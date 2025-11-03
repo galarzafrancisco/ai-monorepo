@@ -1,0 +1,13 @@
+# Best practices for Web applications
+- Use `esnext` modules with `bundler` module resolution.
+- If the application is part of a mono repo, extend base configuration.
+- Use React
+- Use Vite
+- noEmit: true -- tells tcs to type-check only (Vite handles building).
+- Avoid dependencies on `bun` and `deno`.
+- Add npm scripts:
+  - dev: runs the app with hot reload (watch mode) without compiling
+  - build: compiles the app
+  - start: runs the app from the compiled directory
+  - test: runs tests
+  - lint: runs a linter and fixes issues

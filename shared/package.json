@@ -1,0 +1,21 @@
+{
+  "name": "shared",
+  "version": "0.0.1",
+  "type": "module",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -w -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.build.json",
+    "lint": "echo \"(shared) lint todo\"",
+    "generate:types": "openapi-typescript contracts/openapi.json -o contracts/types.ts",
+    "generate:client": "npx openapi-typescript-codegen --input contracts/openapi.json --output src/client --client fetch"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.10.1",
+    "openapi-typescript-codegen": "^0.29.0",
+    "typescript": "^5.6.3"
+  }
+}

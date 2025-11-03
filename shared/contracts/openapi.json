@@ -1,0 +1,262 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/clients": {
+      "get": {
+        "operationId": "ClientController_listClients",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved list of clients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListClientsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all clients",
+        "tags": [
+          "Client"
+        ]
+      },
+      "post": {
+        "operationId": "ClientController_createClient",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successfully created a new client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new client",
+        "tags": [
+          "Client"
+        ]
+      }
+    },
+    "/clients/{id}": {
+      "get": {
+        "operationId": "ClientController_getClientById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The unique identifier of the client",
+            "schema": {
+              "format": "uuid",
+              "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        },
+        "summary": "Get a client by ID",
+        "tags": [
+          "Client"
+        ]
+      },
+      "patch": {
+        "operationId": "ClientController_updateClient",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The unique identifier of the client",
+            "schema": {
+              "format": "uuid",
+              "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateClientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully updated client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        },
+        "summary": "Update a client",
+        "tags": [
+          "Client"
+        ]
+      },
+      "delete": {
+        "operationId": "ClientController_deleteClient",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The unique identifier of the client",
+            "schema": {
+              "format": "uuid",
+              "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted client"
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        },
+        "summary": "Delete a client",
+        "tags": [
+          "Client"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "AI Monorepo API",
+    "description": "The AI Monorepo API description",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "ai-monorepo",
+      "description": ""
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "ClientDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the client",
+            "format": "uuid",
+            "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the client. Must be between 3 and 120 characters.",
+            "example": "Acme Corporation",
+            "minLength": 3,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "ListClientsResponseDto": {
+        "type": "object",
+        "properties": {
+          "clients": {
+            "description": "A list of clients, each containing their unique identifier and name.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClientDto"
+            }
+          }
+        },
+        "required": [
+          "clients"
+        ]
+      },
+      "CreateClientDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the client. Must be between 3 and 120 characters.",
+            "example": "Acme Corporation",
+            "minLength": 3,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateClientDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the client. Must be between 3 and 120 characters.",
+            "example": "Acme Corporation",
+            "minLength": 3,
+            "maxLength": 120
+          }
+        }
+      }
+    }
+  }
+}

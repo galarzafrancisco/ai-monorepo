@@ -1,0 +1,6 @@
+- Controller contains **no business logic**.
+- Uses **DTOs** for params/query/body/response (documented & validated).
+- Calls **services** with **pure types**.
+- **Auth** via guards.
+- **errors** via filter and Problem Details.
+- Explicit status codes.

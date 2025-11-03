@@ -1,0 +1,3 @@
+- Is not a step by step implememtation guide
+- Has general principles
+- Is less than 400 lines

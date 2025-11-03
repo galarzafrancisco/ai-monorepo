@@ -1,0 +1,3 @@
+- Is developer focused
+- Has clear code examples
+- Is less than 400 lines

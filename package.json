@@ -1,0 +1,31 @@
+{
+  "name": "ai-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,ui -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"",
+    "build": "npm -ws run build",
+    "start": "npm -w apps/backend run start:prod",
+    "lint": "npm -ws run lint || true",
+    "typecheck": "npm -ws run typecheck || true"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.10",
+    "concurrently": "^9.0.0",
+    "tsc-alias": "^1.8.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/galarzafrancisco/ai-monorepo.git"
+  },
+  "author": "Francisco Galarza",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/galarzafrancisco/ai-monorepo/issues"
+  },
+  "homepage": "https://github.com/galarzafrancisco/ai-monorepo#readme"
+}
