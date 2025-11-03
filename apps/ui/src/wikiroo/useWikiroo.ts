@@ -27,6 +27,7 @@ export const useWikiroo = () => {
   const fetchPage = useCallback(async (id: string) => {
     setIsLoadingPage(true);
     setError(null);
+    setSelectedPage(null);
     try {
       const page = await WikirooService.wikirooControllerGetPage(id);
       setSelectedPage(page);

@@ -7,8 +7,9 @@
 
 .wikiroo-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -23,31 +24,10 @@
   color: #95a5a6;
 }
 
-.wikiroo-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 24px;
-}
-
-.wikiroo-sidebar,
-.wikiroo-content {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.wikiroo-sidebar-header {
+.wikiroo-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.wikiroo-sidebar-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .wikiroo-button {
@@ -88,7 +68,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   padding: 16px;
   border-radius: 12px;
   background: #f5f7fa;
@@ -122,65 +102,136 @@
   justify-content: flex-end;
 }
 
-.wikiroo-list {
+.wikiroo-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-bottom: 24px;
+}
+
+.wikiroo-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.wikiroo-list-item {
-  border: 1px solid transparent;
-  border-radius: 12px;
-  padding: 12px;
+  gap: 8px;
   background: #ffffff;
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 16px;
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.wikiroo-list-item:hover {
-  border-color: #3498db33;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+.wikiroo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
-.wikiroo-list-item.active {
-  border-color: #3498db;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
-}
-
-.wikiroo-list-item h3 {
-  margin: 0 0 6px;
-  font-size: 16px;
+.wikiroo-card h3 {
+  margin: 0;
+  font-size: 20px;
   font-weight: 600;
 }
 
-.wikiroo-list-item p {
+.wikiroo-card p {
   margin: 0;
-  color: #95a5a6;
+  color: #7f8c8d;
+}
+
+.wikiroo-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
   font-size: 13px;
+  color: #95a5a6;
 }
 
-.wikiroo-content header {
-  border-bottom: 1px solid #ecf0f1;
-  padding-bottom: 12px;
-  margin-bottom: 16px;
-}
-
-.wikiroo-content header h2 {
-  margin: 0;
-  font-size: 24px;
+.wikiroo-back-link {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: #3498db;
+  text-decoration: none;
   font-weight: 600;
+}
+
+.wikiroo-back-link:hover {
+  text-decoration: underline;
+}
+
+.wikiroo-page-view {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .wikiroo-meta {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
   color: #95a5a6;
   font-size: 13px;
 }
 
-.wikiroo-body-text {
-  white-space: pre-line;
+.wikiroo-content-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  min-height: 240px;
+}
+
+.wikiroo-markdown {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   font-size: 15px;
+  line-height: 1.7;
+  color: #2c3e50;
+}
+
+.wikiroo-markdown h1,
+.wikiroo-markdown h2,
+.wikiroo-markdown h3,
+.wikiroo-markdown h4,
+.wikiroo-markdown h5,
+.wikiroo-markdown h6 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.wikiroo-markdown h1 { font-size: 28px; }
+.wikiroo-markdown h2 { font-size: 24px; }
+.wikiroo-markdown h3 { font-size: 20px; }
+
+.wikiroo-markdown p {
+  margin: 0;
+}
+
+.wikiroo-markdown ul {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.wikiroo-markdown li {
+  margin-bottom: 6px;
+}
+
+.wikiroo-markdown code {
+  background: #f0f3f6;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: 'Source Code Pro', Consolas, 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.wikiroo-markdown pre {
+  background: #1f2933;
+  color: #f8f9fa;
+  padding: 16px;
+  border-radius: 12px;
+  overflow-x: auto;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -189,7 +240,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  padding: 48px 16px;
   color: #95a5a6;
   text-align: center;
   gap: 12px;
@@ -207,8 +258,13 @@
   color: #e74c3c;
 }
 
-@media (max-width: 960px) {
-  .wikiroo-layout {
-    grid-template-columns: 1fr;
+@media (max-width: 768px) {
+  .wikiroo {
+    padding: 16px;
+  }
+
+  .wikiroo-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
