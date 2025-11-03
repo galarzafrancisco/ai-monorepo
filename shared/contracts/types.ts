@@ -20,77 +20,158 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/clients": {
+    "/taskeroo/tasks": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List all clients */
-        get: operations["ClientController_listClients"];
+        /** List tasks with optional filtering */
+        get: operations["TaskerooController_listTasks"];
         put?: never;
-        /** Create a new client */
-        post: operations["ClientController_createClient"];
+        /** Create a new task */
+        post: operations["TaskerooController_createTask"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/clients/{id}": {
+    "/taskeroo/tasks/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get a client by ID */
-        get: operations["ClientController_getClientById"];
+        /** Get a task by ID */
+        get: operations["TaskerooController_getTask"];
         put?: never;
         post?: never;
-        /** Delete a client */
-        delete: operations["ClientController_deleteClient"];
+        /** Delete a task */
+        delete: operations["TaskerooController_deleteTask"];
         options?: never;
         head?: never;
-        /** Update a client */
-        patch: operations["ClientController_updateClient"];
+        /** Update task description */
+        patch: operations["TaskerooController_updateTask"];
+        trace?: never;
+    };
+    "/taskeroo/tasks/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Assign a task to someone */
+        patch: operations["TaskerooController_assignTask"];
+        trace?: never;
+    };
+    "/taskeroo/tasks/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a comment to a task */
+        post: operations["TaskerooController_addComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/taskeroo/tasks/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change task status */
+        patch: operations["TaskerooController_changeStatus"];
         trace?: never;
     };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        ClientDto: {
+        CreateTaskDto: {
             /**
-             * Format: uuid
-             * @description The unique identifier of the client
-             * @example a1b2c3d4-e5f6-7890-1234-567890abcdef
-             */
-            id: string;
-            /**
-             * @description The name of the client. Must be between 3 and 120 characters.
-             * @example Acme Corporation
+             * @description Name of the task
+             * @example Implement user authentication
              */
             name: string;
-        };
-        ListClientsResponseDto: {
-            /** @description A list of clients, each containing their unique identifier and name. */
-            clients: components["schemas"]["ClientDto"][];
-        };
-        CreateClientDto: {
             /**
-             * @description The name of the client. Must be between 3 and 120 characters.
-             * @example Acme Corporation
+             * @description Detailed description of the task
+             * @example Add JWT-based authentication to the API
              */
-            name: string;
-        };
-        UpdateClientDto: {
+            description: string;
             /**
-             * @description The name of the client. Must be between 3 and 120 characters.
-             * @example Acme Corporation
+             * @description Name of the assignee (for AI agents)
+             * @example AgentAlpha
              */
-            name?: string;
+            assignee?: string;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string;
+        };
+        UpdateTaskDto: {
+            /**
+             * @description Updated description of the task
+             * @example Add JWT-based authentication with refresh tokens
+             */
+            description: string;
+        };
+        AssignTaskDto: {
+            /**
+             * @description Name of the assignee
+             * @example AgentAlpha
+             */
+            assignee: string;
+        };
+        CreateCommentDto: {
+            /**
+             * @description Name of the person or agent commenting
+             * @example AgentBeta
+             */
+            commenterName: string;
+            /**
+             * @description Content of the comment
+             * @example Task completed successfully. All tests passing.
+             */
+            content: string;
+        };
+        ChangeStatusDto: {
+            /**
+             * @description New status for the task
+             * @example in progress
+             * @enum {string}
+             */
+            status: "not started" | "in progress" | "for review" | "done";
+            /**
+             * @description Comment required when marking task as done
+             * @example All requirements met and tests passing
+             */
+            comment?: string;
         };
     };
     responses: never;
@@ -118,27 +199,28 @@ export interface operations {
             };
         };
     };
-    ClientController_listClients: {
+    TaskerooController_listTasks: {
         parameters: {
-            query?: never;
+            query?: {
+                assignee?: string;
+                sessionId?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successfully retrieved list of clients */
+            /** @description List of tasks */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ListClientsResponseDto"];
-                };
+                content?: never;
             };
         };
     };
-    ClientController_createClient: {
+    TaskerooController_createTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -147,43 +229,38 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateClientDto"];
+                "application/json": components["schemas"]["CreateTaskDto"];
             };
         };
         responses: {
-            /** @description Successfully created a new client */
+            /** @description Task created successfully */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ClientDto"];
-                };
+                content?: never;
             };
         };
     };
-    ClientController_getClientById: {
+    TaskerooController_getTask: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description The unique identifier of the client */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successfully retrieved client */
+            /** @description Task found */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ClientDto"];
-                };
+                content?: never;
             };
-            /** @description Client not found */
+            /** @description Task not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -192,26 +269,25 @@ export interface operations {
             };
         };
     };
-    ClientController_deleteClient: {
+    TaskerooController_deleteTask: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description The unique identifier of the client */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Successfully deleted client */
+            /** @description Task deleted successfully */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Client not found */
+            /** @description Task not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -220,32 +296,129 @@ export interface operations {
             };
         };
     };
-    ClientController_updateClient: {
+    TaskerooController_updateTask: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description The unique identifier of the client */
                 id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateClientDto"];
+                "application/json": components["schemas"]["UpdateTaskDto"];
             };
         };
         responses: {
-            /** @description Successfully updated client */
+            /** @description Task updated successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["ClientDto"];
-                };
+                content?: never;
             };
-            /** @description Client not found */
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_assignTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignTaskDto"];
+            };
+        };
+        responses: {
+            /** @description Task assigned successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_addComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommentDto"];
+            };
+        };
+        responses: {
+            /** @description Comment added successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_changeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeStatusDto"];
+            };
+        };
+        responses: {
+            /** @description Status changed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid status transition */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
             404: {
                 headers: {
                     [name: string]: unknown;

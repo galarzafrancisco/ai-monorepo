@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type CreateClientDto = {
+export type AssignTaskDto = {
     /**
-     * The name of the client. Must be between 3 and 120 characters.
+     * Name of the assignee
      */
-    name: string;
+    assignee: string;
 };
 

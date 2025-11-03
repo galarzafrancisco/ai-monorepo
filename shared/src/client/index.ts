@@ -7,10 +7,11 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
-export type { ClientDto } from './models/ClientDto';
-export type { CreateClientDto } from './models/CreateClientDto';
-export type { ListClientsResponseDto } from './models/ListClientsResponseDto';
-export type { UpdateClientDto } from './models/UpdateClientDto';
+export type { AssignTaskDto } from './models/AssignTaskDto';
+export { ChangeStatusDto } from './models/ChangeStatusDto';
+export type { CreateCommentDto } from './models/CreateCommentDto';
+export type { CreateTaskDto } from './models/CreateTaskDto';
+export type { UpdateTaskDto } from './models/UpdateTaskDto';
 
 export { AppService } from './services/AppService';
-export { ClientService } from './services/ClientService';
+export { TaskerooService } from './services/TaskerooService';

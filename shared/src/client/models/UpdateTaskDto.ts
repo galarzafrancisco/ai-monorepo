@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type UpdateClientDto = {
+export type UpdateTaskDto = {
     /**
-     * The name of the client. Must be between 3 and 120 characters.
+     * Updated description of the task
      */
-    name?: string;
+    description: string;
 };
 

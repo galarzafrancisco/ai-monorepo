@@ -14,7 +14,10 @@
   },
   "permissions": {
     "allow": [
-      "Bash(npm run dev:*)"
+      "Bash",
+      "Read",
+      "Write",
+      "Edit"
     ],
     "deny": [],
     "ask": []

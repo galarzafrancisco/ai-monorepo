@@ -15,105 +15,70 @@
         ]
       }
     },
-    "/clients": {
-      "get": {
-        "operationId": "ClientController_listClients",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Successfully retrieved list of clients",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListClientsResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "List all clients",
-        "tags": [
-          "Client"
-        ]
-      },
+    "/taskeroo/tasks": {
       "post": {
-        "operationId": "ClientController_createClient",
+        "operationId": "TaskerooController_createTask",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateClientDto"
+                "$ref": "#/components/schemas/CreateTaskDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Successfully created a new client",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientDto"
-                }
-              }
-            }
+            "description": "Task created successfully"
           }
         },
-        "summary": "Create a new client",
+        "summary": "Create a new task",
         "tags": [
-          "Client"
+          "taskeroo"
         ]
-      }
-    },
-    "/clients/{id}": {
+      },
       "get": {
-        "operationId": "ClientController_getClientById",
+        "operationId": "TaskerooController_listTasks",
         "parameters": [
           {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "The unique identifier of the client",
+            "name": "assignee",
+            "required": false,
+            "in": "query",
             "schema": {
-              "format": "uuid",
-              "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": false,
+            "in": "query",
+            "schema": {
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Successfully retrieved client",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Client not found"
+            "description": "List of tasks"
           }
         },
-        "summary": "Get a client by ID",
+        "summary": "List tasks with optional filtering",
         "tags": [
-          "Client"
+          "taskeroo"
         ]
-      },
+      }
+    },
+    "/taskeroo/tasks/{id}": {
       "patch": {
-        "operationId": "ClientController_updateClient",
+        "operationId": "TaskerooController_updateTask",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "The unique identifier of the client",
             "schema": {
-              "format": "uuid",
-              "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
               "type": "string"
             }
           }
@@ -123,57 +88,186 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateClientDto"
+                "$ref": "#/components/schemas/UpdateTaskDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Successfully updated client",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientDto"
-                }
-              }
-            }
+            "description": "Task updated successfully"
           },
           "404": {
-            "description": "Client not found"
+            "description": "Task not found"
           }
         },
-        "summary": "Update a client",
+        "summary": "Update task description",
         "tags": [
-          "Client"
+          "taskeroo"
         ]
       },
       "delete": {
-        "operationId": "ClientController_deleteClient",
+        "operationId": "TaskerooController_deleteTask",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "The unique identifier of the client",
             "schema": {
-              "format": "uuid",
-              "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
               "type": "string"
             }
           }
         ],
         "responses": {
           "204": {
-            "description": "Successfully deleted client"
+            "description": "Task deleted successfully"
           },
           "404": {
-            "description": "Client not found"
+            "description": "Task not found"
           }
         },
-        "summary": "Delete a client",
+        "summary": "Delete a task",
         "tags": [
-          "Client"
+          "taskeroo"
+        ]
+      },
+      "get": {
+        "operationId": "TaskerooController_getTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task found"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "summary": "Get a task by ID",
+        "tags": [
+          "taskeroo"
+        ]
+      }
+    },
+    "/taskeroo/tasks/{id}/assign": {
+      "patch": {
+        "operationId": "TaskerooController_assignTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task assigned successfully"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "summary": "Assign a task to someone",
+        "tags": [
+          "taskeroo"
+        ]
+      }
+    },
+    "/taskeroo/tasks/{id}/comments": {
+      "post": {
+        "operationId": "TaskerooController_addComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comment added successfully"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "summary": "Add a comment to a task",
+        "tags": [
+          "taskeroo"
+        ]
+      }
+    },
+    "/taskeroo/tasks/{id}/status": {
+      "patch": {
+        "operationId": "TaskerooController_changeStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status changed successfully"
+          },
+          "400": {
+            "description": "Invalid status transition"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "summary": "Change task status",
+        "tags": [
+          "taskeroo"
         ]
       }
     }
@@ -193,69 +287,103 @@
   "servers": [],
   "components": {
     "schemas": {
-      "ClientDto": {
+      "CreateTaskDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "name": {
             "type": "string",
-            "description": "The unique identifier of the client",
-            "format": "uuid",
-            "example": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+            "description": "Name of the task",
+            "example": "Implement user authentication"
           },
-          "name": {
+          "description": {
             "type": "string",
-            "description": "The name of the client. Must be between 3 and 120 characters.",
-            "example": "Acme Corporation",
-            "minLength": 3,
-            "maxLength": 120
+            "description": "Detailed description of the task",
+            "example": "Add JWT-based authentication to the API"
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Name of the assignee (for AI agents)",
+            "example": "AgentAlpha"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc"
           }
         },
         "required": [
-          "id",
-          "name"
+          "name",
+          "description"
         ]
       },
-      "ListClientsResponseDto": {
+      "UpdateTaskDto": {
         "type": "object",
         "properties": {
-          "clients": {
-            "description": "A list of clients, each containing their unique identifier and name.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ClientDto"
-            }
+          "description": {
+            "type": "string",
+            "description": "Updated description of the task",
+            "example": "Add JWT-based authentication with refresh tokens"
           }
         },
         "required": [
-          "clients"
+          "description"
         ]
       },
-      "CreateClientDto": {
+      "AssignTaskDto": {
         "type": "object",
         "properties": {
-          "name": {
+          "assignee": {
             "type": "string",
-            "description": "The name of the client. Must be between 3 and 120 characters.",
-            "example": "Acme Corporation",
-            "minLength": 3,
-            "maxLength": 120
+            "description": "Name of the assignee",
+            "example": "AgentAlpha"
           }
         },
         "required": [
-          "name"
+          "assignee"
         ]
       },
-      "UpdateClientDto": {
+      "CreateCommentDto": {
         "type": "object",
         "properties": {
-          "name": {
+          "commenterName": {
             "type": "string",
-            "description": "The name of the client. Must be between 3 and 120 characters.",
-            "example": "Acme Corporation",
-            "minLength": 3,
-            "maxLength": 120
+            "description": "Name of the person or agent commenting",
+            "example": "AgentBeta"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the comment",
+            "example": "Task completed successfully. All tests passing."
           }
-        }
+        },
+        "required": [
+          "commenterName",
+          "content"
+        ]
+      },
+      "ChangeStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "New status for the task",
+            "enum": [
+              "not started",
+              "in progress",
+              "for review",
+              "done"
+            ],
+            "example": "in progress"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Comment required when marking task as done",
+            "example": "All requirements met and tests passing"
+          }
+        },
+        "required": [
+          "status"
+        ]
       }
     }
   }
