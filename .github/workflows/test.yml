@@ -30,6 +30,21 @@ jobs:
         id: tests
         run: cd apps/backend && npx jest --config ./test/jest-e2e.json taskeroo.e2e-spec.ts
 
+      - name: Build Docker image
+        if: success()
+        run: |
+          docker build -t taskeroo:${{ github.sha }} .
+          docker save taskeroo:${{ github.sha }} -o taskeroo-image.tar
+
+      - name: Upload Docker image artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskeroo-docker-image
+          path: taskeroo-image.tar
+          retention-days: 7
+          compression-level: 0
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4

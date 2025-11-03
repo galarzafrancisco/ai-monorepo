@@ -95,15 +95,19 @@ The CI pipeline:
 3. Installs dependencies
 4. Builds the backend
 5. Runs the E2E tests
-6. Uploads test results as artifacts (if available)
-7. Shows logs on failure
+6. Builds Docker image (if tests pass)
+7. Uploads Docker image as artifact (7 day retention)
+8. Uploads test results as artifacts (30 day retention)
+9. Shows logs on failure
 
 ### Viewing CI Results
 
 1. Go to the "Actions" tab in GitHub
 2. Select the workflow run for your PR
 3. View the test results in the "Build and Test" job
-4. Download test artifacts if tests fail
+4. Download artifacts:
+   - **Docker image**: `taskeroo-docker-image` (ready to deploy)
+   - **Test results**: `test-results` (if tests fail)
 
 ## Test Structure
 
