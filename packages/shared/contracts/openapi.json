@@ -7,9 +7,18 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Returns a greeting message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "Hello World!"
+                }
+              }
+            }
           }
         },
+        "summary": "Health check endpoint",
         "tags": [
           "App"
         ]
@@ -31,7 +40,17 @@
         },
         "responses": {
           "201": {
-            "description": "Task created successfully"
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
           }
         },
         "summary": "Create a new task",
@@ -46,7 +65,9 @@
             "name": "assignee",
             "required": false,
             "in": "query",
+            "description": "Filter tasks by assignee name",
             "schema": {
+              "example": "AgentAlpha",
               "type": "string"
             }
           },
@@ -54,14 +75,26 @@
             "name": "sessionId",
             "required": false,
             "in": "query",
+            "description": "Filter tasks by session ID",
             "schema": {
+              "example": "session-123-abc",
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of tasks"
+            "description": "List of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "summary": "List tasks with optional filtering",
@@ -78,7 +111,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Task UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -95,7 +130,17 @@
         },
         "responses": {
           "200": {
-            "description": "Task updated successfully"
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
           },
           "404": {
             "description": "Task not found"
@@ -113,7 +158,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Task UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -138,14 +185,23 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Task UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Task found"
+            "description": "Task found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Task not found"
@@ -165,7 +221,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Task UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -182,7 +240,17 @@
         },
         "responses": {
           "200": {
-            "description": "Task assigned successfully"
+            "description": "Task assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
           },
           "404": {
             "description": "Task not found"
@@ -202,7 +270,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Task UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -219,7 +289,17 @@
         },
         "responses": {
           "201": {
-            "description": "Comment added successfully"
+            "description": "Comment added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
           },
           "404": {
             "description": "Task not found"
@@ -239,7 +319,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Task UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -256,10 +338,17 @@
         },
         "responses": {
           "200": {
-            "description": "Status changed successfully"
+            "description": "Status changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Invalid status transition"
+            "description": "Invalid status transition or comment required"
           },
           "404": {
             "description": "Task not found"
@@ -316,6 +405,67 @@
           "description"
         ]
       },
+      "TaskResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the task",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the task",
+            "example": "Implement user authentication"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the task",
+            "example": "Add JWT-based authentication to the API"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the task",
+            "enum": [
+              "not started",
+              "in progress",
+              "for review",
+              "done"
+            ],
+            "example": "not started"
+          },
+          "assignee": {
+            "type": "object",
+            "description": "Name of the assignee (for AI agents)",
+            "example": "AgentAlpha",
+            "nullable": true
+          },
+          "sessionId": {
+            "type": "object",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Task creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Task last update timestamp",
+            "example": "2025-11-03T12:45:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "UpdateTaskDto": {
         "type": "object",
         "properties": {
@@ -359,6 +509,43 @@
         "required": [
           "commenterName",
           "content"
+        ]
+      },
+      "CommentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the comment",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "ID of the task this comment belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "commenterName": {
+            "type": "string",
+            "description": "Name of the person/agent who created the comment",
+            "example": "AgentAlpha"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the comment",
+            "example": "Started working on this task"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Comment creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "commenterName",
+          "content",
+          "createdAt"
         ]
       },
       "ChangeStatusDto": {

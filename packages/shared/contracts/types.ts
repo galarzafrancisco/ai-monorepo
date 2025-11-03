@@ -11,6 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Health check endpoint */
         get: operations["AppController_getHello"];
         put?: never;
         post?: never;
@@ -134,6 +135,49 @@ export interface components {
              */
             sessionId?: string;
         };
+        TaskResponseDto: {
+            /**
+             * @description Unique identifier for the task
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the task
+             * @example Implement user authentication
+             */
+            name: string;
+            /**
+             * @description Detailed description of the task
+             * @example Add JWT-based authentication to the API
+             */
+            description: string;
+            /**
+             * @description Current status of the task
+             * @example not started
+             * @enum {string}
+             */
+            status: "not started" | "in progress" | "for review" | "done";
+            /**
+             * @description Name of the assignee (for AI agents)
+             * @example AgentAlpha
+             */
+            assignee?: Record<string, never> | null;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: Record<string, never> | null;
+            /**
+             * @description Task creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Task last update timestamp
+             * @example 2025-11-03T12:45:00.000Z
+             */
+            updatedAt: string;
+        };
         UpdateTaskDto: {
             /**
              * @description Updated description of the task
@@ -159,6 +203,33 @@ export interface components {
              * @example Task completed successfully. All tests passing.
              */
             content: string;
+        };
+        CommentResponseDto: {
+            /**
+             * @description Unique identifier for the comment
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            id: string;
+            /**
+             * @description ID of the task this comment belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            taskId: string;
+            /**
+             * @description Name of the person/agent who created the comment
+             * @example AgentAlpha
+             */
+            commenterName: string;
+            /**
+             * @description Content of the comment
+             * @example Started working on this task
+             */
+            content: string;
+            /**
+             * @description Comment creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
         };
         ChangeStatusDto: {
             /**
@@ -191,18 +262,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Returns a greeting message */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": string;
+                };
             };
         };
     };
     TaskerooController_listTasks: {
         parameters: {
             query?: {
+                /** @description Filter tasks by assignee name */
                 assignee?: string;
+                /** @description Filter tasks by session ID */
                 sessionId?: string;
             };
             header?: never;
@@ -216,7 +292,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"][];
+                };
             };
         };
     };
@@ -238,6 +316,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -247,6 +334,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Task UUID */
                 id: string;
             };
             cookie?: never;
@@ -258,7 +346,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
             };
             /** @description Task not found */
             404: {
@@ -274,6 +364,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Task UUID */
                 id: string;
             };
             cookie?: never;
@@ -301,6 +392,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Task UUID */
                 id: string;
             };
             cookie?: never;
@@ -313,6 +405,15 @@ export interface operations {
         responses: {
             /** @description Task updated successfully */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -332,6 +433,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Task UUID */
                 id: string;
             };
             cookie?: never;
@@ -344,6 +446,15 @@ export interface operations {
         responses: {
             /** @description Task assigned successfully */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -363,6 +474,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Task UUID */
                 id: string;
             };
             cookie?: never;
@@ -375,6 +487,15 @@ export interface operations {
         responses: {
             /** @description Comment added successfully */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -394,6 +515,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Task UUID */
                 id: string;
             };
             cookie?: never;
@@ -409,9 +531,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
             };
-            /** @description Invalid status transition */
+            /** @description Invalid status transition or comment required */
             400: {
                 headers: {
                     [name: string]: unknown;

@@ -7,10 +7,11 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class AppService {
     /**
-     * @returns any
+     * Health check endpoint
+     * @returns string Returns a greeting message
      * @throws ApiError
      */
-    public static appControllerGetHello(): CancelablePromise<any> {
+    public static appControllerGetHello(): CancelablePromise<string> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/',

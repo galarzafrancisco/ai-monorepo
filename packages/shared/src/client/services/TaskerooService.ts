@@ -4,8 +4,10 @@
 /* eslint-disable */
 import type { AssignTaskDto } from '../models/AssignTaskDto';
 import type { ChangeStatusDto } from '../models/ChangeStatusDto';
+import type { CommentResponseDto } from '../models/CommentResponseDto';
 import type { CreateCommentDto } from '../models/CreateCommentDto';
 import type { CreateTaskDto } from '../models/CreateTaskDto';
+import type { TaskResponseDto } from '../models/TaskResponseDto';
 import type { UpdateTaskDto } from '../models/UpdateTaskDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -14,30 +16,33 @@ export class TaskerooService {
     /**
      * Create a new task
      * @param requestBody
-     * @returns any Task created successfully
+     * @returns TaskResponseDto Task created successfully
      * @throws ApiError
      */
     public static taskerooControllerCreateTask(
         requestBody: CreateTaskDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/taskeroo/tasks',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+            },
         });
     }
     /**
      * List tasks with optional filtering
-     * @param assignee
-     * @param sessionId
-     * @returns any List of tasks
+     * @param assignee Filter tasks by assignee name
+     * @param sessionId Filter tasks by session ID
+     * @returns TaskResponseDto List of tasks
      * @throws ApiError
      */
     public static taskerooControllerListTasks(
         assignee?: string,
         sessionId?: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Array<TaskResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/taskeroo/tasks',
@@ -49,15 +54,15 @@ export class TaskerooService {
     }
     /**
      * Update task description
-     * @param id
+     * @param id Task UUID
      * @param requestBody
-     * @returns any Task updated successfully
+     * @returns TaskResponseDto Task updated successfully
      * @throws ApiError
      */
     public static taskerooControllerUpdateTask(
         id: string,
         requestBody: UpdateTaskDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/taskeroo/tasks/{id}',
@@ -67,13 +72,14 @@ export class TaskerooService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
+                400: `Invalid input data`,
                 404: `Task not found`,
             },
         });
     }
     /**
      * Delete a task
-     * @param id
+     * @param id Task UUID
      * @returns void
      * @throws ApiError
      */
@@ -93,13 +99,13 @@ export class TaskerooService {
     }
     /**
      * Get a task by ID
-     * @param id
-     * @returns any Task found
+     * @param id Task UUID
+     * @returns TaskResponseDto Task found
      * @throws ApiError
      */
     public static taskerooControllerGetTask(
         id: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/taskeroo/tasks/{id}',
@@ -113,15 +119,15 @@ export class TaskerooService {
     }
     /**
      * Assign a task to someone
-     * @param id
+     * @param id Task UUID
      * @param requestBody
-     * @returns any Task assigned successfully
+     * @returns TaskResponseDto Task assigned successfully
      * @throws ApiError
      */
     public static taskerooControllerAssignTask(
         id: string,
         requestBody: AssignTaskDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/taskeroo/tasks/{id}/assign',
@@ -131,21 +137,22 @@ export class TaskerooService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
+                400: `Invalid input data`,
                 404: `Task not found`,
             },
         });
     }
     /**
      * Add a comment to a task
-     * @param id
+     * @param id Task UUID
      * @param requestBody
-     * @returns any Comment added successfully
+     * @returns CommentResponseDto Comment added successfully
      * @throws ApiError
      */
     public static taskerooControllerAddComment(
         id: string,
         requestBody: CreateCommentDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<CommentResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/taskeroo/tasks/{id}/comments',
@@ -155,21 +162,22 @@ export class TaskerooService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
+                400: `Invalid input data`,
                 404: `Task not found`,
             },
         });
     }
     /**
      * Change task status
-     * @param id
+     * @param id Task UUID
      * @param requestBody
-     * @returns any Status changed successfully
+     * @returns TaskResponseDto Status changed successfully
      * @throws ApiError
      */
     public static taskerooControllerChangeStatus(
         id: string,
         requestBody: ChangeStatusDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/taskeroo/tasks/{id}/status',
@@ -179,7 +187,7 @@ export class TaskerooService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Invalid status transition`,
+                400: `Invalid status transition or comment required`,
                 404: `Task not found`,
             },
         });

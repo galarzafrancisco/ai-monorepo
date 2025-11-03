@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { ProblemDetailsFilter } from './http/problem-details.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,7 +12,17 @@ async function bootstrap() {
   // Enable CORS
   app.enableCors();
 
-  app.useGlobalPipes(new ValidationPipe());
+  // Global validation pipe with transformation and strict validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Global exception filter for RFC 7807 Problem Details
+  app.useGlobalFilters(new ProblemDetailsFilter());
 
   const config = new DocumentBuilder()
     .setTitle('AI Monorepo API')
@@ -26,7 +37,7 @@ async function bootstrap() {
 
   if (generateSpec) {
     // Write OpenAPI spec to file and exit
-    const outputPath = join(__dirname, '..', 'contracts', 'openapi.json');
+    const outputPath = join(__dirname, '..', 'openapi.json');
     writeFileSync(outputPath, JSON.stringify(document, null, 2));
     console.log(`OpenAPI specification written to ${outputPath}`);
     process.exit(0);

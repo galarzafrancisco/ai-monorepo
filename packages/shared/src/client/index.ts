@@ -9,8 +9,10 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export { ChangeStatusDto } from './models/ChangeStatusDto';
+export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { CreateCommentDto } from './models/CreateCommentDto';
 export type { CreateTaskDto } from './models/CreateTaskDto';
+export { TaskResponseDto } from './models/TaskResponseDto';
 export type { UpdateTaskDto } from './models/UpdateTaskDto';
 
 export { AppService } from './services/AppService';
