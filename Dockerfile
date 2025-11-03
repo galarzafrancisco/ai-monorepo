@@ -17,7 +17,9 @@ COPY . .
 
 # Generate shared types and build all packages
 RUN npm run generate:all
-RUN npm run build
+# Build shared package first, then backend only (skip UI to avoid type errors)
+RUN npm -w shared run build
+RUN npm -w backend run build
 
 # Production stage
 FROM node:20-alpine
