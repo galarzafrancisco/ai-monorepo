@@ -1,5 +1,5 @@
-import { OpenAPI, TaskerooService } from 'shared';
+import { OpenAPI, TaskService } from 'shared';
 
 OpenAPI.BASE = "http://localhost:3000";
 
-export { TaskerooService };
+export { TaskService as TaskerooService };

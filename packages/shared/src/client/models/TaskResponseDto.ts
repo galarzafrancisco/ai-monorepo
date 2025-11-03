@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Comment } from './Comment';
+import type { CommentResponseDto } from './CommentResponseDto';
 export type TaskResponseDto = {
     /**
      * Unique identifier for the task
@@ -31,7 +31,7 @@ export type TaskResponseDto = {
     /**
      * Comments associated with the task
      */
-    comments: Array<Comment>;
+    comments: Array<CommentResponseDto>;
     /**
      * Task creation timestamp
      */
@@ -46,10 +46,10 @@ export namespace TaskResponseDto {
      * Current status of the task
      */
     export enum status {
-        NOT_STARTED = 'not started',
-        IN_PROGRESS = 'in progress',
-        FOR_REVIEW = 'for review',
-        DONE = 'done',
+        NOT_STARTED = 'NOT_STARTED',
+        IN_PROGRESS = 'IN_PROGRESS',
+        FOR_REVIEW = 'FOR_REVIEW',
+        DONE = 'DONE',
     }
 }
 

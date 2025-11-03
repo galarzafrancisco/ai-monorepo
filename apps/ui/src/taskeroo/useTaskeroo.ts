@@ -36,7 +36,7 @@ export const useTaskeroo = () => {
     setError(null);
     try {
       const response = await TaskerooService.taskerooControllerListTasks();
-      setTasks(response);
+      setTasks(response.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks'); // Question: should we have an error map instead of passing back raw messages?
     } finally {

@@ -6,6 +6,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { TaskEntity } from './task.entity';
+import { CommentEntity } from './comment.entity';
 
 @WebSocketGateway({
   cors: {
@@ -29,11 +31,11 @@ export class TaskerooGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
-  emitTaskCreated(task: any) {
+  emitTaskCreated(task: TaskEntity) {
     this.server.emit('task.created', task);
   }
 
-  emitTaskUpdated(task: any) {
+  emitTaskUpdated(task: TaskEntity) {
     this.server.emit('task.updated', task);
   }
 
@@ -41,15 +43,15 @@ export class TaskerooGateway
     this.server.emit('task.deleted', { taskId });
   }
 
-  emitTaskAssigned(task: any) {
+  emitTaskAssigned(task: TaskEntity) {
     this.server.emit('task.assigned', task);
   }
 
-  emitCommentAdded(comment: any) {
+  emitCommentAdded(comment: CommentEntity) {
     this.server.emit('task.commented', comment);
   }
 
-  emitStatusChanged(task: any) {
+  emitStatusChanged(task: TaskEntity) {
     this.server.emit('task.status_changed', task);
   }
 }

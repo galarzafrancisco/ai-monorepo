@@ -28,7 +28,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List tasks with optional filtering */
+        /** List tasks with optional filtering and pagination */
         get: operations["TaskerooController_listTasks"];
         put?: never;
         /** Create a new task */
@@ -135,89 +135,6 @@ export interface components {
              */
             sessionId?: string;
         };
-        Comment: Record<string, never>;
-        TaskResponseDto: {
-            /**
-             * @description Unique identifier for the task
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Name of the task
-             * @example Implement user authentication
-             */
-            name: string;
-            /**
-             * @description Detailed description of the task
-             * @example Add JWT-based authentication to the API
-             */
-            description: string;
-            /**
-             * @description Current status of the task
-             * @example not started
-             * @enum {string}
-             */
-            status: "not started" | "in progress" | "for review" | "done";
-            /**
-             * @description Name of the assignee (for AI agents)
-             * @example AgentAlpha
-             */
-            assignee?: string | null;
-            /**
-             * @description Session ID for tracking AI agent work
-             * @example session-123-abc
-             */
-            sessionId?: string | null;
-            /**
-             * @description Comments associated with the task
-             * @example [
-             *       {
-             *         "id": "cmt-001",
-             *         "taskId": "123e4567-e89b-12d3-a456-426614174000",
-             *         "commenterName": "John Doe",
-             *         "content": "Please prioritize this task.",
-             *         "createdAt": "2025-11-03T11:00:00.000Z"
-             *       }
-             *     ]
-             */
-            comments: components["schemas"]["Comment"][];
-            /**
-             * @description Task creation timestamp
-             * @example 2025-11-03T10:30:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Task last update timestamp
-             * @example 2025-11-03T12:45:00.000Z
-             */
-            updatedAt: string;
-        };
-        UpdateTaskDto: {
-            /**
-             * @description Updated description of the task
-             * @example Add JWT-based authentication with refresh tokens
-             */
-            description: string;
-        };
-        AssignTaskDto: {
-            /**
-             * @description Name of the assignee (can be empty to unassign)
-             * @example AgentAlpha
-             */
-            assignee?: Record<string, never>;
-        };
-        CreateCommentDto: {
-            /**
-             * @description Name of the person or agent commenting
-             * @example AgentBeta
-             */
-            commenterName: string;
-            /**
-             * @description Content of the comment
-             * @example Task completed successfully. All tests passing.
-             */
-            content: string;
-        };
         CommentResponseDto: {
             /**
              * @description Unique identifier for the comment
@@ -245,13 +162,119 @@ export interface components {
              */
             createdAt: string;
         };
+        TaskResponseDto: {
+            /**
+             * @description Unique identifier for the task
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the task
+             * @example Implement user authentication
+             */
+            name: string;
+            /**
+             * @description Detailed description of the task
+             * @example Add JWT-based authentication to the API
+             */
+            description: string;
+            /**
+             * @description Current status of the task
+             * @example NOT_STARTED
+             * @enum {string}
+             */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
+            /**
+             * @description Name of the assignee (for AI agents)
+             * @example AgentAlpha
+             */
+            assignee?: string | null;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string | null;
+            /**
+             * @description Comments associated with the task
+             * @example [
+             *       {
+             *         "id": "cmt-001",
+             *         "taskId": "123e4567-e89b-12d3-a456-426614174000",
+             *         "commenterName": "John Doe",
+             *         "content": "Please prioritize this task.",
+             *         "createdAt": "2025-11-03T11:00:00.000Z"
+             *       }
+             *     ]
+             */
+            comments: components["schemas"]["CommentResponseDto"][];
+            /**
+             * @description Task creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Task last update timestamp
+             * @example 2025-11-03T12:45:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdateTaskDto: {
+            /**
+             * @description Updated description of the task
+             * @example Add JWT-based authentication with refresh tokens
+             */
+            description: string;
+        };
+        AssignTaskDto: {
+            /**
+             * @description Name of the assignee (can be empty to unassign)
+             * @example AgentAlpha
+             */
+            assignee?: Record<string, never>;
+        };
+        TaskListResponseDto: {
+            /** @description List of tasks */
+            items: components["schemas"]["TaskResponseDto"][];
+            /**
+             * @description Total number of tasks matching the filters
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 3
+             */
+            totalPages: number;
+        };
+        CreateCommentDto: {
+            /**
+             * @description Name of the person or agent commenting
+             * @example AgentBeta
+             */
+            commenterName: string;
+            /**
+             * @description Content of the comment
+             * @example Task completed successfully. All tests passing.
+             */
+            content: string;
+        };
         ChangeStatusDto: {
             /**
              * @description New status for the task
-             * @example in progress
+             * @example IN_PROGRESS
              * @enum {string}
              */
-            status: "not started" | "in progress" | "for review" | "done";
+            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
             /**
              * @description Comment required when marking task as done
              * @example All requirements met and tests passing
@@ -294,6 +317,10 @@ export interface operations {
                 assignee?: string;
                 /** @description Filter tasks by session ID */
                 sessionId?: string;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (1-100) */
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -301,13 +328,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of tasks */
+            /** @description Paginated list of tasks */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskResponseDto"][];
+                    "application/json": components["schemas"]["TaskListResponseDto"];
                 };
             };
         };

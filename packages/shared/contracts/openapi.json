@@ -55,7 +55,7 @@
         },
         "summary": "Create a new task",
         "tags": [
-          "taskeroo"
+          "Task"
         ]
       },
       "get": {
@@ -80,26 +80,45 @@
               "example": "session-123-abc",
               "type": "string"
             }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (1-100)",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of tasks",
+            "description": "Paginated list of tasks",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TaskResponseDto"
-                  }
+                  "$ref": "#/components/schemas/TaskListResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "List tasks with optional filtering",
+        "summary": "List tasks with optional filtering and pagination",
         "tags": [
-          "taskeroo"
+          "Task"
         ]
       }
     },
@@ -148,7 +167,7 @@
         },
         "summary": "Update task description",
         "tags": [
-          "taskeroo"
+          "Task"
         ]
       },
       "delete": {
@@ -175,7 +194,7 @@
         },
         "summary": "Delete a task",
         "tags": [
-          "taskeroo"
+          "Task"
         ]
       },
       "get": {
@@ -209,7 +228,7 @@
         },
         "summary": "Get a task by ID",
         "tags": [
-          "taskeroo"
+          "Task"
         ]
       }
     },
@@ -258,7 +277,7 @@
         },
         "summary": "Assign a task to someone",
         "tags": [
-          "taskeroo"
+          "Task"
         ]
       }
     },
@@ -307,7 +326,7 @@
         },
         "summary": "Add a comment to a task",
         "tags": [
-          "taskeroo"
+          "Task"
         ]
       }
     },
@@ -356,7 +375,7 @@
         },
         "summary": "Change task status",
         "tags": [
-          "taskeroo"
+          "Task"
         ]
       }
     }
@@ -405,9 +424,42 @@
           "description"
         ]
       },
-      "Comment": {
+      "CommentResponseDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the comment",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "ID of the task this comment belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "commenterName": {
+            "type": "string",
+            "description": "Name of the person/agent who created the comment",
+            "example": "AgentAlpha"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the comment",
+            "example": "Started working on this task"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Comment creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "commenterName",
+          "content",
+          "createdAt"
+        ]
       },
       "TaskResponseDto": {
         "type": "object",
@@ -431,12 +483,12 @@
             "type": "string",
             "description": "Current status of the task",
             "enum": [
-              "not started",
-              "in progress",
-              "for review",
-              "done"
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "FOR_REVIEW",
+              "DONE"
             ],
-            "example": "not started"
+            "example": "NOT_STARTED"
           },
           "assignee": {
             "type": "string",
@@ -463,7 +515,7 @@
             ],
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Comment"
+              "$ref": "#/components/schemas/CommentResponseDto"
             }
           },
           "createdAt": {
@@ -510,6 +562,45 @@
           }
         }
       },
+      "TaskListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of tasks",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of tasks matching the filters",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
       "CreateCommentDto": {
         "type": "object",
         "properties": {
@@ -529,43 +620,6 @@
           "content"
         ]
       },
-      "CommentResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the comment",
-            "example": "123e4567-e89b-12d3-a456-426614174001"
-          },
-          "taskId": {
-            "type": "string",
-            "description": "ID of the task this comment belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "commenterName": {
-            "type": "string",
-            "description": "Name of the person/agent who created the comment",
-            "example": "AgentAlpha"
-          },
-          "content": {
-            "type": "string",
-            "description": "Content of the comment",
-            "example": "Started working on this task"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Comment creation timestamp",
-            "example": "2025-11-03T10:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "taskId",
-          "commenterName",
-          "content",
-          "createdAt"
-        ]
-      },
       "ChangeStatusDto": {
         "type": "object",
         "properties": {
@@ -573,12 +627,12 @@
             "type": "string",
             "description": "New status for the task",
             "enum": [
-              "not started",
-              "in progress",
-              "for review",
-              "done"
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "FOR_REVIEW",
+              "DONE"
             ],
-            "example": "in progress"
+            "example": "IN_PROGRESS"
           },
           "comment": {
             "type": "string",

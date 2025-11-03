@@ -17,10 +17,10 @@ export namespace ChangeStatusDto {
      * New status for the task
      */
     export enum status {
-        NOT_STARTED = 'not started',
-        IN_PROGRESS = 'in progress',
-        FOR_REVIEW = 'for review',
-        DONE = 'done',
+        NOT_STARTED = 'NOT_STARTED',
+        IN_PROGRESS = 'IN_PROGRESS',
+        FOR_REVIEW = 'FOR_REVIEW',
+        DONE = 'DONE',
     }
 }
 

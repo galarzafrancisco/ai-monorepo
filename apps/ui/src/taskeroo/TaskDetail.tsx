@@ -94,7 +94,7 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   const handleChangeStatus = async (newStatus: Task['status']) => {
     try {
       const body: any = { status: newStatus };
-      if (newStatus === 'done' && statusComment.trim()) {
+      if (newStatus === TaskStatus.DONE && statusComment.trim()) {
         body.comment = statusComment;
       }
 
@@ -152,25 +152,25 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
           <div className="status-buttons">
             <button
               onClick={() => handleChangeStatus(TaskStatus.NOT_STARTED)}
-              className={`status-btn ${task.status === 'not started' ? 'active status-not-started' : ''}`}
+              className={`status-btn ${task.status === TaskStatus.NOT_STARTED ? 'active status-not-started' : ''}`}
             >
               Not Started
             </button>
             <button
               onClick={() => handleChangeStatus(TaskStatus.IN_PROGRESS)}
-              className={`status-btn ${task.status === 'in progress' ? 'active status-in-progress' : ''}`}
+              className={`status-btn ${task.status === TaskStatus.IN_PROGRESS ? 'active status-in-progress' : ''}`}
             >
               In Progress
             </button>
             <button
               onClick={() => handleChangeStatus(TaskStatus.FOR_REVIEW)}
-              className={`status-btn ${task.status === 'for review' ? 'active status-for-review' : ''}`}
+              className={`status-btn ${task.status === TaskStatus.FOR_REVIEW ? 'active status-for-review' : ''}`}
             >
               For Review
             </button>
             <button
               onClick={() => handleChangeStatus(TaskStatus.DONE)}
-              className={`status-btn ${task.status === 'done' ? 'active status-done' : ''}`}
+              className={`status-btn ${task.status === TaskStatus.DONE ? 'active status-done' : ''}`}
             >
               Done
             </button>

@@ -28,7 +28,7 @@
     "dev": "tsc -w -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.build.json",
     "lint": "echo \"(shared) lint todo\"",
-    "copy:contracts": "mkdir -p contracts && cp ../../apps/backend/openapi.json contracts/openapi.json",
+    "copy:contracts": "mkdir -p contracts && cp ../../apps/backend/dist/apps/backend/openapi.json contracts/openapi.json",
     "generate:types": "openapi-typescript contracts/openapi.json -o contracts/types.ts",
     "generate:client": "openapi --input contracts/openapi.json --output src/client --client fetch"
   },

@@ -5,7 +5,7 @@ import { TaskDetail } from './TaskDetail';
 import './TaskBoard.css';
 import { Socket } from 'socket.io-client';
 import { useTaskeroo } from './useTaskeroo';
-import { Task } from './types';
+import { Task, TaskStatus } from './types';
 
 const API_BASE = 'http://localhost:3000';
 
@@ -15,10 +15,10 @@ export function TaskBoard() {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const tasksByStatus = {
-    'not started': tasks.filter((t) => t.status === 'not started'),
-    'in progress': tasks.filter((t) => t.status === 'in progress'),
-    'for review': tasks.filter((t) => t.status === 'for review'),
-    done: tasks.filter((t) => t.status === 'done'),
+    [TaskStatus.NOT_STARTED]: tasks.filter((t) => t.status === TaskStatus.NOT_STARTED),
+    [TaskStatus.IN_PROGRESS]: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS),
+    [TaskStatus.FOR_REVIEW]: tasks.filter((t) => t.status === TaskStatus.FOR_REVIEW),
+    [TaskStatus.DONE]: tasks.filter((t) => t.status === TaskStatus.DONE),
   };
 
   return (
@@ -43,7 +43,7 @@ export function TaskBoard() {
               <span className="task-count">{statusTasks.length}</span>
             </div>
             <div className="column-content">
-              {status === 'not started' && (
+              {status === TaskStatus.NOT_STARTED && (
                 <button onClick={() => setShowCreateForm(true)} className="btn-add-task">
                   + Add New Task
                 </button>

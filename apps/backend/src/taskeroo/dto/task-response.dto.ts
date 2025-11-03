@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TaskStatus } from './task.entity';
-import { Comment } from './comment.entity';
+import { TaskStatus } from '../task.entity';
+import { CommentResponseDto } from './comment-response.dto';
 
 export class TaskResponseDto {
   @ApiProperty({
@@ -44,7 +44,7 @@ export class TaskResponseDto {
 
   @ApiProperty({
     description: 'Comments associated with the task',
-    type: () => [Comment],
+    type: () => [CommentResponseDto],
     example: [
       {
         id: 'cmt-001',
@@ -55,7 +55,7 @@ export class TaskResponseDto {
       },
     ],
   })
-  comments!: Comment[];
+  comments!: CommentResponseDto[];
 
   @ApiProperty({
     description: 'Task creation timestamp',

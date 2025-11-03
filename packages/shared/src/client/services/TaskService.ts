@@ -7,12 +7,13 @@ import type { ChangeStatusDto } from '../models/ChangeStatusDto';
 import type { CommentResponseDto } from '../models/CommentResponseDto';
 import type { CreateCommentDto } from '../models/CreateCommentDto';
 import type { CreateTaskDto } from '../models/CreateTaskDto';
+import type { TaskListResponseDto } from '../models/TaskListResponseDto';
 import type { TaskResponseDto } from '../models/TaskResponseDto';
 import type { UpdateTaskDto } from '../models/UpdateTaskDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
-export class TaskerooService {
+export class TaskService {
     /**
      * Create a new task
      * @param requestBody
@@ -33,22 +34,28 @@ export class TaskerooService {
         });
     }
     /**
-     * List tasks with optional filtering
+     * List tasks with optional filtering and pagination
      * @param assignee Filter tasks by assignee name
      * @param sessionId Filter tasks by session ID
-     * @returns TaskResponseDto List of tasks
+     * @param page Page number (1-indexed)
+     * @param limit Items per page (1-100)
+     * @returns TaskListResponseDto Paginated list of tasks
      * @throws ApiError
      */
     public static taskerooControllerListTasks(
         assignee?: string,
         sessionId?: string,
-    ): CancelablePromise<Array<TaskResponseDto>> {
+        page: number = 1,
+        limit: number = 20,
+    ): CancelablePromise<TaskListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/taskeroo/tasks',
             query: {
                 'assignee': assignee,
                 'sessionId': sessionId,
+                'page': page,
+                'limit': limit,
             },
         });
     }
