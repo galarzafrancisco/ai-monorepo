@@ -1,0 +1,214 @@
+.wikiroo {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 24px;
+  color: #2c3e50;
+}
+
+.wikiroo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.wikiroo-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.wikiroo-header p {
+  margin: 4px 0 0;
+  color: #95a5a6;
+}
+
+.wikiroo-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+}
+
+.wikiroo-sidebar,
+.wikiroo-content {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.wikiroo-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.wikiroo-sidebar-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.wikiroo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wikiroo-button.primary {
+  background: #3498db;
+  color: #ffffff;
+}
+
+.wikiroo-button.secondary {
+  background: #ecf0f1;
+  color: #2c3e50;
+}
+
+.wikiroo-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wikiroo-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+}
+
+.wikiroo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f5f7fa;
+}
+
+.wikiroo-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wikiroo-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7f8c8d;
+}
+
+.wikiroo-form-group input,
+.wikiroo-form-group textarea {
+  border: 1px solid #dce4ec;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.wikiroo-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.wikiroo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wikiroo-list-item {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wikiroo-list-item:hover {
+  border-color: #3498db33;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.wikiroo-list-item.active {
+  border-color: #3498db;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+}
+
+.wikiroo-list-item h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.wikiroo-list-item p {
+  margin: 0;
+  color: #95a5a6;
+  font-size: 13px;
+}
+
+.wikiroo-content header {
+  border-bottom: 1px solid #ecf0f1;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.wikiroo-content header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.wikiroo-meta {
+  display: flex;
+  gap: 16px;
+  color: #95a5a6;
+  font-size: 13px;
+}
+
+.wikiroo-body-text {
+  white-space: pre-line;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.wikiroo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #95a5a6;
+  text-align: center;
+  gap: 12px;
+}
+
+.wikiroo-status {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #e67e22;
+}
+
+.wikiroo-error {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #e74c3c;
+}
+
+@media (max-width: 960px) {
+  .wikiroo-layout {
+    grid-template-columns: 1fr;
+  }
+}
