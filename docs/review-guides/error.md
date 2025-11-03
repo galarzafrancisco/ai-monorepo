@@ -1,0 +1,7 @@
+- New code has been added to **shared** `error-codes.ts`.
+- Module owns domain error class in `<module>/errors/<module>.errors.ts`.
+- Domain error **does not** reference HTTP and **does** carry `code` and optional `context`.
+- Error Catalog contains mapping for the new code.
+- Global filter emits `application/problem+json` with `requestId`.
+- UI updated (or has a safe default) for the new `code`.
+- Logs include `{ code, status, requestId }`; no secrets in payloads.

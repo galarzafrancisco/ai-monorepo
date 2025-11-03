@@ -1,0 +1,10 @@
+- File/class names follow convention (`<entity>-<verb>(-response).dto.ts`, `VerbEnti(Response)Dto`).  
+- Every field has `@ApiProperty*` with `description` and `example`.
+- All inputs validated (`class-validator`), numbers coerced via `@Transform`.
+- No entities returned; **response DTO** exists.
+- Nested DTOs validated (`@ValidateNested`, `@Type`).
+- Enums centralized and documented.
+- PATCH DTO uses `PartialType`.
+- Service DTOs are pure types; mapping performed in controller or mapper.
+- Sensitive fields never exposed.
+- Deprecated fields marked in Swagger.

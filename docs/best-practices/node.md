@@ -1,0 +1,11 @@
+# Best practices for Node applications
+- Use TypeScript and `npm`.
+- Use `nodenext` modules.
+- If the application is part of a mono repo, extend base configuration.
+- Avoid dependencies on `bun` and `deno`.
+- Add npm scripts:
+  - dev: runs the app with hot reload (watch mode) without compiling
+  - build: compiles the app
+  - start: runs the app from the compiled directory
+  - test: runs tests
+  - lint: runs a linter and fixes issues
