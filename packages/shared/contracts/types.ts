@@ -109,6 +109,44 @@ export interface paths {
         patch: operations["TaskerooController_changeStatus"];
         trace?: never;
     };
+    "/wikiroo/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List wiki pages without content */
+        get: operations["WikirooController_listPages"];
+        put?: never;
+        /** Create a new wiki page */
+        post: operations["WikirooController_createPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/wikiroo/pages/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Fetch a wiki page by ID */
+        get: operations["WikirooController_getPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -271,6 +309,99 @@ export interface components {
         ChangeStatusDto: {
             /**
              * @description New status for the task
+             * @example IN_PROGRESS
+             * @enum {string}
+             */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
+            /**
+             * @description Comment required when marking task as done
+             * @example All requirements met and tests passing
+             */
+            comment?: string;
+        };
+        CreatePageDto: {
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Markdown content of the page
+             * @example # Welcome to Wikiroo\nThis is the onboarding guide.
+             */
+            content: string;
+            /**
+             * @description Author of the page
+             * @example Agent Roo
+             */
+            author: string;
+        };
+        PageResponseDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Markdown content of the wiki page
+             * @example # Welcome to Wikiroo
+             */
+            content: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        PageSummaryDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        PageListResponseDto: {
+            /**
+             * @description Collection of wiki page summaries
+             */
+            items: components["schemas"]["PageSummaryDto"][];
+        };
+
              * @example IN_PROGRESS
              * @enum {string}
              */
@@ -589,6 +720,80 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    WikirooController_listPages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of wiki pages */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageListResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_createPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePageDto"];
+            };
+        };
+        responses: {
+            /** @description Wiki page created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_getPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wiki page retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
             };
         };
     };

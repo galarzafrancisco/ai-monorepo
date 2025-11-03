@@ -33,6 +33,12 @@ export const ErrorCatalog: Record<
     type: '/errors/tasks/comment-required',
     retryable: false,
   },
+  [ErrorCodes.PAGE_NOT_FOUND]: {
+    status: 404,
+    title: 'Wiki page not found',
+    type: '/errors/wiki/page-not-found',
+    retryable: false,
+  },
   [ErrorCodes.VALIDATION_FAILED]: {
     status: 400,
     title: 'Validation failed',

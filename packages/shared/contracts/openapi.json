@@ -378,6 +378,95 @@
           "Task"
         ]
       }
+    },
+    "/wikiroo/pages": {
+      "post": {
+        "operationId": "WikirooController_createPage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Wiki page created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Create a new wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "get": {
+        "operationId": "WikirooController_listPages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of wiki pages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List wiki pages without content",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/wikiroo/pages/{id}": {
+      "get": {
+        "operationId": "WikirooController_getPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wiki page retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fetch a wiki page by ID",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
     }
   },
   "info": {
@@ -642,6 +731,125 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "CreatePageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "content": {
+            "type": "string",
+            "description": "Markdown content of the page",
+            "example": "# Welcome to Wikiroo\\nThis is the onboarding guide."
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the page",
+            "example": "Agent Roo"
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "author"
+        ]
+      },
+      "PageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "content": {
+            "type": "string",
+            "description": "Markdown content of the wiki page",
+            "example": "# Welcome to Wikiroo"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "author",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PageSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "author",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PageListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       }
     }
