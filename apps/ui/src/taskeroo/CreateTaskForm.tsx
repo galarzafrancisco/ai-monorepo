@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-
-const API_BASE = 'http://localhost:3000';
+import { TaskerooService } from './api';
 
 interface CreateTaskFormProps {
   onClose: () => void;
@@ -28,25 +27,16 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE}/taskeroo/tasks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          description,
-          ...(assignee && { assignee }),
-          ...(sessionId && { sessionId }),
-        }),
+      await TaskerooService.taskerooControllerCreateTask({
+        name,
+        description,
+        ...(assignee && { assignee }),
+        ...(sessionId && { sessionId }),
       });
-
-      if (response.ok) {
-        onClose();
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.detail || 'Failed to create task'}`);
-      }
-    } catch (err) {
-      alert('Failed to create task');
+      onClose();
+    } catch (err: any) {
+      const errorMessage = err?.body?.detail || err?.message || 'Failed to create task';
+      alert(`Error: ${errorMessage}`);
       console.error(err);
     } finally {
       setLoading(false);

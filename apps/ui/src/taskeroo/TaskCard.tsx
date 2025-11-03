@@ -1,4 +1,4 @@
-import { Task } from './useTaskerooSocket';
+import { Task } from './types';
 
 interface TaskCardProps {
   task: Task;

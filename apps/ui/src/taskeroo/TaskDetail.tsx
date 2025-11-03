@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Task, TaskStatus } from './types';
-
-const API_BASE = 'http://localhost:3000';
+import { Task, TaskStatus, Comment } from './types';
+import { TaskerooService } from './api';
 
 
 interface TaskDetailProps {
@@ -37,23 +36,16 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
     if (description === task.description) return;
 
     try {
-      const response = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description }),
-      });
-
-      if (response.ok) {
-        const updated = await response.json();
-        onUpdate(updated);
-        setErrorMessage('');
-      } else {
-        const error = await response.json();
-        setErrorMessage(error.detail || 'Failed to update description');
-      }
-    } catch (err) {
+      const updated = await TaskerooService.taskerooControllerUpdateTask(
+        task.id,
+        { description }
+      );
+      onUpdate(updated);
+      setErrorMessage('');
+    } catch (err: any) {
       console.error('Failed to update task:', err);
-      setErrorMessage('Failed to update description');
+      const errorMessage = err?.body?.detail || err?.message || 'Failed to update description';
+      setErrorMessage(errorMessage);
     }
   };
 
@@ -64,23 +56,16 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
       body.assignee = assignee.trim() || null;
       if (sessionId.trim()) body.sessionId = sessionId;
 
-      const response = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}/assign`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        const updated = await response.json();
-        onUpdate(updated);
-        setErrorMessage('');
-      } else {
-        const error = await response.json();
-        setErrorMessage(error.detail || 'Failed to update assignment');
-      }
-    } catch (err) {
+      const updated = await TaskerooService.taskerooControllerAssignTask(
+        task.id,
+        body
+      );
+      onUpdate(updated);
+      setErrorMessage('');
+    } catch (err: any) {
       console.error('Failed to assign task:', err);
-      setErrorMessage('Failed to update assignment');
+      const errorMessage = err?.body?.detail || err?.message || 'Failed to update assignment';
+      setErrorMessage(errorMessage);
     }
   };
 
@@ -88,27 +73,21 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
     if (!comment.trim() || !commenterName.trim()) return;
 
     try {
-      const response = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ commenterName, content: comment }),
-      });
+      await TaskerooService.taskerooControllerAddComment(
+        task.id,
+        { commenterName, content: comment }
+      );
 
-      if (response.ok) {
-        // Refresh task to get updated comments
-        const taskResponse = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}`);
-        const updated = await taskResponse.json();
-        onUpdate(updated);
-        setComment('');
-        setCommenterName('');
-        setErrorMessage('');
-      } else {
-        const error = await response.json();
-        setErrorMessage(error.detail || 'Failed to add comment');
-      }
-    } catch (err) {
+      // Refresh task to get updated comments
+      const updated = await TaskerooService.taskerooControllerGetTask(task.id);
+      onUpdate(updated);
+      setComment('');
+      setCommenterName('');
+      setErrorMessage('');
+    } catch (err: any) {
       console.error('Failed to add comment:', err);
-      setErrorMessage('Failed to add comment');
+      const errorMessage = err?.body?.detail || err?.message || 'Failed to add comment';
+      setErrorMessage(errorMessage);
     }
   };
 
@@ -119,38 +98,28 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
         body.comment = statusComment;
       }
 
-      const response = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        const updated = await response.json();
-        onUpdate(updated);
-        setStatusComment('');
-        setErrorMessage('');
-      } else {
-        const error = await response.json();
-        setErrorMessage(error.detail || 'Failed to change status');
-      }
-    } catch (err) {
+      const updated = await TaskerooService.taskerooControllerChangeStatus(
+        task.id,
+        body
+      );
+      onUpdate(updated);
+      setStatusComment('');
+      setErrorMessage('');
+    } catch (err: any) {
       console.error('Failed to change status:', err);
-      setErrorMessage('Failed to change status');
+      const errorMessage = err?.body?.detail || err?.message || 'Failed to change status';
+      setErrorMessage(errorMessage);
     }
   };
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        onClose();
-      }
+      await TaskerooService.taskerooControllerDeleteTask(task.id);
+      onClose();
     } catch (err) {
       console.error('Failed to delete task:', err);
+      const errorMessage = (err as any)?.body?.detail || (err as any)?.message || 'Failed to delete task';
+      setErrorMessage(errorMessage);
     }
   };
 
@@ -240,7 +209,7 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
         <div className="detail-section">
           <h3>Comments ({task.comments?.length || 0})</h3>
           <div className="comments-list">
-            {task.comments?.map((c) => (
+            {(task.comments as unknown as Comment[])?.map((c) => (
               <div key={c.id} className="comment">
                 <strong>{c.commenterName}</strong>
                 <p>{c.content}</p>

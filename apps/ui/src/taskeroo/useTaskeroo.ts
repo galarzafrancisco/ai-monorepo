@@ -53,6 +53,7 @@ export const useTaskeroo = () => {
     newSocket.on('connect', () => {
       console.log('Connected to websocket');
       setIsConnected(true);
+      loadTasks();
     });
 
     newSocket.on('disconnect', () => {
@@ -61,7 +62,13 @@ export const useTaskeroo = () => {
     });
 
     newSocket.on('task.created', (task: Task) => {
-      setTasks((prev) => [task, ...prev]);
+      setTasks((prev) => {
+        // Avoid duplicates - check if task already exists
+        if (prev.some(t => t.id === task.id)) {
+          return prev;
+        }
+        return [task, ...prev];
+      });
     });
 
     newSocket.on('task.updated', (task: Task) => {
