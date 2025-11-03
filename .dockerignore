@@ -1,0 +1,58 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Build outputs (will be created during build)
+dist
+build
+apps/backend/dist
+apps/ui/dist
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env.local
+.env.*.local
+
+# Documentation
+docs
+*.md
+!package.json
+
+# Test files
+**/*.spec.ts
+**/*.test.ts
+**/*.spec.tsx
+**/*.test.tsx
+coverage
+.nyc_output
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Data directory (will be mounted as volume)
+data
+
+# Features directory
+features

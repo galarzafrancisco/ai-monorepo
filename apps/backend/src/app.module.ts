@@ -8,7 +8,7 @@ import { TaskerooModule } from './taskeroo/taskeroo.module';
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: 'database.sqlite',
+      database: process.env.DATABASE_PATH || 'data/database.sqlite',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),

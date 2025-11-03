@@ -2,12 +2,13 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { writeFileSync } from 'fs';
+import { writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS
   app.enableCors();
@@ -23,6 +24,9 @@ async function bootstrap() {
 
   // Global exception filter for RFC 7807 Problem Details
   app.useGlobalFilters(new ProblemDetailsFilter());
+
+  // Set global prefix for API routes
+  app.setGlobalPrefix('api/v1');
 
   const config = new DocumentBuilder()
     .setTitle('AI Monorepo API')
@@ -43,8 +47,28 @@ async function bootstrap() {
     process.exit(0);
   }
 
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/v1/docs', app, document);
+
+  // Serve static files from the UI build (in production)
+  // __dirname is dist/apps/backend/src, so we need to go up to dist/public
+  const staticPath = join(__dirname, '..', '..', '..', 'public');
+  if (existsSync(staticPath)) {
+    app.useStaticAssets(staticPath);
+    console.log(`Serving static files from ${staticPath}`);
+
+    // SPA fallback: serve index.html for all non-API, non-asset routes
+    // This allows client-side routing to work
+    app.use((req, res, next) => {
+      // Don't intercept API routes or static assets
+      if (req.path.startsWith('/api/') || req.path.startsWith('/assets/')) {
+        return next();
+      }
+      // Serve index.html for all other routes
+      res.sendFile(join(staticPath, 'index.html'));
+    });
+  }
 
   await app.listen(process.env.PORT ?? 3000);
+  console.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
 }
 bootstrap();

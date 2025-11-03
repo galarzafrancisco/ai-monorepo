@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      # You can change the host port (left side) to run multiple instances
+      # Example: "3001:3000" for a second instance
+      - "${HOST_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_PATH=/app/data/database.sqlite
+      # Add any other environment variables here
+    volumes:
+      # Mount a persistent volume for the SQLite database
+      - ./data:/app/data
+    restart: unless-stopped
+    container_name: ai-monorepo-app

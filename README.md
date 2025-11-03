@@ -6,6 +6,28 @@ Monorepo to learn and experiment with application development.
 
 This repository is a sandbox for learning and experimenting with application development. It is structured as a monorepo with a 2-layer architecture (Backend → UI) and includes shared packages for types and utilities. The goal is to explore best practices, patterns, and techniques for building applications.
 
+## Quick Start
+
+### Development Mode
+```bash
+# Install dependencies
+npm install
+
+# Start both backend and frontend with hot reload
+npm run dev
+```
+
+### Production Mode (Docker)
+```bash
+# Run on default port (3000)
+./run-docker.sh
+
+# Run on custom port
+./run-docker.sh 3001
+```
+
+See [DOCKER.md](DOCKER.md) for detailed Docker deployment instructions.
+
 ## API Spec Generation Workflow
 
 The project uses OpenAPI to generate TypeScript types and API clients automatically:

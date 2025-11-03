@@ -3,7 +3,8 @@ import { TaskerooService } from './api'
 import { Task } from './types';
 import { useEffect, useState } from 'react';
 
-const SOCKET_URL = 'http://localhost:3000/taskeroo'; // TODO: move to config
+// Use relative URL in production, absolute URL in development
+const SOCKET_URL = import.meta.env.PROD ? '/taskeroo' : 'http://localhost:3000/taskeroo';
 
 export const useTaskeroo = () => {
 
