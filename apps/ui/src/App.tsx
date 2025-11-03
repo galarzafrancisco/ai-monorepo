@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { TaskBoard } from './taskeroo/TaskBoard';
-import { WikirooPage } from './wikiroo/WikirooPage';
+import { WikirooHomePage } from './wikiroo/WikirooHomePage';
+import { WikirooPageView } from './wikiroo/WikirooPageView';
 
 export default function App() {
   return (
@@ -8,7 +9,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/taskeroo" element={<TaskBoard />} />
-        <Route path="/wikiroo" element={<WikirooPage />} />
+        <Route path="/wikiroo" element={<WikirooHomePage />} />
+        <Route path="/wikiroo/:pageId" element={<WikirooPageView />} />
       </Routes>
     </BrowserRouter>
   );
