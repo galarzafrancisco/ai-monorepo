@@ -6,6 +6,11 @@
     sans-serif;
 }
 
+body {
+  margin: 0;
+  padding: 0;
+}
+
 .task-board {
   min-height: 100vh;
   background: #f8f9fa;
@@ -16,8 +21,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 30px;
-  padding: 30px 0;
+  margin-bottom: 20px;
+  padding: 10px 0;
 }
 
 .task-board-header h1 {
@@ -156,22 +161,60 @@
   transform: translateY(-2px);
 }
 
-.task-card h3 {
+.task-card-title {
   margin: 0 0 8px 0;
   font-size: 16px;
   color: #2c3e50;
   font-weight: 600;
 }
 
-.task-description {
-  margin: 0 0 10px 0;
+.task-card-description {
+  margin: 0 0 12px 0;
   font-size: 14px;
-  color: #7f8c8d;
+  color: #95a5a6;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.task-card-divider {
+  height: 1px;
+  background: #e8ecef;
+  margin: 0 -5px 12px -5px;
+}
+
+.task-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.task-card-assignee {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #2c3e50;
+}
+
+.assignee-emoji {
+  font-size: 14px;
+}
+
+.assignee-name {
+  font-weight: 500;
+}
+
+.unassigned-text {
+  color: #95a5a6;
+  font-style: italic;
+}
+
+.task-card-date {
+  color: #95a5a6;
+  font-size: 12px;
 }
 
 .task-assignee {
@@ -374,6 +417,11 @@ form {
   box-sizing: border-box;
 }
 
+.form-group textarea {
+  resize: none;
+  overflow-y: auto;
+}
+
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
@@ -415,18 +463,111 @@ form {
   line-height: 1.6;
 }
 
-.status-actions {
+.status-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
-.status-actions input {
+.status-btn {
   flex: 1;
-  min-width: 200px;
-  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #495057;
+}
+
+.status-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.status-btn.active {
+  border-width: 2px;
+  font-weight: 600;
+  color: white;
+}
+
+.status-btn.active.status-not-started {
+  background: #1976d2;
+  border-color: #1565c0;
+}
+
+.status-btn.active.status-in-progress {
+  background: #f57f17;
+  border-color: #e65100;
+}
+
+.status-btn.active.status-for-review {
+  background: #7b1fa2;
+  border-color: #6a1b9a;
+}
+
+.status-btn.active.status-done {
+  background: #2e7d32;
+  border-color: #1b5e20;
+}
+
+.status-comment-section {
+  margin-top: 10px;
+}
+
+.status-comment-input {
+  width: 100%;
+  padding: 10px 14px;
   border: 1px solid #dee2e6;
   border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.assignee-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.form-field input {
+  padding: 10px 14px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.current-assignment {
+  margin-top: 15px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.current-assignment p {
+  margin: 4px 0;
+  color: #495057;
 }
 
 .assignee-section {
@@ -469,6 +610,27 @@ form {
   color: #95a5a6;
 }
 
+.description-textarea {
+  width: 100%;
+  min-height: 100px;
+  max-height: 100px;
+  padding: 10px 14px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  overflow-y: auto;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.description-textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
 .add-comment {
   display: flex;
   flex-direction: column;
@@ -482,6 +644,14 @@ form {
   border: 1px solid #dee2e6;
   border-radius: 8px;
   font-family: inherit;
+  box-sizing: border-box;
+}
+
+.add-comment textarea {
+  min-height: 80px;
+  max-height: 80px;
+  resize: none;
+  overflow-y: auto;
 }
 
 /* Confirmation Dialog */

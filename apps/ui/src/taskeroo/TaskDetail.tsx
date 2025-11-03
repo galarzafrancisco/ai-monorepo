@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Task } from './useTaskerooSocket';
 
 const API_BASE = 'http://localhost:3000';
@@ -10,16 +10,31 @@ interface TaskDetailProps {
 }
 
 export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
-  const [editing, setEditing] = useState(false);
   const [description, setDescription] = useState(task.description);
   const [assignee, setAssignee] = useState(task.assignee || '');
+  const [sessionId, setSessionId] = useState(task.sessionId || '');
   const [comment, setComment] = useState('');
   const [commenterName, setCommenterName] = useState('');
   const [statusComment, setStatusComment] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   const handleUpdateDescription = async () => {
+    if (description === task.description) return;
+
     try {
       const response = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}`, {
         method: 'PATCH',
@@ -30,29 +45,42 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
       if (response.ok) {
         const updated = await response.json();
         onUpdate(updated);
-        setEditing(false);
+        setErrorMessage('');
+      } else {
+        const error = await response.json();
+        setErrorMessage(error.detail || 'Failed to update description');
       }
     } catch (err) {
       console.error('Failed to update task:', err);
+      setErrorMessage('Failed to update description');
     }
   };
 
   const handleAssign = async () => {
-    if (!assignee.trim()) return;
+    if (!assignee.trim() && !sessionId.trim()) return;
 
     try {
+      const body: any = {};
+      if (assignee.trim()) body.assignee = assignee;
+      if (sessionId.trim()) body.sessionId = sessionId;
+
       const response = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignee }),
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
         const updated = await response.json();
         onUpdate(updated);
+        setErrorMessage('');
+      } else {
+        const error = await response.json();
+        setErrorMessage(error.detail || 'Failed to update assignment');
       }
     } catch (err) {
       console.error('Failed to assign task:', err);
+      setErrorMessage('Failed to update assignment');
     }
   };
 
@@ -73,9 +101,14 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
         onUpdate(updated);
         setComment('');
         setCommenterName('');
+        setErrorMessage('');
+      } else {
+        const error = await response.json();
+        setErrorMessage(error.detail || 'Failed to add comment');
       }
     } catch (err) {
       console.error('Failed to add comment:', err);
+      setErrorMessage('Failed to add comment');
     }
   };
 
@@ -131,81 +164,77 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
 
         <div className="detail-section">
           <h3>Description</h3>
-          {editing ? (
-            <div>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-              />
-              <div className="form-actions">
-                <button onClick={() => setEditing(false)} className="btn-secondary">
-                  Cancel
-                </button>
-                <button onClick={handleUpdateDescription} className="btn-primary">
-                  Save
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p>{task.description}</p>
-              <button onClick={() => setEditing(true)} className="btn-secondary">
-                Edit
-              </button>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={handleUpdateDescription}
+            placeholder="Enter task description..."
+            className="description-textarea"
+          />
+        </div>
+
+        <div className="detail-section">
+          <h3>Status</h3>
+          {errorMessage && (
+            <div className="error-message">
+              <strong>Error:</strong> {errorMessage}
             </div>
           )}
-        </div>
-
-        <div className="detail-section">
-          <h3>Status: {task.status}</h3>
-          {errorMessage && <p className="error-message">{errorMessage}</p>}
-          <div className="status-actions">
-            {task.status !== 'not started' && (
-              <button onClick={() => handleChangeStatus('not started')} className="btn-status">
-                Not Started
-              </button>
-            )}
-            {task.status !== 'in progress' && (
-              <button onClick={() => handleChangeStatus('in progress')} className="btn-status">
-                In Progress
-              </button>
-            )}
-            {task.status !== 'for review' && (
-              <button onClick={() => handleChangeStatus('for review')} className="btn-status">
-                For Review
-              </button>
-            )}
-            {task.status !== 'done' && (
-              <div>
-                <input
-                  type="text"
-                  placeholder="Comment required for done"
-                  value={statusComment}
-                  onChange={(e) => setStatusComment(e.target.value)}
-                />
-                <button onClick={() => handleChangeStatus('done')} className="btn-status">
-                  Done
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="detail-section">
-          <h3>Assignee</h3>
-          <div className="assignee-section">
-            <input
-              type="text"
-              value={assignee}
-              onChange={(e) => setAssignee(e.target.value)}
-              placeholder="Enter assignee name"
-            />
-            <button onClick={handleAssign} className="btn-primary">
-              Assign
+          <div className="status-buttons">
+            <button
+              onClick={() => handleChangeStatus('not started')}
+              className={`status-btn ${task.status === 'not started' ? 'active status-not-started' : ''}`}
+            >
+              Not Started
+            </button>
+            <button
+              onClick={() => handleChangeStatus('in progress')}
+              className={`status-btn ${task.status === 'in progress' ? 'active status-in-progress' : ''}`}
+            >
+              In Progress
+            </button>
+            <button
+              onClick={() => handleChangeStatus('for review')}
+              className={`status-btn ${task.status === 'for review' ? 'active status-for-review' : ''}`}
+            >
+              For Review
+            </button>
+            <button
+              onClick={() => handleChangeStatus('done')}
+              className={`status-btn ${task.status === 'done' ? 'active status-done' : ''}`}
+            >
+              Done
             </button>
           </div>
-          {task.assignee && <p>Current: {task.assignee}</p>}
+        </div>
+
+        <div className="detail-section">
+          <h3>Assignee & Session</h3>
+          <div className="assignee-form">
+            <div className="form-row">
+              <div className="form-field">
+                <label>Assignee</label>
+                <input
+                  type="text"
+                  value={assignee}
+                  onChange={(e) => setAssignee(e.target.value)}
+                  placeholder="Enter assignee name"
+                />
+              </div>
+              <div className="form-field">
+                <label>Session ID</label>
+                <input
+                  type="text"
+                  value={sessionId}
+                  onChange={(e) => setSessionId(e.target.value)}
+                  placeholder="Enter session ID"
+                />
+              </div>
+            </div>
+            <button onClick={handleAssign} className="btn-primary">
+              Update Assignment
+            </button>
+          </div>
         </div>
 
         <div className="detail-section">
