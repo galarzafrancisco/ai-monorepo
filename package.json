@@ -7,12 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n backend,ui -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"",
+    "dev": "concurrently -n backend,ui -c auto \"npm -w backend run dev\" \"npm -w ui run dev\"",
     "build": "npm -ws run build",
-    "start": "npm -w apps/backend run start:prod",
+    "start": "npm -w backend run start:prod",
     "lint": "npm -ws run lint || true",
     "typecheck": "npm -ws run typecheck || true",
-    "generate:all": "npm -w apps/backend run generate:spec && npm -w packages/shared run copy:contracts && npm -w packages/shared run generate:types && npm -w packages/shared run generate:client"
+    "generate:all": "npm -w backend run generate:spec && npm -w shared run copy:contracts && npm -w shared run generate:types && npm -w shared run generate:client"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",

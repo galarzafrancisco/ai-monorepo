@@ -1,25 +1,28 @@
 {
   "compilerOptions": {
-    
     // Syntax
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "target": "ES2022",
-
     // Module
     "module": "ES2022",
     "moduleResolution": "Bundler",
-    
     // Type Checking
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    
     // Base URL
     "baseUrl": ".",
-
     // Imports
     "paths": {
-      "@shared/*": ["shared/src/*"]
+      "@shared/*": [
+        "packages/shared/src/*"
+      ],
+      "shared": [
+        "packages/shared/src/index.ts"
+      ]
     }
   }
 }

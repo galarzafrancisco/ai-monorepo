@@ -9,6 +9,7 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export { ChangeStatusDto } from './models/ChangeStatusDto';
+export type { Comment } from './models/Comment';
 export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { CreateCommentDto } from './models/CreateCommentDto';
 export type { CreateTaskDto } from './models/CreateTaskDto';

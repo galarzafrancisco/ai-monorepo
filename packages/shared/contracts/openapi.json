@@ -405,6 +405,10 @@
           "description"
         ]
       },
+      "Comment": {
+        "type": "object",
+        "properties": {}
+      },
       "TaskResponseDto": {
         "type": "object",
         "properties": {
@@ -435,16 +439,32 @@
             "example": "not started"
           },
           "assignee": {
-            "type": "object",
+            "type": "string",
             "description": "Name of the assignee (for AI agents)",
             "example": "AgentAlpha",
             "nullable": true
           },
           "sessionId": {
-            "type": "object",
+            "type": "string",
             "description": "Session ID for tracking AI agent work",
             "example": "session-123-abc",
             "nullable": true
+          },
+          "comments": {
+            "description": "Comments associated with the task",
+            "example": [
+              {
+                "id": "cmt-001",
+                "taskId": "123e4567-e89b-12d3-a456-426614174000",
+                "commenterName": "John Doe",
+                "content": "Please prioritize this task.",
+                "createdAt": "2025-11-03T11:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            }
           },
           "createdAt": {
             "type": "string",
@@ -462,6 +482,7 @@
           "name",
           "description",
           "status",
+          "comments",
           "createdAt",
           "updatedAt"
         ]
@@ -483,14 +504,11 @@
         "type": "object",
         "properties": {
           "assignee": {
-            "type": "string",
-            "description": "Name of the assignee",
+            "type": "object",
+            "description": "Name of the assignee (can be empty to unassign)",
             "example": "AgentAlpha"
           }
-        },
-        "required": [
-          "assignee"
-        ]
+        }
       },
       "CreateCommentDto": {
         "type": "object",

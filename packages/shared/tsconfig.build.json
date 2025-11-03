@@ -3,7 +3,12 @@
   "compilerOptions": {
     "outDir": "dist",
     "declaration": true,
-    "emitDeclarationOnly": false
+    "emitDeclarationOnly": false,
+    "noEmit": false,
+    "rootDir": ".",
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*",
+    "contracts/**/*"
+  ],
 }

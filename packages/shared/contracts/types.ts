@@ -135,6 +135,7 @@ export interface components {
              */
             sessionId?: string;
         };
+        Comment: Record<string, never>;
         TaskResponseDto: {
             /**
              * @description Unique identifier for the task
@@ -161,12 +162,25 @@ export interface components {
              * @description Name of the assignee (for AI agents)
              * @example AgentAlpha
              */
-            assignee?: Record<string, never> | null;
+            assignee?: string | null;
             /**
              * @description Session ID for tracking AI agent work
              * @example session-123-abc
              */
-            sessionId?: Record<string, never> | null;
+            sessionId?: string | null;
+            /**
+             * @description Comments associated with the task
+             * @example [
+             *       {
+             *         "id": "cmt-001",
+             *         "taskId": "123e4567-e89b-12d3-a456-426614174000",
+             *         "commenterName": "John Doe",
+             *         "content": "Please prioritize this task.",
+             *         "createdAt": "2025-11-03T11:00:00.000Z"
+             *       }
+             *     ]
+             */
+            comments: components["schemas"]["Comment"][];
             /**
              * @description Task creation timestamp
              * @example 2025-11-03T10:30:00.000Z
@@ -187,10 +201,10 @@ export interface components {
         };
         AssignTaskDto: {
             /**
-             * @description Name of the assignee
+             * @description Name of the assignee (can be empty to unassign)
              * @example AgentAlpha
              */
-            assignee: string;
+            assignee?: Record<string, never>;
         };
         CreateCommentDto: {
             /**

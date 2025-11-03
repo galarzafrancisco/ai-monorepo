@@ -3,8 +3,26 @@
   "version": "0.0.1",
   "type": "module",
   "license": "MIT",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./types": {
+      "types": "./dist/src/types/index.d.ts",
+      "default": "./dist/src/types/index.js"
+    },
+    "./client": {
+      "types": "./dist/src/client/index.d.ts",
+      "default": "./dist/src/client/index.js"
+    },
+    "./contracts": {
+      "types": "./contracts/types.ts",
+      "default": "./contracts/types.ts"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -w -p tsconfig.build.json",

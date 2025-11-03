@@ -2,10 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AssignTaskDto = {
-    /**
-     * Name of the assignee (can be empty to unassign)
-     */
-    assignee?: Record<string, any>;
+export type Comment = {
 };
 

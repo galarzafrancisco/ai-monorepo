@@ -78,7 +78,8 @@ export class TaskerooService {
       throw new TaskNotFoundError(taskId);
     }
 
-    task.assignee = dto.assignee;
+    // Allow setting assignee to null or empty string to unassign
+    task.assignee = dto.assignee || null;
     const assignedTask = await this.taskRepository.save(task);
     this.gateway.emitTaskAssigned(assignedTask);
     return assignedTask;

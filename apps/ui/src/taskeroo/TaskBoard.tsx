@@ -1,24 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useTaskerooSocket, Task } from './useTaskerooSocket';
 import { TaskCard } from './TaskCard';
 import { CreateTaskForm } from './CreateTaskForm';
 import { TaskDetail } from './TaskDetail';
 import './TaskBoard.css';
+import { Socket } from 'socket.io-client';
+import { useTaskeroo } from './useTaskeroo';
+import { Task } from './types';
 
 const API_BASE = 'http://localhost:3000';
 
 export function TaskBoard() {
-  const { tasks, setTasks, connected } = useTaskerooSocket();
+  const { tasks, isConnected } = useTaskeroo();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-
-  // Fetch initial tasks
-  useEffect(() => {
-    fetch(`${API_BASE}/taskeroo/tasks`)
-      .then((res) => res.json())
-      .then((data) => setTasks(data))
-      .catch((err) => console.error('Failed to fetch tasks:', err));
-  }, [setTasks]);
 
   const tasksByStatus = {
     'not started': tasks.filter((t) => t.status === 'not started'),
@@ -35,8 +29,8 @@ export function TaskBoard() {
           <p className="subtitle">Manage and track your tasks across different stages</p>
         </div>
         <div className="header-actions">
-          <span className={`status-indicator ${connected ? 'connected' : 'disconnected'}`}>
-            {connected ? '● Connected' : '○ Disconnected'}
+          <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
+            {isConnected ? '● Connected' : '○ Disconnected'}
           </span>
         </div>
       </div>

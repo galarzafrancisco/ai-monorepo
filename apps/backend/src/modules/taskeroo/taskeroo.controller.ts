@@ -29,6 +29,7 @@ import { TaskResponseDto } from './task-response.dto';
 import { CommentResponseDto } from './comment-response.dto';
 import { TaskParamsDto } from './task-params.dto';
 import { ListTasksQueryDto } from './list-tasks-query.dto';
+import { Task } from './task.entity';
 
 @ApiTags('taskeroo')
 @Controller('taskeroo')
@@ -132,14 +133,15 @@ export class TaskerooController {
     return this.mapTaskToResponse(task);
   }
 
-  private mapTaskToResponse(task: any): TaskResponseDto {
+  private mapTaskToResponse(task: Task): TaskResponseDto {
     return {
       id: task.id,
       name: task.name,
       description: task.description,
       status: task.status,
-      assignee: task.assignee,
-      sessionId: task.sessionId,
+      assignee: task.assignee || '',
+      sessionId: task.sessionId || '',
+      comments: task.comments,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
     };

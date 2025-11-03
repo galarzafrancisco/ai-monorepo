@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Task } from './useTaskerooSocket';
+import { Task, TaskStatus } from './types';
 
 const API_BASE = 'http://localhost:3000';
+
 
 interface TaskDetailProps {
   task: Task;
@@ -57,11 +58,10 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   };
 
   const handleAssign = async () => {
-    if (!assignee.trim() && !sessionId.trim()) return;
-
     try {
       const body: any = {};
-      if (assignee.trim()) body.assignee = assignee;
+      // Allow empty assignee to unassign
+      body.assignee = assignee.trim() || null;
       if (sessionId.trim()) body.sessionId = sessionId;
 
       const response = await fetch(`${API_BASE}/taskeroo/tasks/${task.id}/assign`, {
@@ -182,25 +182,25 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
           )}
           <div className="status-buttons">
             <button
-              onClick={() => handleChangeStatus('not started')}
+              onClick={() => handleChangeStatus(TaskStatus.NOT_STARTED)}
               className={`status-btn ${task.status === 'not started' ? 'active status-not-started' : ''}`}
             >
               Not Started
             </button>
             <button
-              onClick={() => handleChangeStatus('in progress')}
+              onClick={() => handleChangeStatus(TaskStatus.IN_PROGRESS)}
               className={`status-btn ${task.status === 'in progress' ? 'active status-in-progress' : ''}`}
             >
               In Progress
             </button>
             <button
-              onClick={() => handleChangeStatus('for review')}
+              onClick={() => handleChangeStatus(TaskStatus.FOR_REVIEW)}
               className={`status-btn ${task.status === 'for review' ? 'active status-for-review' : ''}`}
             >
               For Review
             </button>
             <button
-              onClick={() => handleChangeStatus('done')}
+              onClick={() => handleChangeStatus(TaskStatus.DONE)}
               className={`status-btn ${task.status === 'done' ? 'active status-done' : ''}`}
             >
               Done
@@ -269,24 +269,23 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
         </div>
 
         <div className="detail-section">
-          <button onClick={() => setShowDeleteConfirm(true)} className="btn-danger">
-            Delete Task
-          </button>
-        </div>
-
-        {showDeleteConfirm && (
-          <div className="confirm-dialog">
-            <p>Are you sure you want to delete this task?</p>
-            <div className="form-actions">
+          {showDeleteConfirm ? (
+            <div>
+              <button onClick={handleDelete} className="btn-danger">
+                Confirm Delete
+              </button>
               <button onClick={() => setShowDeleteConfirm(false)} className="btn-secondary">
                 Cancel
               </button>
-              <button onClick={handleDelete} className="btn-danger">
-                Delete
-              </button>
             </div>
-          </div>
-        )}
+          ) : (
+            <button onClick={() => setShowDeleteConfirm(true)} className="btn-danger">
+              Delete Task
+            </button>
+          )}
+        </div>
+
+
       </div>
     </div>
   );

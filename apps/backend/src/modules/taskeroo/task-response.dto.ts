@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from './task.entity';
+import { Comment } from './comment.entity';
 
 export class TaskResponseDto {
   @ApiProperty({
@@ -32,14 +33,29 @@ export class TaskResponseDto {
     example: 'AgentAlpha',
     nullable: true,
   })
-  assignee!: string | null;
+  assignee!: string;
 
   @ApiPropertyOptional({
     description: 'Session ID for tracking AI agent work',
     example: 'session-123-abc',
     nullable: true,
   })
-  sessionId!: string | null;
+  sessionId!: string;
+
+  @ApiProperty({
+    description: 'Comments associated with the task',
+    type: () => [Comment],
+    example: [
+      {
+        id: 'cmt-001',
+        taskId: '123e4567-e89b-12d3-a456-426614174000',
+        commenterName: 'John Doe',
+        content: 'Please prioritize this task.',
+        createdAt: '2025-11-03T11:00:00.000Z',
+      },
+    ],
+  })
+  comments!: Comment[];
 
   @ApiProperty({
     description: 'Task creation timestamp',

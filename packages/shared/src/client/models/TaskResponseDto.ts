@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Comment } from './Comment';
 export type TaskResponseDto = {
     /**
      * Unique identifier for the task
@@ -22,11 +23,15 @@ export type TaskResponseDto = {
     /**
      * Name of the assignee (for AI agents)
      */
-    assignee?: Record<string, any> | null;
+    assignee?: string | null;
     /**
      * Session ID for tracking AI agent work
      */
-    sessionId?: Record<string, any> | null;
+    sessionId?: string | null;
+    /**
+     * Comments associated with the task
+     */
+    comments: Array<Comment>;
     /**
      * Task creation timestamp
      */
