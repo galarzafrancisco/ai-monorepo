@@ -13,6 +13,7 @@
     "lint": "npm -ws run lint || true",
     "typecheck": "npm -ws run typecheck || true",
     "generate:all": "npm -w backend run generate:spec && npm -w shared run copy:contracts && npm -w shared run generate:types && npm -w shared run generate:client",
+    "test:e2e": "npm -w backend run build && npm -w backend run test:e2e",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",

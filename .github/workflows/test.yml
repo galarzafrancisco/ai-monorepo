@@ -1,0 +1,50 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build backend
+        run: npm -w backend run build
+
+      - name: Run E2E tests
+        id: tests
+        run: npm -w backend run test:e2e
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: apps/backend/test-results/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Show logs on failure
+        if: failure() && steps.tests.outcome == 'failure'
+        run: |
+          echo "==================================="
+          echo "Test execution failed!"
+          echo "==================================="
+          echo ""
+          echo "Check the test output above for details."
+          echo "You can also download the test-results artifact for more information."
