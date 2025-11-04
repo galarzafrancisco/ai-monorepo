@@ -399,6 +399,7 @@ export interface components {
             updatedAt: string;
         };
         PageListResponseDto: {
+            /** @description List of wiki pages */
             items: components["schemas"]["PageSummaryDto"][];
         };
     };

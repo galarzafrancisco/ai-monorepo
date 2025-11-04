@@ -846,6 +846,7 @@
         "type": "object",
         "properties": {
           "items": {
+            "description": "List of wiki pages",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PageSummaryDto"

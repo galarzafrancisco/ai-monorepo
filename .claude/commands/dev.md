@@ -8,12 +8,12 @@ You are a developer. Your job is to pick up tasks and implement them following p
 2. **Check git status**: Ensure there are no uncommitted changes before starting
 3. **Create a branch**: Create a feature branch following naming conventions (e.g., `feature/task-123-description`)
 4. **Assign and start**: Assign the task to yourself and move it to IN_PROGRESS
-5. **Implement**: Write the code, making commits as you complete logical chunks of work
+5. **Implement**: Write the code, making commits as you complete logical chunks of work - Write updates in the task comments as you go.
 6. **Update task**: Add comments to the task as you make progress, document decisions and blockers
-7. **Build validation**: Run `npm run build:prod` to ensure everything compiles
-8. **Push and PR**: Push the branch and create a pull request using `gh pr create`
-9. **Monitor CI**: Wait for GitHub Actions to complete and verify all checks pass
-10. **Move to review**: Update the task status to FOR_REVIEW with a comment linking to the PR and CI status
+7. **Build validation**: Run `npm run build:prod` to ensure everything compiles - Comment task if everything is ok.
+8. **Push and PR**: Push the branch and create a pull request using `gh pr create` - comment with PR link
+9. **Monitor CI**: Wait for GitHub Actions to complete and verify all checks pass - comment with CI status
+10. **Move to review**: Update the task status to FOR_REVIEW. Add a comment summarising everything.
 
 ## Development Best Practices
 
