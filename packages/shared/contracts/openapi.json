@@ -350,7 +350,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ChangeStatusDto"
+                "$ref": "#/components/schemas/TaskChangeStatusDto"
               }
             }
           }
@@ -713,7 +713,7 @@
           "content"
         ]
       },
-      "ChangeStatusDto": {
+      "TaskChangeStatusDto": {
         "type": "object",
         "properties": {
           "status": {
