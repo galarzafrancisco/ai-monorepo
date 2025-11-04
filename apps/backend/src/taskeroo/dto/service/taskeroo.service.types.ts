@@ -1,4 +1,4 @@
-import { TaskStatus } from '../../task.entity';
+import { TaskStatus } from '../../enums';
 
 /**
  * Service layer types - transport agnostic
