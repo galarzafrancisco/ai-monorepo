@@ -59,3 +59,6 @@ Use the Bash tool for git operations:
 - `git push -u origin branch-name` - Push branch to remote
 - `gh pr create --title "Title" --body "Description"` - Create pull request
 - `gh pr checks` - Monitor CI status
+
+# Check
+- Did you add a link to the pull request in the comment? Did you add a CI status?

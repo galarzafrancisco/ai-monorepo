@@ -4,6 +4,9 @@
 /* eslint-disable */
 import type { PageSummaryDto } from './PageSummaryDto';
 export type PageListResponseDto = {
+    /**
+     * List of wiki pages
+     */
     items: Array<PageSummaryDto>;
 };
 
