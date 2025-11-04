@@ -264,8 +264,12 @@ export class TaskerooService {
       );
     }
 
-    if (input.status === TaskStatus.DONE && !input.comment) {
-      throw new CommentRequiredError();
+    if (input.status === TaskStatus.DONE) {
+      const hasExistingComments = task.comments?.length > 0;
+
+      if (!input.comment && !hasExistingComments) {
+        throw new CommentRequiredError();
+      }
     }
 
     // If changing to DONE and comment is provided, add the comment
