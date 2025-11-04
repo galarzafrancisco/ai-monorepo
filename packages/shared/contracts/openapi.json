@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "paths": {
-    "/": {
+    "/api/v1": {
       "get": {
         "operationId": "AppController_getHello",
         "parameters": [],
@@ -24,7 +24,7 @@
         ]
       }
     },
-    "/taskeroo/tasks": {
+    "/api/v1/taskeroo/tasks": {
       "post": {
         "operationId": "TaskerooController_createTask",
         "parameters": [],
@@ -122,7 +122,7 @@
         ]
       }
     },
-    "/taskeroo/tasks/{id}": {
+    "/api/v1/taskeroo/tasks/{id}": {
       "patch": {
         "operationId": "TaskerooController_updateTask",
         "parameters": [
@@ -232,7 +232,7 @@
         ]
       }
     },
-    "/taskeroo/tasks/{id}/assign": {
+    "/api/v1/taskeroo/tasks/{id}/assign": {
       "patch": {
         "operationId": "TaskerooController_assignTask",
         "parameters": [
@@ -281,7 +281,7 @@
         ]
       }
     },
-    "/taskeroo/tasks/{id}/comments": {
+    "/api/v1/taskeroo/tasks/{id}/comments": {
       "post": {
         "operationId": "TaskerooController_addComment",
         "parameters": [
@@ -330,7 +330,7 @@
         ]
       }
     },
-    "/taskeroo/tasks/{id}/status": {
+    "/api/v1/taskeroo/tasks/{id}/status": {
       "patch": {
         "operationId": "TaskerooController_changeStatus",
         "parameters": [
@@ -379,7 +379,7 @@
         ]
       }
     },
-    "/wikiroo/pages": {
+    "/api/v1/wikiroo/pages": {
       "post": {
         "operationId": "WikirooController_createPage",
         "parameters": [],
@@ -434,7 +434,7 @@
         ]
       }
     },
-    "/wikiroo/pages/{id}": {
+    "/api/v1/wikiroo/pages/{id}": {
       "get": {
         "operationId": "WikirooController_getPage",
         "parameters": [
@@ -444,9 +444,8 @@
             "in": "path",
             "description": "Wiki page identifier",
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "123e4567-e89b-12d3-a456-426614174000"
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
             }
           }
         ],
@@ -645,7 +644,7 @@
         "type": "object",
         "properties": {
           "assignee": {
-            "type": "string",
+            "type": "object",
             "description": "Name of the assignee (can be empty to unassign)",
             "example": "AgentAlpha"
           },
@@ -749,7 +748,7 @@
           "content": {
             "type": "string",
             "description": "Markdown content of the page",
-            "example": "# Welcome to Wikiroo\\nThis is the onboarding guide."
+            "example": "# Welcome to Wikiroo\nThis is the onboarding guide."
           },
           "author": {
             "type": "string",

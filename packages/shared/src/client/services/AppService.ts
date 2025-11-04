@@ -14,7 +14,7 @@ export class AppService {
     public static appControllerGetHello(): CancelablePromise<string> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/',
+            url: '/api/v1',
         });
     }
 }

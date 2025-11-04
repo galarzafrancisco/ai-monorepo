@@ -4,5 +4,8 @@
   "private": true,
   "type": "module",
   "main": "./index.js",
-  "types": "./index.d.ts"
+  "types": "./index.d.ts",
+  "scripts": {
+    "build": "echo 'No build needed - package is pre-compiled'"
+  }
 }
