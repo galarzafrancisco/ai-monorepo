@@ -8,6 +8,13 @@ This repository is a sandbox for learning and experimenting with application dev
 
 ## Quick Start
 
+### Zero to Hero (Production Build)
+```bash
+# One command to go from zero to production-ready build
+# Installs dependencies, generates API clients, and builds all apps in the correct order
+npm run zero-to-prod
+```
+
 ### Development Mode
 ```bash
 # Install dependencies
@@ -28,30 +35,16 @@ npm run dev
 
 See [DOCKER.md](DOCKER.md) for detailed Docker deployment instructions.
 
-## API Spec Generation Workflow
+## API Spec Generation
 
-The project uses OpenAPI to generate TypeScript types and API clients automatically:
+The project uses OpenAPI to generate TypeScript types and API clients automatically. This happens automatically during the production build process (`npm run build:prod` or `npm run zero-to-prod`), which:
 
-1. Generate the OpenAPI spec from the backend:
-   ```bash
-   npm -w apps/backend run generate:spec
-   ```
-   This builds the backend and generates `apps/backend/contracts/openapi.json` without starting the server.
+1. Builds the backend and generates the OpenAPI spec
+2. Copies the spec to the shared package
+3. Generates TypeScript types and API client from the spec
+4. Builds all packages in the correct order
 
-2. Copy the spec to the shared package:
-   ```bash
-   cp apps/backend/contracts/openapi.json shared/contracts/openapi.json
-   ```
-
-3. Generate TypeScript types from the spec:
-   ```bash
-   npm -w shared run generate:types
-   ```
-
-4. Generate the API client:
-   ```bash
-   npm -w shared run generate:client
-   ```
+No manual intervention is required - the entire workflow is automated.
 
 ## Documentation
 

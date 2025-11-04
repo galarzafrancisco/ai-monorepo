@@ -8,17 +8,18 @@
   ],
   "scripts": {
     "dev": "concurrently -n backend,ui -c auto \"npm -w backend run dev\" \"npm -w ui run dev\"",
-    "build": "npm run generate:all && npm -w shared run build && npm -ws run build",
+    "build": "npm run build:prod",
     "start": "npm -w backend run start:prod",
     "lint": "npm -ws run lint || true",
     "typecheck": "npm -ws run typecheck || true",
-    "generate:all": "npm -w backend run generate:spec && npm -w shared run copy:contracts && npm -w shared run generate:types && npm -w shared run generate:client",
     "test:e2e": "npm -w backend run build && npm -w backend run test:e2e",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    "docker:rebuild": "docker-compose down && docker-compose build && docker-compose up -d"
+    "docker:rebuild": "docker-compose down && docker-compose build && docker-compose up -d",
+    "build:prod": "npm -w backend run build:prod && npm -w shared run build:prod && npm -w ui run build:prod",
+    "zero-to-prod": "npm ci && npm run build:prod"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
