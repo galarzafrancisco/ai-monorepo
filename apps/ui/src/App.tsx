@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { TaskBoard } from './taskeroo/TaskBoard';
 import { WikirooHomePage } from './wikiroo/WikirooHomePage';
 import { WikirooPageView } from './wikiroo/WikirooPageView';
+import { usePageTitle } from './hooks/usePageTitle';
 
 export default function App() {
   return (
@@ -17,6 +18,8 @@ export default function App() {
 }
 
 function Home() {
+  usePageTitle('AI Monorepo — Home');
+
   return (
     <div style={{ padding: 24 }}>
       <h1>AI Monorepo — UI</h1>

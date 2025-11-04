@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { TaskCard } from './TaskCard';
 import { CreateTaskForm } from './CreateTaskForm';
 import { TaskDetail } from './TaskDetail';
@@ -6,6 +6,7 @@ import './TaskBoard.css';
 import { Socket } from 'socket.io-client';
 import { useTaskeroo } from './useTaskeroo';
 import { Task, TaskStatus } from './types';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const API_BASE = 'http://localhost:3000';
 
@@ -13,6 +14,8 @@ export function TaskBoard() {
   const { tasks, isConnected } = useTaskeroo();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+
+  usePageTitle('Taskeroo');
 
   const tasksByStatus = {
     [TaskStatus.NOT_STARTED]: tasks.filter((t) => t.status === TaskStatus.NOT_STARTED),

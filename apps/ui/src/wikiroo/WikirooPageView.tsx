@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import './Wikiroo.css';
 import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 function formatDate(value: string) {
   try {
@@ -16,6 +17,10 @@ export function WikirooPageView() {
   const { pageId } = useParams<{ pageId: string }>();
   const { pages, selectedPage, isLoadingPage, error, selectPage } = useWikiroo();
 
+  const pageSummary = pages.find((page) => page.id === pageId);
+  const pageTitle = selectedPage?.title || pageSummary?.title;
+  usePageTitle(pageTitle ? `Wikiroo — ${pageTitle}` : 'Wikiroo');
+
   useEffect(() => {
     if (pageId) {
       selectPage(pageId);
@@ -26,7 +31,6 @@ export function WikirooPageView() {
     return <Navigate to="/wikiroo" replace />;
   }
 
-  const pageSummary = pages.find((page) => page.id === pageId);
   const showNotFound =
     !isLoadingPage && !selectedPage && !error && pages.length > 0 && !pageSummary;
   const handleRefresh = useCallback(() => {
