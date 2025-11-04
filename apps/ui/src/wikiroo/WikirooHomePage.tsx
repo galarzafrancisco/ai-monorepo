@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Wikiroo.css';
 import { useWikiroo } from './useWikiroo';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 function formatDate(value: string) {
   try {
@@ -26,6 +27,8 @@ export function WikirooHomePage() {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
+
+  usePageTitle('Wikiroo');
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

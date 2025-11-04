@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="#f7b731" />
+  <g transform="translate(14 20)">
+    <path d="M72 18c0 9.94-12 18-26.8 18S18.4 27.94 18.4 18 30.4 0 45.2 0 72 8.06 72 18Z" fill="#fff3cd" />
+    <ellipse cx="45" cy="32" rx="22" ry="18" fill="#fed330" />
+    <circle cx="35" cy="30" r="6" fill="#1f2d3d" />
+    <circle cx="55" cy="30" r="6" fill="#1f2d3d" />
+    <path d="M28 54c12 12 22 12 34 0" stroke="#1f2d3d" stroke-width="6" stroke-linecap="round" fill="none" />
+    <path d="M19 18C11 20 6 28 7 37" stroke="#1f2d3d" stroke-width="6" stroke-linecap="round" fill="none" />
+    <path d="M71 18c8 2 13 10 12 19" stroke="#1f2d3d" stroke-width="6" stroke-linecap="round" fill="none" />
+  </g>
+  <text x="64" y="116" text-anchor="middle" font-size="28" font-family="'Comic Sans MS', cursive" fill="#1f2d3d">roo!</text>
+</svg>
