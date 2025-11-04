@@ -17,6 +17,8 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const commentCount = task.comments?.length ?? 0;
+
   return (
     <div className="task-card" onClick={onClick}>
       <h3 className="task-card-title">{task.name}</h3>
@@ -32,6 +34,11 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           ) : (
             <span className="unassigned-text">Unassigned</span>
           )}
+          {commentCount > 0 ? (
+            <span className="comment-count" aria-label={`${commentCount} comments`}>
+              💬 {commentCount}
+            </span>
+          ) : null}
         </div>
         <div className="task-card-date">
           {formatDate(task.updatedAt)}
