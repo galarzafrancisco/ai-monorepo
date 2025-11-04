@@ -10,4 +10,13 @@ export class AssignTaskDto {
   @IsString()
   @IsOptional()
   assignee?: string | null;
+
+  @ApiProperty({
+    description: 'Session ID for tracking AI agent work',
+    example: 'session-123-abc',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  sessionId?: string;
 }

@@ -86,6 +86,7 @@ export class TaskerooController {
   ): Promise<TaskResponseDto> {
     const result = await this.taskerooService.assignTask(params.id, {
       assignee: dto.assignee,
+      sessionId: dto.sessionId,
     });
     return this.mapResultToResponse(result);
   }

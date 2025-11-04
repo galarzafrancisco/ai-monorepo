@@ -103,6 +103,7 @@ export class TaskerooService {
       message: 'Assigning task',
       taskId,
       assignee: input.assignee,
+      sessionId: input.sessionId,
     });
 
     const task = await this.taskRepository.findOne({
@@ -115,12 +116,16 @@ export class TaskerooService {
     }
 
     task.assignee = input.assignee || null;
+    if (input.sessionId !== undefined) {
+      task.sessionId = input.sessionId || null;
+    }
     const assignedTask = await this.taskRepository.save(task);
 
     this.logger.log({
       message: 'Task assigned',
       taskId: assignedTask.id,
       assignee: assignedTask.assignee,
+      sessionId: assignedTask.sessionId,
     });
 
     this.gateway.emitTaskAssigned(assignedTask);
