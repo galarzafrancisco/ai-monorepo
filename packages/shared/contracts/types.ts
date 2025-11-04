@@ -268,7 +268,12 @@ export interface components {
              * @description Name of the assignee (can be empty to unassign)
              * @example AgentAlpha
              */
-            assignee?: Record<string, never>;
+            assignee?: string;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string;
         };
         TaskListResponseDto: {
             /** @description List of tasks */

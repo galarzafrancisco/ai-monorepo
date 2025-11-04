@@ -79,6 +79,47 @@ describe('Taskeroo E2E Tests', () => {
     });
   });
 
+  describe('Task Assignment', () => {
+    let assignableTaskId: string;
+
+    beforeAll(async () => {
+      const response = await request(httpServer)
+        .post('/api/v1/taskeroo/tasks')
+        .send({
+          name: 'Task Assignment Target',
+          description: 'This task will be assigned during tests',
+        })
+        .expect(201);
+
+      assignableTaskId = response.body.id;
+    });
+
+    it('should assign a task with session id', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/taskeroo/tasks/${assignableTaskId}/assign`)
+        .send({
+          assignee: 'AgentAlpha',
+          sessionId: 'session-123-abc',
+        })
+        .expect(200);
+
+      expect(response.body.assignee).toBe('AgentAlpha');
+      expect(response.body.sessionId).toBe('session-123-abc');
+    });
+
+    it('should keep the existing session id when not provided', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/taskeroo/tasks/${assignableTaskId}/assign`)
+        .send({
+          assignee: 'AgentBeta',
+        })
+        .expect(200);
+
+      expect(response.body.assignee).toBe('AgentBeta');
+      expect(response.body.sessionId).toBe('session-123-abc');
+    });
+  });
+
   describe('Task Fetching', () => {
     it('should fetch all tasks and see both created tasks', async () => {
       const response = await request(httpServer)

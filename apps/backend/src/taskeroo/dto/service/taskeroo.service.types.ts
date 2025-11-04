@@ -19,6 +19,7 @@ export type UpdateTaskInput = {
 
 export type AssignTaskInput = {
   assignee?: string | null;
+  sessionId?: string;
 };
 
 export type ChangeStatusInput = {

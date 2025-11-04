@@ -645,9 +645,14 @@
         "type": "object",
         "properties": {
           "assignee": {
-            "type": "object",
+            "type": "string",
             "description": "Name of the assignee (can be empty to unassign)",
             "example": "AgentAlpha"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc"
           }
         }
       },
