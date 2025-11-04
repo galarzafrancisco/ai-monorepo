@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173
   },
   build: {
-    outDir: '../backend/dist/public',
+    outDir: './dist',
     emptyOutDir: true,
   },
   clearScreen: false,

@@ -25,6 +25,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build:prod": "npm run copy:contracts && npm run generate:types && npm run generate:client && npm run build",
     "dev": "tsc -w -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.build.json",
     "lint": "echo \"(shared) lint todo\"",
