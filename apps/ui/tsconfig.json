@@ -21,6 +21,14 @@
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
+    "paths": {
+      "shared": [
+        "../../packages/shared/dist/src/index"
+      ],
+      "@shared/*": [
+        "../../packages/shared/dist/src/*"
+      ]
+    },
     "types": [
       "vite/client"
     ]
