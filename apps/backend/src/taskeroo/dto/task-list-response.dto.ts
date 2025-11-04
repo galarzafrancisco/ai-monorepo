@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
 import { TaskResponseDto } from './task-response.dto';
 
 export class TaskListResponseDto {
@@ -6,6 +8,8 @@ export class TaskListResponseDto {
     description: 'List of tasks',
     type: () => [TaskResponseDto],
   })
+  @ValidateNested({ each: true })
+  @Type(() => TaskResponseDto)
   items!: TaskResponseDto[];
 
   @ApiProperty({
