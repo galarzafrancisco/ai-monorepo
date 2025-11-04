@@ -9,13 +9,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { CommentEntity } from './comment.entity';
-
-export enum TaskStatus {
-  NOT_STARTED = 'NOT_STARTED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  FOR_REVIEW = 'FOR_REVIEW',
-  DONE = 'DONE',
-}
+import { TaskStatus } from './enums';
 
 @Entity({ name: 'tasks' })
 export class TaskEntity {
