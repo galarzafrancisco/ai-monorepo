@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { TaskerooService } from './api'
-import { Task } from './types';
+import { Task, Comment } from './types';
 import { useEffect, useState } from 'react';
 
 // Use relative URL in production, absolute URL in development
@@ -88,9 +88,19 @@ export const useTaskeroo = () => {
       );
     });
 
-    newSocket.on('task.commented', () => {
-      // Refresh task to get new comment
-      // In a real app, you might update the specific task
+    newSocket.on('task.commented', async (comment: Comment) => {
+      try {
+        const updatedTask = await TaskerooService.taskerooControllerGetTask(comment.taskId);
+        setTasks((prev) => {
+          const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
+          if (existingTaskIndex === -1) {
+            return [updatedTask, ...prev];
+          }
+          return prev.map((t) => (t.id === updatedTask.id ? updatedTask : t));
+        });
+      } catch (err) {
+        console.error('Failed to refresh task after comment', err);
+      }
     });
 
     newSocket.on('task.status_changed', (task: Task) => {
