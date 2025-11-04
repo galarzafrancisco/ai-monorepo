@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/": {
+    "/api/v1": {
         parameters: {
             query?: never;
             header?: never;
@@ -21,7 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/taskeroo/tasks": {
+    "/api/v1/taskeroo/tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -39,7 +39,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/taskeroo/tasks/{id}": {
+    "/api/v1/taskeroo/tasks/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -58,7 +58,7 @@ export interface paths {
         patch: operations["TaskerooController_updateTask"];
         trace?: never;
     };
-    "/taskeroo/tasks/{id}/assign": {
+    "/api/v1/taskeroo/tasks/{id}/assign": {
         parameters: {
             query?: never;
             header?: never;
@@ -75,7 +75,7 @@ export interface paths {
         patch: operations["TaskerooController_assignTask"];
         trace?: never;
     };
-    "/taskeroo/tasks/{id}/comments": {
+    "/api/v1/taskeroo/tasks/{id}/comments": {
         parameters: {
             query?: never;
             header?: never;
@@ -92,7 +92,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/taskeroo/tasks/{id}/status": {
+    "/api/v1/taskeroo/tasks/{id}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -109,7 +109,7 @@ export interface paths {
         patch: operations["TaskerooController_changeStatus"];
         trace?: never;
     };
-    "/wikiroo/pages": {
+    "/api/v1/wikiroo/pages": {
         parameters: {
             query?: never;
             header?: never;
@@ -127,14 +127,11 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/wikiroo/pages/{id}": {
+    "/api/v1/wikiroo/pages/{id}": {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         /** Fetch a wiki page by ID */
@@ -268,7 +265,7 @@ export interface components {
              * @description Name of the assignee (can be empty to unassign)
              * @example AgentAlpha
              */
-            assignee?: string;
+            assignee?: Record<string, never>;
             /**
              * @description Session ID for tracking AI agent work
              * @example session-123-abc
@@ -332,7 +329,8 @@ export interface components {
             title: string;
             /**
              * @description Markdown content of the page
-             * @example # Welcome to Wikiroo\nThis is the onboarding guide.
+             * @example # Welcome to Wikiroo
+             *     This is the onboarding guide.
              */
             content: string;
             /**
@@ -401,21 +399,7 @@ export interface components {
             updatedAt: string;
         };
         PageListResponseDto: {
-            /**
-             * @description Collection of wiki page summaries
-             */
             items: components["schemas"]["PageSummaryDto"][];
-        };
-
-             * @example IN_PROGRESS
-             * @enum {string}
-             */
-            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
-            /**
-             * @description Comment required when marking task as done
-             * @example All requirements met and tests passing
-             */
-            comment?: string;
         };
     };
     responses: never;

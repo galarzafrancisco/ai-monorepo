@@ -6,7 +6,7 @@ export type AssignTaskDto = {
     /**
      * Name of the assignee (can be empty to unassign)
      */
-    assignee?: string;
+    assignee?: Record<string, any>;
     /**
      * Session ID for tracking AI agent work
      */

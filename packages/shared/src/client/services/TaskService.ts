@@ -25,7 +25,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/taskeroo/tasks',
+            url: '/api/v1/taskeroo/tasks',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -50,7 +50,7 @@ export class TaskService {
     ): CancelablePromise<TaskListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/taskeroo/tasks',
+            url: '/api/v1/taskeroo/tasks',
             query: {
                 'assignee': assignee,
                 'sessionId': sessionId,
@@ -72,7 +72,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/taskeroo/tasks/{id}',
+            url: '/api/v1/taskeroo/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -95,7 +95,7 @@ export class TaskService {
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/taskeroo/tasks/{id}',
+            url: '/api/v1/taskeroo/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -115,7 +115,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/taskeroo/tasks/{id}',
+            url: '/api/v1/taskeroo/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -137,7 +137,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/taskeroo/tasks/{id}/assign',
+            url: '/api/v1/taskeroo/tasks/{id}/assign',
             path: {
                 'id': id,
             },
@@ -162,7 +162,7 @@ export class TaskService {
     ): CancelablePromise<CommentResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/taskeroo/tasks/{id}/comments',
+            url: '/api/v1/taskeroo/tasks/{id}/comments',
             path: {
                 'id': id,
             },
@@ -187,7 +187,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/taskeroo/tasks/{id}/status',
+            url: '/api/v1/taskeroo/tasks/{id}/status',
             path: {
                 'id': id,
             },
