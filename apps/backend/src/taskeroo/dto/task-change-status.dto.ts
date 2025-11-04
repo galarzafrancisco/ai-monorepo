@@ -2,7 +2,7 @@ import { IsEnum, IsString, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from '../task.entity';
 
-export class ChangeStatusDto {
+export class TaskChangeStatusDto {
   @ApiProperty({
     description: 'New status for the task',
     enum: TaskStatus,

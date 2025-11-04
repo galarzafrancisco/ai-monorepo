@@ -308,7 +308,7 @@ export interface components {
              */
             content: string;
         };
-        ChangeStatusDto: {
+        TaskChangeStatusDto: {
             /**
              * @description New status for the task
              * @example IN_PROGRESS
@@ -683,7 +683,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ChangeStatusDto"];
+                "application/json": components["schemas"]["TaskChangeStatusDto"];
             };
         };
         responses: {
