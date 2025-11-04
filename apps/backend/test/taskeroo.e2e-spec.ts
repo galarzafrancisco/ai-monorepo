@@ -175,6 +175,18 @@ describe('Taskeroo E2E Tests', () => {
       expect(response.body.status).toBe('IN_PROGRESS');
       expect(response.body.assignee).toBe('john.doe@example.com');
     });
+
+    it('should fail to move task to Done without comment when no comments exist', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}/status`)
+        .send({
+          status: 'DONE',
+        })
+        .expect(400);
+
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body.detail.toLowerCase()).toContain('comment');
+    });
   });
 
   describe('Task Comments', () => {
@@ -191,6 +203,18 @@ describe('Taskeroo E2E Tests', () => {
       expect(response.body.commenterName).toBe('Jane Smith');
       expect(response.body.content).toBe('This is a test comment on the task');
       expect(response.body.taskId).toBe(taskWithAssigneeId);
+    });
+
+    it('should allow moving task to Done without new comment when comments exist', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}/status`)
+        .send({
+          status: 'DONE',
+        })
+        .expect(200);
+
+      expect(response.body.status).toBe('DONE');
+      expect(response.body.comments.length).toBeGreaterThan(0);
     });
   });
 
