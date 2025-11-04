@@ -4,6 +4,8 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
+  VersionColumn,
 } from 'typeorm';
 
 @Entity({ name: 'wiki_pages' })
@@ -20,9 +22,15 @@ export class WikiPageEntity {
   @Column({ type: 'text' })
   author!: string;
 
+  @VersionColumn({ name: 'row_version' })
+  rowVersion!: number;
+
   @CreateDateColumn({ type: 'datetime', name: 'created_at' })
   createdAt!: Date;
 
   @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
   updatedAt!: Date;
+
+  @DeleteDateColumn({ type: 'datetime', name: 'deleted_at', nullable: true })
+  deletedAt?: Date | null;
 }
