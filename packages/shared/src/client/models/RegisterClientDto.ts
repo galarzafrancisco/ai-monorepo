@@ -8,15 +8,15 @@ export type RegisterClientDto = {
      */
     client_name: string;
     /**
-     * Array of redirect URIs for authorization callbacks
+     * Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
      */
     redirect_uris: Array<string>;
     /**
      * Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
      */
-    grant_types: Array<'authorization_code' | 'refresh_token' | 'client_credentials'>;
+    grant_types: Array<'authorization_code' | 'refresh_token'>;
     /**
-     * Authentication method for the token endpoint
+     * Authentication method for the token endpoint (MCP clients use "none")
      */
     token_endpoint_auth_method: RegisterClientDto.token_endpoint_auth_method;
     /**
@@ -34,11 +34,9 @@ export type RegisterClientDto = {
 };
 export namespace RegisterClientDto {
     /**
-     * Authentication method for the token endpoint
+     * Authentication method for the token endpoint (MCP clients use "none")
      */
     export enum token_endpoint_auth_method {
-        CLIENT_SECRET_BASIC = 'client_secret_basic',
-        CLIENT_SECRET_POST = 'client_secret_post',
         NONE = 'none',
     }
 }
