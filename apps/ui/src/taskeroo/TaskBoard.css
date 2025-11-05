@@ -714,6 +714,64 @@ form {
   font-weight: 500;
 }
 
+/* Review Shortcuts */
+.task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.review-shortcuts {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.btn-review-done {
+  flex: 1;
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
+}
+
+.btn-review-done:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(39, 174, 96, 0.3);
+  background: linear-gradient(135deg, #229954 0%, #27ae60 100%);
+}
+
+.btn-review-needs-work {
+  flex: 1;
+  background: white;
+  color: #f57f17;
+  border: 2px solid #f57f17;
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-review-needs-work:hover {
+  background: #fffde7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 127, 23, 0.2);
+}
+
+.delete-confirm {
+  display: flex;
+  gap: 12px;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .kanban-board {
@@ -730,5 +788,9 @@ form {
     flex-direction: column;
     gap: 15px;
     align-items: flex-start;
+  }
+
+  .review-shortcuts {
+    flex-direction: column;
   }
 }
