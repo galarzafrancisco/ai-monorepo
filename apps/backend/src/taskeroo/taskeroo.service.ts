@@ -176,7 +176,7 @@ export class TaskerooService {
     const [tasks, total] = await this.taskRepository.findAndCount({
       where,
       relations: ['comments'],
-      order: { createdAt: 'DESC' },
+      order: { updatedAt: 'DESC' },
       skip,
       take: input.limit,
     });

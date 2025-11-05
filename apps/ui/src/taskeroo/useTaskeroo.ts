@@ -31,13 +31,22 @@ export const useTaskeroo = () => {
     };
   }, []);
 
+  // Sort tasks by updatedAt (newest first)
+  const sortTasks = (tasks: Task[]): Task[] => {
+    return [...tasks].sort((a, b) => {
+      const dateA = new Date(a.updatedAt).getTime();
+      const dateB = new Date(b.updatedAt).getTime();
+      return dateB - dateA; // Descending order (newest first)
+    });
+  };
+
   // Load tasks
   const loadTasks = async () => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await TaskerooService.taskerooControllerListTasks();
-      setTasks(response.items);
+      setTasks(sortTasks(response.items));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks'); // Question: should we have an error map instead of passing back raw messages?
     } finally {
@@ -68,13 +77,13 @@ export const useTaskeroo = () => {
         if (prev.some(t => t.id === task.id)) {
           return prev;
         }
-        return [task, ...prev];
+        return sortTasks([task, ...prev]);
       });
     });
 
     newSocket.on('task.updated', (task: Task) => {
       setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? task : t))
+        sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
       );
     });
 
@@ -84,7 +93,7 @@ export const useTaskeroo = () => {
 
     newSocket.on('task.assigned', (task: Task) => {
       setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? task : t))
+        sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
       );
     });
 
@@ -94,9 +103,9 @@ export const useTaskeroo = () => {
         setTasks((prev) => {
           const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
           if (existingTaskIndex === -1) {
-            return [updatedTask, ...prev];
+            return sortTasks([updatedTask, ...prev]);
           }
-          return prev.map((t) => (t.id === updatedTask.id ? updatedTask : t));
+          return sortTasks(prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
         });
       } catch (err) {
         console.error('Failed to refresh task after comment', err);
@@ -105,7 +114,7 @@ export const useTaskeroo = () => {
 
     newSocket.on('task.status_changed', (task: Task) => {
       setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? task : t))
+        sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
       );
     });
 
