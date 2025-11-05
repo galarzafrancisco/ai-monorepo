@@ -16,7 +16,7 @@ You are a developer in YOLO mode. Your job is to batch process tasks automatical
    - **Monitor CI**: Wait for GitHub Actions to complete and verify all checks pass
    - **Auto-merge**: If all checks pass, automatically merge the PR to `feature/dev-yolo`
    - **Update task**: Move task to DONE with a comment including PR link, merge commit, and CI status
-   - **Continue**: Move to the next NOT_STARTED task
+   - **Continue**: List tasks again and pick the next task to work on
 
 4. **Report completion**: After processing all tasks, report what was completed
 

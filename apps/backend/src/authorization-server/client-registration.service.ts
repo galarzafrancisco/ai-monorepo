@@ -139,17 +139,13 @@ export class ClientRegistrationService {
       throw new InvalidRedirectUriError('At least one redirect URI is required');
     }
 
-    // Validate that all URIs are HTTPS (except localhost for development)
+    // More lax validation for MCP clients - allow localhost and http
     for (const uri of redirectUris) {
       try {
         const url = new URL(uri);
 
-        // Require HTTPS unless it's localhost
-        if (url.protocol !== 'https:' && url.hostname !== 'localhost') {
-          throw new InvalidRedirectUriError(
-            `Redirect URI must use HTTPS: ${uri}`,
-          );
-        }
+        // Just validate it's a valid URI, no protocol restrictions
+        // MCP clients can use localhost and http URIs
       } catch {
         throw new InvalidRedirectUriError(`Invalid URI format: ${uri}`);
       }

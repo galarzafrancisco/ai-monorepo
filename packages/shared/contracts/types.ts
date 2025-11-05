@@ -628,8 +628,9 @@ export interface components {
              */
             client_name: string;
             /**
-             * @description Array of redirect URIs for authorization callbacks
+             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
              * @example [
+             *       "http://localhost:3000/callback",
              *       "https://example.com/callback"
              *     ]
              */
@@ -641,13 +642,13 @@ export interface components {
              *       "refresh_token"
              *     ]
              */
-            grant_types: ("authorization_code" | "refresh_token" | "client_credentials")[];
+            grant_types: ("authorization_code" | "refresh_token")[];
             /**
-             * @description Authentication method for the token endpoint
-             * @example client_secret_basic
+             * @description Authentication method for the token endpoint (MCP clients use "none")
+             * @example none
              * @enum {string}
              */
-            token_endpoint_auth_method: "client_secret_basic" | "client_secret_post" | "none";
+            token_endpoint_auth_method: "none";
             /**
              * @description Requested scopes for the client
              * @example [
@@ -687,8 +688,9 @@ export interface components {
              */
             client_name: string;
             /**
-             * @description Array of redirect URIs for authorization callbacks
+             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
              * @example [
+             *       "http://localhost:3000/callback",
              *       "https://example.com/callback"
              *     ]
              */
@@ -700,13 +702,13 @@ export interface components {
              *       "refresh_token"
              *     ]
              */
-            grant_types: ("authorization_code" | "refresh_token" | "client_credentials")[];
+            grant_types: ("authorization_code" | "refresh_token")[];
             /**
-             * @description Authentication method for the token endpoint
-             * @example client_secret_basic
+             * @description Authentication method for the token endpoint (MCP clients use "none")
+             * @example none
              * @enum {string}
              */
-            token_endpoint_auth_method: "client_secret_basic" | "client_secret_post" | "none";
+            token_endpoint_auth_method: "none";
             /**
              * @description Scopes granted to the client
              * @example [
