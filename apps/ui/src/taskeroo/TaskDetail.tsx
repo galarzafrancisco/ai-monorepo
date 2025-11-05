@@ -238,20 +238,38 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
         </div>
 
         <div className="detail-section">
-          {showDeleteConfirm ? (
-            <div>
-              <button onClick={handleDelete} className="btn-danger">
-                Confirm Delete
+          <div className="task-actions">
+            {task.status === TaskStatus.FOR_REVIEW && (
+              <div className="review-shortcuts">
+                <button
+                  onClick={() => handleChangeStatus(TaskStatus.DONE)}
+                  className="btn-review-done"
+                >
+                  ✓ Done
+                </button>
+                <button
+                  onClick={() => handleChangeStatus(TaskStatus.IN_PROGRESS)}
+                  className="btn-review-needs-work"
+                >
+                  ← Needs work
+                </button>
+              </div>
+            )}
+            {showDeleteConfirm ? (
+              <div className="delete-confirm">
+                <button onClick={handleDelete} className="btn-danger">
+                  Confirm Delete
+                </button>
+                <button onClick={() => setShowDeleteConfirm(false)} className="btn-secondary">
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowDeleteConfirm(true)} className="btn-danger">
+                Delete Task
               </button>
-              <button onClick={() => setShowDeleteConfirm(false)} className="btn-secondary">
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button onClick={() => setShowDeleteConfirm(true)} className="btn-danger">
-              Delete Task
-            </button>
-          )}
+            )}
+          </div>
         </div>
 
 
