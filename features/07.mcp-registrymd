@@ -1,0 +1,65 @@
+# MCP Registry
+
+## Description
+Introduce first-class support for registering Model Context Protocol (MCP) servers, the scopes they expose, and the downstream OAuth connections they rely on. The feature must let operators describe an MCP server (metadata, scopes) and configure one or more downstream OAuth connections whose scopes map to MCP scopes.
+
+## Background
+- MCP servers are external integrations that expose functionality via tool scopes (for example `tool:read`).
+- Operators need to register these integrations and their downstream OAuth credentials so that agents can connect and request the appropriate scopes.
+- Each MCP scope can fan out to multiple downstream provider scopes, potentially across different OAuth connections that belong to the same MCP server.
+
+## Functional Requirements
+- Register MCP servers with:
+  - system-generated UUID primary key
+  - **human provided id** (unique slug/string used for lookup)
+  - name
+  - short description
+- Define MCP scopes (per server):
+  - scope id (string such as `tool:read` — this is the primary key)
+  - description
+- Create downstream OAuth connections owned by an MCP server:
+  - client id
+  - client secret
+  - authorize URL
+  - token URL
+  - friendly name for operators to distinguish connections (per server, must be unique)
+- Map MCP scopes to one or many downstream scopes:
+  - A mapping record links `{mcp_scope, connection, downstream_scope_string}`
+  - The connection must belong to the same MCP server as the MCP scope.
+- CRUD endpoints:
+  - **Servers**: create, list (with pagination), fetch by id (both UUID and human provided id).
+  - **Scopes**: create (single and bulk), list by MCP server, fetch by scope id + server, delete scope (only if no downstream mappings).
+  - **Connections**: create, list by MCP server, fetch single connection, delete (only if no mappings).
+  - **Mappings**: create mapping(s), list downstream scopes per MCP scope, delete mapping.
+- Validation & errors:
+  - Prevent duplicate human provided ids per server.
+  - Enforce unique MCP scope ids per server (scope id string is unique in the scopes table combined with the MCP server id; the raw string is the primary key for the scope entity).
+  - Ensure downstream scope mappings reference existing MCP scopes and connections.
+  - Deny deleting servers that still own scopes, connections, or mappings.
+
+## Technical Requirements
+- Database modelling:
+  - `mcp_servers` table as described above.
+  - `mcp_scopes` table keyed by scope id string + server id, with description.
+  - `mcp_connections` table keyed by UUID, referencing owning server.
+  - `mcp_scope_mappings` table capturing `{scope_id, server_id, connection_id, downstream_scope}`.
+  - Add timestamps and soft-delete support consistent with existing backend conventions.
+- Backend implementation (NestJS backend under `apps/backend`):
+  - New module (e.g., `mcp-registry`) with entities, DTOs, repositories, services, and controllers following project standards (`docs/how-to-guides`, `docs/best-practices`).
+  - Use TypeORM migrations to create the new tables and constraints.
+  - Implement transactional logic in services for create flows (server + scopes + connections + mappings).
+  - Ensure secrets (client secret) never leak in list endpoints—mask in responses where appropriate.
+  - Include unit tests for services and e2e/integration tests for the new API endpoints.
+- API design:
+  - RESTful routes rooted at `/mcp` (e.g., `/mcp/servers`, `/mcp/servers/:serverId/scopes`).
+  - Apply request validation decorators for DTOs and ensure proper error responses (HTTP 400/404/409).
+  - Document endpoints in OpenAPI spec with request/response schemas and examples.
+- Security & observability:
+  - Store client secrets encrypted/rested consistent with project secure storage practices; do not return secrets after creation.
+  - Emit audit logs when servers, scopes, connections, or mappings are created/updated/deleted.
+  - Add metrics counters for number of registered MCP servers, scopes, and downstream mappings.
+
+## Open Questions
+- Should human provided ids be constrained to a specific format (slug vs arbitrary string)?
+- Do we need webhook/eventing when new MCP servers are registered?
+- Are downstream scope strings case-sensitive or should the system normalize them?
