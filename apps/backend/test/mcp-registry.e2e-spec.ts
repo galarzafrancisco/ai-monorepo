@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { CreateServerDto } from '../src/mcp-registry/dto/create-server.dto';
 import { CreateScopeDto } from '../src/mcp-registry/dto/create-scope.dto';
 import { CreateConnectionDto } from '../src/mcp-registry/dto/create-connection.dto';
 import { CreateMappingDto } from '../src/mcp-registry/dto/create-mapping.dto';
+import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 
 describe('MCP Registry (e2e)', () => {
   let app: INestApplication;
@@ -16,6 +17,17 @@ describe('MCP Registry (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply global filters and pipes like in main.ts
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    app.useGlobalFilters(new ProblemDetailsFilter());
+
     await app.init();
   });
 
