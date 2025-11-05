@@ -566,6 +566,485 @@
           "Authorization Server"
         ]
       }
+    },
+    "/api/v1/mcp/servers": {
+      "post": {
+        "operationId": "McpRegistryController_createServer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateServerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Server created successfully"
+          },
+          "409": {
+            "description": "Server with providedId already exists"
+          }
+        },
+        "summary": "Register a new MCP server",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "get": {
+        "operationId": "McpRegistryController_listServers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of servers"
+          }
+        },
+        "summary": "List all MCP servers with pagination",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}": {
+      "get": {
+        "operationId": "McpRegistryController_getServer",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID or provided ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server found"
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "summary": "Get MCP server by UUID or provided ID",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "delete": {
+        "operationId": "McpRegistryController_deleteServer",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Server deleted successfully"
+          },
+          "404": {
+            "description": "Server not found"
+          },
+          "409": {
+            "description": "Server has dependencies"
+          }
+        },
+        "summary": "Delete MCP server (must have no dependencies)",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/scopes": {
+      "post": {
+        "operationId": "McpRegistryController_createScopes",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scope(s) created successfully"
+          },
+          "404": {
+            "description": "Server not found"
+          },
+          "409": {
+            "description": "Scope already exists"
+          }
+        },
+        "summary": "Create MCP scope(s) for a server",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "get": {
+        "operationId": "McpRegistryController_listScopes",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of scopes"
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "summary": "List all scopes for an MCP server",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}": {
+      "get": {
+        "operationId": "McpRegistryController_getScope",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "path",
+            "description": "Scope ID string",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scope found"
+          },
+          "404": {
+            "description": "Scope not found"
+          }
+        },
+        "summary": "Get a specific MCP scope",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "delete": {
+        "operationId": "McpRegistryController_deleteScope",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "path",
+            "description": "Scope ID string",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Scope deleted successfully"
+          },
+          "404": {
+            "description": "Scope not found"
+          },
+          "409": {
+            "description": "Scope has mappings"
+          }
+        },
+        "summary": "Delete MCP scope (must have no mappings)",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/connections": {
+      "post": {
+        "operationId": "McpRegistryController_createConnection",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Connection created successfully"
+          },
+          "404": {
+            "description": "Server not found"
+          },
+          "409": {
+            "description": "Connection name conflict"
+          }
+        },
+        "summary": "Create OAuth connection for an MCP server",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "get": {
+        "operationId": "McpRegistryController_listConnections",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of connections"
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "summary": "List all connections for an MCP server",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/connections/{connectionId}": {
+      "get": {
+        "operationId": "McpRegistryController_getConnection",
+        "parameters": [
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "description": "Connection UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection found"
+          },
+          "404": {
+            "description": "Connection not found"
+          }
+        },
+        "summary": "Get a specific connection",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "delete": {
+        "operationId": "McpRegistryController_deleteConnection",
+        "parameters": [
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "description": "Connection UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Connection deleted successfully"
+          },
+          "404": {
+            "description": "Connection not found"
+          },
+          "409": {
+            "description": "Connection has mappings"
+          }
+        },
+        "summary": "Delete connection (must have no mappings)",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/mappings": {
+      "post": {
+        "operationId": "McpRegistryController_createMapping",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMappingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mapping created successfully"
+          },
+          "400": {
+            "description": "Invalid mapping"
+          },
+          "404": {
+            "description": "Scope or connection not found"
+          }
+        },
+        "summary": "Create scope mapping",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings": {
+      "get": {
+        "operationId": "McpRegistryController_listMappings",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "path",
+            "description": "Scope ID string",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of mappings"
+          },
+          "404": {
+            "description": "Scope not found"
+          }
+        },
+        "summary": "List downstream scopes for an MCP scope",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/mappings/{mappingId}": {
+      "delete": {
+        "operationId": "McpRegistryController_deleteMapping",
+        "parameters": [
+          {
+            "name": "mappingId",
+            "required": true,
+            "in": "path",
+            "description": "Mapping UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Mapping deleted successfully"
+          },
+          "404": {
+            "description": "Mapping not found"
+          }
+        },
+        "summary": "Delete scope mapping",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
     }
   },
   "info": {
@@ -1134,6 +1613,93 @@
           "grant_types",
           "token_endpoint_auth_method",
           "client_id_issued_at"
+        ]
+      },
+      "CreateServerDto": {
+        "type": "object",
+        "properties": {
+          "providedId": {
+            "type": "string",
+            "description": "Human-readable unique identifier for the MCP server",
+            "example": "github-integration"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the MCP server",
+            "example": "GitHub Integration"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the MCP server",
+            "example": "Provides access to GitHub repositories and issues"
+          }
+        },
+        "required": [
+          "providedId",
+          "name",
+          "description"
+        ]
+      },
+      "CreateConnectionDto": {
+        "type": "object",
+        "properties": {
+          "friendlyName": {
+            "type": "string",
+            "description": "Friendly name to identify this OAuth connection",
+            "example": "GitHub OAuth Connection"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client ID for the downstream provider",
+            "example": "github_client_abc123"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "OAuth client secret for the downstream provider",
+            "example": "secret_xyz789"
+          },
+          "authorizeUrl": {
+            "type": "string",
+            "description": "OAuth authorization endpoint URL",
+            "example": "https://github.com/login/oauth/authorize"
+          },
+          "tokenUrl": {
+            "type": "string",
+            "description": "OAuth token endpoint URL",
+            "example": "https://github.com/login/oauth/access_token"
+          }
+        },
+        "required": [
+          "friendlyName",
+          "clientId",
+          "clientSecret",
+          "authorizeUrl",
+          "tokenUrl"
+        ]
+      },
+      "CreateMappingDto": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "type": "string",
+            "description": "MCP scope ID to map from",
+            "example": "tool:read"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "Connection ID that owns this mapping",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "downstreamScope": {
+            "type": "string",
+            "description": "Downstream OAuth scope string",
+            "example": "repo:read"
+          }
+        },
+        "required": [
+          "scopeId",
+          "connectionId",
+          "downstreamScope"
         ]
       }
     }
