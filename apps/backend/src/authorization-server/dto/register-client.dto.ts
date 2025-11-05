@@ -21,13 +21,13 @@ export class RegisterClientDto {
   client_name!: string;
 
   @ApiProperty({
-    description: 'Array of redirect URIs for authorization callbacks',
-    example: ['https://example.com/callback'],
+    description: 'Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)',
+    example: ['http://localhost:3000/callback', 'https://example.com/callback'],
     type: [String],
   })
   @IsArray()
   @ArrayNotEmpty()
-  @IsUrl({}, { each: true })
+  @IsUrl({ require_tld: false, require_protocol: true }, { each: true })
   redirect_uris!: string[];
 
   @ApiProperty({
@@ -43,8 +43,8 @@ export class RegisterClientDto {
   grant_types!: GrantType[];
 
   @ApiProperty({
-    description: 'Authentication method for the token endpoint',
-    example: TokenEndpointAuthMethod.CLIENT_SECRET_BASIC,
+    description: 'Authentication method for the token endpoint (MCP clients use "none")',
+    example: TokenEndpointAuthMethod.NONE,
     enum: TokenEndpointAuthMethod,
   })
   @IsEnum(TokenEndpointAuthMethod)
