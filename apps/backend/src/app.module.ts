@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskerooModule } from './taskeroo/taskeroo.module';
 import { WikirooModule } from './wikiroo/wikiroo.module';
 import { AuthorizationServerModule } from './authorization-server/authorization-server.module';
+import { McpRegistryModule } from './mcp-registry/mcp-registry.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuthorizationServerModule } from './authorization-server/authorization-
     TaskerooModule,
     WikirooModule,
     AuthorizationServerModule,
+    McpRegistryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
