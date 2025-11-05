@@ -204,6 +204,165 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mcp/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all MCP servers with pagination */
+        get: operations["McpRegistryController_listServers"];
+        put?: never;
+        /** Register a new MCP server */
+        post: operations["McpRegistryController_createServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get MCP server by UUID or provided ID */
+        get: operations["McpRegistryController_getServer"];
+        put?: never;
+        post?: never;
+        /** Delete MCP server (must have no dependencies) */
+        delete: operations["McpRegistryController_deleteServer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all scopes for an MCP server */
+        get: operations["McpRegistryController_listScopes"];
+        put?: never;
+        /** Create MCP scope(s) for a server */
+        post: operations["McpRegistryController_createScopes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a specific MCP scope */
+        get: operations["McpRegistryController_getScope"];
+        put?: never;
+        post?: never;
+        /** Delete MCP scope (must have no mappings) */
+        delete: operations["McpRegistryController_deleteScope"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all connections for an MCP server */
+        get: operations["McpRegistryController_listConnections"];
+        put?: never;
+        /** Create OAuth connection for an MCP server */
+        post: operations["McpRegistryController_createConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/connections/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a specific connection */
+        get: operations["McpRegistryController_getConnection"];
+        put?: never;
+        post?: never;
+        /** Delete connection (must have no mappings) */
+        delete: operations["McpRegistryController_deleteConnection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create scope mapping */
+        post: operations["McpRegistryController_createMapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List downstream scopes for an MCP scope */
+        get: operations["McpRegistryController_listMappings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/mappings/{mappingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete scope mapping */
+        delete: operations["McpRegistryController_deleteMapping"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -576,6 +735,67 @@ export interface components {
              * @example 2025-11-05T08:00:00.000Z
              */
             client_id_issued_at: string;
+        };
+        CreateServerDto: {
+            /**
+             * @description Human-readable unique identifier for the MCP server
+             * @example github-integration
+             */
+            providedId: string;
+            /**
+             * @description Display name of the MCP server
+             * @example GitHub Integration
+             */
+            name: string;
+            /**
+             * @description Short description of the MCP server
+             * @example Provides access to GitHub repositories and issues
+             */
+            description: string;
+        };
+        CreateConnectionDto: {
+            /**
+             * @description Friendly name to identify this OAuth connection
+             * @example GitHub OAuth Connection
+             */
+            friendlyName: string;
+            /**
+             * @description OAuth client ID for the downstream provider
+             * @example github_client_abc123
+             */
+            clientId: string;
+            /**
+             * @description OAuth client secret for the downstream provider
+             * @example secret_xyz789
+             */
+            clientSecret: string;
+            /**
+             * @description OAuth authorization endpoint URL
+             * @example https://github.com/login/oauth/authorize
+             */
+            authorizeUrl: string;
+            /**
+             * @description OAuth token endpoint URL
+             * @example https://github.com/login/oauth/access_token
+             */
+            tokenUrl: string;
+        };
+        CreateMappingDto: {
+            /**
+             * @description MCP scope ID to map from
+             * @example tool:read
+             */
+            scopeId: string;
+            /**
+             * @description Connection ID that owns this mapping
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            connectionId: string;
+            /**
+             * @description Downstream OAuth scope string
+             * @example repo:read
+             */
+            downstreamScope: string;
         };
     };
     responses: never;
@@ -1046,6 +1266,476 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
                 };
+            };
+        };
+    };
+    McpRegistryController_listServers: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of servers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_createServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateServerDto"];
+            };
+        };
+        responses: {
+            /** @description Server created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server with providedId already exists */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_getServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID or provided ID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_deleteServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server has dependencies */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_listScopes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of scopes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_createScopes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scope(s) created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope already exists */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_getScope: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+                /** @description Scope ID string */
+                scopeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scope found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_deleteScope: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+                /** @description Scope ID string */
+                scopeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scope deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope has mappings */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_listConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of connections */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_createConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConnectionDto"];
+            };
+        };
+        responses: {
+            /** @description Connection created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Server not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection name conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_getConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Connection UUID */
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_deleteConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Connection UUID */
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connection deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection has mappings */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_createMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMappingDto"];
+            };
+        };
+        responses: {
+            /** @description Mapping created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid mapping */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope or connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_listMappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+                /** @description Scope ID string */
+                scopeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of mappings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scope not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_deleteMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Mapping UUID */
+                mappingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mapping deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Mapping not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
