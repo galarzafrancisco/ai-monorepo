@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskerooModule } from './taskeroo/taskeroo.module';
 import { WikirooModule } from './wikiroo/wikiroo.module';
+import { AuthorizationServerModule } from './authorization-server/authorization-server.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WikirooModule } from './wikiroo/wikiroo.module';
     }),
     TaskerooModule,
     WikirooModule,
+    AuthorizationServerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
