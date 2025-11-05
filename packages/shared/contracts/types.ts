@@ -144,6 +144,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/authz/clients/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a new OAuth 2.0 client (Dynamic Client Registration)
+         * @description Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.
+         */
+        post: operations["ClientRegistrationController_registerClient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/authz/clients/{clientId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrieve client registration information
+         * @description Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.
+         */
+        get: operations["ClientRegistrationController_getClient"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/authz/clients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all registered clients (Admin)
+         * @description Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.
+         */
+        get: operations["ClientRegistrationController_listClients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -401,6 +461,119 @@ export interface components {
         PageListResponseDto: {
             /** @description List of wiki pages */
             items: components["schemas"]["PageSummaryDto"][];
+        };
+        RegisterClientDto: {
+            /**
+             * @description Human-readable name of the client
+             * @example My OAuth Client
+             */
+            client_name: string;
+            /**
+             * @description Array of redirect URIs for authorization callbacks
+             * @example [
+             *       "https://example.com/callback"
+             *     ]
+             */
+            redirect_uris: string[];
+            /**
+             * @description Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
+             * @example [
+             *       "authorization_code",
+             *       "refresh_token"
+             *     ]
+             */
+            grant_types: ("authorization_code" | "refresh_token" | "client_credentials")[];
+            /**
+             * @description Authentication method for the token endpoint
+             * @example client_secret_basic
+             * @enum {string}
+             */
+            token_endpoint_auth_method: "client_secret_basic" | "client_secret_post" | "none";
+            /**
+             * @description Requested scopes for the client
+             * @example [
+             *       "openid",
+             *       "profile",
+             *       "email"
+             *     ]
+             */
+            scope?: string[];
+            /**
+             * @description Contact emails for the client registration
+             * @example [
+             *       "admin@example.com"
+             *     ]
+             */
+            contacts?: string[];
+            /**
+             * @description PKCE code challenge method. Must be S256 for authorization_code grant.
+             * @example S256
+             */
+            code_challenge_method?: string;
+        };
+        ClientRegistrationResponseDto: {
+            /**
+             * @description Unique client identifier
+             * @example 8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b
+             */
+            client_id: string;
+            /**
+             * @description Client secret for confidential clients
+             * @example ZXhhbXBsZV9zZWNyZXRfa2V5
+             */
+            client_secret?: Record<string, never> | null;
+            /**
+             * @description Human-readable name of the client
+             * @example My OAuth Client
+             */
+            client_name: string;
+            /**
+             * @description Array of redirect URIs for authorization callbacks
+             * @example [
+             *       "https://example.com/callback"
+             *     ]
+             */
+            redirect_uris: string[];
+            /**
+             * @description Grant types the client is authorized to use
+             * @example [
+             *       "authorization_code",
+             *       "refresh_token"
+             *     ]
+             */
+            grant_types: ("authorization_code" | "refresh_token" | "client_credentials")[];
+            /**
+             * @description Authentication method for the token endpoint
+             * @example client_secret_basic
+             * @enum {string}
+             */
+            token_endpoint_auth_method: "client_secret_basic" | "client_secret_post" | "none";
+            /**
+             * @description Scopes granted to the client
+             * @example [
+             *       "openid",
+             *       "profile",
+             *       "email"
+             *     ]
+             */
+            scope?: string[] | null;
+            /**
+             * @description Contact emails for the client
+             * @example [
+             *       "admin@example.com"
+             *     ]
+             */
+            contacts?: string[] | null;
+            /**
+             * @description PKCE code challenge method
+             * @example S256
+             */
+            code_challenge_method?: Record<string, never> | null;
+            /**
+             * @description Client registration timestamp (ISO 8601)
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            client_id_issued_at: string;
         };
     };
     responses: never;
@@ -783,6 +956,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    ClientRegistrationController_registerClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterClientDto"];
+            };
+        };
+        responses: {
+            /** @description Client registered successfully with generated credentials */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
+                };
+            };
+            /** @description Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A client with this name is already registered */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_getClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Client registration information retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
+                };
+            };
+            /** @description Client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_listClients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of registered clients */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
                 };
             };
         };
