@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TaskEntity, TaskStatus } from './task.entity';
+import { TaskEntity } from './task.entity';
+import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
 import {
   CreateTaskInput,

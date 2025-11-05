@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { ValidateNested } from 'class-validator';
-import { TaskStatus } from '../task.entity';
+import { TaskStatus } from '../enums';
 import { CommentResponseDto } from './comment-response.dto';
 
 export class TaskResponseDto {
