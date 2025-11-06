@@ -7,11 +7,13 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 import { McpScopeEntity } from './mcp-scope.entity';
 import { McpConnectionEntity } from './mcp-connection.entity';
 
 @Entity('mcp_scope_mappings')
+@Unique('uq_mcp_scope_mapping', ['scopeId', 'serverId', 'connectionId', 'downstreamScope'])
 export class McpScopeMappingEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

@@ -2,6 +2,9 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # ----------------------------------
 # Input arguments
 # ----------------------------------
@@ -40,6 +43,20 @@ fi
 # Cut branch
 BRANCH_NAME="$AGENT_NAME/s/$SESSION_ID/tasks/$TASK_NAME"
 git checkout -b "$BRANCH_NAME"
+
+# ----------------------------------
+# Update .ai/state.json with current task info
+# ----------------------------------
+STATE_FILE_DIR="$SCRIPT_DIR/../../../.ai"
+mkdir -p "$STATE_FILE_DIR"
+STATE_FILE="$STATE_FILE_DIR/state.json"
+echo "{
+  \"agent_name\": \"$AGENT_NAME\",
+  \"session_id\": \"$SESSION_ID\",
+  \"task_id\": \"$TASK_ID\",
+  \"task_name\": \"$TASK_NAME\",
+  \"branch_name\": \"$BRANCH_NAME\"
+}" > "$STATE_FILE"
 
 # ----------------------------------
 # Print a message with the new branch name

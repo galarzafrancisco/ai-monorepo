@@ -19,6 +19,10 @@ export type { CreatePageDto } from './models/CreatePageDto';
 export type { CreateScopeDto } from './models/CreateScopeDto';
 export type { CreateServerDto } from './models/CreateServerDto';
 export type { CreateTaskDto } from './models/CreateTaskDto';
+export type { DeleteConnectionResponseDto } from './models/DeleteConnectionResponseDto';
+export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto';
+export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto';
+export type { DeleteServerResponseDto } from './models/DeleteServerResponseDto';
 export type { MappingResponseDto } from './models/MappingResponseDto';
 export type { PageListResponseDto } from './models/PageListResponseDto';
 export type { PageResponseDto } from './models/PageResponseDto';
@@ -30,6 +34,7 @@ export type { ServerResponseDto } from './models/ServerResponseDto';
 export { TaskChangeStatusDto } from './models/TaskChangeStatusDto';
 export type { TaskListResponseDto } from './models/TaskListResponseDto';
 export { TaskResponseDto } from './models/TaskResponseDto';
+export type { UpdateConnectionDto } from './models/UpdateConnectionDto';
 export type { UpdateTaskDto } from './models/UpdateTaskDto';
 
 export { AppService } from './services/AppService';

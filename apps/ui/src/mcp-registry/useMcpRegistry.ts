@@ -170,6 +170,32 @@ export const useMcpRegistry = () => {
     }
   };
 
+  // Update connection
+  const updateConnection = async (
+    connectionId: string,
+    data: {
+      clientId?: string;
+      clientSecret?: string;
+      authorizeUrl?: string;
+      tokenUrl?: string;
+      friendlyName?: string;
+    }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await McpRegistryService.mcpRegistryControllerUpdateConnection(connectionId, data);
+      if (selectedServer) {
+        await loadServerDetails(selectedServer.id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update connection');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Create mapping
   const createMapping = async (
     serverId: string,
@@ -263,6 +289,7 @@ export const useMcpRegistry = () => {
     createServer,
     createScope,
     createConnection,
+    updateConnection,
     createMapping,
     deleteScope,
     deleteConnection,

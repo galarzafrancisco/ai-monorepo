@@ -7,10 +7,15 @@ import type { CreateConnectionDto } from '../models/CreateConnectionDto';
 import type { CreateMappingDto } from '../models/CreateMappingDto';
 import type { CreateScopeDto } from '../models/CreateScopeDto';
 import type { CreateServerDto } from '../models/CreateServerDto';
+import type { DeleteConnectionResponseDto } from '../models/DeleteConnectionResponseDto';
+import type { DeleteMappingResponseDto } from '../models/DeleteMappingResponseDto';
+import type { DeleteScopeResponseDto } from '../models/DeleteScopeResponseDto';
+import type { DeleteServerResponseDto } from '../models/DeleteServerResponseDto';
 import type { MappingResponseDto } from '../models/MappingResponseDto';
 import type { ScopeResponseDto } from '../models/ScopeResponseDto';
 import type { ServerListResponseDto } from '../models/ServerListResponseDto';
 import type { ServerResponseDto } from '../models/ServerResponseDto';
+import type { UpdateConnectionDto } from '../models/UpdateConnectionDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -77,12 +82,12 @@ export class McpRegistryService {
     /**
      * Delete MCP server (must have no dependencies)
      * @param serverId Server UUID
-     * @returns void
+     * @returns DeleteServerResponseDto Server deleted successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerDeleteServer(
         serverId: string,
-    ): CancelablePromise<void> {
+    ): CancelablePromise<DeleteServerResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/mcp/servers/{serverId}',
@@ -98,7 +103,7 @@ export class McpRegistryService {
     /**
      * Create MCP scope(s) for a server
      * @param serverId Server UUID
-     * @param requestBody Scope or array of scopes to create
+     * @param requestBody Array of scopes to create
      * @returns ScopeResponseDto Scope(s) created successfully
      * @throws ApiError
      */
@@ -167,13 +172,13 @@ export class McpRegistryService {
      * Delete MCP scope (must have no mappings)
      * @param serverId Server UUID
      * @param scopeId Scope ID string
-     * @returns void
+     * @returns DeleteScopeResponseDto Scope deleted successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerDeleteScope(
         serverId: string,
         scopeId: string,
-    ): CancelablePromise<void> {
+    ): CancelablePromise<DeleteScopeResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/mcp/servers/{serverId}/scopes/{scopeId}',
@@ -253,14 +258,39 @@ export class McpRegistryService {
         });
     }
     /**
+     * Update connection details
+     * @param connectionId Connection UUID
+     * @param requestBody
+     * @returns ConnectionResponseDto Connection updated successfully
+     * @throws ApiError
+     */
+    public static mcpRegistryControllerUpdateConnection(
+        connectionId: string,
+        requestBody: UpdateConnectionDto,
+    ): CancelablePromise<ConnectionResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/mcp/connections/{connectionId}',
+            path: {
+                'connectionId': connectionId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                404: `Connection not found`,
+                409: `Connection name conflict`,
+            },
+        });
+    }
+    /**
      * Delete connection (must have no mappings)
      * @param connectionId Connection UUID
-     * @returns void
+     * @returns DeleteConnectionResponseDto Connection deleted successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerDeleteConnection(
         connectionId: string,
-    ): CancelablePromise<void> {
+    ): CancelablePromise<DeleteConnectionResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/mcp/connections/{connectionId}',
@@ -324,12 +354,12 @@ export class McpRegistryService {
     /**
      * Delete scope mapping
      * @param mappingId Mapping UUID
-     * @returns void
+     * @returns DeleteMappingResponseDto Mapping deleted successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerDeleteMapping(
         mappingId: string,
-    ): CancelablePromise<void> {
+    ): CancelablePromise<DeleteMappingResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/mcp/mappings/{mappingId}',

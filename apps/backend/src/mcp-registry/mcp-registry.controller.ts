@@ -2,12 +2,14 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Body,
   Query,
   ParseIntPipe,
   ParseUUIDPipe,
+  ParseArrayPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { McpRegistryService } from './mcp-registry.service';
@@ -15,12 +17,21 @@ import {
   CreateServerDto,
   CreateScopeDto,
   CreateConnectionDto,
+  UpdateConnectionDto,
   CreateMappingDto,
   ServerResponseDto,
   ServerListResponseDto,
   ScopeResponseDto,
   ConnectionResponseDto,
   MappingResponseDto,
+  DeleteServerResponseDto,
+  DeleteScopeResponseDto,
+  DeleteConnectionResponseDto,
+  DeleteMappingResponseDto,
+  ServerRecord,
+  ScopeRecord,
+  ConnectionRecord,
+  MappingRecord,
 } from './dto';
 
 @ApiTags('MCP Registry')
@@ -73,10 +84,12 @@ export class McpRegistryController {
   @Delete('servers/:serverId')
   @ApiOperation({ summary: 'Delete MCP server (must have no dependencies)' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
-  @ApiResponse({ status: 204, description: 'Server deleted successfully' })
+  @ApiResponse({ status: 200, description: 'Server deleted successfully', type: DeleteServerResponseDto })
   @ApiResponse({ status: 404, description: 'Server not found' })
   @ApiResponse({ status: 409, description: 'Server has dependencies' })
-  async deleteServer(@Param('serverId', ParseUUIDPipe) serverId: string) {
+  async deleteServer(
+    @Param('serverId', ParseUUIDPipe) serverId: string,
+  ): Promise<DeleteServerResponseDto> {
     await this.mcpRegistryService.deleteServer(serverId);
     return { message: 'Server deleted successfully' };
   }
@@ -86,21 +99,17 @@ export class McpRegistryController {
   @Post('servers/:serverId/scopes')
   @ApiOperation({ summary: 'Create MCP scope(s) for a server' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
-  @ApiBody({ type: CreateScopeDto, isArray: true, description: 'Scope or array of scopes to create' })
+  @ApiBody({ type: CreateScopeDto, isArray: true, description: 'Array of scopes to create' })
   @ApiResponse({ status: 201, description: 'Scope(s) created successfully', type: [ScopeResponseDto] })
   @ApiResponse({ status: 404, description: 'Server not found' })
   @ApiResponse({ status: 409, description: 'Scope already exists' })
   async createScopes(
     @Param('serverId', ParseUUIDPipe) serverId: string,
-    @Body() dto: CreateScopeDto | CreateScopeDto[],
-  ): Promise<ScopeResponseDto | ScopeResponseDto[]> {
-    if (Array.isArray(dto)) {
-      const scopes = await this.mcpRegistryService.createScopes(serverId, dto);
-      return scopes.map(scope => this.mapScopeToResponse(scope));
-    } else {
-      const scope = await this.mcpRegistryService.createScope(serverId, dto);
-      return this.mapScopeToResponse(scope);
-    }
+    @Body(new ParseArrayPipe({ items: CreateScopeDto, whitelist: true }))
+    dto: CreateScopeDto[],
+  ): Promise<ScopeResponseDto[]> {
+    const scopes = await this.mcpRegistryService.createScopes(serverId, dto);
+    return scopes.map(scope => this.mapScopeToResponse(scope));
   }
 
   @Get('servers/:serverId/scopes')
@@ -131,13 +140,13 @@ export class McpRegistryController {
   @ApiOperation({ summary: 'Delete MCP scope (must have no mappings)' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiParam({ name: 'scopeId', description: 'Scope ID string' })
-  @ApiResponse({ status: 204, description: 'Scope deleted successfully' })
+  @ApiResponse({ status: 200, description: 'Scope deleted successfully', type: DeleteScopeResponseDto })
   @ApiResponse({ status: 404, description: 'Scope not found' })
   @ApiResponse({ status: 409, description: 'Scope has mappings' })
   async deleteScope(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Param('scopeId') scopeId: string,
-  ) {
+  ): Promise<DeleteScopeResponseDto> {
     await this.mcpRegistryService.deleteScope(scopeId, serverId);
     return { message: 'Scope deleted successfully' };
   }
@@ -180,15 +189,29 @@ export class McpRegistryController {
     return this.mapConnectionToResponse(connection);
   }
 
+  @Patch('connections/:connectionId')
+  @ApiOperation({ summary: 'Update connection details' })
+  @ApiParam({ name: 'connectionId', description: 'Connection UUID' })
+  @ApiResponse({ status: 200, description: 'Connection updated successfully', type: ConnectionResponseDto })
+  @ApiResponse({ status: 404, description: 'Connection not found' })
+  @ApiResponse({ status: 409, description: 'Connection name conflict' })
+  async updateConnection(
+    @Param('connectionId', ParseUUIDPipe) connectionId: string,
+    @Body() dto: UpdateConnectionDto,
+  ): Promise<ConnectionResponseDto> {
+    const connection = await this.mcpRegistryService.updateConnection(connectionId, dto);
+    return this.mapConnectionToResponse(connection);
+  }
+
   @Delete('connections/:connectionId')
   @ApiOperation({ summary: 'Delete connection (must have no mappings)' })
   @ApiParam({ name: 'connectionId', description: 'Connection UUID' })
-  @ApiResponse({ status: 204, description: 'Connection deleted successfully' })
+  @ApiResponse({ status: 200, description: 'Connection deleted successfully', type: DeleteConnectionResponseDto })
   @ApiResponse({ status: 404, description: 'Connection not found' })
   @ApiResponse({ status: 409, description: 'Connection has mappings' })
   async deleteConnection(
     @Param('connectionId', ParseUUIDPipe) connectionId: string,
-  ) {
+  ): Promise<DeleteConnectionResponseDto> {
     await this.mcpRegistryService.deleteConnection(connectionId);
     return { message: 'Connection deleted successfully' };
   }
@@ -226,9 +249,11 @@ export class McpRegistryController {
   @Delete('mappings/:mappingId')
   @ApiOperation({ summary: 'Delete scope mapping' })
   @ApiParam({ name: 'mappingId', description: 'Mapping UUID' })
-  @ApiResponse({ status: 204, description: 'Mapping deleted successfully' })
+  @ApiResponse({ status: 200, description: 'Mapping deleted successfully', type: DeleteMappingResponseDto })
   @ApiResponse({ status: 404, description: 'Mapping not found' })
-  async deleteMapping(@Param('mappingId', ParseUUIDPipe) mappingId: string) {
+  async deleteMapping(
+    @Param('mappingId', ParseUUIDPipe) mappingId: string,
+  ): Promise<DeleteMappingResponseDto> {
     await this.mcpRegistryService.deleteMapping(mappingId);
     return { message: 'Mapping deleted successfully' };
   }
@@ -240,29 +265,29 @@ export class McpRegistryController {
     return uuidRegex.test(str);
   }
 
-  private mapServerToResponse(server: any): ServerResponseDto {
+  private mapServerToResponse(server: ServerRecord): ServerResponseDto {
     return {
       id: server.id,
       providedId: server.providedId,
       name: server.name,
       description: server.description,
-      createdAt: server.createdAt?.toISOString() || server.createdAt,
-      updatedAt: server.updatedAt?.toISOString() || server.updatedAt,
+      createdAt: this.formatDate(server.createdAt),
+      updatedAt: this.formatDate(server.updatedAt),
     };
   }
 
-  private mapScopeToResponse(scope: any): ScopeResponseDto {
+  private mapScopeToResponse(scope: ScopeRecord): ScopeResponseDto {
     return {
       id: scope.id,
       scopeId: scope.scopeId,
       serverId: scope.serverId,
       description: scope.description,
-      createdAt: scope.createdAt?.toISOString() || scope.createdAt,
-      updatedAt: scope.updatedAt?.toISOString() || scope.updatedAt,
+      createdAt: this.formatDate(scope.createdAt),
+      updatedAt: this.formatDate(scope.updatedAt),
     };
   }
 
-  private mapConnectionToResponse(connection: any): ConnectionResponseDto {
+  private mapConnectionToResponse(connection: ConnectionRecord): ConnectionResponseDto {
     return {
       id: connection.id,
       serverId: connection.serverId,
@@ -271,20 +296,24 @@ export class McpRegistryController {
       clientSecret: null, // Never expose client secret
       authorizeUrl: connection.authorizeUrl,
       tokenUrl: connection.tokenUrl,
-      createdAt: connection.createdAt?.toISOString() || connection.createdAt,
-      updatedAt: connection.updatedAt?.toISOString() || connection.updatedAt,
+      createdAt: this.formatDate(connection.createdAt),
+      updatedAt: this.formatDate(connection.updatedAt),
     };
   }
 
-  private mapMappingToResponse(mapping: any): MappingResponseDto {
+  private mapMappingToResponse(mapping: MappingRecord): MappingResponseDto {
     return {
       id: mapping.id,
       scopeId: mapping.scopeId,
       serverId: mapping.serverId,
       connectionId: mapping.connectionId,
       downstreamScope: mapping.downstreamScope,
-      createdAt: mapping.createdAt?.toISOString() || mapping.createdAt,
-      updatedAt: mapping.updatedAt?.toISOString() || mapping.updatedAt,
+      createdAt: this.formatDate(mapping.createdAt),
+      updatedAt: this.formatDate(mapping.updatedAt),
     };
+  }
+
+  private formatDate(value: Date | string): string {
+    return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
   }
 }
