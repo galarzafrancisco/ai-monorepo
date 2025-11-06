@@ -350,7 +350,7 @@ export function McpServerDetail() {
         <div className="modal-overlay" onClick={() => setActiveForm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Create OAuth Connection</h2>
-            <form onSubmit={handleCreateConnection}>
+            <form onSubmit={handleCreateConnection} autoComplete="off">
               <div className="form-group">
                 <label htmlFor="friendlyName">Friendly Name</label>
                 <input
@@ -361,6 +361,7 @@ export function McpServerDetail() {
                     setConnectionForm({ ...connectionForm, friendlyName: e.target.value })
                   }
                   placeholder="e.g., GitHub OAuth"
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -373,6 +374,7 @@ export function McpServerDetail() {
                   onChange={(e) =>
                     setConnectionForm({ ...connectionForm, clientId: e.target.value })
                   }
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -385,6 +387,7 @@ export function McpServerDetail() {
                   onChange={(e) =>
                     setConnectionForm({ ...connectionForm, clientSecret: e.target.value })
                   }
+                  autoComplete="new-password"
                   required
                 />
               </div>
