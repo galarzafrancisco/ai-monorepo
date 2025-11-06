@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { TaskBoard } from './taskeroo/TaskBoard';
 import { WikirooHomePage } from './wikiroo/WikirooHomePage';
 import { WikirooPageView } from './wikiroo/WikirooPageView';
+import { McpRegistryDashboard } from './mcp-registry/McpRegistryDashboard';
+import { McpServerDetail } from './mcp-registry/McpServerDetail';
 import { usePageTitle } from './hooks/usePageTitle';
 
 export default function App() {
@@ -12,6 +14,8 @@ export default function App() {
         <Route path="/taskeroo" element={<TaskBoard />} />
         <Route path="/wikiroo" element={<WikirooHomePage />} />
         <Route path="/wikiroo/:pageId" element={<WikirooPageView />} />
+        <Route path="/mcp-registry" element={<McpRegistryDashboard />} />
+        <Route path="/mcp-registry/:serverId" element={<McpServerDetail />} />
       </Routes>
     </BrowserRouter>
   );
@@ -50,6 +54,19 @@ function Home() {
           }}
         >
           Go to Wikiroo
+        </Link>
+        <Link
+          to="/mcp-registry"
+          style={{
+            padding: '10px 20px',
+            background: '#9b59b6',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '8px',
+            display: 'inline-block',
+          }}
+        >
+          Go to MCP Registry
         </Link>
       </nav>
     </div>
