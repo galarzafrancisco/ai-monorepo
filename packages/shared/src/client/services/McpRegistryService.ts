@@ -11,6 +11,7 @@ import type { MappingResponseDto } from '../models/MappingResponseDto';
 import type { ScopeResponseDto } from '../models/ScopeResponseDto';
 import type { ServerListResponseDto } from '../models/ServerListResponseDto';
 import type { ServerResponseDto } from '../models/ServerResponseDto';
+import type { UpdateConnectionDto } from '../models/UpdateConnectionDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -249,6 +250,31 @@ export class McpRegistryService {
             },
             errors: {
                 404: `Connection not found`,
+            },
+        });
+    }
+    /**
+     * Update connection details
+     * @param connectionId Connection UUID
+     * @param requestBody
+     * @returns ConnectionResponseDto Connection updated successfully
+     * @throws ApiError
+     */
+    public static mcpRegistryControllerUpdateConnection(
+        connectionId: string,
+        requestBody: UpdateConnectionDto,
+    ): CancelablePromise<ConnectionResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/mcp/connections/{connectionId}',
+            path: {
+                'connectionId': connectionId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                404: `Connection not found`,
+                409: `Connection name conflict`,
             },
         });
     }

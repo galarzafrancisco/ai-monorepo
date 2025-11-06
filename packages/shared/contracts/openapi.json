@@ -996,6 +996,52 @@
           "MCP Registry"
         ]
       },
+      "patch": {
+        "operationId": "McpRegistryController_updateConnection",
+        "parameters": [
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "description": "Connection UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connection updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connection not found"
+          },
+          "409": {
+            "description": "Connection name conflict"
+          }
+        },
+        "summary": "Update connection details",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
       "delete": {
         "operationId": "McpRegistryController_deleteConnection",
         "parameters": [
@@ -1974,6 +2020,36 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "UpdateConnectionDto": {
+        "type": "object",
+        "properties": {
+          "friendlyName": {
+            "type": "string",
+            "description": "Friendly name to identify this OAuth connection",
+            "example": "GitHub OAuth Connection"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client ID for the downstream provider",
+            "example": "github_client_abc123"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "OAuth client secret for the downstream provider",
+            "example": "secret_xyz789"
+          },
+          "authorizeUrl": {
+            "type": "string",
+            "description": "OAuth authorization endpoint URL",
+            "example": "https://github.com/login/oauth/authorize"
+          },
+          "tokenUrl": {
+            "type": "string",
+            "description": "OAuth token endpoint URL",
+            "example": "https://github.com/login/oauth/access_token"
+          }
+        }
       },
       "CreateMappingDto": {
         "type": "object",

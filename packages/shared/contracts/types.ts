@@ -309,7 +309,8 @@ export interface paths {
         delete: operations["McpRegistryController_deleteConnection"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update connection details */
+        patch: operations["McpRegistryController_updateConnection"];
         trace?: never;
     };
     "/api/v1/mcp/servers/{serverId}/mappings": {
@@ -921,6 +922,33 @@ export interface components {
              * @example 2025-11-05T08:00:00.000Z
              */
             updatedAt: string;
+        };
+        UpdateConnectionDto: {
+            /**
+             * @description Friendly name to identify this OAuth connection
+             * @example GitHub OAuth Connection
+             */
+            friendlyName?: string;
+            /**
+             * @description OAuth client ID for the downstream provider
+             * @example github_client_abc123
+             */
+            clientId?: string;
+            /**
+             * @description OAuth client secret for the downstream provider
+             * @example secret_xyz789
+             */
+            clientSecret?: string;
+            /**
+             * @description OAuth authorization endpoint URL
+             * @example https://github.com/login/oauth/authorize
+             */
+            authorizeUrl?: string;
+            /**
+             * @description OAuth token endpoint URL
+             * @example https://github.com/login/oauth/access_token
+             */
+            tokenUrl?: string;
         };
         CreateMappingDto: {
             /**
@@ -1836,6 +1864,47 @@ export interface operations {
                 content?: never;
             };
             /** @description Connection has mappings */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_updateConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Connection UUID */
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateConnectionDto"];
+            };
+        };
+        responses: {
+            /** @description Connection updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionResponseDto"];
+                };
+            };
+            /** @description Connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection name conflict */
             409: {
                 headers: {
                     [name: string]: unknown;

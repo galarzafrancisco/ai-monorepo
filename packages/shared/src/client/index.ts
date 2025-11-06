@@ -29,6 +29,7 @@ export type { ServerResponseDto } from './models/ServerResponseDto';
 export { TaskChangeStatusDto } from './models/TaskChangeStatusDto';
 export type { TaskListResponseDto } from './models/TaskListResponseDto';
 export { TaskResponseDto } from './models/TaskResponseDto';
+export type { UpdateConnectionDto } from './models/UpdateConnectionDto';
 export type { UpdateTaskDto } from './models/UpdateTaskDto';
 
 export { AppService } from './services/AppService';
