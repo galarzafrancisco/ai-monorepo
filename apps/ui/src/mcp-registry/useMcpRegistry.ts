@@ -132,7 +132,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerCreateScopes(serverId, { scopeId, description });
+      await McpRegistryService.mcpRegistryControllerCreateScopes(serverId, [{ scopeId, description }]);
       if (selectedServer?.id === serverId) {
         await loadServerDetails(serverId);
       }
