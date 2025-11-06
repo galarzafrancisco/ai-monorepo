@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMcpRegistry } from './useMcpRegistry';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
 
 type FormType = 'scope' | 'connection' | 'mapping' | null;
+
+interface ConfirmState {
+  message: string;
+  onConfirm: () => void;
+}
 
 export function McpServerDetail() {
   const { serverId } = useParams<{ serverId: string }>();
@@ -26,6 +32,7 @@ export function McpServerDetail() {
   } = useMcpRegistry();
 
   const [activeForm, setActiveForm] = useState<FormType>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [scopeForm, setScopeForm] = useState({ scopeId: '', description: '' });
   const [connectionForm, setConnectionForm] = useState({
     clientId: '',
@@ -126,30 +133,49 @@ export function McpServerDetail() {
   };
 
   const handleDeleteScope = async (scopeId: string) => {
-    if (!serverId || !confirm('Are you sure you want to delete this scope?')) return;
-    try {
-      await deleteScope(serverId, scopeId);
-    } catch (err) {
-      console.error('Failed to delete scope', err);
-    }
+    if (!serverId) return;
+    setConfirmState({
+      message: 'Are you sure you want to delete this scope?',
+      onConfirm: async () => {
+        try {
+          await deleteScope(serverId, scopeId);
+          setConfirmState(null);
+        } catch (err) {
+          console.error('Failed to delete scope', err);
+          setConfirmState(null);
+        }
+      },
+    });
   };
 
   const handleDeleteConnection = async (connectionId: string) => {
-    if (!confirm('Are you sure you want to delete this connection?')) return;
-    try {
-      await deleteConnection(connectionId);
-    } catch (err) {
-      console.error('Failed to delete connection', err);
-    }
+    setConfirmState({
+      message: 'Are you sure you want to delete this connection?',
+      onConfirm: async () => {
+        try {
+          await deleteConnection(connectionId);
+          setConfirmState(null);
+        } catch (err) {
+          console.error('Failed to delete connection', err);
+          setConfirmState(null);
+        }
+      },
+    });
   };
 
   const handleDeleteMapping = async (mappingId: string) => {
-    if (!confirm('Are you sure you want to delete this mapping?')) return;
-    try {
-      await deleteMapping(mappingId);
-    } catch (err) {
-      console.error('Failed to delete mapping', err);
-    }
+    setConfirmState({
+      message: 'Are you sure you want to delete this mapping?',
+      onConfirm: async () => {
+        try {
+          await deleteMapping(mappingId);
+          setConfirmState(null);
+        } catch (err) {
+          console.error('Failed to delete mapping', err);
+          setConfirmState(null);
+        }
+      },
+    });
   };
 
   if (isLoading && !selectedServer) {
@@ -485,6 +511,14 @@ export function McpServerDetail() {
             </form>
           </div>
         </div>
+      )}
+
+      {confirmState && (
+        <ConfirmDialog
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
       )}
     </div>
   );
