@@ -160,8 +160,7 @@
 }
 
 .wikiroo-page-view {
-  max-width: 900px;
-  margin: 0 auto;
+  /* Removed max-width constraint to allow full-width display */
 }
 
 .wikiroo-meta {
