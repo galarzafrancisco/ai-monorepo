@@ -1,4 +1,4 @@
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -26,9 +26,7 @@ async function bootstrap() {
   app.useGlobalFilters(new ProblemDetailsFilter());
 
   // Set global prefix for API routes
-  app.setGlobalPrefix('api/v1', {
-    exclude: [{ path: '/.well-known/(.*)', method: RequestMethod.ALL }],
-  });
+  app.setGlobalPrefix('api/v1');
 
   const config = new DocumentBuilder()
     .setTitle('AI Monorepo API')
@@ -70,8 +68,7 @@ async function bootstrap() {
     });
   }
 
-  const PORT = process.env.BACKEND_PORT || 3000;
-  await app.listen(PORT);
-  console.log(`Application is running on: http://localhost:${PORT}`);
+  await app.listen(process.env.PORT ?? 3000);
+  console.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
 }
 bootstrap();
