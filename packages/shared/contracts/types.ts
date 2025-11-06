@@ -204,6 +204,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/.well-known/oauth-authorization-server/{mcpServerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Expose OAuth 2.0 Authorization Server metadata for a registered MCP server
+         * @description Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with an MCP server. Accepts either the server UUID or the providedId.
+         */
+        get: operations["AuthorizationServerMetadataController_getAuthorizationServerMetadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/mcp/servers": {
         parameters: {
             query?: never;
@@ -735,6 +755,60 @@ export interface components {
              * @example 2025-11-05T08:00:00.000Z
              */
             client_id_issued_at: string;
+        };
+        AuthorizationServerMetadataDto: {
+            /**
+             * @description Issuer identifier for the MCP authorization server
+             * @example https://api.example.com/v1/mcp-server
+             */
+            issuer: string;
+            /**
+             * @description Authorization endpoint for initiating OAuth 2.0 authorization code flows
+             * @example https://api.example.com/v1/authorize/mcp-server
+             */
+            authorization_endpoint: string;
+            /**
+             * @description Dynamic client registration endpoint for MCP integrations
+             * @example https://api.example.com/v1/register/mcp-server
+             */
+            registration_endpoint: string;
+            /**
+             * @description Scopes supported by this MCP authorization server
+             * @example [
+             *       "mcp:tool.read",
+             *       "mcp:tool.write"
+             *     ]
+             */
+            scopes_supported: string[];
+            /**
+             * @description OAuth 2.0 response types supported by this authorization server
+             * @example [
+             *       "code"
+             *     ]
+             */
+            response_types_supported: string[];
+            /**
+             * @description OAuth 2.0 grant types supported by this authorization server
+             * @example [
+             *       "authorization_code",
+             *       "refresh_token"
+             *     ]
+             */
+            grant_types_supported: ("authorization_code" | "refresh_token")[];
+            /**
+             * @description Client authentication methods supported by the token endpoint
+             * @example [
+             *       "client_secret_post"
+             *     ]
+             */
+            token_endpoint_auth_methods_supported: string[];
+            /**
+             * @description PKCE code challenge methods supported by this authorization server
+             * @example [
+             *       "S256"
+             *     ]
+             */
+            code_challenge_methods_supported: string[];
         };
         CreateServerDto: {
             /**
@@ -1444,6 +1518,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
+                };
+            };
+        };
+    };
+    AuthorizationServerMetadataController_getAuthorizationServerMetadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description MCP server UUID or providedId */
+                mcpServerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorization server metadata retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorizationServerMetadataDto"];
                 };
             };
         };
