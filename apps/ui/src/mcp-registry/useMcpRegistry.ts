@@ -289,6 +289,7 @@ export const useMcpRegistry = () => {
     createServer,
     createScope,
     createConnection,
+    updateConnection,
     createMapping,
     deleteScope,
     deleteConnection,

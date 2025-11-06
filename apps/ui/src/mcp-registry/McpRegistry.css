@@ -198,6 +198,12 @@
   flex: 1;
 }
 
+.item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
 .item-content h3 {
   margin: 0 0 6px 0;
   color: #2c3e50;
