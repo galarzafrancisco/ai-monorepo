@@ -495,10 +495,25 @@ export interface components {
         };
         UpdateTaskDto: {
             /**
-             * @description Updated description of the task
-             * @example Add JWT-based authentication with refresh tokens
+             * @description Name of the task
+             * @example Implement user authentication
              */
-            description: string;
+            name?: string;
+            /**
+             * @description Detailed description of the task
+             * @example Add JWT-based authentication to the API
+             */
+            description?: string;
+            /**
+             * @description Name of the assignee (for AI agents)
+             * @example AgentAlpha
+             */
+            assignee?: string;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string;
         };
         AssignTaskDto: {
             /**
@@ -548,7 +563,7 @@ export interface components {
              */
             content: string;
         };
-        TaskChangeStatusDto: {
+        ChangeTaskStatusDto: {
             /**
              * @description New status for the task
              * @example IN_PROGRESS
@@ -1388,7 +1403,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TaskChangeStatusDto"];
+                "application/json": components["schemas"]["ChangeTaskStatusDto"];
             };
         };
         responses: {

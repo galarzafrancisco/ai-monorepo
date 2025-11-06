@@ -350,7 +350,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskChangeStatusDto"
+                "$ref": "#/components/schemas/ChangeTaskStatusDto"
               }
             }
           }
@@ -1419,15 +1419,27 @@
       "UpdateTaskDto": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the task",
+            "example": "Implement user authentication"
+          },
           "description": {
             "type": "string",
-            "description": "Updated description of the task",
-            "example": "Add JWT-based authentication with refresh tokens"
+            "description": "Detailed description of the task",
+            "example": "Add JWT-based authentication to the API"
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Name of the assignee (for AI agents)",
+            "example": "AgentAlpha"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc"
           }
-        },
-        "required": [
-          "description"
-        ]
+        }
       },
       "AssignTaskDto": {
         "type": "object",
@@ -1502,7 +1514,7 @@
           "content"
         ]
       },
-      "TaskChangeStatusDto": {
+      "ChangeTaskStatusDto": {
         "type": "object",
         "properties": {
           "status": {

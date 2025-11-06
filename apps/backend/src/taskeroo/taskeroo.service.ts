@@ -95,7 +95,12 @@ export class TaskerooService {
       throw new TaskNotFoundError(taskId);
     }
 
-    task.description = input.description;
+    // Apply partial updates
+    if (input.name !== undefined) task.name = input.name;
+    if (input.description !== undefined) task.description = input.description;
+    if (input.assignee !== undefined) task.assignee = input.assignee ?? null;
+    if (input.sessionId !== undefined) task.sessionId = input.sessionId ?? null;
+
     const updatedTask = await this.taskRepository.save(task);
 
     this.logger.log({

@@ -9,6 +9,7 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';
+export { ChangeTaskStatusDto } from './models/ChangeTaskStatusDto';
 export { ClientRegistrationResponseDto } from './models/ClientRegistrationResponseDto';
 export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { ConnectionResponseDto } from './models/ConnectionResponseDto';
@@ -31,7 +32,6 @@ export { RegisterClientDto } from './models/RegisterClientDto';
 export type { ScopeResponseDto } from './models/ScopeResponseDto';
 export type { ServerListResponseDto } from './models/ServerListResponseDto';
 export type { ServerResponseDto } from './models/ServerResponseDto';
-export { TaskChangeStatusDto } from './models/TaskChangeStatusDto';
 export type { TaskListResponseDto } from './models/TaskListResponseDto';
 export { TaskResponseDto } from './models/TaskResponseDto';
 export type { UpdateConnectionDto } from './models/UpdateConnectionDto';
