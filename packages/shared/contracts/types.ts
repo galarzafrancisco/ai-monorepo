@@ -804,6 +804,18 @@ export interface components {
              */
             limit: number;
         };
+        CreateScopeDto: {
+            /**
+             * @description Unique scope identifier (e.g., tool:read, tool:write)
+             * @example tool:read
+             */
+            scopeId: string;
+            /**
+             * @description Description of what this scope grants access to
+             * @example Read access to MCP tools
+             */
+            description: string;
+        };
         ScopeResponseDto: {
             /**
              * @description System-generated UUID for the scope
@@ -1595,7 +1607,12 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        /** @description Scope or array of scopes to create */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateScopeDto"][];
+            };
+        };
         responses: {
             /** @description Scope(s) created successfully */
             201: {

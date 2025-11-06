@@ -719,6 +719,20 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "description": "Scope or array of scopes to create",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CreateScopeDto"
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Scope(s) created successfully",
@@ -1799,6 +1813,25 @@
           "total",
           "page",
           "limit"
+        ]
+      },
+      "CreateScopeDto": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "type": "string",
+            "description": "Unique scope identifier (e.g., tool:read, tool:write)",
+            "example": "tool:read"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this scope grants access to",
+            "example": "Read access to MCP tools"
+          }
+        },
+        "required": [
+          "scopeId",
+          "description"
         ]
       },
       "ScopeResponseDto": {

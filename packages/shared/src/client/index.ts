@@ -15,6 +15,7 @@ export type { CreateCommentDto } from './models/CreateCommentDto';
 export type { CreateConnectionDto } from './models/CreateConnectionDto';
 export type { CreateMappingDto } from './models/CreateMappingDto';
 export type { CreatePageDto } from './models/CreatePageDto';
+export type { CreateScopeDto } from './models/CreateScopeDto';
 export type { CreateServerDto } from './models/CreateServerDto';
 export type { CreateTaskDto } from './models/CreateTaskDto';
 export type { MappingResponseDto } from './models/MappingResponseDto';

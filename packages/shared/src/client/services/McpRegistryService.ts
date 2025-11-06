@@ -5,6 +5,7 @@
 import type { ConnectionResponseDto } from '../models/ConnectionResponseDto';
 import type { CreateConnectionDto } from '../models/CreateConnectionDto';
 import type { CreateMappingDto } from '../models/CreateMappingDto';
+import type { CreateScopeDto } from '../models/CreateScopeDto';
 import type { CreateServerDto } from '../models/CreateServerDto';
 import type { MappingResponseDto } from '../models/MappingResponseDto';
 import type { ScopeResponseDto } from '../models/ScopeResponseDto';
@@ -97,11 +98,13 @@ export class McpRegistryService {
     /**
      * Create MCP scope(s) for a server
      * @param serverId Server UUID
+     * @param requestBody Scope or array of scopes to create
      * @returns ScopeResponseDto Scope(s) created successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerCreateScopes(
         serverId: string,
+        requestBody: Array<CreateScopeDto>,
     ): CancelablePromise<Array<ScopeResponseDto>> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -109,6 +112,8 @@ export class McpRegistryService {
             path: {
                 'serverId': serverId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 404: `Server not found`,
                 409: `Scope already exists`,
