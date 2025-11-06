@@ -5,8 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TaskerooModule } from './taskeroo/taskeroo.module';
 import { WikirooModule } from './wikiroo/wikiroo.module';
-import { AuthorizationServerModule } from './authorization-server/authorization-server.module';
 import { McpRegistryModule } from './mcp-registry/mcp-registry.module';
+import { AuthorizationServerModule } from './authorization-server/authorization-server.module';
+import { DiscoveryModule } from './discovery/discovery.module';
 
 @Module({
   imports: [
@@ -19,8 +20,9 @@ import { McpRegistryModule } from './mcp-registry/mcp-registry.module';
     EventEmitterModule.forRoot(),
     TaskerooModule,
     WikirooModule,
-    AuthorizationServerModule,
     McpRegistryModule,
+    AuthorizationServerModule,
+    DiscoveryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
