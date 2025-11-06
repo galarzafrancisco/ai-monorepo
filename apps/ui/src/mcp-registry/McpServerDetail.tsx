@@ -323,44 +323,46 @@ export function McpServerDetail() {
           </div>
         </div>
 
-        {/* Mappings Section */}
-        <div className="detail-section">
-          <div className="section-header">
-            <h2>Scope Mappings</h2>
-            <button
-              onClick={() => setActiveForm('mapping')}
-              className="btn-secondary"
-              disabled={scopes.length === 0 || connections.length === 0}
-            >
-              + Add Mapping
-            </button>
-          </div>
-          <div className="items-list">
-            {mappings.length === 0 ? (
-              <p className="empty-text">No mappings configured</p>
-            ) : (
-              mappings.map((mapping) => {
-                const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
-                const connection = connections.find((c) => c.id === mapping.connectionId);
-                return (
-                  <div key={mapping.id} className="item-card">
-                    <div className="item-content">
-                      <h3>{scope?.scopeId || mapping.scopeId}</h3>
-                      <p>→ {mapping.downstreamScope}</p>
-                      <p className="small-text">via {connection?.friendlyName || 'Unknown'}</p>
+        {/* Mappings Section - Only show if there are connections */}
+        {connections.length > 0 && (
+          <div className="detail-section">
+            <div className="section-header">
+              <h2>Scope Mappings</h2>
+              <button
+                onClick={() => setActiveForm('mapping')}
+                className="btn-secondary"
+                disabled={scopes.length === 0}
+              >
+                + Add Mapping
+              </button>
+            </div>
+            <div className="items-list">
+              {mappings.length === 0 ? (
+                <p className="empty-text">No mappings configured</p>
+              ) : (
+                mappings.map((mapping) => {
+                  const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
+                  const connection = connections.find((c) => c.id === mapping.connectionId);
+                  return (
+                    <div key={mapping.id} className="item-card">
+                      <div className="item-content">
+                        <h3>{scope?.scopeId || mapping.scopeId}</h3>
+                        <p>→ {mapping.downstreamScope}</p>
+                        <p className="small-text">via {connection?.friendlyName || 'Unknown'}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteMapping(mapping.id)}
+                        className="btn-delete"
+                      >
+                        Delete
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleDeleteMapping(mapping.id)}
-                      className="btn-delete"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Create Scope Modal */}
