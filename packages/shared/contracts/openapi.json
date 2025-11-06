@@ -350,7 +350,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskChangeStatusDto"
+                "$ref": "#/components/schemas/ChangeTaskStatusDto"
               }
             }
           }
@@ -722,8 +722,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Server deleted successfully"
+          "200": {
+            "description": "Server deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteServerResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Server not found"
@@ -754,7 +761,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Scope or array of scopes to create",
+          "description": "Array of scopes to create",
           "content": {
             "application/json": {
               "schema": {
@@ -895,8 +902,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Scope deleted successfully"
+          "200": {
+            "description": "Scope deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteScopeResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Scope not found"
@@ -1029,6 +1043,52 @@
           "MCP Registry"
         ]
       },
+      "patch": {
+        "operationId": "McpRegistryController_updateConnection",
+        "parameters": [
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "description": "Connection UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connection updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connection not found"
+          },
+          "409": {
+            "description": "Connection name conflict"
+          }
+        },
+        "summary": "Update connection details",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
       "delete": {
         "operationId": "McpRegistryController_deleteConnection",
         "parameters": [
@@ -1043,8 +1103,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Connection deleted successfully"
+          "200": {
+            "description": "Connection deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteConnectionResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Connection not found"
@@ -1169,8 +1236,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Mapping deleted successfully"
+          "200": {
+            "description": "Mapping deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteMappingResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Mapping not found"
@@ -1345,15 +1419,27 @@
       "UpdateTaskDto": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the task",
+            "example": "Implement user authentication"
+          },
           "description": {
             "type": "string",
-            "description": "Updated description of the task",
-            "example": "Add JWT-based authentication with refresh tokens"
+            "description": "Detailed description of the task",
+            "example": "Add JWT-based authentication to the API"
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Name of the assignee (for AI agents)",
+            "example": "AgentAlpha"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc"
           }
-        },
-        "required": [
-          "description"
-        ]
+        }
       },
       "AssignTaskDto": {
         "type": "object",
@@ -1428,7 +1514,7 @@
           "content"
         ]
       },
-      "TaskChangeStatusDto": {
+      "ChangeTaskStatusDto": {
         "type": "object",
         "properties": {
           "status": {
@@ -1934,6 +2020,19 @@
           "limit"
         ]
       },
+      "DeleteServerResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the server was deleted",
+            "example": "Server deleted successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
       "CreateScopeDto": {
         "type": "object",
         "properties": {
@@ -1994,6 +2093,19 @@
           "serverId",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "DeleteScopeResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the scope was deleted",
+            "example": "Scope deleted successfully"
+          }
+        },
+        "required": [
+          "message"
         ]
       },
       "CreateConnectionDto": {
@@ -2094,6 +2206,49 @@
           "updatedAt"
         ]
       },
+      "UpdateConnectionDto": {
+        "type": "object",
+        "properties": {
+          "friendlyName": {
+            "type": "string",
+            "description": "Friendly name to identify this OAuth connection",
+            "example": "GitHub OAuth Connection"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client ID for the downstream provider",
+            "example": "github_client_abc123"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "OAuth client secret for the downstream provider",
+            "example": "secret_xyz789"
+          },
+          "authorizeUrl": {
+            "type": "string",
+            "description": "OAuth authorization endpoint URL",
+            "example": "https://github.com/login/oauth/authorize"
+          },
+          "tokenUrl": {
+            "type": "string",
+            "description": "OAuth token endpoint URL",
+            "example": "https://github.com/login/oauth/access_token"
+          }
+        }
+      },
+      "DeleteConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the connection was deleted",
+            "example": "Connection deleted successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
       "CreateMappingDto": {
         "type": "object",
         "properties": {
@@ -2166,6 +2321,19 @@
           "downstreamScope",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "DeleteMappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the mapping was deleted",
+            "example": "Mapping deleted successfully"
+          }
+        },
+        "required": [
+          "message"
         ]
       }
     }

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { HomeLink } from '../components/HomeLink';
 import { useMcpRegistry } from './useMcpRegistry';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
 
-type FormType = 'scope' | 'connection' | 'mapping' | null;
+type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | null;
 
 interface ConfirmState {
   message: string;
@@ -25,6 +26,7 @@ export function McpServerDetail() {
     loadServerDetails,
     createScope,
     createConnection,
+    updateConnection,
     createMapping,
     deleteScope,
     deleteConnection,
@@ -33,6 +35,7 @@ export function McpServerDetail() {
 
   const [activeForm, setActiveForm] = useState<FormType>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
   const [scopeForm, setScopeForm] = useState({ scopeId: '', description: '' });
   const [connectionForm, setConnectionForm] = useState({
     clientId: '',
@@ -81,6 +84,55 @@ export function McpServerDetail() {
       });
     } catch (err) {
       console.error('Failed to create connection', err);
+    }
+  };
+
+  const handleEditConnection = (connectionId: string) => {
+    const connection = connections.find((c) => c.id === connectionId);
+    if (connection) {
+      setEditingConnectionId(connectionId);
+      setConnectionForm({
+        clientId: connection.clientId,
+        clientSecret: '', // Don't populate password for security
+        authorizeUrl: connection.authorizeUrl,
+        tokenUrl: connection.tokenUrl,
+        friendlyName: connection.friendlyName,
+      });
+      setActiveForm('edit-connection');
+    }
+  };
+
+  const handleUpdateConnection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingConnectionId) return;
+    try {
+      // Only send fields that have values (client secret is optional on update)
+      const updateData: {
+        clientId?: string;
+        clientSecret?: string;
+        authorizeUrl?: string;
+        tokenUrl?: string;
+        friendlyName?: string;
+      } = {};
+
+      if (connectionForm.friendlyName) updateData.friendlyName = connectionForm.friendlyName;
+      if (connectionForm.clientId) updateData.clientId = connectionForm.clientId;
+      if (connectionForm.clientSecret) updateData.clientSecret = connectionForm.clientSecret;
+      if (connectionForm.authorizeUrl) updateData.authorizeUrl = connectionForm.authorizeUrl;
+      if (connectionForm.tokenUrl) updateData.tokenUrl = connectionForm.tokenUrl;
+
+      await updateConnection(editingConnectionId, updateData);
+      setActiveForm(null);
+      setEditingConnectionId(null);
+      setConnectionForm({
+        clientId: '',
+        clientSecret: '',
+        authorizeUrl: '',
+        tokenUrl: '',
+        friendlyName: '',
+      });
+    } catch (err) {
+      console.error('Failed to update connection', err);
     }
   };
 
@@ -197,6 +249,9 @@ export function McpServerDetail() {
           <p className="subtitle">{selectedServer.description}</p>
           <p className="server-id">ID: {selectedServer.providedId}</p>
         </div>
+        <div className="header-actions">
+          <HomeLink />
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -252,56 +307,66 @@ export function McpServerDetail() {
                     <p className="small-text">Authorize: {connection.authorizeUrl}</p>
                     <p className="small-text">Token: {connection.tokenUrl}</p>
                   </div>
-                  <button
-                    onClick={() => handleDeleteConnection(connection.id)}
-                    className="btn-delete"
-                  >
-                    Delete
-                  </button>
+                  <div className="item-actions">
+                    <button
+                      onClick={() => handleEditConnection(connection.id)}
+                      className="btn-secondary"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteConnection(connection.id)}
+                      className="btn-delete"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* Mappings Section */}
-        <div className="detail-section">
-          <div className="section-header">
-            <h2>Scope Mappings</h2>
-            <button
-              onClick={() => setActiveForm('mapping')}
-              className="btn-secondary"
-              disabled={scopes.length === 0 || connections.length === 0}
-            >
-              + Add Mapping
-            </button>
-          </div>
-          <div className="items-list">
-            {mappings.length === 0 ? (
-              <p className="empty-text">No mappings configured</p>
-            ) : (
-              mappings.map((mapping) => {
-                const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
-                const connection = connections.find((c) => c.id === mapping.connectionId);
-                return (
-                  <div key={mapping.id} className="item-card">
-                    <div className="item-content">
-                      <h3>{scope?.scopeId || mapping.scopeId}</h3>
-                      <p>→ {mapping.downstreamScope}</p>
-                      <p className="small-text">via {connection?.friendlyName || 'Unknown'}</p>
+        {/* Mappings Section - Only show if there are connections */}
+        {connections.length > 0 && (
+          <div className="detail-section">
+            <div className="section-header">
+              <h2>Scope Mappings</h2>
+              <button
+                onClick={() => setActiveForm('mapping')}
+                className="btn-secondary"
+                disabled={scopes.length === 0}
+              >
+                + Add Mapping
+              </button>
+            </div>
+            <div className="items-list">
+              {mappings.length === 0 ? (
+                <p className="empty-text">No mappings configured</p>
+              ) : (
+                mappings.map((mapping) => {
+                  const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
+                  const connection = connections.find((c) => c.id === mapping.connectionId);
+                  return (
+                    <div key={mapping.id} className="item-card">
+                      <div className="item-content">
+                        <h3>{scope?.scopeId || mapping.scopeId}</h3>
+                        <p>→ {mapping.downstreamScope}</p>
+                        <p className="small-text">via {connection?.friendlyName || 'Unknown'}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteMapping(mapping.id)}
+                        className="btn-delete"
+                      >
+                        Delete
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleDeleteMapping(mapping.id)}
-                      className="btn-delete"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Create Scope Modal */}
@@ -423,6 +488,105 @@ export function McpServerDetail() {
                 </button>
                 <button type="submit" className="btn-primary">
                   Create Connection
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Connection Modal */}
+      {activeForm === 'edit-connection' && (
+        <div className="modal-overlay" onClick={() => setActiveForm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit OAuth Connection</h2>
+            <form onSubmit={handleUpdateConnection} autoComplete="off">
+              <div className="form-group">
+                <label htmlFor="editFriendlyName">Friendly Name</label>
+                <input
+                  type="text"
+                  id="editFriendlyName"
+                  value={connectionForm.friendlyName}
+                  onChange={(e) =>
+                    setConnectionForm({ ...connectionForm, friendlyName: e.target.value })
+                  }
+                  placeholder="e.g., GitHub OAuth"
+                  autoComplete="off"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editClientId">Client ID</label>
+                <input
+                  type="text"
+                  id="editClientId"
+                  value={connectionForm.clientId}
+                  onChange={(e) =>
+                    setConnectionForm({ ...connectionForm, clientId: e.target.value })
+                  }
+                  autoComplete="off"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editClientSecret">Client Secret (leave blank to keep current)</label>
+                <input
+                  type="password"
+                  id="editClientSecret"
+                  value={connectionForm.clientSecret}
+                  onChange={(e) =>
+                    setConnectionForm({ ...connectionForm, clientSecret: e.target.value })
+                  }
+                  placeholder="Enter new secret or leave blank"
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editAuthorizeUrl">Authorize URL</label>
+                <input
+                  type="url"
+                  id="editAuthorizeUrl"
+                  value={connectionForm.authorizeUrl}
+                  onChange={(e) =>
+                    setConnectionForm({ ...connectionForm, authorizeUrl: e.target.value })
+                  }
+                  placeholder="https://..."
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editTokenUrl">Token URL</label>
+                <input
+                  type="url"
+                  id="editTokenUrl"
+                  value={connectionForm.tokenUrl}
+                  onChange={(e) =>
+                    setConnectionForm({ ...connectionForm, tokenUrl: e.target.value })
+                  }
+                  placeholder="https://..."
+                  required
+                />
+              </div>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveForm(null);
+                    setEditingConnectionId(null);
+                    setConnectionForm({
+                      clientId: '',
+                      clientSecret: '',
+                      authorizeUrl: '',
+                      tokenUrl: '',
+                      friendlyName: '',
+                    });
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Update Connection
                 </button>
               </div>
             </form>

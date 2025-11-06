@@ -13,9 +13,7 @@ export type CreateTaskInput = {
   sessionId?: string;
 };
 
-export type UpdateTaskInput = {
-  description: string;
-};
+export type UpdateTaskInput = Partial<CreateTaskInput>;
 
 export type AssignTaskInput = {
   assignee?: string | null;

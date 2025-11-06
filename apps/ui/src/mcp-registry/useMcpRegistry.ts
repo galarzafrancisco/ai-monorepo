@@ -117,8 +117,9 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerCreateServer(data);
+      const createdServer = await McpRegistryService.mcpRegistryControllerCreateServer(data);
       await loadServers();
+      return createdServer;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create server');
       throw err;
@@ -164,6 +165,32 @@ export const useMcpRegistry = () => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create connection');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update connection
+  const updateConnection = async (
+    connectionId: string,
+    data: {
+      clientId?: string;
+      clientSecret?: string;
+      authorizeUrl?: string;
+      tokenUrl?: string;
+      friendlyName?: string;
+    }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await McpRegistryService.mcpRegistryControllerUpdateConnection(connectionId, data);
+      if (selectedServer) {
+        await loadServerDetails(selectedServer.id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update connection');
       throw err;
     } finally {
       setIsLoading(false);
@@ -263,6 +290,7 @@ export const useMcpRegistry = () => {
     createServer,
     createScope,
     createConnection,
+    updateConnection,
     createMapping,
     deleteScope,
     deleteConnection,

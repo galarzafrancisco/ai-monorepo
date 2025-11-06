@@ -24,6 +24,35 @@ npm install
 npm run dev
 ```
 
+#### Running Multiple Stacks in Parallel
+
+To run multiple development stacks simultaneously (useful for testing or comparing branches), configure different ports using environment variables:
+
+**Stack 1 (default ports):**
+```bash
+npm run dev
+# Backend: http://localhost:3000
+# Frontend: http://localhost:5173
+```
+
+**Stack 2 (custom ports):**
+```bash
+PORT=3001 VITE_PORT=5174 npm run dev
+# Backend: http://localhost:3001
+# Frontend: http://localhost:5174
+```
+
+You can also create `.env` files for each stack:
+```bash
+# .env.stack1
+PORT=3000
+VITE_PORT=5173
+
+# .env.stack2
+PORT=3001
+VITE_PORT=5174
+```
+
 ### Production Mode (Docker)
 ```bash
 # Run on default port (3000)

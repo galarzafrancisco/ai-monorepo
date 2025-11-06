@@ -22,9 +22,9 @@ import {
 import { TaskerooService } from './taskeroo.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { AssignTaskDto } from './dto/task-assign.dto';
+import { AssignTaskDto } from './dto/assign-task.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
-import { TaskChangeStatusDto } from './dto/task-change-status.dto';
+import { ChangeTaskStatusDto } from './dto/change-task-status.dto';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
 import { TaskParamsDto } from './dto/task-params.dto';
@@ -67,7 +67,10 @@ export class TaskerooController {
     @Body() dto: UpdateTaskDto,
   ): Promise<TaskResponseDto> {
     const result = await this.taskerooService.updateTask(params.id, {
+      name: dto.name,
       description: dto.description,
+      assignee: dto.assignee,
+      sessionId: dto.sessionId,
     });
     return this.mapResultToResponse(result);
   }
@@ -165,7 +168,7 @@ export class TaskerooController {
   })
   async changeStatus(
     @Param() params: TaskParamsDto,
-    @Body() dto: TaskChangeStatusDto,
+    @Body() dto: ChangeTaskStatusDto,
   ): Promise<TaskResponseDto> {
     const result = await this.taskerooService.changeStatus(params.id, {
       status: dto.status,

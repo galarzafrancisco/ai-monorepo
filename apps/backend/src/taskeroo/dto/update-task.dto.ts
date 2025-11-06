@@ -1,12 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { PartialType } from '@nestjs/swagger';
+import { CreateTaskDto } from './create-task.dto';
 
-export class UpdateTaskDto {
-  @ApiProperty({
-    description: 'Updated description of the task',
-    example: 'Add JWT-based authentication with refresh tokens',
-  })
-  @IsString()
-  @IsNotEmpty()
-  description!: string;
-}
+export class UpdateTaskDto extends PartialType(CreateTaskDto) {}

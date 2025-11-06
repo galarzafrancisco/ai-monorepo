@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { HomeLink } from '../components/HomeLink';
 import { useMcpRegistry } from './useMcpRegistry';
 import { usePageTitle } from '../hooks/usePageTitle';
 import './McpRegistry.css';
@@ -19,9 +20,13 @@ export function McpRegistryDashboard() {
   const handleCreateServer = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createServer(formData);
+      const createdServer = await createServer(formData);
       setShowCreateForm(false);
       setFormData({ providedId: '', name: '', description: '' });
+      // Navigate to the newly created server's detail page
+      if (createdServer) {
+        navigate(`/mcp-registry/${createdServer.id}`);
+      }
     } catch (err) {
       // Error is handled by the hook
       console.error('Failed to create server', err);
@@ -36,6 +41,7 @@ export function McpRegistryDashboard() {
           <p className="subtitle">Manage Model Context Protocol servers and their configurations</p>
         </div>
         <div className="header-actions">
+          <HomeLink />
           <button onClick={() => setShowCreateForm(true)} className="btn-primary">
             + Add Server
           </button>

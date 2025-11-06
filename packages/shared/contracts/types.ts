@@ -329,7 +329,8 @@ export interface paths {
         delete: operations["McpRegistryController_deleteConnection"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update connection details */
+        patch: operations["McpRegistryController_updateConnection"];
         trace?: never;
     };
     "/api/v1/mcp/servers/{serverId}/mappings": {
@@ -494,10 +495,25 @@ export interface components {
         };
         UpdateTaskDto: {
             /**
-             * @description Updated description of the task
-             * @example Add JWT-based authentication with refresh tokens
+             * @description Name of the task
+             * @example Implement user authentication
              */
-            description: string;
+            name?: string;
+            /**
+             * @description Detailed description of the task
+             * @example Add JWT-based authentication to the API
+             */
+            description?: string;
+            /**
+             * @description Name of the assignee (for AI agents)
+             * @example AgentAlpha
+             */
+            assignee?: string;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string;
         };
         AssignTaskDto: {
             /**
@@ -547,7 +563,7 @@ export interface components {
              */
             content: string;
         };
-        TaskChangeStatusDto: {
+        ChangeTaskStatusDto: {
             /**
              * @description New status for the task
              * @example IN_PROGRESS
@@ -878,6 +894,13 @@ export interface components {
              */
             limit: number;
         };
+        DeleteServerResponseDto: {
+            /**
+             * @description Confirmation message indicating the server was deleted
+             * @example Server deleted successfully
+             */
+            message: string;
+        };
         CreateScopeDto: {
             /**
              * @description Unique scope identifier (e.g., tool:read, tool:write)
@@ -921,6 +944,13 @@ export interface components {
              * @example 2025-11-05T08:00:00.000Z
              */
             updatedAt: string;
+        };
+        DeleteScopeResponseDto: {
+            /**
+             * @description Confirmation message indicating the scope was deleted
+             * @example Scope deleted successfully
+             */
+            message: string;
         };
         CreateConnectionDto: {
             /**
@@ -996,6 +1026,40 @@ export interface components {
              */
             updatedAt: string;
         };
+        UpdateConnectionDto: {
+            /**
+             * @description Friendly name to identify this OAuth connection
+             * @example GitHub OAuth Connection
+             */
+            friendlyName?: string;
+            /**
+             * @description OAuth client ID for the downstream provider
+             * @example github_client_abc123
+             */
+            clientId?: string;
+            /**
+             * @description OAuth client secret for the downstream provider
+             * @example secret_xyz789
+             */
+            clientSecret?: string;
+            /**
+             * @description OAuth authorization endpoint URL
+             * @example https://github.com/login/oauth/authorize
+             */
+            authorizeUrl?: string;
+            /**
+             * @description OAuth token endpoint URL
+             * @example https://github.com/login/oauth/access_token
+             */
+            tokenUrl?: string;
+        };
+        DeleteConnectionResponseDto: {
+            /**
+             * @description Confirmation message indicating the connection was deleted
+             * @example Connection deleted successfully
+             */
+            message: string;
+        };
         CreateMappingDto: {
             /**
              * @description MCP scope ID to map from
@@ -1049,6 +1113,13 @@ export interface components {
              * @example 2025-11-05T08:00:00.000Z
              */
             updatedAt: string;
+        };
+        DeleteMappingResponseDto: {
+            /**
+             * @description Confirmation message indicating the mapping was deleted
+             * @example Mapping deleted successfully
+             */
+            message: string;
         };
     };
     responses: never;
@@ -1332,7 +1403,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TaskChangeStatusDto"];
+                "application/json": components["schemas"]["ChangeTaskStatusDto"];
             };
         };
         responses: {
@@ -1642,11 +1713,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Server deleted successfully */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DeleteServerResponseDto"];
+                };
             };
             /** @description Server not found */
             404: {
@@ -1704,7 +1777,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        /** @description Scope or array of scopes to create */
+        /** @description Array of scopes to create */
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateScopeDto"][];
@@ -1783,11 +1856,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Scope deleted successfully */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DeleteScopeResponseDto"];
+                };
             };
             /** @description Scope not found */
             404: {
@@ -1919,11 +1994,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Connection deleted successfully */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DeleteConnectionResponseDto"];
+                };
             };
             /** @description Connection not found */
             404: {
@@ -1933,6 +2010,47 @@ export interface operations {
                 content?: never;
             };
             /** @description Connection has mappings */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_updateConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Connection UUID */
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateConnectionDto"];
+            };
+        };
+        responses: {
+            /** @description Connection updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionResponseDto"];
+                };
+            };
+            /** @description Connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection name conflict */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2027,11 +2145,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Mapping deleted successfully */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DeleteMappingResponseDto"];
+                };
             };
             /** @description Mapping not found */
             404: {

@@ -4,8 +4,20 @@
 /* eslint-disable */
 export type UpdateTaskDto = {
     /**
-     * Updated description of the task
+     * Name of the task
      */
-    description: string;
+    name?: string;
+    /**
+     * Detailed description of the task
+     */
+    description?: string;
+    /**
+     * Name of the assignee (for AI agents)
+     */
+    assignee?: string;
+    /**
+     * Session ID for tracking AI agent work
+     */
+    sessionId?: string;
 };
 

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TaskStatus } from './enums';
@@ -20,7 +21,14 @@ import {
   InvalidStatusTransitionError,
   CommentRequiredError,
 } from './errors/taskeroo.errors';
-import { TaskerooGateway } from './taskeroo.gateway';
+import {
+  TaskCreatedEvent,
+  TaskUpdatedEvent,
+  TaskAssignedEvent,
+  TaskDeletedEvent,
+  CommentAddedEvent,
+  TaskStatusChangedEvent,
+} from './events/taskeroo.events';
 
 @Injectable()
 export class TaskerooService {
@@ -31,7 +39,7 @@ export class TaskerooService {
     private readonly taskRepository: Repository<TaskEntity>,
     @InjectRepository(CommentEntity)
     private readonly commentRepository: Repository<CommentEntity>,
-    private readonly gateway: TaskerooGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
@@ -68,7 +76,7 @@ export class TaskerooService {
       name: taskWithRelations.name,
     });
 
-    this.gateway.emitTaskCreated(taskWithRelations);
+    this.eventEmitter.emit('task.created', new TaskCreatedEvent(taskWithRelations));
     return this.mapTaskToResult(taskWithRelations);
   }
 
@@ -87,7 +95,12 @@ export class TaskerooService {
       throw new TaskNotFoundError(taskId);
     }
 
-    task.description = input.description;
+    // Apply partial updates
+    if (input.name !== undefined) task.name = input.name;
+    if (input.description !== undefined) task.description = input.description;
+    if (input.assignee !== undefined) task.assignee = input.assignee ?? null;
+    if (input.sessionId !== undefined) task.sessionId = input.sessionId ?? null;
+
     const updatedTask = await this.taskRepository.save(task);
 
     this.logger.log({
@@ -95,7 +108,7 @@ export class TaskerooService {
       taskId: updatedTask.id,
     });
 
-    this.gateway.emitTaskUpdated(updatedTask);
+    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(updatedTask));
     return this.mapTaskToResult(updatedTask);
   }
 
@@ -129,7 +142,7 @@ export class TaskerooService {
       sessionId: assignedTask.sessionId,
     });
 
-    this.gateway.emitTaskAssigned(assignedTask);
+    this.eventEmitter.emit('task.assigned', new TaskAssignedEvent(assignedTask));
     return this.mapTaskToResult(assignedTask);
   }
 
@@ -152,7 +165,7 @@ export class TaskerooService {
       taskId,
     });
 
-    this.gateway.emitTaskDeleted(taskId);
+    this.eventEmitter.emit('task.deleted', new TaskDeletedEvent(taskId));
   }
 
   async listTasks(input: ListTasksInput): Promise<ListTasksResult> {
@@ -236,7 +249,7 @@ export class TaskerooService {
       taskId,
     });
 
-    this.gateway.emitCommentAdded(savedComment);
+    this.eventEmitter.emit('comment.added', new CommentAddedEvent(savedComment));
     return this.mapCommentToResult(savedComment);
   }
 
@@ -303,7 +316,7 @@ export class TaskerooService {
       status: taskWithRelations.status,
     });
 
-    this.gateway.emitStatusChanged(taskWithRelations);
+    this.eventEmitter.emit('task.statusChanged', new TaskStatusChangedEvent(taskWithRelations));
     return this.mapTaskToResult(taskWithRelations);
   }
 

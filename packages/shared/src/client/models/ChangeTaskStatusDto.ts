@@ -2,17 +2,17 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type TaskChangeStatusDto = {
+export type ChangeTaskStatusDto = {
     /**
      * New status for the task
      */
-    status: TaskChangeStatusDto.status;
+    status: ChangeTaskStatusDto.status;
     /**
      * Comment required when marking task as done
      */
     comment?: string;
 };
-export namespace TaskChangeStatusDto {
+export namespace ChangeTaskStatusDto {
     /**
      * New status for the task
      */
