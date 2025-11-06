@@ -4,13 +4,7 @@ import { Task, Comment } from './types';
 import { useEffect, useState } from 'react';
 
 // Use relative URL in production, absolute URL in development
-let SOCKET_URL: string;
-if (import.meta.env.PROD) {
-  SOCKET_URL = '/taskeroo';
-} else {
-  const PORT = import.meta.env.VITE_BACKEND_PORT || 3000;
-  SOCKET_URL = `http://localhost:${PORT}/taskeroo`;
-}
+const SOCKET_URL = import.meta.env.PROD ? '/taskeroo' : 'http://localhost:3000/taskeroo';
 
 export const useTaskeroo = () => {
 
