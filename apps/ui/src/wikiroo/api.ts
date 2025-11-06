@@ -1,6 +1,11 @@
 import { OpenAPI, WikirooService } from 'shared';
 
 // Use relative URL in production, absolute URL in development
-OpenAPI.BASE = import.meta.env.PROD ? '' : 'http://localhost:3000';
+if (import.meta.env.PROD) {
+  OpenAPI.BASE = '';
+} else {
+  const PORT = import.meta.env.VITE_BACKEND_PORT || 3000;
+  OpenAPI.BASE = `http://localhost:${PORT}`;
+}
 
 export { WikirooService };
