@@ -6,9 +6,21 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
-import { TaskEntity } from './task.entity';
-import { CommentEntity } from './comment.entity';
+import { OnEvent } from '@nestjs/event-emitter';
+import {
+  TaskCreatedEvent,
+  TaskUpdatedEvent,
+  TaskAssignedEvent,
+  TaskDeletedEvent,
+  CommentAddedEvent,
+  TaskStatusChangedEvent,
+} from './events/taskeroo.events';
 
+/**
+ * WebSocket gateway for Taskeroo domain.
+ * Listens to domain events and broadcasts them via WebSocket.
+ * This decouples the service layer from transport concerns.
+ */
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -31,27 +43,33 @@ export class TaskerooGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
-  emitTaskCreated(task: TaskEntity) {
-    this.server.emit('task.created', task);
+  @OnEvent('task.created')
+  handleTaskCreated(event: TaskCreatedEvent) {
+    this.server.emit('task.created', event.task);
   }
 
-  emitTaskUpdated(task: TaskEntity) {
-    this.server.emit('task.updated', task);
+  @OnEvent('task.updated')
+  handleTaskUpdated(event: TaskUpdatedEvent) {
+    this.server.emit('task.updated', event.task);
   }
 
-  emitTaskDeleted(taskId: string) {
-    this.server.emit('task.deleted', { taskId });
+  @OnEvent('task.deleted')
+  handleTaskDeleted(event: TaskDeletedEvent) {
+    this.server.emit('task.deleted', { taskId: event.taskId });
   }
 
-  emitTaskAssigned(task: TaskEntity) {
-    this.server.emit('task.assigned', task);
+  @OnEvent('task.assigned')
+  handleTaskAssigned(event: TaskAssignedEvent) {
+    this.server.emit('task.assigned', event.task);
   }
 
-  emitCommentAdded(comment: CommentEntity) {
-    this.server.emit('task.commented', comment);
+  @OnEvent('comment.added')
+  handleCommentAdded(event: CommentAddedEvent) {
+    this.server.emit('task.commented', event.comment);
   }
 
-  emitStatusChanged(task: TaskEntity) {
-    this.server.emit('task.status_changed', task);
+  @OnEvent('task.statusChanged')
+  handleStatusChanged(event: TaskStatusChangedEvent) {
+    this.server.emit('task.status_changed', event.task);
   }
 }
