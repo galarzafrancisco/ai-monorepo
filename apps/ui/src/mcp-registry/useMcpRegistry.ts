@@ -1,6 +1,45 @@
 import { useEffect, useState } from 'react';
 import { McpRegistryService } from './api';
-import { McpServer, McpScope, McpConnection, McpScopeMapping } from './types';
+
+// Types will be generated from backend response DTOs
+type McpServer = {
+  id: string;
+  providedId: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type McpScope = {
+  id: string;
+  scopeId: string;
+  serverId: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type McpConnection = {
+  id: string;
+  serverId: string;
+  clientId: string;
+  authorizeUrl: string;
+  tokenUrl: string;
+  friendlyName: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type McpScopeMapping = {
+  id: string;
+  scopeId: string;
+  serverId: string;
+  connectionId: string;
+  downstreamScope: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export const useMcpRegistry = () => {
   // UI feedback

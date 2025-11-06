@@ -11,7 +11,7 @@ export class MappingResponseDto {
     description: 'MCP scope identifier',
     example: 'tool:read',
   })
-  mcpScopeId!: string;
+  scopeId!: string;
 
   @ApiProperty({
     description: 'UUID of the MCP server',
@@ -36,4 +36,10 @@ export class MappingResponseDto {
     example: '2025-11-05T08:00:00.000Z',
   })
   createdAt!: string;
+
+  @ApiProperty({
+    description: 'Timestamp when the mapping was last updated',
+    example: '2025-11-05T08:00:00.000Z',
+  })
+  updatedAt!: string;
 }

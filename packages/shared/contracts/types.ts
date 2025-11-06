@@ -753,6 +753,89 @@ export interface components {
              */
             description: string;
         };
+        ServerResponseDto: {
+            /**
+             * @description System-generated UUID for the MCP server
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Human-readable unique identifier for the MCP server
+             * @example github-integration
+             */
+            providedId: string;
+            /**
+             * @description Display name of the MCP server
+             * @example GitHub Integration
+             */
+            name: string;
+            /**
+             * @description Short description of the MCP server
+             * @example Provides access to GitHub repositories and issues
+             */
+            description: string;
+            /**
+             * @description Timestamp when the server was created
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the server was last updated
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        ServerListResponseDto: {
+            /** @description List of MCP servers */
+            items: components["schemas"]["ServerResponseDto"][];
+            /**
+             * @description Total number of servers
+             * @example 100
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 50
+             */
+            limit: number;
+        };
+        ScopeResponseDto: {
+            /**
+             * @description System-generated UUID for the scope
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Unique scope identifier (e.g., tool:read)
+             * @example tool:read
+             */
+            scopeId: string;
+            /**
+             * @description Description of what this scope allows
+             * @example Read access to tools
+             */
+            description: string;
+            /**
+             * @description UUID of the MCP server this scope belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description Timestamp when the scope was created
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the scope was last updated
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            updatedAt: string;
+        };
         CreateConnectionDto: {
             /**
              * @description Friendly name to identify this OAuth connection
@@ -780,6 +863,53 @@ export interface components {
              */
             tokenUrl: string;
         };
+        ConnectionResponseDto: {
+            /**
+             * @description System-generated UUID for the connection
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the MCP server this connection belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description Friendly name for operators to distinguish connections
+             * @example Production GitHub OAuth
+             */
+            friendlyName: string;
+            /**
+             * @description OAuth client ID
+             * @example client_abc123
+             */
+            clientId: string;
+            /**
+             * @description OAuth client secret (masked for security)
+             * @example null
+             */
+            clientSecret?: string | null;
+            /**
+             * @description OAuth authorization URL
+             * @example https://github.com/login/oauth/authorize
+             */
+            authorizeUrl: string;
+            /**
+             * @description OAuth token URL
+             * @example https://github.com/login/oauth/access_token
+             */
+            tokenUrl: string;
+            /**
+             * @description Timestamp when the connection was created
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the connection was last updated
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            updatedAt: string;
+        };
         CreateMappingDto: {
             /**
              * @description MCP scope ID to map from
@@ -796,6 +926,43 @@ export interface components {
              * @example repo:read
              */
             downstreamScope: string;
+        };
+        MappingResponseDto: {
+            /**
+             * @description System-generated UUID for the mapping
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description MCP scope identifier
+             * @example tool:read
+             */
+            scopeId: string;
+            /**
+             * @description UUID of the MCP server
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description UUID of the downstream OAuth connection
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            connectionId: string;
+            /**
+             * @description Downstream provider scope string
+             * @example repo:read
+             */
+            downstreamScope: string;
+            /**
+             * @description Timestamp when the mapping was created
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the mapping was last updated
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            updatedAt: string;
         };
     };
     responses: never;
@@ -1286,7 +1453,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ServerListResponseDto"];
+                };
             };
         };
     };
@@ -1308,7 +1477,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ServerResponseDto"];
+                };
             };
             /** @description Server with providedId already exists */
             409: {
@@ -1336,7 +1507,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ServerResponseDto"];
+                };
             };
             /** @description Server not found */
             404: {
@@ -1399,7 +1572,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ScopeResponseDto"][];
+                };
             };
             /** @description Server not found */
             404: {
@@ -1427,7 +1602,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ScopeResponseDto"][];
+                };
             };
             /** @description Server not found */
             404: {
@@ -1464,7 +1641,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ScopeResponseDto"];
+                };
             };
             /** @description Scope not found */
             404: {
@@ -1529,7 +1708,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ConnectionResponseDto"][];
+                };
             };
             /** @description Server not found */
             404: {
@@ -1561,7 +1742,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ConnectionResponseDto"];
+                };
             };
             /** @description Server not found */
             404: {
@@ -1596,7 +1779,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ConnectionResponseDto"];
+                };
             };
             /** @description Connection not found */
             404: {
@@ -1663,7 +1848,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MappingResponseDto"];
+                };
             };
             /** @description Invalid mapping */
             400: {
@@ -1700,7 +1887,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MappingResponseDto"][];
+                };
             };
             /** @description Scope not found */
             404: {

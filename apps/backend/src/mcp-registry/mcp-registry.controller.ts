@@ -16,6 +16,11 @@ import {
   CreateScopeDto,
   CreateConnectionDto,
   CreateMappingDto,
+  ServerResponseDto,
+  ServerListResponseDto,
+  ScopeResponseDto,
+  ConnectionResponseDto,
+  MappingResponseDto,
 } from './dto';
 
 @ApiTags('MCP Registry')
@@ -27,36 +32,42 @@ export class McpRegistryController {
 
   @Post('servers')
   @ApiOperation({ summary: 'Register a new MCP server' })
-  @ApiResponse({ status: 201, description: 'Server created successfully' })
+  @ApiResponse({ status: 201, description: 'Server created successfully', type: ServerResponseDto })
   @ApiResponse({ status: 409, description: 'Server with providedId already exists' })
-  async createServer(@Body() dto: CreateServerDto) {
-    return this.mcpRegistryService.createServer(dto);
+  async createServer(@Body() dto: CreateServerDto): Promise<ServerResponseDto> {
+    const server = await this.mcpRegistryService.createServer(dto);
+    return this.mapServerToResponse(server);
   }
 
   @Get('servers')
   @ApiOperation({ summary: 'List all MCP servers with pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
-  @ApiResponse({ status: 200, description: 'List of servers' })
+  @ApiResponse({ status: 200, description: 'List of servers', type: ServerListResponseDto })
   async listServers(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-  ) {
-    return this.mcpRegistryService.listServers(page, limit);
+  ): Promise<ServerListResponseDto> {
+    const result = await this.mcpRegistryService.listServers(page, limit);
+    return {
+      items: result.items.map(server => this.mapServerToResponse(server)),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    };
   }
 
   @Get('servers/:serverId')
   @ApiOperation({ summary: 'Get MCP server by UUID or provided ID' })
   @ApiParam({ name: 'serverId', description: 'Server UUID or provided ID' })
-  @ApiResponse({ status: 200, description: 'Server found' })
+  @ApiResponse({ status: 200, description: 'Server found', type: ServerResponseDto })
   @ApiResponse({ status: 404, description: 'Server not found' })
-  async getServer(@Param('serverId') serverId: string) {
+  async getServer(@Param('serverId') serverId: string): Promise<ServerResponseDto> {
     // Try UUID first, then providedId
-    if (this.isUuid(serverId)) {
-      return this.mcpRegistryService.getServerById(serverId);
-    } else {
-      return this.mcpRegistryService.getServerByProvidedId(serverId);
-    }
+    const server = this.isUuid(serverId)
+      ? await this.mcpRegistryService.getServerById(serverId)
+      : await this.mcpRegistryService.getServerByProvidedId(serverId);
+    return this.mapServerToResponse(server);
   }
 
   @Delete('servers/:serverId')
@@ -75,40 +86,44 @@ export class McpRegistryController {
   @Post('servers/:serverId/scopes')
   @ApiOperation({ summary: 'Create MCP scope(s) for a server' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
-  @ApiResponse({ status: 201, description: 'Scope(s) created successfully' })
+  @ApiResponse({ status: 201, description: 'Scope(s) created successfully', type: [ScopeResponseDto] })
   @ApiResponse({ status: 404, description: 'Server not found' })
   @ApiResponse({ status: 409, description: 'Scope already exists' })
   async createScopes(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body() dto: CreateScopeDto | CreateScopeDto[],
-  ) {
+  ): Promise<ScopeResponseDto | ScopeResponseDto[]> {
     if (Array.isArray(dto)) {
-      return this.mcpRegistryService.createScopes(serverId, dto);
+      const scopes = await this.mcpRegistryService.createScopes(serverId, dto);
+      return scopes.map(scope => this.mapScopeToResponse(scope));
     } else {
-      return this.mcpRegistryService.createScope(serverId, dto);
+      const scope = await this.mcpRegistryService.createScope(serverId, dto);
+      return this.mapScopeToResponse(scope);
     }
   }
 
   @Get('servers/:serverId/scopes')
   @ApiOperation({ summary: 'List all scopes for an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
-  @ApiResponse({ status: 200, description: 'List of scopes' })
+  @ApiResponse({ status: 200, description: 'List of scopes', type: [ScopeResponseDto] })
   @ApiResponse({ status: 404, description: 'Server not found' })
-  async listScopes(@Param('serverId', ParseUUIDPipe) serverId: string) {
-    return this.mcpRegistryService.listScopesByServer(serverId);
+  async listScopes(@Param('serverId', ParseUUIDPipe) serverId: string): Promise<ScopeResponseDto[]> {
+    const scopes = await this.mcpRegistryService.listScopesByServer(serverId);
+    return scopes.map(scope => this.mapScopeToResponse(scope));
   }
 
   @Get('servers/:serverId/scopes/:scopeId')
   @ApiOperation({ summary: 'Get a specific MCP scope' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiParam({ name: 'scopeId', description: 'Scope ID string' })
-  @ApiResponse({ status: 200, description: 'Scope found' })
+  @ApiResponse({ status: 200, description: 'Scope found', type: ScopeResponseDto })
   @ApiResponse({ status: 404, description: 'Scope not found' })
   async getScope(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Param('scopeId') scopeId: string,
-  ) {
-    return this.mcpRegistryService.getScope(scopeId, serverId);
+  ): Promise<ScopeResponseDto> {
+    const scope = await this.mcpRegistryService.getScope(scopeId, serverId);
+    return this.mapScopeToResponse(scope);
   }
 
   @Delete('servers/:serverId/scopes/:scopeId')
@@ -131,34 +146,37 @@ export class McpRegistryController {
   @Post('servers/:serverId/connections')
   @ApiOperation({ summary: 'Create OAuth connection for an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
-  @ApiResponse({ status: 201, description: 'Connection created successfully' })
+  @ApiResponse({ status: 201, description: 'Connection created successfully', type: ConnectionResponseDto })
   @ApiResponse({ status: 404, description: 'Server not found' })
   @ApiResponse({ status: 409, description: 'Connection name conflict' })
   async createConnection(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body() dto: CreateConnectionDto,
-  ) {
-    return this.mcpRegistryService.createConnection(serverId, dto);
+  ): Promise<ConnectionResponseDto> {
+    const connection = await this.mcpRegistryService.createConnection(serverId, dto);
+    return this.mapConnectionToResponse(connection);
   }
 
   @Get('servers/:serverId/connections')
   @ApiOperation({ summary: 'List all connections for an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
-  @ApiResponse({ status: 200, description: 'List of connections' })
+  @ApiResponse({ status: 200, description: 'List of connections', type: [ConnectionResponseDto] })
   @ApiResponse({ status: 404, description: 'Server not found' })
-  async listConnections(@Param('serverId', ParseUUIDPipe) serverId: string) {
-    return this.mcpRegistryService.listConnectionsByServer(serverId);
+  async listConnections(@Param('serverId', ParseUUIDPipe) serverId: string): Promise<ConnectionResponseDto[]> {
+    const connections = await this.mcpRegistryService.listConnectionsByServer(serverId);
+    return connections.map(conn => this.mapConnectionToResponse(conn));
   }
 
   @Get('connections/:connectionId')
   @ApiOperation({ summary: 'Get a specific connection' })
   @ApiParam({ name: 'connectionId', description: 'Connection UUID' })
-  @ApiResponse({ status: 200, description: 'Connection found' })
+  @ApiResponse({ status: 200, description: 'Connection found', type: ConnectionResponseDto })
   @ApiResponse({ status: 404, description: 'Connection not found' })
   async getConnection(
     @Param('connectionId', ParseUUIDPipe) connectionId: string,
-  ) {
-    return this.mcpRegistryService.getConnection(connectionId);
+  ): Promise<ConnectionResponseDto> {
+    const connection = await this.mcpRegistryService.getConnection(connectionId);
+    return this.mapConnectionToResponse(connection);
   }
 
   @Delete('connections/:connectionId')
@@ -179,27 +197,29 @@ export class McpRegistryController {
   @Post('servers/:serverId/mappings')
   @ApiOperation({ summary: 'Create scope mapping' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
-  @ApiResponse({ status: 201, description: 'Mapping created successfully' })
+  @ApiResponse({ status: 201, description: 'Mapping created successfully', type: MappingResponseDto })
   @ApiResponse({ status: 404, description: 'Scope or connection not found' })
   @ApiResponse({ status: 400, description: 'Invalid mapping' })
   async createMapping(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body() dto: CreateMappingDto,
-  ) {
-    return this.mcpRegistryService.createMapping(serverId, dto);
+  ): Promise<MappingResponseDto> {
+    const mapping = await this.mcpRegistryService.createMapping(serverId, dto);
+    return this.mapMappingToResponse(mapping);
   }
 
   @Get('servers/:serverId/scopes/:scopeId/mappings')
   @ApiOperation({ summary: 'List downstream scopes for an MCP scope' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiParam({ name: 'scopeId', description: 'Scope ID string' })
-  @ApiResponse({ status: 200, description: 'List of mappings' })
+  @ApiResponse({ status: 200, description: 'List of mappings', type: [MappingResponseDto] })
   @ApiResponse({ status: 404, description: 'Scope not found' })
   async listMappings(
     @Param('serverId', ParseUUIDPipe) serverId: string,
     @Param('scopeId') scopeId: string,
-  ) {
-    return this.mcpRegistryService.listMappingsByScope(scopeId, serverId);
+  ): Promise<MappingResponseDto[]> {
+    const mappings = await this.mcpRegistryService.listMappingsByScope(scopeId, serverId);
+    return mappings.map(mapping => this.mapMappingToResponse(mapping));
   }
 
   @Delete('mappings/:mappingId')
@@ -212,10 +232,58 @@ export class McpRegistryController {
     return { message: 'Mapping deleted successfully' };
   }
 
-  // Helper method
+  // Helper methods
   private isUuid(str: string): boolean {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(str);
+  }
+
+  private mapServerToResponse(server: any): ServerResponseDto {
+    return {
+      id: server.id,
+      providedId: server.providedId,
+      name: server.name,
+      description: server.description,
+      createdAt: server.createdAt?.toISOString() || server.createdAt,
+      updatedAt: server.updatedAt?.toISOString() || server.updatedAt,
+    };
+  }
+
+  private mapScopeToResponse(scope: any): ScopeResponseDto {
+    return {
+      id: scope.id,
+      scopeId: scope.scopeId,
+      serverId: scope.serverId,
+      description: scope.description,
+      createdAt: scope.createdAt?.toISOString() || scope.createdAt,
+      updatedAt: scope.updatedAt?.toISOString() || scope.updatedAt,
+    };
+  }
+
+  private mapConnectionToResponse(connection: any): ConnectionResponseDto {
+    return {
+      id: connection.id,
+      serverId: connection.serverId,
+      friendlyName: connection.friendlyName,
+      clientId: connection.clientId,
+      clientSecret: null, // Never expose client secret
+      authorizeUrl: connection.authorizeUrl,
+      tokenUrl: connection.tokenUrl,
+      createdAt: connection.createdAt?.toISOString() || connection.createdAt,
+      updatedAt: connection.updatedAt?.toISOString() || connection.updatedAt,
+    };
+  }
+
+  private mapMappingToResponse(mapping: any): MappingResponseDto {
+    return {
+      id: mapping.id,
+      scopeId: mapping.scopeId,
+      serverId: mapping.serverId,
+      connectionId: mapping.connectionId,
+      downstreamScope: mapping.downstreamScope,
+      createdAt: mapping.createdAt?.toISOString() || mapping.createdAt,
+      updatedAt: mapping.updatedAt?.toISOString() || mapping.updatedAt,
+    };
   }
 }

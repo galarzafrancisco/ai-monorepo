@@ -29,8 +29,9 @@ export class ConnectionResponseDto {
     description: 'OAuth client secret (masked for security)',
     example: null,
     nullable: true,
+    type: 'string',
   })
-  clientSecret!: null;
+  clientSecret!: string | null;
 
   @ApiProperty({
     description: 'OAuth authorization URL',
