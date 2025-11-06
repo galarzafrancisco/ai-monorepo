@@ -3,13 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientRegistrationService } from './client-registration.service';
 import { ClientRegistrationController } from './client-registration.controller';
 import { RegisteredClientEntity } from './registered-client.entity';
-import { AuthorizationServerMetadataController } from './authorization-server-metadata.controller';
-import { McpRegistryModule } from '../mcp-registry/mcp-registry.module';
+
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RegisteredClientEntity]), McpRegistryModule],
+  imports: [TypeOrmModule.forFeature([RegisteredClientEntity])],
   providers: [ClientRegistrationService],
-  controllers: [ClientRegistrationController, AuthorizationServerMetadataController],
+  controllers: [ClientRegistrationController],
   exports: [ClientRegistrationService],
 })
 export class AuthorizationServerModule {}
