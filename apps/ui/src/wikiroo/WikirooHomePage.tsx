@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import './Wikiroo.css';
 import { useWikiroo } from './useWikiroo';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { useToast } from '../hooks/useToast';
+import { Toast } from '../components/Toast';
 
 function formatDate(value: string) {
   try {
@@ -23,6 +25,7 @@ export function WikirooHomePage() {
   } = useWikiroo();
 
   const navigate = useNavigate();
+  const { toasts, showToast, removeToast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -49,7 +52,7 @@ export function WikirooHomePage() {
       navigate(`/wikiroo/${created.id}`);
     } catch (err: any) {
       const message = err?.body?.detail || err?.message || 'Failed to create page';
-      alert(message);
+      showToast(message, 'error');
     }
   };
 
@@ -153,6 +156,15 @@ export function WikirooHomePage() {
 
       {isLoadingList && <div className="wikiroo-status">Loading pages…</div>}
       {error && <div className="wikiroo-error">{error}</div>}
+
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
     </div>
   );
 }

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { TaskerooService } from './api';
+import { useToast } from '../hooks/useToast';
+import { Toast } from '../components/Toast';
 
 interface CreateTaskFormProps {
   onClose: () => void;
 }
 
 export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
+  const { toasts, showToast, removeToast } = useToast();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [assignee, setAssignee] = useState('');
@@ -36,7 +39,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
       onClose();
     } catch (err: any) {
       const errorMessage = err?.body?.detail || err?.message || 'Failed to create task';
-      alert(`Error: ${errorMessage}`);
+      showToast(`Error: ${errorMessage}`, 'error');
       console.error(err);
     } finally {
       setLoading(false);
@@ -107,6 +110,15 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
             </button>
           </div>
         </form>
+
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
       </div>
     </div>
   );
