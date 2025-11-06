@@ -583,7 +583,14 @@
         },
         "responses": {
           "201": {
-            "description": "Server created successfully"
+            "description": "Server created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerResponseDto"
+                }
+              }
+            }
           },
           "409": {
             "description": "Server with providedId already exists"
@@ -618,7 +625,14 @@
         ],
         "responses": {
           "200": {
-            "description": "List of servers"
+            "description": "List of servers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerListResponseDto"
+                }
+              }
+            }
           }
         },
         "summary": "List all MCP servers with pagination",
@@ -643,7 +657,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Server found"
+            "description": "Server found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Server not found"
@@ -700,7 +721,17 @@
         ],
         "responses": {
           "201": {
-            "description": "Scope(s) created successfully"
+            "description": "Scope(s) created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScopeResponseDto"
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Server not found"
@@ -729,7 +760,17 @@
         ],
         "responses": {
           "200": {
-            "description": "List of scopes"
+            "description": "List of scopes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScopeResponseDto"
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Server not found"
@@ -766,7 +807,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Scope found"
+            "description": "Scope found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScopeResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Scope not found"
@@ -842,7 +890,14 @@
         },
         "responses": {
           "201": {
-            "description": "Connection created successfully"
+            "description": "Connection created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Server not found"
@@ -871,7 +926,17 @@
         ],
         "responses": {
           "200": {
-            "description": "List of connections"
+            "description": "List of connections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectionResponseDto"
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Server not found"
@@ -899,7 +964,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Connection found"
+            "description": "Connection found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Connection not found"
@@ -966,7 +1038,14 @@
         },
         "responses": {
           "201": {
-            "description": "Mapping created successfully"
+            "description": "Mapping created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingResponseDto"
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid mapping"
@@ -1006,7 +1085,17 @@
         ],
         "responses": {
           "200": {
-            "description": "List of mappings"
+            "description": "List of mappings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MappingResponseDto"
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Scope not found"
@@ -1636,6 +1725,125 @@
           "description"
         ]
       },
+      "ServerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the MCP server",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "providedId": {
+            "type": "string",
+            "description": "Human-readable unique identifier for the MCP server",
+            "example": "github-integration"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the MCP server",
+            "example": "GitHub Integration"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the MCP server",
+            "example": "Provides access to GitHub repositories and issues"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the server was created",
+            "example": "2025-11-05T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the server was last updated",
+            "example": "2025-11-05T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "providedId",
+          "name",
+          "description",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ServerListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of MCP servers",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServerResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of servers",
+            "example": 100
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 50
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "ScopeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the scope",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "scopeId": {
+            "type": "string",
+            "description": "Unique scope identifier (e.g., tool:read)",
+            "example": "tool:read"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this scope allows",
+            "example": "Read access to tools"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server this scope belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the scope was created",
+            "example": "2025-11-05T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the scope was last updated",
+            "example": "2025-11-05T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "scopeId",
+          "description",
+          "serverId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "CreateConnectionDto": {
         "type": "object",
         "properties": {
@@ -1673,6 +1881,67 @@
           "tokenUrl"
         ]
       },
+      "ConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the connection",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server this connection belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "friendlyName": {
+            "type": "string",
+            "description": "Friendly name for operators to distinguish connections",
+            "example": "Production GitHub OAuth"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client ID",
+            "example": "client_abc123"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "OAuth client secret (masked for security)",
+            "example": null,
+            "nullable": true
+          },
+          "authorizeUrl": {
+            "type": "string",
+            "description": "OAuth authorization URL",
+            "example": "https://github.com/login/oauth/authorize"
+          },
+          "tokenUrl": {
+            "type": "string",
+            "description": "OAuth token URL",
+            "example": "https://github.com/login/oauth/access_token"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the connection was created",
+            "example": "2025-11-05T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the connection was last updated",
+            "example": "2025-11-05T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "serverId",
+          "friendlyName",
+          "clientId",
+          "authorizeUrl",
+          "tokenUrl",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "CreateMappingDto": {
         "type": "object",
         "properties": {
@@ -1696,6 +1965,55 @@
           "scopeId",
           "connectionId",
           "downstreamScope"
+        ]
+      },
+      "MappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the mapping",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "scopeId": {
+            "type": "string",
+            "description": "MCP scope identifier",
+            "example": "tool:read"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "UUID of the downstream OAuth connection",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "downstreamScope": {
+            "type": "string",
+            "description": "Downstream provider scope string",
+            "example": "repo:read"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the mapping was created",
+            "example": "2025-11-05T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the mapping was last updated",
+            "example": "2025-11-05T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "scopeId",
+          "serverId",
+          "connectionId",
+          "downstreamScope",
+          "createdAt",
+          "updatedAt"
         ]
       }
     }

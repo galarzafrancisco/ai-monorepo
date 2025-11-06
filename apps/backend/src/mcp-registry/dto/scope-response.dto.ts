@@ -2,6 +2,12 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ScopeResponseDto {
   @ApiProperty({
+    description: 'System-generated UUID for the scope',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  id!: string;
+
+  @ApiProperty({
     description: 'Unique scope identifier (e.g., tool:read)',
     example: 'tool:read',
   })
