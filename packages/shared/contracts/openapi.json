@@ -689,8 +689,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Server deleted successfully"
+          "200": {
+            "description": "Server deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteServerResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Server not found"
@@ -721,7 +728,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Scope or array of scopes to create",
+          "description": "Array of scopes to create",
           "content": {
             "application/json": {
               "schema": {
@@ -862,8 +869,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Scope deleted successfully"
+          "200": {
+            "description": "Scope deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteScopeResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Scope not found"
@@ -1056,8 +1070,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Connection deleted successfully"
+          "200": {
+            "description": "Connection deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteConnectionResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Connection not found"
@@ -1182,8 +1203,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Mapping deleted successfully"
+          "200": {
+            "description": "Mapping deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteMappingResponseDto"
+                }
+              }
+            }
           },
           "404": {
             "description": "Mapping not found"
@@ -1861,6 +1889,19 @@
           "limit"
         ]
       },
+      "DeleteServerResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the server was deleted",
+            "example": "Server deleted successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
       "CreateScopeDto": {
         "type": "object",
         "properties": {
@@ -1921,6 +1962,19 @@
           "serverId",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "DeleteScopeResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the scope was deleted",
+            "example": "Scope deleted successfully"
+          }
+        },
+        "required": [
+          "message"
         ]
       },
       "CreateConnectionDto": {
@@ -2051,6 +2105,19 @@
           }
         }
       },
+      "DeleteConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the connection was deleted",
+            "example": "Connection deleted successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
       "CreateMappingDto": {
         "type": "object",
         "properties": {
@@ -2123,6 +2190,19 @@
           "downstreamScope",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "DeleteMappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the mapping was deleted",
+            "example": "Mapping deleted successfully"
+          }
+        },
+        "required": [
+          "message"
         ]
       }
     }

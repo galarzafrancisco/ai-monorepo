@@ -8,3 +8,8 @@ export * from './scope-response.dto';
 export * from './connection-response.dto';
 export * from './mapping-response.dto';
 export * from './server-list-response.dto';
+export * from './delete-server-response.dto';
+export * from './delete-scope-response.dto';
+export * from './delete-connection-response.dto';
+export * from './delete-mapping-response.dto';
+export * from './service/mcp-registry.service.types';
