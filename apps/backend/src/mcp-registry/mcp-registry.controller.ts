@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { McpRegistryService } from './mcp-registry.service';
 import {
   CreateServerDto,
@@ -86,6 +86,7 @@ export class McpRegistryController {
   @Post('servers/:serverId/scopes')
   @ApiOperation({ summary: 'Create MCP scope(s) for a server' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
+  @ApiBody({ type: CreateScopeDto, isArray: true, description: 'Scope or array of scopes to create' })
   @ApiResponse({ status: 201, description: 'Scope(s) created successfully', type: [ScopeResponseDto] })
   @ApiResponse({ status: 404, description: 'Server not found' })
   @ApiResponse({ status: 409, description: 'Scope already exists' })
