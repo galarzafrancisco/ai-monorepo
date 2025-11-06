@@ -36,8 +36,7 @@ export function McpServerDetail() {
   });
   const [mappingForm, setMappingForm] = useState({
     scopeId: '',
-    connectionId: '',
-    downstreamScope: '',
+    mappings: [{ connectionId: '', downstreamScope: '' }],
   });
 
   usePageTitle(selectedServer ? `${selectedServer.name} - MCP Registry` : 'MCP Registry');
@@ -82,12 +81,48 @@ export function McpServerDetail() {
     e.preventDefault();
     if (!serverId) return;
     try {
-      await createMapping(serverId, mappingForm);
+      // Create all mappings sequentially
+      for (const mapping of mappingForm.mappings) {
+        await createMapping(serverId, {
+          scopeId: mappingForm.scopeId,
+          connectionId: mapping.connectionId,
+          downstreamScope: mapping.downstreamScope,
+        });
+      }
       setActiveForm(null);
-      setMappingForm({ scopeId: '', connectionId: '', downstreamScope: '' });
+      setMappingForm({ scopeId: '', mappings: [{ connectionId: '', downstreamScope: '' }] });
     } catch (err) {
       console.error('Failed to create mapping', err);
     }
+  };
+
+  const handleAddMappingRow = () => {
+    const lastMapping = mappingForm.mappings[mappingForm.mappings.length - 1];
+    setMappingForm({
+      ...mappingForm,
+      mappings: [
+        ...mappingForm.mappings,
+        { connectionId: lastMapping.connectionId, downstreamScope: '' },
+      ],
+    });
+  };
+
+  const handleRemoveMappingRow = (index: number) => {
+    if (mappingForm.mappings.length === 1) return; // Keep at least one row
+    setMappingForm({
+      ...mappingForm,
+      mappings: mappingForm.mappings.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleUpdateMappingRow = (
+    index: number,
+    field: 'connectionId' | 'downstreamScope',
+    value: string
+  ) => {
+    const updatedMappings = [...mappingForm.mappings];
+    updatedMappings[index] = { ...updatedMappings[index], [field]: value };
+    setMappingForm({ ...mappingForm, mappings: updatedMappings });
   };
 
   const handleDeleteScope = async (scopeId: string) => {
@@ -388,37 +423,57 @@ export function McpServerDetail() {
                   ))}
                 </select>
               </div>
+
               <div className="form-group">
-                <label htmlFor="mappingConnectionId">Connection</label>
-                <select
-                  id="mappingConnectionId"
-                  value={mappingForm.connectionId}
-                  onChange={(e) =>
-                    setMappingForm({ ...mappingForm, connectionId: e.target.value })
-                  }
-                  required
+                <label>Connection & Downstream Scope Mappings</label>
+                {mappingForm.mappings.map((mapping, index) => (
+                  <div key={index} className="mapping-row">
+                    <select
+                      value={mapping.connectionId}
+                      onChange={(e) =>
+                        handleUpdateMappingRow(index, 'connectionId', e.target.value)
+                      }
+                      required
+                      className="mapping-connection-select"
+                    >
+                      <option value="">Select a connection</option>
+                      {connections.map((connection) => (
+                        <option key={connection.id} value={connection.id}>
+                          {connection.friendlyName}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={mapping.downstreamScope}
+                      onChange={(e) =>
+                        handleUpdateMappingRow(index, 'downstreamScope', e.target.value)
+                      }
+                      placeholder="e.g., repo:read"
+                      required
+                      className="mapping-scope-input"
+                    />
+                    {mappingForm.mappings.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMappingRow(index)}
+                        className="btn-remove"
+                        aria-label="Remove mapping"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleAddMappingRow}
+                  className="btn-add-mapping"
                 >
-                  <option value="">Select a connection</option>
-                  {connections.map((connection) => (
-                    <option key={connection.id} value={connection.id}>
-                      {connection.friendlyName}
-                    </option>
-                  ))}
-                </select>
+                  + Add Entry
+                </button>
               </div>
-              <div className="form-group">
-                <label htmlFor="downstreamScope">Downstream Scope</label>
-                <input
-                  type="text"
-                  id="downstreamScope"
-                  value={mappingForm.downstreamScope}
-                  onChange={(e) =>
-                    setMappingForm({ ...mappingForm, downstreamScope: e.target.value })
-                  }
-                  placeholder="e.g., repo:read"
-                  required
-                />
-              </div>
+
               <div className="form-actions">
                 <button type="button" onClick={() => setActiveForm(null)} className="btn-secondary">
                   Cancel
