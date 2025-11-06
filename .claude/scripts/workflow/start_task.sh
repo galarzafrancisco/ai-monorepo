@@ -38,7 +38,7 @@ if [ "$CURRENT_BRANCH" != "agents/main" ]; then
   git checkout agents/main
 fi
 # Cut branch
-BRANCH_NAME="{AGENT_NAME}/s/{SESSION_ID}/tasks/{TASK_ID}"
+BRANCH_NAME="$AGENT_NAME/s/$SESSION_ID/tasks/$TASK_NAME"
 git checkout -b "$BRANCH_NAME"
 
 # ----------------------------------
