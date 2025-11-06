@@ -27,3 +27,4 @@ Your AGENT_NAME will be `claude-{ROLE}`. For example, `claude-dev`.
 9. If CI Failed:
   - Update task - in progress & comment explaining failure by running `.claude/scripts/workflow/update_task_failed.sh {TASK_ID} {AGENT_NAME} {COMMENTS}`
   - Start work again
+10. When done, checkout `agents/main` and pull
