@@ -117,8 +117,9 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerCreateServer(data);
+      const createdServer = await McpRegistryService.mcpRegistryControllerCreateServer(data);
       await loadServers();
+      return createdServer;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create server');
       throw err;
