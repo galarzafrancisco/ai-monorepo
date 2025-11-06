@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Body,
@@ -15,6 +16,7 @@ import {
   CreateServerDto,
   CreateScopeDto,
   CreateConnectionDto,
+  UpdateConnectionDto,
   CreateMappingDto,
   ServerResponseDto,
   ServerListResponseDto,
@@ -177,6 +179,20 @@ export class McpRegistryController {
     @Param('connectionId', ParseUUIDPipe) connectionId: string,
   ): Promise<ConnectionResponseDto> {
     const connection = await this.mcpRegistryService.getConnection(connectionId);
+    return this.mapConnectionToResponse(connection);
+  }
+
+  @Patch('connections/:connectionId')
+  @ApiOperation({ summary: 'Update connection details' })
+  @ApiParam({ name: 'connectionId', description: 'Connection UUID' })
+  @ApiResponse({ status: 200, description: 'Connection updated successfully', type: ConnectionResponseDto })
+  @ApiResponse({ status: 404, description: 'Connection not found' })
+  @ApiResponse({ status: 409, description: 'Connection name conflict' })
+  async updateConnection(
+    @Param('connectionId', ParseUUIDPipe) connectionId: string,
+    @Body() dto: UpdateConnectionDto,
+  ): Promise<ConnectionResponseDto> {
+    const connection = await this.mcpRegistryService.updateConnection(connectionId, dto);
     return this.mapConnectionToResponse(connection);
   }
 

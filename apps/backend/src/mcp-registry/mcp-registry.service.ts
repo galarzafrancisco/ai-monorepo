@@ -11,6 +11,7 @@ import {
   CreateServerDto,
   CreateScopeDto,
   CreateConnectionDto,
+  UpdateConnectionDto,
   CreateMappingDto,
 } from './dto';
 import {
@@ -246,6 +247,29 @@ export class McpRegistryService {
     }
 
     return connection;
+  }
+
+  async updateConnection(
+    connectionId: string,
+    dto: UpdateConnectionDto,
+  ): Promise<McpConnectionEntity> {
+    const connection = await this.getConnection(connectionId);
+
+    // If updating friendly name, check for duplicates
+    if (dto.friendlyName && dto.friendlyName !== connection.friendlyName) {
+      const existing = await this.connectionRepository.findOne({
+        where: { serverId: connection.serverId, friendlyName: dto.friendlyName },
+      });
+
+      if (existing) {
+        throw new ConnectionNameConflictError(dto.friendlyName, connection.serverId);
+      }
+    }
+
+    // Update only provided fields
+    Object.assign(connection, dto);
+
+    return this.connectionRepository.save(connection);
   }
 
   async deleteConnection(connectionId: string): Promise<void> {

@@ -1,6 +1,7 @@
 export * from './create-server.dto';
 export * from './create-scope.dto';
 export * from './create-connection.dto';
+export * from './update-connection.dto';
 export * from './create-mapping.dto';
 export * from './server-response.dto';
 export * from './scope-response.dto';
