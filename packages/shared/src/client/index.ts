@@ -8,6 +8,7 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AssignTaskDto } from './models/AssignTaskDto';
+export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';
 export { ClientRegistrationResponseDto } from './models/ClientRegistrationResponseDto';
 export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { ConnectionResponseDto } from './models/ConnectionResponseDto';
