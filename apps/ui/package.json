@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "build:prod": "npm run build && cp -r ./dist ../backend/dist/public",
-    "preview": "vite preview --port ${VITE_PORT:-5173}"
+    "start": "vite preview --port ${VITE_PORT:-5173}",
+    "preview": "vite preview --port ${VITE_PORT:-5173}",
+    "test": "echo \"No tests configured yet\" && exit 0",
+    "lint": "echo \"No linter configured yet\" && exit 0"
   },
   "dependencies": {
     "react": "^18.3.1",
