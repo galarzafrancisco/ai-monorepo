@@ -9,5 +9,17 @@
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/stop-comment.sh $(jq -r '.transcript_path')"
+          }
+        ]
+      }
+    ]
   }
 }

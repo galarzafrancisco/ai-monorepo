@@ -2,9 +2,20 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ConnectionResponseDto } from '../models/ConnectionResponseDto';
 import type { CreateConnectionDto } from '../models/CreateConnectionDto';
 import type { CreateMappingDto } from '../models/CreateMappingDto';
+import type { CreateScopeDto } from '../models/CreateScopeDto';
 import type { CreateServerDto } from '../models/CreateServerDto';
+import type { DeleteConnectionResponseDto } from '../models/DeleteConnectionResponseDto';
+import type { DeleteMappingResponseDto } from '../models/DeleteMappingResponseDto';
+import type { DeleteScopeResponseDto } from '../models/DeleteScopeResponseDto';
+import type { DeleteServerResponseDto } from '../models/DeleteServerResponseDto';
+import type { MappingResponseDto } from '../models/MappingResponseDto';
+import type { ScopeResponseDto } from '../models/ScopeResponseDto';
+import type { ServerListResponseDto } from '../models/ServerListResponseDto';
+import type { ServerResponseDto } from '../models/ServerResponseDto';
+import type { UpdateConnectionDto } from '../models/UpdateConnectionDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -12,12 +23,12 @@ export class McpRegistryService {
     /**
      * Register a new MCP server
      * @param requestBody
-     * @returns any Server created successfully
+     * @returns ServerResponseDto Server created successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerCreateServer(
         requestBody: CreateServerDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ServerResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/mcp/servers',
@@ -32,13 +43,13 @@ export class McpRegistryService {
      * List all MCP servers with pagination
      * @param page
      * @param limit
-     * @returns any List of servers
+     * @returns ServerListResponseDto List of servers
      * @throws ApiError
      */
     public static mcpRegistryControllerListServers(
         page?: number,
         limit?: number,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ServerListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/mcp/servers',
@@ -51,12 +62,12 @@ export class McpRegistryService {
     /**
      * Get MCP server by UUID or provided ID
      * @param serverId Server UUID or provided ID
-     * @returns any Server found
+     * @returns ServerResponseDto Server found
      * @throws ApiError
      */
     public static mcpRegistryControllerGetServer(
         serverId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ServerResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}',
@@ -71,12 +82,12 @@ export class McpRegistryService {
     /**
      * Delete MCP server (must have no dependencies)
      * @param serverId Server UUID
-     * @returns void
+     * @returns DeleteServerResponseDto Server deleted successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerDeleteServer(
         serverId: string,
-    ): CancelablePromise<void> {
+    ): CancelablePromise<DeleteServerResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/mcp/servers/{serverId}',
@@ -92,18 +103,22 @@ export class McpRegistryService {
     /**
      * Create MCP scope(s) for a server
      * @param serverId Server UUID
-     * @returns any Scope(s) created successfully
+     * @param requestBody Array of scopes to create
+     * @returns ScopeResponseDto Scope(s) created successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerCreateScopes(
         serverId: string,
-    ): CancelablePromise<any> {
+        requestBody: Array<CreateScopeDto>,
+    ): CancelablePromise<Array<ScopeResponseDto>> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/mcp/servers/{serverId}/scopes',
             path: {
                 'serverId': serverId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 404: `Server not found`,
                 409: `Scope already exists`,
@@ -113,12 +128,12 @@ export class McpRegistryService {
     /**
      * List all scopes for an MCP server
      * @param serverId Server UUID
-     * @returns any List of scopes
+     * @returns ScopeResponseDto List of scopes
      * @throws ApiError
      */
     public static mcpRegistryControllerListScopes(
         serverId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Array<ScopeResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}/scopes',
@@ -134,13 +149,13 @@ export class McpRegistryService {
      * Get a specific MCP scope
      * @param serverId Server UUID
      * @param scopeId Scope ID string
-     * @returns any Scope found
+     * @returns ScopeResponseDto Scope found
      * @throws ApiError
      */
     public static mcpRegistryControllerGetScope(
         serverId: string,
         scopeId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ScopeResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}/scopes/{scopeId}',
@@ -157,13 +172,13 @@ export class McpRegistryService {
      * Delete MCP scope (must have no mappings)
      * @param serverId Server UUID
      * @param scopeId Scope ID string
-     * @returns void
+     * @returns DeleteScopeResponseDto Scope deleted successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerDeleteScope(
         serverId: string,
         scopeId: string,
-    ): CancelablePromise<void> {
+    ): CancelablePromise<DeleteScopeResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/mcp/servers/{serverId}/scopes/{scopeId}',
@@ -181,13 +196,13 @@ export class McpRegistryService {
      * Create OAuth connection for an MCP server
      * @param serverId Server UUID
      * @param requestBody
-     * @returns any Connection created successfully
+     * @returns ConnectionResponseDto Connection created successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerCreateConnection(
         serverId: string,
         requestBody: CreateConnectionDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ConnectionResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/mcp/servers/{serverId}/connections',
@@ -205,12 +220,12 @@ export class McpRegistryService {
     /**
      * List all connections for an MCP server
      * @param serverId Server UUID
-     * @returns any List of connections
+     * @returns ConnectionResponseDto List of connections
      * @throws ApiError
      */
     public static mcpRegistryControllerListConnections(
         serverId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Array<ConnectionResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}/connections',
@@ -225,12 +240,12 @@ export class McpRegistryService {
     /**
      * Get a specific connection
      * @param connectionId Connection UUID
-     * @returns any Connection found
+     * @returns ConnectionResponseDto Connection found
      * @throws ApiError
      */
     public static mcpRegistryControllerGetConnection(
         connectionId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ConnectionResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/mcp/connections/{connectionId}',
@@ -243,14 +258,39 @@ export class McpRegistryService {
         });
     }
     /**
+     * Update connection details
+     * @param connectionId Connection UUID
+     * @param requestBody
+     * @returns ConnectionResponseDto Connection updated successfully
+     * @throws ApiError
+     */
+    public static mcpRegistryControllerUpdateConnection(
+        connectionId: string,
+        requestBody: UpdateConnectionDto,
+    ): CancelablePromise<ConnectionResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/mcp/connections/{connectionId}',
+            path: {
+                'connectionId': connectionId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                404: `Connection not found`,
+                409: `Connection name conflict`,
+            },
+        });
+    }
+    /**
      * Delete connection (must have no mappings)
      * @param connectionId Connection UUID
-     * @returns void
+     * @returns DeleteConnectionResponseDto Connection deleted successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerDeleteConnection(
         connectionId: string,
-    ): CancelablePromise<void> {
+    ): CancelablePromise<DeleteConnectionResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/mcp/connections/{connectionId}',
@@ -267,13 +307,13 @@ export class McpRegistryService {
      * Create scope mapping
      * @param serverId Server UUID
      * @param requestBody
-     * @returns any Mapping created successfully
+     * @returns MappingResponseDto Mapping created successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerCreateMapping(
         serverId: string,
         requestBody: CreateMappingDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<MappingResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/mcp/servers/{serverId}/mappings',
@@ -292,13 +332,13 @@ export class McpRegistryService {
      * List downstream scopes for an MCP scope
      * @param serverId Server UUID
      * @param scopeId Scope ID string
-     * @returns any List of mappings
+     * @returns MappingResponseDto List of mappings
      * @throws ApiError
      */
     public static mcpRegistryControllerListMappings(
         serverId: string,
         scopeId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<Array<MappingResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings',
@@ -314,12 +354,12 @@ export class McpRegistryService {
     /**
      * Delete scope mapping
      * @param mappingId Mapping UUID
-     * @returns void
+     * @returns DeleteMappingResponseDto Mapping deleted successfully
      * @throws ApiError
      */
     public static mcpRegistryControllerDeleteMapping(
         mappingId: string,
-    ): CancelablePromise<void> {
+    ): CancelablePromise<DeleteMappingResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/mcp/mappings/{mappingId}',
