@@ -2,6 +2,9 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 TASK_ID=$1
 ASSIGNEE=$2
 COMMENTS=$3
@@ -13,7 +16,7 @@ if [ -z "$TASK_ID" ] || [ -z "$ASSIGNEE" ] || [ -z "$COMMENTS" ]; then
 fi
 
 # Mark as DONE
-../taskeroo/change_task_status.sh "$TASK_ID" "DONE"
+"$SCRIPT_DIR/../taskeroo/change_task_status.sh" "$TASK_ID" "DONE"
 
 # Add comment
-../taskeroo/comment_task.sh "$TASK_ID" "$ASSIGNEE" "$COMMENT"
+"$SCRIPT_DIR/../taskeroo/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENTS"
