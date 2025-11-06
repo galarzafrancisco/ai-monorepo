@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { HomeLink } from '../components/HomeLink';
 import { useMcpRegistry } from './useMcpRegistry';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -247,6 +248,9 @@ export function McpServerDetail() {
           <h1>{selectedServer.name}</h1>
           <p className="subtitle">{selectedServer.description}</p>
           <p className="server-id">ID: {selectedServer.providedId}</p>
+        </div>
+        <div className="header-actions">
+          <HomeLink />
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { HomeLink } from '../components/HomeLink';
 import './Wikiroo.css';
 import { useWikiroo } from './useWikiroo';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -64,6 +65,7 @@ export function WikirooHomePage() {
           <p>Lightweight knowledge base for agents</p>
         </div>
         <div className="wikiroo-actions">
+          <HomeLink />
           <button
             className="wikiroo-button secondary"
             type="button"
