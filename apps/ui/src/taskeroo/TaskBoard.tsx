@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TaskCard } from './TaskCard';
 import { CreateTaskForm } from './CreateTaskForm';
 import { TaskDetail } from './TaskDetail';
+import { HomeLink } from '../components/HomeLink';
 import './TaskBoard.css';
 import { Socket } from 'socket.io-client';
 import { useTaskeroo } from './useTaskeroo';
@@ -32,6 +33,7 @@ export function TaskBoard() {
           <p className="subtitle">Manage and track your tasks across different stages</p>
         </div>
         <div className="header-actions">
+          <HomeLink />
           <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
             {isConnected ? '● Connected' : '○ Disconnected'}
           </span>

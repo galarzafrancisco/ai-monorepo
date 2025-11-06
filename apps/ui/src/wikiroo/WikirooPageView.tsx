@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { HomeLink } from '../components/HomeLink';
 import './Wikiroo.css';
 import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
@@ -60,6 +61,7 @@ export function WikirooPageView() {
           )}
         </div>
         <div className="wikiroo-actions">
+          <HomeLink />
           <button
             className="wikiroo-button secondary"
             type="button"

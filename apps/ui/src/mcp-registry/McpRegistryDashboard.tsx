@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { HomeLink } from '../components/HomeLink';
 import { useMcpRegistry } from './useMcpRegistry';
 import { usePageTitle } from '../hooks/usePageTitle';
 import './McpRegistry.css';
@@ -36,6 +37,7 @@ export function McpRegistryDashboard() {
           <p className="subtitle">Manage Model Context Protocol servers and their configurations</p>
         </div>
         <div className="header-actions">
+          <HomeLink />
           <button onClick={() => setShowCreateForm(true)} className="btn-primary">
             + Add Server
           </button>
