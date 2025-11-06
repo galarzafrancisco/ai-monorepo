@@ -3,10 +3,10 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AssignTaskDto } from '../models/AssignTaskDto';
+import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto';
 import type { CommentResponseDto } from '../models/CommentResponseDto';
 import type { CreateCommentDto } from '../models/CreateCommentDto';
 import type { CreateTaskDto } from '../models/CreateTaskDto';
-import type { TaskChangeStatusDto } from '../models/TaskChangeStatusDto';
 import type { TaskListResponseDto } from '../models/TaskListResponseDto';
 import type { TaskResponseDto } from '../models/TaskResponseDto';
 import type { UpdateTaskDto } from '../models/UpdateTaskDto';
@@ -183,7 +183,7 @@ export class TaskService {
      */
     public static taskerooControllerChangeStatus(
         id: string,
-        requestBody: TaskChangeStatusDto,
+        requestBody: ChangeTaskStatusDto,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',

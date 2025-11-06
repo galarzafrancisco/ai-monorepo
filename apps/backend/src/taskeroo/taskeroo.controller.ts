@@ -67,7 +67,10 @@ export class TaskerooController {
     @Body() dto: UpdateTaskDto,
   ): Promise<TaskResponseDto> {
     const result = await this.taskerooService.updateTask(params.id, {
+      name: dto.name,
       description: dto.description,
+      assignee: dto.assignee,
+      sessionId: dto.sessionId,
     });
     return this.mapResultToResponse(result);
   }
