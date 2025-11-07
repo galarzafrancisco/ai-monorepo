@@ -58,8 +58,8 @@ export class DiscoveryController {
 
       return {
         issuer,
-        authorization_endpoint: `${issuer}/api/v1/authorize/mcp/${serverIdentifier}/${version}`,
-        token_endpoint: `${issuer}/api/v1/token/mcp/${serverIdentifier}/${version}`,
+        authorization_endpoint: `${issuer}/api/v1/auth/authorize/mcp/${serverIdentifier}/${version}`,
+        token_endpoint: `${issuer}/api/v1/auth/token/mcp/${serverIdentifier}/${version}`,
         registration_endpoint: `${issuer}/api/v1/auth/clients/register/mcp/${serverIdentifier}/${version}`,
         scopes_supported: (server.scopes ?? [])
           .map((scope) => scope.scopeId)
