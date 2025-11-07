@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { McpScopeEntity } from './mcp-scope.entity';
 import { McpConnectionEntity } from './mcp-connection.entity';
-import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 
 @Entity('mcp_servers')
 export class McpServerEntity {
@@ -32,10 +31,6 @@ export class McpServerEntity {
     cascade: true,
   })
   connections!: McpConnectionEntity[];
-
-  // Many MCP Authorization Flows can refer to one MCP Server
-  @OneToMany(() => McpAuthorizationFlowEntity, (flow) => flow.server)
-  mcpAuthorizationFlows!: McpAuthorizationFlowEntity[];
 
   @CreateDateColumn()
   createdAt!: Date;

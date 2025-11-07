@@ -33,7 +33,7 @@ export class McpAuthorizationFlowEntity {
   authJourney!: AuthJourneyEntity;
 
   // An MCP Authorization Flow refers to only one MCP Server
-  @ManyToOne(() => McpServerEntity, (server) => server.mcpAuthorizationFlows, {
+  @ManyToOne(() => McpServerEntity, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'server_id' })
