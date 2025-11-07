@@ -9,8 +9,6 @@ import { useTaskeroo } from './useTaskeroo';
 import { Task, TaskStatus } from './types';
 import { usePageTitle } from '../hooks/usePageTitle';
 
-const API_BASE = 'http://localhost:3000';
-
 export function TaskBoard() {
   const { tasks, isConnected } = useTaskeroo();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);

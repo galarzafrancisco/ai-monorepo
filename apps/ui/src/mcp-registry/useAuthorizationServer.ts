@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { McpRegistryService } from './api';
+import { getApiBaseUrl } from '../config/api';
 
 
 export const useAuthorizationServer = (mcpServerId?: string, mcpServerVersion?: string) => {
@@ -15,15 +16,8 @@ export const useAuthorizationServer = (mcpServerId?: string, mcpServerVersion?: 
 
   async function loadMetadata(mcpServerId: string, mcpServerVersion: string) {
 
-    // Make base url
-    let baseUrl: string;
-    if (import.meta.env.PROD) {
-      baseUrl = '';
-    } else {
-      const PORT = import.meta.env.VITE_BACKEND_PORT || 3000;
-      baseUrl = `http://localhost:${PORT}`;
-    }
-
+    // Make base url using centralized config
+    const baseUrl = getApiBaseUrl();
 
     // Make authorization server url
     const asUrl = new URL(`${baseUrl}/mcp/${mcpServerId}/${mcpServerVersion}`);
