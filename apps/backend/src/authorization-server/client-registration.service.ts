@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RegisteredClientEntity } from './registered-client.entity';
@@ -16,6 +16,9 @@ import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 
 @Injectable()
 export class ClientRegistrationService {
+  
+  private logger = new Logger(ClientRegistrationService.name);
+
   constructor(
     @InjectRepository(RegisteredClientEntity)
     private readonly clientRepository: Repository<RegisteredClientEntity>,
@@ -70,7 +73,6 @@ export class ClientRegistrationService {
       contacts: dto.contacts || null,
     });
 
-    console.log()
     const savedClient = await this.clientRepository.save(client);
 
     // Create an Authorization Journey
@@ -79,12 +81,13 @@ export class ClientRegistrationService {
       mcpClientId: savedClient.id,
     });
 
-    console.log(authJourney.authorizationJourney)
-    console.log(authJourney.mcpAuthorizationFlow)
+    this.logger.debug(authJourney.authorizationJourney)
+    this.logger.debug(authJourney.mcpAuthorizationFlow)
+    this.logger.debug(authJourney.connectionAuthorizationFlows)
 
-    console.log('Getting full shit')
+    this.logger.debug('Getting full shit')
     const full = await this.authJourneyService.getJourneysForMcpServer(mcpServer.id);
-    console.log(full);
+    this.logger.debug(JSON.stringify(full, null, 2));
 
     // Return the client with the plaintext secret (only time it's exposed)
     return {

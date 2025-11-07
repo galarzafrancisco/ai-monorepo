@@ -6,6 +6,7 @@ import {
   McpAuthorizationFlowEntity,
 } from './entities';
 import { AuthJourneysService } from './auth-journeys.service';
+import { McpRegistryModule } from 'src/mcp-registry/mcp-registry.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthJourneysService } from './auth-journeys.service';
       McpAuthorizationFlowEntity,
       ConnectionAuthorizationFlowEntity,
     ]),
+    McpRegistryModule,
   ],
   providers: [AuthJourneysService],
   exports: [AuthJourneysService],

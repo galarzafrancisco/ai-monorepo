@@ -3,10 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   AuthJourneyEntity,
+  ConnectionAuthorizationFlowEntity,
   McpAuthorizationFlowEntity,
 } from './entities';
 import { AuthJourneyStatus } from './enums/auth-journey-status.enum';
 import { CreateAuthJourneyInput } from './dto/service/auth-journeys.service.types';
+import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 
 @Injectable()
 export class AuthJourneysService {
@@ -15,6 +17,10 @@ export class AuthJourneysService {
     private readonly authJourneyRepository: Repository<AuthJourneyEntity>,
     @InjectRepository(McpAuthorizationFlowEntity)
     private readonly mcpAuthorizationFlowRepository: Repository<McpAuthorizationFlowEntity>,
+    @InjectRepository(ConnectionAuthorizationFlowEntity)
+    private readonly connectionAuthorizationFlowRepository: Repository<ConnectionAuthorizationFlowEntity>,
+
+    private readonly mcpRegistryService: McpRegistryService
   ) { }
 
   /*
@@ -27,7 +33,11 @@ export class AuthJourneysService {
   ): Promise<{
     authorizationJourney: AuthJourneyEntity;
     mcpAuthorizationFlow: McpAuthorizationFlowEntity;
+    connectionAuthorizationFlows: ConnectionAuthorizationFlowEntity[];
   }> {
+
+    // Get the MCP Server
+    const mcpServer = await this.mcpRegistryService.getServerById(input.mcpServerId);
 
     // Start an Auth journey
     const journey = this.authJourneyRepository.create({
@@ -38,14 +48,25 @@ export class AuthJourneysService {
     // Start an MCP Authorization Flow
     const mcpFlow = this.mcpAuthorizationFlowRepository.create({
       authorizationJourneyId: savedJourney.id,
-      serverId: input.mcpServerId,
+      serverId: mcpServer.id,
       clientId: input.mcpClientId,
     });
     const savedFlow = await this.mcpAuthorizationFlowRepository.save(mcpFlow);
 
+    // Start Connection Authorization Flows if the MCP Server has any connections
+    const connectionFlows = mcpServer.connections.map(connection => {
+      return this.connectionAuthorizationFlowRepository.create({
+        authorizationJourneyId: savedJourney.id,
+        mcpConnectionId: connection.id,
+      })
+    });
+
+    const savedConnectionFlows = connectionFlows.length > 0 ? await this.connectionAuthorizationFlowRepository.save(connectionFlows) : [];
+
     return {
       authorizationJourney: savedJourney,
       mcpAuthorizationFlow: savedFlow,
+      connectionAuthorizationFlows: savedConnectionFlows,
     };
   }
 
@@ -61,8 +82,12 @@ export class AuthJourneysService {
           },
         },
         relations: {
-          mcpAuthorizationFlow: {},
-          connectionAuthorizationFlows: {},
+          mcpAuthorizationFlow: {
+            client: {}
+          },
+          connectionAuthorizationFlows: {
+            mcpConnection: {}
+          },
         }
       }
     )
