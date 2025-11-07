@@ -25,6 +25,7 @@ export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto
 export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto';
 export type { DeleteServerResponseDto } from './models/DeleteServerResponseDto';
 export type { MappingResponseDto } from './models/MappingResponseDto';
+export type { McpAuthorizationFlowEntity } from './models/McpAuthorizationFlowEntity';
 export type { PageListResponseDto } from './models/PageListResponseDto';
 export type { PageResponseDto } from './models/PageResponseDto';
 export type { PageSummaryDto } from './models/PageSummaryDto';

@@ -364,6 +364,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OAuth 2.0 Authorization Endpoint
+         * @description Handles authorization requests from MCP clients. Validates the request, stores PKCE parameters, and redirects to the consent screen UI.
+         */
+        get: operations["AuthorizationController_authorize"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/flow/{flowId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get authorization flow details
+         * @description Retrieves authorization flow details for the consent screen
+         */
+        get: operations["AuthorizationController_getFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
         parameters: {
             query?: never;
@@ -1066,6 +1106,7 @@ export interface components {
              */
             client_id_issued_at: number;
         };
+        McpAuthorizationFlowEntity: Record<string, never>;
         AuthorizationServerMetadataDto: {
             /**
              * @description Issuer identifier for the MCP authorization server
@@ -2146,6 +2187,85 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
                 };
+            };
+        };
+    };
+    AuthorizationController_authorize: {
+        parameters: {
+            query: {
+                /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
+                response_type: "code";
+                /** @description Client identifier issued during registration */
+                client_id: string;
+                /** @description PKCE code challenge derived from the code verifier */
+                code_challenge: string;
+                /** @description PKCE code challenge method (S256 for SHA-256) */
+                code_challenge_method: string;
+                /** @description Redirect URI where the authorization response will be sent */
+                redirect_uri: string;
+                /** @description Opaque state value for CSRF protection */
+                state: string;
+                /** @description Resource server URL that the client wants to access */
+                resource: string;
+            };
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirects to consent screen with authorization request ID */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid authorization request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description MCP server or client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_getFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flowId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorization flow details retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpAuthorizationFlowEntity"];
+                };
+            };
+            /** @description Authorization flow not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
