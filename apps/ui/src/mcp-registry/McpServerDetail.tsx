@@ -57,9 +57,13 @@ export function McpServerDetail() {
   useEffect(() => {
     if (serverId) {
       loadServerDetails(serverId);
-      loadAuthorizationServerMetadata(serverId, "0.0.0");
     }
   }, [serverId]);
+
+  useEffect(() => {
+    if (!selectedServer) return;
+    loadAuthorizationServerMetadata(selectedServer.providedId, "0.0.0");
+  }, [selectedServer])
 
   const handleCreateScope = async (e: React.FormEvent) => {
     e.preventDefault();
