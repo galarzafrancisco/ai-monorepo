@@ -377,7 +377,11 @@ export interface paths {
          */
         get: operations["AuthorizationController_authorize"];
         put?: never;
-        post?: never;
+        /**
+         * OAuth 2.0 Authorization Consent Handler
+         * @description Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.
+         */
+        post: operations["AuthorizationController_authorizeConsent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1105,6 +1109,18 @@ export interface components {
              * @example 604846800
              */
             client_id_issued_at: number;
+        };
+        ConsentDecisionDto: {
+            /**
+             * @description Authorization flow ID (serves as CSRF protection token)
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            flow_id: string;
+            /**
+             * @description Whether the user approved the authorization request
+             * @example true
+             */
+            approved: boolean;
         };
         McpAuthorizationFlowEntity: Record<string, never>;
         AuthorizationServerMetadataDto: {
@@ -2232,6 +2248,52 @@ export interface operations {
                 content?: never;
             };
             /** @description MCP server or client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_authorizeConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentDecisionDto"];
+            };
+        };
+        responses: {
+            /** @description Redirects to client redirect_uri with authorization code or error */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid consent decision or flow state */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization flow has already been used */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization flow not found */
             404: {
                 headers: {
                     [name: string]: unknown;

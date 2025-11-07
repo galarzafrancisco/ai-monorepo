@@ -13,6 +13,7 @@ export { ChangeTaskStatusDto } from './models/ChangeTaskStatusDto';
 export { ClientRegistrationResponseDto } from './models/ClientRegistrationResponseDto';
 export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { ConnectionResponseDto } from './models/ConnectionResponseDto';
+export type { ConsentDecisionDto } from './models/ConsentDecisionDto';
 export type { CreateCommentDto } from './models/CreateCommentDto';
 export type { CreateConnectionDto } from './models/CreateConnectionDto';
 export type { CreateMappingDto } from './models/CreateMappingDto';
