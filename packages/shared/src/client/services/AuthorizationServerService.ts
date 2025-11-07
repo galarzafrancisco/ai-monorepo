@@ -2,7 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AuthorizationServerMetadataDto } from '../models/AuthorizationServerMetadataDto';
 import type { ClientRegistrationResponseDto } from '../models/ClientRegistrationResponseDto';
 import type { RegisterClientDto } from '../models/RegisterClientDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -21,7 +20,7 @@ export class AuthorizationServerService {
     ): CancelablePromise<ClientRegistrationResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/authz/clients/register',
+            url: '/api/v1/auth/clients/register/mcp/{serverId}/{version}',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -42,7 +41,7 @@ export class AuthorizationServerService {
     ): CancelablePromise<ClientRegistrationResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/authz/clients/{clientId}',
+            url: '/api/v1/auth/clients/{clientId}',
             path: {
                 'clientId': clientId,
             },
@@ -60,25 +59,7 @@ export class AuthorizationServerService {
     public static clientRegistrationControllerListClients(): CancelablePromise<Array<ClientRegistrationResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/authz/clients',
-        });
-    }
-    /**
-     * Expose OAuth 2.0 Authorization Server metadata for a registered MCP server
-     * Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with an MCP server. Accepts either the server UUID or the providedId.
-     * @param mcpServerId MCP server UUID or providedId
-     * @returns AuthorizationServerMetadataDto Authorization server metadata retrieved successfully
-     * @throws ApiError
-     */
-    public static authorizationServerMetadataControllerGetAuthorizationServerMetadata(
-        mcpServerId: string,
-    ): CancelablePromise<AuthorizationServerMetadataDto> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/.well-known/oauth-authorization-server/{mcpServerId}',
-            path: {
-                'mcpServerId': mcpServerId,
-            },
+            url: '/api/v1/auth/clients',
         });
     }
 }

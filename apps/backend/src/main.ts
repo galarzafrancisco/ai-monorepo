@@ -27,7 +27,10 @@ async function bootstrap() {
 
   // Set global prefix for API routes
   app.setGlobalPrefix('api/v1', {
-    exclude: [{ path: '/.well-known/(.*)', method: RequestMethod.ALL }],
+    exclude: [
+      {
+        path: '/.well-known/*path', method: RequestMethod.ALL
+      }],
   });
 
   const config = new DocumentBuilder()

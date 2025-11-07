@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RegisteredClientEntity } from './registered-client.entity';
@@ -7,18 +7,24 @@ import { GrantType, TokenEndpointAuthMethod } from './enums';
 import {
   InvalidGrantTypeError,
   InvalidRedirectUriError,
-  PkceRequiredError,
   MissingRequiredFieldError,
-  ClientAlreadyRegisteredError,
   ClientNotFoundError,
 } from './errors/client-registration.errors';
 import { randomBytes } from 'crypto';
+import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
+import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 
 @Injectable()
 export class ClientRegistrationService {
+  
+  private logger = new Logger(ClientRegistrationService.name);
+
   constructor(
     @InjectRepository(RegisteredClientEntity)
     private readonly clientRepository: Repository<RegisteredClientEntity>,
+
+    private readonly authJourneyService: AuthJourneysService,
+    private readonly mcpRegistryService: McpRegistryService,
   ) {}
 
   /**
@@ -27,7 +33,11 @@ export class ClientRegistrationService {
    */
   async registerClient(
     dto: RegisterClientDto,
+    serverId: string,
   ): Promise<RegisteredClientEntity> {
+
+    // Validate payload without touching the database
+
     // Validate required fields
     this.validateRequiredFields(dto);
 
@@ -37,18 +47,6 @@ export class ClientRegistrationService {
     // Validate redirect URIs
     this.validateRedirectUris(dto.redirect_uris);
 
-    // Validate PKCE requirement for authorization_code
-    this.validatePkceRequirement(dto);
-
-    // Check for duplicate client names (idempotency check)
-    const existingClient = await this.clientRepository.findOne({
-      where: { clientName: dto.client_name },
-    });
-
-    if (existingClient) {
-      throw new ClientAlreadyRegisteredError(dto.client_name);
-    }
-
     // Generate secure client credentials
     const clientId = this.generateClientId();
     const clientSecret =
@@ -56,7 +54,14 @@ export class ClientRegistrationService {
         ? this.generateClientSecret()
         : null;
 
+    // Validate that the MCP Server exists
+    const mcpServer = await this.mcpRegistryService.getServerByProvidedId(serverId); // service throws if not found
+    
     // Create and persist the client entity
+    let scopes: string[] = [];
+    if (dto.scope && dto.scope.trim() != '') {
+      scopes = dto.scope.split(' ');
+    }
     const client = this.clientRepository.create({
       clientId,
       clientSecret: clientSecret ? this.hashSecret(clientSecret) : null,
@@ -64,12 +69,25 @@ export class ClientRegistrationService {
       redirectUris: dto.redirect_uris,
       grantTypes: dto.grant_types,
       tokenEndpointAuthMethod: dto.token_endpoint_auth_method,
-      scopes: dto.scope || null,
+      scopes: scopes,
       contacts: dto.contacts || null,
-      codeChallengeMethod: dto.code_challenge_method || null,
     });
 
     const savedClient = await this.clientRepository.save(client);
+
+    // Create an Authorization Journey
+    const authJourney = await this.authJourneyService.createJourneyForMcpRegistration({
+      mcpServerId: mcpServer.id,
+      mcpClientId: savedClient.id,
+    });
+
+    this.logger.debug(authJourney.authorizationJourney)
+    this.logger.debug(authJourney.mcpAuthorizationFlow)
+    this.logger.debug(authJourney.connectionAuthorizationFlows)
+
+    this.logger.debug('Getting full shit')
+    const full = await this.authJourneyService.getJourneysForMcpServer(mcpServer.id);
+    this.logger.debug(JSON.stringify(full, null, 2));
 
     // Return the client with the plaintext secret (only time it's exposed)
     return {
@@ -148,20 +166,6 @@ export class ClientRegistrationService {
         // MCP clients can use localhost and http URIs
       } catch {
         throw new InvalidRedirectUriError(`Invalid URI format: ${uri}`);
-      }
-    }
-  }
-
-  private validatePkceRequirement(dto: RegisterClientDto): void {
-    // If using authorization_code, PKCE is required
-    if (dto.grant_types.includes(GrantType.AUTHORIZATION_CODE)) {
-      if (!dto.code_challenge_method) {
-        throw new PkceRequiredError();
-      }
-
-      // Only S256 is allowed for security
-      if (dto.code_challenge_method !== 'S256') {
-        throw new PkceRequiredError();
       }
     }
   }

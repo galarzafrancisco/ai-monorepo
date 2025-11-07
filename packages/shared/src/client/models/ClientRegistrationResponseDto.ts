@@ -8,10 +8,6 @@ export type ClientRegistrationResponseDto = {
      */
     client_id: string;
     /**
-     * Client secret for confidential clients
-     */
-    client_secret?: Record<string, any> | null;
-    /**
      * Human-readable name of the client
      */
     client_name: string;
@@ -30,19 +26,15 @@ export type ClientRegistrationResponseDto = {
     /**
      * Scopes granted to the client
      */
-    scope?: Array<string> | null;
+    scope?: string | null;
     /**
      * Contact emails for the client
      */
     contacts?: Array<string> | null;
     /**
-     * PKCE code challenge method
+     * Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.
      */
-    code_challenge_method?: Record<string, any> | null;
-    /**
-     * Client registration timestamp (ISO 8601)
-     */
-    client_id_issued_at: string;
+    client_id_issued_at: number;
 };
 export namespace ClientRegistrationResponseDto {
     /**

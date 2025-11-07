@@ -8,6 +8,7 @@ import { WikirooModule } from './wikiroo/wikiroo.module';
 import { McpRegistryModule } from './mcp-registry/mcp-registry.module';
 import { AuthorizationServerModule } from './authorization-server/authorization-server.module';
 import { DiscoveryModule } from './discovery/discovery.module';
+import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
     TaskerooModule,
     WikirooModule,
     McpRegistryModule,
+    AuthJourneysModule,
     AuthorizationServerModule,
     DiscoveryModule,
   ],

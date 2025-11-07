@@ -4,21 +4,25 @@
 /* eslint-disable */
 export type RegisterClientDto = {
     /**
-     * Human-readable name of the client
-     */
-    client_name: string;
-    /**
      * Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
      */
     redirect_uris: Array<string>;
+    /**
+     * Authentication method for the token endpoint (MCP clients use "none")
+     */
+    token_endpoint_auth_method: RegisterClientDto.token_endpoint_auth_method;
     /**
      * Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
      */
     grant_types: Array<'authorization_code' | 'refresh_token'>;
     /**
-     * Authentication method for the token endpoint (MCP clients use "none")
+     * Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.
      */
-    token_endpoint_auth_method: RegisterClientDto.token_endpoint_auth_method;
+    response_types: Array<'code'>;
+    /**
+     * Human-readable name of the client
+     */
+    client_name: string;
     /**
      * Requested scopes for the client
      */
@@ -28,9 +32,16 @@ export type RegisterClientDto = {
      */
     contacts?: Array<string>;
     /**
-     * PKCE code challenge method. Must be S256 for authorization_code grant.
+     * Terms of service URI for the client registration
      */
-    code_challenge_method?: string;
+    tos_uri?: string;
+    client_uri?: string;
+    logo_uri?: string;
+    policy_uri?: string;
+    jwks_uri?: string;
+    jwks?: string;
+    software_id?: string;
+    software_version?: string;
 };
 export namespace RegisterClientDto {
     /**

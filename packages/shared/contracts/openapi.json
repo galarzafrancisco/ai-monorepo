@@ -467,139 +467,6 @@
         ]
       }
     },
-    "/api/v1/authz/clients/register": {
-      "post": {
-        "description": "Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.",
-        "operationId": "ClientRegistrationController_registerClient",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterClientDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Client registered successfully with generated credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientRegistrationResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured)"
-          },
-          "409": {
-            "description": "A client with this name is already registered"
-          }
-        },
-        "summary": "Register a new OAuth 2.0 client (Dynamic Client Registration)",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/api/v1/authz/clients/{clientId}": {
-      "get": {
-        "description": "Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.",
-        "operationId": "ClientRegistrationController_getClient",
-        "parameters": [
-          {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Client registration information retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientRegistrationResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Client not found"
-          }
-        },
-        "summary": "Retrieve client registration information",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/api/v1/authz/clients": {
-      "get": {
-        "description": "Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.",
-        "operationId": "ClientRegistrationController_listClients",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of registered clients",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClientRegistrationResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List all registered clients (Admin)",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/api/v1/.well-known/oauth-authorization-server/{mcpServerId}": {
-      "get": {
-        "description": "Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with an MCP server. Accepts either the server UUID or the providedId.",
-        "operationId": "AuthorizationServerMetadataController_getAuthorizationServerMetadata",
-        "parameters": [
-          {
-            "name": "mcpServerId",
-            "required": true,
-            "in": "path",
-            "description": "MCP server UUID or providedId",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Authorization server metadata retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthorizationServerMetadataDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Expose OAuth 2.0 Authorization Server metadata for a registered MCP server",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
     "/api/v1/mcp/servers": {
       "post": {
         "operationId": "McpRegistryController_createServer",
@@ -1255,6 +1122,148 @@
           "MCP Registry"
         ]
       }
+    },
+    "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
+      "post": {
+        "description": "Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.",
+        "operationId": "ClientRegistrationController_registerClient",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterClientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Client registered successfully with generated credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRegistrationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured)"
+          },
+          "409": {
+            "description": "A client with this name is already registered"
+          }
+        },
+        "summary": "Register a new OAuth 2.0 client (Dynamic Client Registration)",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/clients/{clientId}": {
+      "get": {
+        "description": "Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.",
+        "operationId": "ClientRegistrationController_getClient",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Client registration information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRegistrationResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        },
+        "summary": "Retrieve client registration information",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/clients": {
+      "get": {
+        "description": "Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.",
+        "operationId": "ClientRegistrationController_listClients",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of registered clients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClientRegistrationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all registered clients (Admin)",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
+      "get": {
+        "description": "Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with a specific MCP server version. Accepts either the server UUID or the providedId.",
+        "operationId": "DiscoveryController_getAuthorizationServerMetadata",
+        "parameters": [
+          {
+            "name": "mcpServerId",
+            "required": true,
+            "in": "path",
+            "description": "MCP server UUID or providedId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "description": "Semantic version of the MCP server",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorization server metadata retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationServerMetadataDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Expose OAuth 2.0 Authorization Server metadata for a registered MCP server version",
+        "tags": [
+          "Discovery"
+        ]
+      }
     }
   },
   "info": {
@@ -1656,267 +1665,6 @@
         },
         "required": [
           "items"
-        ]
-      },
-      "RegisterClientDto": {
-        "type": "object",
-        "properties": {
-          "client_name": {
-            "type": "string",
-            "description": "Human-readable name of the client",
-            "example": "My OAuth Client"
-          },
-          "redirect_uris": {
-            "description": "Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)",
-            "example": [
-              "http://localhost:3000/callback",
-              "https://example.com/callback"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "grant_types": {
-            "type": "array",
-            "description": "Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.",
-            "example": [
-              "authorization_code",
-              "refresh_token"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "authorization_code",
-                "refresh_token"
-              ]
-            }
-          },
-          "token_endpoint_auth_method": {
-            "type": "string",
-            "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
-            "example": "none",
-            "enum": [
-              "none"
-            ]
-          },
-          "scope": {
-            "description": "Requested scopes for the client",
-            "example": [
-              "openid",
-              "profile",
-              "email"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "contacts": {
-            "description": "Contact emails for the client registration",
-            "example": [
-              "admin@example.com"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "code_challenge_method": {
-            "type": "string",
-            "description": "PKCE code challenge method. Must be S256 for authorization_code grant.",
-            "example": "S256"
-          }
-        },
-        "required": [
-          "client_name",
-          "redirect_uris",
-          "grant_types",
-          "token_endpoint_auth_method"
-        ]
-      },
-      "ClientRegistrationResponseDto": {
-        "type": "object",
-        "properties": {
-          "client_id": {
-            "type": "string",
-            "description": "Unique client identifier",
-            "example": "8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b"
-          },
-          "client_secret": {
-            "type": "object",
-            "description": "Client secret for confidential clients",
-            "example": "ZXhhbXBsZV9zZWNyZXRfa2V5",
-            "nullable": true
-          },
-          "client_name": {
-            "type": "string",
-            "description": "Human-readable name of the client",
-            "example": "My OAuth Client"
-          },
-          "redirect_uris": {
-            "description": "Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)",
-            "example": [
-              "http://localhost:3000/callback",
-              "https://example.com/callback"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "grant_types": {
-            "type": "array",
-            "description": "Grant types the client is authorized to use",
-            "example": [
-              "authorization_code",
-              "refresh_token"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "authorization_code",
-                "refresh_token"
-              ]
-            }
-          },
-          "token_endpoint_auth_method": {
-            "type": "string",
-            "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
-            "example": "none",
-            "enum": [
-              "none"
-            ]
-          },
-          "scope": {
-            "description": "Scopes granted to the client",
-            "example": [
-              "openid",
-              "profile",
-              "email"
-            ],
-            "nullable": true,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "contacts": {
-            "description": "Contact emails for the client",
-            "example": [
-              "admin@example.com"
-            ],
-            "nullable": true,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "code_challenge_method": {
-            "type": "object",
-            "description": "PKCE code challenge method",
-            "example": "S256",
-            "nullable": true
-          },
-          "client_id_issued_at": {
-            "type": "string",
-            "description": "Client registration timestamp (ISO 8601)",
-            "example": "2025-11-05T08:00:00.000Z"
-          }
-        },
-        "required": [
-          "client_id",
-          "client_name",
-          "redirect_uris",
-          "grant_types",
-          "token_endpoint_auth_method",
-          "client_id_issued_at"
-        ]
-      },
-      "AuthorizationServerMetadataDto": {
-        "type": "object",
-        "properties": {
-          "issuer": {
-            "type": "string",
-            "description": "Issuer identifier for the MCP authorization server",
-            "example": "https://api.example.com/v1/mcp-server"
-          },
-          "authorization_endpoint": {
-            "type": "string",
-            "description": "Authorization endpoint for initiating OAuth 2.0 authorization code flows",
-            "example": "https://api.example.com/v1/authorize/mcp-server"
-          },
-          "registration_endpoint": {
-            "type": "string",
-            "description": "Dynamic client registration endpoint for MCP integrations",
-            "example": "https://api.example.com/v1/register/mcp-server"
-          },
-          "scopes_supported": {
-            "description": "Scopes supported by this MCP authorization server",
-            "example": [
-              "mcp:tool.read",
-              "mcp:tool.write"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "response_types_supported": {
-            "description": "OAuth 2.0 response types supported by this authorization server",
-            "example": [
-              "code"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "grant_types_supported": {
-            "type": "array",
-            "description": "OAuth 2.0 grant types supported by this authorization server",
-            "example": [
-              "authorization_code",
-              "refresh_token"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "authorization_code",
-                "refresh_token"
-              ]
-            }
-          },
-          "token_endpoint_auth_methods_supported": {
-            "description": "Client authentication methods supported by the token endpoint",
-            "example": [
-              "client_secret_post"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "code_challenge_methods_supported": {
-            "description": "PKCE code challenge methods supported by this authorization server",
-            "example": [
-              "S256"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "issuer",
-          "authorization_endpoint",
-          "registration_endpoint",
-          "scopes_supported",
-          "response_types_supported",
-          "grant_types_supported",
-          "token_endpoint_auth_methods_supported",
-          "code_challenge_methods_supported"
         ]
       },
       "CreateServerDto": {
@@ -2334,6 +2082,291 @@
         },
         "required": [
           "message"
+        ]
+      },
+      "RegisterClientDto": {
+        "type": "object",
+        "properties": {
+          "redirect_uris": {
+            "description": "Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)",
+            "example": [
+              "http://localhost:3000/callback",
+              "https://example.com/callback"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "token_endpoint_auth_method": {
+            "type": "string",
+            "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
+            "example": "none",
+            "enum": [
+              "none"
+            ]
+          },
+          "grant_types": {
+            "type": "array",
+            "description": "Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.",
+            "example": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ]
+            }
+          },
+          "response_types": {
+            "type": "array",
+            "description": "Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.",
+            "example": [
+              "code"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          "client_name": {
+            "type": "string",
+            "description": "Human-readable name of the client",
+            "example": "My OAuth Client"
+          },
+          "scope": {
+            "description": "Requested scopes for the client",
+            "example": [
+              "data:read",
+              "data:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contacts": {
+            "description": "Contact emails for the client registration",
+            "example": [
+              "admin@example.com"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tos_uri": {
+            "type": "string",
+            "description": "Terms of service URI for the client registration",
+            "example": "https://example.com/tos"
+          },
+          "client_uri": {
+            "type": "string"
+          },
+          "logo_uri": {
+            "type": "string"
+          },
+          "policy_uri": {
+            "type": "string"
+          },
+          "jwks_uri": {
+            "type": "string"
+          },
+          "jwks": {
+            "type": "string"
+          },
+          "software_id": {
+            "type": "string"
+          },
+          "software_version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "redirect_uris",
+          "token_endpoint_auth_method",
+          "grant_types",
+          "response_types",
+          "client_name"
+        ]
+      },
+      "ClientRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "description": "Unique client identifier",
+            "example": "8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b"
+          },
+          "client_name": {
+            "type": "string",
+            "description": "Human-readable name of the client",
+            "example": "My OAuth Client"
+          },
+          "redirect_uris": {
+            "description": "Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)",
+            "example": [
+              "http://localhost:3000/callback",
+              "https://example.com/callback"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grant_types": {
+            "type": "array",
+            "description": "Grant types the client is authorized to use",
+            "example": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ]
+            }
+          },
+          "token_endpoint_auth_method": {
+            "type": "string",
+            "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
+            "example": "none",
+            "enum": [
+              "none"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "description": "Scopes granted to the client",
+            "example": "openid profile email",
+            "nullable": true
+          },
+          "contacts": {
+            "description": "Contact emails for the client",
+            "example": [
+              "admin@example.com"
+            ],
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "client_id_issued_at": {
+            "type": "number",
+            "description": "Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.",
+            "example": "604846800"
+          }
+        },
+        "required": [
+          "client_id",
+          "client_name",
+          "redirect_uris",
+          "grant_types",
+          "token_endpoint_auth_method",
+          "client_id_issued_at"
+        ]
+      },
+      "AuthorizationServerMetadataDto": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "description": "Issuer identifier for the MCP authorization server",
+            "example": "https://auth.example.com"
+          },
+          "authorization_endpoint": {
+            "type": "string",
+            "description": "Authorization endpoint for initiating OAuth 2.0 authorization code flows",
+            "example": "https://auth.example.com/api/v1/authorize/mcp/inventory/v1"
+          },
+          "token_endpoint": {
+            "type": "string",
+            "description": "Token endpoint for exchanging OAuth 2.0 authorization codes",
+            "example": "https://auth.example.com/api/v1/token/mcp/inventory/v1"
+          },
+          "registration_endpoint": {
+            "type": "string",
+            "description": "Dynamic client registration endpoint for MCP integrations",
+            "example": "https://auth.example.com/api/v1/register/mcp/inventory/v1"
+          },
+          "scopes_supported": {
+            "description": "Scopes supported by this MCP authorization server",
+            "example": [
+              "mcp.read",
+              "mcp.write",
+              "openid",
+              "offline_access"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "response_types_supported": {
+            "description": "OAuth 2.0 response types supported by this authorization server",
+            "example": [
+              "code"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grant_types_supported": {
+            "type": "array",
+            "description": "OAuth 2.0 grant types supported by this authorization server",
+            "example": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ]
+            }
+          },
+          "token_endpoint_auth_methods_supported": {
+            "description": "Client authentication methods supported by the token endpoint",
+            "example": [
+              "client_secret_basic",
+              "private_key_jwt"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "code_challenge_methods_supported": {
+            "description": "PKCE code challenge methods supported by this authorization server",
+            "example": [
+              "S256"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "issuer",
+          "authorization_endpoint",
+          "token_endpoint",
+          "registration_endpoint",
+          "scopes_supported",
+          "response_types_supported",
+          "grant_types_supported",
+          "token_endpoint_auth_methods_supported",
+          "code_challenge_methods_supported"
         ]
       }
     }
