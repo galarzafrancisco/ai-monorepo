@@ -11,16 +11,24 @@ export class AuthorizationServerService {
     /**
      * Register a new OAuth 2.0 client (Dynamic Client Registration)
      * Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.
+     * @param serverId
+     * @param version
      * @param requestBody
      * @returns ClientRegistrationResponseDto Client registered successfully with generated credentials
      * @throws ApiError
      */
     public static clientRegistrationControllerRegisterClient(
+        serverId: string,
+        version: string,
         requestBody: RegisterClientDto,
     ): CancelablePromise<ClientRegistrationResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/auth/clients/register/mcp/{serverId}/{version}',
+            path: {
+                'serverId': serverId,
+                'version': version,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {

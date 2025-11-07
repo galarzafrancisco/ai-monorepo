@@ -2063,7 +2063,10 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                serverId: string;
+                version: string;
+            };
             cookie?: never;
         };
         requestBody: {
