@@ -69,79 +69,45 @@ export function ConsentScreen() {
     }
   };
 
-  const handleApprove = async () => {
+  const submitConsent = (approved: boolean) => {
     if (!flowDetails) return;
 
-    setIsApproving(true);
-    setError(null);
+    // Use a form submission to POST the consent decision
+    // This allows the browser to naturally follow the 302 redirect
+    const baseUrl = import.meta.env.PROD
+      ? ''
+      : `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 3000}`;
 
-    try {
-      const baseUrl = import.meta.env.PROD
-        ? ''
-        : `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 3000}`;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${baseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`;
 
-      // POST consent decision to backend
-      const response = await fetch(`${baseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ flow_id: flowId, approved: true }),
-        redirect: 'manual', // Handle redirect manually to show any errors
-      });
+    // Add flow_id field
+    const flowIdInput = document.createElement('input');
+    flowIdInput.type = 'hidden';
+    flowIdInput.name = 'flow_id';
+    flowIdInput.value = flowId || '';
+    form.appendChild(flowIdInput);
 
-      // The backend will redirect to the client's redirect_uri
-      // Since we're using redirect: 'manual', we need to follow it
-      if (response.type === 'opaqueredirect' || response.status === 302 || response.status === 301) {
-        const redirectUrl = response.headers.get('Location') || response.url;
-        if (redirectUrl) {
-          window.location.href = redirectUrl;
-        } else {
-          throw new Error('No redirect URL provided by server');
-        }
-      } else if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || 'Failed to process authorization');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to approve authorization');
-      setIsApproving(false);
-    }
+    // Add approved field
+    const approvedInput = document.createElement('input');
+    approvedInput.type = 'hidden';
+    approvedInput.name = 'approved';
+    approvedInput.value = approved.toString();
+    form.appendChild(approvedInput);
+
+    document.body.appendChild(form);
+    form.submit();
   };
 
-  const handleDeny = async () => {
+  const handleApprove = () => {
     if (!flowDetails) return;
+    submitConsent(true);
+  };
 
-    setIsApproving(true);
-    setError(null);
-
-    try {
-      const baseUrl = import.meta.env.PROD
-        ? ''
-        : `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 3000}`;
-
-      // POST denial to backend
-      const response = await fetch(`${baseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ flow_id: flowId, approved: false }),
-        redirect: 'manual',
-      });
-
-      // The backend will redirect to the client's redirect_uri with error
-      if (response.type === 'opaqueredirect' || response.status === 302 || response.status === 301) {
-        const redirectUrl = response.headers.get('Location') || response.url;
-        if (redirectUrl) {
-          window.location.href = redirectUrl;
-        } else {
-          throw new Error('No redirect URL provided by server');
-        }
-      } else if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || 'Failed to process denial');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to deny authorization');
-      setIsApproving(false);
-    }
+  const handleDeny = () => {
+    if (!flowDetails) return;
+    submitConsent(false);
   };
 
   if (isLoading) {

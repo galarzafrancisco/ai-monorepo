@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
@@ -16,6 +17,13 @@ export class ConsentDecisionDto {
   @ApiProperty({
     description: 'Whether the user approved the authorization request',
     example: true,
+  })
+  @Transform(({ value }) => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true';
+    }
+    return value;
   })
   @IsBoolean()
   approved!: boolean;
