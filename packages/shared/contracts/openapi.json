@@ -1350,6 +1350,56 @@
         "tags": [
           "Authorization Server"
         ]
+      },
+      "post": {
+        "description": "Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.",
+        "operationId": "AuthorizationController_authorizeConsent",
+        "parameters": [
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Redirects to client redirect_uri with authorization code or error"
+          },
+          "400": {
+            "description": "Invalid consent decision or flow state"
+          },
+          "401": {
+            "description": "Authorization flow has already been used"
+          },
+          "404": {
+            "description": "Authorization flow not found"
+          }
+        },
+        "summary": "OAuth 2.0 Authorization Consent Handler",
+        "tags": [
+          "Authorization Server"
+        ]
       }
     },
     "/api/v1/auth/flow/{flowId}": {
@@ -2436,6 +2486,25 @@
           "grant_types",
           "token_endpoint_auth_method",
           "client_id_issued_at"
+        ]
+      },
+      "ConsentDecisionDto": {
+        "type": "object",
+        "properties": {
+          "flow_id": {
+            "type": "string",
+            "description": "Authorization flow ID (serves as CSRF protection token)",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "approved": {
+            "type": "boolean",
+            "description": "Whether the user approved the authorization request",
+            "example": true
+          }
+        },
+        "required": [
+          "flow_id",
+          "approved"
         ]
       },
       "McpAuthorizationFlowEntity": {

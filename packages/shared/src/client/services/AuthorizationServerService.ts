@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ClientRegistrationResponseDto } from '../models/ClientRegistrationResponseDto';
+import type { ConsentDecisionDto } from '../models/ConsentDecisionDto';
 import type { McpAuthorizationFlowEntity } from '../models/McpAuthorizationFlowEntity';
 import type { RegisterClientDto } from '../models/RegisterClientDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -117,6 +118,37 @@ export class AuthorizationServerService {
                 302: `Redirects to consent screen with authorization request ID`,
                 400: `Invalid authorization request parameters`,
                 404: `MCP server or client not found`,
+            },
+        });
+    }
+    /**
+     * OAuth 2.0 Authorization Consent Handler
+     * Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.
+     * @param serverIdentifier
+     * @param version
+     * @param requestBody
+     * @returns void
+     * @throws ApiError
+     */
+    public static authorizationControllerAuthorizeConsent(
+        serverIdentifier: string,
+        version: string,
+        requestBody: ConsentDecisionDto,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}',
+            path: {
+                'serverIdentifier': serverIdentifier,
+                'version': version,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                302: `Redirects to client redirect_uri with authorization code or error`,
+                400: `Invalid consent decision or flow state`,
+                401: `Authorization flow has already been used`,
+                404: `Authorization flow not found`,
             },
         });
     }

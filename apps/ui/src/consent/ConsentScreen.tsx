@@ -76,39 +76,72 @@ export function ConsentScreen() {
     setError(null);
 
     try {
-      // For now, we just need to show the consent screen
-      // The POST handler will be implemented later per the task description
       const baseUrl = import.meta.env.PROD
         ? ''
         : `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 3000}`;
 
-      // Placeholder for POST endpoint (to be implemented later)
-      // await fetch(`${baseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ flow_id: flowId, approved: true }),
-      // });
+      // POST consent decision to backend
+      const response = await fetch(`${baseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flow_id: flowId, approved: true }),
+        redirect: 'manual', // Handle redirect manually to show any errors
+      });
 
-      // For now, just show an alert that this is not yet implemented
-      alert('Approval endpoint not yet implemented. This is the consent screen UI as requested.');
+      // The backend will redirect to the client's redirect_uri
+      // Since we're using redirect: 'manual', we need to follow it
+      if (response.type === 'opaqueredirect' || response.status === 302 || response.status === 301) {
+        const redirectUrl = response.headers.get('Location') || response.url;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        } else {
+          throw new Error('No redirect URL provided by server');
+        }
+      } else if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || 'Failed to process authorization');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve authorization');
-    } finally {
       setIsApproving(false);
     }
   };
 
-  const handleDeny = () => {
-    if (!flowDetails?.redirectUri) return;
+  const handleDeny = async () => {
+    if (!flowDetails) return;
 
-    // Redirect back to client with error
-    const errorUrl = new URL(flowDetails.redirectUri);
-    errorUrl.searchParams.set('error', 'access_denied');
-    errorUrl.searchParams.set('error_description', 'User denied the authorization request');
-    if (flowDetails.state) {
-      errorUrl.searchParams.set('state', flowDetails.state);
+    setIsApproving(true);
+    setError(null);
+
+    try {
+      const baseUrl = import.meta.env.PROD
+        ? ''
+        : `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 3000}`;
+
+      // POST denial to backend
+      const response = await fetch(`${baseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flow_id: flowId, approved: false }),
+        redirect: 'manual',
+      });
+
+      // The backend will redirect to the client's redirect_uri with error
+      if (response.type === 'opaqueredirect' || response.status === 302 || response.status === 301) {
+        const redirectUrl = response.headers.get('Location') || response.url;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        } else {
+          throw new Error('No redirect URL provided by server');
+        }
+      } else if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || 'Failed to process denial');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to deny authorization');
+      setIsApproving(false);
     }
-    window.location.href = errorUrl.toString();
   };
 
   if (isLoading) {

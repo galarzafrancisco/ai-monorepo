@@ -46,6 +46,18 @@ export class McpAuthorizationFlowEntity {
   @Column({ type: 'text', name: 'resource', nullable: true })
   resource?: string;
 
+  // Authorization code generated after user consent
+  @Column({ type: 'text', name: 'authorization_code', nullable: true })
+  authorizationCode?: string;
+
+  // Authorization code expiry timestamp
+  @Column({ type: 'datetime', name: 'authorization_code_expires_at', nullable: true })
+  authorizationCodeExpiresAt?: Date;
+
+  // Whether the authorization code has been used (single-use)
+  @Column({ type: 'boolean', name: 'authorization_code_used', default: false })
+  authorizationCodeUsed!: boolean;
+
   // An MCP Authorization Flow links to only one Journey
   @OneToOne(() => AuthJourneyEntity)
   @JoinColumn({ name: 'authorization_journey_id' })

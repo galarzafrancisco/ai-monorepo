@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { randomBytes } from 'crypto';
 import { RegisteredClientEntity } from './registered-client.entity';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
+import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 
@@ -88,5 +90,70 @@ export class AuthorizationService {
     }
 
     return flow;
+  }
+
+  /**
+   * Process user consent decision and generate authorization code
+   * Returns redirect URL with authorization code or error
+   */
+  async processConsentDecision(
+    consentDecision: ConsentDecisionDto,
+    serverIdentifier: string,
+    version: string,
+  ): Promise<string> {
+    // Fetch the flow using the flow_id as a CSRF protection token
+    const flow = await this.mcpAuthFlowRepository.findOne({
+      where: { id: consentDecision.flow_id },
+      relations: ['server', 'client'],
+    });
+
+    if (!flow) {
+      throw new NotFoundException(`Authorization flow '${consentDecision.flow_id}' not found`);
+    }
+
+    // Verify the flow hasn't already been used (single-use protection)
+    if (flow.authorizationCode) {
+      throw new UnauthorizedException('Authorization flow has already been completed');
+    }
+
+    // Verify the server matches
+    if (flow.server.providedId !== serverIdentifier) {
+      throw new BadRequestException('Server identifier mismatch');
+    }
+
+    // Verify required PKCE parameters exist
+    if (!flow.codeChallenge || !flow.redirectUri || !flow.state) {
+      throw new BadRequestException('Invalid flow state: missing required parameters');
+    }
+
+    // Handle denial
+    if (!consentDecision.approved) {
+      const errorUrl = new URL(flow.redirectUri);
+      errorUrl.searchParams.set('error', 'access_denied');
+      errorUrl.searchParams.set('error_description', 'User denied the authorization request');
+      errorUrl.searchParams.set('state', flow.state);
+      return errorUrl.toString();
+    }
+
+    // Generate authorization code (cryptographically secure random string)
+    const authorizationCode = randomBytes(32).toString('base64url');
+
+    // Set expiry (10 minutes from now, per OAuth 2.0 best practices)
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+    // Store the authorization code
+    flow.authorizationCode = authorizationCode;
+    flow.authorizationCodeExpiresAt = expiresAt;
+    flow.authorizationCodeUsed = false;
+
+    await this.mcpAuthFlowRepository.save(flow);
+
+    // Build redirect URL with authorization code
+    const redirectUrl = new URL(flow.redirectUri);
+    redirectUrl.searchParams.set('code', authorizationCode);
+    redirectUrl.searchParams.set('state', flow.state);
+
+    return redirectUrl.toString();
   }
 }

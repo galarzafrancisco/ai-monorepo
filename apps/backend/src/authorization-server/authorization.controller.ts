@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Query,
   Param,
   Res,
@@ -14,10 +16,12 @@ import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AuthorizationService } from './authorization.service';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
+import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 
 @ApiTags('Authorization Server')
@@ -77,6 +81,45 @@ export class AuthorizationController {
       } else {
         throw new BadRequestException(error instanceof Error ? error.message : 'Authorization request failed');
       }
+    }
+  }
+
+  @Post('authorize/mcp/:serverIdentifier/:version')
+  @ApiOperation({
+    summary: 'OAuth 2.0 Authorization Consent Handler',
+    description:
+      'Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: 'Redirects to client redirect_uri with authorization code or error',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid consent decision or flow state',
+  })
+  @ApiNotFoundResponse({
+    description: 'Authorization flow not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authorization flow has already been used',
+  })
+  async authorizeConsent(
+    @Body() consentDecision: ConsentDecisionDto,
+    @Param('serverIdentifier') serverIdentifier: string,
+    @Param('version') version: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const redirectUrl = await this.authorizationService.processConsentDecision(
+        consentDecision,
+        serverIdentifier,
+        version,
+      );
+
+      res.redirect(HttpStatus.FOUND, redirectUrl);
+    } catch (error) {
+      // If we can't redirect, throw the error
+      throw new BadRequestException(error instanceof Error ? error.message : 'Consent processing failed');
     }
   }
 
