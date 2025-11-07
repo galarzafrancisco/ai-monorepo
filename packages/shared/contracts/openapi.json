@@ -1240,6 +1240,153 @@
         ]
       }
     },
+    "/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}": {
+      "get": {
+        "description": "Handles authorization requests from MCP clients. Validates the request, stores PKCE parameters, and redirects to the consent screen UI.",
+        "operationId": "AuthorizationController_authorize",
+        "parameters": [
+          {
+            "name": "response_type",
+            "required": true,
+            "in": "query",
+            "description": "OAuth 2.0 response type (must be \"code\" for authorization code flow)",
+            "schema": {
+              "example": "code",
+              "type": "string",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "name": "client_id",
+            "required": true,
+            "in": "query",
+            "description": "Client identifier issued during registration",
+            "schema": {
+              "example": "0bab273987a2e163c3abb40c631ec0a4",
+              "type": "string"
+            }
+          },
+          {
+            "name": "code_challenge",
+            "required": true,
+            "in": "query",
+            "description": "PKCE code challenge derived from the code verifier",
+            "schema": {
+              "example": "SVDkCojJ1edZzG47VFce6y2o5ieCQG19ueoYMQ_xloo",
+              "type": "string"
+            }
+          },
+          {
+            "name": "code_challenge_method",
+            "required": true,
+            "in": "query",
+            "description": "PKCE code challenge method (S256 for SHA-256)",
+            "schema": {
+              "example": "S256",
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "required": true,
+            "in": "query",
+            "description": "Redirect URI where the authorization response will be sent",
+            "schema": {
+              "example": "http://localhost:6274/oauth/callback/debug",
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "description": "Opaque state value for CSRF protection",
+            "schema": {
+              "example": "c5d4fa797d8c0a9025237aafb780ef7e9c38a721a00530372bc26c89572b1833",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource",
+            "required": true,
+            "in": "query",
+            "description": "Resource server URL that the client wants to access",
+            "schema": {
+              "example": "http://localhost:4001/",
+              "type": "string"
+            }
+          },
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirects to consent screen with authorization request ID"
+          },
+          "400": {
+            "description": "Invalid authorization request parameters"
+          },
+          "404": {
+            "description": "MCP server or client not found"
+          }
+        },
+        "summary": "OAuth 2.0 Authorization Endpoint",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/flow/{flowId}": {
+      "get": {
+        "description": "Retrieves authorization flow details for the consent screen",
+        "operationId": "AuthorizationController_getFlow",
+        "parameters": [
+          {
+            "name": "flowId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorization flow details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpAuthorizationFlowEntity"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authorization flow not found"
+          }
+        },
+        "summary": "Get authorization flow details",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
     "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
       "get": {
         "description": "Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with a specific MCP server version. Accepts either the server UUID or the providedId.",
@@ -2290,6 +2437,10 @@
           "token_endpoint_auth_method",
           "client_id_issued_at"
         ]
+      },
+      "McpAuthorizationFlowEntity": {
+        "type": "object",
+        "properties": {}
       },
       "AuthorizationServerMetadataDto": {
         "type": "object",

@@ -27,6 +27,25 @@ export class McpAuthorizationFlowEntity {
   @Column({ type: 'uuid', name: 'client_id' })
   clientId!: string;
 
+  // PKCE parameters for secure authorization
+  @Column({ type: 'text', name: 'code_challenge', nullable: true })
+  codeChallenge?: string;
+
+  @Column({ type: 'varchar', length: 10, name: 'code_challenge_method', nullable: true })
+  codeChallengeMethod?: string;
+
+  // OAuth state parameter for CSRF protection
+  @Column({ type: 'text', name: 'state', nullable: true })
+  state?: string;
+
+  // Redirect URI from authorization request
+  @Column({ type: 'text', name: 'redirect_uri', nullable: true })
+  redirectUri?: string;
+
+  // Resource server URL the client wants to access
+  @Column({ type: 'text', name: 'resource', nullable: true })
+  resource?: string;
+
   // An MCP Authorization Flow links to only one Journey
   @OneToOne(() => AuthJourneyEntity)
   @JoinColumn({ name: 'authorization_journey_id' })
