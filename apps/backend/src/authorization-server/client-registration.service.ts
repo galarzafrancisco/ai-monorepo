@@ -76,13 +76,14 @@ export class ClientRegistrationService {
     // Create an Authorization Journey
     const authJourney = await this.authJourneyService.createJourneyForMcpRegistration({
       mcpServerId: mcpServer.id,
-      mcpClientId: clientId,
+      mcpClientId: savedClient.id,
     });
 
     console.log(authJourney.authorizationJourney)
     console.log(authJourney.mcpAuthorizationFlow)
 
-    const full = await this.authJourneyService.getJourneysForMcpServer(serverId);
+    console.log('Getting full shit')
+    const full = await this.authJourneyService.getJourneysForMcpServer(mcpServer.id);
     console.log(full);
 
     // Return the client with the plaintext secret (only time it's exposed)

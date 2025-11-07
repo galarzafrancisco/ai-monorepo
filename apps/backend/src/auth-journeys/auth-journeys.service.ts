@@ -60,7 +60,10 @@ export class AuthJourneysService {
             serverId: mcpServerId,
           },
         },
-        relations: ['mcpAuthorizationFlows'],
+        relations: {
+          mcpAuthorizationFlow: {},
+          connectionAuthorizationFlows: {},
+        }
       }
     )
     return authJourneys;
