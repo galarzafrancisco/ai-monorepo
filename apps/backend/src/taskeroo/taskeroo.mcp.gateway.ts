@@ -187,7 +187,7 @@ export class TaskerooMcpGateway {
         });
 
         // Add comment
-        const comment = await this.taskerooService.addComment(taskId, {
+        await this.taskerooService.addComment(taskId, {
           commenterName: assignee,
           content: `Starting to work on this. I've created the branch ${branchName}`,
         });
@@ -242,11 +242,10 @@ export class TaskerooMcpGateway {
         description: 'Set status to DONE with completion comment',
         inputSchema: {
           taskId: z.string(),
-          assignee: z.string(),
           comment: z.string(),
         },
       },
-      async ({ taskId, assignee, comment }) => {
+      async ({ taskId, comment }) => {
         // Change status to DONE with comment
         await this.taskerooService.changeStatus(taskId, {
           status: 'DONE' as any,
