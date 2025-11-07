@@ -454,7 +454,7 @@ form {
 }
 
 .detail-section {
-  padding: 12px 20px;
+  padding: 8px 20px;
   border-bottom: 1px solid #ecf0f1;
 }
 
@@ -463,10 +463,13 @@ form {
 }
 
 .detail-section h3 {
-  margin: 0 0 10px 0;
+  margin: 0 0 12px 0;
   color: #2c3e50;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #7f8c8d;
 }
 
 .detail-section p {
@@ -572,8 +575,8 @@ form {
 .current-assignment {
   margin-top: 15px;
   padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: transparent;
+  border-radius: 0;
   font-size: 14px;
 }
 
@@ -600,10 +603,12 @@ form {
 }
 
 .comment {
-  background: #f8f9fa;
-  padding: 12px 16px;
-  border-radius: 10px;
-  margin-bottom: 12px;
+  background: transparent;
+  padding: 8px 0;
+  border-radius: 0;
+  margin-bottom: 10px;
+  border-left: 2px solid #e8ecef;
+  padding-left: 12px;
 }
 
 .comment strong {
