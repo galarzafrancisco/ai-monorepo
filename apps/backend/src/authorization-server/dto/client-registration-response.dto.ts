@@ -8,13 +8,6 @@ export class ClientRegistrationResponseDto {
   })
   client_id!: string;
 
-  @ApiPropertyOptional({
-    description: 'Client secret for confidential clients',
-    example: 'ZXhhbXBsZV9zZWNyZXRfa2V5',
-    nullable: true,
-  })
-  client_secret?: string | null;
-
   @ApiProperty({
     description: 'Human-readable name of the client',
     example: 'My OAuth Client',
@@ -45,11 +38,11 @@ export class ClientRegistrationResponseDto {
 
   @ApiPropertyOptional({
     description: 'Scopes granted to the client',
-    example: ['openid', 'profile', 'email'],
-    type: [String],
+    example: 'openid profile email',
+    type: String,
     nullable: true,
   })
-  scope?: string[] | null;
+  scope?: string | null;
 
   @ApiPropertyOptional({
     description: 'Contact emails for the client',
@@ -59,16 +52,9 @@ export class ClientRegistrationResponseDto {
   })
   contacts?: string[] | null;
 
-  @ApiPropertyOptional({
-    description: 'PKCE code challenge method',
-    example: 'S256',
-    nullable: true,
-  })
-  code_challenge_method?: string | null;
-
   @ApiProperty({
-    description: 'Client registration timestamp (ISO 8601)',
-    example: '2025-11-05T08:00:00.000Z',
+    description: 'Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.',
+    example: '604846800',
   })
-  client_id_issued_at!: string;
+  client_id_issued_at!: number;
 }

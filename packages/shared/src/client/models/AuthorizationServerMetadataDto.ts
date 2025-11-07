@@ -12,6 +12,10 @@ export type AuthorizationServerMetadataDto = {
      */
     authorization_endpoint: string;
     /**
+     * Token endpoint for exchanging OAuth 2.0 authorization codes
+     */
+    token_endpoint: string;
+    /**
      * Dynamic client registration endpoint for MCP integrations
      */
     registration_endpoint: string;

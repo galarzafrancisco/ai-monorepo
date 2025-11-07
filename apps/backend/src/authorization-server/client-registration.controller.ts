@@ -11,15 +11,31 @@ import {
 import { ClientRegistrationService } from './client-registration.service';
 import { RegisterClientDto } from './dto/register-client.dto';
 import { ClientRegistrationResponseDto } from './dto/client-registration-response.dto';
+import { RegisteredClientEntity } from './registered-client.entity';
 
 @ApiTags('Authorization Server')
-@Controller('authz/clients')
+@Controller('auth/clients')
 export class ClientRegistrationController {
   constructor(
     private readonly clientRegistrationService: ClientRegistrationService,
-  ) {}
+  ) { }
 
-  @Post('register')
+  private mapToClientRegistrationResponseDto(
+    client: RegisteredClientEntity,
+  ): ClientRegistrationResponseDto {
+    const response: ClientRegistrationResponseDto = {
+      client_id: client.clientId,
+      client_name: client.clientName,
+      redirect_uris: client.redirectUris,
+      grant_types: client.grantTypes,
+      token_endpoint_auth_method: client.tokenEndpointAuthMethod,
+      client_id_issued_at: Math.floor(client.createdAt.getTime() / 1000),
+    };
+    if (client.contacts && client.contacts.length > 0) response.contacts = client.contacts;
+    return response;
+  }
+
+  @Post('register/mcp/:serverId/:version')
   @HttpCode(201)
   @ApiOperation({
     summary: 'Register a new OAuth 2.0 client (Dynamic Client Registration)',
@@ -42,18 +58,7 @@ export class ClientRegistrationController {
   ): Promise<ClientRegistrationResponseDto> {
     const client = await this.clientRegistrationService.registerClient(dto);
 
-    return {
-      client_id: client.clientId,
-      client_secret: client.clientSecret,
-      client_name: client.clientName,
-      redirect_uris: client.redirectUris,
-      grant_types: client.grantTypes,
-      token_endpoint_auth_method: client.tokenEndpointAuthMethod,
-      scope: client.scopes,
-      contacts: client.contacts,
-      code_challenge_method: client.codeChallengeMethod,
-      client_id_issued_at: client.createdAt.toISOString(),
-    };
+    return this.mapToClientRegistrationResponseDto(client);
   }
 
   @Get(':clientId')
@@ -74,18 +79,7 @@ export class ClientRegistrationController {
   ): Promise<ClientRegistrationResponseDto> {
     const client = await this.clientRegistrationService.getClient(clientId);
 
-    return {
-      client_id: client.clientId,
-      client_secret: null, // Never return secret in GET requests
-      client_name: client.clientName,
-      redirect_uris: client.redirectUris,
-      grant_types: client.grantTypes,
-      token_endpoint_auth_method: client.tokenEndpointAuthMethod,
-      scope: client.scopes,
-      contacts: client.contacts,
-      code_challenge_method: client.codeChallengeMethod,
-      client_id_issued_at: client.createdAt.toISOString(),
-    };
+    return this.mapToClientRegistrationResponseDto(client);
   }
 
   @Get()
@@ -101,17 +95,6 @@ export class ClientRegistrationController {
   async listClients(): Promise<ClientRegistrationResponseDto[]> {
     const clients = await this.clientRegistrationService.listClients();
 
-    return clients.map((client) => ({
-      client_id: client.clientId,
-      client_secret: null,
-      client_name: client.clientName,
-      redirect_uris: client.redirectUris,
-      grant_types: client.grantTypes,
-      token_endpoint_auth_method: client.tokenEndpointAuthMethod,
-      scope: client.scopes,
-      contacts: client.contacts,
-      code_challenge_method: client.codeChallengeMethod,
-      client_id_issued_at: client.createdAt.toISOString(),
-    }));
+    return clients.map(this.mapToClientRegistrationResponseDto);
   }
 }

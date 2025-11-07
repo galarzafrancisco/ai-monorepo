@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HomeLink } from '../components/HomeLink';
 import { useMcpRegistry } from './useMcpRegistry';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
+import { useAuthorizationServer } from './useAuthorizationServer';
 
 type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | null;
 
@@ -33,6 +34,8 @@ export function McpServerDetail() {
     deleteMapping,
   } = useMcpRegistry();
 
+  const { metadata: authorizationServerMetadata, authorizationServerMetadataUrl, loadMetadata: loadAuthorizationServerMetadata } = useAuthorizationServer();
+
   const [activeForm, setActiveForm] = useState<FormType>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
@@ -54,6 +57,7 @@ export function McpServerDetail() {
   useEffect(() => {
     if (serverId) {
       loadServerDetails(serverId);
+      loadAuthorizationServerMetadata(serverId, "0.0.0");
     }
   }, [serverId]);
 
@@ -256,7 +260,22 @@ export function McpServerDetail() {
 
       {error && <div className="error-message">{error}</div>}
 
+
       <div className="detail-sections">
+        {/* Authorization Server Metadata Section */}
+        {authorizationServerMetadata && (
+          <div className="detail-section">
+            <div className="section-header">
+              <h2>Authorization Server Metadata</h2>
+            </div>
+
+            {authorizationServerMetadataUrl?.toString()}
+            <pre>
+              {JSON.stringify(authorizationServerMetadata, null, 2)}
+            </pre>
+          </div>
+        )}
+
         {/* Scopes Section */}
         <div className="detail-section">
           <div className="section-header">

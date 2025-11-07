@@ -8,7 +8,6 @@ export const ClientRegistrationErrorCodes = {
   INVALID_GRANT_TYPE: ErrorCodes.INVALID_GRANT_TYPE,
   INVALID_TOKEN_ENDPOINT_AUTH_METHOD:
     ErrorCodes.INVALID_TOKEN_ENDPOINT_AUTH_METHOD,
-  PKCE_REQUIRED: ErrorCodes.PKCE_REQUIRED,
   MISSING_REQUIRED_FIELD: ErrorCodes.MISSING_REQUIRED_FIELD,
 } as const;
 
@@ -76,15 +75,6 @@ export class InvalidTokenEndpointAuthMethodError extends ClientRegistrationDomai
       `Invalid token endpoint authentication method: ${method}`,
       ClientRegistrationErrorCodes.INVALID_TOKEN_ENDPOINT_AUTH_METHOD,
       { method },
-    );
-  }
-}
-
-export class PkceRequiredError extends ClientRegistrationDomainError {
-  constructor() {
-    super(
-      'PKCE is required for authorization_code grant type. code_challenge_method must be S256.',
-      ClientRegistrationErrorCodes.PKCE_REQUIRED,
     );
   }
 }

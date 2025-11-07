@@ -69,12 +69,6 @@ export const ErrorCatalog: Record<
     type: '/errors/authz/invalid-token-endpoint-auth-method',
     retryable: false,
   },
-  [ErrorCodes.PKCE_REQUIRED]: {
-    status: 400,
-    title: 'PKCE required',
-    type: '/errors/authz/pkce-required',
-    retryable: false,
-  },
   [ErrorCodes.MISSING_REQUIRED_FIELD]: {
     status: 400,
     title: 'Missing required field',

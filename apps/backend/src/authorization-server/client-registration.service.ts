@@ -7,7 +7,6 @@ import { GrantType, TokenEndpointAuthMethod } from './enums';
 import {
   InvalidGrantTypeError,
   InvalidRedirectUriError,
-  PkceRequiredError,
   MissingRequiredFieldError,
   ClientAlreadyRegisteredError,
   ClientNotFoundError,
@@ -37,18 +36,6 @@ export class ClientRegistrationService {
     // Validate redirect URIs
     this.validateRedirectUris(dto.redirect_uris);
 
-    // Validate PKCE requirement for authorization_code
-    this.validatePkceRequirement(dto);
-
-    // Check for duplicate client names (idempotency check)
-    const existingClient = await this.clientRepository.findOne({
-      where: { clientName: dto.client_name },
-    });
-
-    if (existingClient) {
-      throw new ClientAlreadyRegisteredError(dto.client_name);
-    }
-
     // Generate secure client credentials
     const clientId = this.generateClientId();
     const clientSecret =
@@ -57,6 +44,11 @@ export class ClientRegistrationService {
         : null;
 
     // Create and persist the client entity
+    let scopes: string[] = [];
+    if (dto.scope && dto.scope.trim() != '') {
+      scopes = dto.scope.split(' ');
+    }
+    
     const client = this.clientRepository.create({
       clientId,
       clientSecret: clientSecret ? this.hashSecret(clientSecret) : null,
@@ -64,9 +56,8 @@ export class ClientRegistrationService {
       redirectUris: dto.redirect_uris,
       grantTypes: dto.grant_types,
       tokenEndpointAuthMethod: dto.token_endpoint_auth_method,
-      scopes: dto.scope || null,
+      scopes: scopes,
       contacts: dto.contacts || null,
-      codeChallengeMethod: dto.code_challenge_method || null,
     });
 
     const savedClient = await this.clientRepository.save(client);
@@ -148,20 +139,6 @@ export class ClientRegistrationService {
         // MCP clients can use localhost and http URIs
       } catch {
         throw new InvalidRedirectUriError(`Invalid URI format: ${uri}`);
-      }
-    }
-  }
-
-  private validatePkceRequirement(dto: RegisterClientDto): void {
-    // If using authorization_code, PKCE is required
-    if (dto.grant_types.includes(GrantType.AUTHORIZATION_CODE)) {
-      if (!dto.code_challenge_method) {
-        throw new PkceRequiredError();
-      }
-
-      // Only S256 is allowed for security
-      if (dto.code_challenge_method !== 'S256') {
-        throw new PkceRequiredError();
       }
     }
   }
