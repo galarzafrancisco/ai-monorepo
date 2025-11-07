@@ -15,7 +15,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { AuthorizationService } from './authorization.service';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';

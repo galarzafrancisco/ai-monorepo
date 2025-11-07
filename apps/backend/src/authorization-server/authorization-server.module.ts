@@ -5,13 +5,14 @@ import { ClientRegistrationController } from './client-registration.controller';
 import { AuthorizationService } from './authorization.service';
 import { AuthorizationController } from './authorization.controller';
 import { RegisteredClientEntity } from './registered-client.entity';
+import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { AuthJourneysModule } from 'src/auth-journeys/auth-journeys.module';
 import { McpRegistryModule } from 'src/mcp-registry/mcp-registry.module';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RegisteredClientEntity]),
+    TypeOrmModule.forFeature([RegisteredClientEntity, McpAuthorizationFlowEntity]),
     AuthJourneysModule,
     McpRegistryModule,
   ],
