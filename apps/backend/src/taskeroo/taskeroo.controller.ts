@@ -9,6 +9,9 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Req,
+  All,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +22,7 @@ import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
+import type { Request, Response } from "express";
 import { TaskerooService } from './taskeroo.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -31,11 +35,15 @@ import { TaskParamsDto } from './dto/task-params.dto';
 import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { TaskResult, CommentResult } from './dto/service/taskeroo.service.types';
+import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
 
 @ApiTags('Task')
 @Controller('taskeroo/tasks')
 export class TaskerooController {
-  constructor(private readonly taskerooService: TaskerooService) {}
+  constructor(
+    private readonly taskerooService: TaskerooService,
+    private readonly gateway: TaskerooMcpGateway,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
@@ -189,6 +197,11 @@ export class TaskerooController {
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };
+  }
+
+  @All('mcp')
+  async handleMcp(@Req() req: Request, @Res() res: Response) {
+    await this.gateway.handleRequest(req, res);
   }
 
   private mapCommentResultToResponse(
