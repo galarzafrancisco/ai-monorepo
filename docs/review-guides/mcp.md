@@ -1,0 +1,7 @@
+- Tools represent **user journeys**, not 1:1 API mappings
+- Descriptions are **short** and token-efficient
+- Input schemas use **Zod** with minimal field descriptions
+- Returns **JSON.stringify()** in text content
+- Gateway is **@Injectable()** and wired into module providers
+- Controller has **@All('mcp')** endpoint delegating to gateway
+- Journey tools **orchestrate multiple service calls** (e.g., mark_task_in_progress assigns + changes status + comments)
