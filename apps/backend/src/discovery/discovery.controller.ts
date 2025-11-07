@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  HttpException,
-  HttpStatus,
-  Param,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Param, Req } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -15,14 +8,13 @@ import {
 import { isUUID } from 'class-validator';
 import type { Request } from 'express';
 import { AuthorizationServerMetadataDto } from './dto/authorization-server-metadata.dto';
-import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
-import { GrantType } from '../authorization-server/enums';
-import { ServerNotFoundError } from '../mcp-registry/errors/mcp-registry.errors';
+import { GetAuthorizationServerMetadataParamsDto } from './dto/get-authorization-server-metadata-params.dto';
+import { DiscoveryService } from './discovery.service';
 
 @ApiTags('Discovery')
 @Controller('.well-known/oauth-authorization-server/mcp')
 export class DiscoveryController {
-  constructor(private readonly mcpRegistryService: McpRegistryService) {}
+  constructor(private readonly discoveryService: DiscoveryService) {}
 
   @Get(':mcpServerId/:version')
   @ApiOperation({
@@ -44,50 +36,18 @@ export class DiscoveryController {
     type: AuthorizationServerMetadataDto,
   })
   async getAuthorizationServerMetadata(
-    @Param('mcpServerId') mcpServerId: string,
-    @Param('version') version: string,
+    @Param() params: GetAuthorizationServerMetadataParamsDto,
     @Req() request: Request,
   ): Promise<AuthorizationServerMetadataDto> {
-    try {
-      const server = isUUID(mcpServerId)
-        ? await this.mcpRegistryService.getServerById(mcpServerId)
-        : await this.mcpRegistryService.getServerByProvidedId(mcpServerId);
+    const issuer = this.resolveIssuer(request);
+    const lookupBy = isUUID(params.mcpServerId) ? 'id' : 'providedId';
 
-      const issuer = this.resolveIssuer(request);
-      const serverIdentifier = server.providedId ?? server.id;
-
-      return {
-        issuer,
-        authorization_endpoint: `${issuer}/api/v1/auth/authorize/mcp/${serverIdentifier}/${version}`,
-        token_endpoint: `${issuer}/api/v1/auth/token/mcp/${serverIdentifier}/${version}`,
-        registration_endpoint: `${issuer}/api/v1/auth/clients/register/mcp/${serverIdentifier}/${version}`,
-        scopes_supported: (server.scopes ?? [])
-          .map((scope) => scope.scopeId)
-          .sort((left, right) => left.localeCompare(right)),
-        response_types_supported: ['code'],
-        grant_types_supported: [
-          GrantType.AUTHORIZATION_CODE,
-          GrantType.REFRESH_TOKEN,
-        ],
-        token_endpoint_auth_methods_supported: [
-          'client_secret_basic',
-          'private_key_jwt',
-        ],
-        code_challenge_methods_supported: ['S256'],
-      };
-    } catch (error) {
-      if (error instanceof ServerNotFoundError) {
-        throw new HttpException(
-          {
-            error: 'not_found',
-            error_description: `Unknown MCP server '${mcpServerId}' version '${version}'.`,
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
-      throw error;
-    }
+    return this.discoveryService.getAuthorizationServerMetadata({
+      serverIdentifier: params.mcpServerId,
+      version: params.version,
+      issuer,
+      lookupBy,
+    });
   }
 
   private resolveIssuer(request: Request): string {
