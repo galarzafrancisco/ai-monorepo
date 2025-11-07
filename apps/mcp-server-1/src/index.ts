@@ -170,7 +170,7 @@ const app = express();
 app.use(
   mcpAuthRouter({
     provider: proxyProvider,
-    issuerUrl: new URL(`http://localhost:5001/mcp/foo:bar/0.0.0`),
+    issuerUrl: new URL(`http://localhost:3000/mcp/foo:bar/0.0.0`),
     baseUrl: BASE_URL,
     resourceServerUrl: BASE_URL,
     serviceDocumentationUrl: new URL(
