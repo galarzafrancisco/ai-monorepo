@@ -2,9 +2,10 @@ import { io, Socket } from 'socket.io-client';
 import { TaskerooService } from './api'
 import { Task, Comment } from './types';
 import { useEffect, useState } from 'react';
+import { getWebSocketUrl } from '../config/api';
 
-// Use relative URL in production, absolute URL in development
-const SOCKET_URL = import.meta.env.PROD ? '/taskeroo' : 'http://localhost:3000/taskeroo';
+// Use centralized API configuration
+const SOCKET_URL = getWebSocketUrl('/taskeroo');
 
 export const useTaskeroo = () => {
 

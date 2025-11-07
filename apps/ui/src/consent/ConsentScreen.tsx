@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { HomeLink } from '../components/HomeLink';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { getApiBaseUrl } from '../config/api';
 import './ConsentScreen.css';
 
 interface AuthFlowDetails {
@@ -51,9 +52,7 @@ export function ConsentScreen() {
     setError(null);
 
     try {
-      const baseUrl = import.meta.env.PROD
-        ? ''
-        : `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 3000}`;
+      const baseUrl = getApiBaseUrl();
       const response = await fetch(`${baseUrl}/api/v1/auth/flow/${flowId}`);
 
       if (!response.ok) {
@@ -74,9 +73,7 @@ export function ConsentScreen() {
 
     // Use a form submission to POST the consent decision
     // This allows the browser to naturally follow the 302 redirect
-    const baseUrl = import.meta.env.PROD
-      ? ''
-      : `http://localhost:${import.meta.env.VITE_BACKEND_PORT || 3000}`;
+    const baseUrl = getApiBaseUrl();
 
     const form = document.createElement('form');
     form.method = 'POST';
