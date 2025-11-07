@@ -35,5 +35,8 @@
   "bugs": {
     "url": "https://github.com/galarzafrancisco/ai-monorepo/issues"
   },
-  "homepage": "https://github.com/galarzafrancisco/ai-monorepo#readme"
+  "homepage": "https://github.com/galarzafrancisco/ai-monorepo#readme",
+  "dependencies": {
+    "jose": "^6.1.0"
+  }
 }
