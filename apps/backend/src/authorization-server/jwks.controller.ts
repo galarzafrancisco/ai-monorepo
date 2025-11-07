@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { JwksService, JWKS } from './jwks.service';
+import { JwksService } from './jwks.service';
+import { JwksResponseDto } from './dto/jwks-response.dto';
 
 @ApiTags('JWKS')
 @Controller('.well-known')
@@ -15,27 +16,23 @@ export class JwksController {
   })
   @ApiOkResponse({
     description: 'JWKS retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        keys: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              kty: { type: 'string', example: 'RSA' },
-              use: { type: 'string', example: 'sig' },
-              kid: { type: 'string', example: '1234567890abcdef' },
-              alg: { type: 'string', example: 'RS256' },
-              n: { type: 'string' },
-              e: { type: 'string' },
-            },
-          },
-        },
-      },
-    },
+    type: JwksResponseDto,
   })
-  async getJwks(): Promise<JWKS> {
-    return this.jwksService.getPublicKeys();
+  async getJwks(): Promise<JwksResponseDto> {
+    const jwks = await this.jwksService.getPublicKeys();
+
+    return {
+      keys: jwks.keys.map((key) => ({
+        kty: key.kty,
+        use: key.use,
+        kid: key.kid,
+        alg: key.alg,
+        n: key.n,
+        e: key.e,
+        x: key.x,
+        y: key.y,
+        crv: key.crv,
+      })),
+    };
   }
 }
