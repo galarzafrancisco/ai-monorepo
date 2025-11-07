@@ -1143,6 +1143,48 @@ export interface components {
             approved: boolean;
         };
         McpAuthorizationFlowEntity: Record<string, never>;
+        JwkResponseDto: {
+            /**
+             * @description Key type, for example RSA or EC.
+             * @example RSA
+             */
+            kty: string;
+            /**
+             * @description Key usage indicating how the key can be used.
+             * @example sig
+             */
+            use: string;
+            /**
+             * @description Unique identifier for the key used for rotation.
+             * @example 1234567890abcdef
+             */
+            kid: string;
+            /**
+             * @description Algorithm intended for use with this key.
+             * @example RS256
+             */
+            alg: string;
+            /** @description RSA modulus encoded using base64url. */
+            n?: string;
+            /**
+             * @description RSA public exponent encoded using base64url.
+             * @example AQAB
+             */
+            e?: string;
+            /** @description Public coordinate X for EC keys encoded using base64url. */
+            x?: string;
+            /** @description Public coordinate Y for EC keys encoded using base64url. */
+            y?: string;
+            /**
+             * @description Curve name for EC keys.
+             * @example P-256
+             */
+            crv?: string;
+        };
+        JwksResponseDto: {
+            /** @description Collection of JSON Web Keys currently valid for signature verification. */
+            keys: components["schemas"]["JwkResponseDto"][];
+        };
         AuthorizationServerMetadataDto: {
             /**
              * @description Issuer identifier for the MCP authorization server
@@ -2366,20 +2408,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        keys?: {
-                            /** @example RSA */
-                            kty?: string;
-                            /** @example sig */
-                            use?: string;
-                            /** @example 1234567890abcdef */
-                            kid?: string;
-                            /** @example RS256 */
-                            alg?: string;
-                            n?: string;
-                            e?: string;
-                        }[];
-                    };
+                    "application/json": components["schemas"]["JwksResponseDto"];
                 };
             };
         };
