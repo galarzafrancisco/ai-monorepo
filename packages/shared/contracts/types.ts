@@ -408,6 +408,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/.well-known/jwks.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get JSON Web Key Set (JWKS)
+         * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
+         */
+        get: operations["JwksController_getJwks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
         parameters: {
             query?: never;
@@ -2328,6 +2348,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    JwksController_getJwks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JWKS retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        keys?: {
+                            /** @example RSA */
+                            kty?: string;
+                            /** @example sig */
+                            use?: string;
+                            /** @example 1234567890abcdef */
+                            kid?: string;
+                            /** @example RS256 */
+                            alg?: string;
+                            n?: string;
+                            e?: string;
+                        }[];
+                    };
+                };
             };
         };
     };

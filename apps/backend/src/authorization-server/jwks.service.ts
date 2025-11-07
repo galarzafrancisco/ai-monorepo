@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, LessThan } from 'typeorm';
 import { JwksKeyEntity } from './jwks-key.entity';
 import { generateKeyPair, exportJWK, exportPKCS8, exportSPKI } from 'jose';
 import { randomBytes } from 'crypto';
@@ -169,7 +169,7 @@ export class JwksService {
     cutoffDate.setDate(cutoffDate.getDate() - gracePeriodDays);
 
     const result = await this.keyRepository.softDelete({
-      expiresAt: MoreThan(cutoffDate),
+      expiresAt: LessThan(cutoffDate),
     });
 
     const deletedCount = result.affected || 0;

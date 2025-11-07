@@ -42,6 +42,7 @@ export type { UpdateTaskDto } from './models/UpdateTaskDto';
 export { AppService } from './services/AppService';
 export { AuthorizationServerService } from './services/AuthorizationServerService';
 export { DiscoveryService } from './services/DiscoveryService';
+export { JwksService } from './services/JwksService';
 export { McpRegistryService } from './services/McpRegistryService';
 export { TaskService } from './services/TaskService';
 export { WikirooService } from './services/WikirooService';
