@@ -32,10 +32,6 @@ export type ClientRegistrationResponseDto = {
      */
     contacts?: Array<string> | null;
     /**
-     * PKCE code challenge method
-     */
-    code_challenge_method?: Record<string, any> | null;
-    /**
      * Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.
      */
     client_id_issued_at: number;

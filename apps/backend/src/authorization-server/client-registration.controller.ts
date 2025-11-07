@@ -55,8 +55,10 @@ export class ClientRegistrationController {
   })
   async registerClient(
     @Body() dto: RegisterClientDto,
+    @Param('serverId') serverId: string,
+    @Param('version') version: string,
   ): Promise<ClientRegistrationResponseDto> {
-    const client = await this.clientRegistrationService.registerClient(dto);
+    const client = await this.clientRegistrationService.registerClient(dto, serverId);
 
     return this.mapToClientRegistrationResponseDto(client);
   }

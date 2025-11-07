@@ -8,16 +8,20 @@ import {
   InvalidGrantTypeError,
   InvalidRedirectUriError,
   MissingRequiredFieldError,
-  ClientAlreadyRegisteredError,
   ClientNotFoundError,
 } from './errors/client-registration.errors';
 import { randomBytes } from 'crypto';
+import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
+import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 
 @Injectable()
 export class ClientRegistrationService {
   constructor(
     @InjectRepository(RegisteredClientEntity)
     private readonly clientRepository: Repository<RegisteredClientEntity>,
+
+    private readonly authJourneyService: AuthJourneysService,
+    private readonly mcpRegistryService: McpRegistryService,
   ) {}
 
   /**
@@ -26,7 +30,11 @@ export class ClientRegistrationService {
    */
   async registerClient(
     dto: RegisterClientDto,
+    serverId: string,
   ): Promise<RegisteredClientEntity> {
+
+    // Validate payload without touching the database
+
     // Validate required fields
     this.validateRequiredFields(dto);
 
@@ -43,12 +51,14 @@ export class ClientRegistrationService {
         ? this.generateClientSecret()
         : null;
 
+    // Validate that the MCP Server exists
+    const mcpServer = await this.mcpRegistryService.getServerByProvidedId(serverId); // service throws if not found
+    
     // Create and persist the client entity
     let scopes: string[] = [];
     if (dto.scope && dto.scope.trim() != '') {
       scopes = dto.scope.split(' ');
     }
-    
     const client = this.clientRepository.create({
       clientId,
       clientSecret: clientSecret ? this.hashSecret(clientSecret) : null,
@@ -60,7 +70,20 @@ export class ClientRegistrationService {
       contacts: dto.contacts || null,
     });
 
+    console.log()
     const savedClient = await this.clientRepository.save(client);
+
+    // Create an Authorization Journey
+    const authJourney = await this.authJourneyService.createJourneyForMcpRegistration({
+      mcpServerId: mcpServer.id,
+      mcpClientId: clientId,
+    });
+
+    console.log(authJourney.authorizationJourney)
+    console.log(authJourney.mcpAuthorizationFlow)
+
+    const full = await this.authJourneyService.getJourneysForMcpServer(serverId);
+    console.log(full);
 
     // Return the client with the plaintext secret (only time it's exposed)
     return {

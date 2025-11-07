@@ -29,16 +29,6 @@ export abstract class ClientRegistrationDomainError extends Error {
   }
 }
 
-export class ClientAlreadyRegisteredError extends ClientRegistrationDomainError {
-  constructor(clientName: string) {
-    super(
-      'A client with this name is already registered.',
-      ClientRegistrationErrorCodes.CLIENT_ALREADY_REGISTERED,
-      { clientName },
-    );
-  }
-}
-
 export class ClientNotFoundError extends ClientRegistrationDomainError {
   constructor(clientId: string) {
     super(

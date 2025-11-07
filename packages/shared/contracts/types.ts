@@ -1061,11 +1061,6 @@ export interface components {
              */
             contacts?: string[] | null;
             /**
-             * @description PKCE code challenge method
-             * @example S256
-             */
-            code_challenge_method?: Record<string, never> | null;
-            /**
              * @description Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.
              * @example 604846800
              */
