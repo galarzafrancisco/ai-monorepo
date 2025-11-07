@@ -4,6 +4,7 @@ import { TaskerooService } from "./taskeroo.service";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
+import { TaskStatus } from "./enums";
 
 @Injectable()
 export class TaskerooMcpGateway {
@@ -183,7 +184,7 @@ export class TaskerooMcpGateway {
 
         // Change status to IN_PROGRESS
         await this.taskerooService.changeStatus(taskId, {
-          status: 'IN_PROGRESS' as any
+          status: TaskStatus.IN_PROGRESS
         });
 
         // Add comment
@@ -216,7 +217,7 @@ export class TaskerooMcpGateway {
       async ({ taskId, assignee, prLink }) => {
         // Change status to FOR_REVIEW
         await this.taskerooService.changeStatus(taskId, {
-          status: 'FOR_REVIEW' as any
+          status: TaskStatus.FOR_REVIEW
         });
 
         // Add comment with PR link
@@ -248,7 +249,7 @@ export class TaskerooMcpGateway {
       async ({ taskId, comment }) => {
         // Change status to DONE with comment
         await this.taskerooService.changeStatus(taskId, {
-          status: 'DONE' as any,
+          status: TaskStatus.DONE,
           comment,
         });
 
