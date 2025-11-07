@@ -32,7 +32,14 @@ export class TaskerooMcpGateway {
         return {
           content: [{
             type: "text",
-            text: JSON.stringify(tasks),
+            text: JSON.stringify(tasks.items.map(t => {
+              return {
+                name: t.name,
+                assignee: t.assignee,
+                status: t.status,
+                id: t.id,
+              }
+            })),
           }],
         }
       }
