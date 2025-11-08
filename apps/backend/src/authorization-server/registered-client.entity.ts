@@ -42,12 +42,6 @@ export class RegisteredClientEntity {
   @Column('simple-array', { nullable: true })
   contacts!: string[] | null;
 
-  @Column({ type: 'text', name: 'code_challenge_method', nullable: true })
-  codeChallengeMethod!: string | null;
-
-  @Column('simple-json', { nullable: true, name: 'additional_metadata' })
-  additionalMetadata!: Record<string, unknown> | null;
-
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 

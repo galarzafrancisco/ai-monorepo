@@ -5,6 +5,7 @@ import { WikirooHomePage } from './wikiroo/WikirooHomePage';
 import { WikirooPageView } from './wikiroo/WikirooPageView';
 import { McpRegistryDashboard } from './mcp-registry/McpRegistryDashboard';
 import { McpServerDetail } from './mcp-registry/McpServerDetail';
+import { ConsentScreen } from './consent/ConsentScreen';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/wikiroo/:pageId" element={<WikirooPageView />} />
         <Route path="/mcp-registry" element={<McpRegistryDashboard />} />
         <Route path="/mcp-registry/:serverId" element={<McpServerDetail />} />
+        <Route path="/consent" element={<ConsentScreen />} />
       </Routes>
     </BrowserRouter>
   );

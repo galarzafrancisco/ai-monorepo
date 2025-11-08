@@ -199,4 +199,74 @@ export class TaskService {
             },
         });
     }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static taskerooControllerHandleMcpGet(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/taskeroo/tasks/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static taskerooControllerHandleMcpPost(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/taskeroo/tasks/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static taskerooControllerHandleMcpPut(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/taskeroo/tasks/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static taskerooControllerHandleMcpDelete(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/taskeroo/tasks/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static taskerooControllerHandleMcpPatch(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/taskeroo/tasks/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static taskerooControllerHandleMcpOptions(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'OPTIONS',
+            url: '/api/v1/taskeroo/tasks/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static taskerooControllerHandleMcpHead(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'HEAD',
+            url: '/api/v1/taskeroo/tasks/mcp',
+        });
+    }
 }

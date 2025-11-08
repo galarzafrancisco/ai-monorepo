@@ -109,6 +109,22 @@ export interface paths {
         patch: operations["TaskerooController_changeStatus"];
         trace?: never;
     };
+    "/api/v1/taskeroo/tasks/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TaskerooController_handleMcp_get"];
+        put: operations["TaskerooController_handleMcp_put"];
+        post: operations["TaskerooController_handleMcp_post"];
+        delete: operations["TaskerooController_handleMcp_delete"];
+        options: operations["TaskerooController_handleMcp_options"];
+        head: operations["TaskerooController_handleMcp_head"];
+        patch: operations["TaskerooController_handleMcp_patch"];
+        trace?: never;
+    };
     "/api/v1/wikiroo/pages": {
         parameters: {
             query?: never;
@@ -136,86 +152,6 @@ export interface paths {
         };
         /** Fetch a wiki page by ID */
         get: operations["WikirooController_getPage"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/authz/clients/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Register a new OAuth 2.0 client (Dynamic Client Registration)
-         * @description Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.
-         */
-        post: operations["ClientRegistrationController_registerClient"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/authz/clients/{clientId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Retrieve client registration information
-         * @description Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.
-         */
-        get: operations["ClientRegistrationController_getClient"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/authz/clients": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List all registered clients (Admin)
-         * @description Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.
-         */
-        get: operations["ClientRegistrationController_listClients"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/.well-known/oauth-authorization-server/{mcpServerId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Expose OAuth 2.0 Authorization Server metadata for a registered MCP server
-         * @description Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with an MCP server. Accepts either the server UUID or the providedId.
-         */
-        get: operations["AuthorizationServerMetadataController_getAuthorizationServerMetadata"];
         put?: never;
         post?: never;
         delete?: never;
@@ -379,6 +315,150 @@ export interface paths {
         post?: never;
         /** Delete scope mapping */
         delete: operations["McpRegistryController_deleteMapping"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a new OAuth 2.0 client (Dynamic Client Registration)
+         * @description Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.
+         */
+        post: operations["ClientRegistrationController_registerClient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/clients/{clientId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrieve client registration information
+         * @description Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.
+         */
+        get: operations["ClientRegistrationController_getClient"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/clients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all registered clients (Admin)
+         * @description Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.
+         */
+        get: operations["ClientRegistrationController_listClients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OAuth 2.0 Authorization Endpoint
+         * @description Handles authorization requests from MCP clients. Validates the request, stores PKCE parameters, and redirects to the consent screen UI.
+         */
+        get: operations["AuthorizationController_authorize"];
+        put?: never;
+        /**
+         * OAuth 2.0 Authorization Consent Handler
+         * @description Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.
+         */
+        post: operations["AuthorizationController_authorizeConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/flow/{flowId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get authorization flow details
+         * @description Retrieves authorization flow details for the consent screen
+         */
+        get: operations["AuthorizationController_getFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/jwks.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get JSON Web Key Set (JWKS)
+         * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
+         */
+        get: operations["JwksController_getJwks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Expose OAuth 2.0 Authorization Server metadata for a registered MCP server version
+         * @description Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with a specific MCP server version. Accepts either the server UUID or the providedId.
+         */
+        get: operations["DiscoveryController_getAuthorizationServerMetadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -656,175 +736,6 @@ export interface components {
         PageListResponseDto: {
             /** @description List of wiki pages */
             items: components["schemas"]["PageSummaryDto"][];
-        };
-        RegisterClientDto: {
-            /**
-             * @description Human-readable name of the client
-             * @example My OAuth Client
-             */
-            client_name: string;
-            /**
-             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
-             * @example [
-             *       "http://localhost:3000/callback",
-             *       "https://example.com/callback"
-             *     ]
-             */
-            redirect_uris: string[];
-            /**
-             * @description Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
-             * @example [
-             *       "authorization_code",
-             *       "refresh_token"
-             *     ]
-             */
-            grant_types: ("authorization_code" | "refresh_token")[];
-            /**
-             * @description Authentication method for the token endpoint (MCP clients use "none")
-             * @example none
-             * @enum {string}
-             */
-            token_endpoint_auth_method: "none";
-            /**
-             * @description Requested scopes for the client
-             * @example [
-             *       "openid",
-             *       "profile",
-             *       "email"
-             *     ]
-             */
-            scope?: string[];
-            /**
-             * @description Contact emails for the client registration
-             * @example [
-             *       "admin@example.com"
-             *     ]
-             */
-            contacts?: string[];
-            /**
-             * @description PKCE code challenge method. Must be S256 for authorization_code grant.
-             * @example S256
-             */
-            code_challenge_method?: string;
-        };
-        ClientRegistrationResponseDto: {
-            /**
-             * @description Unique client identifier
-             * @example 8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b
-             */
-            client_id: string;
-            /**
-             * @description Client secret for confidential clients
-             * @example ZXhhbXBsZV9zZWNyZXRfa2V5
-             */
-            client_secret?: Record<string, never> | null;
-            /**
-             * @description Human-readable name of the client
-             * @example My OAuth Client
-             */
-            client_name: string;
-            /**
-             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
-             * @example [
-             *       "http://localhost:3000/callback",
-             *       "https://example.com/callback"
-             *     ]
-             */
-            redirect_uris: string[];
-            /**
-             * @description Grant types the client is authorized to use
-             * @example [
-             *       "authorization_code",
-             *       "refresh_token"
-             *     ]
-             */
-            grant_types: ("authorization_code" | "refresh_token")[];
-            /**
-             * @description Authentication method for the token endpoint (MCP clients use "none")
-             * @example none
-             * @enum {string}
-             */
-            token_endpoint_auth_method: "none";
-            /**
-             * @description Scopes granted to the client
-             * @example [
-             *       "openid",
-             *       "profile",
-             *       "email"
-             *     ]
-             */
-            scope?: string[] | null;
-            /**
-             * @description Contact emails for the client
-             * @example [
-             *       "admin@example.com"
-             *     ]
-             */
-            contacts?: string[] | null;
-            /**
-             * @description PKCE code challenge method
-             * @example S256
-             */
-            code_challenge_method?: Record<string, never> | null;
-            /**
-             * @description Client registration timestamp (ISO 8601)
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            client_id_issued_at: string;
-        };
-        AuthorizationServerMetadataDto: {
-            /**
-             * @description Issuer identifier for the MCP authorization server
-             * @example https://api.example.com/v1/mcp-server
-             */
-            issuer: string;
-            /**
-             * @description Authorization endpoint for initiating OAuth 2.0 authorization code flows
-             * @example https://api.example.com/v1/authorize/mcp-server
-             */
-            authorization_endpoint: string;
-            /**
-             * @description Dynamic client registration endpoint for MCP integrations
-             * @example https://api.example.com/v1/register/mcp-server
-             */
-            registration_endpoint: string;
-            /**
-             * @description Scopes supported by this MCP authorization server
-             * @example [
-             *       "mcp:tool.read",
-             *       "mcp:tool.write"
-             *     ]
-             */
-            scopes_supported: string[];
-            /**
-             * @description OAuth 2.0 response types supported by this authorization server
-             * @example [
-             *       "code"
-             *     ]
-             */
-            response_types_supported: string[];
-            /**
-             * @description OAuth 2.0 grant types supported by this authorization server
-             * @example [
-             *       "authorization_code",
-             *       "refresh_token"
-             *     ]
-             */
-            grant_types_supported: ("authorization_code" | "refresh_token")[];
-            /**
-             * @description Client authentication methods supported by the token endpoint
-             * @example [
-             *       "client_secret_post"
-             *     ]
-             */
-            token_endpoint_auth_methods_supported: string[];
-            /**
-             * @description PKCE code challenge methods supported by this authorization server
-             * @example [
-             *       "S256"
-             *     ]
-             */
-            code_challenge_methods_supported: string[];
         };
         CreateServerDto: {
             /**
@@ -1120,6 +1031,237 @@ export interface components {
              * @example Mapping deleted successfully
              */
             message: string;
+        };
+        RegisterClientDto: {
+            /**
+             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
+             * @example [
+             *       "http://localhost:3000/callback",
+             *       "https://example.com/callback"
+             *     ]
+             */
+            redirect_uris: string[];
+            /**
+             * @description Authentication method for the token endpoint (MCP clients use "none")
+             * @example none
+             * @enum {string}
+             */
+            token_endpoint_auth_method: "none";
+            /**
+             * @description Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
+             * @example [
+             *       "authorization_code",
+             *       "refresh_token"
+             *     ]
+             */
+            grant_types: ("authorization_code" | "refresh_token")[];
+            /**
+             * @description Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.
+             * @example [
+             *       "code"
+             *     ]
+             */
+            response_types: "code"[];
+            /**
+             * @description Human-readable name of the client
+             * @example My OAuth Client
+             */
+            client_name: string;
+            /**
+             * @description Requested scopes for the client
+             * @example [
+             *       "data:read",
+             *       "data:write"
+             *     ]
+             */
+            scope?: string[];
+            /**
+             * @description Contact emails for the client registration
+             * @example [
+             *       "admin@example.com"
+             *     ]
+             */
+            contacts?: string[];
+            /**
+             * @description Terms of service URI for the client registration
+             * @example https://example.com/tos
+             */
+            tos_uri?: string;
+            client_uri?: string;
+            logo_uri?: string;
+            policy_uri?: string;
+            jwks_uri?: string;
+            jwks?: string;
+            software_id?: string;
+            software_version?: string;
+        };
+        ClientRegistrationResponseDto: {
+            /**
+             * @description Unique client identifier
+             * @example 8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b
+             */
+            client_id: string;
+            /**
+             * @description Human-readable name of the client
+             * @example My OAuth Client
+             */
+            client_name: string;
+            /**
+             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
+             * @example [
+             *       "http://localhost:3000/callback",
+             *       "https://example.com/callback"
+             *     ]
+             */
+            redirect_uris: string[];
+            /**
+             * @description Grant types the client is authorized to use
+             * @example [
+             *       "authorization_code",
+             *       "refresh_token"
+             *     ]
+             */
+            grant_types: ("authorization_code" | "refresh_token")[];
+            /**
+             * @description Authentication method for the token endpoint (MCP clients use "none")
+             * @example none
+             * @enum {string}
+             */
+            token_endpoint_auth_method: "none";
+            /**
+             * @description Scopes granted to the client
+             * @example openid profile email
+             */
+            scope?: string | null;
+            /**
+             * @description Contact emails for the client
+             * @example [
+             *       "admin@example.com"
+             *     ]
+             */
+            contacts?: string[] | null;
+            /**
+             * @description Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.
+             * @example 604846800
+             */
+            client_id_issued_at: number;
+        };
+        ConsentDecisionDto: {
+            /**
+             * @description Authorization flow ID (serves as CSRF protection token)
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            flow_id: string;
+            /**
+             * @description Whether the user approved the authorization request
+             * @example true
+             */
+            approved: boolean;
+        };
+        McpAuthorizationFlowEntity: Record<string, never>;
+        JwkResponseDto: {
+            /**
+             * @description Key type, for example RSA or EC.
+             * @example RSA
+             */
+            kty: string;
+            /**
+             * @description Key usage indicating how the key can be used.
+             * @example sig
+             */
+            use: string;
+            /**
+             * @description Unique identifier for the key used for rotation.
+             * @example 1234567890abcdef
+             */
+            kid: string;
+            /**
+             * @description Algorithm intended for use with this key.
+             * @example RS256
+             */
+            alg: string;
+            /** @description RSA modulus encoded using base64url. */
+            n?: string;
+            /**
+             * @description RSA public exponent encoded using base64url.
+             * @example AQAB
+             */
+            e?: string;
+            /** @description Public coordinate X for EC keys encoded using base64url. */
+            x?: string;
+            /** @description Public coordinate Y for EC keys encoded using base64url. */
+            y?: string;
+            /**
+             * @description Curve name for EC keys.
+             * @example P-256
+             */
+            crv?: string;
+        };
+        JwksResponseDto: {
+            /** @description Collection of JSON Web Keys currently valid for signature verification. */
+            keys: components["schemas"]["JwkResponseDto"][];
+        };
+        AuthorizationServerMetadataDto: {
+            /**
+             * @description Issuer identifier for the MCP authorization server
+             * @example https://auth.example.com
+             */
+            issuer: string;
+            /**
+             * @description Authorization endpoint for initiating OAuth 2.0 authorization code flows
+             * @example https://auth.example.com/api/v1/authorize/mcp/inventory/v1
+             */
+            authorization_endpoint: string;
+            /**
+             * @description Token endpoint for exchanging OAuth 2.0 authorization codes
+             * @example https://auth.example.com/api/v1/token/mcp/inventory/v1
+             */
+            token_endpoint: string;
+            /**
+             * @description Dynamic client registration endpoint for MCP integrations
+             * @example https://auth.example.com/api/v1/register/mcp/inventory/v1
+             */
+            registration_endpoint: string;
+            /**
+             * @description Scopes supported by this MCP authorization server
+             * @example [
+             *       "mcp.read",
+             *       "mcp.write",
+             *       "openid",
+             *       "offline_access"
+             *     ]
+             */
+            scopes_supported: string[];
+            /**
+             * @description OAuth 2.0 response types supported by this authorization server
+             * @example [
+             *       "code"
+             *     ]
+             */
+            response_types_supported: string[];
+            /**
+             * @description OAuth 2.0 grant types supported by this authorization server
+             * @example [
+             *       "authorization_code",
+             *       "refresh_token"
+             *     ]
+             */
+            grant_types_supported: ("authorization_code" | "refresh_token")[];
+            /**
+             * @description Client authentication methods supported by the token endpoint
+             * @example [
+             *       "client_secret_basic",
+             *       "private_key_jwt"
+             *     ]
+             */
+            token_endpoint_auth_methods_supported: string[];
+            /**
+             * @description PKCE code challenge methods supported by this authorization server
+             * @example [
+             *       "S256"
+             *     ]
+             */
+            code_challenge_methods_supported: string[];
         };
     };
     responses: never;
@@ -1432,6 +1574,125 @@ export interface operations {
             };
         };
     };
+    TaskerooController_handleMcp_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_handleMcp_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_handleMcp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_handleMcp_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_handleMcp_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_handleMcp_head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_handleMcp_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     WikirooController_listPages: {
         parameters: {
             query?: never;
@@ -1502,116 +1763,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseDto"];
-                };
-            };
-        };
-    };
-    ClientRegistrationController_registerClient: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterClientDto"];
-            };
-        };
-        responses: {
-            /** @description Client registered successfully with generated credentials */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
-                };
-            };
-            /** @description Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description A client with this name is already registered */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ClientRegistrationController_getClient: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clientId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Client registration information retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
-                };
-            };
-            /** @description Client not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ClientRegistrationController_listClients: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of registered clients */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
-                };
-            };
-        };
-    };
-    AuthorizationServerMetadataController_getAuthorizationServerMetadata: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description MCP server UUID or providedId */
-                mcpServerId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Authorization server metadata retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthorizationServerMetadataDto"];
                 };
             };
         };
@@ -2159,6 +2310,266 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_registerClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverId: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterClientDto"];
+            };
+        };
+        responses: {
+            /** @description Client registered successfully with generated credentials */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
+                };
+            };
+            /** @description Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A client with this name is already registered */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_getClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Client registration information retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
+                };
+            };
+            /** @description Client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_listClients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of registered clients */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
+                };
+            };
+        };
+    };
+    AuthorizationController_authorize: {
+        parameters: {
+            query: {
+                /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
+                response_type: "code";
+                /** @description Client identifier issued during registration */
+                client_id: string;
+                /** @description PKCE code challenge derived from the code verifier */
+                code_challenge: string;
+                /** @description PKCE code challenge method (S256 for SHA-256) */
+                code_challenge_method: string;
+                /** @description Redirect URI where the authorization response will be sent */
+                redirect_uri: string;
+                /** @description Opaque state value for CSRF protection */
+                state: string;
+                /** @description Resource server URL that the client wants to access */
+                resource: string;
+            };
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirects to consent screen with authorization request ID */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid authorization request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description MCP server or client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_authorizeConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentDecisionDto"];
+            };
+        };
+        responses: {
+            /** @description Redirects to client redirect_uri with authorization code or error */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid consent decision or flow state */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization flow has already been used */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization flow not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_getFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flowId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorization flow details retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpAuthorizationFlowEntity"];
+                };
+            };
+            /** @description Authorization flow not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    JwksController_getJwks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JWKS retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JwksResponseDto"];
+                };
+            };
+        };
+    };
+    DiscoveryController_getAuthorizationServerMetadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description MCP server UUID or providedId */
+                mcpServerId: string;
+                /** @description Semantic version of the MCP server */
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorization server metadata retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorizationServerMetadataDto"];
+                };
             };
         };
     };

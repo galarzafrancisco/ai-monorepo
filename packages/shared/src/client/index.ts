@@ -13,6 +13,7 @@ export { ChangeTaskStatusDto } from './models/ChangeTaskStatusDto';
 export { ClientRegistrationResponseDto } from './models/ClientRegistrationResponseDto';
 export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { ConnectionResponseDto } from './models/ConnectionResponseDto';
+export type { ConsentDecisionDto } from './models/ConsentDecisionDto';
 export type { CreateCommentDto } from './models/CreateCommentDto';
 export type { CreateConnectionDto } from './models/CreateConnectionDto';
 export type { CreateMappingDto } from './models/CreateMappingDto';
@@ -24,7 +25,10 @@ export type { DeleteConnectionResponseDto } from './models/DeleteConnectionRespo
 export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto';
 export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto';
 export type { DeleteServerResponseDto } from './models/DeleteServerResponseDto';
+export type { JwkResponseDto } from './models/JwkResponseDto';
+export type { JwksResponseDto } from './models/JwksResponseDto';
 export type { MappingResponseDto } from './models/MappingResponseDto';
+export type { McpAuthorizationFlowEntity } from './models/McpAuthorizationFlowEntity';
 export type { PageListResponseDto } from './models/PageListResponseDto';
 export type { PageResponseDto } from './models/PageResponseDto';
 export type { PageSummaryDto } from './models/PageSummaryDto';
@@ -39,6 +43,8 @@ export type { UpdateTaskDto } from './models/UpdateTaskDto';
 
 export { AppService } from './services/AppService';
 export { AuthorizationServerService } from './services/AuthorizationServerService';
+export { DiscoveryService } from './services/DiscoveryService';
+export { JwksService } from './services/JwksService';
 export { McpRegistryService } from './services/McpRegistryService';
 export { TaskService } from './services/TaskService';
 export { WikirooService } from './services/WikirooService';

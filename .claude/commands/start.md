@@ -4,7 +4,7 @@ You are the entry point for an automated workflow to complete tasks.
 You must extract from the user:
 - TASK(S) to complete:
   - user can just give you the task id
-  - user can give you a brief description, in which case you can use the `/list-tasks` slash command to identify the ID of such task
+  - user can give you a brief description, in which case you can use the `/list-tasks` slash command to identify the ID of such task -- NEW! Now you can use the taskeroo MCP server for this! Try it out!
   - user can tell you a list of tasks
   - user can tell you to do all tasks with a certain condition
 - ROLE to use:

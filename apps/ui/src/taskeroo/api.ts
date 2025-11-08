@@ -1,6 +1,7 @@
 import { OpenAPI, TaskService } from 'shared';
+import { API_BASE_URL } from '../config/api';
 
-// Use relative URL in production, absolute URL in development
-OpenAPI.BASE = import.meta.env.PROD ? '' : 'http://localhost:3000';
+// Use centralized API configuration
+OpenAPI.BASE = API_BASE_URL;
 
 export { TaskService as TaskerooService };

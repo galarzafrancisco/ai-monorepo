@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -26,7 +26,12 @@ async function bootstrap() {
   app.useGlobalFilters(new ProblemDetailsFilter());
 
   // Set global prefix for API routes
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1', {
+    exclude: [
+      {
+        path: '/.well-known/*path', method: RequestMethod.ALL
+      }],
+  });
 
   const config = new DocumentBuilder()
     .setTitle('AI Monorepo API')
@@ -59,8 +64,8 @@ async function bootstrap() {
     // SPA fallback: serve index.html for all non-API, non-asset routes
     // This allows client-side routing to work
     app.use((req, res, next) => {
-      // Don't intercept API routes or static assets
-      if (req.path.startsWith('/api/') || req.path.startsWith('/assets/')) {
+      // Don't intercept API routes, static assets, or well-known routes
+      if (req.path.startsWith('/api/') || req.path.startsWith('/assets/') || req.path.startsWith('/.well-known/')) {
         return next();
       }
       // Serve index.html for all other routes
@@ -68,7 +73,8 @@ async function bootstrap() {
     });
   }
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
+  const PORT = process.env.BACKEND_PORT || 3000;
+  await app.listen(PORT);
+  console.log(`Application is running on: http://localhost:${PORT}`);
 }
 bootstrap();
