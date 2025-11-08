@@ -23,6 +23,7 @@ import { AuthorizationService } from './authorization.service';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
+import { getFrontendPath } from '../config/frontend.config';
 
 @ApiTags('Authorization Server')
 @Controller('auth')
@@ -62,11 +63,8 @@ export class AuthorizationController {
       );
 
       // Redirect to the consent screen with the flow ID
-      // In dev, UI runs on a different port; in prod, it's served from the same origin
-      const uiPort = process.env.VITE_PORT;
-      const consentUrl = uiPort
-        ? `http://localhost:${uiPort}/consent?flow=${flowId}`
-        : `/consent?flow=${flowId}`;
+      // Use centralized frontend URL configuration
+      const consentUrl = getFrontendPath(`/consent?flow=${flowId}`);
       res.redirect(HttpStatus.FOUND, consentUrl);
     } catch (error) {
       // If there's an error, redirect back with error parameters
