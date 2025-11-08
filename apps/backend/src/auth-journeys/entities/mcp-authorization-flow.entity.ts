@@ -11,6 +11,7 @@ import {
 import { McpServerEntity } from '../../mcp-registry/entities/mcp-server.entity';
 import { RegisteredClientEntity } from '../../authorization-server/registered-client.entity';
 import { AuthJourneyEntity } from './auth-journey.entity';
+import { McpAuthorizationFlowStatus } from '../enums/mcp-authorization-flow-status.enum';
 
 
 @Entity('mcp_authorization_flows')
@@ -26,6 +27,12 @@ export class McpAuthorizationFlowEntity {
 
   @Column({ type: 'uuid', name: 'client_id' })
   clientId!: string;
+
+  @Column({
+      type: 'text',
+      default: McpAuthorizationFlowStatus.CLIENT_NOT_REGISTERED,
+    })
+    status!: McpAuthorizationFlowStatus;
 
   // PKCE parameters for secure authorization
   @Column({ type: 'text', name: 'code_challenge', nullable: true })

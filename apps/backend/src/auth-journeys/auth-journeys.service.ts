@@ -9,6 +9,7 @@ import {
 import { AuthJourneyStatus } from './enums/auth-journey-status.enum';
 import { CreateAuthJourneyInput } from './dto/service/auth-journeys.service.types';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
+import { McpAuthorizationFlowStatus } from './enums/mcp-authorization-flow-status.enum';
 
 @Injectable()
 export class AuthJourneysService {
@@ -50,6 +51,7 @@ export class AuthJourneysService {
       authorizationJourneyId: savedJourney.id,
       serverId: mcpServer.id,
       clientId: input.mcpClientId,
+      status: McpAuthorizationFlowStatus.CLIENT_REGISTERED,
     });
     const savedFlow = await this.mcpAuthorizationFlowRepository.save(mcpFlow);
 
