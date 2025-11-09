@@ -1,11 +1,13 @@
-# Start task
-Your goal is to pick up a task and work on it, taking it all the way from "not started" to "done".
+---
+description: Your goal is to pick up a task and work on it, taking it all the way from "not started" to "done".
+argument-hint: [TASK_ID=<task>] [ROLE=<role>]
+---
 
 # Input
 - TASK_ID: id of the task to work on
 - ROLE: who is picking up the task (dev, reviewer, pm etc). Usually dev.
 
-Your AGENT_NAME will be `codex-{ROLE}`. For example, `codex-dev`.
+Your AGENT_NAME will be `codex-{$ROLE}`. For example, `codex-dev`.
 
 # Workflow
 
