@@ -4,6 +4,7 @@ import { TaskerooService } from "./taskeroo.service";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
+import { TaskStatus } from "./enums";
 
 @Injectable()
 export class TaskerooMcpGateway {
@@ -141,7 +142,7 @@ export class TaskerooMcpGateway {
         return {
           content: [{
             type: "text",
-            text: JSON.stringify(task),
+            text: "done",
           }],
         }
       }
@@ -159,14 +160,14 @@ export class TaskerooMcpGateway {
         },
       },
       async ({ taskId, commenterName, content }) => {
-        const comment = await this.taskerooService.addComment(taskId, {
+        await this.taskerooService.addComment(taskId, {
           commenterName,
           content,
         });
         return {
           content: [{
             type: "text",
-            text: JSON.stringify(comment),
+            text: "done",
           }],
         }
       }
@@ -176,7 +177,7 @@ export class TaskerooMcpGateway {
       'mark_task_in_progress',
       {
         title: 'Start working on task',
-        description: 'Assign task, set status to IN_PROGRESS, add comment with branch info',
+        description: 'Assign task to yourself, set status to IN_PROGRESS, add comment with branch info',
         inputSchema: {
           taskId: z.string(),
           assignee: z.string(),
@@ -190,7 +191,7 @@ export class TaskerooMcpGateway {
 
         // Change status to IN_PROGRESS
         await this.taskerooService.changeStatus(taskId, {
-          status: 'IN_PROGRESS' as any
+          status: TaskStatus.IN_PROGRESS,
         });
 
         // Add comment
@@ -199,11 +200,10 @@ export class TaskerooMcpGateway {
           content: `Starting to work on this. I've created the branch ${branchName}`,
         });
 
-        const task = await this.taskerooService.getTaskById(taskId);
         return {
           content: [{
             type: "text",
-            text: JSON.stringify(task),
+            text: "done",
           }],
         }
       }
@@ -223,7 +223,7 @@ export class TaskerooMcpGateway {
       async ({ taskId, assignee, prLink }) => {
         // Change status to FOR_REVIEW
         await this.taskerooService.changeStatus(taskId, {
-          status: 'FOR_REVIEW' as any
+          status: TaskStatus.FOR_REVIEW,
         });
 
         // Add comment with PR link
@@ -232,11 +232,10 @@ export class TaskerooMcpGateway {
           content: `Opened PR for review: ${prLink}`,
         });
 
-        const task = await this.taskerooService.getTaskById(taskId);
         return {
           content: [{
             type: "text",
-            text: JSON.stringify(task),
+            text: "done",
           }],
         }
       }
@@ -249,21 +248,58 @@ export class TaskerooMcpGateway {
         description: 'Set status to DONE with completion comment',
         inputSchema: {
           taskId: z.string(),
+          assignee: z.string(),
           comment: z.string(),
         },
       },
-      async ({ taskId, comment }) => {
+      async ({ taskId, assignee, comment }) => {
         // Change status to DONE with comment
         await this.taskerooService.changeStatus(taskId, {
-          status: 'DONE' as any,
-          comment,
+          status: TaskStatus.DONE,
         });
 
-        const task = await this.taskerooService.getTaskById(taskId);
+        // Add a comment
+        await this.taskerooService.addComment(taskId, {
+          commenterName: assignee,
+          content: comment,
+        });
+
         return {
           content: [{
             type: "text",
-            text: JSON.stringify(task),
+            text: "done",
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'mark_task_needs_work',
+      {
+        title: 'Flags the task as needing work',
+        description: 'Set status to back to IN_PROGRESS with a comment',
+        inputSchema: {
+          taskId: z.string(),
+          assignee: z.string(),
+          comment: z.string(),
+        },
+      },
+      async ({ taskId, assignee, comment }) => {
+        // Change status to IN_PROGRESS with comment
+        await this.taskerooService.changeStatus(taskId, {
+          status: TaskStatus.IN_PROGRESS,
+        });
+
+        // Add a comment
+        await this.taskerooService.addComment(taskId, {
+          commenterName: assignee,
+          content: comment,
+        });
+
+        return {
+          content: [{
+            type: "text",
+            text: "done",
           }],
         }
       }
@@ -282,15 +318,14 @@ export class TaskerooMcpGateway {
       },
       async ({ taskId, status, comment }) => {
         await this.taskerooService.changeStatus(taskId, {
-          status: status as any,
+          status: status as TaskStatus,
           comment,
         });
 
-        const task = await this.taskerooService.getTaskById(taskId);
         return {
           content: [{
             type: "text",
-            text: JSON.stringify(task),
+            text: "done",
           }],
         }
       }
