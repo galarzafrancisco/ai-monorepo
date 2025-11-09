@@ -565,6 +565,104 @@
         ]
       }
     },
+    "/api/v1/wikiroo/pages/mcp": {
+      "get": {
+        "operationId": "WikirooController_handleMcp_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "post": {
+        "operationId": "WikirooController_handleMcp_post",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "put": {
+        "operationId": "WikirooController_handleMcp_put",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "delete": {
+        "operationId": "WikirooController_handleMcp_delete",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "patch": {
+        "operationId": "WikirooController_handleMcp_patch",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "options": {
+        "operationId": "WikirooController_handleMcp_options",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "head": {
+        "operationId": "WikirooController_handleMcp_head",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "search": {
+        "operationId": "WikirooController_handleMcp_search",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
     "/api/v1/mcp/servers": {
       "post": {
         "operationId": "McpRegistryController_createServer",

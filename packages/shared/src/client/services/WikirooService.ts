@@ -56,4 +56,74 @@ export class WikirooService {
             },
         });
     }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static wikirooControllerHandleMcpGet(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/wikiroo/pages/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static wikirooControllerHandleMcpPost(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/wikiroo/pages/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static wikirooControllerHandleMcpPut(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/wikiroo/pages/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static wikirooControllerHandleMcpDelete(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/wikiroo/pages/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static wikirooControllerHandleMcpPatch(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/wikiroo/pages/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static wikirooControllerHandleMcpOptions(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'OPTIONS',
+            url: '/api/v1/wikiroo/pages/mcp',
+        });
+    }
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static wikirooControllerHandleMcpHead(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'HEAD',
+            url: '/api/v1/wikiroo/pages/mcp',
+        });
+    }
 }
