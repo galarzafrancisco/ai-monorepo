@@ -55,7 +55,7 @@ export class AuthorizationService {
     // Validate the scopes requested
     let scopes: string[] = [];
     if (authRequest.scope) {
-      const requestedScopes = authRequest.scope.split(',');
+      const requestedScopes = authRequest.scope.split(' '); // in GET /authorize, the scopes are space delimited
       const allowedScopes = mcpServer.scopes.map(s => s.scopeId);
       scopes = requestedScopes.filter(s => allowedScopes.includes(s));
     }
@@ -84,7 +84,9 @@ export class AuthorizationService {
     mcpAuthFlow.resource = authRequest.resource;
     mcpAuthFlow.scope = scopes.join(',');
 
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    const updatedAF = await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    this.logger.debug(`updatedAF`);
+    this.logger.debug(updatedAF);
 
     // Return the flow ID to be used in the consent screen
     return mcpAuthFlow.id;
@@ -227,31 +229,22 @@ export class AuthorizationService {
 
     // Map MCP scopes to downstream scopes
     const mcpAuthFlow = connectionFlow.authJourney?.mcpAuthorizationFlow;
-    this.logger.log(`MCP auth flow scope: ${mcpAuthFlow?.scope || 'none'}`);
-    this.logger.log(`Connection has ${connectionFlow.mcpConnection.mappings?.length || 0} scope mappings`);
 
     if (mcpAuthFlow?.scope && connectionFlow.mcpConnection.mappings) {
       // Get the scopes requested in the MCP flow
       const requestedScopes = mcpAuthFlow.scope.split(',').map(s => s.trim()).filter(s => s);
-      this.logger.log(`Requested MCP scopes: ${JSON.stringify(requestedScopes)}`);
-
-      // Log all available mappings
-      this.logger.log(`Available mappings: ${JSON.stringify(connectionFlow.mcpConnection.mappings.map(m => ({ scopeId: m.scopeId, downstream: m.downstreamScope })))}`);
 
       // Filter mappings to only include requested scopes
       const relevantMappings = connectionFlow.mcpConnection.mappings.filter(
         mapping => requestedScopes.includes(mapping.scopeId)
       );
-      this.logger.log(`Relevant mappings found: ${relevantMappings.length}`);
 
       // Extract downstream scopes
       const downstreamScopes = relevantMappings.map(m => m.downstreamScope);
-      this.logger.log(`Downstream scopes to request: ${JSON.stringify(downstreamScopes)}`);
 
       if (downstreamScopes.length > 0) {
         // Add scopes to the authorization URL (space-separated for OAuth)
         authUrl.searchParams.set('scope', downstreamScopes.join(' '));
-        this.logger.log(`Added scopes to URL: ${downstreamScopes.join(' ')}`);
       } else {
         this.logger.warn('No downstream scopes mapped for requested MCP scopes!');
       }
@@ -270,6 +263,7 @@ export class AuthorizationService {
    * Complete the MCP auth flow by issuing authorization code
    */
   private async completeMcpAuthFlow(journeyId: string): Promise<string> {
+    this.logger.debug(`Finishing auth flow for journey ${journeyId}`);
     // Get the MCP auth flow for this journey
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByJourneyId(journeyId);
 
@@ -297,6 +291,7 @@ export class AuthorizationService {
     const redirectUrl = new URL(mcpAuthFlow.redirectUri);
     redirectUrl.searchParams.set('code', authorizationCode);
     redirectUrl.searchParams.set('state', mcpAuthFlow.state);
+    this.logger.debug(`redirectUrl: ${redirectUrl}`);
 
     return redirectUrl.toString();
   }

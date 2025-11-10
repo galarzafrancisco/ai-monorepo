@@ -33,10 +33,11 @@ export class AuthGuard implements CanActivate {
     try {
       const payload = await this.jwtValidationService.validateToken(token);
       this.logger.debug(`Token validated for subject: ${payload.sub}`);
-
+      
       const auth: AuthContext = {
         token,
         payload,
+        scopes: payload.scope,
       };
       res.locals.auth = auth;
 

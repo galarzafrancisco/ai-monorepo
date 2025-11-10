@@ -27,6 +27,13 @@ export class CallbackRequestDto {
   error?: string;
 
   @ApiPropertyOptional({
+    description: 'Scopes that were granted'
+  })
+  @IsString()
+  @IsOptional()
+  scope?: string;
+
+  @ApiPropertyOptional({
     description: 'Error description if authorization failed',
     example: 'User denied the authorization request',
   })

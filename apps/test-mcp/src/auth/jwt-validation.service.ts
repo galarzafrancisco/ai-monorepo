@@ -10,7 +10,8 @@ export class JwtValidationService {
   private readonly jwksClient: JwksClient;
 
   constructor() {
-    const jwksUri = `${AUTHORIZATION_SERVER_URL}/.well-known/jwks.json`;
+    const authorizationServerBaseUrl = new URL(AUTHORIZATION_SERVER_URL).origin;
+    const jwksUri = `${authorizationServerBaseUrl}/.well-known/jwks.json`;
     this.logger.log(`Initializing JWKS client with URI: ${jwksUri}`);
 
     this.jwksClient = new JwksClient({
