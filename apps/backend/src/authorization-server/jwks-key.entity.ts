@@ -16,11 +16,11 @@ export class JwksKeyEntity {
   @Column({ type: 'text', unique: true })
   kid!: string;
 
-  @Column({ type: 'text', name: 'public_key' })
-  publicKey!: string;
+  @Column({ type: 'text', name: 'public_key_pem' })
+  publicKeyPem!: string;
 
-  @Column({ type: 'text', name: 'private_key' })
-  privateKey!: string;
+  @Column({ type: 'text', name: 'private_key_pem' })
+  privateKeyPem!: string;
 
   @Column({ type: 'text' })
   algorithm!: string;

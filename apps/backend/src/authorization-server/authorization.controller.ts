@@ -20,8 +20,11 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AuthorizationService } from './authorization.service';
+import { TokenService } from './token.service';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
+import { TokenRequestDto } from './dto/token-request.dto';
+import { TokenResponseDto } from './dto/token-response.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { getFrontendPath } from '../config/frontend.config';
 
@@ -30,6 +33,7 @@ import { getFrontendPath } from '../config/frontend.config';
 export class AuthorizationController {
   constructor(
     private readonly authorizationService: AuthorizationService,
+    private readonly tokenService: TokenService,
   ) {}
 
   @Get('authorize/mcp/:serverIdentifier/:version')
@@ -137,5 +141,29 @@ export class AuthorizationController {
     @Param('flowId') flowId: string,
   ): Promise<McpAuthorizationFlowEntity> {
     return this.authorizationService.getAuthorizationFlow(flowId);
+  }
+
+  @Post('token/mcp/:serverIdentifier/:version')
+  @ApiOperation({
+    summary: 'OAuth 2.0 Token Endpoint',
+    description:
+      'Exchanges authorization code for access token. Validates PKCE code_verifier, issues signed JWT access token and refresh token.',
+  })
+  @ApiOkResponse({
+    description: 'Access token issued successfully',
+    type: TokenResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid token request parameters',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid authorization code, code_verifier, or expired code',
+  })
+  async token(
+    @Body() tokenRequest: TokenRequestDto,
+    @Param('serverIdentifier') serverIdentifier: string,
+    @Param('version') version: string,
+  ): Promise<TokenResponseDto> {
+    return this.tokenService.exchangeAuthorizationCode(tokenRequest);
   }
 }

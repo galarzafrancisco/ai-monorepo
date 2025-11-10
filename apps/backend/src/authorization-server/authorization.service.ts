@@ -6,6 +6,7 @@ import { RegisteredClientEntity } from './registered-client.entity';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
+import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
 
@@ -14,8 +15,7 @@ export class AuthorizationService {
   constructor(
     @InjectRepository(RegisteredClientEntity)
     private readonly clientRepository: Repository<RegisteredClientEntity>,
-    @InjectRepository(McpAuthorizationFlowEntity)
-    private readonly mcpAuthFlowRepository: Repository<McpAuthorizationFlowEntity>,
+    private readonly authJourneysService: AuthJourneysService,
     private readonly mcpRegistryService: McpRegistryService,
   ) { }
 
@@ -50,13 +50,11 @@ export class AuthorizationService {
     }
 
     // Find the existing MCP authorization flow for this client and server
-    const mcpAuthFlow = await this.mcpAuthFlowRepository.findOne({
-      where: {
-        clientId: client.id,
-        serverId: mcpServer.id,
-      },
-      relations: ['authJourney'],
-    });
+    const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByClientAndServer(
+      client.id,
+      mcpServer.id,
+      ['authJourney']
+    );
 
     if (!mcpAuthFlow) {
       throw new NotFoundException(
@@ -74,7 +72,7 @@ export class AuthorizationService {
     mcpAuthFlow.redirectUri = authRequest.redirect_uri;
     mcpAuthFlow.resource = authRequest.resource;
 
-    await this.mcpAuthFlowRepository.save(mcpAuthFlow);
+    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
 
     // Return the flow ID to be used in the consent screen
     return mcpAuthFlow.id;
@@ -84,10 +82,10 @@ export class AuthorizationService {
    * Get authorization flow details for the consent screen
    */
   async getAuthorizationFlow(flowId: string): Promise<McpAuthorizationFlowEntity> {
-    const mcpAuthFlow = await this.mcpAuthFlowRepository.findOne({
-      where: { id: flowId },
-      relations: ['server', 'client', 'authJourney'],
-    });
+    const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
+      flowId,
+      ['server', 'client', 'authJourney']
+    );
 
     if (!mcpAuthFlow) {
       throw new NotFoundException(`Authorization flow '${flowId}' not found`);
@@ -106,10 +104,10 @@ export class AuthorizationService {
     version: string,
   ): Promise<string> {
     // Fetch the flow using the flow_id as a CSRF protection token
-    const mcpAuthFlow = await this.mcpAuthFlowRepository.findOne({
-      where: { id: consentDecision.flow_id },
-      relations: ['server', 'client'],
-    });
+    const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
+      consentDecision.flow_id,
+      ['server', 'client']
+    );
 
     if (!mcpAuthFlow) {
       throw new NotFoundException(`Authorization flow '${consentDecision.flow_id}' not found`);
@@ -134,7 +132,7 @@ export class AuthorizationService {
     if (!consentDecision.approved) {
       // Mark as rejected
       mcpAuthFlow.status = McpAuthorizationFlowStatus.USER_CONSENT_REJECTED;
-      await this.mcpAuthFlowRepository.save(mcpAuthFlow);
+      await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
       const errorUrl = new URL(mcpAuthFlow.redirectUri);
       errorUrl.searchParams.set('error', 'access_denied');
       errorUrl.searchParams.set('error_description', 'User denied the authorization request');
@@ -143,11 +141,11 @@ export class AuthorizationService {
     }
     // Mark as consent
     mcpAuthFlow.status = McpAuthorizationFlowStatus.USER_CONSENT_OK;
-    await this.mcpAuthFlowRepository.save(mcpAuthFlow);
+    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
 
     // Placeholder: Here we would handle any auth with downstream systems
     mcpAuthFlow.status = McpAuthorizationFlowStatus.WAITING_ON_DOWNSTREAM_AUTH;
-    await this.mcpAuthFlowRepository.save(mcpAuthFlow);
+    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
 
     // Generate authorization code (cryptographically secure random string)
     const authorizationCode = randomBytes(32).toString('base64url');
@@ -164,7 +162,7 @@ export class AuthorizationService {
     // Update status
     mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_CODE_ISSUED;
 
-    await this.mcpAuthFlowRepository.save(mcpAuthFlow);
+    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
 
     // Build redirect URL with authorization code
     const redirectUrl = new URL(mcpAuthFlow.redirectUri);

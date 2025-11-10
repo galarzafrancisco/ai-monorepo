@@ -440,6 +440,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/token/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * OAuth 2.0 Token Endpoint
+         * @description Exchanges authorization code for access token. Validates PKCE code_verifier, issues signed JWT access token and refresh token.
+         */
+        post: operations["AuthorizationController_token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/.well-known/jwks.json": {
         parameters: {
             query?: never;
@@ -452,6 +472,26 @@ export interface paths {
          * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
          */
         get: operations["JwksController_getJwks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/jwk-active.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Active Signing Key (Single JWK)
+         * @description Returns the currently active signing key as a single JWK. Useful for debugging and testing JWT verification with tools like jwt.io. This endpoint returns only the current signing key, not the full key set.
+         */
+        get: operations["JwksController_getActiveJwk"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1175,6 +1215,78 @@ export interface components {
             approved: boolean;
         };
         McpAuthorizationFlowEntity: Record<string, never>;
+        TokenRequestDto: {
+            /**
+             * @description Grant type that determines which parameters must be supplied
+             * @example authorization_code
+             * @enum {string}
+             */
+            grant_type: "authorization_code" | "refresh_token";
+            /**
+             * @description Client identifier issued during dynamic registration
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            client_id: string;
+            /**
+             * @description Authorization code that was issued by the /authorize endpoint
+             * @example SplxlOBeZQQYbYS6WxSbIA
+             */
+            code?: string;
+            /**
+             * @description Redirect URI used during authorization (required when code is present)
+             * @example http://localhost:6274/oauth/callback/debug
+             */
+            redirect_uri?: string;
+            /**
+             * @description PKCE code verifier used to validate the authorization code exchange
+             * @example dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
+             */
+            code_verifier?: string;
+            /**
+             * @description Refresh token issued earlier by the authorization server
+             * @example def5020091c58c49fbb...
+             */
+            refresh_token?: string;
+            /**
+             * @description Optional list of scopes to narrow when refreshing a token (space-delimited)
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+            /**
+             * @description Optional resource indicator (RFC 8707) - identifies the target resource server
+             * @example http://localhost:4001/
+             */
+            resource?: string;
+        };
+        TokenResponseDto: {
+            /**
+             * @description Opaque access token used to access protected resources
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            access_token: string;
+            /**
+             * @description Type of token issued (MCP clients always receive Bearer tokens)
+             * @default Bearer
+             * @example Bearer
+             * @enum {string}
+             */
+            token_type: "Bearer";
+            /**
+             * @description Lifetime of the access token in seconds
+             * @example 3600
+             */
+            expires_in: number;
+            /**
+             * @description Refresh token that can be exchanged for a new access token
+             * @example def5020091c58c49fbb...
+             */
+            refresh_token: string;
+            /**
+             * @description Space-delimited scopes that were granted for this token
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+        };
         JwkResponseDto: {
             /**
              * @description Key type, for example RSA or EC.
@@ -2663,6 +2775,47 @@ export interface operations {
             };
         };
     };
+    AuthorizationController_token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Access token issued successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponseDto"];
+                };
+            };
+            /** @description Invalid token request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid authorization code, code_verifier, or expired code */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     JwksController_getJwks: {
         parameters: {
             query?: never;
@@ -2680,6 +2833,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["JwksResponseDto"];
                 };
+            };
+        };
+    };
+    JwksController_getActiveJwk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active JWK retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

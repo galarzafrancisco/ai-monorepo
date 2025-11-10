@@ -18,11 +18,11 @@ export class JwksController {
     description: 'JWKS retrieved successfully',
     type: JwksResponseDto,
   })
-  async getJwks(): Promise<JwksResponseDto> {
+  async getJwks() {
     const jwks = await this.jwksService.getPublicKeys();
 
     return {
-      keys: jwks.keys.map((key) => ({
+      keys: jwks.map((key) => ({
         kty: key.kty,
         use: key.use,
         kid: key.kid,

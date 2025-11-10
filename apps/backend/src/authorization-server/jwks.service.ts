@@ -2,24 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, LessThan } from 'typeorm';
 import { JwksKeyEntity } from './jwks-key.entity';
-import { generateKeyPair, exportJWK, exportPKCS8, exportSPKI } from 'jose';
-import { randomBytes } from 'crypto';
+import { generateKeyPair, exportJWK, exportPKCS8, exportSPKI, calculateJwkThumbprint, importSPKI, JWK } from 'jose';
+import { createPublicKey, randomBytes } from 'crypto';
 
-export interface JWK {
-  kty: string;
-  use: string;
-  kid: string;
-  alg: string;
-  n?: string;
-  e?: string;
-  x?: string;
-  y?: string;
-  crv?: string;
-}
 
-export interface JWKS {
-  keys: JWK[];
-}
+/* -------- algorithm -------- */
+const ALG          = 'RS256' as const   // keep the string literal
 
 @Injectable()
 export class JwksService {
@@ -69,16 +57,18 @@ export class JwksService {
     );
 
     // Generate new RSA key pair
-    const { publicKey, privateKey } = await generateKeyPair('RS256', {
+    const { publicKey, privateKey } = await generateKeyPair(ALG, {
       modulusLength: 2048,
+      extractable: true, // Required to export keys to PEM format
     });
 
     // Export keys to PEM format for storage
     const publicKeyPem = await exportSPKI(publicKey);
     const privateKeyPem = await exportPKCS8(privateKey);
-
+    
     // Generate a unique key ID
-    const kid = this.generateKeyId();
+    const publicJwk = await exportJWK(publicKey);
+    const kid = await calculateJwkThumbprint(publicJwk);
 
     // Calculate expiration date based on TTL
     const ttlHours = parseInt(process.env.JWKS_KEY_TTL_HOURS || '24', 10);
@@ -88,9 +78,9 @@ export class JwksService {
     // Create and save the new key
     const newKey = this.keyRepository.create({
       kid,
-      publicKey: publicKeyPem,
-      privateKey: privateKeyPem,
-      algorithm: 'RS256',
+      publicKeyPem: publicKeyPem,
+      privateKeyPem: privateKeyPem,
+      algorithm: ALG,
       isActive: true,
       expiresAt,
     });
@@ -106,7 +96,7 @@ export class JwksService {
    * This includes both active and inactive keys to allow validation of tokens
    * signed with recently rotated keys
    */
-  async getPublicKeys(): Promise<JWKS> {
+  async getPublicKeys(): Promise<JWK[]> {
     const now = new Date();
     const validKeys = await this.keyRepository.find({
       where: {
@@ -122,28 +112,20 @@ export class JwksService {
     // Convert stored keys to JWK format
     const jwks: JWK[] = await Promise.all(
       validKeys.map(async (key) => {
-        // Import the public key from PEM
-        const { createPublicKey } = await import('crypto');
-        const publicKeyObject = createPublicKey(key.publicKey);
+        
+        const publicKey = await importSPKI(key.publicKeyPem, key.algorithm)
 
         // Export as JWK
-        const jwk = await exportJWK(publicKeyObject);
+        const publicJwk = await exportJWK(publicKey);
+        publicJwk.use = 'sig';
+        publicJwk.alg = key.algorithm;
+        publicJwk.kid = key.kid;
 
-        return {
-          kty: jwk.kty!,
-          use: 'sig',
-          kid: key.kid,
-          alg: key.algorithm,
-          ...(jwk.n && { n: jwk.n }),
-          ...(jwk.e && { e: jwk.e }),
-          ...(jwk.x && { x: jwk.x }),
-          ...(jwk.y && { y: jwk.y }),
-          ...(jwk.crv && { crv: jwk.crv }),
-        };
+        return publicJwk;
       }),
     );
 
-    return { keys: jwks };
+    return jwks;
   }
 
   /**
@@ -151,13 +133,6 @@ export class JwksService {
    */
   async getActiveSigningKey(): Promise<JwksKeyEntity> {
     return this.getOrCreateActiveKey();
-  }
-
-  /**
-   * Generate a unique key ID
-   */
-  private generateKeyId(): string {
-    return randomBytes(16).toString('hex');
   }
 
   /**

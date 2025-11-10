@@ -4,23 +4,23 @@ import { ClientRegistrationService } from './client-registration.service';
 import { ClientRegistrationController } from './client-registration.controller';
 import { AuthorizationService } from './authorization.service';
 import { AuthorizationController } from './authorization.controller';
+import { TokenService } from './token.service';
 import { RegisteredClientEntity } from './registered-client.entity';
 import { JwksKeyEntity } from './jwks-key.entity';
 import { JwksService } from './jwks.service';
 import { JwksController } from './jwks.controller';
-import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { AuthJourneysModule } from 'src/auth-journeys/auth-journeys.module';
 import { McpRegistryModule } from 'src/mcp-registry/mcp-registry.module';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RegisteredClientEntity, McpAuthorizationFlowEntity, JwksKeyEntity]),
+    TypeOrmModule.forFeature([RegisteredClientEntity, JwksKeyEntity]),
     AuthJourneysModule,
     McpRegistryModule,
   ],
-  providers: [ClientRegistrationService, AuthorizationService, JwksService],
+  providers: [ClientRegistrationService, AuthorizationService, TokenService, JwksService],
   controllers: [ClientRegistrationController, AuthorizationController, JwksController],
-  exports: [ClientRegistrationService, AuthorizationService, JwksService],
+  exports: [ClientRegistrationService, AuthorizationService, TokenService, JwksService],
 })
 export class AuthorizationServerModule {}
