@@ -55,7 +55,7 @@ export class AuthorizationService {
     // Validate the scopes requested
     let scopes: string[] = [];
     if (authRequest.scope) {
-      const requestedScopes = authRequest.scope.split(',');
+      const requestedScopes = authRequest.scope.split(' '); // in GET /authorize, the scopes are space delimited
       const allowedScopes = mcpServer.scopes.map(s => s.scopeId);
       scopes = requestedScopes.filter(s => allowedScopes.includes(s));
     }
@@ -84,7 +84,9 @@ export class AuthorizationService {
     mcpAuthFlow.resource = authRequest.resource;
     mcpAuthFlow.scope = scopes.join(',');
 
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    const updatedAF = await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    this.logger.debug(`updatedAF`);
+    this.logger.debug(updatedAF);
 
     // Return the flow ID to be used in the consent screen
     return mcpAuthFlow.id;
@@ -227,6 +229,12 @@ export class AuthorizationService {
 
     // Map MCP scopes to downstream scopes
     const mcpAuthFlow = connectionFlow.authJourney?.mcpAuthorizationFlow;
+    this.logger.debug(`connectionFlow`);
+    this.logger.log(connectionFlow.authJourney);
+    this.logger.debug(`connectionFlow.authJourney`);
+    this.logger.log(mcpAuthFlow);
+    this.logger.debug(`mcpAuthFlow`);
+    this.logger.log(connectionFlow);
     this.logger.log(`MCP auth flow scope: ${mcpAuthFlow?.scope || 'none'}`);
     this.logger.log(`Connection has ${connectionFlow.mcpConnection.mappings?.length || 0} scope mappings`);
 
