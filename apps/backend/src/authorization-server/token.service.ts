@@ -144,7 +144,7 @@ export class TokenService {
     const signingKey = await this.jwksService.getActiveSigningKey();
 
     // Import private key from PEM
-    const privateKey = await importPKCS8(signingKey.privateKey, signingKey.algorithm);
+    const privateKey = await importPKCS8(signingKey.privateKeyPem, signingKey.algorithm);
 
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
