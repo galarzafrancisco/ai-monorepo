@@ -1633,6 +1633,62 @@
         ]
       }
     },
+    "/api/v1/auth/token/mcp/{serverIdentifier}/{version}": {
+      "post": {
+        "description": "Exchanges authorization code for access token. Validates PKCE code_verifier, issues signed JWT access token and refresh token.",
+        "operationId": "AuthorizationController_token",
+        "parameters": [
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access token issued successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token request parameters"
+          },
+          "401": {
+            "description": "Invalid authorization code, code_verifier, or expired code"
+          }
+        },
+        "summary": "OAuth 2.0 Token Endpoint",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
     "/.well-known/jwks.json": {
       "get": {
         "description": "Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.",
@@ -2731,6 +2787,94 @@
       "McpAuthorizationFlowEntity": {
         "type": "object",
         "properties": {}
+      },
+      "TokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "description": "Grant type that determines which parameters must be supplied",
+            "enum": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "example": "authorization_code"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Client identifier issued during dynamic registration",
+            "example": "0bab273987a2e163c3abb40c631ec0a4"
+          },
+          "code": {
+            "type": "string",
+            "description": "Authorization code that was issued by the /authorize endpoint",
+            "example": "SplxlOBeZQQYbYS6WxSbIA"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "description": "Redirect URI used during authorization (required when code is present)",
+            "example": "http://localhost:6274/oauth/callback/debug"
+          },
+          "code_verifier": {
+            "type": "string",
+            "description": "PKCE code verifier used to validate the authorization code exchange",
+            "example": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "Refresh token issued earlier by the authorization server",
+            "example": "def5020091c58c49fbb..."
+          },
+          "scope": {
+            "type": "string",
+            "description": "Optional list of scopes to narrow when refreshing a token (space-delimited)",
+            "example": "tasks:read tasks:write"
+          }
+        },
+        "required": [
+          "grant_type",
+          "client_id"
+        ]
+      },
+      "TokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "Opaque access token used to access protected resources",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Type of token issued (MCP clients always receive Bearer tokens)",
+            "enum": [
+              "Bearer"
+            ],
+            "example": "Bearer",
+            "default": "Bearer"
+          },
+          "expires_in": {
+            "type": "number",
+            "description": "Lifetime of the access token in seconds",
+            "example": 3600
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "Refresh token that can be exchanged for a new access token",
+            "example": "def5020091c58c49fbb..."
+          },
+          "scope": {
+            "type": "string",
+            "description": "Space-delimited scopes that were granted for this token",
+            "example": "tasks:read tasks:write"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in",
+          "refresh_token"
+        ]
       },
       "JwkResponseDto": {
         "type": "object",

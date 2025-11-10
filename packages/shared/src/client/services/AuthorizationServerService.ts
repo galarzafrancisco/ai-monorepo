@@ -6,6 +6,8 @@ import type { ClientRegistrationResponseDto } from '../models/ClientRegistration
 import type { ConsentDecisionDto } from '../models/ConsentDecisionDto';
 import type { McpAuthorizationFlowEntity } from '../models/McpAuthorizationFlowEntity';
 import type { RegisterClientDto } from '../models/RegisterClientDto';
+import type { TokenRequestDto } from '../models/TokenRequestDto';
+import type { TokenResponseDto } from '../models/TokenResponseDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -170,6 +172,35 @@ export class AuthorizationServerService {
             },
             errors: {
                 404: `Authorization flow not found`,
+            },
+        });
+    }
+    /**
+     * OAuth 2.0 Token Endpoint
+     * Exchanges authorization code for access token. Validates PKCE code_verifier, issues signed JWT access token and refresh token.
+     * @param serverIdentifier
+     * @param version
+     * @param requestBody
+     * @returns TokenResponseDto Access token issued successfully
+     * @throws ApiError
+     */
+    public static authorizationControllerToken(
+        serverIdentifier: string,
+        version: string,
+        requestBody: TokenRequestDto,
+    ): CancelablePromise<TokenResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/token/mcp/{serverIdentifier}/{version}',
+            path: {
+                'serverIdentifier': serverIdentifier,
+                'version': version,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid token request parameters`,
+                401: `Invalid authorization code, code_verifier, or expired code`,
             },
         });
     }
