@@ -155,94 +155,118 @@ export class AuthorizationService {
     mcpAuthFlow.status = McpAuthorizationFlowStatus.USER_CONSENT_OK;
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
 
-    // Handle downstream auth flows for connections
+    // Process the next downstream flow (or complete if no connections)
+    return this.processNextDownstreamFlow(mcpAuthFlow.authorizationJourneyId);
+  }
+
+  /**
+   * Process the next downstream flow or complete MCP auth if all done
+   * This method is called from both the consent handler and callback handler
+   */
+  private async processNextDownstreamFlow(journeyId: string): Promise<string> {
+    // Get all connection flows for this journey
     const connectionFlows = await this.authJourneysService.getConnectionFlowsForJourney(
-      mcpAuthFlow.authorizationJourneyId,
-      ['mcpConnection']
+      journeyId,
+      ['mcpConnection', 'authJourney', 'authJourney.mcpAuthorizationFlow']
     );
 
-    // If there are no connections, we can skip downstream auth
+    // If there are no connections, complete the MCP auth flow immediately
     if (connectionFlows.length === 0) {
-      this.logger.log('No downstream connections to authorize');
-    } else {
-      // Mark as waiting for downstream auth
-      mcpAuthFlow.status = McpAuthorizationFlowStatus.WAITING_ON_DOWNSTREAM_AUTH;
-      await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-
-      // Initiate OAuth flows for each connection
-      await this.initiateDownstreamAuthFlows(connectionFlows, mcpAuthFlow);
-
-      // Return a redirect to a "waiting" page that will poll for completion
-      // For now, we'll just wait synchronously (TODO: make this async with polling)
-      const redirectUrl = new URL(mcpAuthFlow.redirectUri);
-      redirectUrl.searchParams.set('state', mcpAuthFlow.state);
-      redirectUrl.searchParams.set('flow_id', mcpAuthFlow.id);
-      return redirectUrl.toString();
+      this.logger.log('No downstream connections to authorize, completing MCP auth');
+      return this.completeMcpAuthFlow(journeyId);
     }
 
-    mcpAuthFlow.status = McpAuthorizationFlowStatus.WAITING_ON_DOWNSTREAM_AUTH;
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    // Find the next pending connection flow
+    const nextPendingFlow = connectionFlows.find(flow => flow.status === 'pending');
 
-    // Generate authorization code (cryptographically secure random string)
+    if (nextPendingFlow) {
+      // Initiate OAuth for this ONE connection
+      return this.initiateConnectionOAuth(nextPendingFlow);
+    } else {
+      // Check if all flows are authorized
+      const allAuthorized = connectionFlows.every(flow => flow.status === 'authorized');
+      const anyFailed = connectionFlows.some(flow => flow.status === 'failed');
+
+      if (allAuthorized) {
+        this.logger.log('All downstream connections authorized, completing MCP auth');
+        return this.completeMcpAuthFlow(journeyId);
+      } else if (anyFailed) {
+        throw new BadRequestException('One or more downstream connections failed to authorize');
+      } else {
+        throw new BadRequestException('No pending connection flows found');
+      }
+    }
+  }
+
+  /**
+   * Initiate OAuth for a single connection
+   */
+  private async initiateConnectionOAuth(connectionFlow: ConnectionAuthorizationFlowEntity): Promise<string> {
+    const baseCallbackUrl = process.env.CALLBACK_BASE_URL || 'http://localhost:3000';
+    const callbackUrl = `${baseCallbackUrl}/api/v1/auth/callback`;
+
+    // Generate a unique state for this connection flow
+    const state = randomBytes(32).toString('base64url');
+    connectionFlow.state = state;
+    connectionFlow.status = 'pending';
+
+    await this.authJourneysService.saveConnectionFlow(connectionFlow);
+
+    // Build the authorization URL
+    const authUrl = new URL(connectionFlow.mcpConnection.authorizeUrl);
+    authUrl.searchParams.set('client_id', connectionFlow.mcpConnection.clientId);
+    authUrl.searchParams.set('redirect_uri', callbackUrl);
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('state', state);
+
+    // Add access_type=offline for Google to get refresh token
+    authUrl.searchParams.set('access_type', 'offline');
+
+    // Add prompt=consent to force consent screen (needed for refresh token)
+    authUrl.searchParams.set('prompt', 'consent');
+
+    // TODO: Add scope if the connection has scope mappings
+
+    this.logger.log(`Initiating downstream OAuth flow for connection ${connectionFlow.mcpConnection.friendlyName}`);
+    this.logger.log(`Authorization URL: ${authUrl.toString()}`);
+
+    // Return the authorization URL for redirect
+    return authUrl.toString();
+  }
+
+  /**
+   * Complete the MCP auth flow by issuing authorization code
+   */
+  private async completeMcpAuthFlow(journeyId: string): Promise<string> {
+    // Get the MCP auth flow for this journey
+    const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByJourneyId(journeyId);
+
+    if (!mcpAuthFlow) {
+      throw new NotFoundException('MCP auth flow not found for journey');
+    }
+
+    if (!mcpAuthFlow.redirectUri || !mcpAuthFlow.state) {
+      throw new BadRequestException('MCP auth flow missing redirect URI or state');
+    }
+
+    // Generate authorization code for the MCP client
     const authorizationCode = randomBytes(32).toString('base64url');
-
-    // Set expiry (10 minutes from now, per OAuth 2.0 best practices)
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
-    // Store the authorization code
     mcpAuthFlow.authorizationCode = authorizationCode;
     mcpAuthFlow.authorizationCodeExpiresAt = expiresAt;
     mcpAuthFlow.authorizationCodeUsed = false;
-
-    // Update status
     mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_CODE_ISSUED;
 
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
 
-    // Build redirect URL with authorization code
+    // Redirect back to the MCP client with the authorization code
     const redirectUrl = new URL(mcpAuthFlow.redirectUri);
     redirectUrl.searchParams.set('code', authorizationCode);
     redirectUrl.searchParams.set('state', mcpAuthFlow.state);
 
     return redirectUrl.toString();
-  }
-
-  /**
-   * Initiate OAuth flows for all downstream connections
-   */
-  private async initiateDownstreamAuthFlows(
-    connectionFlows: ConnectionAuthorizationFlowEntity[],
-    mcpAuthFlow: McpAuthorizationFlowEntity
-  ): Promise<void> {
-    const baseCallbackUrl = process.env.CALLBACK_BASE_URL || 'http://localhost:3000';
-    const callbackUrl = `${baseCallbackUrl}/api/v1/auth/callback`;
-
-    for (const connectionFlow of connectionFlows) {
-      // Generate a unique state for this connection flow
-      const state = randomBytes(32).toString('base64url');
-      connectionFlow.state = state;
-      connectionFlow.status = 'pending';
-
-      await this.authJourneysService.saveConnectionFlow(connectionFlow);
-
-      // Build the authorization URL
-      const authUrl = new URL(connectionFlow.mcpConnection.authorizeUrl);
-      authUrl.searchParams.set('client_id', connectionFlow.mcpConnection.clientId);
-      authUrl.searchParams.set('redirect_uri', callbackUrl);
-      authUrl.searchParams.set('response_type', 'code');
-      authUrl.searchParams.set('state', state);
-
-      // Add scope if the connection has scope mappings
-      // For now, we'll skip this and add it later if needed
-
-      this.logger.log(`Initiating downstream OAuth flow for connection ${connectionFlow.mcpConnection.friendlyName}`);
-      this.logger.log(`Authorization URL: ${authUrl.toString()}`);
-
-      // In a real implementation, we would redirect the user to this URL
-      // For now, we'll just log it and mark the flow as needing user action
-      // TODO: Implement proper redirect handling with return URL tracking
-    }
   }
 
   /**
@@ -273,51 +297,8 @@ export class AuthorizationService {
     // Exchange authorization code for access token
     await this.exchangeCodeForToken(connectionFlow);
 
-    // Check if all connection flows are complete
-    const allConnectionFlows = await this.authJourneysService.getConnectionFlowsForJourney(
-      connectionFlow.authorizationJourneyId,
-      ['authJourney', 'authJourney.mcpAuthorizationFlow']
-    );
-
-    const allComplete = allConnectionFlows.every(flow => flow.status === 'authorized');
-
-    if (allComplete) {
-      this.logger.log('All downstream connections authorized, completing MCP auth flow');
-
-      // Get the MCP auth flow
-      const mcpAuthFlow = connectionFlow.authJourney.mcpAuthorizationFlow;
-
-      if (!mcpAuthFlow.redirectUri || !mcpAuthFlow.state) {
-        throw new BadRequestException('MCP auth flow missing redirect URI or state');
-      }
-
-      // Generate authorization code for the MCP client
-      const authorizationCode = randomBytes(32).toString('base64url');
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 10);
-
-      mcpAuthFlow.authorizationCode = authorizationCode;
-      mcpAuthFlow.authorizationCodeExpiresAt = expiresAt;
-      mcpAuthFlow.authorizationCodeUsed = false;
-      mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_CODE_ISSUED;
-
-      await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-
-      // Redirect back to the MCP client with the authorization code
-      const redirectUrl = new URL(mcpAuthFlow.redirectUri);
-      redirectUrl.searchParams.set('code', authorizationCode);
-      redirectUrl.searchParams.set('state', mcpAuthFlow.state);
-
-      return redirectUrl.toString();
-    } else {
-      // Still waiting on other connections
-      // TODO: Redirect to a waiting page or the next auth URL
-      this.logger.log('Waiting on other downstream connections');
-
-      // For now, return a simple success message
-      // In a real implementation, we'd redirect to the next connection's auth URL
-      return '/auth-in-progress';
-    }
+    // Process the next downstream flow (or complete if all done)
+    return this.processNextDownstreamFlow(connectionFlow.authorizationJourneyId);
   }
 
   /**

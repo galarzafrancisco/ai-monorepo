@@ -187,4 +187,18 @@ export class AuthJourneysService {
   ): Promise<ConnectionAuthorizationFlowEntity> {
     return this.connectionAuthorizationFlowRepository.save(connectionFlow);
   }
+
+  /*
+  Public API: Find MCP authorization flow by auth journey ID
+  Used to get the MCP flow when completing the auth journey
+  */
+  async findMcpAuthFlowByJourneyId(
+    journeyId: string,
+    relations?: string[]
+  ): Promise<McpAuthorizationFlowEntity | null> {
+    return this.mcpAuthorizationFlowRepository.findOne({
+      where: { authorizationJourneyId: journeyId },
+      relations,
+    });
+  }
 }
