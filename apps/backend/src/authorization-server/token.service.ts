@@ -1,9 +1,8 @@
 import { Injectable, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { SignJWT, importPKCS8 } from 'jose';
 import { createHash, randomBytes } from 'crypto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
+import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
 import { JwksService } from './jwks.service';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
@@ -17,8 +16,7 @@ export class TokenService {
   private readonly logger = new Logger(TokenService.name);
 
   constructor(
-    @InjectRepository(McpAuthorizationFlowEntity)
-    private readonly mcpAuthFlowRepository: Repository<McpAuthorizationFlowEntity>,
+    private readonly authJourneysService: AuthJourneysService,
     private readonly jwksService: JwksService,
   ) {}
 
@@ -40,12 +38,10 @@ export class TokenService {
     }
 
     // Find the authorization flow by authorization code
-    const mcpAuthFlow = await this.mcpAuthFlowRepository.findOne({
-      where: {
-        authorizationCode: tokenRequest.code,
-      },
-      relations: ['client', 'server'],
-    });
+    const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByAuthorizationCode(
+      tokenRequest.code,
+      ['client', 'server']
+    );
 
     if (!mcpAuthFlow) {
       this.logger.warn(`Authorization code not found: ${tokenRequest.code}`);
@@ -96,7 +92,7 @@ export class TokenService {
     // Mark authorization code as used
     mcpAuthFlow.authorizationCodeUsed = true;
     mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_CODE_EXCHANGED;
-    await this.mcpAuthFlowRepository.save(mcpAuthFlow);
+    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
 
     // Generate access token (JWT)
     const accessToken = await this.generateAccessToken(mcpAuthFlow);
