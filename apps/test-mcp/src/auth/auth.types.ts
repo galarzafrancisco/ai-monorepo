@@ -1,12 +1,6 @@
-export type AuthContext = {
-  // sub: string;
-  token: string;
-  // scopes: string[];
-};
+import { McpJwtPayload } from './mcp-jwt-payload.type';
 
-// // If using Express:
-// declare module 'express-serve-static-core' {
-//   interface Request {
-//     auth?: AuthContext;
-//   }
-// }
+export type AuthContext = {
+  token: string;
+  payload: McpJwtPayload;
+};
