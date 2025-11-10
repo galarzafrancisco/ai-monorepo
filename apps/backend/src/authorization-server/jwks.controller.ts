@@ -35,4 +35,37 @@ export class JwksController {
       })),
     };
   }
+
+  @Get('jwk-active.json')
+  @ApiOperation({
+    summary: 'Get Active Signing Key (Single JWK)',
+    description:
+      'Returns the currently active signing key as a single JWK. Useful for debugging and testing JWT verification with tools like jwt.io. This endpoint returns only the current signing key, not the full key set.',
+  })
+  @ApiOkResponse({
+    description: 'Active JWK retrieved successfully',
+  })
+  async getActiveJwk() {
+    const jwks = await this.jwksService.getPublicKeys();
+    const activeSigningKey = await this.jwksService.getActiveSigningKey();
+
+    // Find the active key in the JWKS
+    const activeJwk = jwks.keys.find((key) => key.kid === activeSigningKey.kid);
+
+    if (!activeJwk) {
+      throw new Error('Active signing key not found in JWKS');
+    }
+
+    return {
+      kty: activeJwk.kty,
+      use: activeJwk.use,
+      kid: activeJwk.kid,
+      alg: activeJwk.alg,
+      n: activeJwk.n,
+      e: activeJwk.e,
+      x: activeJwk.x,
+      y: activeJwk.y,
+      crv: activeJwk.crv,
+    };
+  }
 }
