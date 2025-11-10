@@ -78,4 +78,12 @@ export class TokenRequestDto {
   @IsOptional()
   @IsString()
   scope?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional resource indicator (RFC 8707) - identifies the target resource server',
+    example: 'http://localhost:4001/',
+  })
+  @IsOptional()
+  @IsString()
+  resource?: string;
 }

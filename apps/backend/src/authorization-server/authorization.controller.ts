@@ -8,8 +8,6 @@ import {
   Res,
   HttpStatus,
   BadRequestException,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -146,10 +144,6 @@ export class AuthorizationController {
   }
 
   @Post('token/mcp/:serverIdentifier/:version')
-  @UsePipes(new ValidationPipe({
-    whitelist: true, // Strip properties that don't have decorators
-    forbidNonWhitelisted: false, // Allow extra fields but ignore them
-  }))
   @ApiOperation({
     summary: 'OAuth 2.0 Token Endpoint',
     description:
