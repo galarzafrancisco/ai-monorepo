@@ -167,7 +167,7 @@ export class AuthorizationService {
     // Get all connection flows for this journey
     const connectionFlows = await this.authJourneysService.getConnectionFlowsForJourney(
       journeyId,
-      ['mcpConnection', 'authJourney', 'authJourney.mcpAuthorizationFlow']
+      ['mcpConnection', 'mcpConnection.mappings', 'authJourney', 'authJourney.mcpAuthorizationFlow']
     );
 
     // If there are no connections, complete the MCP auth flow immediately
@@ -225,7 +225,26 @@ export class AuthorizationService {
     // Add prompt=consent to force consent screen (needed for refresh token)
     authUrl.searchParams.set('prompt', 'consent');
 
-    // TODO: Add scope if the connection has scope mappings
+    // Map MCP scopes to downstream scopes
+    const mcpAuthFlow = connectionFlow.authJourney?.mcpAuthorizationFlow;
+    if (mcpAuthFlow?.scope && connectionFlow.mcpConnection.mappings) {
+      // Get the scopes requested in the MCP flow
+      const requestedScopes = mcpAuthFlow.scope.split(',').map(s => s.trim()).filter(s => s);
+
+      // Filter mappings to only include requested scopes
+      const relevantMappings = connectionFlow.mcpConnection.mappings.filter(
+        mapping => requestedScopes.includes(mapping.scopeId)
+      );
+
+      // Extract downstream scopes
+      const downstreamScopes = relevantMappings.map(m => m.downstreamScope);
+
+      if (downstreamScopes.length > 0) {
+        // Add scopes to the authorization URL (space-separated for OAuth)
+        authUrl.searchParams.set('scope', downstreamScopes.join(' '));
+        this.logger.log(`Requesting downstream scopes: ${downstreamScopes.join(', ')}`);
+      }
+    }
 
     this.logger.log(`Initiating downstream OAuth flow for connection ${connectionFlow.mcpConnection.friendlyName}`);
     this.logger.log(`Authorization URL: ${authUrl.toString()}`);
