@@ -229,37 +229,22 @@ export class AuthorizationService {
 
     // Map MCP scopes to downstream scopes
     const mcpAuthFlow = connectionFlow.authJourney?.mcpAuthorizationFlow;
-    this.logger.debug(`connectionFlow`);
-    this.logger.log(connectionFlow.authJourney);
-    this.logger.debug(`connectionFlow.authJourney`);
-    this.logger.log(mcpAuthFlow);
-    this.logger.debug(`mcpAuthFlow`);
-    this.logger.log(connectionFlow);
-    this.logger.log(`MCP auth flow scope: ${mcpAuthFlow?.scope || 'none'}`);
-    this.logger.log(`Connection has ${connectionFlow.mcpConnection.mappings?.length || 0} scope mappings`);
 
     if (mcpAuthFlow?.scope && connectionFlow.mcpConnection.mappings) {
       // Get the scopes requested in the MCP flow
       const requestedScopes = mcpAuthFlow.scope.split(',').map(s => s.trim()).filter(s => s);
-      this.logger.log(`Requested MCP scopes: ${JSON.stringify(requestedScopes)}`);
-
-      // Log all available mappings
-      this.logger.log(`Available mappings: ${JSON.stringify(connectionFlow.mcpConnection.mappings.map(m => ({ scopeId: m.scopeId, downstream: m.downstreamScope })))}`);
 
       // Filter mappings to only include requested scopes
       const relevantMappings = connectionFlow.mcpConnection.mappings.filter(
         mapping => requestedScopes.includes(mapping.scopeId)
       );
-      this.logger.log(`Relevant mappings found: ${relevantMappings.length}`);
 
       // Extract downstream scopes
       const downstreamScopes = relevantMappings.map(m => m.downstreamScope);
-      this.logger.log(`Downstream scopes to request: ${JSON.stringify(downstreamScopes)}`);
 
       if (downstreamScopes.length > 0) {
         // Add scopes to the authorization URL (space-separated for OAuth)
         authUrl.searchParams.set('scope', downstreamScopes.join(' '));
-        this.logger.log(`Added scopes to URL: ${downstreamScopes.join(' ')}`);
       } else {
         this.logger.warn('No downstream scopes mapped for requested MCP scopes!');
       }
