@@ -38,6 +38,8 @@ export type { ServerListResponseDto } from './models/ServerListResponseDto';
 export type { ServerResponseDto } from './models/ServerResponseDto';
 export type { TaskListResponseDto } from './models/TaskListResponseDto';
 export { TaskResponseDto } from './models/TaskResponseDto';
+export { TokenRequestDto } from './models/TokenRequestDto';
+export { TokenResponseDto } from './models/TokenResponseDto';
 export type { UpdateConnectionDto } from './models/UpdateConnectionDto';
 export type { UpdateTaskDto } from './models/UpdateTaskDto';
 
