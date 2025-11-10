@@ -1751,6 +1751,69 @@
         ]
       }
     },
+    "/api/v1/auth/callback": {
+      "get": {
+        "description": "Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.",
+        "operationId": "AuthorizationController_callback",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "description": "Authorization code from downstream OAuth provider",
+            "schema": {
+              "example": "abc123xyz",
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "description": "State parameter that identifies the connection flow",
+            "schema": {
+              "example": "xyz789abc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "required": false,
+            "in": "query",
+            "description": "Error code if authorization failed",
+            "schema": {
+              "example": "access_denied",
+              "type": "string"
+            }
+          },
+          {
+            "name": "error_description",
+            "required": false,
+            "in": "query",
+            "description": "Error description if authorization failed",
+            "schema": {
+              "example": "User denied the authorization request",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirects to next step in the authorization flow"
+          },
+          "400": {
+            "description": "Invalid callback parameters or state"
+          },
+          "404": {
+            "description": "Connection flow not found for provided state"
+          }
+        },
+        "summary": "OAuth 2.0 Callback Endpoint for Downstream Systems",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
     "/.well-known/jwks.json": {
       "get": {
         "description": "Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.",

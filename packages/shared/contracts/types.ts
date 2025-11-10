@@ -480,6 +480,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OAuth 2.0 Callback Endpoint for Downstream Systems
+         * @description Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.
+         */
+        get: operations["AuthorizationController_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/.well-known/jwks.json": {
         parameters: {
             query?: never;
@@ -2938,6 +2958,47 @@ export interface operations {
             };
             /** @description Invalid introspection request parameters */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_callback: {
+        parameters: {
+            query: {
+                /** @description Authorization code from downstream OAuth provider */
+                code: string;
+                /** @description State parameter that identifies the connection flow */
+                state: string;
+                /** @description Error code if authorization failed */
+                error?: string;
+                /** @description Error description if authorization failed */
+                error_description?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirects to next step in the authorization flow */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid callback parameters or state */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection flow not found for provided state */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
