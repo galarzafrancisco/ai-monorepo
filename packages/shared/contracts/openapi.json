@@ -1455,6 +1455,15 @@
             }
           },
           {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of scopes",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "client_id",
             "required": true,
             "in": "query",
