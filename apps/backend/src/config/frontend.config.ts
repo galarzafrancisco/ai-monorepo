@@ -33,6 +33,7 @@ export function getFrontendUrl(): string {
  */
 export function getFrontendPath(path: string): string {
   const baseUrl = getFrontendUrl();
+  console.log(`Frontend base url: ${baseUrl}`)
 
   // Ensure path starts with /
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
