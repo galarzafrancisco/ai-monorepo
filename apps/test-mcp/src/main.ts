@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SELF_PORT, SELF_VERSION } from './config/self.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -8,14 +9,13 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Documents server')
     .setDescription('can handle documents')
-    .setVersion('0.0.1')
+    .setVersion(SELF_VERSION)
     .addTag('mcp')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
   
-  const PORT = process.env.PORT || 3000;
-  await app.listen(PORT);
-  console.log(`Application is running on: http://localhost:${PORT}`);
+  await app.listen(SELF_PORT);
+  console.log(`Application is running on: http://localhost:${SELF_PORT}`);
 }
 bootstrap();

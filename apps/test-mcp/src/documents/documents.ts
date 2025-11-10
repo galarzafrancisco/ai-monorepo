@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { DocumentsService } from './documents.service';
+import { SELF_NAME, SELF_VERSION } from 'src/config/self.config';
 
 @Injectable()
 export class Documents {
@@ -13,8 +14,8 @@ export class Documents {
 
   private buildServer(): McpServer {
     const server = new McpServer({
-      name: Documents.name,
-      version: '0.0.0',
+      name: SELF_NAME,
+      version: SELF_VERSION,
     });
 
     server.registerTool(
