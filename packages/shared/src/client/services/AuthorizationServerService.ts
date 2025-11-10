@@ -4,6 +4,8 @@
 /* eslint-disable */
 import type { ClientRegistrationResponseDto } from '../models/ClientRegistrationResponseDto';
 import type { ConsentDecisionDto } from '../models/ConsentDecisionDto';
+import type { IntrospectTokenRequestDto } from '../models/IntrospectTokenRequestDto';
+import type { IntrospectTokenResponseDto } from '../models/IntrospectTokenResponseDto';
 import type { McpAuthorizationFlowEntity } from '../models/McpAuthorizationFlowEntity';
 import type { RegisterClientDto } from '../models/RegisterClientDto';
 import type { TokenRequestDto } from '../models/TokenRequestDto';
@@ -201,6 +203,34 @@ export class AuthorizationServerService {
             errors: {
                 400: `Invalid token request parameters`,
                 401: `Invalid authorization code, code_verifier, or expired code`,
+            },
+        });
+    }
+    /**
+     * OAuth 2.0 Token Introspection Endpoint
+     * Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.
+     * @param serverIdentifier
+     * @param version
+     * @param requestBody
+     * @returns IntrospectTokenResponseDto Token introspection response (active true/false with metadata)
+     * @throws ApiError
+     */
+    public static authorizationControllerIntrospect(
+        serverIdentifier: string,
+        version: string,
+        requestBody: IntrospectTokenRequestDto,
+    ): CancelablePromise<IntrospectTokenResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}',
+            path: {
+                'serverIdentifier': serverIdentifier,
+                'version': version,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid introspection request parameters`,
             },
         });
     }

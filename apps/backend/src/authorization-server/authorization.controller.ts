@@ -25,6 +25,8 @@ import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { IntrospectTokenRequestDto } from './dto/introspect-token-request.dto';
+import { IntrospectTokenResponseDto } from './dto/introspect-token-response.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { getFrontendPath } from '../config/frontend.config';
 
@@ -165,5 +167,26 @@ export class AuthorizationController {
     @Param('version') version: string,
   ): Promise<TokenResponseDto> {
     return this.tokenService.exchangeAuthorizationCode(tokenRequest);
+  }
+
+  @Post('introspect/mcp/:serverIdentifier/:version')
+  @ApiOperation({
+    summary: 'OAuth 2.0 Token Introspection Endpoint',
+    description:
+      'Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.',
+  })
+  @ApiOkResponse({
+    description: 'Token introspection response (active true/false with metadata)',
+    type: IntrospectTokenResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid introspection request parameters',
+  })
+  async introspect(
+    @Body() introspectRequest: IntrospectTokenRequestDto,
+    @Param('serverIdentifier') serverIdentifier: string,
+    @Param('version') version: string,
+  ): Promise<IntrospectTokenResponseDto> {
+    return this.tokenService.introspectToken(introspectRequest);
   }
 }

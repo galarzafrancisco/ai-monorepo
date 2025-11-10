@@ -1,11 +1,13 @@
 import { Injectable, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
-import { SignJWT, importPKCS8 } from 'jose';
+import { SignJWT, importPKCS8, jwtVerify, createRemoteJWKSet, errors } from 'jose';
 import { createHash, randomBytes } from 'crypto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
 import { JwksService } from './jwks.service';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { IntrospectTokenRequestDto } from './dto/introspect-token-request.dto';
+import { IntrospectTokenResponseDto } from './dto/introspect-token-response.dto';
 import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
 import { McpJwtPayload } from './types/mcp-jwt-payload.type';
@@ -180,5 +182,88 @@ export class TokenService {
    */
   private generateRefreshToken(): string {
     return randomBytes(32).toString('base64url');
+  }
+
+  /**
+   * Introspect a token to validate and return its metadata
+   * Implements OAuth 2.0 Token Introspection (RFC 7662)
+   */
+  async introspectToken(request: IntrospectTokenRequestDto): Promise<IntrospectTokenResponseDto> {
+    this.logger.debug(`Introspecting token for client: ${request.client_id}`);
+
+    try {
+      // Get all valid public keys for verification
+      const publicKeys = await this.jwksService.getPublicKeys();
+
+      if (publicKeys.length === 0) {
+        this.logger.error('No valid public keys available for token verification');
+        // Return inactive token response instead of throwing
+        return { active: false } as IntrospectTokenResponseDto;
+      }
+
+      // Create a JWKS object from our keys
+      const jwks = {
+        keys: publicKeys,
+      };
+
+      // Verify the JWT signature and decode payload
+      // We need to create a local JWKS resolver since we don't have a remote JWKS endpoint
+      const getKey = async (header: any) => {
+        const key = publicKeys.find((k) => k.kid === header.kid);
+        if (!key) {
+          throw new Error('Key not found');
+        }
+        return key as any;
+      };
+
+      // Verify JWT with our JWKS
+      const { payload } = await jwtVerify(request.token, getKey as any, {
+        issuer: process.env.ISSUER_URL || 'http://localhost:4000',
+        algorithms: ['RS256'],
+      });
+
+      // Cast payload to our expected type
+      const mcpPayload = payload as unknown as McpJwtPayload;
+
+      // Validate client_id matches the token
+      if (mcpPayload.client_id !== request.client_id) {
+        this.logger.warn('Client ID mismatch during introspection');
+        return { active: false } as IntrospectTokenResponseDto;
+      }
+
+      // Token is valid - build the introspection response
+      const response: IntrospectTokenResponseDto = {
+        active: true,
+        token_type: TokenType.BEARER,
+        client_id: mcpPayload.client_id,
+        sub: mcpPayload.sub,
+        aud: mcpPayload.aud,
+        iss: mcpPayload.iss,
+        jti: mcpPayload.jti,
+        exp: mcpPayload.exp,
+        iat: mcpPayload.iat,
+        nbf: (payload as any).nbf, // nbf is optional and not in McpJwtPayload type
+        scope: mcpPayload.scope?.join(' '),
+        server_identifier: mcpPayload.server_identifier,
+        resource: mcpPayload.resource,
+        version: mcpPayload.version,
+      };
+
+      this.logger.log(`Token introspection successful for client: ${request.client_id}`);
+      return response;
+    } catch (error) {
+      // Token is invalid (expired, bad signature, etc.)
+      if (error instanceof errors.JWTExpired) {
+        this.logger.debug('Token expired during introspection');
+      } else if (error instanceof errors.JWSSignatureVerificationFailed) {
+        this.logger.warn('Token signature verification failed');
+      } else {
+        this.logger.warn(`Token introspection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+
+      // Return inactive response for any validation failure
+      // Per RFC 7662, we should not reveal why the token is invalid
+      return { active: false } as IntrospectTokenResponseDto;
+    }
   }
 }
