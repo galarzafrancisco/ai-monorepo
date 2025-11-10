@@ -95,4 +95,58 @@ export class AuthJourneysService {
     )
     return authJourneys;
   }
+
+  /*
+  Public API: Find MCP authorization flow by client ID and server ID
+  Used by AuthorizationService to locate existing flows
+  */
+  async findMcpAuthFlowByClientAndServer(
+    clientId: string,
+    serverId: string,
+    relations?: string[]
+  ): Promise<McpAuthorizationFlowEntity | null> {
+    return this.mcpAuthorizationFlowRepository.findOne({
+      where: {
+        clientId,
+        serverId,
+      },
+      relations,
+    });
+  }
+
+  /*
+  Public API: Find MCP authorization flow by flow ID
+  Used by AuthorizationService for consent flow
+  */
+  async findMcpAuthFlowById(
+    flowId: string,
+    relations?: string[]
+  ): Promise<McpAuthorizationFlowEntity | null> {
+    return this.mcpAuthorizationFlowRepository.findOne({
+      where: { id: flowId },
+      relations,
+    });
+  }
+
+  /*
+  Public API: Find MCP authorization flow by authorization code
+  Used by TokenService for token exchange
+  */
+  async findMcpAuthFlowByAuthorizationCode(
+    authorizationCode: string,
+    relations?: string[]
+  ): Promise<McpAuthorizationFlowEntity | null> {
+    return this.mcpAuthorizationFlowRepository.findOne({
+      where: { authorizationCode },
+      relations,
+    });
+  }
+
+  /*
+  Public API: Save/update MCP authorization flow
+  Used by AuthorizationService and TokenService to update flow state
+  */
+  async saveMcpAuthFlow(mcpAuthFlow: McpAuthorizationFlowEntity): Promise<McpAuthorizationFlowEntity> {
+    return this.mcpAuthorizationFlowRepository.save(mcpAuthFlow);
+  }
 }
