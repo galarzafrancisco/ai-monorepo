@@ -237,4 +237,36 @@ export class AuthorizationServerService {
             },
         });
     }
+    /**
+     * OAuth 2.0 Callback Endpoint for Downstream Systems
+     * Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.
+     * @param code Authorization code from downstream OAuth provider
+     * @param state State parameter that identifies the connection flow
+     * @param error Error code if authorization failed
+     * @param errorDescription Error description if authorization failed
+     * @returns void
+     * @throws ApiError
+     */
+    public static authorizationControllerCallback(
+        code: string,
+        state: string,
+        error?: string,
+        errorDescription?: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/auth/callback',
+            query: {
+                'code': code,
+                'state': state,
+                'error': error,
+                'error_description': errorDescription,
+            },
+            errors: {
+                302: `Redirects to next step in the authorization flow`,
+                400: `Invalid callback parameters or state`,
+                404: `Connection flow not found for provided state`,
+            },
+        });
+    }
 }
