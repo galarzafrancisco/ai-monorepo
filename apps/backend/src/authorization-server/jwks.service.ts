@@ -71,6 +71,7 @@ export class JwksService {
     // Generate new RSA key pair
     const { publicKey, privateKey } = await generateKeyPair('RS256', {
       modulusLength: 2048,
+      extractable: true, // Required to export keys to PEM format
     });
 
     // Export keys to PEM format for storage

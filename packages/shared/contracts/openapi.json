@@ -2829,6 +2829,11 @@
             "type": "string",
             "description": "Optional list of scopes to narrow when refreshing a token (space-delimited)",
             "example": "tasks:read tasks:write"
+          },
+          "resource": {
+            "type": "string",
+            "description": "Optional resource indicator (RFC 8707) - identifies the target resource server",
+            "example": "http://localhost:4001/"
           }
         },
         "required": [

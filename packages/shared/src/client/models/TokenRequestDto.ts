@@ -31,6 +31,10 @@ export type TokenRequestDto = {
      * Optional list of scopes to narrow when refreshing a token (space-delimited)
      */
     scope?: string;
+    /**
+     * Optional resource indicator (RFC 8707) - identifies the target resource server
+     */
+    resource?: string;
 };
 export namespace TokenRequestDto {
     /**

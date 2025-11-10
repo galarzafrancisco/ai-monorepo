@@ -1232,6 +1232,11 @@ export interface components {
              * @example tasks:read tasks:write
              */
             scope?: string;
+            /**
+             * @description Optional resource indicator (RFC 8707) - identifies the target resource server
+             * @example http://localhost:4001/
+             */
+            resource?: string;
         };
         TokenResponseDto: {
             /**
