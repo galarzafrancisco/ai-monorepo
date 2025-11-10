@@ -18,11 +18,11 @@ export class JwksController {
     description: 'JWKS retrieved successfully',
     type: JwksResponseDto,
   })
-  async getJwks(): Promise<JwksResponseDto> {
+  async getJwks() {
     const jwks = await this.jwksService.getPublicKeys();
 
     return {
-      keys: jwks.keys.map((key) => ({
+      keys: jwks.map((key) => ({
         kty: key.kty,
         use: key.use,
         kid: key.kid,
@@ -50,7 +50,7 @@ export class JwksController {
     const activeSigningKey = await this.jwksService.getActiveSigningKey();
 
     // Find the active key in the JWKS
-    const activeJwk = jwks.keys.find((key) => key.kid === activeSigningKey.kid);
+    const activeJwk = jwks.find((key) => key.kid === activeSigningKey.kid);
 
     if (!activeJwk) {
       throw new Error('Active signing key not found in JWKS');
