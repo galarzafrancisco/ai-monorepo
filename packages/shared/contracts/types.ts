@@ -2748,6 +2748,8 @@ export interface operations {
             query: {
                 /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
                 response_type: "code";
+                /** @description Comma separated list of scopes */
+                scope?: string;
                 /** @description Client identifier issued during registration */
                 client_id: string;
                 /** @description PKCE code challenge derived from the code verifier */

@@ -88,6 +88,7 @@ export class AuthorizationServerService {
      * @param resource Resource server URL that the client wants to access
      * @param serverIdentifier
      * @param version
+     * @param scope Comma separated list of scopes
      * @returns void
      * @throws ApiError
      */
@@ -101,6 +102,7 @@ export class AuthorizationServerService {
         resource: string,
         serverIdentifier: string,
         version: string,
+        scope?: string,
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -111,6 +113,7 @@ export class AuthorizationServerService {
             },
             query: {
                 'response_type': responseType,
+                'scope': scope,
                 'client_id': clientId,
                 'code_challenge': codeChallenge,
                 'code_challenge_method': codeChallengeMethod,
