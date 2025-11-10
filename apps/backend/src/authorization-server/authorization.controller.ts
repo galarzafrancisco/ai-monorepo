@@ -8,6 +8,7 @@ import {
   Res,
   HttpStatus,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -34,6 +35,7 @@ import { getFrontendPath } from '../config/frontend.config';
 @ApiTags('Authorization Server')
 @Controller('auth')
 export class AuthorizationController {
+  private logger = new Logger(AuthorizationController.name);
   constructor(
     private readonly authorizationService: AuthorizationService,
     private readonly tokenService: TokenService,
@@ -121,6 +123,7 @@ export class AuthorizationController {
         version,
       );
 
+      this.logger.debug(`controller redirecting to ${redirectUrl}`);
       res.redirect(HttpStatus.FOUND, redirectUrl);
     } catch (error) {
       // If we can't redirect, throw the error

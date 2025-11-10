@@ -278,6 +278,7 @@ export class AuthorizationService {
    * Complete the MCP auth flow by issuing authorization code
    */
   private async completeMcpAuthFlow(journeyId: string): Promise<string> {
+    this.logger.debug(`Finishing auth flow for journey ${journeyId}`);
     // Get the MCP auth flow for this journey
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByJourneyId(journeyId);
 
@@ -305,6 +306,7 @@ export class AuthorizationService {
     const redirectUrl = new URL(mcpAuthFlow.redirectUri);
     redirectUrl.searchParams.set('code', authorizationCode);
     redirectUrl.searchParams.set('state', mcpAuthFlow.state);
+    this.logger.debug(`redirectUrl: ${redirectUrl}`);
 
     return redirectUrl.toString();
   }
