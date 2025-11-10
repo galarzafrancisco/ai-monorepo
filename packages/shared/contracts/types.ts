@@ -460,6 +460,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * OAuth 2.0 Token Introspection Endpoint
+         * @description Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.
+         */
+        post: operations["AuthorizationController_introspect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/.well-known/jwks.json": {
         parameters: {
             query?: never;
@@ -472,26 +492,6 @@ export interface paths {
          * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
          */
         get: operations["JwksController_getJwks"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/.well-known/jwk-active.json": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Active Signing Key (Single JWK)
-         * @description Returns the currently active signing key as a single JWK. Useful for debugging and testing JWT verification with tools like jwt.io. This endpoint returns only the current signing key, not the full key set.
-         */
-        get: operations["JwksController_getActiveJwk"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1286,6 +1286,99 @@ export interface components {
              * @example tasks:read tasks:write
              */
             scope?: string;
+        };
+        IntrospectTokenRequestDto: {
+            /**
+             * @description Access or refresh token that should be validated
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            token: string;
+            /**
+             * @description Hint to help the server determine the token lookup strategy
+             * @example access_token
+             * @enum {string}
+             */
+            token_type_hint?: "access_token" | "refresh_token";
+            /**
+             * @description Client identifier making the request (required for public MCP clients)
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            client_id: string;
+            /**
+             * @description Client secret for confidential clients (MCP clients typically omit this)
+             * @example s3cr3t
+             */
+            client_secret?: string | null;
+        };
+        IntrospectTokenResponseDto: {
+            /**
+             * @description Indicates whether the token is currently valid
+             * @example true
+             */
+            active: boolean;
+            /**
+             * @description Token type, always Bearer for MCP clients
+             * @example Bearer
+             * @enum {string}
+             */
+            token_type: "Bearer";
+            /**
+             * @description Client identifier associated with the token
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            client_id: string;
+            /**
+             * @description Subject of the token (resource owner or actor)
+             * @example journey:1234
+             */
+            sub: Record<string, never>;
+            /** @description Audience that should accept this token */
+            aud: string | string[];
+            /**
+             * @description Issuer that minted the token
+             * @example https://auth.taskeroo.local/auth
+             */
+            iss: Record<string, never>;
+            /**
+             * @description Unique token identifier for replay detection
+             * @example b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c
+             */
+            jti: Record<string, never>;
+            /**
+             * @description Expiration timestamp (seconds since Unix epoch)
+             * @example 1731145219
+             */
+            exp: Record<string, never>;
+            /**
+             * @description Issued-at timestamp (seconds since Unix epoch)
+             * @example 1731141619
+             */
+            iat: Record<string, never>;
+            /**
+             * @description Not-before timestamp (seconds since Unix epoch)
+             * @example 1731141019
+             */
+            nbf?: number;
+            /**
+             * @description Granted scopes (space-delimited) for display purposes
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+            /**
+             * @description MCP server identifier the token is scoped to
+             * @example taskeroo
+             */
+            server_identifier: Record<string, never>;
+            /**
+             * @description Resource URL that was used during authorization
+             * @example http://localhost:4001/
+             */
+            resource: Record<string, never>;
+            /**
+             * @description Version of the MCP server contract
+             * @example 1.0.0
+             */
+            version: Record<string, never>;
         };
         JwkResponseDto: {
             /**
@@ -2816,6 +2909,40 @@ export interface operations {
             };
         };
     };
+    AuthorizationController_introspect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntrospectTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Token introspection response (active true/false with metadata) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntrospectTokenResponseDto"];
+                };
+            };
+            /** @description Invalid introspection request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     JwksController_getJwks: {
         parameters: {
             query?: never;
@@ -2833,24 +2960,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["JwksResponseDto"];
                 };
-            };
-        };
-    };
-    JwksController_getActiveJwk: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Active JWK retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
