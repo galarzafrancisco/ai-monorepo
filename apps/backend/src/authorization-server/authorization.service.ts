@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
@@ -9,9 +9,11 @@ import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
+import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
 
 @Injectable()
 export class AuthorizationService {
+  private logger = new Logger(AuthJourneysService.name);
   constructor(
     @InjectRepository(RegisteredClientEntity)
     private readonly clientRepository: Repository<RegisteredClientEntity>,
@@ -49,6 +51,14 @@ export class AuthorizationService {
       );
     }
 
+    // Validate the scopes requested
+    let scopes: string[] = [];
+    if (authRequest.scope) {
+      const requestedScopes = authRequest.scope.split(',');
+      const allowedScopes = mcpServer.scopes.map(s => s.scopeId);
+      scopes = requestedScopes.filter(s => allowedScopes.includes(s));
+    }
+
     // Find the existing MCP authorization flow for this client and server
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByClientAndServer(
       client.id,
@@ -71,6 +81,7 @@ export class AuthorizationService {
     mcpAuthFlow.state = authRequest.state;
     mcpAuthFlow.redirectUri = authRequest.redirect_uri;
     mcpAuthFlow.resource = authRequest.resource;
+    mcpAuthFlow.scope = scopes.join(',');
 
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
 

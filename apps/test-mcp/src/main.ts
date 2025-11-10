@@ -6,6 +6,9 @@ import { SELF_PORT, SELF_VERSION } from './config/self.config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Enable CORS
+  app.enableCors();
+
   const config = new DocumentBuilder()
     .setTitle('Documents server')
     .setDescription('can handle documents')

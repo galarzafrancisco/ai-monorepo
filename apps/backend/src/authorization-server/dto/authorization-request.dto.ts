@@ -6,7 +6,7 @@ import {
   Length,
   Matches,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ResponseType } from '../enums';
 
 /**
@@ -21,6 +21,12 @@ export class AuthorizationRequestDto {
   })
   @IsEnum(ResponseType)
   response_type!: ResponseType;
+
+  @ApiPropertyOptional({
+    description: 'Comma separated list of scopes'
+  })
+  @IsString()
+  scope?: string;
 
   @ApiProperty({
     description: 'Client identifier issued during registration',
