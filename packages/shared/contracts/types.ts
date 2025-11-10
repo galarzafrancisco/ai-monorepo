@@ -480,26 +480,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/.well-known/jwk-active.json": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Active Signing Key (Single JWK)
-         * @description Returns the currently active signing key as a single JWK. Useful for debugging and testing JWT verification with tools like jwt.io. This endpoint returns only the current signing key, not the full key set.
-         */
-        get: operations["JwksController_getActiveJwk"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
         parameters: {
             query?: never;
@@ -2833,24 +2813,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["JwksResponseDto"];
                 };
-            };
-        };
-    };
-    JwksController_getActiveJwk: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Active JWK retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

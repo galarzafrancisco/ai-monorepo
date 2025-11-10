@@ -19,16 +19,4 @@ export class JwksService {
             url: '/.well-known/jwks.json',
         });
     }
-    /**
-     * Get Active Signing Key (Single JWK)
-     * Returns the currently active signing key as a single JWK. Useful for debugging and testing JWT verification with tools like jwt.io. This endpoint returns only the current signing key, not the full key set.
-     * @returns any Active JWK retrieved successfully
-     * @throws ApiError
-     */
-    public static jwksControllerGetActiveJwk(): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/.well-known/jwk-active.json',
-        });
-    }
 }

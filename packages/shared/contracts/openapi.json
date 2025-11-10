@@ -1712,22 +1712,6 @@
         ]
       }
     },
-    "/.well-known/jwk-active.json": {
-      "get": {
-        "description": "Returns the currently active signing key as a single JWK. Useful for debugging and testing JWT verification with tools like jwt.io. This endpoint returns only the current signing key, not the full key set.",
-        "operationId": "JwksController_getActiveJwk",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Active JWK retrieved successfully"
-          }
-        },
-        "summary": "Get Active Signing Key (Single JWK)",
-        "tags": [
-          "JWKS"
-        ]
-      }
-    },
     "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
       "get": {
         "description": "Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with a specific MCP server version. Accepts either the server UUID or the providedId.",
