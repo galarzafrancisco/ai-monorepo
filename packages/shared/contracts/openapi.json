@@ -826,6 +826,150 @@
         ]
       }
     },
+    "/api/v1/wikiroo/pages/{id}/tags": {
+      "post": {
+        "operationId": "WikirooController_addTagToPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddWikiTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag added to page successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Add a tag to a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "WikirooController_removeTagFromPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag removed from page successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove a tag from a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags/all": {
+      "get": {
+        "operationId": "WikirooController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WikiTagResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all tags",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags/{name}/pages": {
+      "get": {
+        "operationId": "WikirooController_listPagesByTag",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pages with the specified tag",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PageResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List pages by tag name",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
     "/api/v1/wikiroo/pages/mcp": {
       "get": {
         "operationId": "WikirooController_handleMcp_get",
@@ -2540,6 +2684,47 @@
           "author"
         ]
       },
+      "WikiTagResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the tag",
+            "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the tag",
+            "example": "Notes related to project alpha"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the tag was created",
+            "example": "2023-10-15T10:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the tag was last updated",
+            "example": "2023-10-15T10:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "PageResponseDto": {
         "type": "object",
         "properties": {
@@ -2563,6 +2748,23 @@
             "description": "Author of the wiki page",
             "example": "Agent Roo"
           },
+          "tags": {
+            "description": "Tags associated with the page",
+            "example": [
+              {
+                "id": "123",
+                "name": "project-alpha",
+                "color": "#FF5733",
+                "description": "Project Alpha notes",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-01T12:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WikiTagResponseDto"
+            }
+          },
           "createdAt": {
             "type": "string",
             "description": "Creation timestamp",
@@ -2579,6 +2781,7 @@
           "title",
           "content",
           "author",
+          "tags",
           "createdAt",
           "updatedAt"
         ]
@@ -2601,6 +2804,23 @@
             "description": "Author of the wiki page",
             "example": "Agent Roo"
           },
+          "tags": {
+            "description": "Tags associated with the page",
+            "example": [
+              {
+                "id": "123",
+                "name": "project-alpha",
+                "color": "#FF5733",
+                "description": "Project Alpha notes",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-01T12:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WikiTagResponseDto"
+            }
+          },
           "createdAt": {
             "type": "string",
             "description": "Creation timestamp",
@@ -2616,6 +2836,7 @@
           "id",
           "title",
           "author",
+          "tags",
           "createdAt",
           "updatedAt"
         ]
@@ -2666,6 +2887,29 @@
         },
         "required": [
           "content"
+        ]
+      },
+      "AddWikiTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the tag",
+            "example": "Notes related to project alpha"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "CreateServerDto": {

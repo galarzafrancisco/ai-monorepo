@@ -8,6 +8,7 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AddTagDto } from './models/AddTagDto';
+export type { AddWikiTagDto } from './models/AddWikiTagDto';
 export type { AppendPageDto } from './models/AppendPageDto';
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';
@@ -48,6 +49,7 @@ export { TokenResponseDto } from './models/TokenResponseDto';
 export type { UpdateConnectionDto } from './models/UpdateConnectionDto';
 export type { UpdatePageDto } from './models/UpdatePageDto';
 export type { UpdateTaskDto } from './models/UpdateTaskDto';
+export type { WikiTagResponseDto } from './models/WikiTagResponseDto';
 
 export { AppService } from './services/AppService';
 export { AuthorizationServerService } from './services/AuthorizationServerService';

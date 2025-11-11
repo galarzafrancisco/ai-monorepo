@@ -152,6 +152,97 @@ export class WikirooMcpGateway {
       }
     )
 
+    server.registerTool(
+      'add_tag_to_page',
+      {
+        title: 'Add tag to page',
+        description: 'Add a tag to a wiki page by tag name (creates tag if it does not exist)',
+        inputSchema: {
+          pageId: z.string(),
+          tagName: z.string(),
+          color: z.string().optional(),
+          description: z.string().optional(),
+        },
+      },
+      async ({ pageId, tagName, color, description }) => {
+        await this.wikirooService.addTagToPage(pageId, {
+          name: tagName,
+          color,
+          description,
+        });
+
+        return {
+          content: [{
+            type: "text",
+            text: "done",
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'remove_tag_from_page',
+      {
+        title: 'Remove tag from page',
+        description: 'Remove a tag from a wiki page',
+        inputSchema: {
+          pageId: z.string(),
+          tagId: z.string(),
+        },
+      },
+      async ({ pageId, tagId }) => {
+        await this.wikirooService.removeTagFromPage(pageId, tagId);
+
+        return {
+          content: [{
+            type: "text",
+            text: "done",
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'get_all_tags',
+      {
+        title: 'Get all tags',
+        description: 'List all available tags',
+      },
+      async ({}) => {
+        const tags = await this.wikirooService.getAllTags();
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(tags),
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'list_pages_by_tag',
+      {
+        title: 'List pages by tag',
+        description: 'Get all wiki pages that have a specific tag',
+        inputSchema: {
+          tagName: z.string(),
+        },
+      },
+      async ({ tagName }) => {
+        const pages = await this.wikirooService.listPagesByTag(tagName);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(pages.map(p => ({
+              name: p.title,
+              author: p.author,
+              id: p.id,
+            }))),
+          }],
+        }
+      }
+    )
+
     return server;
   }
 

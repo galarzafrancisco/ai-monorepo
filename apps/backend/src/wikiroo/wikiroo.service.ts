@@ -2,11 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WikiPageEntity } from './page.entity';
+import { WikiTagEntity } from './tag.entity';
 import {
+  AddTagInput,
   AppendPageInput,
   CreatePageInput,
   PageResult,
   PageSummaryResult,
+  TagResult,
   UpdatePageInput,
 } from './dto/service/wikiroo.service.types';
 import { PageNotFoundError } from './errors/wikiroo.errors';
@@ -18,6 +21,8 @@ export class WikirooService {
   constructor(
     @InjectRepository(WikiPageEntity)
     private readonly pageRepository: Repository<WikiPageEntity>,
+    @InjectRepository(WikiTagEntity)
+    private readonly tagRepository: Repository<WikiTagEntity>,
   ) {}
 
   async createPage(input: CreatePageInput): Promise<PageResult> {
@@ -31,6 +36,7 @@ export class WikirooService {
       title: input.title,
       content: input.content,
       author: input.author,
+      tags: [],
     });
 
     const saved = await this.pageRepository.save(page);
@@ -47,13 +53,7 @@ export class WikirooService {
     this.logger.log({ message: 'Listing wiki pages' });
 
     const pages = await this.pageRepository.find({
-      select: {
-        id: true,
-        title: true,
-        author: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      relations: ['tags'],
       order: { createdAt: 'DESC' },
     });
 
@@ -63,7 +63,10 @@ export class WikirooService {
   async getPageById(pageId: string): Promise<PageResult> {
     this.logger.log({ message: 'Fetching wiki page', pageId });
 
-    const page = await this.pageRepository.findOne({ where: { id: pageId } });
+    const page = await this.pageRepository.findOne({
+      where: { id: pageId },
+      relations: ['tags'],
+    });
 
     if (!page) {
       throw new PageNotFoundError(pageId);
@@ -78,7 +81,10 @@ export class WikirooService {
   ): Promise<PageResult> {
     this.logger.log({ message: 'Updating wiki page', pageId });
 
-    const page = await this.pageRepository.findOne({ where: { id: pageId } });
+    const page = await this.pageRepository.findOne({
+      where: { id: pageId },
+      relations: ['tags'],
+    });
 
     if (!page) {
       throw new PageNotFoundError(pageId);
@@ -107,7 +113,10 @@ export class WikirooService {
   ): Promise<PageResult> {
     this.logger.log({ message: 'Appending wiki page content', pageId });
 
-    const page = await this.pageRepository.findOne({ where: { id: pageId } });
+    const page = await this.pageRepository.findOne({
+      where: { id: pageId },
+      relations: ['tags'],
+    });
 
     if (!page) {
       throw new PageNotFoundError(pageId);
@@ -134,27 +143,123 @@ export class WikirooService {
     this.logger.log({ message: 'Wiki page deleted', pageId });
   }
 
+  async addTagToPage(pageId: string, input: AddTagInput): Promise<PageResult> {
+    this.logger.log({ message: 'Adding tag to page', pageId, tagName: input.name });
+
+    const page = await this.pageRepository.findOne({
+      where: { id: pageId },
+      relations: ['tags'],
+    });
+
+    if (!page) {
+      throw new PageNotFoundError(pageId);
+    }
+
+    // Find or create the tag
+    let tag = await this.tagRepository.findOne({ where: { name: input.name } });
+
+    if (!tag) {
+      tag = this.tagRepository.create({
+        name: input.name,
+        color: input.color,
+        description: input.description,
+      });
+      tag = await this.tagRepository.save(tag);
+    }
+
+    // Add tag to page if not already present
+    if (!page.tags.some((t) => t.id === tag.id)) {
+      page.tags.push(tag);
+      await this.pageRepository.save(page);
+    }
+
+    // Reload with relations
+    const pageWithRelations = await this.pageRepository.findOne({
+      where: { id: pageId },
+      relations: ['tags'],
+    });
+
+    this.logger.log({ message: 'Tag added to page', pageId, tagId: tag.id });
+
+    return this.mapToResult(pageWithRelations!);
+  }
+
+  async removeTagFromPage(pageId: string, tagId: string): Promise<PageResult> {
+    this.logger.log({ message: 'Removing tag from page', pageId, tagId });
+
+    const page = await this.pageRepository.findOne({
+      where: { id: pageId },
+      relations: ['tags'],
+    });
+
+    if (!page) {
+      throw new PageNotFoundError(pageId);
+    }
+
+    page.tags = page.tags.filter((tag) => tag.id !== tagId);
+    await this.pageRepository.save(page);
+
+    this.logger.log({ message: 'Tag removed from page', pageId, tagId });
+
+    return this.mapToResult(page);
+  }
+
+  async getAllTags(): Promise<TagResult[]> {
+    this.logger.log({ message: 'Getting all tags' });
+
+    const tags = await this.tagRepository.find({
+      order: { name: 'ASC' },
+    });
+
+    return tags.map((tag) => this.mapTagToResult(tag));
+  }
+
+  async listPagesByTag(tagName: string): Promise<PageResult[]> {
+    this.logger.log({ message: 'Listing pages by tag', tagName });
+
+    const tag = await this.tagRepository.findOne({
+      where: { name: tagName },
+      relations: ['pages', 'pages.tags'],
+    });
+
+    if (!tag) {
+      return [];
+    }
+
+    return tag.pages.map((page) => this.mapToResult(page));
+  }
+
   private mapToResult(page: WikiPageEntity): PageResult {
     return {
       id: page.id,
       title: page.title,
       content: page.content,
       author: page.author,
+      tags: (page.tags || []).map((tag) => this.mapTagToResult(tag)),
       createdAt: page.createdAt,
       updatedAt: page.updatedAt,
     };
   }
 
-  private mapToSummary(page: Pick<
-    WikiPageEntity,
-    'id' | 'title' | 'author' | 'createdAt' | 'updatedAt'
-  >): PageSummaryResult {
+  private mapToSummary(page: WikiPageEntity): PageSummaryResult {
     return {
       id: page.id,
       title: page.title,
       author: page.author,
+      tags: (page.tags || []).map((tag) => this.mapTagToResult(tag)),
       createdAt: page.createdAt,
       updatedAt: page.updatedAt,
+    };
+  }
+
+  private mapTagToResult(tag: WikiTagEntity): TagResult {
+    return {
+      id: tag.id,
+      name: tag.name,
+      color: tag.color,
+      description: tag.description,
+      createdAt: tag.createdAt,
+      updatedAt: tag.updatedAt,
     };
   }
 }

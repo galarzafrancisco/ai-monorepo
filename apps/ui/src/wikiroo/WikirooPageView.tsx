@@ -6,6 +6,8 @@ import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { WikiPageEditForm } from './WikiPageEditForm';
+import { TagBadge } from './TagBadge';
+import { TagSelector } from './TagSelector';
 import type { UpdatePageDto } from 'shared';
 
 function formatDate(value: string) {
@@ -19,8 +21,19 @@ function formatDate(value: string) {
 export function WikirooPageView() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
-  const { pages, selectedPage, isLoadingPage, error, selectPage, updatePage, deletePage, isUpdating, isDeleting } =
-    useWikiroo();
+  const {
+    pages,
+    selectedPage,
+    isLoadingPage,
+    error,
+    selectPage,
+    updatePage,
+    deletePage,
+    isUpdating,
+    isDeleting,
+    addTagToPage,
+    removeTagFromPage,
+  } = useWikiroo();
   const [showEditForm, setShowEditForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -80,6 +93,26 @@ export function WikirooPageView() {
     }
   }, [pageId, deletePage, navigate]);
 
+  const handleRemoveTag = useCallback(
+    async (tagId: string) => {
+      if (!pageId) return;
+      try {
+        await removeTagFromPage(pageId, tagId);
+        setErrorMessage('');
+      } catch (err: any) {
+        const errorMsg = err?.body?.detail || err?.message || 'Failed to remove tag';
+        setErrorMessage(errorMsg);
+      }
+    },
+    [pageId, removeTagFromPage],
+  );
+
+  const handleTagAdded = useCallback(() => {
+    if (pageId) {
+      selectPage(pageId);
+    }
+  }, [pageId, selectPage]);
+
   return (
     <div className="wikiroo wikiroo-page-view">
       <header className="wikiroo-header">
@@ -133,7 +166,24 @@ export function WikirooPageView() {
             <span>The requested page may have been removed or never existed.</span>
           </div>
         )}
-        {selectedPage && <MarkdownPreview content={selectedPage.content} />}
+        {selectedPage && (
+          <>
+            {selectedPage.tags && selectedPage.tags.length > 0 && (
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1rem', marginBottom: '8px' }}>Tags</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {selectedPage.tags.map((tag) => (
+                    <TagBadge key={tag.id} tag={tag} onRemove={() => handleRemoveTag(tag.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+            <TagSelector pageId={selectedPage.id} onTagAdded={handleTagAdded} />
+            <div style={{ marginTop: '24px' }}>
+              <MarkdownPreview content={selectedPage.content} />
+            </div>
+          </>
+        )}
       </section>
 
       {showEditForm && selectedPage && (

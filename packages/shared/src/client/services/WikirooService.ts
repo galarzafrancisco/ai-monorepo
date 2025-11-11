@@ -2,11 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AddWikiTagDto } from '../models/AddWikiTagDto';
 import type { AppendPageDto } from '../models/AppendPageDto';
 import type { CreatePageDto } from '../models/CreatePageDto';
 import type { PageListResponseDto } from '../models/PageListResponseDto';
 import type { PageResponseDto } from '../models/PageResponseDto';
 import type { UpdatePageDto } from '../models/UpdatePageDto';
+import type { WikiTagResponseDto } from '../models/WikiTagResponseDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -118,6 +120,78 @@ export class WikirooService {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Add a tag to a wiki page
+     * @param id Wiki page identifier
+     * @param requestBody
+     * @returns PageResponseDto Tag added to page successfully
+     * @throws ApiError
+     */
+    public static wikirooControllerAddTagToPage(
+        id: string,
+        requestBody: AddWikiTagDto,
+    ): CancelablePromise<PageResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/wikiroo/pages/{id}/tags',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+            },
+        });
+    }
+    /**
+     * Remove a tag from a wiki page
+     * @param id
+     * @param tagId
+     * @returns PageResponseDto Tag removed from page successfully
+     * @throws ApiError
+     */
+    public static wikirooControllerRemoveTagFromPage(
+        id: string,
+        tagId: string,
+    ): CancelablePromise<PageResponseDto> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/wikiroo/pages/{id}/tags/{tagId}',
+            path: {
+                'id': id,
+                'tagId': tagId,
+            },
+        });
+    }
+    /**
+     * Get all tags
+     * @returns WikiTagResponseDto List of all tags
+     * @throws ApiError
+     */
+    public static wikirooControllerGetAllTags(): CancelablePromise<Array<WikiTagResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/wikiroo/pages/tags/all',
+        });
+    }
+    /**
+     * List pages by tag name
+     * @param name
+     * @returns PageResponseDto List of pages with the specified tag
+     * @throws ApiError
+     */
+    public static wikirooControllerListPagesByTag(
+        name: string,
+    ): CancelablePromise<Array<PageResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/wikiroo/pages/tags/{name}/pages',
+            path: {
+                'name': name,
+            },
         });
     }
     /**

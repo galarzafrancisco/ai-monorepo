@@ -53,6 +53,7 @@ export const useWikiroo = () => {
               id: created.id,
               title: created.title,
               author: created.author,
+              tags: created.tags,
               createdAt: created.createdAt,
               updatedAt: created.updatedAt,
             },
@@ -91,6 +92,7 @@ export const useWikiroo = () => {
                   id: updated.id,
                   title: updated.title,
                   author: updated.author,
+                  tags: updated.tags,
                   createdAt: updated.createdAt,
                   updatedAt: updated.updatedAt,
                 }
@@ -131,6 +133,88 @@ export const useWikiroo = () => {
     [selectedPage],
   );
 
+  const appendToPage = useCallback(
+    async (id: string, content: string) => {
+      setIsUpdating(true);
+      setError(null);
+      try {
+        const updated = await WikirooService.wikirooControllerAppendToPage(id, { content });
+        if (selectedPage?.id === id) {
+          setSelectedPage(updated);
+        }
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to append content');
+        throw err;
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [selectedPage],
+  );
+
+  const addTagToPage = useCallback(
+    async (pageId: string, tagData: { name: string; color?: string; description?: string }) => {
+      setError(null);
+      try {
+        const updated = await WikirooService.wikirooControllerAddTagToPage(pageId, tagData);
+        setPages((prev) =>
+          prev.map((p) =>
+            p.id === pageId
+              ? {
+                  id: updated.id,
+                  title: updated.title,
+                  author: updated.author,
+                  tags: updated.tags,
+                  createdAt: updated.createdAt,
+                  updatedAt: updated.updatedAt,
+                }
+              : p,
+          ),
+        );
+        if (selectedPage?.id === pageId) {
+          setSelectedPage(updated);
+        }
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to add tag');
+        throw err;
+      }
+    },
+    [selectedPage],
+  );
+
+  const removeTagFromPage = useCallback(
+    async (pageId: string, tagId: string) => {
+      setError(null);
+      try {
+        const updated = await WikirooService.wikirooControllerRemoveTagFromPage(pageId, tagId);
+        setPages((prev) =>
+          prev.map((p) =>
+            p.id === pageId
+              ? {
+                  id: updated.id,
+                  title: updated.title,
+                  author: updated.author,
+                  tags: updated.tags,
+                  createdAt: updated.createdAt,
+                  updatedAt: updated.updatedAt,
+                }
+              : p,
+          ),
+        );
+        if (selectedPage?.id === pageId) {
+          setSelectedPage(updated);
+        }
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to remove tag');
+        throw err;
+      }
+    },
+    [selectedPage],
+  );
+
   useEffect(() => {
     loadPages();
   }, [loadPages]);
@@ -148,6 +232,9 @@ export const useWikiroo = () => {
     createPage,
     selectPage,
     updatePage,
+    appendToPage,
     deletePage,
+    addTagToPage,
+    removeTagFromPage,
   };
 };
