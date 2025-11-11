@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { CommentResponseDto } from './CommentResponseDto';
+import type { TagResponseDto } from './TagResponseDto';
 export type TaskResponseDto = {
     /**
      * Unique identifier for the task
@@ -32,6 +33,10 @@ export type TaskResponseDto = {
      * Comments associated with the task
      */
     comments: Array<CommentResponseDto>;
+    /**
+     * Tags associated with the task
+     */
+    tags: Array<TagResponseDto>;
     /**
      * Task creation timestamp
      */

@@ -109,6 +109,74 @@ export interface paths {
         patch: operations["TaskerooController_changeStatus"];
         trace?: never;
     };
+    "/api/v1/taskeroo/tasks/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a tag to a task */
+        post: operations["TaskerooController_addTagToTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taskeroo/tasks/{id}/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a tag from a task */
+        delete: operations["TaskerooController_removeTagFromTask"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taskeroo/tasks/tags/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all tags */
+        get: operations["TaskerooController_getAllTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taskeroo/tasks/tags/{name}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tasks by tag name */
+        get: operations["TaskerooController_listTasksByTag"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/taskeroo/tasks/mcp": {
         parameters: {
             query?: never;
@@ -612,6 +680,38 @@ export interface components {
              */
             createdAt: string;
         };
+        TagResponseDto: {
+            /**
+             * @description Unique identifier for the tag
+             * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
+             */
+            id: string;
+            /**
+             * @description Name of the tag
+             * @example bug
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
+            /**
+             * @description Description of the tag
+             * @example Issues that need to be fixed
+             */
+            description?: string;
+            /**
+             * @description Timestamp when the tag was created
+             * @example 2023-10-15T10:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the tag was last updated
+             * @example 2023-10-15T10:00:00.000Z
+             */
+            updatedAt: string;
+        };
         TaskResponseDto: {
             /**
              * @description Unique identifier for the task
@@ -657,6 +757,20 @@ export interface components {
              *     ]
              */
             comments: components["schemas"]["CommentResponseDto"][];
+            /**
+             * @description Tags associated with the task
+             * @example [
+             *       {
+             *         "id": "tag-001",
+             *         "name": "bug",
+             *         "color": "#FF5733",
+             *         "description": "Issues that need to be fixed",
+             *         "createdAt": "2025-11-03T10:00:00.000Z",
+             *         "updatedAt": "2025-11-03T10:00:00.000Z"
+             *       }
+             *     ]
+             */
+            tags: components["schemas"]["TagResponseDto"][];
             /**
              * @description Task creation timestamp
              * @example 2025-11-03T10:30:00.000Z
@@ -750,6 +864,23 @@ export interface components {
              * @example All requirements met and tests passing
              */
             comment?: string;
+        };
+        AddTagDto: {
+            /**
+             * @description Name of the tag
+             * @example bug
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
+            /**
+             * @description Description of the tag
+             * @example Issues that need to be fixed
+             */
+            description?: string;
         };
         CreatePageDto: {
             /**
@@ -1855,6 +1986,119 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    TaskerooController_addTagToTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag added to task successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_removeTagFromTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed from task successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_getAllTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponseDto"][];
+                };
+            };
+        };
+    };
+    TaskerooController_listTasksByTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of tasks with the specified tag */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"][];
+                };
             };
         };
     };

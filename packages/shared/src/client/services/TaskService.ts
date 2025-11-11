@@ -2,11 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AddTagDto } from '../models/AddTagDto';
 import type { AssignTaskDto } from '../models/AssignTaskDto';
 import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto';
 import type { CommentResponseDto } from '../models/CommentResponseDto';
 import type { CreateCommentDto } from '../models/CreateCommentDto';
 import type { CreateTaskDto } from '../models/CreateTaskDto';
+import type { TagResponseDto } from '../models/TagResponseDto';
 import type { TaskListResponseDto } from '../models/TaskListResponseDto';
 import type { TaskResponseDto } from '../models/TaskResponseDto';
 import type { UpdateTaskDto } from '../models/UpdateTaskDto';
@@ -196,6 +198,82 @@ export class TaskService {
             errors: {
                 400: `Invalid status transition or comment required`,
                 404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Add a tag to a task
+     * @param id Task UUID
+     * @param requestBody
+     * @returns TaskResponseDto Tag added to task successfully
+     * @throws ApiError
+     */
+    public static taskerooControllerAddTagToTask(
+        id: string,
+        requestBody: AddTagDto,
+    ): CancelablePromise<TaskResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/taskeroo/tasks/{id}/tags',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Remove a tag from a task
+     * @param id
+     * @param tagId
+     * @returns TaskResponseDto Tag removed from task successfully
+     * @throws ApiError
+     */
+    public static taskerooControllerRemoveTagFromTask(
+        id: string,
+        tagId: string,
+    ): CancelablePromise<TaskResponseDto> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/taskeroo/tasks/{id}/tags/{tagId}',
+            path: {
+                'id': id,
+                'tagId': tagId,
+            },
+            errors: {
+                404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Get all tags
+     * @returns TagResponseDto List of all tags
+     * @throws ApiError
+     */
+    public static taskerooControllerGetAllTags(): CancelablePromise<Array<TagResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/taskeroo/tasks/tags/all',
+        });
+    }
+    /**
+     * List tasks by tag name
+     * @param name
+     * @returns TaskResponseDto List of tasks with the specified tag
+     * @throws ApiError
+     */
+    public static taskerooControllerListTasksByTag(
+        name: string,
+    ): CancelablePromise<Array<TaskResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/taskeroo/tasks/tags/{name}/tasks',
+            path: {
+                'name': name,
             },
         });
     }

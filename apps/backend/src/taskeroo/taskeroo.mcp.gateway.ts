@@ -330,6 +330,101 @@ export class TaskerooMcpGateway {
         }
       }
     )
+
+    server.registerTool(
+      'add_tag_to_task',
+      {
+        title: 'Add tag to task',
+        description: 'Add a tag to a task by tag name',
+        inputSchema: {
+          taskId: z.string(),
+          tagName: z.string(),
+          color: z.string().optional(),
+          description: z.string().optional(),
+        },
+      },
+      async ({ taskId, tagName, color, description }) => {
+        await this.taskerooService.addTagToTask(taskId, {
+          name: tagName,
+          color,
+          description,
+        });
+
+        return {
+          content: [{
+            type: "text",
+            text: "done",
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'remove_tag_from_task',
+      {
+        title: 'Remove tag from task',
+        description: 'Remove a tag from a task',
+        inputSchema: {
+          taskId: z.string(),
+          tagId: z.string(),
+        },
+      },
+      async ({ taskId, tagId }) => {
+        await this.taskerooService.removeTagFromTask(taskId, tagId);
+
+        return {
+          content: [{
+            type: "text",
+            text: "done",
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'get_all_tags',
+      {
+        title: 'Get all tags',
+        description: 'List all available tags',
+      },
+      async ({}) => {
+        const tags = await this.taskerooService.getAllTags();
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(tags),
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'list_tasks_by_tag',
+      {
+        title: 'List tasks by tag',
+        description: 'Get all tasks that have a specific tag',
+        inputSchema: {
+          tagName: z.string(),
+        },
+      },
+      async ({ tagName }) => {
+        const tasks = await this.taskerooService.listTasksByTag(tagName);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(tasks.map(t => {
+              return {
+                name: t.name,
+                assignee: t.assignee,
+                status: t.status,
+                id: t.id,
+              }
+            })),
+          }],
+        }
+      }
+    )
+
     return server;
   }
 
