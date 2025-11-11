@@ -4,6 +4,16 @@ export interface CreatePageInput {
   author: string;
 }
 
+export interface UpdatePageInput {
+  title?: string;
+  content?: string;
+  author?: string;
+}
+
+export interface AppendPageInput {
+  content: string;
+}
+
 export interface PageResult {
   id: string;
   title: string;

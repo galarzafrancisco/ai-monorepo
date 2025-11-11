@@ -83,11 +83,56 @@ describe('Wikiroo E2E Tests', () => {
     expect(response.body.author).toBe('Agent Tester');
   });
 
+  it('should reject updates without any fields', async () => {
+    await request(httpServer)
+      .patch(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .send({})
+      .expect(400);
+  });
+
+  it('should update the wiki page title', async () => {
+    const response = await request(httpServer)
+      .patch(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .send({
+        title: 'Updated Test Page',
+      })
+      .expect(200);
+
+    expect(response.body.title).toBe('Updated Test Page');
+    expect(response.body.content).toBe(
+      'This is a wikiroo page created during tests.',
+    );
+  });
+
+  it('should append content to the wiki page', async () => {
+    const appendText = '\nAdditional wikiroo details.';
+    const response = await request(httpServer)
+      .post(`/api/v1/wikiroo/pages/${createdPageId}/append`)
+      .send({
+        content: appendText,
+      })
+      .expect(200);
+
+    expect(response.body.content).toContain(appendText.trim());
+  });
+
+  it('should delete the wiki page', async () => {
+    await request(httpServer)
+      .delete(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .expect(204);
+  });
+
   it('should return 404 for unknown page', async () => {
     const response = await request(httpServer)
       .get('/api/v1/wikiroo/pages/00000000-0000-0000-0000-000000000000')
       .expect(404);
 
     expect(response.body.code).toBe('PAGE_NOT_FOUND');
+  });
+
+  it('should return 404 when fetching a deleted page', async () => {
+    await request(httpServer)
+      .get(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .expect(404);
   });
 });

@@ -563,6 +563,117 @@
         "tags": [
           "Wikiroo"
         ]
+      },
+      "patch": {
+        "operationId": "WikirooController_updatePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wiki page updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No update fields provided"
+          }
+        },
+        "summary": "Update an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "delete": {
+        "operationId": "WikirooController_deletePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Wiki page deleted successfully"
+          }
+        },
+        "summary": "Delete a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/append": {
+      "post": {
+        "operationId": "WikirooController_appendToPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wiki page content appended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Append content to an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
       }
     },
     "/api/v1/wikiroo/pages/mcp": {
@@ -2187,6 +2298,39 @@
           "content",
           "author"
         ]
+      },
+      "AppendPageDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Markdown content to append to the existing page content",
+            "example": "\\n## Additional details"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "UpdatePageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Updated title of the wiki page",
+            "example": "Updated onboarding guide"
+          },
+          "content": {
+            "type": "string",
+            "description": "Updated markdown content of the page",
+            "example": "## Updated content"
+          },
+          "author": {
+            "type": "string",
+            "description": "Updated author of the page",
+            "example": "Agent Roo"
+          }
+        }
       },
       "PageResponseDto": {
         "type": "object",

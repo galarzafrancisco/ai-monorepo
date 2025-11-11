@@ -1,7 +1,21 @@
-import { Body, Controller, Get, Param, Post, All, Req, Res } from '@nestjs/common';
+import {
+  All,
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -13,6 +27,8 @@ import { PageResponseDto } from './dto/page-response.dto';
 import { PageListResponseDto } from './dto/page-list-response.dto';
 import { PageSummaryDto } from './dto/page-summary.dto';
 import { PageParamsDto } from './dto/page-params.dto';
+import { UpdatePageDto } from './dto/update-page.dto';
+import { AppendPageDto } from './dto/append-page.dto';
 import { PageResult, PageSummaryResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 
@@ -63,6 +79,61 @@ export class WikirooController {
   async getPage(@Param() params: PageParamsDto): Promise<PageResponseDto> {
     const result = await this.wikirooService.getPageById(params.id);
     return this.mapToResponse(result);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update an existing wiki page' })
+  @ApiOkResponse({
+    type: PageResponseDto,
+    description: 'Wiki page updated successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'No update fields provided',
+  })
+  async updatePage(
+    @Param() params: PageParamsDto,
+    @Body() dto: UpdatePageDto,
+  ): Promise<PageResponseDto> {
+    if (
+      dto.title === undefined &&
+      dto.content === undefined &&
+      dto.author === undefined
+    ) {
+      throw new BadRequestException('At least one field must be provided');
+    }
+
+    const result = await this.wikirooService.updatePage(params.id, {
+      title: dto.title,
+      content: dto.content,
+      author: dto.author,
+    });
+
+    return this.mapToResponse(result);
+  }
+
+  @Post(':id/append')
+  @ApiOperation({ summary: 'Append content to an existing wiki page' })
+  @ApiOkResponse({
+    type: PageResponseDto,
+    description: 'Wiki page content appended successfully',
+  })
+  async appendToPage(
+    @Param() params: PageParamsDto,
+    @Body() dto: AppendPageDto,
+  ): Promise<PageResponseDto> {
+    const result = await this.wikirooService.appendToPage(params.id, {
+      content: dto.content,
+    });
+
+    return this.mapToResponse(result);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete a wiki page' })
+  @ApiNoContentResponse({ description: 'Wiki page deleted successfully' })
+  async deletePage(@Param() params: PageParamsDto): Promise<void> {
+    await this.wikirooService.deletePage(params.id);
   }
 
   private mapToResponse(result: PageResult): PageResponseDto {
