@@ -6,6 +6,7 @@ import { useWikiroo } from './useWikiroo';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
+import { TagBadge } from './TagBadge';
 
 function formatDate(value: string) {
   try {
@@ -141,6 +142,13 @@ export function WikirooHomePage() {
           <Link key={page.id} to={`/wikiroo/${page.id}`} className="wikiroo-card">
             <h3>{page.title}</h3>
             <p>By {page.author}</p>
+            {page.tags && page.tags.length > 0 && (
+              <div style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {page.tags.map((tag) => (
+                  <TagBadge key={tag.id} tag={tag} small />
+                ))}
+              </div>
+            )}
             <div className="wikiroo-card-meta">
               <span>Updated {formatDate(page.updatedAt)}</span>
               <span>Created {formatDate(page.createdAt)}</span>

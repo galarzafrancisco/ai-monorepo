@@ -247,6 +247,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/wikiroo/pages/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a tag to a wiki page */
+        post: operations["WikirooController_addTagToPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a tag from a wiki page */
+        delete: operations["WikirooController_removeTagFromPage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all tags */
+        get: operations["WikirooController_getAllTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags/{name}/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List pages by tag name */
+        get: operations["WikirooController_listPagesByTag"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wikiroo/pages/mcp": {
         parameters: {
             query?: never;
@@ -688,7 +756,7 @@ export interface components {
             id: string;
             /**
              * @description Name of the tag
-             * @example bug
+             * @example project-alpha
              */
             name: string;
             /**
@@ -698,7 +766,7 @@ export interface components {
             color?: string;
             /**
              * @description Description of the tag
-             * @example Issues that need to be fixed
+             * @example Notes related to project alpha
              */
             description?: string;
             /**
@@ -868,7 +936,7 @@ export interface components {
         AddTagDto: {
             /**
              * @description Name of the tag
-             * @example bug
+             * @example project-alpha
              */
             name: string;
             /**
@@ -878,7 +946,7 @@ export interface components {
             color?: string;
             /**
              * @description Description of the tag
-             * @example Issues that need to be fixed
+             * @example Notes related to project alpha
              */
             description?: string;
         };
@@ -922,6 +990,20 @@ export interface components {
              */
             author: string;
             /**
+             * @description Tags associated with the page
+             * @example [
+             *       {
+             *         "id": "123",
+             *         "name": "project-alpha",
+             *         "color": "#FF5733",
+             *         "description": "Project Alpha notes",
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-01T12:00:00.000Z"
+             *       }
+             *     ]
+             */
+            tags: components["schemas"]["TagResponseDto"][];
+            /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
              */
@@ -948,6 +1030,20 @@ export interface components {
              * @example Agent Roo
              */
             author: string;
+            /**
+             * @description Tags associated with the page
+             * @example [
+             *       {
+             *         "id": "123",
+             *         "name": "project-alpha",
+             *         "color": "#FF5733",
+             *         "description": "Project Alpha notes",
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-01T12:00:00.000Z"
+             *       }
+             *     ]
+             */
+            tags: components["schemas"]["TagResponseDto"][];
             /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
@@ -2373,6 +2469,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_addTagToPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag added to page successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_removeTagFromPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed from page successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_getAllTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponseDto"][];
+                };
+            };
+        };
+    };
+    WikirooController_listPagesByTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of pages with the specified tag */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"][];
                 };
             };
         };
