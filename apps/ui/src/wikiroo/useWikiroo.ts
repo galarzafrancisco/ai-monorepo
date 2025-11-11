@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CreatePageDto } from 'shared';
+import type { CreatePageDto, UpdatePageDto } from 'shared';
 import { WikirooService } from './api';
 import type { WikiPage, WikiPageSummary } from './types';
 
@@ -9,6 +9,8 @@ export const useWikiroo = () => {
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadPages = useCallback(async () => {
@@ -76,6 +78,59 @@ export const useWikiroo = () => {
     [fetchPage],
   );
 
+  const updatePage = useCallback(
+    async (id: string, payload: UpdatePageDto) => {
+      setIsUpdating(true);
+      setError(null);
+      try {
+        const updated = await WikirooService.wikirooControllerUpdatePage(id, payload);
+        setPages((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  id: updated.id,
+                  title: updated.title,
+                  author: updated.author,
+                  createdAt: updated.createdAt,
+                  updatedAt: updated.updatedAt,
+                }
+              : p,
+          ),
+        );
+        if (selectedPage?.id === id) {
+          setSelectedPage(updated);
+        }
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update page');
+        throw err;
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [selectedPage],
+  );
+
+  const deletePage = useCallback(
+    async (id: string) => {
+      setIsDeleting(true);
+      setError(null);
+      try {
+        await WikirooService.wikirooControllerDeletePage(id);
+        setPages((prev) => prev.filter((p) => p.id !== id));
+        if (selectedPage?.id === id) {
+          setSelectedPage(null);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete page');
+        throw err;
+      } finally {
+        setIsDeleting(false);
+      }
+    },
+    [selectedPage],
+  );
+
   useEffect(() => {
     loadPages();
   }, [loadPages]);
@@ -86,9 +141,13 @@ export const useWikiroo = () => {
     isLoadingList,
     isLoadingPage,
     isCreating,
+    isUpdating,
+    isDeleting,
     error,
     loadPages,
     createPage,
     selectPage,
+    updatePage,
+    deletePage,
   };
 };
