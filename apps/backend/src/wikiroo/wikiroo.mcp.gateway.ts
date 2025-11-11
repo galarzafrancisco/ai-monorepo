@@ -79,6 +79,79 @@ export class WikirooMcpGateway {
       }
     )
 
+    server.registerTool(
+      'update_page',
+      {
+        title: 'Update wiki page',
+        description: 'Update the title, content, or author of an existing wiki page',
+        inputSchema: {
+          pageId: z.string(),
+          title: z.string().optional(),
+          content: z.string().optional(),
+          author: z.string().optional(),
+        },
+      },
+      async ({ pageId, title, content, author }) => {
+        if (title === undefined && content === undefined && author === undefined) {
+          throw new Error('At least one field must be provided to update the page.');
+        }
+
+        const page = await this.wikirooService.updatePage(pageId, {
+          title,
+          content,
+          author,
+        });
+
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(page),
+          }],
+        };
+      }
+    )
+
+    server.registerTool(
+      'append_page',
+      {
+        title: 'Append wiki page content',
+        description: 'Append markdown content to the end of an existing wiki page',
+        inputSchema: {
+          pageId: z.string(),
+          content: z.string(),
+        },
+      },
+      async ({ pageId, content }) => {
+        const page = await this.wikirooService.appendToPage(pageId, { content });
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(page),
+          }],
+        };
+      }
+    )
+
+    server.registerTool(
+      'delete_page',
+      {
+        title: 'Delete wiki page',
+        description: 'Delete a wiki page by its identifier',
+        inputSchema: {
+          pageId: z.string(),
+        },
+      },
+      async ({ pageId }) => {
+        await this.wikirooService.deletePage(pageId);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({ status: 'deleted', pageId }),
+          }],
+        };
+      }
+    )
+
     return server;
   }
 

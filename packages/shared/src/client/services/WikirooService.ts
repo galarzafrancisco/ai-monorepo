@@ -2,9 +2,11 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AppendPageDto } from '../models/AppendPageDto';
 import type { CreatePageDto } from '../models/CreatePageDto';
 import type { PageListResponseDto } from '../models/PageListResponseDto';
 import type { PageResponseDto } from '../models/PageResponseDto';
+import type { UpdatePageDto } from '../models/UpdatePageDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -50,6 +52,68 @@ export class WikirooService {
     ): CancelablePromise<PageResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
+            url: '/api/v1/wikiroo/pages/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * Update an existing wiki page
+     * @param id Wiki page identifier
+     * @param requestBody
+     * @returns PageResponseDto Wiki page updated successfully
+     * @throws ApiError
+     */
+    public static wikirooControllerUpdatePage(
+        id: string,
+        requestBody: UpdatePageDto,
+    ): CancelablePromise<PageResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/wikiroo/pages/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `No update fields provided`,
+            },
+        });
+    }
+    /**
+     * Append content to an existing wiki page
+     * @param id Wiki page identifier
+     * @param requestBody
+     * @returns PageResponseDto Wiki page content appended successfully
+     * @throws ApiError
+     */
+    public static wikirooControllerAppendToPage(
+        id: string,
+        requestBody: AppendPageDto,
+    ): CancelablePromise<PageResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/wikiroo/pages/{id}/append',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Delete a wiki page
+     * @param id Wiki page identifier
+     * @returns void Wiki page deleted successfully
+     * @throws ApiError
+     */
+    public static wikirooControllerDeletePage(
+        id: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
             url: '/api/v1/wikiroo/pages/{id}',
             path: {
                 'id': id,

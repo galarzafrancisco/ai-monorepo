@@ -154,6 +154,25 @@ export interface paths {
         get: operations["WikirooController_getPage"];
         put?: never;
         post?: never;
+        /** Update an existing wiki page */
+        patch: operations["WikirooController_updatePage"];
+        /** Delete a wiki page */
+        delete: operations["WikirooController_deletePage"];
+        options?: never;
+        head?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/append": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Append content to an existing wiki page */
+        post: operations["WikirooController_appendToPage"];
+        get?: never;
+        put?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -749,6 +768,30 @@ export interface components {
              * @example Agent Roo
              */
             author: string;
+        };
+        AppendPageDto: {
+            /**
+             * @description Markdown content to append to the existing page content
+             * @example ## Additional details
+             */
+            content: string;
+        };
+        UpdatePageDto: {
+            /**
+             * @description Updated title of the wiki page
+             * @example Updated onboarding guide
+             */
+            title?: string;
+            /**
+             * @description Updated markdown content of the page
+             * @example ## Updated content
+             */
+            content?: string;
+            /**
+             * @description Updated author of the page
+             * @example Agent Roo
+             */
+            author?: string;
         };
         PageResponseDto: {
             /**
@@ -1998,6 +2041,88 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Wiki page retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_updatePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePageDto"];
+            };
+        };
+        responses: {
+            /** @description Wiki page updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description No update fields provided */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_deletePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wiki page deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_appendToPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppendPageDto"];
+            };
+        };
+        responses: {
+            /** @description Wiki page content appended successfully */
             200: {
                 headers: {
                     [name: string]: unknown;

@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WikiPageEntity } from './page.entity';
 import {
+  AppendPageInput,
   CreatePageInput,
   PageResult,
   PageSummaryResult,
+  UpdatePageInput,
 } from './dto/service/wikiroo.service.types';
 import { PageNotFoundError } from './errors/wikiroo.errors';
 
@@ -68,6 +70,68 @@ export class WikirooService {
     }
 
     return this.mapToResult(page);
+  }
+
+  async updatePage(
+    pageId: string,
+    input: UpdatePageInput,
+  ): Promise<PageResult> {
+    this.logger.log({ message: 'Updating wiki page', pageId });
+
+    const page = await this.pageRepository.findOne({ where: { id: pageId } });
+
+    if (!page) {
+      throw new PageNotFoundError(pageId);
+    }
+
+    if (input.title !== undefined) {
+      page.title = input.title;
+    }
+    if (input.content !== undefined) {
+      page.content = input.content;
+    }
+    if (input.author !== undefined) {
+      page.author = input.author;
+    }
+
+    const saved = await this.pageRepository.save(page);
+
+    this.logger.log({ message: 'Wiki page updated', pageId: saved.id });
+
+    return this.mapToResult(saved);
+  }
+
+  async appendToPage(
+    pageId: string,
+    input: AppendPageInput,
+  ): Promise<PageResult> {
+    this.logger.log({ message: 'Appending wiki page content', pageId });
+
+    const page = await this.pageRepository.findOne({ where: { id: pageId } });
+
+    if (!page) {
+      throw new PageNotFoundError(pageId);
+    }
+
+    page.content = `${page.content}${input.content}`;
+
+    const saved = await this.pageRepository.save(page);
+
+    this.logger.log({ message: 'Wiki page content appended', pageId: saved.id });
+
+    return this.mapToResult(saved);
+  }
+
+  async deletePage(pageId: string): Promise<void> {
+    this.logger.log({ message: 'Deleting wiki page', pageId });
+
+    const result = await this.pageRepository.delete(pageId);
+
+    if (!result.affected) {
+      throw new PageNotFoundError(pageId);
+    }
+
+    this.logger.log({ message: 'Wiki page deleted', pageId });
   }
 
   private mapToResult(page: WikiPageEntity): PageResult {
