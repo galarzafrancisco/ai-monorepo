@@ -243,6 +243,7 @@ export class AuthorizationServerService {
      * @param code Authorization code from downstream OAuth provider
      * @param state State parameter that identifies the connection flow
      * @param error Error code if authorization failed
+     * @param scope Scopes that were granted
      * @param errorDescription Error description if authorization failed
      * @returns void
      * @throws ApiError
@@ -251,6 +252,7 @@ export class AuthorizationServerService {
         code: string,
         state: string,
         error?: string,
+        scope?: string,
         errorDescription?: string,
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
@@ -260,6 +262,7 @@ export class AuthorizationServerService {
                 'code': code,
                 'state': state,
                 'error': error,
+                'scope': scope,
                 'error_description': errorDescription,
             },
             errors: {

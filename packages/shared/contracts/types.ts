@@ -154,12 +154,12 @@ export interface paths {
         get: operations["WikirooController_getPage"];
         put?: never;
         post?: never;
-        /** Update an existing wiki page */
-        patch: operations["WikirooController_updatePage"];
         /** Delete a wiki page */
         delete: operations["WikirooController_deletePage"];
         options?: never;
         head?: never;
+        /** Update an existing wiki page */
+        patch: operations["WikirooController_updatePage"];
         trace?: never;
     };
     "/api/v1/wikiroo/pages/{id}/append": {
@@ -169,10 +169,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Append content to an existing wiki page */
-        post: operations["WikirooController_appendToPage"];
         get?: never;
         put?: never;
+        /** Append content to an existing wiki page */
+        post: operations["WikirooController_appendToPage"];
         delete?: never;
         options?: never;
         head?: never;
@@ -769,30 +769,6 @@ export interface components {
              */
             author: string;
         };
-        AppendPageDto: {
-            /**
-             * @description Markdown content to append to the existing page content
-             * @example ## Additional details
-             */
-            content: string;
-        };
-        UpdatePageDto: {
-            /**
-             * @description Updated title of the wiki page
-             * @example Updated onboarding guide
-             */
-            title?: string;
-            /**
-             * @description Updated markdown content of the page
-             * @example ## Updated content
-             */
-            content?: string;
-            /**
-             * @description Updated author of the page
-             * @example Agent Roo
-             */
-            author?: string;
-        };
         PageResponseDto: {
             /**
              * @description Unique identifier for the page
@@ -855,6 +831,30 @@ export interface components {
         PageListResponseDto: {
             /** @description List of wiki pages */
             items: components["schemas"]["PageSummaryDto"][];
+        };
+        UpdatePageDto: {
+            /**
+             * @description Updated title of the wiki page
+             * @example Updated onboarding guide
+             */
+            title?: string;
+            /**
+             * @description Updated markdown content of the page
+             * @example ## Updated content
+             */
+            content?: string;
+            /**
+             * @description Updated author of the page
+             * @example Agent Roo
+             */
+            author?: string;
+        };
+        AppendPageDto: {
+            /**
+             * @description Markdown content to append to the existing page content
+             * @example ## Additional details
+             */
+            content: string;
         };
         CreateServerDto: {
             /**
@@ -2051,6 +2051,27 @@ export interface operations {
             };
         };
     };
+    WikirooController_deletePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wiki page deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     WikirooController_updatePage: {
         parameters: {
             query?: never;
@@ -2078,27 +2099,6 @@ export interface operations {
             };
             /** @description No update fields provided */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_deletePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Wiki page deleted successfully */
-            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3099,6 +3099,8 @@ export interface operations {
                 state: string;
                 /** @description Error code if authorization failed */
                 error?: string;
+                /** @description Scopes that were granted */
+                scope?: string;
                 /** @description Error description if authorization failed */
                 error_description?: string;
             };
