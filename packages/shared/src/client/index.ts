@@ -7,6 +7,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { AddTagDto } from './models/AddTagDto';
 export type { AppendPageDto } from './models/AppendPageDto';
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';
@@ -39,6 +40,7 @@ export { RegisterClientDto } from './models/RegisterClientDto';
 export type { ScopeResponseDto } from './models/ScopeResponseDto';
 export type { ServerListResponseDto } from './models/ServerListResponseDto';
 export type { ServerResponseDto } from './models/ServerResponseDto';
+export type { TagResponseDto } from './models/TagResponseDto';
 export type { TaskListResponseDto } from './models/TaskListResponseDto';
 export { TaskResponseDto } from './models/TaskResponseDto';
 export { TokenRequestDto } from './models/TokenRequestDto';

@@ -7,8 +7,11 @@ import {
   DeleteDateColumn,
   VersionColumn,
   OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { CommentEntity } from './comment.entity';
+import { TagEntity } from './tag.entity';
 import { TaskStatus } from './enums';
 
 @Entity({ name: 'tasks' })
@@ -37,6 +40,14 @@ export class TaskEntity {
 
   @OneToMany(() => CommentEntity, (comment) => comment.task, { cascade: true })
   comments!: CommentEntity[];
+
+  @ManyToMany(() => TagEntity, (tag) => tag.tasks)
+  @JoinTable({
+    name: 'task_tags',
+    joinColumn: { name: 'task_id' },
+    inverseJoinColumn: { name: 'tag_id' },
+  })
+  tags!: TagEntity[];
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

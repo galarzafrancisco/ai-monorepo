@@ -379,6 +379,156 @@
         ]
       }
     },
+    "/api/v1/taskeroo/tasks/{id}/tags": {
+      "post": {
+        "operationId": "TaskerooController_addTagToTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag added to task successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "summary": "Add a tag to a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/taskeroo/tasks/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "TaskerooController_removeTagFromTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag removed from task successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "summary": "Remove a tag from a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/taskeroo/tasks/tags/all": {
+      "get": {
+        "operationId": "TaskerooController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TagResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all tags",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/taskeroo/tasks/tags/{name}/tasks": {
+      "get": {
+        "operationId": "TaskerooController_listTasksByTag",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tasks with the specified tag",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List tasks by tag name",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/taskeroo/tasks/mcp": {
       "get": {
         "operationId": "TaskerooController_handleMcp_get",
@@ -2083,6 +2233,47 @@
           "createdAt"
         ]
       },
+      "TagResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the tag",
+            "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the tag",
+            "example": "Issues that need to be fixed"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the tag was created",
+            "example": "2023-10-15T10:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the tag was last updated",
+            "example": "2023-10-15T10:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "TaskResponseDto": {
         "type": "object",
         "properties": {
@@ -2140,6 +2331,23 @@
               "$ref": "#/components/schemas/CommentResponseDto"
             }
           },
+          "tags": {
+            "description": "Tags associated with the task",
+            "example": [
+              {
+                "id": "tag-001",
+                "name": "bug",
+                "color": "#FF5733",
+                "description": "Issues that need to be fixed",
+                "createdAt": "2025-11-03T10:00:00.000Z",
+                "updatedAt": "2025-11-03T10:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagResponseDto"
+            }
+          },
           "createdAt": {
             "type": "string",
             "description": "Task creation timestamp",
@@ -2157,6 +2365,7 @@
           "description",
           "status",
           "comments",
+          "tags",
           "createdAt",
           "updatedAt"
         ]
@@ -2281,6 +2490,29 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "AddTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the tag",
+            "example": "Issues that need to be fixed"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "CreatePageDto": {

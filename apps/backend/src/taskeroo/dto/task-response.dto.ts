@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { ValidateNested } from 'class-validator';
 import { TaskStatus } from '../enums';
 import { CommentResponseDto } from './comment-response.dto';
+import { TagResponseDto } from './tag-response.dto';
 
 export class TaskResponseDto {
   @ApiProperty({
@@ -60,6 +61,24 @@ export class TaskResponseDto {
   @ValidateNested({ each: true })
   @Type(() => CommentResponseDto)
   comments!: CommentResponseDto[];
+
+  @ApiProperty({
+    description: 'Tags associated with the task',
+    type: () => [TagResponseDto],
+    example: [
+      {
+        id: 'tag-001',
+        name: 'bug',
+        color: '#FF5733',
+        description: 'Issues that need to be fixed',
+        createdAt: '2025-11-03T10:00:00.000Z',
+        updatedAt: '2025-11-03T10:00:00.000Z',
+      },
+    ],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => TagResponseDto)
+  tags!: TagResponseDto[];
 
   @ApiProperty({
     description: 'Task creation timestamp',

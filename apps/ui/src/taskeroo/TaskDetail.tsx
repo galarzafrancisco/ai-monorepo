@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Task, TaskStatus, Comment } from './types';
 import { TaskerooService } from './api';
+import { TagBadge } from './TagBadge';
+import { TagSelector } from './TagSelector';
 
 
 interface TaskDetailProps {
@@ -123,6 +125,31 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
     }
   };
 
+  const handleRemoveTag = async (tagId: string) => {
+    try {
+      await TaskerooService.taskerooControllerRemoveTagFromTask(task.id, tagId);
+      // Refresh task to get updated tags
+      const updated = await TaskerooService.taskerooControllerGetTask(task.id);
+      onUpdate(updated);
+      setErrorMessage('');
+    } catch (err: any) {
+      console.error('Failed to remove tag:', err);
+      const errorMessage = err?.body?.detail || err?.message || 'Failed to remove tag';
+      setErrorMessage(errorMessage);
+    }
+  };
+
+  const handleTagAdded = async () => {
+    try {
+      // Refresh task to get updated tags
+      const updated = await TaskerooService.taskerooControllerGetTask(task.id);
+      onUpdate(updated);
+      setErrorMessage('');
+    } catch (err: any) {
+      console.error('Failed to refresh task:', err);
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content task-detail" onClick={(e) => e.stopPropagation()}>
@@ -204,6 +231,26 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
               Update Assignment
             </button>
           </div>
+        </div>
+
+        <div className="detail-section">
+          <h3>Tags</h3>
+          <div style={{ marginBottom: '12px' }}>
+            {task.tags && task.tags.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {task.tags.map((tag) => (
+                  <TagBadge
+                    key={tag.id}
+                    tag={tag}
+                    onRemove={() => handleRemoveTag(tag.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: '#6B7280', fontSize: '0.875rem' }}>No tags yet</p>
+            )}
+          </div>
+          <TagSelector taskId={task.id} onTagAdded={handleTagAdded} />
         </div>
 
         <div className="detail-section">
