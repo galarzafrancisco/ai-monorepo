@@ -7,31 +7,25 @@ import {
   DeleteDateColumn,
   VersionColumn,
   ManyToMany,
-  JoinTable,
 } from 'typeorm';
-import { WikiTagEntity } from './tag.entity';
+import { WikiPageEntity } from './page.entity';
 
-@Entity({ name: 'wiki_pages' })
-export class WikiPageEntity {
+@Entity({ name: 'wiki_tags' })
+export class WikiTagEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'text', unique: true })
-  title!: string;
+  name!: string;
 
-  @Column('text')
-  content!: string;
+  @Column({ type: 'text', nullable: true })
+  color?: string;
 
-  @Column({ type: 'text' })
-  author!: string;
+  @Column({ type: 'text', nullable: true })
+  description?: string;
 
-  @ManyToMany(() => WikiTagEntity, (tag) => tag.pages)
-  @JoinTable({
-    name: 'wiki_page_tags',
-    joinColumn: { name: 'page_id' },
-    inverseJoinColumn: { name: 'tag_id' },
-  })
-  tags!: WikiTagEntity[];
+  @ManyToMany(() => WikiPageEntity, (page) => page.tags, { onDelete: 'CASCADE' })
+  pages!: WikiPageEntity[];
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

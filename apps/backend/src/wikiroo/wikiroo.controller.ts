@@ -29,7 +29,9 @@ import { PageSummaryDto } from './dto/page-summary.dto';
 import { PageParamsDto } from './dto/page-params.dto';
 import { UpdatePageDto } from './dto/update-page.dto';
 import { AppendPageDto } from './dto/append-page.dto';
-import { PageResult, PageSummaryResult } from './dto/service/wikiroo.service.types';
+import { AddTagDto } from './dto/add-tag.dto';
+import { TagResponseDto } from './dto/tag-response.dto';
+import { PageResult, PageSummaryResult, TagResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 
 @ApiTags('Wikiroo')
@@ -136,12 +138,68 @@ export class WikirooController {
     await this.wikirooService.deletePage(params.id);
   }
 
+  @Post(':id/tags')
+  @ApiOperation({ summary: 'Add a tag to a wiki page' })
+  @ApiCreatedResponse({
+    type: PageResponseDto,
+    description: 'Tag added to page successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async addTagToPage(
+    @Param() params: PageParamsDto,
+    @Body() dto: AddTagDto,
+  ): Promise<PageResponseDto> {
+    const result = await this.wikirooService.addTagToPage(params.id, {
+      name: dto.name,
+      color: dto.color,
+      description: dto.description,
+    });
+    return this.mapToResponse(result);
+  }
+
+  @Delete(':id/tags/:tagId')
+  @ApiOperation({ summary: 'Remove a tag from a wiki page' })
+  @ApiOkResponse({
+    type: PageResponseDto,
+    description: 'Tag removed from page successfully',
+  })
+  async removeTagFromPage(
+    @Param('id') pageId: string,
+    @Param('tagId') tagId: string,
+  ): Promise<PageResponseDto> {
+    const result = await this.wikirooService.removeTagFromPage(pageId, tagId);
+    return this.mapToResponse(result);
+  }
+
+  @Get('tags/all')
+  @ApiOperation({ summary: 'Get all tags' })
+  @ApiOkResponse({
+    type: [TagResponseDto],
+    description: 'List of all tags',
+  })
+  async getAllTags(): Promise<TagResponseDto[]> {
+    const result = await this.wikirooService.getAllTags();
+    return result.map((tag) => this.mapTagToResponse(tag));
+  }
+
+  @Get('tags/:name/pages')
+  @ApiOperation({ summary: 'List pages by tag name' })
+  @ApiOkResponse({
+    type: [PageResponseDto],
+    description: 'List of pages with the specified tag',
+  })
+  async listPagesByTag(@Param('name') tagName: string): Promise<PageResponseDto[]> {
+    const result = await this.wikirooService.listPagesByTag(tagName);
+    return result.map((page) => this.mapToResponse(page));
+  }
+
   private mapToResponse(result: PageResult): PageResponseDto {
     return {
       id: result.id,
       title: result.title,
       content: result.content,
       author: result.author,
+      tags: result.tags.map((tag) => this.mapTagToResponse(tag)),
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };
@@ -152,6 +210,18 @@ export class WikirooController {
       id: result.id,
       title: result.title,
       author: result.author,
+      tags: result.tags.map((tag) => this.mapTagToResponse(tag)),
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
+    };
+  }
+
+  private mapTagToResponse(result: TagResult): TagResponseDto {
+    return {
+      id: result.id,
+      name: result.name,
+      color: result.color,
+      description: result.description,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };
