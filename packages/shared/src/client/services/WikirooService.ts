@@ -83,6 +83,23 @@ export class WikirooService {
         });
     }
     /**
+     * Delete a wiki page
+     * @param id Wiki page identifier
+     * @returns void
+     * @throws ApiError
+     */
+    public static wikirooControllerDeletePage(
+        id: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/wikiroo/pages/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * Append content to an existing wiki page
      * @param id Wiki page identifier
      * @param requestBody
@@ -101,23 +118,6 @@ export class WikirooService {
             },
             body: requestBody,
             mediaType: 'application/json',
-        });
-    }
-    /**
-     * Delete a wiki page
-     * @param id Wiki page identifier
-     * @returns void Wiki page deleted successfully
-     * @throws ApiError
-     */
-    public static wikirooControllerDeletePage(
-        id: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/v1/wikiroo/pages/{id}',
-            path: {
-                'id': id,
-            },
         });
     }
     /**

@@ -7,6 +7,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { AppendPageDto } from './models/AppendPageDto';
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';
 export { ChangeTaskStatusDto } from './models/ChangeTaskStatusDto';
@@ -21,7 +22,6 @@ export type { CreatePageDto } from './models/CreatePageDto';
 export type { CreateScopeDto } from './models/CreateScopeDto';
 export type { CreateServerDto } from './models/CreateServerDto';
 export type { CreateTaskDto } from './models/CreateTaskDto';
-export type { AppendPageDto } from './models/AppendPageDto';
 export type { DeleteConnectionResponseDto } from './models/DeleteConnectionResponseDto';
 export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto';
 export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto';

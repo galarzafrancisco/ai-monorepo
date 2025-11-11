@@ -1898,6 +1898,15 @@
             }
           },
           {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Scopes that were granted",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "error_description",
             "required": false,
             "in": "query",
@@ -2299,39 +2308,6 @@
           "author"
         ]
       },
-      "AppendPageDto": {
-        "type": "object",
-        "properties": {
-          "content": {
-            "type": "string",
-            "description": "Markdown content to append to the existing page content",
-            "example": "\\n## Additional details"
-          }
-        },
-        "required": [
-          "content"
-        ]
-      },
-      "UpdatePageDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Updated title of the wiki page",
-            "example": "Updated onboarding guide"
-          },
-          "content": {
-            "type": "string",
-            "description": "Updated markdown content of the page",
-            "example": "## Updated content"
-          },
-          "author": {
-            "type": "string",
-            "description": "Updated author of the page",
-            "example": "Agent Roo"
-          }
-        }
-      },
       "PageResponseDto": {
         "type": "object",
         "properties": {
@@ -2425,6 +2401,39 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "UpdatePageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Updated title of the wiki page",
+            "example": "Updated onboarding guide"
+          },
+          "content": {
+            "type": "string",
+            "description": "Updated markdown content of the page",
+            "example": "## Updated content"
+          },
+          "author": {
+            "type": "string",
+            "description": "Updated author of the page",
+            "example": "Agent Roo"
+          }
+        }
+      },
+      "AppendPageDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Markdown content to append to the existing page content",
+            "example": "\n## Additional details"
+          }
+        },
+        "required": [
+          "content"
         ]
       },
       "CreateServerDto": {
