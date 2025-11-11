@@ -29,8 +29,8 @@ import { PageSummaryDto } from './dto/page-summary.dto';
 import { PageParamsDto } from './dto/page-params.dto';
 import { UpdatePageDto } from './dto/update-page.dto';
 import { AppendPageDto } from './dto/append-page.dto';
-import { AddTagDto } from './dto/add-tag.dto';
-import { TagResponseDto } from './dto/tag-response.dto';
+import { AddWikiTagDto } from './dto/add-wiki-tag.dto';
+import { WikiTagResponseDto } from './dto/wiki-tag-response.dto';
 import { PageResult, PageSummaryResult, TagResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 
@@ -147,7 +147,7 @@ export class WikirooController {
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async addTagToPage(
     @Param() params: PageParamsDto,
-    @Body() dto: AddTagDto,
+    @Body() dto: AddWikiTagDto,
   ): Promise<PageResponseDto> {
     const result = await this.wikirooService.addTagToPage(params.id, {
       name: dto.name,
@@ -174,10 +174,10 @@ export class WikirooController {
   @Get('tags/all')
   @ApiOperation({ summary: 'Get all tags' })
   @ApiOkResponse({
-    type: [TagResponseDto],
+    type: [WikiTagResponseDto],
     description: 'List of all tags',
   })
-  async getAllTags(): Promise<TagResponseDto[]> {
+  async getAllTags(): Promise<WikiTagResponseDto[]> {
     const result = await this.wikirooService.getAllTags();
     return result.map((tag) => this.mapTagToResponse(tag));
   }
@@ -216,7 +216,7 @@ export class WikirooController {
     };
   }
 
-  private mapTagToResponse(result: TagResult): TagResponseDto {
+  private mapTagToResponse(result: TagResult): WikiTagResponseDto {
     return {
       id: result.id,
       name: result.name,

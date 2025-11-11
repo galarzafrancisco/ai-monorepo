@@ -756,7 +756,7 @@ export interface components {
             id: string;
             /**
              * @description Name of the tag
-             * @example project-alpha
+             * @example bug
              */
             name: string;
             /**
@@ -766,7 +766,7 @@ export interface components {
             color?: string;
             /**
              * @description Description of the tag
-             * @example Notes related to project alpha
+             * @example Issues that need to be fixed
              */
             description?: string;
             /**
@@ -936,7 +936,7 @@ export interface components {
         AddTagDto: {
             /**
              * @description Name of the tag
-             * @example project-alpha
+             * @example bug
              */
             name: string;
             /**
@@ -946,7 +946,7 @@ export interface components {
             color?: string;
             /**
              * @description Description of the tag
-             * @example Notes related to project alpha
+             * @example Issues that need to be fixed
              */
             description?: string;
         };
@@ -967,6 +967,38 @@ export interface components {
              * @example Agent Roo
              */
             author: string;
+        };
+        WikiTagResponseDto: {
+            /**
+             * @description Unique identifier for the tag
+             * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
+             */
+            id: string;
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
+            /**
+             * @description Description of the tag
+             * @example Notes related to project alpha
+             */
+            description?: string;
+            /**
+             * @description Timestamp when the tag was created
+             * @example 2023-10-15T10:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the tag was last updated
+             * @example 2023-10-15T10:00:00.000Z
+             */
+            updatedAt: string;
         };
         PageResponseDto: {
             /**
@@ -1002,7 +1034,7 @@ export interface components {
              *       }
              *     ]
              */
-            tags: components["schemas"]["TagResponseDto"][];
+            tags: components["schemas"]["WikiTagResponseDto"][];
             /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
@@ -1043,7 +1075,7 @@ export interface components {
              *       }
              *     ]
              */
-            tags: components["schemas"]["TagResponseDto"][];
+            tags: components["schemas"]["WikiTagResponseDto"][];
             /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
@@ -1082,6 +1114,23 @@ export interface components {
              * @example ## Additional details
              */
             content: string;
+        };
+        AddWikiTagDto: {
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
+            /**
+             * @description Description of the tag
+             * @example Notes related to project alpha
+             */
+            description?: string;
         };
         CreateServerDto: {
             /**
@@ -2485,7 +2534,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AddTagDto"];
+                "application/json": components["schemas"]["AddWikiTagDto"];
             };
         };
         responses: {
@@ -2545,7 +2594,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TagResponseDto"][];
+                    "application/json": components["schemas"]["WikiTagResponseDto"][];
                 };
             };
         };

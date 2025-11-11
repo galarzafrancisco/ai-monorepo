@@ -2,13 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AddTagDto } from '../models/AddTagDto';
+import type { AddWikiTagDto } from '../models/AddWikiTagDto';
 import type { AppendPageDto } from '../models/AppendPageDto';
 import type { CreatePageDto } from '../models/CreatePageDto';
 import type { PageListResponseDto } from '../models/PageListResponseDto';
 import type { PageResponseDto } from '../models/PageResponseDto';
-import type { TagResponseDto } from '../models/TagResponseDto';
 import type { UpdatePageDto } from '../models/UpdatePageDto';
+import type { WikiTagResponseDto } from '../models/WikiTagResponseDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -131,7 +131,7 @@ export class WikirooService {
      */
     public static wikirooControllerAddTagToPage(
         id: string,
-        requestBody: AddTagDto,
+        requestBody: AddWikiTagDto,
     ): CancelablePromise<PageResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -168,10 +168,10 @@ export class WikirooService {
     }
     /**
      * Get all tags
-     * @returns TagResponseDto List of all tags
+     * @returns WikiTagResponseDto List of all tags
      * @throws ApiError
      */
-    public static wikirooControllerGetAllTags(): CancelablePromise<Array<TagResponseDto>> {
+    public static wikirooControllerGetAllTags(): CancelablePromise<Array<WikiTagResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/wikiroo/pages/tags/all',

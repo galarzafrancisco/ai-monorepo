@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
-export class AddTagDto {
+export class AddWikiTagDto {
   @ApiProperty({
     description: 'Name of the tag',
     example: 'project-alpha',

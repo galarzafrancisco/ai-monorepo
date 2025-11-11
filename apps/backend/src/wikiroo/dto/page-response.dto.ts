@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TagResponseDto } from './tag-response.dto';
+import { WikiTagResponseDto } from './wiki-tag-response.dto';
 
 export class PageResponseDto {
   @ApiProperty({
@@ -28,10 +28,10 @@ export class PageResponseDto {
 
   @ApiProperty({
     description: 'Tags associated with the page',
-    type: [TagResponseDto],
+    type: [WikiTagResponseDto],
     example: [{ id: '123', name: 'project-alpha', color: '#FF5733', description: 'Project Alpha notes', createdAt: '2025-01-01T12:00:00.000Z', updatedAt: '2025-01-01T12:00:00.000Z' }],
   })
-  tags!: TagResponseDto[];
+  tags!: WikiTagResponseDto[];
 
   @ApiProperty({
     description: 'Creation timestamp',
