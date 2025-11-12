@@ -83,7 +83,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="assignee">Assigned to (optional)</label>
+            <label htmlFor="assignee">Assigned to</label>
             <input
               id="assignee"
               type="text"
@@ -94,7 +94,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="sessionId">Session ID (optional)</label>
+            <label htmlFor="sessionId">Session ID</label>
             <input
               id="sessionId"
               type="text"
@@ -105,7 +105,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="tags">Tags (optional)</label>
+            <label htmlFor="tags">Tags</label>
             <TagInput
               value={tagNames}
               onChange={setTagNames}

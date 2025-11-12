@@ -16,13 +16,13 @@ export const TagBadge: React.FC<TagBadgeProps> = ({ tag, onRemove, small = false
       style={{
         backgroundColor,
         color: '#ffffff',
-        padding: small ? '2px 6px' : '4px 8px',
-        borderRadius: '4px',
-        fontSize: small ? '0.7rem' : '0.75rem',
+        padding: small ? '1px 4px' : '2px 6px',
+        borderRadius: '3px',
+        fontSize: small ? '0.65rem' : '0.7rem',
         fontWeight: '500',
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '4px',
+        gap: '2px',
         marginRight: '4px',
         marginBottom: '4px',
       }}
@@ -40,8 +40,8 @@ export const TagBadge: React.FC<TagBadgeProps> = ({ tag, onRemove, small = false
             color: 'white',
             cursor: 'pointer',
             padding: '0',
-            marginLeft: '2px',
-            fontSize: small ? '0.8rem' : '0.9rem',
+            marginLeft: '1px',
+            fontSize: small ? '0.75rem' : '0.85rem',
             lineHeight: '1',
           }}
           aria-label={`Remove ${tag.name} tag`}
