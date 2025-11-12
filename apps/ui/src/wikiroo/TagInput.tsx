@@ -25,9 +25,13 @@ export const TagInput: React.FC<TagInputProps> = ({
     const searchTags = async () => {
       if (inputValue.trim().length > 0) {
         try {
-          const results = await WikirooService.wikirooControllerSearchTags(inputValue.trim());
-          // Filter out already selected tags
-          const filtered = results.filter(tag => !value.includes(tag.name));
+          // Get all tags and filter locally
+          const allTags = await WikirooService.wikirooControllerGetAllTags();
+          const query = inputValue.trim().toLowerCase();
+          const filtered = allTags
+            .filter((tag: WikiTagResponseDto) =>
+              tag.name.toLowerCase().includes(query) && !value.includes(tag.name)
+            );
           setSuggestions(filtered);
           setShowSuggestions(true);
         } catch (error) {

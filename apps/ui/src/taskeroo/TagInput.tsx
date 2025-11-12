@@ -25,9 +25,13 @@ export const TagInput: React.FC<TagInputProps> = ({
     const searchTags = async () => {
       if (inputValue.trim().length > 0) {
         try {
-          const results = await TaskerooService.taskerooControllerSearchTags(inputValue.trim());
-          // Filter out already selected tags
-          const filtered = results.filter(tag => !value.includes(tag.name));
+          // Get all tags and filter locally
+          const allTags = await TaskerooService.taskerooControllerGetAllTags();
+          const query = inputValue.trim().toLowerCase();
+          const filtered = allTags
+            .filter((tag: TagResponseDto) =>
+              tag.name.toLowerCase().includes(query) && !value.includes(tag.name)
+            );
           setSuggestions(filtered);
           setShowSuggestions(true);
         } catch (error) {

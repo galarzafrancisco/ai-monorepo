@@ -130,7 +130,7 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
     try {
       const updated = await TaskerooService.taskerooControllerUpdateTask(task.id, {
         tagNames: newTagNames,
-      });
+      } as any);
       onUpdate(updated);
       setErrorMessage('');
     } catch (err: any) {

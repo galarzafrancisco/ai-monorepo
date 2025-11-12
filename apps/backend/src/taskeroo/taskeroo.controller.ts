@@ -204,7 +204,6 @@ export class TaskerooController {
     const result = await this.taskerooService.addTagToTask(params.id, {
       name: dto.name,
       color: dto.color,
-      description: dto.description,
     });
     return this.mapResultToResponse(result);
   }

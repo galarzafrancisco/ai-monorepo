@@ -157,7 +157,6 @@ export class WikirooController {
     const result = await this.wikirooService.addTagToPage(params.id, {
       name: dto.name,
       color: dto.color,
-      description: dto.description,
     });
     return this.mapToResponse(result);
   }
