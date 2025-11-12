@@ -178,6 +178,40 @@ export class WikirooService {
         });
     }
     /**
+     * Search tags by name
+     * @param q
+     * @returns WikiTagResponseDto List of tags matching the search query
+     * @throws ApiError
+     */
+    public static wikirooControllerSearchTags(
+        q: string,
+    ): CancelablePromise<Array<WikiTagResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/wikiroo/pages/tags/search',
+            query: {
+                'q': q,
+            },
+        });
+    }
+    /**
+     * Delete a tag from the system
+     * @param tagId
+     * @returns void
+     * @throws ApiError
+     */
+    public static wikirooControllerDeleteTag(
+        tagId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/wikiroo/pages/tags/{tagId}',
+            path: {
+                'tagId': tagId,
+            },
+        });
+    }
+    /**
      * List pages by tag name
      * @param name
      * @returns PageResponseDto List of pages with the specified tag

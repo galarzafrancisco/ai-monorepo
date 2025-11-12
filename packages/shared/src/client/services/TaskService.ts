@@ -261,6 +261,43 @@ export class TaskService {
         });
     }
     /**
+     * Search tags by name
+     * @param q
+     * @returns TagResponseDto List of tags matching the search query
+     * @throws ApiError
+     */
+    public static taskerooControllerSearchTags(
+        q: string,
+    ): CancelablePromise<Array<TagResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/taskeroo/tasks/tags/search',
+            query: {
+                'q': q,
+            },
+        });
+    }
+    /**
+     * Delete a tag from the system
+     * @param tagId
+     * @returns void
+     * @throws ApiError
+     */
+    public static taskerooControllerDeleteTag(
+        tagId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/taskeroo/tasks/tags/{tagId}',
+            path: {
+                'tagId': tagId,
+            },
+            errors: {
+                404: `Tag not found`,
+            },
+        });
+    }
+    /**
      * List tasks by tag name
      * @param name
      * @returns TaskResponseDto List of tasks with the specified tag

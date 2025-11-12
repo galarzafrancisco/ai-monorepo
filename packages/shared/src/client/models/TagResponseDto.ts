@@ -16,10 +16,6 @@ export type TagResponseDto = {
      */
     color?: string;
     /**
-     * Description of the tag
-     */
-    description?: string;
-    /**
      * Timestamp when the tag was created
      */
     createdAt: string;

@@ -11,9 +11,5 @@ export type AddWikiTagDto = {
      * Color for the tag (hex format)
      */
     color?: string;
-    /**
-     * Description of the tag
-     */
-    description?: string;
 };
 
