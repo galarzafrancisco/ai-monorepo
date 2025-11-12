@@ -15,14 +15,11 @@ export class WikiTagEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text', unique: true, collation: 'NOCASE' })
   name!: string;
 
   @Column({ type: 'text', nullable: true })
   color?: string;
-
-  @Column({ type: 'text', nullable: true })
-  description?: string;
 
   @ManyToMany(() => WikiPageEntity, (page) => page.tags, { onDelete: 'CASCADE' })
   pages!: WikiPageEntity[];

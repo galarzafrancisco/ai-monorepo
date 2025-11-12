@@ -6,9 +6,11 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -54,6 +56,7 @@ export class WikirooController {
       title: dto.title,
       content: dto.content,
       author: dto.author,
+      tagNames: dto.tagNames,
     });
 
     return this.mapToResponse(result);
@@ -99,7 +102,8 @@ export class WikirooController {
     if (
       dto.title === undefined &&
       dto.content === undefined &&
-      dto.author === undefined
+      dto.author === undefined &&
+      dto.tagNames === undefined
     ) {
       throw new BadRequestException('At least one field must be provided');
     }
@@ -108,6 +112,7 @@ export class WikirooController {
       title: dto.title,
       content: dto.content,
       author: dto.author,
+      tagNames: dto.tagNames,
     });
 
     return this.mapToResponse(result);
@@ -182,6 +187,25 @@ export class WikirooController {
     return result.map((tag) => this.mapTagToResponse(tag));
   }
 
+  @Get('tags/search')
+  @ApiOperation({ summary: 'Search tags by name' })
+  @ApiOkResponse({
+    type: [WikiTagResponseDto],
+    description: 'List of tags matching the search query',
+  })
+  async searchTags(@Query('q') query: string): Promise<WikiTagResponseDto[]> {
+    const result = await this.wikirooService.searchTags(query || '');
+    return result.map((tag) => this.mapTagToResponse(tag));
+  }
+
+  @Delete('tags/:tagId')
+  @ApiOperation({ summary: 'Delete a tag from the system' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Tag deleted successfully' })
+  async deleteTag(@Param('tagId') tagId: string): Promise<void> {
+    await this.wikirooService.deleteTag(tagId);
+  }
+
   @Get('tags/:name/pages')
   @ApiOperation({ summary: 'List pages by tag name' })
   @ApiOkResponse({
@@ -221,7 +245,6 @@ export class WikirooController {
       id: result.id,
       name: result.name,
       color: result.color,
-      description: result.description,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };

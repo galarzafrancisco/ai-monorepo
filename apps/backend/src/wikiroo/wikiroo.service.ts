@@ -41,12 +41,25 @@ export class WikirooService {
 
     const saved = await this.pageRepository.save(page);
 
+    // Handle tags if provided
+    if (input.tagNames && input.tagNames.length > 0) {
+      const tags = await this.findOrCreateTags(input.tagNames);
+      saved.tags = tags;
+      await this.pageRepository.save(saved);
+    }
+
+    // Reload with relations
+    const pageWithTags = await this.pageRepository.findOne({
+      where: { id: saved.id },
+      relations: ['tags'],
+    });
+
     this.logger.log({
       message: 'Wiki page created',
       pageId: saved.id,
     });
 
-    return this.mapToResult(saved);
+    return this.mapToResult(pageWithTags!);
   }
 
   async listPages(): Promise<PageSummaryResult[]> {
@@ -100,11 +113,26 @@ export class WikirooService {
       page.author = input.author;
     }
 
+    // Handle tags if provided
+    if (input.tagNames !== undefined) {
+      if (input.tagNames.length === 0) {
+        page.tags = [];
+      } else {
+        page.tags = await this.findOrCreateTags(input.tagNames);
+      }
+    }
+
     const saved = await this.pageRepository.save(page);
+
+    // Reload with relations
+    const pageWithTags = await this.pageRepository.findOne({
+      where: { id: pageId },
+      relations: ['tags'],
+    });
 
     this.logger.log({ message: 'Wiki page updated', pageId: saved.id });
 
-    return this.mapToResult(saved);
+    return this.mapToResult(pageWithTags!);
   }
 
   async appendToPage(
@@ -155,14 +183,13 @@ export class WikirooService {
       throw new PageNotFoundError(pageId);
     }
 
-    // Find or create the tag
+    // Find or create the tag (case-insensitive)
     let tag = await this.tagRepository.findOne({ where: { name: input.name } });
 
     if (!tag) {
       tag = this.tagRepository.create({
         name: input.name,
         color: input.color,
-        description: input.description,
       });
       tag = await this.tagRepository.save(tag);
     }
@@ -229,6 +256,48 @@ export class WikirooService {
     return tag.pages.map((page) => this.mapToResult(page));
   }
 
+  async searchTags(query: string): Promise<TagResult[]> {
+    this.logger.log({
+      message: 'Searching tags',
+      query,
+    });
+
+    const tags = await this.tagRepository
+      .createQueryBuilder('tag')
+      .where('LOWER(tag.name) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orderBy('tag.name', 'ASC')
+      .getMany();
+
+    this.logger.log({
+      message: 'Tags search completed',
+      query,
+      count: tags.length,
+    });
+
+    return tags.map((tag) => this.mapTagToResult(tag));
+  }
+
+  async deleteTag(tagId: string): Promise<void> {
+    this.logger.log({
+      message: 'Deleting tag',
+      tagId,
+    });
+
+    const result = await this.tagRepository.softDelete(tagId);
+
+    if (result.affected === 0) {
+      this.logger.warn({
+        message: 'Tag not found for deletion',
+        tagId,
+      });
+    } else {
+      this.logger.log({
+        message: 'Tag deleted',
+        tagId,
+      });
+    }
+  }
+
   private mapToResult(page: WikiPageEntity): PageResult {
     return {
       id: page.id,
@@ -257,9 +326,42 @@ export class WikirooService {
       id: tag.id,
       name: tag.name,
       color: tag.color,
-      description: tag.description,
       createdAt: tag.createdAt,
       updatedAt: tag.updatedAt,
     };
+  }
+
+  /**
+   * Helper method to find or create tags by name (case-insensitive)
+   */
+  private async findOrCreateTags(tagNames: string[]): Promise<WikiTagEntity[]> {
+    const tags: WikiTagEntity[] = [];
+
+    for (const tagName of tagNames) {
+      const normalizedName = tagName.trim();
+      if (!normalizedName) continue;
+
+      // Try to find existing tag (case-insensitive due to NOCASE collation)
+      let tag = await this.tagRepository.findOne({
+        where: { name: normalizedName }
+      });
+
+      if (!tag) {
+        // Create new tag with normalized name
+        tag = this.tagRepository.create({
+          name: normalizedName,
+        });
+        tag = await this.tagRepository.save(tag);
+        this.logger.log({
+          message: 'Tag created',
+          tagId: tag.id,
+          tagName: tag.name,
+        });
+      }
+
+      tags.push(tag);
+    }
+
+    return tags;
   }
 }

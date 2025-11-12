@@ -17,12 +17,4 @@ export class AddWikiTagDto {
   @IsString()
   @IsOptional()
   color?: string;
-
-  @ApiPropertyOptional({
-    description: 'Description of the tag',
-    example: 'Notes related to project alpha',
-  })
-  @IsString()
-  @IsOptional()
-  description?: string;
 }

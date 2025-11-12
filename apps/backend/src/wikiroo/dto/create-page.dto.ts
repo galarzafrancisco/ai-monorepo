@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, MaxLength, IsArray, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePageDto {
   @ApiProperty({
@@ -27,4 +27,14 @@ export class CreatePageDto {
   @IsNotEmpty()
   @MaxLength(120)
   author!: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of tag names to associate with the page',
+    example: ['documentation', 'onboarding'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tagNames?: string[];
 }
