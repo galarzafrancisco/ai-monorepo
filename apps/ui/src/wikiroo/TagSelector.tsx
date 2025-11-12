@@ -51,7 +51,6 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ pageId, onTagAdded }) 
       await WikirooService.wikirooControllerAddTagToPage(pageId, {
         name: newTagName.trim(),
         color: newTagColor,
-        description: newTagDescription.trim() || undefined,
       });
       setNewTagName('');
       setNewTagColor('#3B82F6');
