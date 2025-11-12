@@ -11,6 +11,7 @@ export type CreateTaskInput = {
   description: string;
   assignee?: string;
   sessionId?: string;
+  tagNames?: string[];
 };
 
 export type UpdateTaskInput = Partial<CreateTaskInput>;
@@ -41,13 +42,11 @@ export type ListTasksInput = {
 export type AddTagInput = {
   name: string;
   color?: string;
-  description?: string;
 };
 
 export type CreateTagInput = {
   name: string;
   color?: string;
-  description?: string;
 };
 
 // Result types (from service methods)
@@ -55,7 +54,6 @@ export type TagResult = {
   id: string;
   name: string;
   color?: string;
-  description?: string;
   createdAt: Date;
   updatedAt: Date;
 };

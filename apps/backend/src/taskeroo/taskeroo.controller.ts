@@ -60,6 +60,7 @@ export class TaskerooController {
       description: dto.description,
       assignee: dto.assignee,
       sessionId: dto.sessionId,
+      tagNames: dto.tagNames,
     });
     return this.mapResultToResponse(result);
   }
@@ -81,6 +82,7 @@ export class TaskerooController {
       description: dto.description,
       assignee: dto.assignee,
       sessionId: dto.sessionId,
+      tagNames: dto.tagNames,
     });
     return this.mapResultToResponse(result);
   }
@@ -202,7 +204,6 @@ export class TaskerooController {
     const result = await this.taskerooService.addTagToTask(params.id, {
       name: dto.name,
       color: dto.color,
-      description: dto.description,
     });
     return this.mapResultToResponse(result);
   }
@@ -231,6 +232,26 @@ export class TaskerooController {
   async getAllTags(): Promise<TagResponseDto[]> {
     const result = await this.taskerooService.getAllTags();
     return result.map((tag) => this.mapTagResultToResponse(tag));
+  }
+
+  @Get('tags/search')
+  @ApiOperation({ summary: 'Search tags by name' })
+  @ApiOkResponse({
+    type: [TagResponseDto],
+    description: 'List of tags matching the search query',
+  })
+  async searchTags(@Query('q') query: string): Promise<TagResponseDto[]> {
+    const result = await this.taskerooService.searchTags(query || '');
+    return result.map((tag) => this.mapTagResultToResponse(tag));
+  }
+
+  @Delete('tags/:tagId')
+  @ApiOperation({ summary: 'Delete a tag from the system' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Tag deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Tag not found' })
+  async deleteTag(@Param('tagId') tagId: string): Promise<void> {
+    await this.taskerooService.deleteTag(tagId);
   }
 
   @Get('tags/:name/tasks')
@@ -281,7 +302,6 @@ export class TaskerooController {
       id: result.id,
       name: result.name,
       color: result.color,
-      description: result.description,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };

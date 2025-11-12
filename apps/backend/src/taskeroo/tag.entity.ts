@@ -15,14 +15,11 @@ export class TagEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text', unique: true, collation: 'NOCASE' })
   name!: string;
 
   @Column({ type: 'text', nullable: true })
   color?: string;
-
-  @Column({ type: 'text', nullable: true })
-  description?: string;
 
   @ManyToMany(() => TaskEntity, (task) => task.tags, { onDelete: 'CASCADE' })
   tasks!: TaskEntity[];

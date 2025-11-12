@@ -340,14 +340,12 @@ export class TaskerooMcpGateway {
           taskId: z.string(),
           tagName: z.string(),
           color: z.string().optional(),
-          description: z.string().optional(),
         },
       },
-      async ({ taskId, tagName, color, description }) => {
+      async ({ taskId, tagName, color }) => {
         await this.taskerooService.addTagToTask(taskId, {
           name: tagName,
           color,
-          description,
         });
 
         return {

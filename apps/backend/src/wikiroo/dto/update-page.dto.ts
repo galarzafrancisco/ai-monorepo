@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, IsArray } from 'class-validator';
 
 export class UpdatePageDto {
   @ApiPropertyOptional({
@@ -27,4 +27,14 @@ export class UpdatePageDto {
   @IsString()
   @MaxLength(120)
   author?: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of tag names to associate with the page',
+    example: ['documentation', 'onboarding'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tagNames?: string[];
 }

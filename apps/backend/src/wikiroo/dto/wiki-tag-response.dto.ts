@@ -19,12 +19,6 @@ export class WikiTagResponseDto {
   })
   color?: string;
 
-  @ApiPropertyOptional({
-    description: 'Description of the tag',
-    example: 'Notes related to project alpha',
-  })
-  description?: string;
-
   @ApiProperty({
     description: 'Timestamp when the tag was created',
     example: '2023-10-15T10:00:00.000Z',

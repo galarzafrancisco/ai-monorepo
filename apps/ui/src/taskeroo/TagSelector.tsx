@@ -51,7 +51,6 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ taskId, onTagAdded }) 
       await TaskerooService.taskerooControllerAddTagToTask(taskId, {
         name: newTagName.trim(),
         color: newTagColor,
-        description: newTagDescription.trim() || undefined,
       });
       setNewTagName('');
       setNewTagColor('#3B82F6');
@@ -89,7 +88,6 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ taskId, onTagAdded }) 
                   cursor: 'pointer',
                   opacity: isSubmitting ? 0.6 : 1,
                 }}
-                title={tag.description}
               >
                 {tag.name}
               </button>

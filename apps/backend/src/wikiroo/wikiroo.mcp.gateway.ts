@@ -161,14 +161,12 @@ export class WikirooMcpGateway {
           pageId: z.string(),
           tagName: z.string(),
           color: z.string().optional(),
-          description: z.string().optional(),
         },
       },
-      async ({ pageId, tagName, color, description }) => {
+      async ({ pageId, tagName, color }) => {
         await this.wikirooService.addTagToPage(pageId, {
           name: tagName,
           color,
-          description,
         });
 
         return {

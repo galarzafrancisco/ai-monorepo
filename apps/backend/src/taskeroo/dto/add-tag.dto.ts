@@ -17,12 +17,4 @@ export class AddTagDto {
   @IsString()
   @IsOptional()
   color?: string;
-
-  @ApiPropertyOptional({
-    description: 'Description of the tag',
-    example: 'Issues that need to be fixed',
-  })
-  @IsString()
-  @IsOptional()
-  description?: string;
 }

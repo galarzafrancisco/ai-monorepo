@@ -26,7 +26,6 @@ export const TagBadge: React.FC<TagBadgeProps> = ({ tag, onRemove, small = false
         marginRight: '4px',
         marginBottom: '4px',
       }}
-      title={tag.description}
     >
       {tag.name}
       {onRemove && (
