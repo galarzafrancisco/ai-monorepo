@@ -433,6 +433,9 @@ export class TaskerooService {
       tagId,
     });
 
+    // Check if tag is now orphaned and clean it up
+    await this.cleanupOrphanedTag(tagId);
+
     return this.mapTaskToResult(task);
   }
 
@@ -513,6 +516,47 @@ export class TaskerooService {
       this.logger.log({
         message: 'Tag deleted',
         tagId,
+      });
+    }
+  }
+
+  private async cleanupOrphanedTag(tagId: string): Promise<void> {
+    this.logger.log({
+      message: 'Checking if tag is orphaned',
+      tagId,
+    });
+
+    const tagWithTasks = await this.tagRepository.findOne({
+      where: { id: tagId },
+      relations: ['tasks'],
+    });
+
+    if (!tagWithTasks) {
+      this.logger.warn({
+        message: 'Tag not found for cleanup check',
+        tagId,
+      });
+      return;
+    }
+
+    if (tagWithTasks.tasks.length === 0) {
+      this.logger.log({
+        message: 'Tag is orphaned, cleaning up',
+        tagId,
+        tagName: tagWithTasks.name,
+      });
+
+      await this.tagRepository.softDelete(tagId);
+
+      this.logger.log({
+        message: 'Orphaned tag cleaned up',
+        tagId,
+      });
+    } else {
+      this.logger.log({
+        message: 'Tag still has tasks, keeping it',
+        tagId,
+        taskCount: tagWithTasks.tasks.length,
       });
     }
   }
