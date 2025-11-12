@@ -160,6 +160,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/taskeroo/tasks/tags/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search tags by name */
+        get: operations["TaskerooController_searchTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taskeroo/tasks/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a tag from the system */
+        delete: operations["TaskerooController_deleteTag"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/taskeroo/tasks/tags/{name}/tasks": {
         parameters: {
             query?: never;
@@ -293,6 +327,40 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search tags by name */
+        get: operations["WikirooController_searchTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a tag from the system */
+        delete: operations["WikirooController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -720,6 +788,14 @@ export interface components {
              * @example session-123-abc
              */
             sessionId?: string;
+            /**
+             * @description Array of tag names to associate with the task
+             * @example [
+             *       "bug",
+             *       "urgent"
+             *     ]
+             */
+            tagNames?: string[];
         };
         CommentResponseDto: {
             /**
@@ -764,11 +840,6 @@ export interface components {
              * @example #FF5733
              */
             color?: string;
-            /**
-             * @description Description of the tag
-             * @example Issues that need to be fixed
-             */
-            description?: string;
             /**
              * @description Timestamp when the tag was created
              * @example 2023-10-15T10:00:00.000Z
@@ -871,6 +942,14 @@ export interface components {
              * @example session-123-abc
              */
             sessionId?: string;
+            /**
+             * @description Array of tag names to associate with the task
+             * @example [
+             *       "bug",
+             *       "urgent"
+             *     ]
+             */
+            tagNames?: string[];
         };
         AssignTaskDto: {
             /**
@@ -944,11 +1023,6 @@ export interface components {
              * @example #FF5733
              */
             color?: string;
-            /**
-             * @description Description of the tag
-             * @example Issues that need to be fixed
-             */
-            description?: string;
         };
         CreatePageDto: {
             /**
@@ -967,6 +1041,14 @@ export interface components {
              * @example Agent Roo
              */
             author: string;
+            /**
+             * @description Array of tag names to associate with the page
+             * @example [
+             *       "documentation",
+             *       "onboarding"
+             *     ]
+             */
+            tagNames?: string[];
         };
         WikiTagResponseDto: {
             /**
@@ -984,11 +1066,6 @@ export interface components {
              * @example #FF5733
              */
             color?: string;
-            /**
-             * @description Description of the tag
-             * @example Notes related to project alpha
-             */
-            description?: string;
             /**
              * @description Timestamp when the tag was created
              * @example 2023-10-15T10:00:00.000Z
@@ -1107,6 +1184,14 @@ export interface components {
              * @example Agent Roo
              */
             author?: string;
+            /**
+             * @description Array of tag names to associate with the page
+             * @example [
+             *       "documentation",
+             *       "onboarding"
+             *     ]
+             */
+            tagNames?: string[];
         };
         AppendPageDto: {
             /**
@@ -1126,11 +1211,6 @@ export interface components {
              * @example #FF5733
              */
             color?: string;
-            /**
-             * @description Description of the tag
-             * @example Notes related to project alpha
-             */
-            description?: string;
         };
         CreateServerDto: {
             /**
@@ -2225,6 +2305,55 @@ export interface operations {
             };
         };
     };
+    TaskerooController_searchTags: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of tags matching the search query */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponseDto"][];
+                };
+            };
+        };
+    };
+    TaskerooController_deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     TaskerooController_listTasksByTag: {
         parameters: {
             query?: never;
@@ -2596,6 +2725,48 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["WikiTagResponseDto"][];
                 };
+            };
+        };
+    };
+    WikirooController_searchTags: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of tags matching the search query */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiTagResponseDto"][];
+                };
+            };
+        };
+    };
+    WikirooController_deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

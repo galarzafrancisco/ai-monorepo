@@ -19,5 +19,9 @@ export type CreateTaskDto = {
      * Session ID for tracking AI agent work
      */
     sessionId?: string;
+    /**
+     * Array of tag names to associate with the task
+     */
+    tagNames?: Array<string>;
 };
 

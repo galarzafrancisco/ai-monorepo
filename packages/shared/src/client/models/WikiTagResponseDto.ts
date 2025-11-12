@@ -16,10 +16,6 @@ export type WikiTagResponseDto = {
      */
     color?: string;
     /**
-     * Description of the tag
-     */
-    description?: string;
-    /**
      * Timestamp when the tag was created
      */
     createdAt: string;
