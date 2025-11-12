@@ -228,6 +228,9 @@ export class WikirooService {
 
     this.logger.log({ message: 'Tag removed from page', pageId, tagId });
 
+    // Check if tag is now orphaned and clean it up
+    await this.cleanupOrphanedTag(tagId);
+
     return this.mapToResult(page);
   }
 
@@ -294,6 +297,47 @@ export class WikirooService {
       this.logger.log({
         message: 'Tag deleted',
         tagId,
+      });
+    }
+  }
+
+  private async cleanupOrphanedTag(tagId: string): Promise<void> {
+    this.logger.log({
+      message: 'Checking if tag is orphaned',
+      tagId,
+    });
+
+    const tagWithPages = await this.tagRepository.findOne({
+      where: { id: tagId },
+      relations: ['pages'],
+    });
+
+    if (!tagWithPages) {
+      this.logger.warn({
+        message: 'Tag not found for cleanup check',
+        tagId,
+      });
+      return;
+    }
+
+    if (tagWithPages.pages.length === 0) {
+      this.logger.log({
+        message: 'Tag is orphaned, cleaning up',
+        tagId,
+        tagName: tagWithPages.name,
+      });
+
+      await this.tagRepository.softDelete(tagId);
+
+      this.logger.log({
+        message: 'Orphaned tag cleaned up',
+        tagId,
+      });
+    } else {
+      this.logger.log({
+        message: 'Tag still has pages, keeping it',
+        tagId,
+        pageCount: tagWithPages.pages.length,
       });
     }
   }
