@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Task, TaskStatus, Comment } from './types';
 import { TaskerooService } from './api';
-import { TagBadge } from './TagBadge';
-import { TagSelector } from './TagSelector';
+import { TagInput } from './TagInput';
 
 
 interface TaskDetailProps {
@@ -15,6 +14,7 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   const [description, setDescription] = useState(task.description);
   const [assignee, setAssignee] = useState(task.assignee || '');
   const [sessionId, setSessionId] = useState(task.sessionId || '');
+  const [tagNames, setTagNames] = useState<string[]>(task.tags?.map(t => t.name) || []);
   const [comment, setComment] = useState('');
   const [commenterName, setCommenterName] = useState('');
   const [statusComment, setStatusComment] = useState('');
@@ -125,28 +125,20 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
     }
   };
 
-  const handleRemoveTag = async (tagId: string) => {
+  const handleUpdateTags = async (newTagNames: string[]) => {
+    setTagNames(newTagNames);
     try {
-      await TaskerooService.taskerooControllerRemoveTagFromTask(task.id, tagId);
-      // Refresh task to get updated tags
-      const updated = await TaskerooService.taskerooControllerGetTask(task.id);
+      const updated = await TaskerooService.taskerooControllerUpdateTask(task.id, {
+        tagNames: newTagNames,
+      });
       onUpdate(updated);
       setErrorMessage('');
     } catch (err: any) {
-      console.error('Failed to remove tag:', err);
-      const errorMessage = err?.body?.detail || err?.message || 'Failed to remove tag';
+      console.error('Failed to update tags:', err);
+      const errorMessage = err?.body?.detail || err?.message || 'Failed to update tags';
       setErrorMessage(errorMessage);
-    }
-  };
-
-  const handleTagAdded = async () => {
-    try {
-      // Refresh task to get updated tags
-      const updated = await TaskerooService.taskerooControllerGetTask(task.id);
-      onUpdate(updated);
-      setErrorMessage('');
-    } catch (err: any) {
-      console.error('Failed to refresh task:', err);
+      // Revert on error
+      setTagNames(task.tags?.map(t => t.name) || []);
     }
   };
 
@@ -235,22 +227,11 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
 
         <div className="detail-section">
           <h3>Tags</h3>
-          <div style={{ marginBottom: '12px' }}>
-            {task.tags && task.tags.length > 0 ? (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {task.tags.map((tag) => (
-                  <TagBadge
-                    key={tag.id}
-                    tag={tag}
-                    onRemove={() => handleRemoveTag(tag.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p style={{ color: '#6B7280', fontSize: '0.875rem' }}>No tags yet</p>
-            )}
-          </div>
-          <TagSelector taskId={task.id} onTagAdded={handleTagAdded} />
+          <TagInput
+            value={tagNames}
+            onChange={handleUpdateTags}
+            placeholder="Type to add tags..."
+          />
         </div>
 
         <div className="detail-section">
