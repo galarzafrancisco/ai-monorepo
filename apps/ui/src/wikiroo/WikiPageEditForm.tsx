@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { WikiPage } from './types';
 import type { UpdatePageDto } from 'shared';
+import { TagInput } from './TagInput';
 
 interface WikiPageEditFormProps {
   page: WikiPage;
@@ -24,6 +25,7 @@ export function WikiPageEditForm({
   const [title, setTitle] = useState(page.title);
   const [content, setContent] = useState(page.content);
   const [author, setAuthor] = useState(page.author);
+  const [tagNames, setTagNames] = useState<string[]>(page.tags?.map(t => t.name) || []);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -56,6 +58,13 @@ export function WikiPageEditForm({
     }
     if (author !== page.author) {
       payload.author = author;
+      hasChanges = true;
+    }
+
+    const currentTagNames = page.tags?.map(t => t.name) || [];
+    const tagsChanged = JSON.stringify(tagNames.sort()) !== JSON.stringify(currentTagNames.sort());
+    if (tagsChanged) {
+      payload.tagNames = tagNames;
       hasChanges = true;
     }
 
@@ -101,110 +110,110 @@ export function WikiPageEditForm({
         </div>
 
         {errorMessage && (
-          <div className="error-message">
-            <strong>Error:</strong> {errorMessage}
+          <div className="wikiroo-error" style={{ margin: '16px 0' }}>
+            {errorMessage}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="detail-section">
-            <label htmlFor="title">
-              <strong>Title</strong>
-            </label>
+        <form onSubmit={handleSubmit} className="wikiroo-form">
+          <div className="wikiroo-form-group">
+            <label htmlFor="edit-title">Title *</label>
             <input
-              id="title"
+              id="edit-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter page title..."
+              placeholder="Give your page a headline"
               required
               disabled={isUpdating || isDeleting}
             />
           </div>
 
-          <div className="detail-section">
-            <label htmlFor="author">
-              <strong>Author</strong>
-            </label>
+          <div className="wikiroo-form-group">
+            <label htmlFor="edit-author">Author *</label>
             <input
-              id="author"
+              id="edit-author"
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Enter author name..."
+              placeholder="Who wrote this?"
               required
               disabled={isUpdating || isDeleting}
             />
           </div>
 
-          <div className="detail-section">
-            <label htmlFor="content">
-              <strong>Content (Markdown)</strong>
-            </label>
+          <div className="wikiroo-form-group">
+            <label htmlFor="edit-content">Content *</label>
             <textarea
-              id="content"
+              id="edit-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Enter page content in markdown format..."
-              className="content-textarea"
+              placeholder="Write in markdown or plain text"
               rows={15}
               required
               disabled={isUpdating || isDeleting}
             />
           </div>
 
-          <div className="detail-section">
-            <div className="form-actions">
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={isUpdating || isDeleting}
-              >
-                {isUpdating ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-secondary"
-                disabled={isUpdating || isDeleting}
-              >
-                Cancel
-              </button>
-            </div>
+          <div className="wikiroo-form-group">
+            <label htmlFor="edit-tags">Tags</label>
+            <TagInput
+              value={tagNames}
+              onChange={setTagNames}
+              placeholder="Type to add tags..."
+            />
           </div>
 
-          <div className="detail-section">
-            <div className="task-actions">
-              {showDeleteConfirm ? (
-                <div className="delete-confirm">
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="btn-danger"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? 'Deleting...' : 'Confirm Delete'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="btn-secondary"
-                    disabled={isDeleting}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
+          <div className="wikiroo-form-actions">
+            <button
+              type="submit"
+              className="wikiroo-button primary"
+              disabled={isUpdating || isDeleting}
+            >
+              {isUpdating ? 'Saving…' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="wikiroo-button secondary"
+              disabled={isUpdating || isDeleting}
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #ddd' }}>
+            {showDeleteConfirm ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
                   type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="btn-danger"
-                  disabled={isUpdating || isDeleting}
+                  onClick={handleDelete}
+                  className="wikiroo-button"
+                  style={{ backgroundColor: '#dc2626', color: 'white' }}
+                  disabled={isDeleting}
                 >
-                  Delete Page
+                  {isDeleting ? 'Deleting…' : 'Confirm Delete'}
                 </button>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="wikiroo-button secondary"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="wikiroo-button"
+                style={{ backgroundColor: '#dc2626', color: 'white' }}
+                disabled={isUpdating || isDeleting}
+              >
+                Delete Page
+              </button>
+            )}
           </div>
         </form>
       </div>
