@@ -7,6 +7,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
 import { TagBadge } from './TagBadge';
+import { TagInput } from './TagInput';
 
 function formatDate(value: string) {
   try {
@@ -32,6 +33,7 @@ export function WikirooHomePage() {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
+  const [tagNames, setTagNames] = useState<string[]>([]);
 
   usePageTitle('Wikiroo');
 
@@ -46,10 +48,12 @@ export function WikirooHomePage() {
         title: title.trim(),
         author: author.trim(),
         content: content.trim(),
+        ...(tagNames.length > 0 && { tagNames }),
       });
       setTitle('');
       setAuthor('');
       setContent('');
+      setTagNames([]);
       setShowForm(false);
       navigate(`/wikiroo/${created.id}`);
     } catch (err: any) {
@@ -116,6 +120,14 @@ export function WikirooHomePage() {
               placeholder="Write in markdown or plain text"
               rows={6}
               required
+            />
+          </div>
+          <div className="wikiroo-form-group">
+            <label htmlFor="wikiroo-tags">Tags</label>
+            <TagInput
+              value={tagNames}
+              onChange={setTagNames}
+              placeholder="Type to add tags..."
             />
           </div>
           <div className="wikiroo-form-actions">
