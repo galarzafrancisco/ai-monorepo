@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SignJWT, importPKCS8, jwtVerify, createRemoteJWKSet, errors } from 'jose';
 import { createHash, randomBytes } from 'crypto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
@@ -12,6 +12,17 @@ import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
 import { McpJwtPayload } from './types/mcp-jwt-payload.type';
 import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
+import {
+  AuthorizationCodeAlreadyUsedError,
+  AuthorizationCodeExpiredError,
+  ClientIdMismatchError,
+  InvalidAuthorizationCodeError,
+  InvalidCodeVerifierError,
+  InvalidGrantTypeForTokenError,
+  PkceParametersMissingError,
+  RedirectUriMismatchError,
+  TokenRequestParametersMissingError,
+} from './errors/authorization.errors';
 
 @Injectable()
 export class TokenService {
@@ -31,12 +42,18 @@ export class TokenService {
 
     // Validate grant type
     if (tokenRequest.grant_type !== GrantType.AUTHORIZATION_CODE) {
-      throw new BadRequestException('Invalid grant_type');
+      throw new InvalidGrantTypeForTokenError(tokenRequest.grant_type);
     }
 
     // Validate required parameters
-    if (!tokenRequest.code || !tokenRequest.code_verifier || !tokenRequest.redirect_uri) {
-      throw new BadRequestException('Missing required parameters for authorization_code grant');
+    const missingParameters = [
+      !tokenRequest.code ? 'code' : null,
+      !tokenRequest.code_verifier ? 'code_verifier' : null,
+      !tokenRequest.redirect_uri ? 'redirect_uri' : null,
+    ].filter(Boolean) as string[];
+
+    if (missingParameters.length > 0) {
+      throw new TokenRequestParametersMissingError(missingParameters);
     }
 
     // Find the authorization flow by authorization code
@@ -47,37 +64,43 @@ export class TokenService {
 
     if (!mcpAuthFlow) {
       this.logger.warn(`Authorization code not found: ${tokenRequest.code}`);
-      throw new UnauthorizedException('Invalid authorization code');
+      throw new InvalidAuthorizationCodeError(tokenRequest.code);
     }
 
     // Validate client_id matches
     if (mcpAuthFlow.client.clientId !== tokenRequest.client_id) {
       this.logger.warn(`Client ID mismatch for authorization code`);
-      throw new UnauthorizedException('Client ID mismatch');
+      throw new ClientIdMismatchError(mcpAuthFlow.client.clientId, tokenRequest.client_id);
     }
 
     // Validate authorization code hasn't been used (single-use protection)
     if (mcpAuthFlow.authorizationCodeUsed) {
       this.logger.warn(`Authorization code already used: ${tokenRequest.code}`);
-      throw new UnauthorizedException('Authorization code has already been used');
+      throw new AuthorizationCodeAlreadyUsedError(tokenRequest.code);
     }
 
     // Validate authorization code hasn't expired
     if (!mcpAuthFlow.authorizationCodeExpiresAt || new Date() > mcpAuthFlow.authorizationCodeExpiresAt) {
       this.logger.warn(`Authorization code expired`);
-      throw new UnauthorizedException('Authorization code has expired');
+      throw new AuthorizationCodeExpiredError(
+        tokenRequest.code,
+        mcpAuthFlow.authorizationCodeExpiresAt,
+      );
     }
 
     // Validate redirect_uri matches
     if (mcpAuthFlow.redirectUri !== tokenRequest.redirect_uri) {
       this.logger.warn(`Redirect URI mismatch`);
-      throw new BadRequestException('Redirect URI mismatch');
+      throw new RedirectUriMismatchError(
+        mcpAuthFlow.redirectUri!,
+        tokenRequest.redirect_uri,
+      );
     }
 
     // Validate PKCE code_verifier
     if (!mcpAuthFlow.codeChallenge || !mcpAuthFlow.codeChallengeMethod) {
       this.logger.warn(`Missing PKCE parameters in authorization flow`);
-      throw new BadRequestException('Missing PKCE parameters');
+      throw new PkceParametersMissingError(mcpAuthFlow.id);
     }
 
     const isValidVerifier = this.validatePkceVerifier(
@@ -88,7 +111,7 @@ export class TokenService {
 
     if (!isValidVerifier) {
       this.logger.warn(`Invalid PKCE code_verifier`);
-      throw new UnauthorizedException('Invalid code_verifier');
+      throw new InvalidCodeVerifierError();
     }
 
     // Mark authorization code as used
