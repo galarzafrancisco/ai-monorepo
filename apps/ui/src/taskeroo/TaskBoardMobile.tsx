@@ -6,6 +6,7 @@ import { useTaskeroo } from './useTaskeroo';
 import { Task, TaskStatus } from './types';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { TagBadge } from './TagBadge';
+import { HamburgerMenu } from '../components/HamburgerMenu';
 
 export function TaskBoardMobile() {
   const { tasks, isConnected } = useTaskeroo();
@@ -55,6 +56,7 @@ export function TaskBoardMobile() {
       {/* Header */}
       <div className="mobile-header">
         <div className="mobile-header-content">
+          <HamburgerMenu />
           <h1>Taskeroo</h1>
           <span className={`mobile-status-dot ${isConnected ? 'connected' : 'disconnected'}`} />
         </div>
