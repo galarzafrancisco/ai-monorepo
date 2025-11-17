@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
 import { WikiPageEditForm } from './WikiPageEditForm';
 import { TagSelector } from './TagSelector';
+import type { UpdatePageDto } from 'shared';
 import './WikirooMobile.css';
 
 export function WikirooPageViewMobile() {
@@ -13,17 +14,22 @@ export function WikirooPageViewMobile() {
     selectedPage,
     isLoadingPage,
     error,
-    fetchPage,
+    selectPage,
+    updatePage,
+    deletePage,
+    isUpdating,
+    isDeleting,
     removeTagFromPage,
   } = useWikiroo();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showTagSelector, setShowTagSelector] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (pageId) {
-      fetchPage(pageId);
+      selectPage(pageId);
     }
-  }, [pageId, fetchPage]);
+  }, [pageId, selectPage]);
 
   if (isLoadingPage) {
     return (
@@ -76,6 +82,39 @@ export function WikirooPageViewMobile() {
     if (!selectedPage) return;
     await removeTagFromPage(selectedPage.id, tagId);
   };
+
+  const handleUpdate = useCallback(
+    async (updatedPage: any) => {
+      if (!pageId) return;
+      const payload: UpdatePageDto = {};
+      if (updatedPage.title !== selectedPage?.title) payload.title = updatedPage.title;
+      if (updatedPage.content !== selectedPage?.content) payload.content = updatedPage.content;
+      if (updatedPage.author !== selectedPage?.author) payload.author = updatedPage.author;
+
+      try {
+        await updatePage(pageId, payload);
+        setShowEditModal(false);
+        setErrorMessage('');
+      } catch (err: any) {
+        const errorMsg = err?.body?.detail || err?.message || 'Failed to update page';
+        setErrorMessage(errorMsg);
+        throw err;
+      }
+    },
+    [pageId, selectedPage, updatePage],
+  );
+
+  const handleDelete = useCallback(async () => {
+    if (!pageId) return;
+    try {
+      await deletePage(pageId);
+      navigate('/wikiroo');
+    } catch (err: any) {
+      const errorMsg = err?.body?.detail || err?.message || 'Failed to delete page';
+      setErrorMessage(errorMsg);
+      throw err;
+    }
+  }, [pageId, deletePage, navigate]);
 
   return (
     <div className="mobile-wikiroo-page-view">
@@ -154,10 +193,15 @@ export function WikirooPageViewMobile() {
       </div>
 
       {/* Edit Modal */}
-      {showEditModal && (
+      {showEditModal && selectedPage && (
         <WikiPageEditForm
           page={selectedPage}
           onClose={() => setShowEditModal(false)}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+          onError={setErrorMessage}
+          isUpdating={isUpdating}
+          isDeleting={isDeleting}
         />
       )}
 
@@ -186,7 +230,7 @@ export function WikirooPageViewMobile() {
                 pageId={selectedPage.id}
                 onTagAdded={() => {
                   setShowTagSelector(false);
-                  fetchPage(selectedPage.id);
+                  selectPage(selectedPage.id);
                 }}
               />
             </div>

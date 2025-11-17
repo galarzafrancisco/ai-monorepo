@@ -7,12 +7,11 @@ import './WikirooMobile.css';
 
 export function WikirooHomeMobile() {
   const { pages, isLoadingList, error, createPage, isCreating } = useWikiroo();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [tagNames, setTagNames] = useState<string[]>([]);
 
   const handleCreatePage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,14 +23,14 @@ export function WikirooHomeMobile() {
       title: title.trim(),
       author: author.trim(),
       content: content.trim(),
-      tags: tags.length > 0 ? tags : undefined,
+      ...(tagNames.length > 0 && { tagNames }),
     });
 
     // Reset form and close modal
     setTitle('');
     setAuthor('');
     setContent('');
-    setTags([]);
+    setTagNames([]);
     setShowCreateModal(false);
   };
 
@@ -47,19 +46,6 @@ export function WikirooHomeMobile() {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const getPreviewText = (content: string): string => {
-    // Remove markdown formatting for preview
-    let text = content
-      .replace(/#{1,6}\s/g, '') // Remove headers
-      .replace(/\*\*/g, '') // Remove bold
-      .replace(/\*/g, '') // Remove italic
-      .replace(/`/g, '') // Remove code
-      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove links
-      .replace(/\n+/g, ' ') // Replace newlines with space
-      .trim();
-
-    return text || 'No content';
-  };
 
   const getTagColor = (index: number): string => {
     const colors = [
@@ -75,20 +61,12 @@ export function WikirooHomeMobile() {
 
   return (
     <div className="wikiroo-mobile">
-      <HamburgerMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+      <HamburgerMenu />
 
       {/* Header */}
       <div className="mobile-wikiroo-header">
         <div className="mobile-wikiroo-header-content">
-          <button
-            className="mobile-wikiroo-menu-button"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
+          <div style={{ width: '40px' }}></div>
           <h1 className="mobile-wikiroo-title">Wikiroo</h1>
           <button
             className="mobile-wikiroo-new-button"
@@ -123,9 +101,6 @@ export function WikirooHomeMobile() {
             className="mobile-wikiroo-page-item"
           >
             <h3 className="mobile-wikiroo-page-title">{page.title}</h3>
-            <p className="mobile-wikiroo-page-preview">
-              {getPreviewText(page.content)}
-            </p>
 
             {page.tags && page.tags.length > 0 && (
               <div className="mobile-wikiroo-page-tags">
@@ -214,8 +189,8 @@ export function WikirooHomeMobile() {
                 <div className="mobile-wikiroo-form-group">
                   <label className="mobile-wikiroo-form-label">Tags</label>
                   <TagInput
-                    tags={tags}
-                    onChange={setTags}
+                    value={tagNames}
+                    onChange={setTagNames}
                     placeholder="Add tags"
                   />
                 </div>
