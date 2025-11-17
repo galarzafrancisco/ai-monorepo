@@ -81,14 +81,6 @@ export class ClientRegistrationService {
       mcpClientId: savedClient.id,
     });
 
-    this.logger.debug(authJourney.authorizationJourney)
-    this.logger.debug(authJourney.mcpAuthorizationFlow)
-    this.logger.debug(authJourney.connectionAuthorizationFlows)
-
-    this.logger.debug('Getting full shit')
-    const full = await this.authJourneyService.getJourneysForMcpServer(mcpServer.id);
-    this.logger.debug(JSON.stringify(full, null, 2));
-
     // Return the client with the plaintext secret (only time it's exposed)
     return {
       ...savedClient,

@@ -1,4 +1,5 @@
 import { Task } from './types';
+import { TagBadge } from './TagBadge';
 
 interface TaskCardProps {
   task: Task;
@@ -23,6 +24,13 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
     <div className="task-card" onClick={onClick}>
       <h3 className="task-card-title">{task.name}</h3>
       <p className="task-card-description">{task.description}</p>
+      {task.tags && task.tags.length > 0 && (
+        <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+          {task.tags.map((tag) => (
+            <TagBadge key={tag.id} tag={tag} small={true} />
+          ))}
+        </div>
+      )}
       <div className="task-card-divider"></div>
       <div className="task-card-footer">
         <div className="task-card-assignee">

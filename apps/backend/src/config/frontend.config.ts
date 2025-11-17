@@ -14,10 +14,9 @@
  * @returns Relative path "/" in production, "http://localhost:{port}" in development
  */
 export function getFrontendUrl(): string {
-  const uiPort = process.env.VITE_PORT;
-
   // In development, frontend runs on a different port
-  if (uiPort) {
+  if (process.env.NODE_ENV !== 'production') {
+    const uiPort = process.env.VITE_PORT || '5173';
     return `http://localhost:${uiPort}`;
   }
 

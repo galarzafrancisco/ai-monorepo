@@ -8,6 +8,7 @@ import {
   Res,
   HttpStatus,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,12 +26,16 @@ import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { IntrospectTokenRequestDto } from './dto/introspect-token-request.dto';
+import { IntrospectTokenResponseDto } from './dto/introspect-token-response.dto';
+import { CallbackRequestDto } from './dto/callback-request.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { getFrontendPath } from '../config/frontend.config';
 
 @ApiTags('Authorization Server')
 @Controller('auth')
 export class AuthorizationController {
+  private logger = new Logger(AuthorizationController.name);
   constructor(
     private readonly authorizationService: AuthorizationService,
     private readonly tokenService: TokenService,
@@ -118,6 +123,7 @@ export class AuthorizationController {
         version,
       );
 
+      this.logger.debug(`controller redirecting to ${redirectUrl}`);
       res.redirect(HttpStatus.FOUND, redirectUrl);
     } catch (error) {
       // If we can't redirect, throw the error
@@ -165,5 +171,55 @@ export class AuthorizationController {
     @Param('version') version: string,
   ): Promise<TokenResponseDto> {
     return this.tokenService.exchangeAuthorizationCode(tokenRequest);
+  }
+
+  @Post('introspect/mcp/:serverIdentifier/:version')
+  @ApiOperation({
+    summary: 'OAuth 2.0 Token Introspection Endpoint',
+    description:
+      'Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.',
+  })
+  @ApiOkResponse({
+    description: 'Token introspection response (active true/false with metadata)',
+    type: IntrospectTokenResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid introspection request parameters',
+  })
+  async introspect(
+    @Body() introspectRequest: IntrospectTokenRequestDto,
+    @Param('serverIdentifier') serverIdentifier: string,
+    @Param('version') version: string,
+  ): Promise<IntrospectTokenResponseDto> {
+    return this.tokenService.introspectToken(introspectRequest);
+  }
+
+  @Get('callback')
+  @ApiOperation({
+    summary: 'OAuth 2.0 Callback Endpoint for Downstream Systems',
+    description:
+      'Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: 'Redirects to next step in the authorization flow',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid callback parameters or state',
+  })
+  @ApiNotFoundResponse({
+    description: 'Connection flow not found for provided state',
+  })
+  async callback(
+    @Query() callbackRequest: CallbackRequestDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const redirectUrl = await this.authorizationService.handleDownstreamCallback(callbackRequest);
+      res.redirect(HttpStatus.FOUND, redirectUrl);
+    } catch (error) {
+      // If there's an error, show an error page
+      throw new BadRequestException(error instanceof Error ? error.message : 'Callback processing failed');
+    }
   }
 }

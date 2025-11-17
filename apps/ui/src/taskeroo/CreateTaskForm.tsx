@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { TaskerooService } from './api';
 import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
+import { TagInput } from './TagInput';
 
 interface CreateTaskFormProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
   const [description, setDescription] = useState('');
   const [assignee, setAssignee] = useState('');
   const [sessionId, setSessionId] = useState('');
+  const [tagNames, setTagNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
         description,
         ...(assignee && { assignee }),
         ...(sessionId && { sessionId }),
+        ...(tagNames.length > 0 && { tagNames }),
       });
       onClose();
     } catch (err: any) {
@@ -80,7 +83,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="assignee">Assigned to (optional)</label>
+            <label htmlFor="assignee">Assigned to</label>
             <input
               id="assignee"
               type="text"
@@ -91,13 +94,22 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="sessionId">Session ID (optional)</label>
+            <label htmlFor="sessionId">Session ID</label>
             <input
               id="sessionId"
               type="text"
               value={sessionId}
               onChange={(e) => setSessionId(e.target.value)}
               placeholder="Agent session ID"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="tags">Tags</label>
+            <TagInput
+              value={tagNames}
+              onChange={setTagNames}
+              placeholder="Type to add tags..."
             />
           </div>
 

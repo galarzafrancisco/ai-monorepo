@@ -795,7 +795,123 @@ form {
     align-items: flex-start;
   }
 
-  .review-shortcuts {
+  /* Mobile modal optimizations */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+    margin: 0;
+  }
+
+  .modal-header {
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-bottom: 1px solid #ecf0f1;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+
+  /* Form optimizations */
+  form {
+    padding: 0 16px 16px 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 16px; /* Prevents iOS zoom */
+    padding: 12px 14px; /* Better touch targets */
+  }
+
+  /* Task detail optimizations */
+  .detail-section {
+    padding: 12px 16px;
+  }
+
+  .detail-section h3 {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  /* Status buttons wrap on mobile */
+  .status-buttons {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .status-btn {
+    flex: 1 1 calc(50% - 4px); /* 2 buttons per row */
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* Assignee form - stack vertically */
+  .form-row {
     flex-direction: column;
+  }
+
+  .form-field {
+    width: 100%;
+  }
+
+  /* Comments list */
+  .comments-list {
+    max-height: 200px;
+  }
+
+  .add-comment input,
+  .add-comment textarea {
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+
+  /* Action buttons */
+  .form-actions {
+    gap: 8px;
+    flex-direction: column-reverse;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+
+  .task-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .review-shortcuts {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .review-shortcuts button {
+    flex: 1;
+  }
+
+  .delete-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .delete-confirm button {
+    width: 100%;
   }
 }

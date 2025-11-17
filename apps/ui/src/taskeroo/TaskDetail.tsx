@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Task, TaskStatus, Comment } from './types';
 import { TaskerooService } from './api';
+import { TagInput } from './TagInput';
 
 
 interface TaskDetailProps {
@@ -13,6 +14,7 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   const [description, setDescription] = useState(task.description);
   const [assignee, setAssignee] = useState(task.assignee || '');
   const [sessionId, setSessionId] = useState(task.sessionId || '');
+  const [tagNames, setTagNames] = useState<string[]>(task.tags?.map(t => t.name) || []);
   const [comment, setComment] = useState('');
   const [commenterName, setCommenterName] = useState('');
   const [statusComment, setStatusComment] = useState('');
@@ -123,6 +125,23 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
     }
   };
 
+  const handleUpdateTags = async (newTagNames: string[]) => {
+    setTagNames(newTagNames);
+    try {
+      const updated = await TaskerooService.taskerooControllerUpdateTask(task.id, {
+        tagNames: newTagNames,
+      } as any);
+      onUpdate(updated);
+      setErrorMessage('');
+    } catch (err: any) {
+      console.error('Failed to update tags:', err);
+      const errorMessage = err?.body?.detail || err?.message || 'Failed to update tags';
+      setErrorMessage(errorMessage);
+      // Revert on error
+      setTagNames(task.tags?.map(t => t.name) || []);
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content task-detail" onClick={(e) => e.stopPropagation()}>
@@ -204,6 +223,15 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
               Update Assignment
             </button>
           </div>
+        </div>
+
+        <div className="detail-section">
+          <h3>Tags</h3>
+          <TagInput
+            value={tagNames}
+            onChange={handleUpdateTags}
+            placeholder="Type to add tags..."
+          />
         </div>
 
         <div className="detail-section">

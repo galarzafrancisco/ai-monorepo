@@ -6,6 +6,8 @@ import { useWikiroo } from './useWikiroo';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
+import { TagBadge } from './TagBadge';
+import { TagInput } from './TagInput';
 
 function formatDate(value: string) {
   try {
@@ -31,6 +33,7 @@ export function WikirooHomePage() {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
+  const [tagNames, setTagNames] = useState<string[]>([]);
 
   usePageTitle('Wikiroo');
 
@@ -45,10 +48,12 @@ export function WikirooHomePage() {
         title: title.trim(),
         author: author.trim(),
         content: content.trim(),
+        ...(tagNames.length > 0 && { tagNames }),
       });
       setTitle('');
       setAuthor('');
       setContent('');
+      setTagNames([]);
       setShowForm(false);
       navigate(`/wikiroo/${created.id}`);
     } catch (err: any) {
@@ -117,6 +122,14 @@ export function WikirooHomePage() {
               required
             />
           </div>
+          <div className="wikiroo-form-group">
+            <label htmlFor="wikiroo-tags">Tags</label>
+            <TagInput
+              value={tagNames}
+              onChange={setTagNames}
+              placeholder="Type to add tags..."
+            />
+          </div>
           <div className="wikiroo-form-actions">
             <button
               type="button"
@@ -141,6 +154,13 @@ export function WikirooHomePage() {
           <Link key={page.id} to={`/wikiroo/${page.id}`} className="wikiroo-card">
             <h3>{page.title}</h3>
             <p>By {page.author}</p>
+            {page.tags && page.tags.length > 0 && (
+              <div style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {page.tags.map((tag) => (
+                  <TagBadge key={tag.id} tag={tag} small />
+                ))}
+              </div>
+            )}
             <div className="wikiroo-card-meta">
               <span>Updated {formatDate(page.updatedAt)}</span>
               <span>Created {formatDate(page.createdAt)}</span>

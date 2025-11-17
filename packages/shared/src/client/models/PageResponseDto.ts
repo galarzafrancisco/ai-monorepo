@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { WikiTagResponseDto } from './WikiTagResponseDto';
 export type PageResponseDto = {
     /**
      * Unique identifier for the page
@@ -19,6 +20,10 @@ export type PageResponseDto = {
      * Author of the wiki page
      */
     author: string;
+    /**
+     * Tags associated with the page
+     */
+    tags: Array<WikiTagResponseDto>;
     /**
      * Creation timestamp
      */

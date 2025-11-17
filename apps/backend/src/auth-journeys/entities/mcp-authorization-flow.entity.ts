@@ -29,10 +29,10 @@ export class McpAuthorizationFlowEntity {
   clientId!: string;
 
   @Column({
-      type: 'text',
-      default: McpAuthorizationFlowStatus.CLIENT_NOT_REGISTERED,
-    })
-    status!: McpAuthorizationFlowStatus;
+    type: 'text',
+    default: McpAuthorizationFlowStatus.CLIENT_NOT_REGISTERED,
+  })
+  status!: McpAuthorizationFlowStatus;
 
   // PKCE parameters for secure authorization
   @Column({ type: 'text', name: 'code_challenge', nullable: true })
@@ -48,6 +48,10 @@ export class McpAuthorizationFlowEntity {
   // Redirect URI from authorization request
   @Column({ type: 'text', name: 'redirect_uri', nullable: true })
   redirectUri?: string;
+
+  // Scopes requested
+  @Column({ type: 'text', name: 'scope', nullable: true })
+  scope?: string;
 
   // Resource server URL the client wants to access
   @Column({ type: 'text', name: 'resource', nullable: true })
@@ -83,7 +87,7 @@ export class McpAuthorizationFlowEntity {
   })
   @JoinColumn({ name: 'client_id' })
   client!: RegisteredClientEntity;
-  
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

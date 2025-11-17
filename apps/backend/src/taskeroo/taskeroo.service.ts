@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import { TaskEntity } from './task.entity';
+import { TagEntity } from './tag.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
 import {
@@ -12,9 +13,12 @@ import {
   ChangeStatusInput,
   CreateCommentInput,
   ListTasksInput,
+  AddTagInput,
+  CreateTagInput,
   TaskResult,
   CommentResult,
   ListTasksResult,
+  TagResult,
 } from './dto/service/taskeroo.service.types';
 import {
   TaskNotFoundError,
@@ -39,6 +43,8 @@ export class TaskerooService {
     private readonly taskRepository: Repository<TaskEntity>,
     @InjectRepository(CommentEntity)
     private readonly commentRepository: Repository<CommentEntity>,
+    @InjectRepository(TagEntity)
+    private readonly tagRepository: Repository<TagEntity>,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -60,10 +66,17 @@ export class TaskerooService {
 
     const savedTask = await this.taskRepository.save(task);
 
+    // Handle tags if provided
+    if (input.tagNames && input.tagNames.length > 0) {
+      const tags = await this.findOrCreateTags(input.tagNames);
+      savedTask.tags = tags;
+      await this.taskRepository.save(savedTask);
+    }
+
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: savedTask.id },
-      relations: ['comments'],
+      relations: ['comments', 'tags'],
     });
 
     if (!taskWithRelations) {
@@ -88,7 +101,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments'],
+      relations: ['comments', 'tags'],
     });
 
     if (!task) {
@@ -101,15 +114,34 @@ export class TaskerooService {
     if (input.assignee !== undefined) task.assignee = input.assignee ?? null;
     if (input.sessionId !== undefined) task.sessionId = input.sessionId ?? null;
 
+    // Handle tags if provided
+    if (input.tagNames !== undefined) {
+      if (input.tagNames.length === 0) {
+        task.tags = [];
+      } else {
+        task.tags = await this.findOrCreateTags(input.tagNames);
+      }
+    }
+
     const updatedTask = await this.taskRepository.save(task);
+
+    // Reload with relations to ensure we have updated tags
+    const taskWithRelations = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ['comments', 'tags'],
+    });
+
+    if (!taskWithRelations) {
+      throw new TaskNotFoundError(taskId);
+    }
 
     this.logger.log({
       message: 'Task updated',
-      taskId: updatedTask.id,
+      taskId: taskWithRelations.id,
     });
 
-    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(updatedTask));
-    return this.mapTaskToResult(updatedTask);
+    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(taskWithRelations));
+    return this.mapTaskToResult(taskWithRelations);
   }
 
   async assignTask(taskId: string, input: AssignTaskInput): Promise<TaskResult> {
@@ -122,7 +154,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments'],
+      relations: ['comments', 'tags'],
     });
 
     if (!task) {
@@ -188,7 +220,7 @@ export class TaskerooService {
 
     const [tasks, total] = await this.taskRepository.findAndCount({
       where,
-      relations: ['comments'],
+      relations: ['comments', 'tags'],
       order: { updatedAt: 'DESC' },
       skip,
       take: input.limit,
@@ -212,7 +244,7 @@ export class TaskerooService {
   async getTaskById(taskId: string): Promise<TaskResult> {
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments'],
+      relations: ['comments', 'tags'],
     });
 
     if (!task) {
@@ -262,7 +294,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments'],
+      relations: ['comments', 'tags'],
     });
 
     if (!task) {
@@ -303,7 +335,7 @@ export class TaskerooService {
     // Reload to get updated comments if any were added
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments'],
+      relations: ['comments', 'tags'],
     });
 
     if (!taskWithRelations) {
@@ -320,6 +352,215 @@ export class TaskerooService {
     return this.mapTaskToResult(taskWithRelations);
   }
 
+  async addTagToTask(taskId: string, input: AddTagInput): Promise<TaskResult> {
+    this.logger.log({
+      message: 'Adding tag to task',
+      taskId,
+      tagName: input.name,
+    });
+
+    const task = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ['comments', 'tags'],
+    });
+
+    if (!task) {
+      throw new TaskNotFoundError(taskId);
+    }
+
+    // Find or create the tag (case-insensitive)
+    let tag = await this.tagRepository.findOne({ where: { name: input.name } });
+
+    if (!tag) {
+      tag = this.tagRepository.create({
+        name: input.name,
+        color: input.color,
+      });
+      tag = await this.tagRepository.save(tag);
+      this.logger.log({
+        message: 'Tag created',
+        tagId: tag.id,
+        tagName: tag.name,
+      });
+    }
+
+    // Add tag to task if not already present
+    if (!task.tags.some((t) => t.id === tag.id)) {
+      task.tags.push(tag);
+      await this.taskRepository.save(task);
+      this.logger.log({
+        message: 'Tag added to task',
+        taskId,
+        tagId: tag.id,
+      });
+    }
+
+    // Reload with relations
+    const taskWithRelations = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ['comments', 'tags'],
+    });
+
+    if (!taskWithRelations) {
+      throw new TaskNotFoundError(taskId);
+    }
+
+    return this.mapTaskToResult(taskWithRelations);
+  }
+
+  async removeTagFromTask(taskId: string, tagId: string): Promise<TaskResult> {
+    this.logger.log({
+      message: 'Removing tag from task',
+      taskId,
+      tagId,
+    });
+
+    const task = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ['comments', 'tags'],
+    });
+
+    if (!task) {
+      throw new TaskNotFoundError(taskId);
+    }
+
+    task.tags = task.tags.filter((tag) => tag.id !== tagId);
+    await this.taskRepository.save(task);
+
+    this.logger.log({
+      message: 'Tag removed from task',
+      taskId,
+      tagId,
+    });
+
+    // Check if tag is now orphaned and clean it up
+    await this.cleanupOrphanedTag(tagId);
+
+    return this.mapTaskToResult(task);
+  }
+
+  async getAllTags(): Promise<TagResult[]> {
+    this.logger.log({ message: 'Getting all tags' });
+
+    const tags = await this.tagRepository.find({
+      order: { name: 'ASC' },
+    });
+
+    this.logger.log({
+      message: 'Tags retrieved',
+      count: tags.length,
+    });
+
+    return tags.map((tag) => this.mapTagToResult(tag));
+  }
+
+  async listTasksByTag(tagName: string): Promise<TaskResult[]> {
+    this.logger.log({
+      message: 'Listing tasks by tag',
+      tagName,
+    });
+
+    const tag = await this.tagRepository.findOne({
+      where: { name: tagName },
+      relations: ['tasks', 'tasks.comments', 'tasks.tags'],
+    });
+
+    if (!tag) {
+      return [];
+    }
+
+    this.logger.log({
+      message: 'Tasks by tag retrieved',
+      tagName,
+      count: tag.tasks.length,
+    });
+
+    return tag.tasks.map((task) => this.mapTaskToResult(task));
+  }
+
+  async searchTags(query: string): Promise<TagResult[]> {
+    this.logger.log({
+      message: 'Searching tags',
+      query,
+    });
+
+    const tags = await this.tagRepository
+      .createQueryBuilder('tag')
+      .where('LOWER(tag.name) LIKE LOWER(:query)', { query: `%${query}%` })
+      .orderBy('tag.name', 'ASC')
+      .getMany();
+
+    this.logger.log({
+      message: 'Tags search completed',
+      query,
+      count: tags.length,
+    });
+
+    return tags.map((tag) => this.mapTagToResult(tag));
+  }
+
+  async deleteTag(tagId: string): Promise<void> {
+    this.logger.log({
+      message: 'Deleting tag',
+      tagId,
+    });
+
+    const result = await this.tagRepository.softDelete(tagId);
+
+    if (result.affected === 0) {
+      this.logger.warn({
+        message: 'Tag not found for deletion',
+        tagId,
+      });
+    } else {
+      this.logger.log({
+        message: 'Tag deleted',
+        tagId,
+      });
+    }
+  }
+
+  private async cleanupOrphanedTag(tagId: string): Promise<void> {
+    this.logger.log({
+      message: 'Checking if tag is orphaned',
+      tagId,
+    });
+
+    const tagWithTasks = await this.tagRepository.findOne({
+      where: { id: tagId },
+      relations: ['tasks'],
+    });
+
+    if (!tagWithTasks) {
+      this.logger.warn({
+        message: 'Tag not found for cleanup check',
+        tagId,
+      });
+      return;
+    }
+
+    if (tagWithTasks.tasks.length === 0) {
+      this.logger.log({
+        message: 'Tag is orphaned, cleaning up',
+        tagId,
+        tagName: tagWithTasks.name,
+      });
+
+      await this.tagRepository.softDelete(tagId);
+
+      this.logger.log({
+        message: 'Orphaned tag cleaned up',
+        tagId,
+      });
+    } else {
+      this.logger.log({
+        message: 'Tag still has tasks, keeping it',
+        tagId,
+        taskCount: tagWithTasks.tasks.length,
+      });
+    }
+  }
+
   private mapTaskToResult(task: TaskEntity): TaskResult {
     return {
       id: task.id,
@@ -329,6 +570,7 @@ export class TaskerooService {
       assignee: task.assignee,
       sessionId: task.sessionId,
       comments: task.comments.map((c) => this.mapCommentToResult(c)),
+      tags: (task.tags || []).map((t) => this.mapTagToResult(t)),
       rowVersion: task.rowVersion,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
@@ -344,5 +586,49 @@ export class TaskerooService {
       content: comment.content,
       createdAt: comment.createdAt,
     };
+  }
+
+  private mapTagToResult(tag: TagEntity): TagResult {
+    return {
+      id: tag.id,
+      name: tag.name,
+      color: tag.color,
+      createdAt: tag.createdAt,
+      updatedAt: tag.updatedAt,
+    };
+  }
+
+  /**
+   * Helper method to find or create tags by name (case-insensitive)
+   */
+  private async findOrCreateTags(tagNames: string[]): Promise<TagEntity[]> {
+    const tags: TagEntity[] = [];
+
+    for (const tagName of tagNames) {
+      const normalizedName = tagName.trim();
+      if (!normalizedName) continue;
+
+      // Try to find existing tag (case-insensitive due to NOCASE collation)
+      let tag = await this.tagRepository.findOne({
+        where: { name: normalizedName }
+      });
+
+      if (!tag) {
+        // Create new tag with normalized name
+        tag = this.tagRepository.create({
+          name: normalizedName,
+        });
+        tag = await this.tagRepository.save(tag);
+        this.logger.log({
+          message: 'Tag created',
+          tagId: tag.id,
+          tagName: tag.name,
+        });
+      }
+
+      tags.push(tag);
+    }
+
+    return tags;
   }
 }

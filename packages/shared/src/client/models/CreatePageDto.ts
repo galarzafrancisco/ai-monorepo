@@ -15,5 +15,9 @@ export type CreatePageDto = {
      * Author of the page
      */
     author: string;
+    /**
+     * Array of tag names to associate with the page
+     */
+    tagNames?: Array<string>;
 };
 
