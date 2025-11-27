@@ -8,6 +8,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { WikiPageEditForm } from './WikiPageEditForm';
 import { TagBadge } from './TagBadge';
 import { TagSelector } from './TagSelector';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { UpdatePageDto } from 'shared';
 
 function formatDate(value: string) {
@@ -36,6 +37,7 @@ export function WikirooPageView() {
   } = useWikiroo();
   const [showEditForm, setShowEditForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const pageSummary = pages.find((page) => page.id === pageId);
   const pageTitle = selectedPage?.title || pageSummary?.title;
@@ -80,16 +82,20 @@ export function WikirooPageView() {
     [pageId, selectedPage, updatePage],
   );
 
-  const handleDelete = useCallback(async () => {
+  const handleDeleteClick = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
     if (!pageId) return;
     try {
       await deletePage(pageId);
-      setShowEditForm(false);
+      setShowDeleteConfirm(false);
       navigate('/wikiroo');
     } catch (err: any) {
       const errorMsg = err?.body?.detail || err?.message || 'Failed to delete page';
       setErrorMessage(errorMsg);
-      throw err;
+      setShowDeleteConfirm(false);
     }
   }, [pageId, deletePage, navigate]);
 
@@ -115,86 +121,88 @@ export function WikirooPageView() {
 
   return (
     <div className="wikiroo wikiroo-page-view">
-      <header className="wikiroo-header">
-        <div>
-          <Link to="/wikiroo" className="wikiroo-back-link">
-            ← All pages
-          </Link>
-          <h1>{selectedPage?.title || pageSummary?.title || 'Loading page…'}</h1>
-          {(selectedPage || pageSummary) && (
-            <div className="wikiroo-meta">
-              <span>By {selectedPage?.author || pageSummary?.author}</span>
-              {selectedPage && (
-                <>
-                  <span>Created {formatDate(selectedPage.createdAt)}</span>
-                  <span>Updated {formatDate(selectedPage.updatedAt)}</span>
-                </>
-              )}
+      <div className="wikiroo-page-navigation">
+        <Link to="/wikiroo" className="wikiroo-back-link">
+          ← All pages
+        </Link>
+        <HomeLink />
+      </div>
+
+      {isLoadingPage && <div className="wikiroo-status">Loading page…</div>}
+      {error && <div className="wikiroo-error">{error}</div>}
+      {errorMessage && <div className="wikiroo-error">{errorMessage}</div>}
+      {showNotFound && (
+        <div className="wikiroo-empty">
+          <strong>Page not found</strong>
+          <span>The requested page may have been removed or never existed.</span>
+        </div>
+      )}
+
+      {selectedPage && (
+        <div className="wikiroo-page-detail">
+          <div className="wikiroo-page-detail-header">
+            <h1 className="wikiroo-page-detail-title">{selectedPage.title}</h1>
+            <div className="wikiroo-page-detail-meta">
+              <span>By {selectedPage.author}</span>
+              <span>•</span>
+              <span>Created {formatDate(selectedPage.createdAt)}</span>
+              <span>•</span>
+              <span>Last edited {formatDate(selectedPage.updatedAt)}</span>
+            </div>
+          </div>
+
+          {selectedPage.tags && selectedPage.tags.length > 0 && (
+            <div className="wikiroo-page-detail-tags">
+              {selectedPage.tags.map((tag) => (
+                <TagBadge key={tag.id} tag={tag} onRemove={() => handleRemoveTag(tag.id)} />
+              ))}
             </div>
           )}
-        </div>
-        <div className="wikiroo-actions">
-          <HomeLink />
-          {selectedPage && (
+
+          <div className="wikiroo-page-detail-content">
+            <MarkdownPreview content={selectedPage.content} />
+          </div>
+
+          <div className="wikiroo-page-detail-actions">
             <button
               className="wikiroo-button"
               type="button"
               onClick={() => setShowEditForm(true)}
-              disabled={isLoadingPage || isUpdating || isDeleting}
+              disabled={isUpdating || isDeleting}
             >
-              Edit Page
+              Edit
             </button>
-          )}
-          <button
-            className="wikiroo-button secondary"
-            type="button"
-            onClick={handleRefresh}
-            disabled={isLoadingPage}
-          >
-            {isLoadingPage ? 'Refreshing…' : 'Refresh'}
-          </button>
-        </div>
-      </header>
-
-      <section className="wikiroo-content-panel">
-        {isLoadingPage && <div className="wikiroo-status">Loading page…</div>}
-        {error && <div className="wikiroo-error">{error}</div>}
-        {errorMessage && <div className="wikiroo-error">{errorMessage}</div>}
-        {showNotFound && (
-          <div className="wikiroo-empty">
-            <strong>Page not found</strong>
-            <span>The requested page may have been removed or never existed.</span>
+            <button
+              className="wikiroo-button wikiroo-button-danger"
+              type="button"
+              onClick={handleDeleteClick}
+              disabled={isUpdating || isDeleting}
+            >
+              Delete
+            </button>
           </div>
-        )}
-        {selectedPage && (
-          <>
-            {selectedPage.tags && selectedPage.tags.length > 0 && (
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '1rem', marginBottom: '8px' }}>Tags</h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                  {selectedPage.tags.map((tag) => (
-                    <TagBadge key={tag.id} tag={tag} onRemove={() => handleRemoveTag(tag.id)} />
-                  ))}
-                </div>
-              </div>
-            )}
-            <TagSelector pageId={selectedPage.id} onTagAdded={handleTagAdded} />
-            <div style={{ marginTop: '24px' }}>
-              <MarkdownPreview content={selectedPage.content} />
-            </div>
-          </>
-        )}
-      </section>
+        </div>
+      )}
 
       {showEditForm && selectedPage && (
         <WikiPageEditForm
           page={selectedPage}
           onClose={() => setShowEditForm(false)}
           onUpdate={handleUpdate}
-          onDelete={handleDelete}
+          onDelete={handleDeleteConfirm}
           onError={setErrorMessage}
           isUpdating={isUpdating}
           isDeleting={isDeleting}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          message="Are you sure you want to delete this page? This action cannot be undone."
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setShowDeleteConfirm(false)}
+          confirmText="Delete"
+          cancelText="Cancel"
         />
       )}
     </div>

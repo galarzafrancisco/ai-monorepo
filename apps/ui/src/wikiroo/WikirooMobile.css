@@ -622,3 +622,95 @@
   color: #ff3b30;
   font-size: 17px;
 }
+
+/* New Page Detail View Styles */
+.mobile-wikiroo-page-detail {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  padding: 20px 16px;
+}
+
+.mobile-wikiroo-page-detail-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+}
+
+.mobile-wikiroo-page-detail-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #8e8e93;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 0.5px solid #e5e5ea;
+}
+
+.mobile-wikiroo-page-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.mobile-wikiroo-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.mobile-wikiroo-page-detail-content {
+  margin-bottom: 32px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #000;
+}
+
+.mobile-wikiroo-page-detail-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 0.5px solid #e5e5ea;
+}
+
+.mobile-wikiroo-action-button {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease;
+}
+
+.mobile-wikiroo-action-button:active {
+  opacity: 0.7;
+}
+
+.mobile-wikiroo-action-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.mobile-wikiroo-edit-button {
+  background: #007aff;
+  color: #fff;
+}
+
+.mobile-wikiroo-delete-button {
+  background: #ff3b30;
+  color: #fff;
+}

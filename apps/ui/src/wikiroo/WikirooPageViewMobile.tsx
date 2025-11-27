@@ -4,6 +4,7 @@ import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
 import { WikiPageEditForm } from './WikiPageEditForm';
 import { TagSelector } from './TagSelector';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { UpdatePageDto } from 'shared';
 import './WikirooMobile.css';
 
@@ -23,6 +24,7 @@ export function WikirooPageViewMobile() {
   } = useWikiroo();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showTagSelector, setShowTagSelector] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
@@ -104,52 +106,53 @@ export function WikirooPageViewMobile() {
     [pageId, selectedPage, updatePage],
   );
 
-  const handleDelete = useCallback(async () => {
+  const handleDeleteClick = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
     if (!pageId) return;
     try {
       await deletePage(pageId);
+      setShowDeleteConfirm(false);
       navigate('/wikiroo');
     } catch (err: any) {
       const errorMsg = err?.body?.detail || err?.message || 'Failed to delete page';
       setErrorMessage(errorMsg);
-      throw err;
+      setShowDeleteConfirm(false);
     }
   }, [pageId, deletePage, navigate]);
 
   return (
     <div className="mobile-wikiroo-page-view">
-      {/* Header */}
-      <div className="mobile-wikiroo-page-header">
-        <div className="mobile-wikiroo-page-nav">
-          <button
-            className="mobile-wikiroo-back-button"
-            onClick={() => navigate('/wikiroo')}
-          >
-            ← Back
-          </button>
-          <button
-            className="mobile-wikiroo-edit-button"
-            onClick={() => setShowEditModal(true)}
-          >
-            Edit
-          </button>
-        </div>
-
-        <h1 className="mobile-wikiroo-page-view-title">{selectedPage.title}</h1>
-        <div className="mobile-wikiroo-page-view-meta">
-          By {selectedPage.author} • Updated {formatDateTime(selectedPage.updatedAt)}
-        </div>
+      {/* Navigation */}
+      <div className="mobile-wikiroo-page-nav">
+        <button
+          className="mobile-wikiroo-back-button"
+          onClick={() => navigate('/wikiroo')}
+        >
+          ← Back
+        </button>
       </div>
 
-      {/* Tags Section */}
-      {selectedPage.tags && selectedPage.tags.length > 0 && (
-        <div className="mobile-wikiroo-tags-section">
-          <div className="mobile-wikiroo-tags-header">Tags</div>
-          <div className="mobile-wikiroo-tags-list">
+      {/* Page Detail */}
+      <div className="mobile-wikiroo-page-detail">
+        <h1 className="mobile-wikiroo-page-detail-title">{selectedPage.title}</h1>
+        <div className="mobile-wikiroo-page-detail-meta">
+          <span>By {selectedPage.author}</span>
+          <span>•</span>
+          <span>Created {formatDateTime(selectedPage.createdAt)}</span>
+          <span>•</span>
+          <span>Last edited {formatDateTime(selectedPage.updatedAt)}</span>
+        </div>
+
+        {/* Tags */}
+        {selectedPage.tags && selectedPage.tags.length > 0 && (
+          <div className="mobile-wikiroo-page-detail-tags">
             {selectedPage.tags.map((tag, index) => (
               <div
                 key={tag.id}
-                className="mobile-wikiroo-tag-item"
+                className="mobile-wikiroo-tag-chip"
                 style={{ backgroundColor: getTagColor(index) }}
               >
                 {tag.name}
@@ -162,33 +165,30 @@ export function WikirooPageViewMobile() {
                 </button>
               </div>
             ))}
-            <button
-              className="mobile-wikiroo-add-tag-button"
-              onClick={() => setShowTagSelector(true)}
-            >
-              + Add Tag
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* No Tags - Show Add Button */}
-      {(!selectedPage.tags || selectedPage.tags.length === 0) && (
-        <div className="mobile-wikiroo-tags-section">
-          <div className="mobile-wikiroo-tags-header">Tags</div>
-          <button
-            className="mobile-wikiroo-add-tag-button"
-            onClick={() => setShowTagSelector(true)}
-          >
-            + Add Tag
-          </button>
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="mobile-wikiroo-page-content">
-        <div className="mobile-wikiroo-markdown">
+        {/* Content */}
+        <div className="mobile-wikiroo-page-detail-content">
           <MarkdownPreview content={selectedPage.content} />
+        </div>
+
+        {/* Actions */}
+        <div className="mobile-wikiroo-page-detail-actions">
+          <button
+            className="mobile-wikiroo-action-button mobile-wikiroo-edit-button"
+            onClick={() => setShowEditModal(true)}
+            disabled={isUpdating || isDeleting}
+          >
+            Edit
+          </button>
+          <button
+            className="mobile-wikiroo-action-button mobile-wikiroo-delete-button"
+            onClick={handleDeleteClick}
+            disabled={isUpdating || isDeleting}
+          >
+            Delete
+          </button>
         </div>
       </div>
 
@@ -198,44 +198,22 @@ export function WikirooPageViewMobile() {
           page={selectedPage}
           onClose={() => setShowEditModal(false)}
           onUpdate={handleUpdate}
-          onDelete={handleDelete}
+          onDelete={handleDeleteConfirm}
           onError={setErrorMessage}
           isUpdating={isUpdating}
           isDeleting={isDeleting}
         />
       )}
 
-      {/* Tag Selector Modal */}
-      {showTagSelector && (
-        <div
-          className="mobile-wikiroo-modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowTagSelector(false);
-            }
-          }}
-        >
-          <div className="mobile-wikiroo-modal">
-            <div className="mobile-wikiroo-modal-header">
-              <h2 className="mobile-wikiroo-modal-title">Add Tag</h2>
-              <button
-                className="mobile-wikiroo-modal-close"
-                onClick={() => setShowTagSelector(false)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="mobile-wikiroo-modal-content">
-              <TagSelector
-                pageId={selectedPage.id}
-                onTagAdded={() => {
-                  setShowTagSelector(false);
-                  selectPage(selectedPage.id);
-                }}
-              />
-            </div>
-          </div>
-        </div>
+      {/* Delete Confirmation */}
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          message="Are you sure you want to delete this page? This action cannot be undone."
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setShowDeleteConfirm(false)}
+          confirmText="Delete"
+          cancelText="Cancel"
+        />
       )}
     </div>
   );
