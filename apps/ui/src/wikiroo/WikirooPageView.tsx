@@ -104,7 +104,7 @@ export function WikirooPageView() {
         </div>
       )}
 
-      {selectedPage && (
+      {selectedPage && !showEditForm && (
         <div className="wikiroo-page-detail">
           <div className="wikiroo-page-detail-header">
             <h1 className="wikiroo-page-detail-title">{selectedPage.title}</h1>
