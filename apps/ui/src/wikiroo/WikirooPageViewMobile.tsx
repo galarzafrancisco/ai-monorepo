@@ -2,8 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
-import { WikiPageEditForm } from './WikiPageEditForm';
-import { TagSelector } from './TagSelector';
+import { WikiPageForm } from './WikiPageForm';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { UpdatePageDto } from 'shared';
 import './WikirooMobile.css';
@@ -20,10 +19,8 @@ export function WikirooPageViewMobile() {
     deletePage,
     isUpdating,
     isDeleting,
-    removeTagFromPage,
   } = useWikiroo();
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showTagSelector, setShowTagSelector] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -80,30 +77,14 @@ export function WikirooPageViewMobile() {
     return colors[index % colors.length];
   };
 
-  const handleRemoveTag = async (tagId: string) => {
-    if (!selectedPage) return;
-    await removeTagFromPage(selectedPage.id, tagId);
-  };
-
   const handleUpdate = useCallback(
-    async (updatedPage: any) => {
+    async (payload: UpdatePageDto) => {
       if (!pageId) return;
-      const payload: UpdatePageDto = {};
-      if (updatedPage.title !== selectedPage?.title) payload.title = updatedPage.title;
-      if (updatedPage.content !== selectedPage?.content) payload.content = updatedPage.content;
-      if (updatedPage.author !== selectedPage?.author) payload.author = updatedPage.author;
-
-      try {
-        await updatePage(pageId, payload);
-        setShowEditModal(false);
-        setErrorMessage('');
-      } catch (err: any) {
-        const errorMsg = err?.body?.detail || err?.message || 'Failed to update page';
-        setErrorMessage(errorMsg);
-        throw err;
-      }
+      await updatePage(pageId, payload);
+      setShowEditModal(false);
+      setErrorMessage('');
     },
-    [pageId, selectedPage, updatePage],
+    [pageId, updatePage],
   );
 
   const handleDeleteClick = useCallback(() => {
@@ -156,13 +137,6 @@ export function WikirooPageViewMobile() {
                 style={{ backgroundColor: getTagColor(index) }}
               >
                 {tag.name}
-                <button
-                  className="mobile-wikiroo-tag-remove"
-                  onClick={() => handleRemoveTag(tag.id)}
-                  aria-label={`Remove tag ${tag.name}`}
-                >
-                  ×
-                </button>
               </div>
             ))}
           </div>
@@ -194,15 +168,23 @@ export function WikirooPageViewMobile() {
 
       {/* Edit Modal */}
       {showEditModal && selectedPage && (
-        <WikiPageEditForm
-          page={selectedPage}
-          onClose={() => setShowEditModal(false)}
-          onUpdate={handleUpdate}
-          onDelete={handleDeleteConfirm}
-          onError={setErrorMessage}
-          isUpdating={isUpdating}
-          isDeleting={isDeleting}
-        />
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Page</h2>
+              <button onClick={() => setShowEditModal(false)} className="btn-close">
+                ×
+              </button>
+            </div>
+            <WikiPageForm
+              mode="edit"
+              page={selectedPage}
+              onSubmit={handleUpdate}
+              onCancel={() => setShowEditModal(false)}
+              isSubmitting={isUpdating}
+            />
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation */}
