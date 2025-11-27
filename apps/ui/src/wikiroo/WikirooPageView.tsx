@@ -5,9 +5,8 @@ import './Wikiroo.css';
 import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { WikiPageEditForm } from './WikiPageEditForm';
+import { WikiPageForm } from './WikiPageForm';
 import { TagBadge } from './TagBadge';
-import { TagSelector } from './TagSelector';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { UpdatePageDto } from 'shared';
 
@@ -32,8 +31,6 @@ export function WikirooPageView() {
     deletePage,
     isUpdating,
     isDeleting,
-    addTagToPage,
-    removeTagFromPage,
   } = useWikiroo();
   const [showEditForm, setShowEditForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -62,24 +59,13 @@ export function WikirooPageView() {
   }, [pageId, selectPage]);
 
   const handleUpdate = useCallback(
-    async (updatedPage: any) => {
+    async (payload: UpdatePageDto) => {
       if (!pageId) return;
-      const payload: UpdatePageDto = {};
-      if (updatedPage.title !== selectedPage?.title) payload.title = updatedPage.title;
-      if (updatedPage.content !== selectedPage?.content) payload.content = updatedPage.content;
-      if (updatedPage.author !== selectedPage?.author) payload.author = updatedPage.author;
-
-      try {
-        await updatePage(pageId, payload);
-        setShowEditForm(false);
-        setErrorMessage('');
-      } catch (err: any) {
-        const errorMsg = err?.body?.detail || err?.message || 'Failed to update page';
-        setErrorMessage(errorMsg);
-        throw err;
-      }
+      await updatePage(pageId, payload);
+      setShowEditForm(false);
+      setErrorMessage('');
     },
-    [pageId, selectedPage, updatePage],
+    [pageId, updatePage],
   );
 
   const handleDeleteClick = useCallback(() => {
@@ -98,26 +84,6 @@ export function WikirooPageView() {
       setShowDeleteConfirm(false);
     }
   }, [pageId, deletePage, navigate]);
-
-  const handleRemoveTag = useCallback(
-    async (tagId: string) => {
-      if (!pageId) return;
-      try {
-        await removeTagFromPage(pageId, tagId);
-        setErrorMessage('');
-      } catch (err: any) {
-        const errorMsg = err?.body?.detail || err?.message || 'Failed to remove tag';
-        setErrorMessage(errorMsg);
-      }
-    },
-    [pageId, removeTagFromPage],
-  );
-
-  const handleTagAdded = useCallback(() => {
-    if (pageId) {
-      selectPage(pageId);
-    }
-  }, [pageId, selectPage]);
 
   return (
     <div className="wikiroo wikiroo-page-view">
@@ -154,7 +120,7 @@ export function WikirooPageView() {
           {selectedPage.tags && selectedPage.tags.length > 0 && (
             <div className="wikiroo-page-detail-tags">
               {selectedPage.tags.map((tag) => (
-                <TagBadge key={tag.id} tag={tag} onRemove={() => handleRemoveTag(tag.id)} />
+                <TagBadge key={tag.id} tag={tag} />
               ))}
             </div>
           )}
@@ -185,15 +151,24 @@ export function WikirooPageView() {
       )}
 
       {showEditForm && selectedPage && (
-        <WikiPageEditForm
-          page={selectedPage}
-          onClose={() => setShowEditForm(false)}
-          onUpdate={handleUpdate}
-          onDelete={handleDeleteConfirm}
-          onError={setErrorMessage}
-          isUpdating={isUpdating}
-          isDeleting={isDeleting}
-        />
+        <div className="wikiroo-edit-container">
+          <div className="wikiroo-edit-header">
+            <h2>Edit Page</h2>
+            <button
+              onClick={() => setShowEditForm(false)}
+              className="wikiroo-button secondary"
+            >
+              Close
+            </button>
+          </div>
+          <WikiPageForm
+            mode="edit"
+            page={selectedPage}
+            onSubmit={handleUpdate}
+            onCancel={() => setShowEditForm(false)}
+            isSubmitting={isUpdating}
+          />
+        </div>
       )}
 
       {showDeleteConfirm && (
