@@ -117,6 +117,7 @@ export function WikirooPageViewMobile() {
       </div>
 
       {/* Page Detail */}
+      {!showEditModal && (
       <div className="mobile-wikiroo-page-detail">
         <h1 className="mobile-wikiroo-page-detail-title">{selectedPage.title}</h1>
         <div className="mobile-wikiroo-page-detail-meta">
@@ -165,6 +166,7 @@ export function WikirooPageViewMobile() {
           </button>
         </div>
       </div>
+      )}
 
       {/* Edit Modal */}
       {showEditModal && selectedPage && (
