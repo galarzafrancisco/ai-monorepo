@@ -296,12 +296,9 @@
 }
 
 .wikiroo-page-detail {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 48px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   max-width: 900px;
   margin: 0 auto;
+  padding: 0 24px;
 }
 
 .wikiroo-page-detail-header {
@@ -373,7 +370,7 @@
   }
 
   .wikiroo-page-detail {
-    padding: 24px;
+    padding: 0 16px;
   }
 
   .wikiroo-page-detail-title {
