@@ -15,6 +15,8 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
   const [assignee, setAssignee] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [tagNames, setTagNames] = useState<string[]>([]);
+  const [createdBy, setCreatedBy] = useState('');
+  const [dependsOnIds, setDependsOnIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -35,9 +37,11 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
       await TaskerooService.taskerooControllerCreateTask({
         name,
         description,
+        createdBy,
         ...(assignee && { assignee }),
         ...(sessionId && { sessionId }),
         ...(tagNames.length > 0 && { tagNames }),
+        ...(dependsOnIds.length > 0 && { dependsOnIds }),
       });
       onClose();
     } catch (err: any) {
@@ -83,6 +87,18 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
           </div>
 
           <div className="form-group">
+            <label htmlFor="createdBy">Created By *</label>
+            <input
+              id="createdBy"
+              type="text"
+              value={createdBy}
+              onChange={(e) => setCreatedBy(e.target.value)}
+              required
+              placeholder="Your name"
+            />
+          </div>
+
+          <div className="form-group">
             <label htmlFor="assignee">Assigned to</label>
             <input
               id="assignee"
@@ -110,6 +126,17 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
               value={tagNames}
               onChange={setTagNames}
               placeholder="Type to add tags..."
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="dependsOn">Depends On (Task IDs)</label>
+            <input
+              id="dependsOn"
+              type="text"
+              value={dependsOnIds.join(', ')}
+              onChange={(e) => setDependsOnIds(e.target.value.split(',').map(id => id.trim()).filter(id => id))}
+              placeholder="Enter task IDs separated by commas"
             />
           </div>
 
