@@ -32,6 +32,7 @@ import { PageParamsDto } from './dto/page-params.dto';
 import { UpdatePageDto } from './dto/update-page.dto';
 import { AppendPageDto } from './dto/append-page.dto';
 import { AddWikiTagDto } from './dto/add-wiki-tag.dto';
+import { CreateWikiTagDto } from './dto/create-wiki-tag.dto';
 import { WikiTagResponseDto } from './dto/wiki-tag-response.dto';
 import { ListPagesQueryDto } from './dto/list-pages-query.dto';
 import { PageResult, PageSummaryResult, TagResult } from './dto/service/wikiroo.service.types';
@@ -174,6 +175,20 @@ export class WikirooController {
   ): Promise<PageResponseDto> {
     const result = await this.wikirooService.removeTagFromPage(pageId, tagId);
     return this.mapToResponse(result);
+  }
+
+  @Post('tags')
+  @ApiOperation({ summary: 'Create a new tag' })
+  @ApiCreatedResponse({
+    type: WikiTagResponseDto,
+    description: 'Tag created successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async createTag(@Body() dto: CreateWikiTagDto): Promise<WikiTagResponseDto> {
+    const result = await this.wikirooService.createTag({
+      name: dto.name,
+    });
+    return this.mapTagToResponse(result);
   }
 
   @Get('tags/all')

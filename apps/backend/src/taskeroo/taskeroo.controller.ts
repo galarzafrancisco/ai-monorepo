@@ -33,6 +33,7 @@ import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
 import { TagResponseDto } from './dto/tag-response.dto';
 import { AddTagDto } from './dto/add-tag.dto';
+import { CreateTagDto } from './dto/create-tag.dto';
 import { TaskParamsDto } from './dto/task-params.dto';
 import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
@@ -222,6 +223,20 @@ export class TaskerooController {
   ): Promise<TaskResponseDto> {
     const result = await this.taskerooService.removeTagFromTask(taskId, tagId);
     return this.mapResultToResponse(result);
+  }
+
+  @Post('tags')
+  @ApiOperation({ summary: 'Create a new tag' })
+  @ApiCreatedResponse({
+    type: TagResponseDto,
+    description: 'Tag created successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async createTag(@Body() dto: CreateTagDto): Promise<TagResponseDto> {
+    const result = await this.taskerooService.createTag({
+      name: dto.name,
+    });
+    return this.mapTagResultToResponse(result);
   }
 
   @Get('tags/all')

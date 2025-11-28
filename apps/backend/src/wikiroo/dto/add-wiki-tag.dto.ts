@@ -11,7 +11,7 @@ export class AddWikiTagDto {
   name!: string;
 
   @ApiPropertyOptional({
-    description: 'Color for the tag (hex format)',
+    description: 'Color for the tag (hex format). If not provided, a random color will be assigned.',
     example: '#FF5733',
   })
   @IsString()

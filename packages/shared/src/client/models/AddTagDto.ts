@@ -8,7 +8,7 @@ export type AddTagDto = {
      */
     name: string;
     /**
-     * Color for the tag (hex format)
+     * Color for the tag (hex format). If not provided, a random color will be assigned.
      */
     color?: string;
 };
