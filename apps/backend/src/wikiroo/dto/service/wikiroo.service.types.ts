@@ -16,6 +16,10 @@ export interface AppendPageInput {
   content: string;
 }
 
+export interface ListPagesInput {
+  tag?: string;
+}
+
 export interface TagResult {
   id: string;
   name: string;

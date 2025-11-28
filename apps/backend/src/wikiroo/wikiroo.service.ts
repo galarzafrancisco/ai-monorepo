@@ -7,6 +7,7 @@ import {
   AddTagInput,
   AppendPageInput,
   CreatePageInput,
+  ListPagesInput,
   PageResult,
   PageSummaryResult,
   TagResult,
@@ -62,9 +63,23 @@ export class WikirooService {
     return this.mapToResult(pageWithTags!);
   }
 
-  async listPages(): Promise<PageSummaryResult[]> {
-    this.logger.log({ message: 'Listing wiki pages' });
+  async listPages(input?: ListPagesInput): Promise<PageSummaryResult[]> {
+    this.logger.log({ message: 'Listing wiki pages', tag: input?.tag });
 
+    // If tag filter is provided, use query builder for join
+    if (input?.tag) {
+      const pages = await this.pageRepository
+        .createQueryBuilder('page')
+        .leftJoinAndSelect('page.tags', 'tags')
+        .innerJoin('page.tags', 'filterTag')
+        .where('filterTag.name = :tagName', { tagName: input.tag })
+        .orderBy('page.createdAt', 'DESC')
+        .getMany();
+
+      return pages.map((page) => this.mapToSummary(page));
+    }
+
+    // Standard filtering without tags
     const pages = await this.pageRepository.find({
       relations: ['tags'],
       order: { createdAt: 'DESC' },
@@ -239,42 +254,6 @@ export class WikirooService {
 
     const tags = await this.tagRepository.find({
       order: { name: 'ASC' },
-    });
-
-    return tags.map((tag) => this.mapTagToResult(tag));
-  }
-
-  async listPagesByTag(tagName: string): Promise<PageResult[]> {
-    this.logger.log({ message: 'Listing pages by tag', tagName });
-
-    const tag = await this.tagRepository.findOne({
-      where: { name: tagName },
-      relations: ['pages', 'pages.tags'],
-    });
-
-    if (!tag) {
-      return [];
-    }
-
-    return tag.pages.map((page) => this.mapToResult(page));
-  }
-
-  async searchTags(query: string): Promise<TagResult[]> {
-    this.logger.log({
-      message: 'Searching tags',
-      query,
-    });
-
-    const tags = await this.tagRepository
-      .createQueryBuilder('tag')
-      .where('LOWER(tag.name) LIKE LOWER(:query)', { query: `%${query}%` })
-      .orderBy('tag.name', 'ASC')
-      .getMany();
-
-    this.logger.log({
-      message: 'Tags search completed',
-      query,
-      count: tags.length,
     });
 
     return tags.map((tag) => this.mapTagToResult(tag));

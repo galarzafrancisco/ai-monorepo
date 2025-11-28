@@ -21,9 +21,12 @@ export class WikirooMcpGateway {
       {
         title: 'List wiki pages',
         description: 'Get a list of all wiki pages with metadata (title, id, author)',
+        inputSchema: {
+          tag: z.string().optional(),
+        },
       },
-      async ({ }) => {
-        const pages = await this.wikirooService.listPages();
+      async ({ tag }) => {
+        const pages = await this.wikirooService.listPages({ tag });
         return {
           content: [{
             type: "text",
@@ -212,30 +215,6 @@ export class WikirooMcpGateway {
           content: [{
             type: "text",
             text: JSON.stringify(tags),
-          }],
-        }
-      }
-    )
-
-    server.registerTool(
-      'list_pages_by_tag',
-      {
-        title: 'List pages by tag',
-        description: 'Get all wiki pages that have a specific tag',
-        inputSchema: {
-          tagName: z.string(),
-        },
-      },
-      async ({ tagName }) => {
-        const pages = await this.wikirooService.listPagesByTag(tagName);
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(pages.map(p => ({
-              name: p.title,
-              author: p.author,
-              id: p.id,
-            }))),
           }],
         }
       }

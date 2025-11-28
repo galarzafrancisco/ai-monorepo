@@ -34,13 +34,19 @@ export class WikirooService {
     }
     /**
      * List wiki pages without content
+     * @param tag Filter pages by tag name
      * @returns PageListResponseDto List of wiki pages
      * @throws ApiError
      */
-    public static wikirooControllerListPages(): CancelablePromise<PageListResponseDto> {
+    public static wikirooControllerListPages(
+        tag?: string,
+    ): CancelablePromise<PageListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/wikiroo/pages',
+            query: {
+                'tag': tag,
+            },
         });
     }
     /**
@@ -178,23 +184,6 @@ export class WikirooService {
         });
     }
     /**
-     * Search tags by name
-     * @param q
-     * @returns WikiTagResponseDto List of tags matching the search query
-     * @throws ApiError
-     */
-    public static wikirooControllerSearchTags(
-        q: string,
-    ): CancelablePromise<Array<WikiTagResponseDto>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/wikiroo/pages/tags/search',
-            query: {
-                'q': q,
-            },
-        });
-    }
-    /**
      * Delete a tag from the system
      * @param tagId
      * @returns void
@@ -208,23 +197,6 @@ export class WikirooService {
             url: '/api/v1/wikiroo/pages/tags/{tagId}',
             path: {
                 'tagId': tagId,
-            },
-        });
-    }
-    /**
-     * List pages by tag name
-     * @param name
-     * @returns PageResponseDto List of pages with the specified tag
-     * @throws ApiError
-     */
-    public static wikirooControllerListPagesByTag(
-        name: string,
-    ): CancelablePromise<Array<PageResponseDto>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/wikiroo/pages/tags/{name}/pages',
-            path: {
-                'name': name,
             },
         });
     }

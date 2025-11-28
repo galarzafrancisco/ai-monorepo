@@ -33,6 +33,7 @@ import { UpdatePageDto } from './dto/update-page.dto';
 import { AppendPageDto } from './dto/append-page.dto';
 import { AddWikiTagDto } from './dto/add-wiki-tag.dto';
 import { WikiTagResponseDto } from './dto/wiki-tag-response.dto';
+import { ListPagesQueryDto } from './dto/list-pages-query.dto';
 import { PageResult, PageSummaryResult, TagResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 
@@ -68,8 +69,8 @@ export class WikirooController {
     type: PageListResponseDto,
     description: 'List of wiki pages',
   })
-  async listPages(): Promise<PageListResponseDto> {
-    const items = await this.wikirooService.listPages();
+  async listPages(@Query() query: ListPagesQueryDto): Promise<PageListResponseDto> {
+    const items = await this.wikirooService.listPages({ tag: query.tag });
     return {
       items: items.map((item) => this.mapToSummary(item)),
     };
@@ -186,34 +187,12 @@ export class WikirooController {
     return result.map((tag) => this.mapTagToResponse(tag));
   }
 
-  @Get('tags/search')
-  @ApiOperation({ summary: 'Search tags by name' })
-  @ApiOkResponse({
-    type: [WikiTagResponseDto],
-    description: 'List of tags matching the search query',
-  })
-  async searchTags(@Query('q') query: string): Promise<WikiTagResponseDto[]> {
-    const result = await this.wikirooService.searchTags(query || '');
-    return result.map((tag) => this.mapTagToResponse(tag));
-  }
-
   @Delete('tags/:tagId')
   @ApiOperation({ summary: 'Delete a tag from the system' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Tag deleted successfully' })
   async deleteTag(@Param('tagId') tagId: string): Promise<void> {
     await this.wikirooService.deleteTag(tagId);
-  }
-
-  @Get('tags/:name/pages')
-  @ApiOperation({ summary: 'List pages by tag name' })
-  @ApiOkResponse({
-    type: [PageResponseDto],
-    description: 'List of pages with the specified tag',
-  })
-  async listPagesByTag(@Param('name') tagName: string): Promise<PageResponseDto[]> {
-    const result = await this.wikirooService.listPagesByTag(tagName);
-    return result.map((page) => this.mapToResponse(page));
   }
 
   private mapToResponse(result: PageResult): PageResponseDto {
