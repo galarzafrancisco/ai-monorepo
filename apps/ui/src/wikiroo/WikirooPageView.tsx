@@ -120,7 +120,7 @@ export function WikirooPageView() {
           {selectedPage.tags && selectedPage.tags.length > 0 && (
             <div className="wikiroo-page-detail-tags">
               {selectedPage.tags.map((tag) => (
-                <TagBadge key={tag.id} tag={tag} />
+                <TagBadge key={tag.name} tag={tag} />
               ))}
             </div>
           )}

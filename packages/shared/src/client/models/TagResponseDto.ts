@@ -4,10 +4,6 @@
 /* eslint-disable */
 export type TagResponseDto = {
     /**
-     * Unique identifier for the tag
-     */
-    id: string;
-    /**
      * Name of the tag
      */
     name: string;
@@ -15,13 +11,5 @@ export type TagResponseDto = {
      * Color for the tag (hex format)
      */
     color?: string;
-    /**
-     * Timestamp when the tag was created
-     */
-    createdAt: string;
-    /**
-     * Timestamp when the tag was last updated
-     */
-    updatedAt: string;
 };
 

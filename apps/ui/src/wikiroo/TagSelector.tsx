@@ -90,7 +90,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ pageId, onTagAdded }) 
             >
               <option value="">Select existing tag...</option>
               {allTags.map((tag) => (
-                <option key={tag.id} value={tag.name}>
+                <option key={tag.name} value={tag.name}>
                   {tag.name}
                 </option>
               ))}

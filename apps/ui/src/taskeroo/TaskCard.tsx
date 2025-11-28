@@ -27,7 +27,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       {task.tags && task.tags.length > 0 && (
         <div style={{ marginTop: '8px', marginBottom: '8px' }}>
           {task.tags.map((tag) => (
-            <TagBadge key={tag.id} tag={tag} small={true} />
+            <TagBadge key={tag.name} tag={tag} small={true} />
           ))}
         </div>
       )}

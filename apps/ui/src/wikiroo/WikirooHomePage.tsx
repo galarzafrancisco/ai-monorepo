@@ -84,7 +84,7 @@ export function WikirooHomePage() {
             {page.tags && page.tags.length > 0 && (
               <div style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {page.tags.map((tag) => (
-                  <TagBadge key={tag.id} tag={tag} small />
+                  <TagBadge key={tag.name} tag={tag} small />
                 ))}
               </div>
             )}

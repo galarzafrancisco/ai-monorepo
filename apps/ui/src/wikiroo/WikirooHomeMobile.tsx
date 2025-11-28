@@ -106,7 +106,7 @@ export function WikirooHomeMobile() {
               <div className="mobile-wikiroo-page-tags">
                 {page.tags.map((tag, index) => (
                   <span
-                    key={tag.id}
+                    key={tag.name}
                     className="mobile-wikiroo-page-tag"
                     style={{ backgroundColor: getTagColor(index) }}
                   >

@@ -133,7 +133,7 @@ export function WikirooPageViewMobile() {
           <div className="mobile-wikiroo-page-detail-tags">
             {selectedPage.tags.map((tag, index) => (
               <div
-                key={tag.id}
+                key={tag.name}
                 className="mobile-wikiroo-tag-chip"
                 style={{ backgroundColor: getTagColor(index) }}
               >

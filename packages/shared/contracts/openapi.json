@@ -2395,11 +2395,6 @@
       "TagResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the tag",
-            "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-          },
           "name": {
             "type": "string",
             "description": "Name of the tag",
@@ -2409,23 +2404,10 @@
             "type": "string",
             "description": "Color for the tag (hex format)",
             "example": "#FF5733"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the tag was created",
-            "example": "2023-10-15T10:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the tag was last updated",
-            "example": "2023-10-15T10:00:00.000Z"
           }
         },
         "required": [
-          "id",
-          "name",
-          "createdAt",
-          "updatedAt"
+          "name"
         ]
       },
       "TaskResponseDto": {
@@ -2714,11 +2696,6 @@
       "WikiTagResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the tag",
-            "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-          },
           "name": {
             "type": "string",
             "description": "Name of the tag",
@@ -2728,23 +2705,10 @@
             "type": "string",
             "description": "Color for the tag (hex format)",
             "example": "#FF5733"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the tag was created",
-            "example": "2023-10-15T10:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the tag was last updated",
-            "example": "2023-10-15T10:00:00.000Z"
           }
         },
         "required": [
-          "id",
-          "name",
-          "createdAt",
-          "updatedAt"
+          "name"
         ]
       },
       "PageResponseDto": {
