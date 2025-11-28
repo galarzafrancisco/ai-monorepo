@@ -17,27 +17,34 @@ export const TagInput: React.FC<TagInputProps> = ({
   const [suggestions, setSuggestions] = useState<WikiTagResponseDto[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [allTags, setAllTags] = useState<WikiTagResponseDto[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Load all tags on mount
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const tags = await WikirooService.wikirooControllerGetAllTags();
+        setAllTags(tags);
+      } catch (error) {
+        console.error('Failed to load tags:', error);
+      }
+    };
+    loadTags();
+  }, []);
+
   // Search for tags as user types
   useEffect(() => {
-    const searchTags = async () => {
+    const searchTags = () => {
       if (inputValue.trim().length > 0) {
-        try {
-          // Get all tags and filter locally
-          const allTags = await WikirooService.wikirooControllerGetAllTags();
-          const query = inputValue.trim().toLowerCase();
-          const filtered = allTags
-            .filter((tag: WikiTagResponseDto) =>
-              tag.name.toLowerCase().includes(query) && !value.includes(tag.name)
-            );
-          setSuggestions(filtered);
-          setShowSuggestions(true);
-        } catch (error) {
-          console.error('Failed to search tags:', error);
-          setSuggestions([]);
-        }
+        const query = inputValue.trim().toLowerCase();
+        const filtered = allTags
+          .filter((tag: WikiTagResponseDto) =>
+            tag.name.toLowerCase().includes(query) && !value.includes(tag.name)
+          );
+        setSuggestions(filtered);
+        setShowSuggestions(true);
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -46,7 +53,7 @@ export const TagInput: React.FC<TagInputProps> = ({
 
     const timeoutId = setTimeout(searchTags, 150); // Debounce
     return () => clearTimeout(timeoutId);
-  }, [inputValue, value]);
+  }, [inputValue, value, allTags]);
 
   // Click outside to close suggestions
   useEffect(() => {
@@ -125,41 +132,48 @@ export const TagInput: React.FC<TagInputProps> = ({
         }}
         onClick={() => inputRef.current?.focus()}
       >
-        {value.map((tagName) => (
-          <span
-            key={tagName}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: '#3B82F6',
-              color: 'white',
-              padding: '2px 8px',
-              borderRadius: '3px',
-              fontSize: '0.875rem',
-            }}
-          >
-            {tagName}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                removeTag(tagName);
-              }}
+        {value.map((tagName) => {
+          const tagData = allTags.find(t => t.name === tagName);
+          const backgroundColor = tagData?.color || '#6B7280';
+
+          return (
+            <span
+              key={tagName}
               style={{
-                background: 'none',
-                border: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '2px',
+                backgroundColor,
                 color: 'white',
-                cursor: 'pointer',
-                padding: '0 2px',
-                fontSize: '1rem',
-                lineHeight: '1',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontSize: '0.7rem',
+                fontWeight: '500',
               }}
             >
-              ×
-            </button>
-          </span>
-        ))}
+              {tagName}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeTag(tagName);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'white',
+                  cursor: 'pointer',
+                  padding: '0',
+                  marginLeft: '1px',
+                  fontSize: '0.85rem',
+                  lineHeight: '1',
+                }}
+              >
+                ×
+              </button>
+            </span>
+          );
+        })}
         <input
           ref={inputRef}
           type="text"
