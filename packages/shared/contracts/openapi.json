@@ -666,7 +666,18 @@
       },
       "get": {
         "operationId": "WikirooController_listPages",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Filter pages by tag name",
+            "schema": {
+              "example": "tutorial",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "List of wiki pages",
@@ -939,40 +950,6 @@
         ]
       }
     },
-    "/api/v1/wikiroo/pages/tags/search": {
-      "get": {
-        "operationId": "WikirooController_searchTags",
-        "parameters": [
-          {
-            "name": "q",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of tags matching the search query",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WikiTagResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Search tags by name",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
     "/api/v1/wikiroo/pages/tags/{tagId}": {
       "delete": {
         "operationId": "WikirooController_deleteTag",
@@ -992,40 +969,6 @@
           }
         },
         "summary": "Delete a tag from the system",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/tags/{name}/pages": {
-      "get": {
-        "operationId": "WikirooController_listPagesByTag",
-        "parameters": [
-          {
-            "name": "name",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of pages with the specified tag",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PageResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List pages by tag name",
         "tags": [
           "Wikiroo"
         ]

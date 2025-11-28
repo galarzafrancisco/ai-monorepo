@@ -298,23 +298,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tags/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Search tags by name */
-        get: operations["WikirooController_searchTags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/wikiroo/pages/tags/{tagId}": {
         parameters: {
             query?: never;
@@ -327,23 +310,6 @@ export interface paths {
         post?: never;
         /** Delete a tag from the system */
         delete: operations["WikirooController_deleteTag"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/tags/{name}/pages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List pages by tag name */
-        get: operations["WikirooController_listPagesByTag"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2421,7 +2387,10 @@ export interface operations {
     };
     WikirooController_listPages: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filter pages by tag name */
+                tag?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2652,28 +2621,6 @@ export interface operations {
             };
         };
     };
-    WikirooController_searchTags: {
-        parameters: {
-            query: {
-                q: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of tags matching the search query */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"][];
-                };
-            };
-        };
-    };
     WikirooController_deleteTag: {
         parameters: {
             query?: never;
@@ -2691,28 +2638,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    WikirooController_listPagesByTag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of pages with the specified tag */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"][];
-                };
             };
         };
     };
