@@ -235,6 +235,26 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
         </div>
 
         <div className="detail-section">
+          <h3>Task Info</h3>
+          <div className="task-info-grid">
+            <div className="info-item">
+              <label>Created By</label>
+              <span>{task.createdBy || 'Unknown'}</span>
+            </div>
+            {task.dependsOnIds && task.dependsOnIds.length > 0 && (
+              <div className="info-item">
+                <label>Depends On</label>
+                <div className="dependency-list">
+                  {task.dependsOnIds.map((depId) => (
+                    <span key={depId} className="dependency-id">{depId}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="detail-section">
           <h3>Comments ({task.comments?.length || 0})</h3>
           <div className="comments-list">
             {(task.comments as unknown as Comment[])?.map((c) => (

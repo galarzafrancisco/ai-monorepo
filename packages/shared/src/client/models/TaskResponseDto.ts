@@ -38,6 +38,14 @@ export type TaskResponseDto = {
      */
     tags: Array<TagResponseDto>;
     /**
+     * Name of the person who created the task
+     */
+    createdBy: string;
+    /**
+     * Array of task IDs that this task depends on
+     */
+    dependsOnIds: Array<string>;
+    /**
      * Task creation timestamp
      */
     createdAt: string;

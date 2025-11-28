@@ -107,14 +107,18 @@ export class TaskerooMcpGateway {
           description: z.string(),
           assignee: z.string().optional(),
           sessionId: z.string().optional(),
+          createdBy: z.string(),
+          dependsOnIds: z.array(z.string()).optional(),
         },
       },
-      async ({ name, description, assignee, sessionId }) => {
+      async ({ name, description, assignee, sessionId, createdBy, dependsOnIds }) => {
         const task = await this.taskerooService.createTask({
           name,
           description,
           assignee,
           sessionId,
+          createdBy,
+          dependsOnIds,
         });
         return {
           content: [{

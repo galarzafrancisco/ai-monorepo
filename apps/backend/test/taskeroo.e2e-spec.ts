@@ -46,6 +46,7 @@ describe('Taskeroo E2E Tests', () => {
         .send({
           name: 'Test Task Without Assignee',
           description: 'This is a test task without an assignee',
+          createdBy: 'TestUser',
         })
         .expect(201);
 
@@ -66,6 +67,7 @@ describe('Taskeroo E2E Tests', () => {
           name: 'Test Task With Assignee',
           description: 'This is a test task with an assignee',
           assignee: 'john.doe@example.com',
+          createdBy: 'TestUser',
         })
         .expect(201);
 
@@ -88,6 +90,7 @@ describe('Taskeroo E2E Tests', () => {
         .send({
           name: 'Task Assignment Target',
           description: 'This task will be assigned during tests',
+          createdBy: 'TestUser',
         })
         .expect(201);
 

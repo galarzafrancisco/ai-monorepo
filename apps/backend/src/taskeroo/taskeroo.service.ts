@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TagEntity } from './tag.entity';
 import { TaskStatus } from './enums';
@@ -63,6 +63,7 @@ export class TaskerooService {
       assignee: input.assignee ?? null,
       sessionId: input.sessionId ?? null,
       status: TaskStatus.NOT_STARTED,
+      createdBy: input.createdBy,
     });
 
     const savedTask = await this.taskRepository.save(task);
@@ -74,10 +75,22 @@ export class TaskerooService {
       await this.taskRepository.save(savedTask);
     }
 
+    // Handle dependencies if provided
+    if (input.dependsOnIds && input.dependsOnIds.length > 0) {
+      const dependencyTasks = await this.taskRepository.findBy({
+        id: In(input.dependsOnIds),
+      });
+      if (dependencyTasks.length !== input.dependsOnIds.length) {
+        throw new Error('One or more dependency tasks not found');
+      }
+      savedTask.dependsOn = dependencyTasks;
+      await this.taskRepository.save(savedTask);
+    }
+
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: savedTask.id },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!taskWithRelations) {
@@ -102,7 +115,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!task) {
@@ -114,6 +127,7 @@ export class TaskerooService {
     if (input.description !== undefined) task.description = input.description;
     if (input.assignee !== undefined) task.assignee = input.assignee ?? null;
     if (input.sessionId !== undefined) task.sessionId = input.sessionId ?? null;
+    if (input.createdBy !== undefined) task.createdBy = input.createdBy;
 
     // Handle tags if provided
     if (input.tagNames !== undefined) {
@@ -124,12 +138,27 @@ export class TaskerooService {
       }
     }
 
+    // Handle dependencies if provided
+    if (input.dependsOnIds !== undefined) {
+      if (input.dependsOnIds.length === 0) {
+        task.dependsOn = [];
+      } else {
+        const dependencyTasks = await this.taskRepository.findBy({
+          id: In(input.dependsOnIds),
+        });
+        if (dependencyTasks.length !== input.dependsOnIds.length) {
+          throw new Error('One or more dependency tasks not found');
+        }
+        task.dependsOn = dependencyTasks;
+      }
+    }
+
     const updatedTask = await this.taskRepository.save(task);
 
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!taskWithRelations) {
@@ -155,7 +184,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!task) {
@@ -260,7 +289,7 @@ export class TaskerooService {
 
     const [tasks, total] = await this.taskRepository.findAndCount({
       where,
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
       order: { updatedAt: 'DESC' },
       skip,
       take: input.limit,
@@ -284,7 +313,7 @@ export class TaskerooService {
   async getTaskById(taskId: string): Promise<TaskResult> {
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!task) {
@@ -334,7 +363,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!task) {
@@ -375,7 +404,7 @@ export class TaskerooService {
     // Reload to get updated comments if any were added
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!taskWithRelations) {
@@ -434,7 +463,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!task) {
@@ -471,7 +500,7 @@ export class TaskerooService {
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!taskWithRelations) {
@@ -490,7 +519,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags'],
+      relations: ['comments', 'tags', 'dependsOn'],
     });
 
     if (!task) {
@@ -599,6 +628,8 @@ export class TaskerooService {
       sessionId: task.sessionId,
       comments: task.comments.map((c) => this.mapCommentToResult(c)),
       tags: (task.tags || []).map((t) => this.mapTagToResult(t)),
+      createdBy: task.createdBy,
+      dependsOnIds: (task.dependsOn || []).map((t) => t.id),
       rowVersion: task.rowVersion,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,

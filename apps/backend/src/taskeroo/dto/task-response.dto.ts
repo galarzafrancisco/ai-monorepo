@@ -81,6 +81,19 @@ export class TaskResponseDto {
   tags!: TagResponseDto[];
 
   @ApiProperty({
+    description: 'Name of the person who created the task',
+    example: 'Fran',
+  })
+  createdBy!: string;
+
+  @ApiProperty({
+    description: 'Array of task IDs that this task depends on',
+    type: [String],
+    example: ['uuid-1', 'uuid-2'],
+  })
+  dependsOnIds!: string[];
+
+  @ApiProperty({
     description: 'Task creation timestamp',
     example: '2025-11-03T10:30:00.000Z',
   })
