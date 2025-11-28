@@ -39,6 +39,7 @@ export class TaskService {
      * List tasks with optional filtering and pagination
      * @param assignee Filter tasks by assignee name
      * @param sessionId Filter tasks by session ID
+     * @param tag Filter tasks by tag name
      * @param page Page number (1-indexed)
      * @param limit Items per page (1-100)
      * @returns TaskListResponseDto Paginated list of tasks
@@ -47,6 +48,7 @@ export class TaskService {
     public static taskerooControllerListTasks(
         assignee?: string,
         sessionId?: string,
+        tag?: string,
         page: number = 1,
         limit: number = 20,
     ): CancelablePromise<TaskListResponseDto> {
@@ -56,6 +58,7 @@ export class TaskService {
             query: {
                 'assignee': assignee,
                 'sessionId': sessionId,
+                'tag': tag,
                 'page': page,
                 'limit': limit,
             },
@@ -261,23 +264,6 @@ export class TaskService {
         });
     }
     /**
-     * Search tags by name
-     * @param q
-     * @returns TagResponseDto List of tags matching the search query
-     * @throws ApiError
-     */
-    public static taskerooControllerSearchTags(
-        q: string,
-    ): CancelablePromise<Array<TagResponseDto>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/taskeroo/tasks/tags/search',
-            query: {
-                'q': q,
-            },
-        });
-    }
-    /**
      * Delete a tag from the system
      * @param tagId
      * @returns void
@@ -294,23 +280,6 @@ export class TaskService {
             },
             errors: {
                 404: `Tag not found`,
-            },
-        });
-    }
-    /**
-     * List tasks by tag name
-     * @param name
-     * @returns TaskResponseDto List of tasks with the specified tag
-     * @throws ApiError
-     */
-    public static taskerooControllerListTasksByTag(
-        name: string,
-    ): CancelablePromise<Array<TaskResponseDto>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/taskeroo/tasks/tags/{name}/tasks',
-            path: {
-                'name': name,
             },
         });
     }
