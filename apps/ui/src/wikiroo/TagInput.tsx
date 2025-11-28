@@ -134,7 +134,7 @@ export const TagInput: React.FC<TagInputProps> = ({
       >
         {value.map((tagName) => {
           const tagData = allTags.find(t => t.name === tagName);
-          const backgroundColor = tagData?.color || '#6B7280';
+          const backgroundColor = tagData?.color || '#3B82F6';
 
           return (
             <span
