@@ -38,7 +38,7 @@ export class TaskEntity {
   @Column({ type: 'text', nullable: true, name: 'session_id' })
   sessionId!: string | null;
 
-  @Column({ type: 'text', nullable: false, name: 'created_by' })
+  @Column({ type: 'text', nullable: false, name: 'created_by', default: 'Fran' })
   createdBy!: string;
 
   @ManyToMany(() => TaskEntity, (task) => task.dependents)
