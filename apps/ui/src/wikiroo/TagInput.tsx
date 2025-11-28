@@ -198,7 +198,7 @@ export const TagInput: React.FC<TagInputProps> = ({
         >
           {suggestions.map((tag, index) => (
             <div
-              key={tag.id}
+              key={tag.name}
               onClick={() => addTag(tag.name)}
               style={{
                 padding: '8px 12px',

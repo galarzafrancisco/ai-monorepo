@@ -104,7 +104,7 @@ export function TaskBoardMobile() {
               {task.tags && task.tags.length > 0 && (
                 <div className="mobile-task-tags">
                   {task.tags.map((tag: Task['tags'][0]) => (
-                    <TagBadge key={tag.id} tag={tag} small={true} />
+                    <TagBadge key={tag.name} tag={tag} small={true} />
                   ))}
                 </div>
               )}

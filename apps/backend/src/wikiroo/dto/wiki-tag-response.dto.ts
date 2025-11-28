@@ -2,12 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class WikiTagResponseDto {
   @ApiProperty({
-    description: 'Unique identifier for the tag',
-    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-  })
-  id!: string;
-
-  @ApiProperty({
     description: 'Name of the tag',
     example: 'project-alpha',
   })
@@ -18,16 +12,4 @@ export class WikiTagResponseDto {
     example: '#FF5733',
   })
   color?: string;
-
-  @ApiProperty({
-    description: 'Timestamp when the tag was created',
-    example: '2023-10-15T10:00:00.000Z',
-  })
-  createdAt!: string;
-
-  @ApiProperty({
-    description: 'Timestamp when the tag was last updated',
-    example: '2023-10-15T10:00:00.000Z',
-  })
-  updatedAt!: string;
 }

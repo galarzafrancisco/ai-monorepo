@@ -278,11 +278,8 @@ export class TaskerooController {
 
   private mapTagResultToResponse(result: TagResult): TagResponseDto {
     return {
-      id: result.id,
       name: result.name,
       color: result.color,
-      createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
     };
   }
 }

@@ -75,7 +75,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ taskId, onTagAdded }) 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
             {allTags.map((tag) => (
               <button
-                key={tag.id}
+                key={tag.name}
                 onClick={() => handleAddExistingTag(tag.name)}
                 disabled={isSubmitting}
                 style={{

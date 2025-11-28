@@ -758,11 +758,6 @@ export interface components {
         };
         TagResponseDto: {
             /**
-             * @description Unique identifier for the tag
-             * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
-             */
-            id: string;
-            /**
              * @description Name of the tag
              * @example bug
              */
@@ -772,16 +767,6 @@ export interface components {
              * @example #FF5733
              */
             color?: string;
-            /**
-             * @description Timestamp when the tag was created
-             * @example 2023-10-15T10:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the tag was last updated
-             * @example 2023-10-15T10:00:00.000Z
-             */
-            updatedAt: string;
         };
         TaskResponseDto: {
             /**
@@ -984,11 +969,6 @@ export interface components {
         };
         WikiTagResponseDto: {
             /**
-             * @description Unique identifier for the tag
-             * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
-             */
-            id: string;
-            /**
              * @description Name of the tag
              * @example project-alpha
              */
@@ -998,16 +978,6 @@ export interface components {
              * @example #FF5733
              */
             color?: string;
-            /**
-             * @description Timestamp when the tag was created
-             * @example 2023-10-15T10:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the tag was last updated
-             * @example 2023-10-15T10:00:00.000Z
-             */
-            updatedAt: string;
         };
         PageResponseDto: {
             /**
