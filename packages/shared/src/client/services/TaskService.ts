@@ -7,6 +7,7 @@ import type { AssignTaskDto } from '../models/AssignTaskDto';
 import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto';
 import type { CommentResponseDto } from '../models/CommentResponseDto';
 import type { CreateCommentDto } from '../models/CreateCommentDto';
+import type { CreateTagDto } from '../models/CreateTagDto';
 import type { CreateTaskDto } from '../models/CreateTaskDto';
 import type { TagResponseDto } from '../models/TagResponseDto';
 import type { TaskListResponseDto } from '../models/TaskListResponseDto';
@@ -249,6 +250,25 @@ export class TaskService {
             },
             errors: {
                 404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Create a new tag
+     * @param requestBody
+     * @returns TagResponseDto Tag created successfully
+     * @throws ApiError
+     */
+    public static taskerooControllerCreateTag(
+        requestBody: CreateTagDto,
+    ): CancelablePromise<TagResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/taskeroo/tasks/tags',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
             },
         });
     }

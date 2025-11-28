@@ -143,6 +143,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/taskeroo/tasks/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a new tag */
+        post: operations["TaskerooController_createTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/taskeroo/tasks/tags/all": {
         parameters: {
             query?: never;
@@ -276,6 +293,23 @@ export interface paths {
         post?: never;
         /** Remove a tag from a wiki page */
         delete: operations["WikirooController_removeTagFromPage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a new tag */
+        post: operations["WikirooController_createTag"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -936,10 +970,17 @@ export interface components {
              */
             name: string;
             /**
-             * @description Color for the tag (hex format)
+             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
              * @example #FF5733
              */
             color?: string;
+        };
+        CreateTagDto: {
+            /**
+             * @description Name of the tag
+             * @example bug
+             */
+            name: string;
         };
         CreatePageDto: {
             /**
@@ -1109,10 +1150,17 @@ export interface components {
              */
             name: string;
             /**
-             * @description Color for the tag (hex format)
+             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
              * @example #FF5733
              */
             color?: string;
+        };
+        CreateWikiTagDto: {
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
         };
         CreateServerDto: {
             /**
@@ -2189,6 +2237,37 @@ export interface operations {
             };
         };
     };
+    TaskerooController_createTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     TaskerooController_getAllTags: {
         parameters: {
             query?: never;
@@ -2568,6 +2647,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PageResponseDto"];
                 };
+            };
+        };
+    };
+    WikirooController_createTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWikiTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiTagResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

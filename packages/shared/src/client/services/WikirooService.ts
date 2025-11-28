@@ -5,6 +5,7 @@
 import type { AddWikiTagDto } from '../models/AddWikiTagDto';
 import type { AppendPageDto } from '../models/AppendPageDto';
 import type { CreatePageDto } from '../models/CreatePageDto';
+import type { CreateWikiTagDto } from '../models/CreateWikiTagDto';
 import type { PageListResponseDto } from '../models/PageListResponseDto';
 import type { PageResponseDto } from '../models/PageResponseDto';
 import type { UpdatePageDto } from '../models/UpdatePageDto';
@@ -169,6 +170,25 @@ export class WikirooService {
             path: {
                 'id': id,
                 'tagId': tagId,
+            },
+        });
+    }
+    /**
+     * Create a new tag
+     * @param requestBody
+     * @returns WikiTagResponseDto Tag created successfully
+     * @throws ApiError
+     */
+    public static wikirooControllerCreateTag(
+        requestBody: CreateWikiTagDto,
+    ): CancelablePromise<WikiTagResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/wikiroo/pages/tags',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
             },
         });
     }

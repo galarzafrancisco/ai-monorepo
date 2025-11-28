@@ -33,6 +33,10 @@ export interface AddTagInput {
   color?: string;
 }
 
+export interface CreateTagInput {
+  name: string;
+}
+
 export interface PageResult {
   id: string;
   title: string;

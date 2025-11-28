@@ -480,6 +480,41 @@
         ]
       }
     },
+    "/api/v1/taskeroo/tasks/tags": {
+      "post": {
+        "operationId": "TaskerooController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Create a new tag",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/taskeroo/tasks/tags/all": {
       "get": {
         "operationId": "TaskerooController_getAllTags",
@@ -920,6 +955,41 @@
           }
         },
         "summary": "Remove a tag from a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags": {
+      "post": {
+        "operationId": "WikirooController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWikiTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WikiTagResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Create a new tag",
         "tags": [
           "Wikiroo"
         ]
@@ -2649,8 +2719,21 @@
           },
           "color": {
             "type": "string",
-            "description": "Color for the tag (hex format)",
+            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
             "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
           }
         },
         "required": [
@@ -2896,8 +2979,21 @@
           },
           "color": {
             "type": "string",
-            "description": "Color for the tag (hex format)",
+            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
             "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateWikiTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
           }
         },
         "required": [

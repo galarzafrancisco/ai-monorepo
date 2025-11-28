@@ -7,6 +7,7 @@ import {
   AddTagInput,
   AppendPageInput,
   CreatePageInput,
+  CreateTagInput,
   ListPagesInput,
   PageResult,
   PageSummaryResult,
@@ -14,6 +15,7 @@ import {
   UpdatePageInput,
 } from './dto/service/wikiroo.service.types';
 import { PageNotFoundError } from './errors/wikiroo.errors';
+import { getRandomTagColor } from '../common/utils/color-palette.util';
 
 @Injectable()
 export class WikirooService {
@@ -186,6 +188,39 @@ export class WikirooService {
     this.logger.log({ message: 'Wiki page deleted', pageId });
   }
 
+  async createTag(input: CreateTagInput): Promise<TagResult> {
+    this.logger.log({
+      message: 'Creating tag',
+      tagName: input.name,
+    });
+
+    // Check if tag already exists (case-insensitive)
+    let tag = await this.tagRepository.findOne({ where: { name: input.name } });
+
+    if (!tag) {
+      // Create new tag with random color
+      tag = this.tagRepository.create({
+        name: input.name,
+        color: getRandomTagColor(),
+      });
+      tag = await this.tagRepository.save(tag);
+      this.logger.log({
+        message: 'Tag created',
+        tagId: tag.id,
+        tagName: tag.name,
+        color: tag.color,
+      });
+    } else {
+      this.logger.log({
+        message: 'Tag already exists',
+        tagId: tag.id,
+        tagName: tag.name,
+      });
+    }
+
+    return this.mapTagToResult(tag);
+  }
+
   async addTagToPage(pageId: string, input: AddTagInput): Promise<PageResult> {
     this.logger.log({ message: 'Adding tag to page', pageId, tagName: input.name });
 
@@ -204,7 +239,7 @@ export class WikirooService {
     if (!tag) {
       tag = this.tagRepository.create({
         name: input.name,
-        color: input.color,
+        color: input.color ?? getRandomTagColor(),
       });
       tag = await this.tagRepository.save(tag);
     }
@@ -370,15 +405,17 @@ export class WikirooService {
       });
 
       if (!tag) {
-        // Create new tag with normalized name
+        // Create new tag with normalized name and random color
         tag = this.tagRepository.create({
           name: normalizedName,
+          color: getRandomTagColor(),
         });
         tag = await this.tagRepository.save(tag);
         this.logger.log({
           message: 'Tag created',
           tagId: tag.id,
           tagName: tag.name,
+          color: tag.color,
         });
       }
 
