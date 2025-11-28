@@ -2368,6 +2368,189 @@
           "Discovery"
         ]
       }
+    },
+    "/api/v1/agents": {
+      "post": {
+        "operationId": "AgentsController_createAgent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new agent",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "get": {
+        "operationId": "AgentsController_listAgents",
+        "parameters": [
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List agents with optional filtering and pagination",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agents/{id}": {
+      "get": {
+        "operationId": "AgentsController_getAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Agent ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get an agent by ID",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "patch": {
+        "operationId": "AgentsController_updateAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Agent ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAgentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update an agent",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "delete": {
+        "operationId": "AgentsController_deleteAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Agent ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Delete an agent",
+        "tags": [
+          "Agent"
+        ]
+      }
     }
   },
   "info": {
@@ -4075,6 +4258,230 @@
           "token_endpoint_auth_methods_supported",
           "code_challenge_methods_supported"
         ]
+      },
+      "CreateAgentDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier for the agent",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "taskeroo.createTask",
+              "taskeroo.readTask",
+              "wikiroo.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true,
+            "default": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "systemPrompt",
+          "allowedTools"
+        ]
+      },
+      "AgentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the agent",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "description": {
+            "type": "object",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "taskeroo.createTask",
+              "taskeroo.readTask",
+              "wikiroo.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true
+          },
+          "concurrencyLimit": {
+            "type": "object",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Agent creation timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Agent last update timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "deletedAt": {
+            "type": "object",
+            "description": "Agent deletion timestamp (soft delete)",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "systemPrompt",
+          "allowedTools",
+          "isActive",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AgentListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of agents",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of agents matching the query",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "UpdateAgentDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier for the agent",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "taskeroo.createTask",
+              "taskeroo.readTask",
+              "wikiroo.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true,
+            "default": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          }
+        }
       }
     }
   }
