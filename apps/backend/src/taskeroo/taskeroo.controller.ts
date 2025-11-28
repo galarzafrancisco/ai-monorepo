@@ -31,10 +31,13 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { ChangeTaskStatusDto } from './dto/change-task-status.dto';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
+import { TagResponseDto } from './dto/tag-response.dto';
+import { AddTagDto } from './dto/add-tag.dto';
+import { CreateTagDto } from './dto/create-tag.dto';
 import { TaskParamsDto } from './dto/task-params.dto';
 import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
-import { TaskResult, CommentResult } from './dto/service/taskeroo.service.types';
+import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.service.types';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
 
 @ApiTags('Task')
@@ -58,6 +61,7 @@ export class TaskerooController {
       description: dto.description,
       assignee: dto.assignee,
       sessionId: dto.sessionId,
+      tagNames: dto.tagNames,
     });
     return this.mapResultToResponse(result);
   }
@@ -79,6 +83,7 @@ export class TaskerooController {
       description: dto.description,
       assignee: dto.assignee,
       sessionId: dto.sessionId,
+      tagNames: dto.tagNames,
     });
     return this.mapResultToResponse(result);
   }
@@ -123,6 +128,7 @@ export class TaskerooController {
     const result = await this.taskerooService.listTasks({
       assignee: query.assignee,
       sessionId: query.sessionId,
+      tag: query.tag,
       page: query.page ?? 1,
       limit: query.limit ?? 20,
     });
@@ -185,6 +191,74 @@ export class TaskerooController {
     return this.mapResultToResponse(result);
   }
 
+  @Post(':id/tags')
+  @ApiOperation({ summary: 'Add a tag to a task' })
+  @ApiCreatedResponse({
+    type: TaskResponseDto,
+    description: 'Tag added to task successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async addTagToTask(
+    @Param() params: TaskParamsDto,
+    @Body() dto: AddTagDto,
+  ): Promise<TaskResponseDto> {
+    const result = await this.taskerooService.addTagToTask(params.id, {
+      name: dto.name,
+      color: dto.color,
+    });
+    return this.mapResultToResponse(result);
+  }
+
+  @Delete(':id/tags/:tagId')
+  @ApiOperation({ summary: 'Remove a tag from a task' })
+  @ApiOkResponse({
+    type: TaskResponseDto,
+    description: 'Tag removed from task successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  async removeTagFromTask(
+    @Param('id') taskId: string,
+    @Param('tagId') tagId: string,
+  ): Promise<TaskResponseDto> {
+    const result = await this.taskerooService.removeTagFromTask(taskId, tagId);
+    return this.mapResultToResponse(result);
+  }
+
+  @Post('tags')
+  @ApiOperation({ summary: 'Create a new tag' })
+  @ApiCreatedResponse({
+    type: TagResponseDto,
+    description: 'Tag created successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async createTag(@Body() dto: CreateTagDto): Promise<TagResponseDto> {
+    const result = await this.taskerooService.createTag({
+      name: dto.name,
+    });
+    return this.mapTagResultToResponse(result);
+  }
+
+  @Get('tags/all')
+  @ApiOperation({ summary: 'Get all tags' })
+  @ApiOkResponse({
+    type: [TagResponseDto],
+    description: 'List of all tags',
+  })
+  async getAllTags(): Promise<TagResponseDto[]> {
+    const result = await this.taskerooService.getAllTags();
+    return result.map((tag) => this.mapTagResultToResponse(tag));
+  }
+
+  @Delete('tags/:tagId')
+  @ApiOperation({ summary: 'Delete a tag from the system' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Tag deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Tag not found' })
+  async deleteTag(@Param('tagId') tagId: string): Promise<void> {
+    await this.taskerooService.deleteTag(tagId);
+  }
+
   private mapResultToResponse(result: TaskResult): TaskResponseDto {
     return {
       id: result.id,
@@ -194,6 +268,7 @@ export class TaskerooController {
       assignee: result.assignee ?? '',
       sessionId: result.sessionId ?? '',
       comments: result.comments.map((c) => this.mapCommentResultToResponse(c)),
+      tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };
@@ -213,6 +288,13 @@ export class TaskerooController {
       commenterName: result.commenterName,
       content: result.content,
       createdAt: result.createdAt.toISOString(),
+    };
+  }
+
+  private mapTagResultToResponse(result: TagResult): TagResponseDto {
+    return {
+      name: result.name,
+      color: result.color,
     };
   }
 }

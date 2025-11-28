@@ -22,11 +22,13 @@ export class TaskerooMcpGateway {
       {
         title: 'List tasks',
         description: 'Use to get a summary of tasks available', // Keep descriptions short to save tokens. Explain when to use it.
-        // inputSchema: {}, // If we don't need schemas, avoid them to save tokens
-        // outputSchema: {}, // If we don't need schemas, avoid them to save tokens
+        inputSchema: {
+          tag: z.string().optional(),
+        },
       },
-      async ({ }) => {
+      async ({ tag }) => {
         const tasks = await this.taskerooService.listTasks({
+          tag,
           page: 0,
           limit: 20,
         });
@@ -330,6 +332,72 @@ export class TaskerooMcpGateway {
         }
       }
     )
+
+    server.registerTool(
+      'add_tag_to_task',
+      {
+        title: 'Add tag to task',
+        description: 'Add a tag to a task by tag name',
+        inputSchema: {
+          taskId: z.string(),
+          tagName: z.string(),
+          color: z.string().optional(),
+        },
+      },
+      async ({ taskId, tagName, color }) => {
+        await this.taskerooService.addTagToTask(taskId, {
+          name: tagName,
+          color,
+        });
+
+        return {
+          content: [{
+            type: "text",
+            text: "done",
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'remove_tag_from_task',
+      {
+        title: 'Remove tag from task',
+        description: 'Remove a tag from a task',
+        inputSchema: {
+          taskId: z.string(),
+          tagId: z.string(),
+        },
+      },
+      async ({ taskId, tagId }) => {
+        await this.taskerooService.removeTagFromTask(taskId, tagId);
+
+        return {
+          content: [{
+            type: "text",
+            text: "done",
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'get_all_tags',
+      {
+        title: 'Get all tags',
+        description: 'List all available tags',
+      },
+      async ({}) => {
+        const tags = await this.taskerooService.getAllTags();
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(tags),
+          }],
+        }
+      }
+    )
+
     return server;
   }
 

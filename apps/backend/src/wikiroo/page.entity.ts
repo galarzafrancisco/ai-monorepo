@@ -6,7 +6,10 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   VersionColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
+import { WikiTagEntity } from './tag.entity';
 
 @Entity({ name: 'wiki_pages' })
 export class WikiPageEntity {
@@ -21,6 +24,14 @@ export class WikiPageEntity {
 
   @Column({ type: 'text' })
   author!: string;
+
+  @ManyToMany(() => WikiTagEntity, (tag) => tag.pages)
+  @JoinTable({
+    name: 'wiki_page_tags',
+    joinColumn: { name: 'page_id' },
+    inverseJoinColumn: { name: 'tag_id' },
+  })
+  tags!: WikiTagEntity[];
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

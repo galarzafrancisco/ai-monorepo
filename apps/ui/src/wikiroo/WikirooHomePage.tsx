@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HomeLink } from '../components/HomeLink';
 import './Wikiroo.css';
@@ -6,6 +6,9 @@ import { useWikiroo } from './useWikiroo';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
+import { TagBadge } from './TagBadge';
+import { WikiPageForm } from './WikiPageForm';
+import type { CreatePageDto } from 'shared';
 
 function formatDate(value: string) {
   try {
@@ -28,33 +31,13 @@ export function WikirooHomePage() {
   const navigate = useNavigate();
   const { toasts, showToast, removeToast } = useToast();
   const [showForm, setShowForm] = useState(false);
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [content, setContent] = useState('');
 
   usePageTitle('Wikiroo');
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!title.trim() || !author.trim() || !content.trim()) {
-      return;
-    }
-
-    try {
-      const created = await createPage({
-        title: title.trim(),
-        author: author.trim(),
-        content: content.trim(),
-      });
-      setTitle('');
-      setAuthor('');
-      setContent('');
-      setShowForm(false);
-      navigate(`/wikiroo/${created.id}`);
-    } catch (err: any) {
-      const message = err?.body?.detail || err?.message || 'Failed to create page';
-      showToast(message, 'error');
-    }
+  const handleCreatePage = async (data: CreatePageDto) => {
+    const created = await createPage(data);
+    setShowForm(false);
+    navigate(`/wikiroo/${created.id}`);
   };
 
   return (
@@ -85,55 +68,12 @@ export function WikirooHomePage() {
       </header>
 
       {showForm && (
-        <form className="wikiroo-form" onSubmit={handleSubmit}>
-          <div className="wikiroo-form-group">
-            <label htmlFor="wikiroo-title">Title *</label>
-            <input
-              id="wikiroo-title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Give your page a headline"
-              required
-            />
-          </div>
-          <div className="wikiroo-form-group">
-            <label htmlFor="wikiroo-author">Author *</label>
-            <input
-              id="wikiroo-author"
-              value={author}
-              onChange={(event) => setAuthor(event.target.value)}
-              placeholder="Who wrote this?"
-              required
-            />
-          </div>
-          <div className="wikiroo-form-group">
-            <label htmlFor="wikiroo-content">Content *</label>
-            <textarea
-              id="wikiroo-content"
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="Write in markdown or plain text"
-              rows={6}
-              required
-            />
-          </div>
-          <div className="wikiroo-form-actions">
-            <button
-              type="button"
-              className="wikiroo-button secondary"
-              onClick={() => setShowForm(false)}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="wikiroo-button primary"
-              disabled={isCreating}
-            >
-              {isCreating ? 'Saving…' : 'Create page'}
-            </button>
-          </div>
-        </form>
+        <WikiPageForm
+          mode="create"
+          onSubmit={handleCreatePage}
+          onCancel={() => setShowForm(false)}
+          isSubmitting={isCreating}
+        />
       )}
 
       <section className="wikiroo-grid" aria-live="polite">
@@ -141,6 +81,13 @@ export function WikirooHomePage() {
           <Link key={page.id} to={`/wikiroo/${page.id}`} className="wikiroo-card">
             <h3>{page.title}</h3>
             <p>By {page.author}</p>
+            {page.tags && page.tags.length > 0 && (
+              <div style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {page.tags.map((tag) => (
+                  <TagBadge key={tag.name} tag={tag} small />
+                ))}
+              </div>
+            )}
             <div className="wikiroo-card-meta">
               <span>Updated {formatDate(page.updatedAt)}</span>
               <span>Created {formatDate(page.createdAt)}</span>

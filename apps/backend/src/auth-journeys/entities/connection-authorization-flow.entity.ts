@@ -37,6 +37,25 @@ export class ConnectionAuthorizationFlowEntity {
   @JoinColumn({ name: 'mcp_connection_id' })
   mcpConnection!: McpConnectionEntity;
 
+  // OAuth flow tracking fields
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  state?: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  authorizationCode?: string;
+
+  @Column({ type: 'text', nullable: true })
+  accessToken?: string;
+
+  @Column({ type: 'text', nullable: true })
+  refreshToken?: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  tokenExpiresAt?: Date;
+
+  @Column({ type: 'varchar', length: 50, default: 'pending' })
+  status!: string; // pending, authorized, failed
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

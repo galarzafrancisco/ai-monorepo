@@ -4,6 +4,8 @@
 /* eslint-disable */
 import type { ClientRegistrationResponseDto } from '../models/ClientRegistrationResponseDto';
 import type { ConsentDecisionDto } from '../models/ConsentDecisionDto';
+import type { IntrospectTokenRequestDto } from '../models/IntrospectTokenRequestDto';
+import type { IntrospectTokenResponseDto } from '../models/IntrospectTokenResponseDto';
 import type { McpAuthorizationFlowEntity } from '../models/McpAuthorizationFlowEntity';
 import type { RegisterClientDto } from '../models/RegisterClientDto';
 import type { TokenRequestDto } from '../models/TokenRequestDto';
@@ -86,6 +88,7 @@ export class AuthorizationServerService {
      * @param resource Resource server URL that the client wants to access
      * @param serverIdentifier
      * @param version
+     * @param scope Comma separated list of scopes
      * @returns void
      * @throws ApiError
      */
@@ -99,6 +102,7 @@ export class AuthorizationServerService {
         resource: string,
         serverIdentifier: string,
         version: string,
+        scope?: string,
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -109,6 +113,7 @@ export class AuthorizationServerService {
             },
             query: {
                 'response_type': responseType,
+                'scope': scope,
                 'client_id': clientId,
                 'code_challenge': codeChallenge,
                 'code_challenge_method': codeChallengeMethod,
@@ -201,6 +206,69 @@ export class AuthorizationServerService {
             errors: {
                 400: `Invalid token request parameters`,
                 401: `Invalid authorization code, code_verifier, or expired code`,
+            },
+        });
+    }
+    /**
+     * OAuth 2.0 Token Introspection Endpoint
+     * Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.
+     * @param serverIdentifier
+     * @param version
+     * @param requestBody
+     * @returns IntrospectTokenResponseDto Token introspection response (active true/false with metadata)
+     * @throws ApiError
+     */
+    public static authorizationControllerIntrospect(
+        serverIdentifier: string,
+        version: string,
+        requestBody: IntrospectTokenRequestDto,
+    ): CancelablePromise<IntrospectTokenResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}',
+            path: {
+                'serverIdentifier': serverIdentifier,
+                'version': version,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid introspection request parameters`,
+            },
+        });
+    }
+    /**
+     * OAuth 2.0 Callback Endpoint for Downstream Systems
+     * Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.
+     * @param code Authorization code from downstream OAuth provider
+     * @param state State parameter that identifies the connection flow
+     * @param error Error code if authorization failed
+     * @param scope Scopes that were granted
+     * @param errorDescription Error description if authorization failed
+     * @returns void
+     * @throws ApiError
+     */
+    public static authorizationControllerCallback(
+        code: string,
+        state: string,
+        error?: string,
+        scope?: string,
+        errorDescription?: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/auth/callback',
+            query: {
+                'code': code,
+                'state': state,
+                'error': error,
+                'scope': scope,
+                'error_description': errorDescription,
+            },
+            errors: {
+                302: `Redirects to next step in the authorization flow`,
+                400: `Invalid callback parameters or state`,
+                404: `Connection flow not found for provided state`,
             },
         });
     }

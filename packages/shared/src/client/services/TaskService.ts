@@ -2,11 +2,14 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AddTagDto } from '../models/AddTagDto';
 import type { AssignTaskDto } from '../models/AssignTaskDto';
 import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto';
 import type { CommentResponseDto } from '../models/CommentResponseDto';
 import type { CreateCommentDto } from '../models/CreateCommentDto';
+import type { CreateTagDto } from '../models/CreateTagDto';
 import type { CreateTaskDto } from '../models/CreateTaskDto';
+import type { TagResponseDto } from '../models/TagResponseDto';
 import type { TaskListResponseDto } from '../models/TaskListResponseDto';
 import type { TaskResponseDto } from '../models/TaskResponseDto';
 import type { UpdateTaskDto } from '../models/UpdateTaskDto';
@@ -37,6 +40,7 @@ export class TaskService {
      * List tasks with optional filtering and pagination
      * @param assignee Filter tasks by assignee name
      * @param sessionId Filter tasks by session ID
+     * @param tag Filter tasks by tag name
      * @param page Page number (1-indexed)
      * @param limit Items per page (1-100)
      * @returns TaskListResponseDto Paginated list of tasks
@@ -45,6 +49,7 @@ export class TaskService {
     public static taskerooControllerListTasks(
         assignee?: string,
         sessionId?: string,
+        tag?: string,
         page: number = 1,
         limit: number = 20,
     ): CancelablePromise<TaskListResponseDto> {
@@ -54,6 +59,7 @@ export class TaskService {
             query: {
                 'assignee': assignee,
                 'sessionId': sessionId,
+                'tag': tag,
                 'page': page,
                 'limit': limit,
             },
@@ -196,6 +202,104 @@ export class TaskService {
             errors: {
                 400: `Invalid status transition or comment required`,
                 404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Add a tag to a task
+     * @param id Task UUID
+     * @param requestBody
+     * @returns TaskResponseDto Tag added to task successfully
+     * @throws ApiError
+     */
+    public static taskerooControllerAddTagToTask(
+        id: string,
+        requestBody: AddTagDto,
+    ): CancelablePromise<TaskResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/taskeroo/tasks/{id}/tags',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Remove a tag from a task
+     * @param id
+     * @param tagId
+     * @returns TaskResponseDto Tag removed from task successfully
+     * @throws ApiError
+     */
+    public static taskerooControllerRemoveTagFromTask(
+        id: string,
+        tagId: string,
+    ): CancelablePromise<TaskResponseDto> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/taskeroo/tasks/{id}/tags/{tagId}',
+            path: {
+                'id': id,
+                'tagId': tagId,
+            },
+            errors: {
+                404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Create a new tag
+     * @param requestBody
+     * @returns TagResponseDto Tag created successfully
+     * @throws ApiError
+     */
+    public static taskerooControllerCreateTag(
+        requestBody: CreateTagDto,
+    ): CancelablePromise<TagResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/taskeroo/tasks/tags',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+            },
+        });
+    }
+    /**
+     * Get all tags
+     * @returns TagResponseDto List of all tags
+     * @throws ApiError
+     */
+    public static taskerooControllerGetAllTags(): CancelablePromise<Array<TagResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/taskeroo/tasks/tags/all',
+        });
+    }
+    /**
+     * Delete a tag from the system
+     * @param tagId
+     * @returns void
+     * @throws ApiError
+     */
+    public static taskerooControllerDeleteTag(
+        tagId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/taskeroo/tasks/tags/{tagId}',
+            path: {
+                'tagId': tagId,
+            },
+            errors: {
+                404: `Tag not found`,
             },
         });
     }

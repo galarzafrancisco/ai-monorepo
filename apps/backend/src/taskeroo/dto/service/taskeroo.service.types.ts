@@ -11,6 +11,7 @@ export type CreateTaskInput = {
   description: string;
   assignee?: string;
   sessionId?: string;
+  tagNames?: string[];
 };
 
 export type UpdateTaskInput = Partial<CreateTaskInput>;
@@ -33,11 +34,30 @@ export type CreateCommentInput = {
 export type ListTasksInput = {
   assignee?: string;
   sessionId?: string;
+  tag?: string;
   page: number;
   limit: number;
 };
 
+export type AddTagInput = {
+  name: string;
+  color?: string;
+};
+
+export type CreateTagInput = {
+  name: string;
+  color?: string;
+};
+
 // Result types (from service methods)
+export type TagResult = {
+  id: string;
+  name: string;
+  color?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type TaskResult = {
   id: string;
   name: string;
@@ -46,6 +66,7 @@ export type TaskResult = {
   assignee: string | null;
   sessionId: string | null;
   comments: CommentResult[];
+  tags: TagResult[];
   rowVersion: number;
   createdAt: Date;
   updatedAt: Date;

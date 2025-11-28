@@ -82,6 +82,16 @@
             }
           },
           {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Filter tasks by tag name",
+            "schema": {
+              "example": "bug",
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",
@@ -379,6 +389,184 @@
         ]
       }
     },
+    "/api/v1/taskeroo/tasks/{id}/tags": {
+      "post": {
+        "operationId": "TaskerooController_addTagToTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag added to task successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "summary": "Add a tag to a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/taskeroo/tasks/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "TaskerooController_removeTagFromTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag removed from task successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "summary": "Remove a tag from a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/taskeroo/tasks/tags": {
+      "post": {
+        "operationId": "TaskerooController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Create a new tag",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/taskeroo/tasks/tags/all": {
+      "get": {
+        "operationId": "TaskerooController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TagResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all tags",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/taskeroo/tasks/tags/{tagId}": {
+      "delete": {
+        "operationId": "TaskerooController_deleteTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tag deleted successfully"
+          },
+          "404": {
+            "description": "Tag not found"
+          }
+        },
+        "summary": "Delete a tag from the system",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/taskeroo/tasks/mcp": {
       "get": {
         "operationId": "TaskerooController_handleMcp_get",
@@ -513,7 +701,18 @@
       },
       "get": {
         "operationId": "WikirooController_listPages",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Filter pages by tag name",
+            "schema": {
+              "example": "tutorial",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "List of wiki pages",
@@ -560,6 +759,286 @@
           }
         },
         "summary": "Fetch a wiki page by ID",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "patch": {
+        "operationId": "WikirooController_updatePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wiki page updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No update fields provided"
+          }
+        },
+        "summary": "Update an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "delete": {
+        "operationId": "WikirooController_deletePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Wiki page deleted successfully"
+          }
+        },
+        "summary": "Delete a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/append": {
+      "post": {
+        "operationId": "WikirooController_appendToPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wiki page content appended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Append content to an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/tags": {
+      "post": {
+        "operationId": "WikirooController_addTagToPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddWikiTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag added to page successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Add a tag to a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "WikirooController_removeTagFromPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag removed from page successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove a tag from a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags": {
+      "post": {
+        "operationId": "WikirooController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWikiTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WikiTagResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Create a new tag",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags/all": {
+      "get": {
+        "operationId": "WikirooController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WikiTagResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all tags",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags/{tagId}": {
+      "delete": {
+        "operationId": "WikirooController_deleteTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tag deleted successfully"
+          }
+        },
+        "summary": "Delete a tag from the system",
         "tags": [
           "Wikiroo"
         ]
@@ -1455,6 +1934,15 @@
             }
           },
           {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of scopes",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "client_id",
             "required": true,
             "in": "query",
@@ -1689,6 +2177,131 @@
         ]
       }
     },
+    "/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}": {
+      "post": {
+        "description": "Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.",
+        "operationId": "AuthorizationController_introspect",
+        "parameters": [
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntrospectTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token introspection response (active true/false with metadata)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntrospectTokenResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid introspection request parameters"
+          }
+        },
+        "summary": "OAuth 2.0 Token Introspection Endpoint",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/callback": {
+      "get": {
+        "description": "Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.",
+        "operationId": "AuthorizationController_callback",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "description": "Authorization code from downstream OAuth provider",
+            "schema": {
+              "example": "abc123xyz",
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "description": "State parameter that identifies the connection flow",
+            "schema": {
+              "example": "xyz789abc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "required": false,
+            "in": "query",
+            "description": "Error code if authorization failed",
+            "schema": {
+              "example": "access_denied",
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Scopes that were granted",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error_description",
+            "required": false,
+            "in": "query",
+            "description": "Error description if authorization failed",
+            "schema": {
+              "example": "User denied the authorization request",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirects to next step in the authorization flow"
+          },
+          "400": {
+            "description": "Invalid callback parameters or state"
+          },
+          "404": {
+            "description": "Connection flow not found for provided state"
+          }
+        },
+        "summary": "OAuth 2.0 Callback Endpoint for Downstream Systems",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
     "/.well-known/jwks.json": {
       "get": {
         "description": "Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.",
@@ -1794,6 +2407,17 @@
             "type": "string",
             "description": "Session ID for tracking AI agent work",
             "example": "session-123-abc"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the task",
+            "example": [
+              "bug",
+              "urgent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -1836,6 +2460,24 @@
           "commenterName",
           "content",
           "createdAt"
+        ]
+      },
+      "TagResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "TaskResponseDto": {
@@ -1895,6 +2537,23 @@
               "$ref": "#/components/schemas/CommentResponseDto"
             }
           },
+          "tags": {
+            "description": "Tags associated with the task",
+            "example": [
+              {
+                "id": "tag-001",
+                "name": "bug",
+                "color": "#FF5733",
+                "description": "Issues that need to be fixed",
+                "createdAt": "2025-11-03T10:00:00.000Z",
+                "updatedAt": "2025-11-03T10:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagResponseDto"
+            }
+          },
           "createdAt": {
             "type": "string",
             "description": "Task creation timestamp",
@@ -1912,6 +2571,7 @@
           "description",
           "status",
           "comments",
+          "tags",
           "createdAt",
           "updatedAt"
         ]
@@ -1938,6 +2598,17 @@
             "type": "string",
             "description": "Session ID for tracking AI agent work",
             "example": "session-123-abc"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the task",
+            "example": [
+              "bug",
+              "urgent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -2038,6 +2709,37 @@
           "status"
         ]
       },
+      "AddTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "CreatePageDto": {
         "type": "object",
         "properties": {
@@ -2055,12 +2757,41 @@
             "type": "string",
             "description": "Author of the page",
             "example": "Agent Roo"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the page",
+            "example": [
+              "documentation",
+              "onboarding"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "title",
           "content",
           "author"
+        ]
+      },
+      "WikiTagResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "PageResponseDto": {
@@ -2086,6 +2817,23 @@
             "description": "Author of the wiki page",
             "example": "Agent Roo"
           },
+          "tags": {
+            "description": "Tags associated with the page",
+            "example": [
+              {
+                "id": "123",
+                "name": "project-alpha",
+                "color": "#FF5733",
+                "description": "Project Alpha notes",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-01T12:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WikiTagResponseDto"
+            }
+          },
           "createdAt": {
             "type": "string",
             "description": "Creation timestamp",
@@ -2102,6 +2850,7 @@
           "title",
           "content",
           "author",
+          "tags",
           "createdAt",
           "updatedAt"
         ]
@@ -2124,6 +2873,23 @@
             "description": "Author of the wiki page",
             "example": "Agent Roo"
           },
+          "tags": {
+            "description": "Tags associated with the page",
+            "example": [
+              {
+                "id": "123",
+                "name": "project-alpha",
+                "color": "#FF5733",
+                "description": "Project Alpha notes",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-01T12:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WikiTagResponseDto"
+            }
+          },
           "createdAt": {
             "type": "string",
             "description": "Creation timestamp",
@@ -2139,6 +2905,7 @@
           "id",
           "title",
           "author",
+          "tags",
           "createdAt",
           "updatedAt"
         ]
@@ -2156,6 +2923,81 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "UpdatePageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Updated title of the wiki page",
+            "example": "Updated onboarding guide"
+          },
+          "content": {
+            "type": "string",
+            "description": "Updated markdown content of the page",
+            "example": "## Updated content"
+          },
+          "author": {
+            "type": "string",
+            "description": "Updated author of the page",
+            "example": "Agent Roo"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the page",
+            "example": [
+              "documentation",
+              "onboarding"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AppendPageDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Markdown content to append to the existing page content",
+            "example": "\n## Additional details"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "AddWikiTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateWikiTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "CreateServerDto": {
@@ -2879,6 +3721,145 @@
           "token_type",
           "expires_in",
           "refresh_token"
+        ]
+      },
+      "IntrospectTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Access or refresh token that should be validated",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "token_type_hint": {
+            "type": "string",
+            "description": "Hint to help the server determine the token lookup strategy",
+            "enum": [
+              "access_token",
+              "refresh_token"
+            ],
+            "example": "access_token"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Client identifier making the request (required for public MCP clients)",
+            "example": "0bab273987a2e163c3abb40c631ec0a4"
+          },
+          "client_secret": {
+            "type": "string",
+            "description": "Client secret for confidential clients (MCP clients typically omit this)",
+            "example": "s3cr3t",
+            "nullable": true
+          }
+        },
+        "required": [
+          "token",
+          "client_id"
+        ]
+      },
+      "IntrospectTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "description": "Indicates whether the token is currently valid",
+            "example": true
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Token type, always Bearer for MCP clients",
+            "enum": [
+              "Bearer"
+            ],
+            "example": "Bearer"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Client identifier associated with the token",
+            "example": "0bab273987a2e163c3abb40c631ec0a4"
+          },
+          "sub": {
+            "type": "object",
+            "description": "Subject of the token (resource owner or actor)",
+            "example": "journey:1234"
+          },
+          "aud": {
+            "description": "Audience that should accept this token",
+            "oneOf": [
+              {
+                "type": "string",
+                "example": "taskeroo-api"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": [
+                  "taskeroo-api"
+                ]
+              }
+            ]
+          },
+          "iss": {
+            "type": "object",
+            "description": "Issuer that minted the token",
+            "example": "https://auth.taskeroo.local/auth"
+          },
+          "jti": {
+            "type": "object",
+            "description": "Unique token identifier for replay detection",
+            "example": "b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c"
+          },
+          "exp": {
+            "type": "object",
+            "description": "Expiration timestamp (seconds since Unix epoch)",
+            "example": 1731145219
+          },
+          "iat": {
+            "type": "object",
+            "description": "Issued-at timestamp (seconds since Unix epoch)",
+            "example": 1731141619
+          },
+          "nbf": {
+            "type": "number",
+            "description": "Not-before timestamp (seconds since Unix epoch)",
+            "example": 1731141019
+          },
+          "scope": {
+            "type": "string",
+            "description": "Granted scopes (space-delimited) for display purposes",
+            "example": "tasks:read tasks:write"
+          },
+          "server_identifier": {
+            "type": "object",
+            "description": "MCP server identifier the token is scoped to",
+            "example": "taskeroo"
+          },
+          "resource": {
+            "type": "object",
+            "description": "Resource URL that was used during authorization",
+            "example": "http://localhost:4001/"
+          },
+          "version": {
+            "type": "object",
+            "description": "Version of the MCP server contract",
+            "example": "1.0.0"
+          }
+        },
+        "required": [
+          "active",
+          "token_type",
+          "client_id",
+          "sub",
+          "aud",
+          "iss",
+          "jti",
+          "exp",
+          "iat",
+          "server_identifier",
+          "resource",
+          "version"
         ]
       },
       "JwkResponseDto": {

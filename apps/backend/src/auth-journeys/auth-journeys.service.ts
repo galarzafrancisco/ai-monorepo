@@ -149,4 +149,56 @@ export class AuthJourneysService {
   async saveMcpAuthFlow(mcpAuthFlow: McpAuthorizationFlowEntity): Promise<McpAuthorizationFlowEntity> {
     return this.mcpAuthorizationFlowRepository.save(mcpAuthFlow);
   }
+
+  /*
+  Public API: Get connection authorization flows for an auth journey
+  Used by downstream auth flow to process all connections
+  */
+  async getConnectionFlowsForJourney(
+    journeyId: string,
+    relations?: string[]
+  ): Promise<ConnectionAuthorizationFlowEntity[]> {
+    return this.connectionAuthorizationFlowRepository.find({
+      where: { authorizationJourneyId: journeyId },
+      relations,
+    });
+  }
+
+  /*
+  Public API: Find connection authorization flow by state
+  Used by callback handler to identify which flow is being completed
+  */
+  async findConnectionFlowByState(
+    state: string,
+    relations?: string[]
+  ): Promise<ConnectionAuthorizationFlowEntity | null> {
+    return this.connectionAuthorizationFlowRepository.findOne({
+      where: { state },
+      relations,
+    });
+  }
+
+  /*
+  Public API: Save/update connection authorization flow
+  Used by downstream auth flow to update connection state
+  */
+  async saveConnectionFlow(
+    connectionFlow: ConnectionAuthorizationFlowEntity
+  ): Promise<ConnectionAuthorizationFlowEntity> {
+    return this.connectionAuthorizationFlowRepository.save(connectionFlow);
+  }
+
+  /*
+  Public API: Find MCP authorization flow by auth journey ID
+  Used to get the MCP flow when completing the auth journey
+  */
+  async findMcpAuthFlowByJourneyId(
+    journeyId: string,
+    relations?: string[]
+  ): Promise<McpAuthorizationFlowEntity | null> {
+    return this.mcpAuthorizationFlowRepository.findOne({
+      where: { authorizationJourneyId: journeyId },
+      relations,
+    });
+  }
 }

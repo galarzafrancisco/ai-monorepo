@@ -109,6 +109,91 @@ export interface paths {
         patch: operations["TaskerooController_changeStatus"];
         trace?: never;
     };
+    "/api/v1/taskeroo/tasks/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a tag to a task */
+        post: operations["TaskerooController_addTagToTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taskeroo/tasks/{id}/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a tag from a task */
+        delete: operations["TaskerooController_removeTagFromTask"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taskeroo/tasks/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a new tag */
+        post: operations["TaskerooController_createTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taskeroo/tasks/tags/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all tags */
+        get: operations["TaskerooController_getAllTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taskeroo/tasks/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a tag from the system */
+        delete: operations["TaskerooController_deleteTag"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/taskeroo/tasks/mcp": {
         parameters: {
             query?: never;
@@ -154,7 +239,111 @@ export interface paths {
         get: operations["WikirooController_getPage"];
         put?: never;
         post?: never;
+        /** Delete a wiki page */
+        delete: operations["WikirooController_deletePage"];
+        options?: never;
+        head?: never;
+        /** Update an existing wiki page */
+        patch: operations["WikirooController_updatePage"];
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/append": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Append content to an existing wiki page */
+        post: operations["WikirooController_appendToPage"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a tag to a wiki page */
+        post: operations["WikirooController_addTagToPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a tag from a wiki page */
+        delete: operations["WikirooController_removeTagFromPage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a new tag */
+        post: operations["WikirooController_createTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all tags */
+        get: operations["WikirooController_getAllTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a tag from the system */
+        delete: operations["WikirooController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -460,6 +649,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * OAuth 2.0 Token Introspection Endpoint
+         * @description Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.
+         */
+        post: operations["AuthorizationController_introspect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OAuth 2.0 Callback Endpoint for Downstream Systems
+         * @description Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.
+         */
+        get: operations["AuthorizationController_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/.well-known/jwks.json": {
         parameters: {
             query?: never;
@@ -525,6 +754,14 @@ export interface components {
              * @example session-123-abc
              */
             sessionId?: string;
+            /**
+             * @description Array of tag names to associate with the task
+             * @example [
+             *       "bug",
+             *       "urgent"
+             *     ]
+             */
+            tagNames?: string[];
         };
         CommentResponseDto: {
             /**
@@ -552,6 +789,18 @@ export interface components {
              * @example 2025-11-03T10:30:00.000Z
              */
             createdAt: string;
+        };
+        TagResponseDto: {
+            /**
+             * @description Name of the tag
+             * @example bug
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
         };
         TaskResponseDto: {
             /**
@@ -599,6 +848,20 @@ export interface components {
              */
             comments: components["schemas"]["CommentResponseDto"][];
             /**
+             * @description Tags associated with the task
+             * @example [
+             *       {
+             *         "id": "tag-001",
+             *         "name": "bug",
+             *         "color": "#FF5733",
+             *         "description": "Issues that need to be fixed",
+             *         "createdAt": "2025-11-03T10:00:00.000Z",
+             *         "updatedAt": "2025-11-03T10:00:00.000Z"
+             *       }
+             *     ]
+             */
+            tags: components["schemas"]["TagResponseDto"][];
+            /**
              * @description Task creation timestamp
              * @example 2025-11-03T10:30:00.000Z
              */
@@ -630,6 +893,14 @@ export interface components {
              * @example session-123-abc
              */
             sessionId?: string;
+            /**
+             * @description Array of tag names to associate with the task
+             * @example [
+             *       "bug",
+             *       "urgent"
+             *     ]
+             */
+            tagNames?: string[];
         };
         AssignTaskDto: {
             /**
@@ -692,6 +963,25 @@ export interface components {
              */
             comment?: string;
         };
+        AddTagDto: {
+            /**
+             * @description Name of the tag
+             * @example bug
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
+             * @example #FF5733
+             */
+            color?: string;
+        };
+        CreateTagDto: {
+            /**
+             * @description Name of the tag
+             * @example bug
+             */
+            name: string;
+        };
         CreatePageDto: {
             /**
              * @description Title of the wiki page
@@ -709,6 +999,26 @@ export interface components {
              * @example Agent Roo
              */
             author: string;
+            /**
+             * @description Array of tag names to associate with the page
+             * @example [
+             *       "documentation",
+             *       "onboarding"
+             *     ]
+             */
+            tagNames?: string[];
+        };
+        WikiTagResponseDto: {
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
         };
         PageResponseDto: {
             /**
@@ -731,6 +1041,20 @@ export interface components {
              * @example Agent Roo
              */
             author: string;
+            /**
+             * @description Tags associated with the page
+             * @example [
+             *       {
+             *         "id": "123",
+             *         "name": "project-alpha",
+             *         "color": "#FF5733",
+             *         "description": "Project Alpha notes",
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-01T12:00:00.000Z"
+             *       }
+             *     ]
+             */
+            tags: components["schemas"]["WikiTagResponseDto"][];
             /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
@@ -759,6 +1083,20 @@ export interface components {
              */
             author: string;
             /**
+             * @description Tags associated with the page
+             * @example [
+             *       {
+             *         "id": "123",
+             *         "name": "project-alpha",
+             *         "color": "#FF5733",
+             *         "description": "Project Alpha notes",
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-01T12:00:00.000Z"
+             *       }
+             *     ]
+             */
+            tags: components["schemas"]["WikiTagResponseDto"][];
+            /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
              */
@@ -772,6 +1110,57 @@ export interface components {
         PageListResponseDto: {
             /** @description List of wiki pages */
             items: components["schemas"]["PageSummaryDto"][];
+        };
+        UpdatePageDto: {
+            /**
+             * @description Updated title of the wiki page
+             * @example Updated onboarding guide
+             */
+            title?: string;
+            /**
+             * @description Updated markdown content of the page
+             * @example ## Updated content
+             */
+            content?: string;
+            /**
+             * @description Updated author of the page
+             * @example Agent Roo
+             */
+            author?: string;
+            /**
+             * @description Array of tag names to associate with the page
+             * @example [
+             *       "documentation",
+             *       "onboarding"
+             *     ]
+             */
+            tagNames?: string[];
+        };
+        AppendPageDto: {
+            /**
+             * @description Markdown content to append to the existing page content
+             * @example ## Additional details
+             */
+            content: string;
+        };
+        AddWikiTagDto: {
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
+             * @example #FF5733
+             */
+            color?: string;
+        };
+        CreateWikiTagDto: {
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
         };
         CreateServerDto: {
             /**
@@ -1267,6 +1656,99 @@ export interface components {
              */
             scope?: string;
         };
+        IntrospectTokenRequestDto: {
+            /**
+             * @description Access or refresh token that should be validated
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            token: string;
+            /**
+             * @description Hint to help the server determine the token lookup strategy
+             * @example access_token
+             * @enum {string}
+             */
+            token_type_hint?: "access_token" | "refresh_token";
+            /**
+             * @description Client identifier making the request (required for public MCP clients)
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            client_id: string;
+            /**
+             * @description Client secret for confidential clients (MCP clients typically omit this)
+             * @example s3cr3t
+             */
+            client_secret?: string | null;
+        };
+        IntrospectTokenResponseDto: {
+            /**
+             * @description Indicates whether the token is currently valid
+             * @example true
+             */
+            active: boolean;
+            /**
+             * @description Token type, always Bearer for MCP clients
+             * @example Bearer
+             * @enum {string}
+             */
+            token_type: "Bearer";
+            /**
+             * @description Client identifier associated with the token
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            client_id: string;
+            /**
+             * @description Subject of the token (resource owner or actor)
+             * @example journey:1234
+             */
+            sub: Record<string, never>;
+            /** @description Audience that should accept this token */
+            aud: string | string[];
+            /**
+             * @description Issuer that minted the token
+             * @example https://auth.taskeroo.local/auth
+             */
+            iss: Record<string, never>;
+            /**
+             * @description Unique token identifier for replay detection
+             * @example b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c
+             */
+            jti: Record<string, never>;
+            /**
+             * @description Expiration timestamp (seconds since Unix epoch)
+             * @example 1731145219
+             */
+            exp: Record<string, never>;
+            /**
+             * @description Issued-at timestamp (seconds since Unix epoch)
+             * @example 1731141619
+             */
+            iat: Record<string, never>;
+            /**
+             * @description Not-before timestamp (seconds since Unix epoch)
+             * @example 1731141019
+             */
+            nbf?: number;
+            /**
+             * @description Granted scopes (space-delimited) for display purposes
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+            /**
+             * @description MCP server identifier the token is scoped to
+             * @example taskeroo
+             */
+            server_identifier: Record<string, never>;
+            /**
+             * @description Resource URL that was used during authorization
+             * @example http://localhost:4001/
+             */
+            resource: Record<string, never>;
+            /**
+             * @description Version of the MCP server contract
+             * @example 1.0.0
+             */
+            version: Record<string, never>;
+        };
         JwkResponseDto: {
             /**
              * @description Key type, for example RSA or EC.
@@ -1407,6 +1889,8 @@ export interface operations {
                 assignee?: string;
                 /** @description Filter tasks by session ID */
                 sessionId?: string;
+                /** @description Filter tasks by tag name */
+                tag?: string;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (1-100) */
@@ -1682,6 +2166,155 @@ export interface operations {
             };
         };
     };
+    TaskerooController_addTagToTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag added to task successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_removeTagFromTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed from task successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_createTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskerooController_getAllTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponseDto"][];
+                };
+            };
+        };
+    };
+    TaskerooController_deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     TaskerooController_handleMcp_get: {
         parameters: {
             query?: never;
@@ -1803,7 +2436,10 @@ export interface operations {
     };
     WikirooController_listPages: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filter pages by tag name */
+                tag?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1872,6 +2508,216 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PageResponseDto"];
                 };
+            };
+        };
+    };
+    WikirooController_deletePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wiki page deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_updatePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePageDto"];
+            };
+        };
+        responses: {
+            /** @description Wiki page updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description No update fields provided */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_appendToPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppendPageDto"];
+            };
+        };
+        responses: {
+            /** @description Wiki page content appended successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_addTagToPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddWikiTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag added to page successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_removeTagFromPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed from page successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_createTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWikiTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiTagResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_getAllTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WikiTagResponseDto"][];
+                };
+            };
+        };
+    };
+    WikirooController_deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2635,6 +3481,8 @@ export interface operations {
             query: {
                 /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
                 response_type: "code";
+                /** @description Comma separated list of scopes */
+                scope?: string;
                 /** @description Client identifier issued during registration */
                 client_id: string;
                 /** @description PKCE code challenge derived from the code verifier */
@@ -2789,6 +3637,83 @@ export interface operations {
             };
             /** @description Invalid authorization code, code_verifier, or expired code */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_introspect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntrospectTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Token introspection response (active true/false with metadata) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntrospectTokenResponseDto"];
+                };
+            };
+            /** @description Invalid introspection request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_callback: {
+        parameters: {
+            query: {
+                /** @description Authorization code from downstream OAuth provider */
+                code: string;
+                /** @description State parameter that identifies the connection flow */
+                state: string;
+                /** @description Error code if authorization failed */
+                error?: string;
+                /** @description Scopes that were granted */
+                scope?: string;
+                /** @description Error description if authorization failed */
+                error_description?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirects to next step in the authorization flow */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid callback parameters or state */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection flow not found for provided state */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
