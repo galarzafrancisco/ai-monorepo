@@ -20,6 +20,14 @@ export class ListTasksQueryDto {
   sessionId?: string;
 
   @ApiPropertyOptional({
+    description: 'Filter tasks by tag name',
+    example: 'bug',
+  })
+  @IsString()
+  @IsOptional()
+  tag?: string;
+
+  @ApiPropertyOptional({
     description: 'Page number (1-indexed)',
     example: 1,
     default: 1,

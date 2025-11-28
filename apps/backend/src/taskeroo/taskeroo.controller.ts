@@ -127,6 +127,7 @@ export class TaskerooController {
     const result = await this.taskerooService.listTasks({
       assignee: query.assignee,
       sessionId: query.sessionId,
+      tag: query.tag,
       page: query.page ?? 1,
       limit: query.limit ?? 20,
     });
@@ -234,17 +235,6 @@ export class TaskerooController {
     return result.map((tag) => this.mapTagResultToResponse(tag));
   }
 
-  @Get('tags/search')
-  @ApiOperation({ summary: 'Search tags by name' })
-  @ApiOkResponse({
-    type: [TagResponseDto],
-    description: 'List of tags matching the search query',
-  })
-  async searchTags(@Query('q') query: string): Promise<TagResponseDto[]> {
-    const result = await this.taskerooService.searchTags(query || '');
-    return result.map((tag) => this.mapTagResultToResponse(tag));
-  }
-
   @Delete('tags/:tagId')
   @ApiOperation({ summary: 'Delete a tag from the system' })
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -252,17 +242,6 @@ export class TaskerooController {
   @ApiNotFoundResponse({ description: 'Tag not found' })
   async deleteTag(@Param('tagId') tagId: string): Promise<void> {
     await this.taskerooService.deleteTag(tagId);
-  }
-
-  @Get('tags/:name/tasks')
-  @ApiOperation({ summary: 'List tasks by tag name' })
-  @ApiOkResponse({
-    type: [TaskResponseDto],
-    description: 'List of tasks with the specified tag',
-  })
-  async listTasksByTag(@Param('name') tagName: string): Promise<TaskResponseDto[]> {
-    const result = await this.taskerooService.listTasksByTag(tagName);
-    return result.map((task) => this.mapResultToResponse(task));
   }
 
   private mapResultToResponse(result: TaskResult): TaskResponseDto {

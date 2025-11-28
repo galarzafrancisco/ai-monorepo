@@ -82,6 +82,16 @@
             }
           },
           {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Filter tasks by tag name",
+            "schema": {
+              "example": "bug",
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",
@@ -495,40 +505,6 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/tags/search": {
-      "get": {
-        "operationId": "TaskerooController_searchTags",
-        "parameters": [
-          {
-            "name": "q",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of tags matching the search query",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TagResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Search tags by name",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
     "/api/v1/taskeroo/tasks/tags/{tagId}": {
       "delete": {
         "operationId": "TaskerooController_deleteTag",
@@ -551,40 +527,6 @@
           }
         },
         "summary": "Delete a tag from the system",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/taskeroo/tasks/tags/{name}/tasks": {
-      "get": {
-        "operationId": "TaskerooController_listTasksByTag",
-        "parameters": [
-          {
-            "name": "name",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of tasks with the specified tag",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TaskResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List tasks by tag name",
         "tags": [
           "Task"
         ]

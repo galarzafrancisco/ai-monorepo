@@ -160,23 +160,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/tags/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Search tags by name */
-        get: operations["TaskerooController_searchTags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/taskeroo/tasks/tags/{tagId}": {
         parameters: {
             query?: never;
@@ -189,23 +172,6 @@ export interface paths {
         post?: never;
         /** Delete a tag from the system */
         delete: operations["TaskerooController_deleteTag"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/taskeroo/tasks/tags/{name}/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List tasks by tag name */
-        get: operations["TaskerooController_listTasksByTag"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1939,6 +1905,8 @@ export interface operations {
                 assignee?: string;
                 /** @description Filter tasks by session ID */
                 sessionId?: string;
+                /** @description Filter tasks by tag name */
+                tag?: string;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (1-100) */
@@ -2305,28 +2273,6 @@ export interface operations {
             };
         };
     };
-    TaskerooController_searchTags: {
-        parameters: {
-            query: {
-                q: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of tags matching the search query */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagResponseDto"][];
-                };
-            };
-        };
-    };
     TaskerooController_deleteTag: {
         parameters: {
             query?: never;
@@ -2351,28 +2297,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    TaskerooController_listTasksByTag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of tasks with the specified tag */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"][];
-                };
             };
         };
     };
