@@ -220,11 +220,8 @@ export class WikirooController {
 
   private mapTagToResponse(result: TagResult): WikiTagResponseDto {
     return {
-      id: result.id,
       name: result.name,
       color: result.color,
-      createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
     };
   }
 
