@@ -12,6 +12,8 @@ export type CreateTaskInput = {
   assignee?: string;
   sessionId?: string;
   tagNames?: string[];
+  createdBy: string;
+  dependsOnIds?: string[];
 };
 
 export type UpdateTaskInput = Partial<CreateTaskInput>;
@@ -67,6 +69,8 @@ export type TaskResult = {
   sessionId: string | null;
   comments: CommentResult[];
   tags: TagResult[];
+  createdBy: string;
+  dependsOnIds: string[];
   rowVersion: number;
   createdAt: Date;
   updatedAt: Date;
