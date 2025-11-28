@@ -766,6 +766,43 @@ export interface paths {
         patch: operations["AgentsController_updateAgent"];
         trace?: never;
     };
+    "/api/v1/chat/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List chat sessions with optional filtering and pagination */
+        get: operations["ChatController_listSessions"];
+        put?: never;
+        /** Create a new chat session */
+        post: operations["ChatController_createSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chat/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a chat session by ID */
+        get: operations["ChatController_getSession"];
+        put?: never;
+        post?: never;
+        /** Delete a chat session */
+        delete: operations["ChatController_deleteSession"];
+        options?: never;
+        head?: never;
+        /** Update a chat session */
+        patch: operations["ChatController_updateSession"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2102,6 +2139,130 @@ export interface components {
              * @example 5
              */
             concurrencyLimit?: number;
+        };
+        CreateSessionDto: {
+            /**
+             * @description ID of the agent for this chat session
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            agentId: string;
+            /**
+             * @description Human-readable title for this session
+             * @example Banana MCP - design with Architect
+             */
+            title?: string;
+            /**
+             * @description Optional project label for this session
+             * @example project:banana-mcp
+             */
+            project?: string;
+        };
+        SessionResponseDto: {
+            /**
+             * @description Unique identifier for the session
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description ADK session identifier
+             * @example adk-session-123e4567-e89b-12d3-a456-426614174000
+             */
+            adkSessionId: string;
+            /**
+             * @description ID of the agent for this chat session
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            agentId: string;
+            /**
+             * @description Human-readable title for this session
+             * @example Chat with Buddy - 2025-11-28
+             */
+            title: string;
+            /**
+             * @description Optional project label for this session
+             * @example project:banana-mcp
+             */
+            project?: Record<string, never>;
+            /**
+             * @description Whether the session is archived
+             * @example false
+             */
+            isArchived: boolean;
+            /**
+             * @description Whether the session is pinned
+             * @example false
+             */
+            isPinned: boolean;
+            /**
+             * @description Timestamp of the last message in this chat
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            lastMessageAt: string;
+            /** @description Tasks referenced in this session */
+            referencedTasks?: components["schemas"]["TaskResponseDto"][];
+            /** @description Tasks subscribed to in this session */
+            subscribedTasks?: components["schemas"]["TaskResponseDto"][];
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description Session creation timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Session last update timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            updatedAt: string;
+            /**
+             * @description Session deletion timestamp (soft delete)
+             * @example null
+             */
+            deletedAt?: Record<string, never>;
+        };
+        SessionListResponseDto: {
+            /** @description List of sessions */
+            items: components["schemas"]["SessionResponseDto"][];
+            /**
+             * @description Total number of sessions matching the filters
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
+        };
+        UpdateSessionDto: {
+            /**
+             * @description Human-readable title for this session
+             * @example Updated Chat Title
+             */
+            title?: string;
+            /**
+             * @description Optional project label for this session
+             * @example project:banana-mcp
+             */
+            project?: string;
+            /**
+             * @description Whether the session should be archived
+             * @example false
+             */
+            isArchived?: boolean;
+            /**
+             * @description Whether the session should be pinned
+             * @example true
+             */
+            isPinned?: boolean;
         };
     };
     responses: never;
@@ -4129,6 +4290,129 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_listSessions: {
+        parameters: {
+            query?: {
+                /** @description Filter by agent ID */
+                agentId?: string;
+                /** @description Filter by project label */
+                project?: string;
+                /** @description Filter by archived status */
+                isArchived?: boolean;
+                /** @description Filter by pinned status */
+                isPinned?: boolean;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionListResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_createSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSessionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChatController_updateSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSessionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponseDto"];
                 };
             };
         };
