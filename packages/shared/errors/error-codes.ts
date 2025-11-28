@@ -8,6 +8,10 @@ export const ErrorCodes = {
   // Wiki errors
   PAGE_NOT_FOUND: 'PAGE_NOT_FOUND',
 
+  // Agent errors
+  AGENT_NOT_FOUND: 'AGENT_NOT_FOUND',
+  AGENT_SLUG_CONFLICT: 'AGENT_SLUG_CONFLICT',
+
   // Authorization Server - Client Registration errors
   CLIENT_ALREADY_REGISTERED: 'CLIENT_ALREADY_REGISTERED',
   CLIENT_NOT_FOUND: 'CLIENT_NOT_FOUND',

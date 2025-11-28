@@ -9,6 +9,8 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { AddTagDto } from './models/AddTagDto';
 export type { AddWikiTagDto } from './models/AddWikiTagDto';
+export type { AgentListResponseDto } from './models/AgentListResponseDto';
+export type { AgentResponseDto } from './models/AgentResponseDto';
 export type { AppendPageDto } from './models/AppendPageDto';
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';
@@ -17,6 +19,7 @@ export { ClientRegistrationResponseDto } from './models/ClientRegistrationRespon
 export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { ConnectionResponseDto } from './models/ConnectionResponseDto';
 export type { ConsentDecisionDto } from './models/ConsentDecisionDto';
+export type { CreateAgentDto } from './models/CreateAgentDto';
 export type { CreateCommentDto } from './models/CreateCommentDto';
 export type { CreateConnectionDto } from './models/CreateConnectionDto';
 export type { CreateMappingDto } from './models/CreateMappingDto';
@@ -48,11 +51,13 @@ export type { TaskListResponseDto } from './models/TaskListResponseDto';
 export { TaskResponseDto } from './models/TaskResponseDto';
 export { TokenRequestDto } from './models/TokenRequestDto';
 export { TokenResponseDto } from './models/TokenResponseDto';
+export type { UpdateAgentDto } from './models/UpdateAgentDto';
 export type { UpdateConnectionDto } from './models/UpdateConnectionDto';
 export type { UpdatePageDto } from './models/UpdatePageDto';
 export type { UpdateTaskDto } from './models/UpdateTaskDto';
 export type { WikiTagResponseDto } from './models/WikiTagResponseDto';
 
+export { AgentService } from './services/AgentService';
 export { AppService } from './services/AppService';
 export { AuthorizationServerService } from './services/AuthorizationServerService';
 export { DiscoveryService } from './services/DiscoveryService';

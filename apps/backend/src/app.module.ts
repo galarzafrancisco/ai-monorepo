@@ -9,6 +9,7 @@ import { McpRegistryModule } from './mcp-registry/mcp-registry.module';
 import { AuthorizationServerModule } from './authorization-server/authorization-server.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
+import { AgentsModule } from './agents/agents.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
     AuthJourneysModule,
     AuthorizationServerModule,
     DiscoveryModule,
+    AgentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
