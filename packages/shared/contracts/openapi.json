@@ -2418,11 +2418,28 @@
             "items": {
               "type": "string"
             }
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "Name of the person who created the task",
+            "example": "Fran"
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "name",
-          "description"
+          "description",
+          "createdBy"
         ]
       },
       "CommentResponseDto": {
@@ -2554,6 +2571,22 @@
               "$ref": "#/components/schemas/TagResponseDto"
             }
           },
+          "createdBy": {
+            "type": "string",
+            "description": "Name of the person who created the task",
+            "example": "Fran"
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "createdAt": {
             "type": "string",
             "description": "Task creation timestamp",
@@ -2572,6 +2605,8 @@
           "status",
           "comments",
           "tags",
+          "createdBy",
+          "dependsOnIds",
           "createdAt",
           "updatedAt"
         ]
@@ -2604,6 +2639,22 @@
             "example": [
               "bug",
               "urgent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "Name of the person who created the task",
+            "example": "Fran"
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
             ],
             "type": "array",
             "items": {
