@@ -2551,6 +2551,219 @@
           "Agent"
         ]
       }
+    },
+    "/api/v1/chat/sessions": {
+      "post": {
+        "operationId": "ChatController_createSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new chat session",
+        "tags": [
+          "Chat"
+        ]
+      },
+      "get": {
+        "operationId": "ChatController_listSessions",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by agent ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": false,
+            "in": "query",
+            "description": "Filter by project label",
+            "schema": {
+              "example": "project:banana-mcp",
+              "type": "string"
+            }
+          },
+          {
+            "name": "isArchived",
+            "required": false,
+            "in": "query",
+            "description": "Filter by archived status",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isPinned",
+            "required": false,
+            "in": "query",
+            "description": "Filter by pinned status",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List chat sessions with optional filtering and pagination",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/api/v1/chat/sessions/{id}": {
+      "get": {
+        "operationId": "ChatController_getSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a chat session by ID",
+        "tags": [
+          "Chat"
+        ]
+      },
+      "patch": {
+        "operationId": "ChatController_updateSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a chat session",
+        "tags": [
+          "Chat"
+        ]
+      },
+      "delete": {
+        "operationId": "ChatController_deleteSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Delete a chat session",
+        "tags": [
+          "Chat"
+        ]
+      }
     }
   },
   "info": {
@@ -4480,6 +4693,178 @@
             "type": "number",
             "description": "Max number of tasks this agent can process in parallel",
             "example": 5
+          }
+        }
+      },
+      "CreateSessionDto": {
+        "type": "object",
+        "properties": {
+          "agentId": {
+            "type": "string",
+            "description": "ID of the agent for this chat session",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title for this session",
+            "example": "Banana MCP - design with Architect"
+          },
+          "project": {
+            "type": "string",
+            "description": "Optional project label for this session",
+            "example": "project:banana-mcp"
+          }
+        },
+        "required": [
+          "agentId"
+        ]
+      },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the session",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "adkSessionId": {
+            "type": "string",
+            "description": "ADK session identifier",
+            "example": "adk-session-123e4567-e89b-12d3-a456-426614174000"
+          },
+          "agentId": {
+            "type": "string",
+            "description": "ID of the agent for this chat session",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title for this session",
+            "example": "Chat with Buddy - 2025-11-28"
+          },
+          "project": {
+            "type": "object",
+            "description": "Optional project label for this session",
+            "example": "project:banana-mcp"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "description": "Whether the session is archived",
+            "example": false
+          },
+          "isPinned": {
+            "type": "boolean",
+            "description": "Whether the session is pinned",
+            "example": false
+          },
+          "lastMessageAt": {
+            "type": "string",
+            "description": "Timestamp of the last message in this chat",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "referencedTasks": {
+            "description": "Tasks referenced in this session",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskResponseDto"
+            }
+          },
+          "subscribedTasks": {
+            "description": "Tasks subscribed to in this session",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskResponseDto"
+            }
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Session creation timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Session last update timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "deletedAt": {
+            "type": "object",
+            "description": "Session deletion timestamp (soft delete)",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "adkSessionId",
+          "agentId",
+          "title",
+          "isArchived",
+          "isPinned",
+          "lastMessageAt",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SessionListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of sessions",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of sessions matching the filters",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "UpdateSessionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Human-readable title for this session",
+            "example": "Updated Chat Title"
+          },
+          "project": {
+            "type": "string",
+            "description": "Optional project label for this session",
+            "example": "project:banana-mcp"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "description": "Whether the session should be archived",
+            "example": false
+          },
+          "isPinned": {
+            "type": "boolean",
+            "description": "Whether the session should be pinned",
+            "example": true
           }
         }
       }

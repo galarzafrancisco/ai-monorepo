@@ -1,4 +1,4 @@
-import { ErrorCodes } from '@codex/shared/errors';
+import { ErrorCodes } from '../../../../../packages/shared/errors/error-codes';
 
 export const ChatErrorCodes = {
   SESSION_NOT_FOUND: ErrorCodes.SESSION_NOT_FOUND,
