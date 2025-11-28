@@ -203,11 +203,52 @@ export class TaskerooService {
   async listTasks(input: ListTasksInput): Promise<ListTasksResult> {
     this.logger.log({
       message: 'Listing tasks',
-      filters: { assignee: input.assignee, sessionId: input.sessionId },
+      filters: { assignee: input.assignee, sessionId: input.sessionId, tag: input.tag },
       page: input.page,
       limit: input.limit,
     });
 
+    const skip = (input.page - 1) * input.limit;
+
+    // If tag filter is provided, use query builder for join
+    if (input.tag) {
+      const queryBuilder = this.taskRepository
+        .createQueryBuilder('task')
+        .leftJoinAndSelect('task.comments', 'comments')
+        .leftJoinAndSelect('task.tags', 'tags')
+        .innerJoin('task.tags', 'filterTag')
+        .where('filterTag.name = :tagName', { tagName: input.tag });
+
+      if (input.assignee) {
+        queryBuilder.andWhere('task.assignee = :assignee', { assignee: input.assignee });
+      }
+      if (input.sessionId) {
+        queryBuilder.andWhere('task.sessionId = :sessionId', { sessionId: input.sessionId });
+      }
+
+      queryBuilder
+        .orderBy('task.updatedAt', 'DESC')
+        .skip(skip)
+        .take(input.limit);
+
+      const [tasks, total] = await queryBuilder.getManyAndCount();
+
+      this.logger.log({
+        message: 'Tasks listed',
+        count: tasks.length,
+        total,
+        page: input.page,
+      });
+
+      return {
+        items: tasks.map((task) => this.mapTaskToResult(task)),
+        total,
+        page: input.page,
+        limit: input.limit,
+      };
+    }
+
+    // Standard filtering without tags
     const where: any = {};
     if (input.assignee) {
       where.assignee = input.assignee;
@@ -215,8 +256,6 @@ export class TaskerooService {
     if (input.sessionId) {
       where.sessionId = input.sessionId;
     }
-
-    const skip = (input.page - 1) * input.limit;
 
     const [tasks, total] = await this.taskRepository.findAndCount({
       where,
@@ -448,51 +487,6 @@ export class TaskerooService {
 
     this.logger.log({
       message: 'Tags retrieved',
-      count: tags.length,
-    });
-
-    return tags.map((tag) => this.mapTagToResult(tag));
-  }
-
-  async listTasksByTag(tagName: string): Promise<TaskResult[]> {
-    this.logger.log({
-      message: 'Listing tasks by tag',
-      tagName,
-    });
-
-    const tag = await this.tagRepository.findOne({
-      where: { name: tagName },
-      relations: ['tasks', 'tasks.comments', 'tasks.tags'],
-    });
-
-    if (!tag) {
-      return [];
-    }
-
-    this.logger.log({
-      message: 'Tasks by tag retrieved',
-      tagName,
-      count: tag.tasks.length,
-    });
-
-    return tag.tasks.map((task) => this.mapTaskToResult(task));
-  }
-
-  async searchTags(query: string): Promise<TagResult[]> {
-    this.logger.log({
-      message: 'Searching tags',
-      query,
-    });
-
-    const tags = await this.tagRepository
-      .createQueryBuilder('tag')
-      .where('LOWER(tag.name) LIKE LOWER(:query)', { query: `%${query}%` })
-      .orderBy('tag.name', 'ASC')
-      .getMany();
-
-    this.logger.log({
-      message: 'Tags search completed',
-      query,
       count: tags.length,
     });
 

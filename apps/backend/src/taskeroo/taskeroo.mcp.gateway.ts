@@ -22,11 +22,13 @@ export class TaskerooMcpGateway {
       {
         title: 'List tasks',
         description: 'Use to get a summary of tasks available', // Keep descriptions short to save tokens. Explain when to use it.
-        // inputSchema: {}, // If we don't need schemas, avoid them to save tokens
-        // outputSchema: {}, // If we don't need schemas, avoid them to save tokens
+        inputSchema: {
+          tag: z.string().optional(),
+        },
       },
-      async ({ }) => {
+      async ({ tag }) => {
         const tasks = await this.taskerooService.listTasks({
+          tag,
           page: 0,
           limit: 20,
         });
@@ -391,33 +393,6 @@ export class TaskerooMcpGateway {
           content: [{
             type: "text",
             text: JSON.stringify(tags),
-          }],
-        }
-      }
-    )
-
-    server.registerTool(
-      'list_tasks_by_tag',
-      {
-        title: 'List tasks by tag',
-        description: 'Get all tasks that have a specific tag',
-        inputSchema: {
-          tagName: z.string(),
-        },
-      },
-      async ({ tagName }) => {
-        const tasks = await this.taskerooService.listTasksByTag(tagName);
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(tasks.map(t => {
-              return {
-                name: t.name,
-                assignee: t.assignee,
-                status: t.status,
-                id: t.id,
-              }
-            })),
           }],
         }
       }
