@@ -1171,6 +1171,11 @@ export interface components {
              *     ]
              */
             tagNames?: string[];
+            /**
+             * @description Parent page ID for nesting
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId?: string;
         };
         WikiTagResponseDto: {
             /**
@@ -1220,6 +1225,16 @@ export interface components {
              */
             tags: components["schemas"]["WikiTagResponseDto"][];
             /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
              */
@@ -1261,6 +1276,16 @@ export interface components {
              */
             tags: components["schemas"]["WikiTagResponseDto"][];
             /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
              */
@@ -1299,6 +1324,16 @@ export interface components {
              *     ]
              */
             tagNames?: string[];
+            /**
+             * @description Parent page ID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId?: string;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order?: number;
         };
         AppendPageDto: {
             /**
