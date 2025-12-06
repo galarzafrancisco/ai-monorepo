@@ -6,12 +6,19 @@ import { writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Enable CORS
-  app.enableCors();
+  // Cookie parser for session management
+  app.use(cookieParser());
+
+  // Enable CORS with credentials
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
 
   // Global validation pipe with transformation and strict validation
   app.useGlobalPipes(

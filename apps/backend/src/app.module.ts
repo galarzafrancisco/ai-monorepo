@@ -11,6 +11,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
 import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
 import { AgentsModule } from './agents/agents.module';
 import { ChatModule } from './chat/chat.module';
+import { IdentityProviderModule } from './identity-provider/identity-provider.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ChatModule } from './chat/chat.module';
     DiscoveryModule,
     AgentsModule,
     ChatModule,
+    IdentityProviderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
