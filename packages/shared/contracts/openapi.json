@@ -731,6 +731,31 @@
         ]
       }
     },
+    "/api/v1/wikiroo/pages/tree": {
+      "get": {
+        "operationId": "WikirooController_getPageTree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Page hierarchy tree",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PageTreeResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get page hierarchy tree",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
     "/api/v1/wikiroo/pages/{id}": {
       "get": {
         "operationId": "WikirooController_getPage",
@@ -870,6 +895,95 @@
           }
         },
         "summary": "Append content to an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/reorder": {
+      "patch": {
+        "operationId": "WikirooController_reorderPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page reordered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorder a page within siblings",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/move": {
+      "patch": {
+        "operationId": "WikirooController_movePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page moved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Circular reference detected or parent not found"
+          }
+        },
+        "summary": "Move page to different parent",
         "tags": [
           "Wikiroo"
         ]
@@ -3465,6 +3579,65 @@
           "items"
         ]
       },
+      "PageTreeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
+          "children": {
+            "description": "Child pages",
+            "example": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageTreeResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "author",
+          "parentId",
+          "order",
+          "children",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "UpdatePageDto": {
         "type": "object",
         "properties": {
@@ -3517,6 +3690,33 @@
         },
         "required": [
           "content"
+        ]
+      },
+      "ReorderPageDto": {
+        "type": "object",
+        "properties": {
+          "newOrder": {
+            "type": "number",
+            "description": "New order position within siblings",
+            "example": 2
+          }
+        },
+        "required": [
+          "newOrder"
+        ]
+      },
+      "MovePageDto": {
+        "type": "object",
+        "properties": {
+          "newParentId": {
+            "type": "object",
+            "description": "New parent page ID (null to move to root)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          }
+        },
+        "required": [
+          "newParentId"
         ]
       },
       "AddWikiTagDto": {
