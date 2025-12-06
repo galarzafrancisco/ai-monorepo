@@ -2764,6 +2764,68 @@
           "Chat"
         ]
       }
+    },
+    "/api/v1/login": {
+      "post": {
+        "operationId": "IdentityProviderController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful"
+          }
+        },
+        "summary": "Login with email and password",
+        "tags": [
+          "Identity Provider"
+        ]
+      }
+    },
+    "/api/v1/logout": {
+      "post": {
+        "operationId": "IdentityProviderController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        },
+        "summary": "Logout and clear session",
+        "tags": [
+          "Identity Provider"
+        ]
+      }
+    },
+    "/api/v1/session": {
+      "get": {
+        "operationId": "IdentityProviderController_getSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get current session information",
+        "tags": [
+          "Identity Provider"
+        ]
+      }
     }
   },
   "info": {
@@ -4722,92 +4784,12 @@
       "SessionResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the session",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "adkSessionId": {
-            "type": "string",
-            "description": "ADK session identifier",
-            "example": "adk-session-123e4567-e89b-12d3-a456-426614174000"
-          },
-          "agentId": {
-            "type": "string",
-            "description": "ID of the agent for this chat session",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Human-readable title for this session",
-            "example": "Chat with Buddy - 2025-11-28"
-          },
-          "project": {
-            "type": "object",
-            "description": "Optional project label for this session",
-            "example": "project:banana-mcp"
-          },
-          "isArchived": {
-            "type": "boolean",
-            "description": "Whether the session is archived",
-            "example": false
-          },
-          "isPinned": {
-            "type": "boolean",
-            "description": "Whether the session is pinned",
-            "example": false
-          },
-          "lastMessageAt": {
-            "type": "string",
-            "description": "Timestamp of the last message in this chat",
-            "example": "2025-11-28T10:30:00.000Z"
-          },
-          "referencedTasks": {
-            "description": "Tasks referenced in this session",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TaskResponseDto"
-            }
-          },
-          "subscribedTasks": {
-            "description": "Tasks subscribed to in this session",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TaskResponseDto"
-            }
-          },
-          "rowVersion": {
-            "type": "number",
-            "description": "Row version for optimistic locking",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Session creation timestamp",
-            "example": "2025-11-28T10:30:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Session last update timestamp",
-            "example": "2025-11-28T10:30:00.000Z"
-          },
-          "deletedAt": {
-            "type": "object",
-            "description": "Session deletion timestamp (soft delete)",
-            "example": null
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
           }
         },
         "required": [
-          "id",
-          "adkSessionId",
-          "agentId",
-          "title",
-          "isArchived",
-          "isPinned",
-          "lastMessageAt",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
+          "user"
         ]
       },
       "SessionListResponseDto": {
@@ -4867,6 +4849,42 @@
             "example": true
           }
         }
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "UserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName"
+        ]
       }
     }
   }
