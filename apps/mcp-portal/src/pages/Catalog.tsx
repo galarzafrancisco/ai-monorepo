@@ -1,12 +1,48 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { McpRegistryService } from "../lib/api";
 import type { ServerResponseDto } from "shared";
+import StarRating from "../components/StarRating";
+
+// Label badge with custom color
+const Label = ({ text, color }: { text: string; color: string }) => (
+  <span className={`text-xs font-semibold px-2 py-1 rounded-md ${color}`}>
+    {text}
+  </span>
+);
+
+// Server card
+const ServerCard = ({ server }: { server: ServerResponseDto }) => {
+  // TODO: Backend doesn't support ratings yet, using placeholder data
+  const rating = 4.2;
+  const votes = 42;
+
+  return (
+    <div className="rounded-2xl border border-white/10 backdrop-blur-xl bg-white/5 p-4 shadow-lg flex flex-col gap-3 w-full text-white max-w-sm">
+      <div className="text-lg font-semibold flex items-center gap-2">
+        {server.name}
+      </div>
+      <p className="text-sm text-white/70 line-clamp-3">{server.description}</p>
+      {/* Votes & Tags */}
+      <div className="flex items-center justify-between gap-4">
+        {/* Votes */}
+        <div className="flex items-center gap-4">
+          <StarRating rating={rating} votes={votes} />
+        </div>
+
+        {/* Tags - placeholder for now */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Label text="Local" color="bg-emerald-600" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function CatalogPage() {
   const [servers, setServers] = useState<ServerResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedServer, setSelectedServer] = useState<ServerResponseDto | null>(null);
 
   useEffect(() => {
     loadServers();
@@ -27,7 +63,7 @@ export default function CatalogPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-4">
         <div className="text-white/60">Loading servers...</div>
       </div>
     );
@@ -35,7 +71,7 @@ export default function CatalogPage() {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div className="p-4">
         <div className="text-red-400">Error: {error}</div>
         <button
           onClick={loadServers}
@@ -48,80 +84,70 @@ export default function CatalogPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">MCP Catalog</h1>
-        <p className="text-white/60">
-          Browse and manage Model Context Protocol servers
-        </p>
+    <div className="p-4">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-4xl font-bold">MCP Catalog</h1>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 mb-8 items-center">
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search MCP servers"
+          className="bg-white/10 border border-white/20 text-white px-4 py-2 h-10 rounded-lg placeholder-white/50 w-full sm:w-80"
+          onChange={() => {}}
+        />
+
+        {/* Type toggle buttons as a segmented control */}
+        <div className="bg-white/10 border border-white/20 text-white h-10 rounded-lg flex">
+          <button
+            type="button"
+            className="px-4 text-sm text-white/50 hover:text-white transition-colors"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            className="px-4 text-sm text-white/50 hover:text-white transition-colors border-l border-white/20"
+          >
+            Local
+          </button>
+          <button
+            type="button"
+            className="px-4 text-sm text-white/50 hover:text-white transition-colors border-l border-white/20"
+          >
+            Remote
+          </button>
+        </div>
+
+        {/* Sort dropdown */}
+        <select className="bg-white/10 border border-white/20 text-white text-sm px-4 h-10 rounded-md">
+          <option>Sort by</option>
+          <option>Rating</option>
+          <option>Name</option>
+          <option>Votes</option>
+        </select>
+      </div>
+
+      {/* Cards */}
       {servers.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-white/60 mb-4">No servers registered yet</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {servers.map((server) => (
-            <div
-              key={server.id}
-              onClick={() => setSelectedServer(server)}
-              className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 cursor-pointer transition-colors"
-            >
-              <h3 className="text-xl font-semibold mb-2">{server.name}</h3>
-              {server.description && (
-                <p className="text-white/60 text-sm line-clamp-3">
-                  {server.description}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {selectedServer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#0b1220] border border-white/10 rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-3xl font-bold">{selectedServer.name}</h2>
-              <button
-                onClick={() => setSelectedServer(null)}
-                className="text-white/60 hover:text-white"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {servers.map((server) => {
+            return (
+              <Link
+                key={server.id}
+                to={`/catalog/${server.id}`}
+                className="hover:scale-[1.02] transition-transform"
               >
-                ✕
-              </button>
-            </div>
-
-            {selectedServer.description && (
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-white/70 mb-2">
-                  Description
-                </h3>
-                <p className="text-white/80">{selectedServer.description}</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold text-white/70 mb-1">
-                  Server ID
-                </h3>
-                <p className="text-white/80 font-mono text-sm">
-                  {selectedServer.id}
-                </p>
-              </div>
-              {selectedServer.providedId && (
-                <div>
-                  <h3 className="text-sm font-semibold text-white/70 mb-1">
-                    Provided ID
-                  </h3>
-                  <p className="text-white/80 font-mono text-sm">
-                    {selectedServer.providedId}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+                <ServerCard server={server} />
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

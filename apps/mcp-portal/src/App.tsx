@@ -7,6 +7,7 @@ import LogoutPage from "./pages/Logout";
 import { SessionProvider } from "./context/SessionContext";
 import PublicLayout from "./Layouts/Public";
 import CatalogPage from "./pages/Catalog";
+import ServerDetailPage from "./pages/ServerDetail";
 import AgentsPage from "./pages/Agents";
 import TaskerooPage from "./pages/Taskeroo";
 import WikirooPage from "./pages/Wikiroo";
@@ -26,6 +27,7 @@ export default function App() {
             <Route element={<ShellWithNavSidebarLayout />}>
               <Route path="/home" element={<HomePage />} />
               <Route path="/catalog" element={<CatalogPage />} />
+              <Route path="/catalog/:id" element={<ServerDetailPage />} />
               <Route path="/agents" element={<AgentsPage />} />
               <Route path="/taskeroo" element={<TaskerooPage />} />
               <Route path="/wikiroo" element={<WikirooPage />} />
