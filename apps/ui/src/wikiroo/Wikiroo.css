@@ -359,6 +359,68 @@
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
+/* Rich Editor Styles */
+.rich-editor {
+  width: 100%;
+  border: 1px solid #dce4ec;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.rich-editor-panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 400px;
+}
+
+.rich-editor-pane {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.rich-editor-edit {
+  border-right: 1px solid #dce4ec;
+}
+
+.rich-editor-label {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dce4ec;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7f8c8d;
+}
+
+.rich-editor-textarea {
+  flex: 1;
+  border: none;
+  padding: 16px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+}
+
+.rich-editor-textarea::placeholder {
+  color: #95a5a6;
+}
+
+.rich-editor-preview-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.rich-editor-empty {
+  color: #95a5a6;
+  font-size: 14px;
+  font-style: italic;
+}
+
 @media (max-width: 768px) {
   .wikiroo {
     padding: 16px;
@@ -379,5 +441,19 @@
 
   .wikiroo-page-detail-meta {
     flex-wrap: wrap;
+  }
+
+  .rich-editor-panes {
+    grid-template-columns: 1fr;
+    min-height: 600px;
+  }
+
+  .rich-editor-edit {
+    border-right: none;
+    border-bottom: 1px solid #dce4ec;
+  }
+
+  .rich-editor-pane {
+    min-height: 300px;
   }
 }
