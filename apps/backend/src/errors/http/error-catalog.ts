@@ -39,6 +39,18 @@ export const ErrorCatalog: Record<
     type: '/errors/wiki/page-not-found',
     retryable: false,
   },
+  [ErrorCodes.PARENT_PAGE_NOT_FOUND]: {
+    status: 404,
+    title: 'Parent page not found',
+    type: '/errors/wiki/parent-page-not-found',
+    retryable: false,
+  },
+  [ErrorCodes.CIRCULAR_REFERENCE]: {
+    status: 400,
+    title: 'Circular reference detected',
+    type: '/errors/wiki/circular-reference',
+    retryable: false,
+  },
   [ErrorCodes.CLIENT_ALREADY_REGISTERED]: {
     status: 409,
     title: 'Client already registered',
