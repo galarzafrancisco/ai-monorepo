@@ -53,8 +53,12 @@ export class WikirooService {
     // Calculate default order (max sibling order + 1)
     let order = 0;
     if (input.parentId !== undefined) {
+      const whereClause = input.parentId === null
+        ? { parentId: null as any }
+        : { parentId: input.parentId };
+
       const siblings = await this.pageRepository.find({
-        where: { parentId: input.parentId },
+        where: whereClause,
         order: { order: 'DESC' },
         take: 1,
       });
@@ -511,8 +515,12 @@ export class WikirooService {
     page.parentId = newParentId;
 
     // Calculate new order (append to end of siblings)
+    const whereClause = newParentId === null
+      ? { parentId: null as any }
+      : { parentId: newParentId };
+
     const siblings = await this.pageRepository.find({
-      where: { parentId: newParentId },
+      where: whereClause,
       order: { order: 'DESC' },
       take: 1,
     });
