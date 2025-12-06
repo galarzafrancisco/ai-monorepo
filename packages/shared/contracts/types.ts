@@ -803,6 +803,57 @@ export interface paths {
         patch: operations["ChatController_updateSession"];
         trace?: never;
     };
+    "/api/v1/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login with email and password */
+        post: operations["IdentityProviderController_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout and clear session */
+        post: operations["IdentityProviderController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current session information */
+        get: operations["IdentityProviderController_getSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2158,70 +2209,7 @@ export interface components {
             project?: string;
         };
         SessionResponseDto: {
-            /**
-             * @description Unique identifier for the session
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description ADK session identifier
-             * @example adk-session-123e4567-e89b-12d3-a456-426614174000
-             */
-            adkSessionId: string;
-            /**
-             * @description ID of the agent for this chat session
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            agentId: string;
-            /**
-             * @description Human-readable title for this session
-             * @example Chat with Buddy - 2025-11-28
-             */
-            title: string;
-            /**
-             * @description Optional project label for this session
-             * @example project:banana-mcp
-             */
-            project?: Record<string, never>;
-            /**
-             * @description Whether the session is archived
-             * @example false
-             */
-            isArchived: boolean;
-            /**
-             * @description Whether the session is pinned
-             * @example false
-             */
-            isPinned: boolean;
-            /**
-             * @description Timestamp of the last message in this chat
-             * @example 2025-11-28T10:30:00.000Z
-             */
-            lastMessageAt: string;
-            /** @description Tasks referenced in this session */
-            referencedTasks?: components["schemas"]["TaskResponseDto"][];
-            /** @description Tasks subscribed to in this session */
-            subscribedTasks?: components["schemas"]["TaskResponseDto"][];
-            /**
-             * @description Row version for optimistic locking
-             * @example 1
-             */
-            rowVersion: number;
-            /**
-             * @description Session creation timestamp
-             * @example 2025-11-28T10:30:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Session last update timestamp
-             * @example 2025-11-28T10:30:00.000Z
-             */
-            updatedAt: string;
-            /**
-             * @description Session deletion timestamp (soft delete)
-             * @example null
-             */
-            deletedAt?: Record<string, never>;
+            user: components["schemas"]["UserDto"];
         };
         SessionListResponseDto: {
             /** @description List of sessions */
@@ -2263,6 +2251,17 @@ export interface components {
              * @example true
              */
             isPinned?: boolean;
+        };
+        LoginDto: {
+            /** @example user@example.com */
+            email: string;
+            /** @example password123 */
+            password: string;
+        };
+        UserDto: {
+            id: string;
+            email: string;
+            displayName: string;
         };
     };
     responses: never;
@@ -4406,6 +4405,65 @@ export interface operations {
                 "application/json": components["schemas"]["UpdateSessionDto"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponseDto"];
+                };
+            };
+        };
+    };
+    IdentityProviderController_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginDto"];
+            };
+        };
+        responses: {
+            /** @description Login successful */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IdentityProviderController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Logout successful */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IdentityProviderController_getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

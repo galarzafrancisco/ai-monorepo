@@ -2,8 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { UserDto } from './UserDto';
-export type SessionResponseDto = {
-    user: UserDto;
+export type UserDto = {
+    id: string;
+    email: string;
+    displayName: string;
 };
 
