@@ -363,6 +363,8 @@ export class WikirooService {
       content: page.content,
       author: page.author,
       tags: (page.tags || []).map((tag) => this.mapTagToResult(tag)),
+      parentId: page.parentId ?? null,
+      order: page.order,
       createdAt: page.createdAt,
       updatedAt: page.updatedAt,
     };
@@ -374,6 +376,8 @@ export class WikirooService {
       title: page.title,
       author: page.author,
       tags: (page.tags || []).map((tag) => this.mapTagToResult(tag)),
+      parentId: page.parentId ?? null,
+      order: page.order,
       createdAt: page.createdAt,
       updatedAt: page.updatedAt,
     };
