@@ -6,7 +6,7 @@ import { writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);

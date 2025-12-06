@@ -11,29 +11,29 @@ import {
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column()
-  displayName: string;
+  displayName!: string;
 
   @Column()
-  passwordHash: string;
+  passwordHash!: string;
 
   @Column({ default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @VersionColumn()
-  rowVersion: number;
+  rowVersion!: number;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @DeleteDateColumn()
-  deletedAt: Date | null;
+  deletedAt!: Date | null;
 }

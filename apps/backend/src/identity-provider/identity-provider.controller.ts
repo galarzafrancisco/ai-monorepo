@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { IdentityProviderService } from './identity-provider.service';
 import { LoginDto } from './dto/login.dto';
 import { SessionResponseDto } from './dto/session-response.dto';
