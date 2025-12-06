@@ -35,7 +35,10 @@ import { AddWikiTagDto } from './dto/add-wiki-tag.dto';
 import { CreateWikiTagDto } from './dto/create-wiki-tag.dto';
 import { WikiTagResponseDto } from './dto/wiki-tag-response.dto';
 import { ListPagesQueryDto } from './dto/list-pages-query.dto';
-import { PageResult, PageSummaryResult, TagResult } from './dto/service/wikiroo.service.types';
+import { PageTreeResponseDto } from './dto/page-tree-response.dto';
+import { ReorderPageDto } from './dto/reorder-page.dto';
+import { MovePageDto } from './dto/move-page.dto';
+import { PageResult, PageSummaryResult, TagResult, PageTreeResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 
 @ApiTags('Wikiroo')
@@ -59,6 +62,7 @@ export class WikirooController {
       content: dto.content,
       author: dto.author,
       tagNames: dto.tagNames,
+      parentId: dto.parentId,
     });
 
     return this.mapToResponse(result);
@@ -75,6 +79,17 @@ export class WikirooController {
     return {
       items: items.map((item) => this.mapToSummary(item)),
     };
+  }
+
+  @Get('tree')
+  @ApiOperation({ summary: 'Get page hierarchy tree' })
+  @ApiOkResponse({
+    type: [PageTreeResponseDto],
+    description: 'Page hierarchy tree',
+  })
+  async getPageTree(): Promise<PageTreeResponseDto[]> {
+    const result = await this.wikirooService.getPageTree();
+    return result.map((node) => this.mapToTreeResponse(node));
   }
 
   @Get(':id')
@@ -105,7 +120,9 @@ export class WikirooController {
       dto.title === undefined &&
       dto.content === undefined &&
       dto.author === undefined &&
-      dto.tagNames === undefined
+      dto.tagNames === undefined &&
+      dto.parentId === undefined &&
+      dto.order === undefined
     ) {
       throw new BadRequestException('At least one field must be provided');
     }
@@ -115,6 +132,8 @@ export class WikirooController {
       content: dto.content,
       author: dto.author,
       tagNames: dto.tagNames,
+      parentId: dto.parentId,
+      order: dto.order,
     });
 
     return this.mapToResponse(result);
@@ -134,6 +153,37 @@ export class WikirooController {
       content: dto.content,
     });
 
+    return this.mapToResponse(result);
+  }
+
+  @Patch(':id/reorder')
+  @ApiOperation({ summary: 'Reorder a page within siblings' })
+  @ApiOkResponse({
+    type: PageResponseDto,
+    description: 'Page reordered successfully',
+  })
+  async reorderPage(
+    @Param() params: PageParamsDto,
+    @Body() dto: ReorderPageDto,
+  ): Promise<PageResponseDto> {
+    const result = await this.wikirooService.reorderPage(params.id, dto.newOrder);
+    return this.mapToResponse(result);
+  }
+
+  @Patch(':id/move')
+  @ApiOperation({ summary: 'Move page to different parent' })
+  @ApiOkResponse({
+    type: PageResponseDto,
+    description: 'Page moved successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Circular reference detected or parent not found',
+  })
+  async movePage(
+    @Param() params: PageParamsDto,
+    @Body() dto: MovePageDto,
+  ): Promise<PageResponseDto> {
+    const result = await this.wikirooService.movePage(params.id, dto.newParentId);
     return this.mapToResponse(result);
   }
 
@@ -241,6 +291,19 @@ export class WikirooController {
     return {
       name: result.name,
       color: result.color,
+    };
+  }
+
+  private mapToTreeResponse(result: PageTreeResult): PageTreeResponseDto {
+    return {
+      id: result.id,
+      title: result.title,
+      author: result.author,
+      parentId: result.parentId,
+      order: result.order,
+      children: result.children.map((child) => this.mapToTreeResponse(child)),
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
     };
   }
 

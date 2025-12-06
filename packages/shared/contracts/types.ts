@@ -228,6 +228,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/wikiroo/pages/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get page hierarchy tree */
+        get: operations["WikirooController_getPageTree"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wikiroo/pages/{id}": {
         parameters: {
             query?: never;
@@ -262,6 +279,40 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Reorder a page within siblings */
+        patch: operations["WikirooController_reorderPage"];
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Move page to different parent */
+        patch: operations["WikirooController_movePage"];
         trace?: never;
     };
     "/api/v1/wikiroo/pages/{id}/tags": {
@@ -1300,6 +1351,48 @@ export interface components {
             /** @description List of wiki pages */
             items: components["schemas"]["PageSummaryDto"][];
         };
+        PageTreeResponseDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
+             * @description Child pages
+             * @example []
+             */
+            children: components["schemas"]["PageTreeResponseDto"][];
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
         UpdatePageDto: {
             /**
              * @description Updated title of the wiki page
@@ -1341,6 +1434,20 @@ export interface components {
              * @example ## Additional details
              */
             content: string;
+        };
+        ReorderPageDto: {
+            /**
+             * @description New order position within siblings
+             * @example 2
+             */
+            newOrder: number;
+        };
+        MovePageDto: {
+            /**
+             * @description New parent page ID (null to move to root)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            newParentId: Record<string, never> | null;
         };
         AddWikiTagDto: {
             /**
@@ -2933,6 +3040,26 @@ export interface operations {
             };
         };
     };
+    WikirooController_getPageTree: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Page hierarchy tree */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageTreeResponseDto"][];
+                };
+            };
+        };
+    };
     WikirooController_getPage: {
         parameters: {
             query?: never;
@@ -3035,6 +3162,67 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PageResponseDto"];
                 };
+            };
+        };
+    };
+    WikirooController_reorderPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderPageDto"];
+            };
+        };
+        responses: {
+            /** @description Page reordered successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_movePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MovePageDto"];
+            };
+        };
+        responses: {
+            /** @description Page moved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Circular reference detected or parent not found */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
