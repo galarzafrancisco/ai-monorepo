@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { McpRegistryService } from "../lib/api";
 import type { ServerResponseDto } from "shared";
 import StarRating from "../components/StarRating";
+import NewServerModal from "../components/NewServerModal";
 
 // Label badge with custom color
 const Label = ({ text, color }: { text: string; color: string }) => (
@@ -43,6 +45,7 @@ export default function CatalogPage() {
   const [servers, setServers] = useState<ServerResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showNewServerModal, setShowNewServerModal] = useState(false);
 
   useEffect(() => {
     loadServers();
@@ -87,6 +90,13 @@ export default function CatalogPage() {
     <div className="p-4">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-4xl font-bold">MCP Catalog</h1>
+        <button
+          onClick={() => setShowNewServerModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-600 to-teal-500 hover:from-sky-500 hover:to-teal-400 text-white rounded-lg font-medium"
+        >
+          <Plus size={20} />
+          Create Server
+        </button>
       </div>
 
       {/* Filters */}
@@ -149,6 +159,16 @@ export default function CatalogPage() {
             );
           })}
         </div>
+      )}
+
+      {showNewServerModal && (
+        <NewServerModal
+          onClose={() => setShowNewServerModal(false)}
+          onSuccess={() => {
+            setShowNewServerModal(false);
+            loadServers();
+          }}
+        />
       )}
     </div>
   );
