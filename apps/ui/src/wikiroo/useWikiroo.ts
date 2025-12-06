@@ -54,6 +54,8 @@ export const useWikiroo = () => {
               title: created.title,
               author: created.author,
               tags: created.tags,
+              parentId: created.parentId,
+              order: created.order,
               createdAt: created.createdAt,
               updatedAt: created.updatedAt,
             },
@@ -93,6 +95,8 @@ export const useWikiroo = () => {
                   title: updated.title,
                   author: updated.author,
                   tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
                   createdAt: updated.createdAt,
                   updatedAt: updated.updatedAt,
                 }
@@ -166,6 +170,8 @@ export const useWikiroo = () => {
                   title: updated.title,
                   author: updated.author,
                   tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
                   createdAt: updated.createdAt,
                   updatedAt: updated.updatedAt,
                 }
@@ -197,6 +203,8 @@ export const useWikiroo = () => {
                   title: updated.title,
                   author: updated.author,
                   tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
                   createdAt: updated.createdAt,
                   updatedAt: updated.updatedAt,
                 }

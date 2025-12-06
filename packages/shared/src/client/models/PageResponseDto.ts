@@ -25,6 +25,14 @@ export type PageResponseDto = {
      */
     tags: Array<WikiTagResponseDto>;
     /**
+     * Parent page ID (null if root page)
+     */
+    parentId: Record<string, any> | null;
+    /**
+     * Order within siblings
+     */
+    order: number;
+    /**
      * Creation timestamp
      */
     createdAt: string;

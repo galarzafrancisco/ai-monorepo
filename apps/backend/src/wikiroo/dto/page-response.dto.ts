@@ -34,6 +34,19 @@ export class PageResponseDto {
   tags!: WikiTagResponseDto[];
 
   @ApiProperty({
+    description: 'Parent page ID (null if root page)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    nullable: true,
+  })
+  parentId!: string | null;
+
+  @ApiProperty({
+    description: 'Order within siblings',
+    example: 0,
+  })
+  order!: number;
+
+  @ApiProperty({
     description: 'Creation timestamp',
     example: '2025-01-01T12:00:00.000Z',
   })

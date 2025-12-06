@@ -217,6 +217,8 @@ export class WikirooController {
       content: result.content,
       author: result.author,
       tags: result.tags.map((tag) => this.mapTagToResponse(tag)),
+      parentId: result.parentId,
+      order: result.order,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };
@@ -228,6 +230,8 @@ export class WikirooController {
       title: result.title,
       author: result.author,
       tags: result.tags.map((tag) => this.mapTagToResponse(tag)),
+      parentId: result.parentId,
+      order: result.order,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };
