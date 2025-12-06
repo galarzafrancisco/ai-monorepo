@@ -8,6 +8,8 @@
   ],
   "scripts": {
     "dev": "concurrently -n backend,ui -c auto \"npm -w backend run dev\" \"npm -w ui run dev\"",
+    "dev:mcp-portal": "concurrently -n backend,mcp-portal -c auto \"npm -w backend run dev\" \"npm -w mcp-portal run dev\"",
+    "dev:all": "concurrently -n backend,ui,mcp-portal -c auto \"npm -w backend run dev\" \"npm -w ui run dev\" \"npm -w mcp-portal run dev\"",
     "build": "npm run build:prod",
     "start": "npm -w backend run start:prod",
     "lint": "npm -ws run lint || true",
@@ -18,7 +20,7 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:rebuild": "docker-compose down && docker-compose build && docker-compose up -d",
-    "build:prod": "npm -w backend run build:prod && npm -w shared run build:prod && npm -w ui run build:prod",
+    "build:prod": "npm -w backend run build:prod && npm -w shared run build:prod && npm -w ui run build:prod && npm -w mcp-portal run build:prod",
     "zero-to-prod": "npm ci && npm run build:prod"
   },
   "devDependencies": {
