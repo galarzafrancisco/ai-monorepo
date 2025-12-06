@@ -7,6 +7,8 @@ export const ErrorCodes = {
 
   // Wiki errors
   PAGE_NOT_FOUND: 'PAGE_NOT_FOUND',
+  PARENT_PAGE_NOT_FOUND: 'PARENT_PAGE_NOT_FOUND',
+  CIRCULAR_REFERENCE: 'CIRCULAR_REFERENCE',
 
   // Agent errors
   AGENT_NOT_FOUND: 'AGENT_NOT_FOUND',
