@@ -171,6 +171,87 @@
   /* Removed max-width constraint to allow full-width display */
 }
 
+/* WikirooLayout - Sidebar + Content Layout */
+.wikiroo-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.wikiroo-main-container {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.wikiroo-sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #dce4ec;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  position: sticky;
+  top: 24px;
+}
+
+.wikiroo-sidebar-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.wikiroo-empty-sidebar {
+  padding: 16px;
+  text-align: center;
+  color: #95a5a6;
+  font-size: 14px;
+}
+
+.wikiroo-content {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  border: 1px solid #dce4ec;
+  min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+.wikiroo-welcome {
+  text-align: center;
+  padding: 48px 24px;
+  color: #7f8c8d;
+}
+
+.wikiroo-welcome h2 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.wikiroo-welcome p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1024px) {
+  .wikiroo-main-container {
+    flex-direction: column;
+  }
+
+  .wikiroo-sidebar {
+    width: 100%;
+    max-height: 400px;
+    position: static;
+  }
+}
+
 .wikiroo-meta {
   display: flex;
   flex-wrap: wrap;
