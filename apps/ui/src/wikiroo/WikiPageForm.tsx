@@ -126,7 +126,7 @@ export function WikiPageForm({
 
         const currentParentId = typeof page.parentId === 'string' ? page.parentId : null;
         if (parentId !== currentParentId) {
-          payload.parentId = parentId ?? undefined;
+          payload.parentId = parentId;
           hasChanges = true;
         }
 

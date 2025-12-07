@@ -20,9 +20,9 @@ export type UpdatePageDto = {
      */
     tagNames?: Array<string>;
     /**
-     * Parent page ID
+     * Parent page ID (null to remove parent)
      */
-    parentId?: string;
+    parentId?: string | null;
     /**
      * Order within siblings
      */

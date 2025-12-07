@@ -1418,10 +1418,10 @@ export interface components {
              */
             tagNames?: string[];
             /**
-             * @description Parent page ID
+             * @description Parent page ID (null to remove parent)
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            parentId?: string;
+            parentId?: string | null;
             /**
              * @description Order within siblings
              * @example 0

@@ -3669,8 +3669,9 @@
           },
           "parentId": {
             "type": "string",
-            "description": "Parent page ID",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+            "description": "Parent page ID (null to remove parent)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
           },
           "order": {
             "type": "number",
