@@ -11,6 +11,7 @@ export function WikirooPageViewMobile() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
   const {
+    pages,
     selectedPage,
     isLoadingPage,
     error,
@@ -181,6 +182,7 @@ export function WikirooPageViewMobile() {
             <WikiPageForm
               mode="edit"
               page={selectedPage}
+              pages={pages}
               onSubmit={handleUpdate}
               onCancel={() => setShowEditModal(false)}
               isSubmitting={isUpdating}
