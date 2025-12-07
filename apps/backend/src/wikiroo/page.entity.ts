@@ -11,10 +11,12 @@ import {
   OneToMany,
   JoinTable,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { WikiTagEntity } from './tag.entity';
 
 @Entity({ name: 'wiki_pages' })
+@Index(['parentId', 'order'])
 export class WikiPageEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
