@@ -646,3 +646,30 @@
   color: #2c3e50;
   font-weight: 500;
 }
+
+/* Mobile-specific styles for touch targets */
+@media (max-width: 768px) {
+  .tree-toggle {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  .tree-item-link {
+    padding: 12px 4px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .breadcrumb {
+    padding: 8px 0;
+  }
+
+  .breadcrumb-link {
+    padding: 8px 4px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
