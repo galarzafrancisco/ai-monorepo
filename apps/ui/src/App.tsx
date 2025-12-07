@@ -29,7 +29,9 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/taskeroo" element={<TaskerooRouter />} />
         <Route path="/wikiroo" element={<WikirooRouter />} />
-        <Route path="/wikiroo/:pageId" element={<WikirooRouter />} />
+        <Route path="/wikiroo/new" element={<WikirooRouter />} />
+        <Route path="/wikiroo/page/:pageId" element={<WikirooRouter />} />
+        <Route path="/wikiroo/page/:pageId/edit" element={<WikirooRouter />} />
         <Route path="/mcp-registry" element={<McpRegistryDashboard />} />
         <Route path="/mcp-registry/:serverId" element={<McpServerDetail />} />
         <Route path="/consent" element={<ConsentScreen />} />

@@ -36,7 +36,7 @@ export function Breadcrumb({ pageId, pages }: BreadcrumbProps) {
           {index === breadcrumbs.length - 1 ? (
             <span className="breadcrumb-current">{page.title}</span>
           ) : (
-            <Link to={`/wikiroo/${page.id}`} className="breadcrumb-link">
+            <Link to={`/wikiroo/page/${page.id}`} className="breadcrumb-link">
               {page.title}
             </Link>
           )}

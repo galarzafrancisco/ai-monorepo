@@ -24,6 +24,7 @@ function formatDate(value: string) {
 export function WikirooLayout() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
+  const location = window.location;
   const {
     pages,
     selectedPage,
@@ -40,13 +41,19 @@ export function WikirooLayout() {
     getPageTree,
   } = useWikiroo();
 
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
   const [isLoadingTree, setIsLoadingTree] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [manualSidebarCollapse, setManualSidebarCollapse] = useState(false);
+
+  // Determine current view from route
+  const isEditMode = location.pathname.endsWith('/edit');
+  const isCreateMode = location.pathname === '/wikiroo/new';
+  const isPageView = pageId && !isEditMode;
+
+  // Sidebar is collapsed when viewing a page (not editing/creating) or manually collapsed
+  const isSidebarCollapsed = isPageView || manualSidebarCollapse;
 
   const pageSummary = pages.find((page) => page.id === pageId);
   const pageTitle = selectedPage?.title || pageSummary?.title;
@@ -77,31 +84,31 @@ export function WikirooLayout() {
 
   const handlePageClick = useCallback(
     (id: string) => {
-      navigate(`/wikiroo/${id}`);
+      navigate(`/wikiroo/page/${id}`);
     },
     [navigate],
   );
 
   const handleCreatePage = async (data: CreatePageDto) => {
     const created = await createPage(data);
-    setShowCreateForm(false);
     // Reload tree to show new page
     const tree = await getPageTree();
     setPageTree(tree);
-    navigate(`/wikiroo/${created.id}`);
+    navigate(`/wikiroo/page/${created.id}`);
   };
 
   const handleUpdate = useCallback(
     async (payload: UpdatePageDto) => {
       if (!pageId) return;
       await updatePage(pageId, payload);
-      setShowEditForm(false);
       setErrorMessage('');
       // Reload tree in case title changed
       const tree = await getPageTree();
       setPageTree(tree);
+      // Navigate back to page view
+      navigate(`/wikiroo/page/${pageId}`);
     },
-    [pageId, updatePage, getPageTree],
+    [pageId, updatePage, getPageTree, navigate],
   );
 
   const handleDeleteClick = useCallback(() => {
@@ -146,7 +153,7 @@ export function WikirooLayout() {
           <button
             className="wikiroo-button secondary"
             type="button"
-            onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+            onClick={() => setManualSidebarCollapse((prev) => !prev)}
             title={isSidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
           >
             {isSidebarCollapsed ? '☰' : '←'}
@@ -166,22 +173,12 @@ export function WikirooLayout() {
           <button
             className="wikiroo-button primary"
             type="button"
-            onClick={() => setShowCreateForm((prev) => !prev)}
+            onClick={() => navigate('/wikiroo/new')}
           >
-            {showCreateForm ? 'Close form' : 'New page'}
+            New page
           </button>
         </div>
       </header>
-
-      {showCreateForm && (
-        <WikiPageForm
-          mode="create"
-          pages={pages}
-          onSubmit={handleCreatePage}
-          onCancel={() => setShowCreateForm(false)}
-          isSubmitting={isCreating}
-        />
-      )}
 
       <div className="wikiroo-main-container">
         {/* Left sidebar with tree navigation */}
@@ -204,20 +201,67 @@ export function WikirooLayout() {
 
         {/* Right content area */}
         <main className="wikiroo-content">
-          {!pageId && (
+          {/* Create page form (/wikiroo/new) */}
+          {isCreateMode && (
+            <div className="wikiroo-edit-container">
+              <div className="wikiroo-edit-header">
+                <h2>New Page</h2>
+                <button
+                  onClick={() => navigate('/wikiroo')}
+                  className="wikiroo-button secondary"
+                >
+                  Close
+                </button>
+              </div>
+              <WikiPageForm
+                mode="create"
+                pages={pages}
+                onSubmit={handleCreatePage}
+                onCancel={() => navigate('/wikiroo')}
+                isSubmitting={isCreating}
+              />
+            </div>
+          )}
+
+          {/* Edit page form (/wikiroo/page/:pageId/edit) */}
+          {isEditMode && selectedPage && (
+            <div className="wikiroo-edit-container">
+              <div className="wikiroo-edit-header">
+                <h2>Edit Page</h2>
+                <button
+                  onClick={() => navigate(`/wikiroo/page/${pageId}`)}
+                  className="wikiroo-button secondary"
+                >
+                  Close
+                </button>
+              </div>
+              <WikiPageForm
+                mode="edit"
+                page={selectedPage}
+                pages={pages}
+                onSubmit={handleUpdate}
+                onCancel={() => navigate(`/wikiroo/page/${pageId}`)}
+                isSubmitting={isUpdating}
+              />
+            </div>
+          )}
+
+          {/* Welcome screen (/wikiroo) */}
+          {!pageId && !isCreateMode && (
             <div className="wikiroo-welcome">
               <h2>Wikiroo</h2>
             </div>
           )}
 
-          {pageId && isLoadingPage && (
+          {/* Page view (/wikiroo/page/:pageId) */}
+          {isPageView && isLoadingPage && (
             <div className="wikiroo-status">Loading page…</div>
           )}
 
-          {pageId && error && <div className="wikiroo-error">{error}</div>}
+          {isPageView && error && <div className="wikiroo-error">{error}</div>}
           {errorMessage && <div className="wikiroo-error">{errorMessage}</div>}
 
-          {pageId && selectedPage && !showEditForm && (
+          {isPageView && selectedPage && (
             <div className="wikiroo-page-detail">
               <Breadcrumb pageId={pageId} pages={pages} />
               <div className="wikiroo-page-detail-header">
@@ -247,7 +291,7 @@ export function WikirooLayout() {
                 <button
                   className="wikiroo-button"
                   type="button"
-                  onClick={() => setShowEditForm(true)}
+                  onClick={() => navigate(`/wikiroo/page/${pageId}/edit`)}
                   disabled={isUpdating || isDeleting}
                 >
                   Edit
@@ -261,28 +305,6 @@ export function WikirooLayout() {
                   Delete
                 </button>
               </div>
-            </div>
-          )}
-
-          {showEditForm && selectedPage && (
-            <div className="wikiroo-edit-container">
-              <div className="wikiroo-edit-header">
-                <h2>Edit Page</h2>
-                <button
-                  onClick={() => setShowEditForm(false)}
-                  className="wikiroo-button secondary"
-                >
-                  Close
-                </button>
-              </div>
-              <WikiPageForm
-                mode="edit"
-                page={selectedPage}
-                pages={pages}
-                onSubmit={handleUpdate}
-                onCancel={() => setShowEditForm(false)}
-                isSubmitting={isUpdating}
-              />
             </div>
           )}
         </main>
