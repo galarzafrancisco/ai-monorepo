@@ -2,6 +2,7 @@ import { useState, useRef, KeyboardEvent } from 'react';
 import { MarkdownPreview } from './MarkdownPreview';
 import { SlashCommandMenu } from './SlashCommandMenu';
 import type { SlashCommand } from './types';
+import { createAllSlashCommands } from './slashCommands';
 import './Wikiroo.css';
 
 interface RichEditorProps {
@@ -29,83 +30,6 @@ export function RichEditor({ value, onChange, placeholder, disabled }: RichEdito
     startPosition: 0,
   });
 
-  // Define available slash commands
-  const allCommands: SlashCommand[] = [
-    {
-      id: 'h1',
-      label: '/h1',
-      description: 'Heading 1',
-      action: () => insertText('# '),
-    },
-    {
-      id: 'h2',
-      label: '/h2',
-      description: 'Heading 2',
-      action: () => insertText('## '),
-    },
-    {
-      id: 'h3',
-      label: '/h3',
-      description: 'Heading 3',
-      action: () => insertText('### '),
-    },
-    {
-      id: 'bold',
-      label: '/bold',
-      description: 'Bold text',
-      action: () => insertText('**', '**'),
-    },
-    {
-      id: 'italic',
-      label: '/italic',
-      description: 'Italic text',
-      action: () => insertText('_', '_'),
-    },
-    {
-      id: 'code',
-      label: '/code',
-      description: 'Inline code',
-      action: () => insertText('`', '`'),
-    },
-    {
-      id: 'codeblock',
-      label: '/codeblock',
-      description: 'Code block',
-      action: () => insertText('```\n', '\n```'),
-    },
-    {
-      id: 'list',
-      label: '/list',
-      description: 'Bullet list',
-      action: () => insertText('- '),
-    },
-    {
-      id: 'numbered',
-      label: '/numbered',
-      description: 'Numbered list',
-      action: () => insertText('1. '),
-    },
-    {
-      id: 'quote',
-      label: '/quote',
-      description: 'Block quote',
-      action: () => insertText('> '),
-    },
-    {
-      id: 'link',
-      label: '/link',
-      description: 'Insert link',
-      action: () => insertText('[', '](url)'),
-    },
-  ];
-
-  // Filter commands based on query
-  const filteredCommands = commandMenu.query
-    ? allCommands.filter((cmd) =>
-        cmd.label.toLowerCase().includes(commandMenu.query.toLowerCase())
-      )
-    : allCommands;
-
   const insertText = (before: string, after: string = '') => {
     if (!textareaRef.current) return;
 
@@ -131,6 +55,16 @@ export function RichEditor({ value, onChange, placeholder, disabled }: RichEdito
       textarea.setSelectionRange(cursorPos, cursorPos);
     }, 0);
   };
+
+  // Define available slash commands using the registry
+  const allCommands: SlashCommand[] = createAllSlashCommands(insertText);
+
+  // Filter commands based on query
+  const filteredCommands = commandMenu.query
+    ? allCommands.filter((cmd) =>
+        cmd.label.toLowerCase().includes(commandMenu.query.toLowerCase())
+      )
+    : allCommands;
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (!commandMenu.active) {
