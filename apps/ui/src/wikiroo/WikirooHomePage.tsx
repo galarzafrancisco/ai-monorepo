@@ -70,6 +70,7 @@ export function WikirooHomePage() {
       {showForm && (
         <WikiPageForm
           mode="create"
+          pages={pages}
           onSubmit={handleCreatePage}
           onCancel={() => setShowForm(false)}
           isSubmitting={isCreating}

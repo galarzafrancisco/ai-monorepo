@@ -164,6 +164,7 @@ export function WikirooPageView() {
           <WikiPageForm
             mode="edit"
             page={selectedPage}
+            pages={pages}
             onSubmit={handleUpdate}
             onCancel={() => setShowEditForm(false)}
             isSubmitting={isUpdating}
