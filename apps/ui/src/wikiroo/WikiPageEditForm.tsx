@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { WikiPage } from './types';
 import type { UpdatePageDto } from 'shared';
 import { TagInput } from './TagInput';
+import { RichEditor } from './RichEditor';
 
 interface WikiPageEditFormProps {
   page: WikiPage;
@@ -144,13 +145,10 @@ export function WikiPageEditForm({
 
           <div className="wikiroo-form-group">
             <label htmlFor="edit-content">Content *</label>
-            <textarea
-              id="edit-content"
+            <RichEditor
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write in markdown or plain text"
-              rows={15}
-              required
+              onChange={setContent}
+              placeholder="Write in markdown or use / for commands"
               disabled={isUpdating || isDeleting}
             />
           </div>
