@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo, useMemo } from 'react';
 import type { WikiPageTree } from './types';
 
 interface PageTreeProps {
@@ -15,7 +15,7 @@ interface PageTreeItemProps {
   onPageClick: (pageId: string) => void;
 }
 
-function PageTreeItem({ page, level, isActive, currentPageId, onPageClick }: PageTreeItemProps) {
+const PageTreeItem = memo(function PageTreeItem({ page, level, isActive, currentPageId, onPageClick }: PageTreeItemProps) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = page.children && page.children.length > 0;
 
@@ -29,10 +29,11 @@ function PageTreeItem({ page, level, isActive, currentPageId, onPageClick }: Pag
     onPageClick(page.id);
   };
 
-  // Sort children by order field
-  const sortedChildren = hasChildren
-    ? [...page.children].sort((a, b) => a.order - b.order)
-    : [];
+  // Sort children by order field - memoized to avoid re-sorting on every render
+  const sortedChildren = useMemo(
+    () => hasChildren ? [...page.children].sort((a, b) => a.order - b.order) : [],
+    [hasChildren, page.children]
+  );
 
   return (
     <div className="page-tree-item">
@@ -77,11 +78,14 @@ function PageTreeItem({ page, level, isActive, currentPageId, onPageClick }: Pag
       )}
     </div>
   );
-}
+});
 
 export function PageTree({ pages, currentPageId, onPageClick }: PageTreeProps) {
-  // Sort root-level pages by order
-  const sortedPages = [...pages].sort((a, b) => a.order - b.order);
+  // Sort root-level pages by order - memoized to avoid re-sorting on every render
+  const sortedPages = useMemo(
+    () => [...pages].sort((a, b) => a.order - b.order),
+    [pages]
+  );
 
   return (
     <div className="page-tree">
