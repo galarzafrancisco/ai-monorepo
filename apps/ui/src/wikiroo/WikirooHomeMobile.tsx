@@ -100,7 +100,7 @@ export function WikirooHomeMobile() {
         {!isLoadingList && !error && pages.map((page) => (
           <Link
             key={page.id}
-            to={`/wikiroo/${page.id}`}
+            to={`/wikiroo/page/${page.id}`}
             className="mobile-wikiroo-page-item"
           >
             <h3 className="mobile-wikiroo-page-title">{page.title}</h3>

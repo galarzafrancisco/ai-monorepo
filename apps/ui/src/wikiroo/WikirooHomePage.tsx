@@ -51,7 +51,7 @@ export function WikirooHomePage() {
     // Reload tree to show new page
     const tree = await getPageTree();
     setPageTree(tree);
-    navigate(`/wikiroo/${created.id}`);
+    navigate(`/wikiroo/page/${created.id}`);
   };
 
   const handleRefresh = async () => {
@@ -109,7 +109,7 @@ export function WikirooHomePage() {
           <PageTree
             pages={pageTree}
             currentPageId={undefined}
-            onPageClick={(id) => navigate(`/wikiroo/${id}`)}
+            onPageClick={(id) => navigate(`/wikiroo/page/${id}`)}
           />
         )}
       </section>
