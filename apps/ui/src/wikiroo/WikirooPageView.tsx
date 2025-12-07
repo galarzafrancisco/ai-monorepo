@@ -8,6 +8,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { WikiPageForm } from './WikiPageForm';
 import { TagBadge } from './TagBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Breadcrumb } from './Breadcrumb';
 import type { UpdatePageDto } from 'shared';
 
 function formatDate(value: string) {
@@ -106,6 +107,7 @@ export function WikirooPageView() {
 
       {selectedPage && !showEditForm && (
         <div className="wikiroo-page-detail">
+          {pageId && <Breadcrumb pageId={pageId} pages={pages} />}
           <div className="wikiroo-page-detail-header">
             <h1 className="wikiroo-page-detail-title">{selectedPage.title}</h1>
             <div className="wikiroo-page-detail-meta">
