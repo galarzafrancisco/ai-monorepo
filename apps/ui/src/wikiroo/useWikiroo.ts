@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CreatePageDto, UpdatePageDto } from 'shared';
 import { WikirooService } from './api';
-import type { WikiPage, WikiPageSummary } from './types';
+import type { WikiPage, WikiPageSummary, WikiPageTree } from './types';
 
 export const useWikiroo = () => {
   const [pages, setPages] = useState<WikiPageSummary[]>([]);
@@ -223,6 +223,87 @@ export const useWikiroo = () => {
     [selectedPage],
   );
 
+  const getPageTree = useCallback(async (): Promise<WikiPageTree[]> => {
+    setError(null);
+    try {
+      const tree = await WikirooService.wikirooControllerGetPageTree();
+      return tree;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch page tree');
+      throw err;
+    }
+  }, []);
+
+  const reorderPage = useCallback(
+    async (pageId: string, newOrder: number) => {
+      setError(null);
+      try {
+        const updated = await WikirooService.wikirooControllerReorderPage(pageId, {
+          newOrder,
+        });
+        setPages((prev) =>
+          prev.map((p) =>
+            p.id === pageId
+              ? {
+                  id: updated.id,
+                  title: updated.title,
+                  author: updated.author,
+                  tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
+                  createdAt: updated.createdAt,
+                  updatedAt: updated.updatedAt,
+                }
+              : p,
+          ),
+        );
+        if (selectedPage?.id === pageId) {
+          setSelectedPage(updated);
+        }
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to reorder page');
+        throw err;
+      }
+    },
+    [selectedPage],
+  );
+
+  const movePage = useCallback(
+    async (pageId: string, newParentId: string | null) => {
+      setError(null);
+      try {
+        const updated = await WikirooService.wikirooControllerMovePage(pageId, {
+          newParentId: newParentId as any,
+        });
+        setPages((prev) =>
+          prev.map((p) =>
+            p.id === pageId
+              ? {
+                  id: updated.id,
+                  title: updated.title,
+                  author: updated.author,
+                  tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
+                  createdAt: updated.createdAt,
+                  updatedAt: updated.updatedAt,
+                }
+              : p,
+          ),
+        );
+        if (selectedPage?.id === pageId) {
+          setSelectedPage(updated);
+        }
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to move page');
+        throw err;
+      }
+    },
+    [selectedPage],
+  );
+
   useEffect(() => {
     loadPages();
   }, [loadPages]);
@@ -244,5 +325,8 @@ export const useWikiroo = () => {
     deletePage,
     addTagToPage,
     removeTagFromPage,
+    getPageTree,
+    reorderPage,
+    movePage,
   };
 };
