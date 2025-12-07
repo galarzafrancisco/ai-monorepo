@@ -52,8 +52,8 @@ export function WikirooLayout() {
   const isCreateMode = location.pathname === '/wikiroo/new';
   const isPageView = pageId && !isEditMode;
 
-  // Sidebar is collapsed when viewing a page (not editing/creating) or manually collapsed
-  const isSidebarCollapsed = isPageView || manualSidebarCollapse;
+  // Sidebar is collapsed when viewing, editing, or creating a page, or manually collapsed
+  const isSidebarCollapsed = isPageView || isEditMode || isCreateMode || manualSidebarCollapse;
 
   const pageSummary = pages.find((page) => page.id === pageId);
   const pageTitle = selectedPage?.title || pageSummary?.title;
