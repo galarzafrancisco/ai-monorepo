@@ -421,6 +421,54 @@
   font-style: italic;
 }
 
+/* Slash Command Menu Styles */
+.slash-command-menu {
+  position: absolute;
+  background: #ffffff;
+  border: 1px solid #dce4ec;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px 0;
+}
+
+.slash-command-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.slash-command-item:hover,
+.slash-command-item.selected {
+  background: #f8f9fa;
+}
+
+.slash-command-item.selected {
+  background: #e3f2fd;
+}
+
+.slash-command-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-family: 'Source Code Pro', Consolas, 'Courier New', monospace;
+}
+
+.slash-command-description {
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
 @media (max-width: 768px) {
   .wikiroo {
     padding: 16px;

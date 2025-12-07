@@ -4,3 +4,9 @@ export type {
   PageSummaryDto as WikiPageSummary,
 } from 'shared';
 
+export interface SlashCommand {
+  id: string;
+  label: string;
+  description: string;
+  action: () => void;
+}
