@@ -46,6 +46,7 @@ export function WikirooLayout() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
   const [isLoadingTree, setIsLoadingTree] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const pageSummary = pages.find((page) => page.id === pageId);
   const pageTitle = selectedPage?.title || pageSummary?.title;
@@ -141,9 +142,16 @@ export function WikirooLayout() {
   return (
     <div className="wikiroo wikiroo-layout">
       <header className="wikiroo-header">
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            className="wikiroo-button secondary"
+            type="button"
+            onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+            title={isSidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+          >
+            {isSidebarCollapsed ? '☰' : '←'}
+          </button>
           <h1>Wikiroo</h1>
-          <p>Lightweight knowledge base for agents</p>
         </div>
         <div className="wikiroo-actions">
           <HomeLink />
@@ -177,7 +185,7 @@ export function WikirooLayout() {
 
       <div className="wikiroo-main-container">
         {/* Left sidebar with tree navigation */}
-        <aside className="wikiroo-sidebar">
+        <aside className={`wikiroo-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
           <h2 className="wikiroo-sidebar-title">Pages</h2>
           {isLoadingTree && <div className="wikiroo-status">Loading pages…</div>}
           {pageTree.length > 0 && (
@@ -198,8 +206,7 @@ export function WikirooLayout() {
         <main className="wikiroo-content">
           {!pageId && (
             <div className="wikiroo-welcome">
-              <h2>Welcome to Wikiroo</h2>
-              <p>Select a page from the sidebar or create a new one to get started.</p>
+              <h2>Wikiroo</h2>
             </div>
           )}
 
