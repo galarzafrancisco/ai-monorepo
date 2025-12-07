@@ -2,8 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HomePage } from './home/HomePage';
 import { TaskBoard } from './taskeroo/TaskBoard';
 import { TaskBoardMobile } from './taskeroo/TaskBoardMobile';
-import { WikirooHomePage } from './wikiroo/WikirooHomePage';
-import { WikirooPageView } from './wikiroo/WikirooPageView';
+import { WikirooLayout } from './wikiroo/WikirooLayout';
 import { WikirooHomeMobile } from './wikiroo/WikirooHomeMobile';
 import { WikirooPageViewMobile } from './wikiroo/WikirooPageViewMobile';
 import { McpRegistryDashboard } from './mcp-registry/McpRegistryDashboard';
@@ -19,12 +18,8 @@ function TaskerooRouter() {
   return isMobile() ? <TaskBoardMobile /> : <TaskBoard />;
 }
 
-function WikirooHomeRouter() {
-  return isMobile() ? <WikirooHomeMobile /> : <WikirooHomePage />;
-}
-
-function WikirooPageRouter() {
-  return isMobile() ? <WikirooPageViewMobile /> : <WikirooPageView />;
+function WikirooRouter() {
+  return isMobile() ? <WikirooHomeMobile /> : <WikirooLayout />;
 }
 
 export default function App() {
@@ -33,8 +28,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/taskeroo" element={<TaskerooRouter />} />
-        <Route path="/wikiroo" element={<WikirooHomeRouter />} />
-        <Route path="/wikiroo/:pageId" element={<WikirooPageRouter />} />
+        <Route path="/wikiroo" element={<WikirooRouter />} />
+        <Route path="/wikiroo/:pageId" element={<WikirooRouter />} />
         <Route path="/mcp-registry" element={<McpRegistryDashboard />} />
         <Route path="/mcp-registry/:serverId" element={<McpServerDetail />} />
         <Route path="/consent" element={<ConsentScreen />} />
