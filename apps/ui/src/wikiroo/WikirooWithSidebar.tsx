@@ -85,12 +85,12 @@ export function WikirooWithSidebar() {
     <div className="wikiroo-with-sidebar">
       <aside className={`sidebar-app-specific ${wikirooSidebarCollapsed ? 'collapsed' : ''}`}>
         <nav className="sidebar-content">
-          {wikirooSidebarCollapsed && isConnected && (
+          {wikirooSidebarCollapsed && (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '8px' }}>
               <span
-                className="wikiroo-status-dot"
-                title="WebSocket connected"
-                aria-label="WebSocket connected"
+                className={`wikiroo-status-dot ${isConnected ? 'connected' : 'disconnected'}`}
+                title={isConnected ? 'WebSocket connected' : 'WebSocket disconnected'}
+                aria-label={isConnected ? 'WebSocket connected' : 'WebSocket disconnected'}
               />
             </div>
           )}
@@ -101,13 +101,11 @@ export function WikirooWithSidebar() {
               <div className="wikiroo-sidebar-header">
                 <h2 className="wikiroo-sidebar-title">
                   📚 Wikiroo
-                  {isConnected && (
-                    <span
-                      className="wikiroo-status-dot"
-                      title="WebSocket connected"
-                      aria-label="WebSocket connected"
-                    />
-                  )}
+                  <span
+                    className={`wikiroo-status-dot ${isConnected ? 'connected' : 'disconnected'}`}
+                    title={isConnected ? 'WebSocket connected' : 'WebSocket disconnected'}
+                    aria-label={isConnected ? 'WebSocket connected' : 'WebSocket disconnected'}
+                  />
                 </h2>
                 <button
                   className="wikiroo-button primary wikiroo-sidebar-new-page"

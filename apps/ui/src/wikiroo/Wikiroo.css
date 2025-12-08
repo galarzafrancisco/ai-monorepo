@@ -824,11 +824,19 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  background-color: #10b981;
   border-radius: 50%;
   margin-left: 8px;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
   animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.wikiroo-status-dot.connected {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.wikiroo-status-dot.disconnected {
+  background-color: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
 }
 
 @keyframes pulse-dot {
