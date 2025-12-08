@@ -17,6 +17,7 @@
   --sidebar-app-nav-width: 240px;
   --sidebar-app-nav-collapsed-width: 64px;
   --sidebar-app-specific-width: 300px;
+  --sidebar-app-specific-collapsed-width: 64px;
   --sidebar-toggle-size: 40px;
   --sidebar-padding: 16px;
   --sidebar-gap: 8px;
@@ -78,10 +79,12 @@
 .sidebar-app-specific {
   width: var(--sidebar-app-specific-width);
   z-index: calc(var(--sidebar-z-index) - 1);
+  background-color: #ffffff;
+  color: #2c3e50;
 }
 
 .sidebar-app-specific.collapsed {
-  width: 0;
+  width: var(--sidebar-app-specific-collapsed-width);
 }
 
 /* ===========================

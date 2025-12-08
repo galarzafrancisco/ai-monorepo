@@ -594,27 +594,59 @@
   gap: 12px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid #e4e6eb;
 }
 
 .wikiroo-sidebar-title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .wikiroo-sidebar-new-page {
   padding: 6px 12px;
   font-size: 13px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .wikiroo-empty-sidebar {
   padding: 16px 0;
   text-align: center;
-  color: #94a3b8;
+  color: #7f8c8d;
   font-size: 14px;
+}
+
+/* Collapsed sidebar state */
+.sidebar-app-specific.collapsed .wikiroo-sidebar-header {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 8px;
+  gap: 8px;
+}
+
+.sidebar-app-specific.collapsed .wikiroo-sidebar-title {
+  display: none;
+}
+
+.sidebar-app-specific.collapsed .wikiroo-sidebar-new-page {
+  padding: 8px;
+  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-app-specific.collapsed .page-tree,
+.sidebar-app-specific.collapsed .wikiroo-status,
+.sidebar-app-specific.collapsed .wikiroo-empty-sidebar {
+  display: none;
 }
 
 /* Page Tree Styles */
