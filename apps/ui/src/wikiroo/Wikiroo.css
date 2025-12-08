@@ -191,37 +191,6 @@
   min-height: calc(100vh - 60px);
 }
 
-.wikiroo-sidebar {
-  width: 300px;
-  min-width: 300px;
-  background: #ffffff;
-  padding: 16px;
-  border-right: 1px solid #e4e6eb;
-  height: calc(100vh - 60px);
-  overflow-y: auto;
-  position: sticky;
-  top: 60px;
-  transition: margin-left 0.3s ease;
-}
-
-.wikiroo-sidebar.collapsed {
-  margin-left: -300px;
-}
-
-.wikiroo-sidebar-title {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.wikiroo-empty-sidebar {
-  padding: 16px;
-  text-align: center;
-  color: #95a5a6;
-  font-size: 14px;
-}
-
 .wikiroo-content {
   flex: 1;
   background: #ffffff;
@@ -252,12 +221,6 @@
 @media (max-width: 1024px) {
   .wikiroo-main-container {
     flex-direction: column;
-  }
-
-  .wikiroo-sidebar {
-    width: 100%;
-    max-height: 400px;
-    position: static;
   }
 }
 
