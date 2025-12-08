@@ -9,7 +9,6 @@ const STORAGE_KEY = 'wikiroo-sidebar-collapsed';
 export function WikirooWithSidebar() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
-  const location = window.location;
   const { getPageTree, isConnected } = useWikiroo();
 
   const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
