@@ -21,21 +21,10 @@ export function WikirooWithSidebar() {
     return stored === 'true';
   });
 
-  // Determine current view from route
-  const isEditMode = location.pathname.endsWith('/edit');
-  const isCreateMode = location.pathname === '/wikiroo/new';
-  const isPageView = pageId && !isEditMode;
-
-  // Auto-collapse sidebar when viewing, editing, or creating a page
-  const autoCollapse = isPageView || isEditMode || isCreateMode;
-  const isSidebarCollapsed = autoCollapse || wikirooSidebarCollapsed;
-
-  // Save to localStorage on change (only when not auto-collapsed)
+  // Save to localStorage on change
   useEffect(() => {
-    if (!autoCollapse) {
-      localStorage.setItem(STORAGE_KEY, String(wikirooSidebarCollapsed));
-    }
-  }, [wikirooSidebarCollapsed, autoCollapse]);
+    localStorage.setItem(STORAGE_KEY, String(wikirooSidebarCollapsed));
+  }, [wikirooSidebarCollapsed]);
 
   // Load page tree on mount
   useEffect(() => {
@@ -66,7 +55,7 @@ export function WikirooWithSidebar() {
 
   return (
     <div className="wikiroo-with-sidebar">
-      <aside className={`sidebar-app-specific ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+      <aside className={`sidebar-app-specific ${wikirooSidebarCollapsed ? 'collapsed' : ''}`}>
         <nav className="sidebar-content">
           <div className="wikiroo-sidebar-header">
             <h2 className="wikiroo-sidebar-title">Pages</h2>
@@ -96,10 +85,9 @@ export function WikirooWithSidebar() {
         <button
           className="sidebar-toggle"
           onClick={toggleSidebar}
-          aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          disabled={autoCollapse}
+          aria-label={wikirooSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isSidebarCollapsed ? '→' : '←'}
+          {wikirooSidebarCollapsed ? '→' : '←'}
         </button>
       </aside>
 
