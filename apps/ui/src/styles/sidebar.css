@@ -259,3 +259,25 @@
     transition: none;
   }
 }
+
+/* ===========================
+   Connection Status Indicator
+   =========================== */
+.sidebar-nav-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.connection-status-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background-color: #10b981;
+  border-radius: 50%;
+  border: 2px solid var(--sidebar-bg);
+  box-shadow: 0 0 4px rgba(16, 185, 129, 0.5);
+}
