@@ -11,6 +11,10 @@ import { WikirooPageEdit } from './wikiroo/WikirooPageEdit';
 import { McpRegistryDashboard } from './mcp-registry/McpRegistryDashboard';
 import { McpServerDetail } from './mcp-registry/McpServerDetail';
 import { ConsentScreen } from './consent/ConsentScreen';
+import { AgentsWithSidebar } from './agents/AgentsWithSidebar';
+import { AgentsHome } from './agents/AgentsHome';
+import { AgentsChatSession } from './agents/AgentsChatSession';
+import { AgentsAdmin } from './agents/AgentsAdmin';
 
 // Simple mobile detection
 const isMobile = () => {
@@ -39,6 +43,13 @@ export default function App() {
             <Route path="page/:pageId" element={<WikirooPageView />} />
             <Route path="page/:pageId/edit" element={<WikirooPageEdit />} />
             <Route path="page/:pageId/new" element={<WikirooCreate />} />
+          </Route>
+
+          {/* Agents nested routes with AgentsWithSidebar layout */}
+          <Route path="agents" element={<AgentsWithSidebar />}>
+            <Route index element={<AgentsHome />} />
+            <Route path="admin" element={<AgentsAdmin />} />
+            <Route path=":agentId/session/:sessionId" element={<AgentsChatSession />} />
           </Route>
         </Route>
       </Routes>

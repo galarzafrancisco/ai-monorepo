@@ -26,6 +26,11 @@ export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
       ),
     },
     {
+      name: 'Agents',
+      path: '/agents',
+      icon: '🤖',
+    },
+    {
       name: 'Taskeroo',
       path: '/taskeroo',
       icon: '📋',
