@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WikiPageEntity } from './page.entity';
 import { WikiTagEntity } from './tag.entity';
 import {
@@ -21,6 +22,11 @@ import {
   CircularReferenceError,
 } from './errors/wikiroo.errors';
 import { getRandomTagColor } from '../common/utils/color-palette.util';
+import {
+  PageCreatedEvent,
+  PageUpdatedEvent,
+  PageDeletedEvent,
+} from './events/wikiroo.events';
 
 @Injectable()
 export class WikirooService {
@@ -31,6 +37,7 @@ export class WikirooService {
     private readonly pageRepository: Repository<WikiPageEntity>,
     @InjectRepository(WikiTagEntity)
     private readonly tagRepository: Repository<WikiTagEntity>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createPage(input: CreatePageInput): Promise<PageResult> {
@@ -95,6 +102,9 @@ export class WikirooService {
       message: 'Wiki page created',
       pageId: saved.id,
     });
+
+    // Emit page created event
+    this.eventEmitter.emit('page.created', new PageCreatedEvent(pageWithTags!));
 
     return this.mapToResult(pageWithTags!);
   }
@@ -209,6 +219,9 @@ export class WikirooService {
 
     this.logger.log({ message: 'Wiki page updated', pageId: saved.id });
 
+    // Emit page updated event
+    this.eventEmitter.emit('page.updated', new PageUpdatedEvent(pageWithTags!));
+
     return this.mapToResult(pageWithTags!);
   }
 
@@ -233,6 +246,9 @@ export class WikirooService {
 
     this.logger.log({ message: 'Wiki page content appended', pageId: saved.id });
 
+    // Emit page updated event (appending is an update)
+    this.eventEmitter.emit('page.updated', new PageUpdatedEvent(saved));
+
     return this.mapToResult(saved);
   }
 
@@ -246,6 +262,9 @@ export class WikirooService {
     }
 
     this.logger.log({ message: 'Wiki page deleted', pageId });
+
+    // Emit page deleted event
+    this.eventEmitter.emit('page.deleted', new PageDeletedEvent(pageId));
   }
 
   async createTag(input: CreateTagInput): Promise<TagResult> {
@@ -318,6 +337,9 @@ export class WikirooService {
 
     this.logger.log({ message: 'Tag added to page', pageId, tagId: tag.id });
 
+    // Emit page updated event (tag changes are updates)
+    this.eventEmitter.emit('page.updated', new PageUpdatedEvent(pageWithRelations!));
+
     return this.mapToResult(pageWithRelations!);
   }
 
@@ -340,6 +362,9 @@ export class WikirooService {
 
     // Check if tag is now orphaned and clean it up
     await this.cleanupOrphanedTag(tagId);
+
+    // Emit page updated event (tag changes are updates)
+    this.eventEmitter.emit('page.updated', new PageUpdatedEvent(page));
 
     return this.mapToResult(page);
   }
