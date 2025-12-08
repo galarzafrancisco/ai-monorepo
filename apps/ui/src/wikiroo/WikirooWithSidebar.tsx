@@ -86,10 +86,9 @@ export function WikirooWithSidebar() {
       <aside className={`sidebar-app-specific ${wikirooSidebarCollapsed ? 'collapsed' : ''}`}>
         <nav className="sidebar-content">
           {wikirooSidebarCollapsed && isConnected && (
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', padding: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px' }}>
               <span
-                className="connection-status-dot"
-                style={{ position: 'static', margin: '0 auto' }}
+                className="wikiroo-status-dot"
                 title="WebSocket connected"
                 aria-label="WebSocket connected"
               />
@@ -100,16 +99,16 @@ export function WikirooWithSidebar() {
 
 
               <div className="wikiroo-sidebar-header">
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <h2 className="wikiroo-sidebar-title">📚 Wikiroo</h2>
+                <h2 className="wikiroo-sidebar-title">
+                  📚 Wikiroo
                   {isConnected && (
                     <span
-                      className="connection-status-dot"
+                      className="wikiroo-status-dot"
                       title="WebSocket connected"
                       aria-label="WebSocket connected"
                     />
                   )}
-                </div>
+                </h2>
                 <button
                   className="wikiroo-button primary wikiroo-sidebar-new-page"
                   type="button"
