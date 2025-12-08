@@ -14,7 +14,8 @@ import { ConsentScreen } from './consent/ConsentScreen';
 import { AgentsWithSidebar } from './agents/AgentsWithSidebar';
 import { AgentsHome } from './agents/AgentsHome';
 import { AgentsChatSession } from './agents/AgentsChatSession';
-import { AgentsAdmin } from './agents/AgentsAdmin';
+import { AgentsAdminList } from './agents/AgentsAdminList';
+import { AgentAdminDetail } from './agents/AgentAdminDetail';
 
 // Simple mobile detection
 const isMobile = () => {
@@ -48,7 +49,8 @@ export default function App() {
           {/* Agents nested routes with AgentsWithSidebar layout */}
           <Route path="agents" element={<AgentsWithSidebar />}>
             <Route index element={<AgentsHome />} />
-            <Route path="admin" element={<AgentsAdmin />} />
+            <Route path="admin" element={<AgentsAdminList />} />
+            <Route path=":agentId/admin" element={<AgentAdminDetail />} />
             <Route path=":agentId/session/:sessionId" element={<AgentsChatSession />} />
           </Route>
         </Route>
