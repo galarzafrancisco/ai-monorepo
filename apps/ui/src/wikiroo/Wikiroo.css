@@ -650,6 +650,11 @@
 }
 
 /* Page Tree Styles */
+.sidebar-app-specific .sidebar-content {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .page-tree {
   background: white;
   border: none;
@@ -664,8 +669,7 @@
 .tree-item-content {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid #f0f4f8;
+  padding: 4px 8px;
   transition: background-color 0.2s ease;
 }
 
@@ -713,9 +717,9 @@
   flex: 1;
   color: #2c3e50;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 2px 0;
   transition: color 0.2s ease;
 }
 
