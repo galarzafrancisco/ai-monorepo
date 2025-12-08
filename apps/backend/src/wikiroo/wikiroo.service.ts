@@ -416,6 +416,22 @@ export class WikirooService {
     }
   }
 
+  async getChildPages(parentId: string | null): Promise<PageSummaryResult[]> {
+    this.logger.log({ message: 'Fetching child pages', parentId });
+
+    const whereClause = parentId === null
+      ? { parentId: null as any }
+      : { parentId };
+
+    const children = await this.pageRepository.find({
+      where: whereClause,
+      relations: ['tags'],
+      order: { order: 'ASC' },
+    });
+
+    return children.map((page) => this.mapToSummary(page));
+  }
+
   async getPageTree(): Promise<PageTreeResult[]> {
     this.logger.log({ message: 'Fetching page tree' });
 
