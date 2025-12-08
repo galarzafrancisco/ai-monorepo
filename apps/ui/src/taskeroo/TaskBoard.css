@@ -75,6 +75,8 @@ body {
   padding: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   min-height: 400px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .column-header {
@@ -154,6 +156,8 @@ body {
   padding: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
+  word-wrap: break-word;
 }
 
 .task-card:hover {
