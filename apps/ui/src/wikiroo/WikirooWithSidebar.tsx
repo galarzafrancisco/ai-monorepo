@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Outlet, Link } from 'react-router-dom';
+import { useParams, useNavigate, Outlet } from 'react-router-dom';
 import { PageTree } from './PageTree';
 import { useWikiroo } from './useWikiroo';
 import type { WikiPageTree } from './types';
@@ -9,8 +9,7 @@ const STORAGE_KEY = 'wikiroo-sidebar-collapsed';
 export function WikirooWithSidebar() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
-  const location = window.location;
-  const { getPageTree } = useWikiroo();
+  const { getPageTree, isConnected } = useWikiroo();
 
   const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
   const [isLoadingTree, setIsLoadingTree] = useState(false);
@@ -57,12 +56,31 @@ export function WikirooWithSidebar() {
     <div className="wikiroo-with-sidebar">
       <aside className={`sidebar-app-specific ${wikirooSidebarCollapsed ? 'collapsed' : ''}`}>
         <nav className="sidebar-content">
+          {wikirooSidebarCollapsed && isConnected && (
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', padding: '8px' }}>
+              <span
+                className="connection-status-dot"
+                style={{ position: 'static', margin: '0 auto' }}
+                title="WebSocket connected"
+                aria-label="WebSocket connected"
+              />
+            </div>
+          )}
           {!wikirooSidebarCollapsed && (
             <div>
 
 
               <div className="wikiroo-sidebar-header">
-                <h2 className="wikiroo-sidebar-title">📚 Wikiroo</h2>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <h2 className="wikiroo-sidebar-title">📚 Wikiroo</h2>
+                  {isConnected && (
+                    <span
+                      className="connection-status-dot"
+                      title="WebSocket connected"
+                      aria-label="WebSocket connected"
+                    />
+                  )}
+                </div>
                 <button
                   className="wikiroo-button primary wikiroo-sidebar-new-page"
                   type="button"

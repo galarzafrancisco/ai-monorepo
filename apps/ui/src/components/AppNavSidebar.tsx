@@ -2,10 +2,9 @@ import { NavLink } from 'react-router-dom';
 
 interface AppNavSidebarProps {
   collapsed: boolean;
-  wikirooConnected?: boolean;
 }
 
-export function AppNavSidebar({ collapsed, wikirooConnected }: AppNavSidebarProps) {
+export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
   const menuItems = [
     {
       name: 'Home',
@@ -64,13 +63,6 @@ export function AppNavSidebar({ collapsed, wikirooConnected }: AppNavSidebarProp
               <span>{item.icon}</span>
             ) : (
               item.icon
-            )}
-            {item.path === '/wikiroo' && wikirooConnected && (
-              <span
-                className="connection-status-dot"
-                title="WebSocket connected"
-                aria-label="WebSocket connected"
-              />
             )}
           </div>
           <span className="nav-link-text">{item.name}</span>
