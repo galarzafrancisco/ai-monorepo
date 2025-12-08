@@ -819,6 +819,27 @@
   font-weight: 500;
 }
 
+/* WebSocket status indicator dot */
+.wikiroo-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #10b981;
+  border-radius: 50%;
+  margin-left: 8px;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 /* Mobile-specific styles for touch targets */
 @media (max-width: 768px) {
   .tree-toggle {
