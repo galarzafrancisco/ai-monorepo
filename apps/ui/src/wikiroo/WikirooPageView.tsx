@@ -67,7 +67,7 @@ export function WikirooPageView() {
       {error && <div className="wikiroo-error">{error}</div>}
       {errorMessage && <div className="wikiroo-error">{errorMessage}</div>}
 
-      {selectedPage && (
+      {selectedPage && pageId && (
         <div className="wikiroo-page-detail">
           <Breadcrumb pageId={pageId} pages={pages} />
           <div className="wikiroo-page-detail-header">
