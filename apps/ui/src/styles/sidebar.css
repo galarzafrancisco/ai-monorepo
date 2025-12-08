@@ -62,8 +62,7 @@
   display: flex;
   flex-direction: column;
   transition: var(--sidebar-transition);
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   border-right: 1px solid var(--sidebar-border);
 }
 
@@ -85,31 +84,30 @@
    Sidebar Content
    =========================== */
 .sidebar-content {
+  flex: 1;
   padding: var(--sidebar-padding);
   display: flex;
   flex-direction: column;
   gap: var(--sidebar-gap);
+  overflow-y: auto;
 }
 
 /* ===========================
    Sidebar Toggle Button
    =========================== */
 .sidebar-toggle {
-  position: fixed;
-  top: var(--sidebar-padding);
-  left: var(--sidebar-padding);
-  width: var(--sidebar-toggle-size);
+  width: 100%;
   height: var(--sidebar-toggle-size);
   background-color: var(--sidebar-bg);
   color: var(--sidebar-text);
-  border: 1px solid var(--sidebar-border);
-  border-radius: 4px;
+  border: none;
+  border-top: 1px solid var(--sidebar-border);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: var(--sidebar-transition-fast);
-  z-index: var(--sidebar-toggle-z-index);
+  flex-shrink: 0;
 }
 
 .sidebar-toggle:hover {
@@ -118,12 +116,6 @@
 
 .sidebar-toggle:active {
   transform: scale(0.95);
-}
-
-/* Adjust toggle position when sidebar is collapsed */
-.sidebar-app-nav.collapsed ~ .sidebar-toggle,
-.root-layout:has(.sidebar-app-nav.collapsed) .sidebar-toggle {
-  left: calc(var(--sidebar-app-nav-collapsed-width) + var(--sidebar-padding));
 }
 
 /* ===========================
