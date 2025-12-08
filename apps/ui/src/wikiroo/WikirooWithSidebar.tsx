@@ -1,0 +1,138 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, Outlet } from 'react-router-dom';
+import { HomeLink } from '../components/HomeLink';
+import { PageTree } from './PageTree';
+import { useWikiroo } from './useWikiroo';
+import type { WikiPageTree } from './types';
+
+const STORAGE_KEY = 'wikiroo-sidebar-collapsed';
+
+export function WikirooWithSidebar() {
+  const { pageId } = useParams<{ pageId: string }>();
+  const navigate = useNavigate();
+  const location = window.location;
+  const { getPageTree } = useWikiroo();
+
+  const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
+  const [isLoadingTree, setIsLoadingTree] = useState(false);
+
+  // Initialize from localStorage, default to false
+  const [wikirooSidebarCollapsed, setWikirooSidebarCollapsed] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === 'true';
+  });
+
+  // Determine current view from route
+  const isEditMode = location.pathname.endsWith('/edit');
+  const isCreateMode = location.pathname === '/wikiroo/new';
+  const isPageView = pageId && !isEditMode;
+
+  // Auto-collapse sidebar when viewing, editing, or creating a page
+  const autoCollapse = isPageView || isEditMode || isCreateMode;
+  const isSidebarCollapsed = autoCollapse || wikirooSidebarCollapsed;
+
+  // Save to localStorage on change (only when not auto-collapsed)
+  useEffect(() => {
+    if (!autoCollapse) {
+      localStorage.setItem(STORAGE_KEY, String(wikirooSidebarCollapsed));
+    }
+  }, [wikirooSidebarCollapsed, autoCollapse]);
+
+  // Load page tree on mount
+  useEffect(() => {
+    async function loadTree() {
+      setIsLoadingTree(true);
+      try {
+        const tree = await getPageTree();
+        setPageTree(tree);
+      } catch (err) {
+        console.error('Failed to load page tree:', err);
+      } finally {
+        setIsLoadingTree(false);
+      }
+    }
+    loadTree();
+  }, [getPageTree]);
+
+  const handlePageClick = useCallback(
+    (id: string) => {
+      navigate(`/wikiroo/page/${id}`);
+    },
+    [navigate],
+  );
+
+  const handleRefresh = async () => {
+    setIsLoadingTree(true);
+    try {
+      const tree = await getPageTree();
+      setPageTree(tree);
+    } catch (err) {
+      console.error('Failed to refresh:', err);
+    } finally {
+      setIsLoadingTree(false);
+    }
+  };
+
+  const toggleSidebar = () => {
+    setWikirooSidebarCollapsed(!wikirooSidebarCollapsed);
+  };
+
+  return (
+    <div className="wikiroo-with-sidebar">
+      <header className="wikiroo-header">
+        <h1>Wikiroo</h1>
+        <div className="wikiroo-actions">
+          <HomeLink />
+          <button
+            className="wikiroo-button secondary"
+            type="button"
+            onClick={handleRefresh}
+            disabled={isLoadingTree}
+          >
+            {isLoadingTree ? 'Refreshing…' : 'Refresh'}
+          </button>
+          <button
+            className="wikiroo-button primary"
+            type="button"
+            onClick={() => navigate('/wikiroo/new')}
+          >
+            New page
+          </button>
+        </div>
+      </header>
+
+      <div className="wikiroo-body">
+        <aside className={`sidebar-app-specific ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+          <nav className="sidebar-content">
+            <h2 className="wikiroo-sidebar-title">Pages</h2>
+            {isLoadingTree && <div className="wikiroo-status">Loading pages…</div>}
+            {pageTree.length > 0 && (
+              <PageTree
+                pages={pageTree}
+                currentPageId={pageId}
+                onPageClick={handlePageClick}
+              />
+            )}
+            {pageTree.length === 0 && !isLoadingTree && (
+              <div className="wikiroo-empty-sidebar">
+                <span>No pages yet</span>
+              </div>
+            )}
+          </nav>
+          <button
+            className="sidebar-toggle"
+            onClick={toggleSidebar}
+            aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            disabled={autoCollapse}
+          >
+            {isSidebarCollapsed ? '→' : '←'}
+          </button>
+        </aside>
+
+        <main className="wikiroo-content">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
