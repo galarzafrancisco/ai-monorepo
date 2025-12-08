@@ -1,4 +1,4 @@
-import { useState, memo, useMemo, useEffect } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WikiPageTree } from './types';
 
