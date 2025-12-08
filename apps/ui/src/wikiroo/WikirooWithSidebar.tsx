@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
-import { HomeLink } from '../components/HomeLink';
 import { PageTree } from './PageTree';
 import { useWikiroo } from './useWikiroo';
 import type { WikiPageTree } from './types';
@@ -61,78 +60,52 @@ export function WikirooWithSidebar() {
     [navigate],
   );
 
-  const handleRefresh = async () => {
-    setIsLoadingTree(true);
-    try {
-      const tree = await getPageTree();
-      setPageTree(tree);
-    } catch (err) {
-      console.error('Failed to refresh:', err);
-    } finally {
-      setIsLoadingTree(false);
-    }
-  };
-
   const toggleSidebar = () => {
     setWikirooSidebarCollapsed(!wikirooSidebarCollapsed);
   };
 
   return (
     <div className="wikiroo-with-sidebar">
-      <header className="wikiroo-header">
-        <h1>Wikiroo</h1>
-        <div className="wikiroo-actions">
-          <HomeLink />
-          <button
-            className="wikiroo-button secondary"
-            type="button"
-            onClick={handleRefresh}
-            disabled={isLoadingTree}
-          >
-            {isLoadingTree ? 'Refreshing…' : 'Refresh'}
-          </button>
-          <button
-            className="wikiroo-button primary"
-            type="button"
-            onClick={() => navigate('/wikiroo/new')}
-          >
-            New page
-          </button>
-        </div>
-      </header>
-
-      <div className="wikiroo-body">
-        <aside className={`sidebar-app-specific ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-          <nav className="sidebar-content">
+      <aside className={`sidebar-app-specific ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        <nav className="sidebar-content">
+          <div className="wikiroo-sidebar-header">
             <h2 className="wikiroo-sidebar-title">Pages</h2>
-            {isLoadingTree && <div className="wikiroo-status">Loading pages…</div>}
-            {pageTree.length > 0 && (
-              <PageTree
-                pages={pageTree}
-                currentPageId={pageId}
-                onPageClick={handlePageClick}
-              />
-            )}
-            {pageTree.length === 0 && !isLoadingTree && (
-              <div className="wikiroo-empty-sidebar">
-                <span>No pages yet</span>
-              </div>
-            )}
-          </nav>
-          <button
-            className="sidebar-toggle"
-            onClick={toggleSidebar}
-            aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            disabled={autoCollapse}
-          >
-            {isSidebarCollapsed ? '→' : '←'}
-          </button>
-        </aside>
+            <button
+              className="wikiroo-button primary wikiroo-sidebar-new-page"
+              type="button"
+              onClick={() => navigate('/wikiroo/new')}
+              title="Create new page"
+            >
+              + New
+            </button>
+          </div>
+          {isLoadingTree && <div className="wikiroo-status">Loading pages…</div>}
+          {pageTree.length > 0 && (
+            <PageTree
+              pages={pageTree}
+              currentPageId={pageId}
+              onPageClick={handlePageClick}
+            />
+          )}
+          {pageTree.length === 0 && !isLoadingTree && (
+            <div className="wikiroo-empty-sidebar">
+              <span>No pages yet</span>
+            </div>
+          )}
+        </nav>
+        <button
+          className="sidebar-toggle"
+          onClick={toggleSidebar}
+          aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          disabled={autoCollapse}
+        >
+          {isSidebarCollapsed ? '→' : '←'}
+        </button>
+      </aside>
 
-        <main className="wikiroo-content">
-          <Outlet />
-        </main>
-      </div>
+      <main className="wikiroo-content">
+        <Outlet />
+      </main>
     </div>
   );
 }
