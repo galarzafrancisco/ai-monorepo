@@ -178,3 +178,10 @@
 body.hamburger-menu-open {
   overflow: hidden;
 }
+
+/* Desktop: Hide hamburger, sidebars visible */
+@media (min-width: 769px) {
+  .hamburger-button {
+    display: none;
+  }
+}
