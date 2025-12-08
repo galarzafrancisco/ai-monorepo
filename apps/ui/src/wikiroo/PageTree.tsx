@@ -1,4 +1,4 @@
-import { useState, memo, useMemo } from 'react';
+import { useState, memo, useMemo, useEffect } from 'react';
 import type { WikiPageTree } from './types';
 
 interface PageTreeProps {
@@ -15,9 +15,30 @@ interface PageTreeItemProps {
   onPageClick: (pageId: string) => void;
 }
 
+// Helper function to check if current page is in this subtree
+function hasCurrentPageInSubtree(page: WikiPageTree, currentPageId?: string): boolean {
+  if (!currentPageId) return false;
+  if (page.id === currentPageId) return true;
+  if (page.children) {
+    return page.children.some(child => hasCurrentPageInSubtree(child, currentPageId));
+  }
+  return false;
+}
+
 const PageTreeItem = memo(function PageTreeItem({ page, level, isActive, currentPageId, onPageClick }: PageTreeItemProps) {
-  const [expanded, setExpanded] = useState(true);
   const hasChildren = page.children && page.children.length > 0;
+
+  // Check if current page is in this page's subtree
+  const shouldAutoExpand = hasChildren && hasCurrentPageInSubtree(page, currentPageId);
+
+  const [expanded, setExpanded] = useState(shouldAutoExpand);
+
+  // Auto-expand when current page changes and is in this subtree
+  useEffect(() => {
+    if (shouldAutoExpand) {
+      setExpanded(true);
+    }
+  }, [shouldAutoExpand]);
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
