@@ -401,6 +401,7 @@ export const useWikiroo = () => {
     isDeleting,
     error,
     isConnected,
+    socket,
     loadPages,
     createPage,
     selectPage,

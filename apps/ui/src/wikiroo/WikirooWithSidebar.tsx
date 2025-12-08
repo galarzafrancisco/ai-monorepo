@@ -9,7 +9,7 @@ const STORAGE_KEY = 'wikiroo-sidebar-collapsed';
 export function WikirooWithSidebar() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
-  const { getPageTree, isConnected } = useWikiroo();
+  const { getPageTree, isConnected, socket } = useWikiroo();
 
   const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
   const [isLoadingTree, setIsLoadingTree] = useState(false);
@@ -25,21 +25,50 @@ export function WikirooWithSidebar() {
     localStorage.setItem(STORAGE_KEY, String(wikirooSidebarCollapsed));
   }, [wikirooSidebarCollapsed]);
 
+  // Load page tree on mount and when requested
+  const loadTree = useCallback(async () => {
+    setIsLoadingTree(true);
+    try {
+      const tree = await getPageTree();
+      setPageTree(tree);
+    } catch (err) {
+      console.error('Failed to load page tree:', err);
+    } finally {
+      setIsLoadingTree(false);
+    }
+  }, [getPageTree]);
+
   // Load page tree on mount
   useEffect(() => {
-    async function loadTree() {
-      setIsLoadingTree(true);
-      try {
-        const tree = await getPageTree();
-        setPageTree(tree);
-      } catch (err) {
-        console.error('Failed to load page tree:', err);
-      } finally {
-        setIsLoadingTree(false);
-      }
-    }
     loadTree();
-  }, [getPageTree]);
+  }, [loadTree]);
+
+  // Listen to WebSocket events to refresh the tree
+  useEffect(() => {
+    if (!socket) return;
+
+    const handlePageCreated = () => {
+      loadTree();
+    };
+
+    const handlePageUpdated = () => {
+      loadTree();
+    };
+
+    const handlePageDeleted = () => {
+      loadTree();
+    };
+
+    socket.on('page.created', handlePageCreated);
+    socket.on('page.updated', handlePageUpdated);
+    socket.on('page.deleted', handlePageDeleted);
+
+    return () => {
+      socket.off('page.created', handlePageCreated);
+      socket.off('page.updated', handlePageUpdated);
+      socket.off('page.deleted', handlePageDeleted);
+    };
+  }, [socket, loadTree]);
 
   const handlePageClick = useCallback(
     (id: string) => {
