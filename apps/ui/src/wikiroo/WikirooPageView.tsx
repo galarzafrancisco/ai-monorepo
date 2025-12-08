@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
-import { HomeLink } from '../components/HomeLink';
-import './Wikiroo.css';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { WikiPageForm } from './WikiPageForm';
 import { TagBadge } from './TagBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Breadcrumb } from './Breadcrumb';
-import type { UpdatePageDto } from 'shared';
 
 function formatDate(value: string) {
   try {
@@ -26,48 +22,24 @@ export function WikirooPageView() {
     pages,
     selectedPage,
     isLoadingPage,
-    error,
-    selectPage,
-    updatePage,
-    deletePage,
     isUpdating,
     isDeleting,
+    error,
+    selectPage,
+    deletePage,
+    getPageTree,
   } = useWikiroo();
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const pageSummary = pages.find((page) => page.id === pageId);
-  const pageTitle = selectedPage?.title || pageSummary?.title;
-  usePageTitle(pageTitle ? `Wikiroo — ${pageTitle}` : 'Wikiroo');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  usePageTitle(selectedPage?.title ? `Wikiroo — ${selectedPage.title}` : 'Wikiroo');
 
   useEffect(() => {
     if (pageId) {
       selectPage(pageId);
     }
   }, [pageId, selectPage]);
-
-  if (!pageId) {
-    return <Navigate to="/wikiroo" replace />;
-  }
-
-  const showNotFound =
-    !isLoadingPage && !selectedPage && !error && pages.length > 0 && !pageSummary;
-  const handleRefresh = useCallback(() => {
-    if (pageId) {
-      selectPage(pageId);
-    }
-  }, [pageId, selectPage]);
-
-  const handleUpdate = useCallback(
-    async (payload: UpdatePageDto) => {
-      if (!pageId) return;
-      await updatePage(pageId, payload);
-      setShowEditForm(false);
-      setErrorMessage('');
-    },
-    [pageId, updatePage],
-  );
 
   const handleDeleteClick = useCallback(() => {
     setShowDeleteConfirm(true);
@@ -78,36 +50,26 @@ export function WikirooPageView() {
     try {
       await deletePage(pageId);
       setShowDeleteConfirm(false);
+      // Reload tree to remove deleted page
+      await getPageTree();
       navigate('/wikiroo');
     } catch (err: any) {
       const errorMsg = err?.body?.detail || err?.message || 'Failed to delete page';
       setErrorMessage(errorMsg);
       setShowDeleteConfirm(false);
     }
-  }, [pageId, deletePage, navigate]);
+  }, [pageId, deletePage, navigate, getPageTree]);
 
   return (
-    <div className="wikiroo wikiroo-page-view">
-      <div className="wikiroo-page-navigation">
-        <Link to="/wikiroo" className="wikiroo-back-link">
-          ← All pages
-        </Link>
-        <HomeLink />
-      </div>
-
+    <>
       {isLoadingPage && <div className="wikiroo-status">Loading page…</div>}
+
       {error && <div className="wikiroo-error">{error}</div>}
       {errorMessage && <div className="wikiroo-error">{errorMessage}</div>}
-      {showNotFound && (
-        <div className="wikiroo-empty">
-          <strong>Page not found</strong>
-          <span>The requested page may have been removed or never existed.</span>
-        </div>
-      )}
 
-      {selectedPage && !showEditForm && (
+      {selectedPage && pageId && (
         <div className="wikiroo-page-detail">
-          {pageId && <Breadcrumb pageId={pageId} pages={pages} />}
+          <Breadcrumb pageId={pageId} pages={pages} />
           <div className="wikiroo-page-detail-header">
             <h1 className="wikiroo-page-detail-title">{selectedPage.title}</h1>
             <div className="wikiroo-page-detail-meta">
@@ -135,7 +97,7 @@ export function WikirooPageView() {
             <button
               className="wikiroo-button"
               type="button"
-              onClick={() => setShowEditForm(true)}
+              onClick={() => navigate(`/wikiroo/page/${pageId}/edit`)}
               disabled={isUpdating || isDeleting}
             >
               Edit
@@ -152,28 +114,6 @@ export function WikirooPageView() {
         </div>
       )}
 
-      {showEditForm && selectedPage && (
-        <div className="wikiroo-edit-container">
-          <div className="wikiroo-edit-header">
-            <h2>Edit Page</h2>
-            <button
-              onClick={() => setShowEditForm(false)}
-              className="wikiroo-button secondary"
-            >
-              Close
-            </button>
-          </div>
-          <WikiPageForm
-            mode="edit"
-            page={selectedPage}
-            pages={pages}
-            onSubmit={handleUpdate}
-            onCancel={() => setShowEditForm(false)}
-            isSubmitting={isUpdating}
-          />
-        </div>
-      )}
-
       {showDeleteConfirm && (
         <ConfirmDialog
           message="Are you sure you want to delete this page? This action cannot be undone."
@@ -183,6 +123,6 @@ export function WikirooPageView() {
           cancelText="Cancel"
         />
       )}
-    </div>
+    </>
   );
 }
