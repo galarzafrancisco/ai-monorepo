@@ -80,6 +80,10 @@
   z-index: calc(var(--sidebar-z-index) - 1);
 }
 
+.sidebar-app-specific.collapsed {
+  width: 0;
+}
+
 /* ===========================
    Sidebar Content
    =========================== */

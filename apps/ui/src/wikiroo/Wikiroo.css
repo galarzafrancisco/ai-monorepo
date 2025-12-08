@@ -586,6 +586,37 @@
   }
 }
 
+/* Sidebar header and new page button */
+.wikiroo-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.wikiroo-sidebar-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.wikiroo-sidebar-new-page {
+  padding: 6px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.wikiroo-empty-sidebar {
+  padding: 16px 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
 /* Page Tree Styles */
 .page-tree {
   background: white;
