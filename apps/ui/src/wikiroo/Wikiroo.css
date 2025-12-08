@@ -213,7 +213,6 @@
 .wikiroo-content {
   flex: 1;
   background: #ffffff;
-  padding: 24px;
   min-width: 0;
   overflow-y: auto;
 }
@@ -378,7 +377,7 @@
 .wikiroo-page-detail {
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 16px;
 }
 
 .wikiroo-page-detail-header {
@@ -737,6 +736,35 @@
 .tree-item-content.active .tree-item-link {
   color: #1976d2;
   font-weight: 600;
+}
+
+.tree-item-add-child {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  margin-left: 4px;
+  font-size: 16px;
+  color: #7f8c8d;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tree-item-content:hover .tree-item-add-child {
+  opacity: 1;
+}
+
+.tree-item-add-child:hover {
+  background-color: #e3f2fd;
+  color: #2196f3;
+}
+
+.tree-item-add-child:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  opacity: 1;
 }
 
 .tree-item-children {
