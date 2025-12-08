@@ -617,6 +617,7 @@ body {
   margin: 6px 0;
   color: #34495e;
   font-size: 14px;
+  white-space: pre-wrap;
 }
 
 .comment-date {
