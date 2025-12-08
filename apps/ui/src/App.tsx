@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { RootLayout } from './layouts/RootLayout';
 import { HomePage } from './home/HomePage';
 import { TaskBoard } from './taskeroo/TaskBoard';
 import { TaskBoardMobile } from './taskeroo/TaskBoardMobile';
@@ -26,15 +27,19 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/taskeroo" element={<TaskerooRouter />} />
-        <Route path="/wikiroo" element={<WikirooRouter />} />
-        <Route path="/wikiroo/new" element={<WikirooRouter />} />
-        <Route path="/wikiroo/page/:pageId" element={<WikirooRouter />} />
-        <Route path="/wikiroo/page/:pageId/edit" element={<WikirooRouter />} />
-        <Route path="/mcp-registry" element={<McpRegistryDashboard />} />
-        <Route path="/mcp-registry/:serverId" element={<McpServerDetail />} />
-        <Route path="/consent" element={<ConsentScreen />} />
+        <Route element={<RootLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="taskeroo" element={<TaskerooRouter />} />
+          <Route path="mcp-registry" element={<McpRegistryDashboard />} />
+          <Route path="mcp-registry/:serverId" element={<McpServerDetail />} />
+          <Route path="consent" element={<ConsentScreen />} />
+
+          {/* Wikiroo routes stay flat for now - will be nested in task #12 */}
+          <Route path="wikiroo" element={<WikirooRouter />} />
+          <Route path="wikiroo/new" element={<WikirooRouter />} />
+          <Route path="wikiroo/page/:pageId" element={<WikirooRouter />} />
+          <Route path="wikiroo/page/:pageId/edit" element={<WikirooRouter />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
