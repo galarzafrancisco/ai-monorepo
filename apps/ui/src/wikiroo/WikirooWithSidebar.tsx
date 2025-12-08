@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Outlet } from 'react-router-dom';
+import { useParams, useNavigate, Outlet, Link } from 'react-router-dom';
 import { PageTree } from './PageTree';
 import { useWikiroo } from './useWikiroo';
 import type { WikiPageTree } from './types';
@@ -57,28 +57,34 @@ export function WikirooWithSidebar() {
     <div className="wikiroo-with-sidebar">
       <aside className={`sidebar-app-specific ${wikirooSidebarCollapsed ? 'collapsed' : ''}`}>
         <nav className="sidebar-content">
-          <div className="wikiroo-sidebar-header">
-            <h2 className="wikiroo-sidebar-title">Pages</h2>
-            <button
-              className="wikiroo-button primary wikiroo-sidebar-new-page"
-              type="button"
-              onClick={() => navigate('/wikiroo/new')}
-              title="Create new page"
-            >
-              + New
-            </button>
-          </div>
-          {isLoadingTree && <div className="wikiroo-status">Loading pages…</div>}
-          {pageTree.length > 0 && (
-            <PageTree
-              pages={pageTree}
-              currentPageId={pageId}
-              onPageClick={handlePageClick}
-            />
-          )}
-          {pageTree.length === 0 && !isLoadingTree && (
-            <div className="wikiroo-empty-sidebar">
-              <span>No pages yet</span>
+          {!wikirooSidebarCollapsed && (
+            <div>
+
+
+              <div className="wikiroo-sidebar-header">
+                <h2 className="wikiroo-sidebar-title">📚 Wikiroo</h2>
+                <button
+                  className="wikiroo-button primary wikiroo-sidebar-new-page"
+                  type="button"
+                  onClick={() => navigate('/wikiroo/new')}
+                  title="Create new page"
+                >
+                  + New page
+                </button>
+              </div>
+              {isLoadingTree && <div className="wikiroo-status">Loading pages…</div>}
+              {pageTree.length > 0 && (
+                <PageTree
+                  pages={pageTree}
+                  currentPageId={pageId}
+                  onPageClick={handlePageClick}
+                />
+              )}
+              {pageTree.length === 0 && !isLoadingTree && (
+                <div className="wikiroo-empty-sidebar">
+                  <span>No pages yet</span>
+                </div>
+              )}
             </div>
           )}
         </nav>
