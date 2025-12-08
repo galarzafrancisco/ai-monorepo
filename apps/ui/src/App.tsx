@@ -38,6 +38,7 @@ export default function App() {
             <Route path="new" element={<WikirooCreate />} />
             <Route path="page/:pageId" element={<WikirooPageView />} />
             <Route path="page/:pageId/edit" element={<WikirooPageEdit />} />
+            <Route path="page/:pageId/new" element={<WikirooCreate />} />
           </Route>
         </Route>
       </Routes>

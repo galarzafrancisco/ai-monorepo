@@ -32,6 +32,7 @@ type WikiPageFormProps =
       onSubmit: (data: CreatePageDto) => Promise<void>;
       onCancel: () => void;
       isSubmitting: boolean;
+      defaultParentId?: string;
     }
   | {
       mode: 'edit';
@@ -40,6 +41,7 @@ type WikiPageFormProps =
       onSubmit: (data: UpdatePageDto) => Promise<void>;
       onCancel: () => void;
       isSubmitting: boolean;
+      defaultParentId?: never;
     };
 
 export function WikiPageForm({
@@ -49,12 +51,16 @@ export function WikiPageForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  defaultParentId,
 }: WikiPageFormProps) {
   const [title, setTitle] = useState(page?.title || '');
   const [content, setContent] = useState(page?.content || '');
   const [author, setAuthor] = useState(page?.author || '');
   const [tagNames, setTagNames] = useState<string[]>(page?.tags?.map(t => t.name) || []);
   const [parentId, setParentId] = useState<string | null>(() => {
+    if (mode === 'create' && defaultParentId) {
+      return defaultParentId;
+    }
     const pid = page?.parentId;
     return typeof pid === 'string' ? pid : null;
   });

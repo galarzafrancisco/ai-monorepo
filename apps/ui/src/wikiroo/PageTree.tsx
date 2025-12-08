@@ -1,4 +1,5 @@
 import { useState, memo, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { WikiPageTree } from './types';
 
 interface PageTreeProps {
@@ -13,6 +14,7 @@ interface PageTreeItemProps {
   isActive: boolean;
   currentPageId?: string;
   onPageClick: (pageId: string) => void;
+  onAddChild: (parentId: string) => void;
 }
 
 // Helper function to check if current page is in this subtree
@@ -25,7 +27,7 @@ function hasCurrentPageInSubtree(page: WikiPageTree, currentPageId?: string): bo
   return false;
 }
 
-const PageTreeItem = memo(function PageTreeItem({ page, level, isActive, currentPageId, onPageClick }: PageTreeItemProps) {
+const PageTreeItem = memo(function PageTreeItem({ page, level, isActive, currentPageId, onPageClick, onAddChild }: PageTreeItemProps) {
   const hasChildren = page.children && page.children.length > 0;
 
   // Check if current page is in this page's subtree
@@ -48,6 +50,12 @@ const PageTreeItem = memo(function PageTreeItem({ page, level, isActive, current
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onPageClick(page.id);
+  };
+
+  const handleAddChild = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAddChild(page.id);
   };
 
   // Sort children by order field - memoized to avoid re-sorting on every render
@@ -82,6 +90,14 @@ const PageTreeItem = memo(function PageTreeItem({ page, level, isActive, current
         >
           {page.title}
         </a>
+        <button
+          className="tree-item-add-child"
+          onClick={handleAddChild}
+          aria-label={`Add child page to ${page.title}`}
+          title="Add child page"
+        >
+          +
+        </button>
       </div>
       {expanded && hasChildren && (
         <div className="tree-item-children">
@@ -93,6 +109,7 @@ const PageTreeItem = memo(function PageTreeItem({ page, level, isActive, current
               isActive={child.id === currentPageId}
               currentPageId={currentPageId}
               onPageClick={onPageClick}
+              onAddChild={onAddChild}
             />
           ))}
         </div>
@@ -102,11 +119,17 @@ const PageTreeItem = memo(function PageTreeItem({ page, level, isActive, current
 });
 
 export function PageTree({ pages, currentPageId, onPageClick }: PageTreeProps) {
+  const navigate = useNavigate();
+
   // Sort root-level pages by order - memoized to avoid re-sorting on every render
   const sortedPages = useMemo(
     () => [...pages].sort((a, b) => a.order - b.order),
     [pages]
   );
+
+  const handleAddChild = (parentId: string) => {
+    navigate(`/wikiroo/page/${parentId}/new`);
+  };
 
   return (
     <div className="page-tree">
@@ -118,6 +141,7 @@ export function PageTree({ pages, currentPageId, onPageClick }: PageTreeProps) {
           isActive={page.id === currentPageId}
           currentPageId={currentPageId}
           onPageClick={onPageClick}
+          onAddChild={handleAddChild}
         />
       ))}
     </div>

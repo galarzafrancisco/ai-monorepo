@@ -1,10 +1,11 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useWikiroo } from './useWikiroo';
 import { WikiPageForm } from './WikiPageForm';
 import type { CreatePageDto } from 'shared';
 
 export function WikirooCreate() {
   const navigate = useNavigate();
+  const { pageId } = useParams<{ pageId: string }>();
   const { pages, isCreating, createPage, getPageTree } = useWikiroo();
 
   const handleCreatePage = async (data: CreatePageDto) => {
@@ -31,6 +32,7 @@ export function WikirooCreate() {
         onSubmit={handleCreatePage}
         onCancel={() => navigate('/wikiroo')}
         isSubmitting={isCreating}
+        defaultParentId={pageId}
       />
     </div>
   );
