@@ -5,11 +5,12 @@ import { WikirooController } from './wikiroo.controller';
 import { WikiPageEntity } from './page.entity';
 import { WikiTagEntity } from './tag.entity';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
+import { WikirooGateway } from './wikiroo.gateway';
 
 @Module({
   imports: [TypeOrmModule.forFeature([WikiPageEntity, WikiTagEntity])],
   controllers: [WikirooController],
-  providers: [WikirooService, WikirooMcpGateway],
+  providers: [WikirooService, WikirooMcpGateway, WikirooGateway],
   exports: [WikirooService],
 })
 export class WikirooModule {}
