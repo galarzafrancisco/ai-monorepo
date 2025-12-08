@@ -5,6 +5,25 @@
   color: #2c3e50;
 }
 
+/* Wikiroo with sidebar layout */
+.wikiroo-with-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.wikiroo-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.wikiroo-body .wikiroo-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
 .wikiroo-header {
   display: flex;
   align-items: center;
