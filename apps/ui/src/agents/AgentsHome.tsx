@@ -34,9 +34,15 @@ export function AgentsHome() {
               }
             }}
           >
-            <div className="agent-card-icon">{agent.icon || '🤖'}</div>
+            <div className="agent-card-icon">🤖</div>
             <h3 className="agent-card-title">{agent.name}</h3>
-            <p className="agent-card-description">{agent.description || 'No description available'}</p>
+            <p className="agent-card-description">
+              {typeof agent.description === 'string'
+                ? agent.description
+                : agent.description
+                  ? JSON.stringify(agent.description)
+                  : 'No description available'}
+            </p>
           </div>
         ))}
       </div>
