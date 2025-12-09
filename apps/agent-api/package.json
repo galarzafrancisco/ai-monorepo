@@ -4,7 +4,7 @@
   "private": true,
   "description": "ADK-based agent API service with UV package management",
   "scripts": {
-    "install": "uv sync",
+    "setup": "uv sync",
     "dev": "uv run adk run src",
     "dev:api": "uv run adk api_server src",
     "dev:web": "uv run adk web src",

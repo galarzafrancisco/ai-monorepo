@@ -17,7 +17,7 @@ This service provides an AI agent API powered by Google's ADK framework, integra
 
 ```bash
 # From the monorepo root
-npm -w agent-api run install
+npm -w agent-api run setup
 
 # Or directly in this directory
 cd apps/agent-api
@@ -94,7 +94,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### Module not found errors
 Ensure dependencies are installed:
 ```bash
-npm -w agent-api run install
+npm -w agent-api run setup
 ```
 
 ### Port conflicts
