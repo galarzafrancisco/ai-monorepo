@@ -2576,9 +2576,18 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Agent ID",
+            "description": "Agent ID or slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              },
+              "byId": {
+                "summary": "By ID",
+                "value": "123e4567-e89b-12d3-a456-426614174000"
+              }
+            },
             "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -2595,7 +2604,7 @@
             }
           }
         },
-        "summary": "Get an agent by ID",
+        "summary": "Get an agent by ID or slug",
         "tags": [
           "Agent"
         ]
@@ -2607,9 +2616,18 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Agent ID",
+            "description": "Agent ID or slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              },
+              "byId": {
+                "summary": "By ID",
+                "value": "123e4567-e89b-12d3-a456-426614174000"
+              }
+            },
             "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -2648,9 +2666,18 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Agent ID",
+            "description": "Agent ID or slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              },
+              "byId": {
+                "summary": "By ID",
+                "value": "123e4567-e89b-12d3-a456-426614174000"
+              }
+            },
             "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
