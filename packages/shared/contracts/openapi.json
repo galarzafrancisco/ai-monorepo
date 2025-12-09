@@ -2666,6 +2666,181 @@
         ]
       }
     },
+    "/api/v1/adk/apps": {
+      "get": {
+        "operationId": "AdkController_listApps",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all available ADK apps",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/sessions": {
+      "post": {
+        "operationId": "AdkController_createSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdkSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Create a new ADK session",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/apps/{appId}/users/{userId}/sessions": {
+      "get": {
+        "operationId": "AdkController_listSessions",
+        "parameters": [
+          {
+            "name": "appId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List sessions for an app and user",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/apps/{appId}/users/{userId}/sessions/{sessionId}": {
+      "get": {
+        "operationId": "AdkController_getSession",
+        "parameters": [
+          {
+            "name": "appId",
+            "required": true,
+            "in": "path",
+            "description": "App ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get a specific session",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/messages": {
+      "post": {
+        "operationId": "AdkController_sendMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Send a message to an ADK agent (non-streaming)",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/messages/stream": {
+      "get": {
+        "operationId": "AdkController_sendMessageStream",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Send a message to an ADK agent with SSE streaming",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
     "/api/v1/chat/sessions": {
       "post": {
         "operationId": "ChatController_createSession",
@@ -4999,6 +5174,54 @@
             "example": 5
           }
         }
+      },
+      "CreateAdkSessionDto": {
+        "type": "object",
+        "properties": {
+          "appId": {
+            "type": "string",
+            "description": "App ID"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Optional session ID"
+          }
+        },
+        "required": [
+          "appId",
+          "userId"
+        ]
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {
+          "appId": {
+            "type": "string",
+            "description": "App ID (agent name)"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message content"
+          }
+        },
+        "required": [
+          "appId",
+          "userId",
+          "sessionId",
+          "message"
+        ]
       },
       "CreateSessionDto": {
         "type": "object",
