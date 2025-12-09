@@ -100,16 +100,16 @@ export default function TaskerooPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-[calc(100vh-240px)]">
         {STATUS_COLUMNS.map((status) => (
-          <div key={status} className="flex flex-col">
+          <div key={status} className="flex flex-col h-full">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">{STATUS_LABELS[status]}</h2>
               <span className="px-2 py-1 bg-white/10 rounded text-sm">
                 {tasksByStatus[status].length}
               </span>
             </div>
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-3 overflow-y-auto pr-2">
               {tasksByStatus[status].map((task) => (
                 <div
                   key={task.id}
