@@ -2,12 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { SessionResponseDto } from './SessionResponseDto';
+import type { ChatSessionResponseDto } from './ChatSessionResponseDto';
 export type SessionListResponseDto = {
     /**
      * List of sessions
      */
-    items: Array<SessionResponseDto>;
+    items: Array<ChatSessionResponseDto>;
     /**
      * Total number of sessions matching the filters
      */

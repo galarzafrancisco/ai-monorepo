@@ -2861,7 +2861,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionResponseDto"
+                  "$ref": "#/components/schemas/ChatSessionResponseDto"
                 }
               }
             }
@@ -2977,7 +2977,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionResponseDto"
+                  "$ref": "#/components/schemas/ChatSessionResponseDto"
                 }
               }
             }
@@ -3018,7 +3018,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionResponseDto"
+                  "$ref": "#/components/schemas/ChatSessionResponseDto"
                 }
               }
             }
@@ -3049,6 +3049,78 @@
           }
         },
         "summary": "Delete a chat session",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/api/v1/chat/sessions/{id}/messages": {
+      "post": {
+        "operationId": "ChatController_sendMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message sent successfully"
+          }
+        },
+        "summary": "Send a message to the ADK agent (non-streaming)",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/api/v1/chat/sessions/{id}/messages/stream": {
+      "get": {
+        "operationId": "ChatController_sendMessageStream",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Send a message to the ADK agent with streaming response",
         "tags": [
           "Chat"
         ]
@@ -5246,15 +5318,95 @@
           "agentId"
         ]
       },
-      "SessionResponseDto": {
+      "ChatSessionResponseDto": {
         "type": "object",
         "properties": {
-          "user": {
-            "$ref": "#/components/schemas/UserDto"
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the session",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "adkSessionId": {
+            "type": "string",
+            "description": "ADK session identifier",
+            "example": "adk-session-123e4567-e89b-12d3-a456-426614174000"
+          },
+          "agentId": {
+            "type": "string",
+            "description": "ID of the agent for this chat session",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title for this session",
+            "example": "Chat with Buddy - 2025-11-28"
+          },
+          "project": {
+            "type": "object",
+            "description": "Optional project label for this session",
+            "example": "project:banana-mcp"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "description": "Whether the session is archived",
+            "example": false
+          },
+          "isPinned": {
+            "type": "boolean",
+            "description": "Whether the session is pinned",
+            "example": false
+          },
+          "lastMessageAt": {
+            "type": "string",
+            "description": "Timestamp of the last message in this chat",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "referencedTasks": {
+            "description": "Tasks referenced in this session",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskResponseDto"
+            }
+          },
+          "subscribedTasks": {
+            "description": "Tasks subscribed to in this session",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskResponseDto"
+            }
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Session creation timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Session last update timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "deletedAt": {
+            "type": "object",
+            "description": "Session deletion timestamp (soft delete)",
+            "example": null
           }
         },
         "required": [
-          "user"
+          "id",
+          "adkSessionId",
+          "agentId",
+          "title",
+          "isArchived",
+          "isPinned",
+          "lastMessageAt",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "SessionListResponseDto": {
@@ -5264,7 +5416,7 @@
             "description": "List of sessions",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SessionResponseDto"
+              "$ref": "#/components/schemas/ChatSessionResponseDto"
             }
           },
           "total": {
@@ -5315,6 +5467,19 @@
           }
         }
       },
+      "ChatSendMessageDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The message content to send",
+            "example": "Hello, how can you help me today?"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -5349,6 +5514,17 @@
           "id",
           "email",
           "displayName"
+        ]
+      },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          }
+        },
+        "required": [
+          "user"
         ]
       }
     }

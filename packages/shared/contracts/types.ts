@@ -956,6 +956,40 @@ export interface paths {
         patch: operations["ChatController_updateSession"];
         trace?: never;
     };
+    "/api/v1/chat/sessions/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a message to the ADK agent (non-streaming) */
+        post: operations["ChatController_sendMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chat/sessions/{id}/messages/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Send a message to the ADK agent with streaming response */
+        get: operations["ChatController_sendMessageStream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/login": {
         parameters: {
             query?: never;
@@ -2470,12 +2504,75 @@ export interface components {
              */
             project?: string;
         };
-        SessionResponseDto: {
-            user: components["schemas"]["UserDto"];
+        ChatSessionResponseDto: {
+            /**
+             * @description Unique identifier for the session
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description ADK session identifier
+             * @example adk-session-123e4567-e89b-12d3-a456-426614174000
+             */
+            adkSessionId: string;
+            /**
+             * @description ID of the agent for this chat session
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            agentId: string;
+            /**
+             * @description Human-readable title for this session
+             * @example Chat with Buddy - 2025-11-28
+             */
+            title: string;
+            /**
+             * @description Optional project label for this session
+             * @example project:banana-mcp
+             */
+            project?: Record<string, never>;
+            /**
+             * @description Whether the session is archived
+             * @example false
+             */
+            isArchived: boolean;
+            /**
+             * @description Whether the session is pinned
+             * @example false
+             */
+            isPinned: boolean;
+            /**
+             * @description Timestamp of the last message in this chat
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            lastMessageAt: string;
+            /** @description Tasks referenced in this session */
+            referencedTasks?: components["schemas"]["TaskResponseDto"][];
+            /** @description Tasks subscribed to in this session */
+            subscribedTasks?: components["schemas"]["TaskResponseDto"][];
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description Session creation timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Session last update timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            updatedAt: string;
+            /**
+             * @description Session deletion timestamp (soft delete)
+             * @example null
+             */
+            deletedAt?: Record<string, never>;
         };
         SessionListResponseDto: {
             /** @description List of sessions */
-            items: components["schemas"]["SessionResponseDto"][];
+            items: components["schemas"]["ChatSessionResponseDto"][];
             /**
              * @description Total number of sessions matching the filters
              * @example 42
@@ -2514,6 +2611,13 @@ export interface components {
              */
             isPinned?: boolean;
         };
+        ChatSendMessageDto: {
+            /**
+             * @description The message content to send
+             * @example Hello, how can you help me today?
+             */
+            message: string;
+        };
         LoginDto: {
             /** @example user@example.com */
             email: string;
@@ -2524,6 +2628,9 @@ export interface components {
             id: string;
             email: string;
             displayName: string;
+        };
+        SessionResponseDto: {
+            user: components["schemas"]["UserDto"];
         };
     };
     responses: never;
@@ -4812,7 +4919,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SessionResponseDto"];
+                    "application/json": components["schemas"]["ChatSessionResponseDto"];
                 };
             };
         };
@@ -4834,7 +4941,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SessionResponseDto"];
+                    "application/json": components["schemas"]["ChatSessionResponseDto"];
                 };
             };
         };
@@ -4880,8 +4987,57 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SessionResponseDto"];
+                    "application/json": components["schemas"]["ChatSessionResponseDto"];
                 };
+            };
+        };
+    };
+    ChatController_sendMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSendMessageDto"];
+            };
+        };
+        responses: {
+            /** @description Message sent successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChatController_sendMessageStream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSendMessageDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

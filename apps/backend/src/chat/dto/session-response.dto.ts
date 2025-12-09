@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskResponseDto } from './task-response.dto';
 
-export class SessionResponseDto {
+export class ChatSessionResponseDto {
   @ApiProperty({
     description: 'Unique identifier for the session',
     example: '123e4567-e89b-12d3-a456-426614174000',
