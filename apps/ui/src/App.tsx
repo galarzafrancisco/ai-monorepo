@@ -14,6 +14,7 @@ import { ConsentScreen } from './consent/ConsentScreen';
 import { AgentsWithSidebar } from './agents/AgentsWithSidebar';
 import { AgentsHome } from './agents/AgentsHome';
 import { AgentsChatSession } from './agents/AgentsChatSession';
+import { AgentsChatSessionNew } from './agents/AgentsChatSessionNew';
 import { AgentsAdminList } from './agents/AgentsAdminList';
 import { AgentAdminDetail } from './agents/AgentAdminDetail';
 
@@ -51,6 +52,7 @@ export default function App() {
             <Route index element={<AgentsHome />} />
             <Route path="admin" element={<AgentsAdminList />} />
             <Route path=":agentId/admin" element={<AgentAdminDetail />} />
+            <Route path=":agentId/session/new" element={<AgentsChatSessionNew />} />
             <Route path=":agentId/session/:sessionId" element={<AgentsChatSession />} />
           </Route>
         </Route>
