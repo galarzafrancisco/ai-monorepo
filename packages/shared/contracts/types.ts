@@ -805,7 +805,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get an agent by ID */
+        /** Get an agent by ID or slug */
         get: operations["AgentsController_getAgent"];
         put?: never;
         post?: never;
@@ -4680,7 +4680,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Agent ID */
+                /** @description Agent ID or slug */
                 id: string;
             };
             cookie?: never;
@@ -4702,7 +4702,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Agent ID */
+                /** @description Agent ID or slug */
                 id: string;
             };
             cookie?: never;
@@ -4722,7 +4722,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Agent ID */
+                /** @description Agent ID or slug */
                 id: string;
             };
             cookie?: never;

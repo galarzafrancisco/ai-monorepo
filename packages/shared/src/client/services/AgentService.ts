@@ -50,8 +50,8 @@ export class AgentService {
         });
     }
     /**
-     * Get an agent by ID
-     * @param id Agent ID
+     * Get an agent by ID or slug
+     * @param id Agent ID or slug
      * @returns AgentResponseDto
      * @throws ApiError
      */
@@ -68,7 +68,7 @@ export class AgentService {
     }
     /**
      * Update an agent
-     * @param id Agent ID
+     * @param id Agent ID or slug
      * @param requestBody
      * @returns AgentResponseDto
      * @throws ApiError
@@ -89,7 +89,7 @@ export class AgentService {
     }
     /**
      * Delete an agent
-     * @param id Agent ID
+     * @param id Agent ID or slug
      * @returns void
      * @throws ApiError
      */
