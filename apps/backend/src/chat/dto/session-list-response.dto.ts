@@ -1,12 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SessionResponseDto } from './session-response.dto';
+import { ChatSessionResponseDto } from './session-response.dto';
 
 export class SessionListResponseDto {
   @ApiProperty({
     description: 'List of sessions',
-    type: [SessionResponseDto],
+    type: [ChatSessionResponseDto],
   })
-  items!: SessionResponseDto[];
+  items!: ChatSessionResponseDto[];
 
   @ApiProperty({
     description: 'Total number of sessions matching the filters',

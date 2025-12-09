@@ -15,6 +15,8 @@ export type { AppendPageDto } from './models/AppendPageDto';
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';
 export { ChangeTaskStatusDto } from './models/ChangeTaskStatusDto';
+export type { ChatSendMessageDto } from './models/ChatSendMessageDto';
+export type { ChatSessionResponseDto } from './models/ChatSessionResponseDto';
 export { ClientRegistrationResponseDto } from './models/ClientRegistrationResponseDto';
 export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { ConnectionResponseDto } from './models/ConnectionResponseDto';

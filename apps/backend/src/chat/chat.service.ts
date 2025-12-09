@@ -318,17 +318,17 @@ export class ChatService {
       // Call ADK service to create session
       const response = await this.adkService.createSession(appId, userId);
 
-      if (!response.session_id) {
+      if (!response.id) {
         throw new AdkSessionCreationFailedError(
           `ADK session creation failed for agent ${agent.name}: No session ID returned`,
         );
       }
 
       this.logger.log(
-        `Successfully created ADK session: ${response.session_id}`,
+        `Successfully created ADK session: ${response.id}`,
       );
 
-      return response.session_id;
+      return response.id;
     } catch (error) {
       this.logger.error(
         `Failed to create ADK session for agent ${agent.name}: ${error}`,

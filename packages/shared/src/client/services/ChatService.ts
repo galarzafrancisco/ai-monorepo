@@ -2,9 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ChatSendMessageDto } from '../models/ChatSendMessageDto';
+import type { ChatSessionResponseDto } from '../models/ChatSessionResponseDto';
 import type { CreateSessionDto } from '../models/CreateSessionDto';
 import type { SessionListResponseDto } from '../models/SessionListResponseDto';
-import type { SessionResponseDto } from '../models/SessionResponseDto';
 import type { UpdateSessionDto } from '../models/UpdateSessionDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -13,12 +14,12 @@ export class ChatService {
     /**
      * Create a new chat session
      * @param requestBody
-     * @returns SessionResponseDto
+     * @returns ChatSessionResponseDto
      * @throws ApiError
      */
     public static chatControllerCreateSession(
         requestBody: CreateSessionDto,
-    ): CancelablePromise<SessionResponseDto> {
+    ): CancelablePromise<ChatSessionResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/chat/sessions',
@@ -61,12 +62,12 @@ export class ChatService {
     /**
      * Get a chat session by ID
      * @param id Session ID
-     * @returns SessionResponseDto
+     * @returns ChatSessionResponseDto
      * @throws ApiError
      */
     public static chatControllerGetSession(
         id: string,
-    ): CancelablePromise<SessionResponseDto> {
+    ): CancelablePromise<ChatSessionResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/chat/sessions/{id}',
@@ -79,13 +80,13 @@ export class ChatService {
      * Update a chat session
      * @param id Session ID
      * @param requestBody
-     * @returns SessionResponseDto
+     * @returns ChatSessionResponseDto
      * @throws ApiError
      */
     public static chatControllerUpdateSession(
         id: string,
         requestBody: UpdateSessionDto,
-    ): CancelablePromise<SessionResponseDto> {
+    ): CancelablePromise<ChatSessionResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/chat/sessions/{id}',
@@ -111,6 +112,48 @@ export class ChatService {
             path: {
                 'id': id,
             },
+        });
+    }
+    /**
+     * Send a message to the ADK agent (non-streaming)
+     * @param id Session ID
+     * @param requestBody
+     * @returns any Message sent successfully
+     * @throws ApiError
+     */
+    public static chatControllerSendMessage(
+        id: string,
+        requestBody: ChatSendMessageDto,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/chat/sessions/{id}/messages',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Send a message to the ADK agent with streaming response
+     * @param id Session ID
+     * @param requestBody
+     * @returns any
+     * @throws ApiError
+     */
+    public static chatControllerSendMessageStream(
+        id: string,
+        requestBody: ChatSendMessageDto,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/chat/sessions/{id}/messages/stream',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 }

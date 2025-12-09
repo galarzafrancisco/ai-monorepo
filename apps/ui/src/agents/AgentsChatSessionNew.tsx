@@ -21,7 +21,7 @@ export function AgentsChatSessionNew() {
         setError(null);
 
         // Fetch agent details to get name for session title
-        const agent = await AgentService.agentControllerGetAgent(agentId);
+        const agent = await AgentService.agentsControllerGetAgent(agentId);
 
         // Create a new chat session
         const session = await ChatService.chatControllerCreateSession({

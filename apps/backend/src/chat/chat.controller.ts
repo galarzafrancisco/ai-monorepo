@@ -21,7 +21,7 @@ import { Observable, from } from 'rxjs';
 import { ChatService } from './chat.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
-import { SessionResponseDto } from './dto/session-response.dto';
+import { ChatSessionResponseDto } from './dto/session-response.dto';
 import { SessionListResponseDto } from './dto/session-list-response.dto';
 import { ListSessionsQueryDto } from './dto/list-sessions-query.dto';
 import { SessionParamsDto } from './dto/session-params.dto';
@@ -30,7 +30,7 @@ import {
   TaskResult,
 } from './dto/service/chat.service.types';
 import { TaskResponseDto } from './dto/task-response.dto';
-import { SendMessageDto } from './dto/send-message.dto';
+import { ChatSendMessageDto } from './dto/send-message.dto';
 
 @ApiTags('Chat')
 @Controller('chat/sessions')
@@ -39,10 +39,10 @@ export class ChatController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new chat session' })
-  @ApiCreatedResponse({ type: SessionResponseDto })
+  @ApiCreatedResponse({ type: ChatSessionResponseDto })
   async createSession(
     @Body() dto: CreateSessionDto,
-  ): Promise<SessionResponseDto> {
+  ): Promise<ChatSessionResponseDto> {
     const result = await this.chatService.createSession({
       agentId: dto.agentId,
       title: dto.title,
@@ -78,10 +78,10 @@ export class ChatController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a chat session by ID' })
-  @ApiOkResponse({ type: SessionResponseDto })
+  @ApiOkResponse({ type: ChatSessionResponseDto })
   async getSession(
     @Param() params: SessionParamsDto,
-  ): Promise<SessionResponseDto> {
+  ): Promise<ChatSessionResponseDto> {
     const result = await this.chatService.getSessionById(params.id, {
       withTasks: true,
     });
@@ -90,11 +90,11 @@ export class ChatController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a chat session' })
-  @ApiOkResponse({ type: SessionResponseDto })
+  @ApiOkResponse({ type: ChatSessionResponseDto })
   async updateSession(
     @Param() params: SessionParamsDto,
     @Body() dto: UpdateSessionDto,
-  ): Promise<SessionResponseDto> {
+  ): Promise<ChatSessionResponseDto> {
     const result = await this.chatService.updateSession(params.id, {
       title: dto.title,
       project: dto.project,
@@ -116,7 +116,7 @@ export class ChatController {
   @ApiOkResponse({ description: 'Message sent successfully' })
   async sendMessage(
     @Param() params: SessionParamsDto,
-    @Body() dto: SendMessageDto,
+    @Body() dto: ChatSendMessageDto,
   ): Promise<{ events: any[] }> {
     return await this.chatService.sendMessage(params.id, dto.message);
   }
@@ -127,7 +127,7 @@ export class ChatController {
   })
   async sendMessageStream(
     @Param() params: SessionParamsDto,
-    @Body() dto: SendMessageDto,
+    @Body() dto: ChatSendMessageDto,
   ): Promise<Observable<MessageEvent>> {
     const generator = this.chatService.sendMessageStream(
       params.id,
@@ -150,8 +150,8 @@ export class ChatController {
     });
   }
 
-  private mapSessionToResponse(result: SessionResult): SessionResponseDto {
-    const response: SessionResponseDto = {
+  private mapSessionToResponse(result: SessionResult): ChatSessionResponseDto {
+    const response: ChatSessionResponseDto = {
       id: result.id,
       adkSessionId: result.adkSessionId,
       agentId: result.agentId,
