@@ -9,6 +9,7 @@
     "dev:api": "uv run adk api_server src",
     "dev:web": "uv run adk web src",
     "start": "uv run adk api_server src",
+    "build:prod": "echo 'Python agent-api has no build step'",
     "test": "uv run pytest"
   }
 }
