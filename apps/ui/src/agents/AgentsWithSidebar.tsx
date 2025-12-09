@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
+import { ChatService } from './api';
+import type { ChatSessionResponseDto } from 'shared';
 
 const STORAGE_KEY = 'agents-sidebar-collapsed';
 
@@ -12,6 +14,27 @@ export function AgentsWithSidebar() {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored === 'true';
   });
+
+  // Sessions state
+  const [sessions, setSessions] = useState<ChatSessionResponseDto[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Load sessions on mount
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const loadSessions = async () => {
+    setSessionsLoading(true);
+    try {
+      const response = await ChatService.chatControllerListSessions();
+      setSessions(response.items || []);
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
 
   // Save to localStorage on change
   useEffect(() => {
@@ -48,9 +71,29 @@ export function AgentsWithSidebar() {
               <div className="agents-sidebar-section">
                 <h3 className="agents-sidebar-section-title">History</h3>
                 <div className="agents-history-list">
-                  <div className="agents-history-item">Placeholder chat 1</div>
-                  <div className="agents-history-item">Placeholder chat 2</div>
-                  <div className="agents-history-item">Placeholder chat 3</div>
+                  {sessionsLoading && (
+                    <div className="agents-history-item">Loading sessions...</div>
+                  )}
+                  {!sessionsLoading && sessions.length === 0 && (
+                    <div className="agents-history-item">No sessions yet</div>
+                  )}
+                  {!sessionsLoading && sessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className={`agents-history-item ${sessionId === session.id ? 'active' : ''}`}
+                      onClick={() => navigate(`/agents/${session.agentId}/session/${session.id}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          navigate(`/agents/${session.agentId}/session/${session.id}`);
+                        }
+                      }}
+                      title={session.title}
+                    >
+                      {session.title}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
