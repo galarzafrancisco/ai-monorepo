@@ -49,10 +49,21 @@ export class ChatService {
       `Creating session for agent: ${input.agentId}, project: ${input.project}`,
     );
 
-    // Verify agent exists
-    const agent = await this.agentRepository.findOne({
-      where: { id: input.agentId },
+    // Verify agent exists - support both slug and UUID
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isUuid = uuidPattern.test(input.agentId);
+
+    // Try by slug first, then by ID if it looks like a UUID
+    let agent = await this.agentRepository.findOne({
+      where: { slug: input.agentId },
     });
+
+    if (!agent && isUuid) {
+      agent = await this.agentRepository.findOne({
+        where: { id: input.agentId },
+      });
+    }
 
     if (!agent) {
       throw new Error(`Agent not found: ${input.agentId}`);
