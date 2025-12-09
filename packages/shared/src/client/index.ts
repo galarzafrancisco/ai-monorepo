@@ -19,6 +19,7 @@ export { ClientRegistrationResponseDto } from './models/ClientRegistrationRespon
 export type { CommentResponseDto } from './models/CommentResponseDto';
 export type { ConnectionResponseDto } from './models/ConnectionResponseDto';
 export type { ConsentDecisionDto } from './models/ConsentDecisionDto';
+export type { CreateAdkSessionDto } from './models/CreateAdkSessionDto';
 export type { CreateAgentDto } from './models/CreateAgentDto';
 export type { CreateCommentDto } from './models/CreateCommentDto';
 export type { CreateConnectionDto } from './models/CreateConnectionDto';
@@ -49,6 +50,7 @@ export type { PageTreeResponseDto } from './models/PageTreeResponseDto';
 export { RegisterClientDto } from './models/RegisterClientDto';
 export type { ReorderPageDto } from './models/ReorderPageDto';
 export type { ScopeResponseDto } from './models/ScopeResponseDto';
+export type { SendMessageDto } from './models/SendMessageDto';
 export type { ServerListResponseDto } from './models/ServerListResponseDto';
 export type { ServerResponseDto } from './models/ServerResponseDto';
 export type { SessionListResponseDto } from './models/SessionListResponseDto';
@@ -66,6 +68,7 @@ export type { UpdateTaskDto } from './models/UpdateTaskDto';
 export type { UserDto } from './models/UserDto';
 export type { WikiTagResponseDto } from './models/WikiTagResponseDto';
 
+export { AdkService } from './services/AdkService';
 export { AgentService } from './services/AgentService';
 export { AppService } from './services/AppService';
 export { AuthorizationServerService } from './services/AuthorizationServerService';

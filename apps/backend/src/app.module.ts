@@ -12,6 +12,7 @@ import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
 import { AgentsModule } from './agents/agents.module';
 import { ChatModule } from './chat/chat.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
+import { AdkModule } from './adk/adk.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { IdentityProviderModule } from './identity-provider/identity-provider.mo
     AgentsModule,
     ChatModule,
     IdentityProviderModule,
+    AdkModule,
   ],
   controllers: [AppController],
   providers: [AppService],
