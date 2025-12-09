@@ -126,6 +126,33 @@ export class AgentsService {
     return this.mapAgentToResult(agent);
   }
 
+  async getAgentByIdOrSlug(idOrSlug: string): Promise<AgentResult> {
+    this.logger.log(`Getting agent by ID or slug: ${idOrSlug}`);
+
+    // UUID regex pattern
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isUuid = uuidPattern.test(idOrSlug);
+
+    // Try slug first (more user-friendly), then fall back to UUID for backward compatibility
+    let agent = await this.agentRepository.findOne({
+      where: { slug: idOrSlug },
+    });
+
+    // If not found by slug and input looks like a UUID, try by ID
+    if (!agent && isUuid) {
+      agent = await this.agentRepository.findOne({
+        where: { id: idOrSlug },
+      });
+    }
+
+    if (!agent) {
+      throw new AgentNotFoundError(idOrSlug);
+    }
+
+    return this.mapAgentToResult(agent);
+  }
+
   async updateAgent(
     agentId: string,
     input: UpdateAgentInput,

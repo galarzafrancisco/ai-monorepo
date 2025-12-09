@@ -70,10 +70,10 @@ export class AgentsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get an agent by ID' })
+  @ApiOperation({ summary: 'Get an agent by ID or slug' })
   @ApiOkResponse({ type: AgentResponseDto })
   async getAgent(@Param() params: AgentParamsDto): Promise<AgentResponseDto> {
-    const result = await this.agentsService.getAgentById(params.id);
+    const result = await this.agentsService.getAgentByIdOrSlug(params.id);
     return this.mapResultToResponse(result);
   }
 
