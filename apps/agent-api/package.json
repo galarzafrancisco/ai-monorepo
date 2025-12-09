@@ -1,0 +1,15 @@
+{
+  "name": "agent-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ADK-based agent API service with UV package management",
+  "scripts": {
+    "setup": "uv sync",
+    "dev": "uv run adk run src",
+    "dev:api": "uv run adk api_server src",
+    "dev:web": "uv run adk web src",
+    "start": "uv run adk api_server src",
+    "build:prod": "echo 'Python agent-api has no build step'",
+    "test": "uv run pytest"
+  }
+}

@@ -150,3 +150,20 @@ vite.config.ts.timestamp-*
 
 # Vite dependency cache
 .vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.pyc
+uv.lock
