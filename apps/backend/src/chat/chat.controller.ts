@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Sse,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +17,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
 } from '@nestjs/swagger';
+import { Observable, from } from 'rxjs';
 import { ChatService } from './chat.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
@@ -28,6 +30,7 @@ import {
   TaskResult,
 } from './dto/service/chat.service.types';
 import { TaskResponseDto } from './dto/task-response.dto';
+import { SendMessageDto } from './dto/send-message.dto';
 
 @ApiTags('Chat')
 @Controller('chat/sessions')
@@ -106,6 +109,45 @@ export class ChatController {
   @ApiOperation({ summary: 'Delete a chat session' })
   async deleteSession(@Param() params: SessionParamsDto): Promise<void> {
     await this.chatService.deleteSession(params.id);
+  }
+
+  @Post(':id/messages')
+  @ApiOperation({ summary: 'Send a message to the ADK agent (non-streaming)' })
+  @ApiOkResponse({ description: 'Message sent successfully' })
+  async sendMessage(
+    @Param() params: SessionParamsDto,
+    @Body() dto: SendMessageDto,
+  ): Promise<{ events: any[] }> {
+    return await this.chatService.sendMessage(params.id, dto.message);
+  }
+
+  @Sse(':id/messages/stream')
+  @ApiOperation({
+    summary: 'Send a message to the ADK agent with streaming response',
+  })
+  async sendMessageStream(
+    @Param() params: SessionParamsDto,
+    @Body() dto: SendMessageDto,
+  ): Promise<Observable<MessageEvent>> {
+    const generator = this.chatService.sendMessageStream(
+      params.id,
+      dto.message,
+    );
+
+    return new Observable((subscriber) => {
+      (async () => {
+        try {
+          for await (const event of generator) {
+            subscriber.next({
+              data: JSON.stringify(event),
+            } as MessageEvent);
+          }
+          subscriber.complete();
+        } catch (error) {
+          subscriber.error(error);
+        }
+      })();
+    });
   }
 
   private mapSessionToResponse(result: SessionResult): SessionResponseDto {

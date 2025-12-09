@@ -27,6 +27,7 @@ import {
   TaskUnsubscribedEvent,
 } from './events/chat.events';
 import { randomUUID } from 'crypto';
+import { AdkService } from '../adk/adk.service';
 
 @Injectable()
 export class ChatService {
@@ -40,6 +41,7 @@ export class ChatService {
     @InjectRepository(AgentEntity)
     private readonly agentRepository: Repository<AgentEntity>,
     private readonly eventEmitter: EventEmitter2,
+    private readonly adkService: AdkService,
   ) {}
 
   async createSession(input: CreateSessionInput): Promise<SessionResult> {
@@ -56,8 +58,8 @@ export class ChatService {
       throw new Error(`Agent not found: ${input.agentId}`);
     }
 
-    // Create ADK session (stubbed for now)
-    const adkSessionId = await this.createAdkSession(input.agentId);
+    // Create ADK session
+    const adkSessionId = await this.createAdkSession(agent);
 
     // Generate default title if not provided
     const title =
@@ -301,13 +303,40 @@ export class ChatService {
     );
   }
 
-  private async createAdkSession(agentId: string): Promise<string> {
-    // TODO: Implement actual ADK session creation via ADK API
-    // For now, return a stubbed UUID
-    this.logger.warn(
-      `ADK session creation is stubbed. Agent ID: ${agentId}`,
-    );
-    return `adk-session-${randomUUID()}`;
+  private async createAdkSession(agent: AgentEntity): Promise<string> {
+    try {
+      // Use agent slug as ADK app name
+      const appId = agent.slug;
+
+      // Use agent ID as the userId for ADK session
+      const userId = agent.id;
+
+      this.logger.log(
+        `Creating ADK session for app: ${appId}, user: ${userId}`,
+      );
+
+      // Call ADK service to create session
+      const response = await this.adkService.createSession(appId, userId);
+
+      if (!response.session_id) {
+        throw new AdkSessionCreationFailedError(
+          `ADK session creation failed for agent ${agent.name}: No session ID returned`,
+        );
+      }
+
+      this.logger.log(
+        `Successfully created ADK session: ${response.session_id}`,
+      );
+
+      return response.session_id;
+    } catch (error) {
+      this.logger.error(
+        `Failed to create ADK session for agent ${agent.name}: ${error}`,
+      );
+      throw new AdkSessionCreationFailedError(
+        `ADK session creation failed for agent ${agent.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
   private mapSessionToResult(
@@ -349,5 +378,97 @@ export class ChatService {
       status: task.status,
       assignee: task.assignee,
     };
+  }
+
+  async sendMessage(
+    sessionId: string,
+    message: string,
+  ): Promise<{ events: any[] }> {
+    // Get session with agent relation
+    const session = await this.sessionRepository.findOne({
+      where: { id: sessionId },
+      relations: ['agent'],
+    });
+
+    if (!session) {
+      throw new SessionNotFoundError(sessionId);
+    }
+
+    if (!session.agent) {
+      throw new Error(`Agent not found for session ${sessionId}`);
+    }
+
+    try {
+      // Send message to ADK
+      const response = await this.adkService.run({
+        app_name: session.agent.slug,
+        user_id: session.agentId,
+        session_id: session.adkSessionId,
+        new_message: {
+          role: 'user',
+          parts: [{ text: message }],
+        },
+      });
+
+      // Update lastMessageAt
+      session.lastMessageAt = new Date();
+      await this.sessionRepository.save(session);
+
+      return { events: response };
+    } catch (error) {
+      this.logger.error(
+        `Failed to send message to ADK for session ${sessionId}: ${error}`,
+      );
+      throw new Error(
+        `Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  async *sendMessageStream(
+    sessionId: string,
+    message: string,
+  ): AsyncGenerator<any, void, unknown> {
+    // Get session with agent relation
+    const session = await this.sessionRepository.findOne({
+      where: { id: sessionId },
+      relations: ['agent'],
+    });
+
+    if (!session) {
+      throw new SessionNotFoundError(sessionId);
+    }
+
+    if (!session.agent) {
+      throw new Error(`Agent not found for session ${sessionId}`);
+    }
+
+    try {
+      // Send message to ADK with streaming
+      const stream = this.adkService.runSSE({
+        app_name: session.agent.slug,
+        user_id: session.agentId,
+        session_id: session.adkSessionId,
+        new_message: {
+          role: 'user',
+          parts: [{ text: message }],
+        },
+      });
+
+      for await (const event of stream) {
+        yield event;
+      }
+
+      // Update lastMessageAt after stream completes
+      session.lastMessageAt = new Date();
+      await this.sessionRepository.save(session);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send streaming message to ADK for session ${sessionId}: ${error}`,
+      );
+      throw new Error(
+        `Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 }
