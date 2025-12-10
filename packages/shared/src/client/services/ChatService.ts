@@ -5,6 +5,7 @@
 import type { ChatSendMessageDto } from '../models/ChatSendMessageDto';
 import type { ChatSessionResponseDto } from '../models/ChatSessionResponseDto';
 import type { CreateSessionDto } from '../models/CreateSessionDto';
+import type { SendMessageResponseDto } from '../models/SendMessageResponseDto';
 import type { SessionListResponseDto } from '../models/SessionListResponseDto';
 import type { UpdateSessionDto } from '../models/UpdateSessionDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -118,13 +119,13 @@ export class ChatService {
      * Send a message to the ADK agent (non-streaming)
      * @param id Session ID
      * @param requestBody
-     * @returns any Message sent successfully
+     * @returns SendMessageResponseDto
      * @throws ApiError
      */
     public static chatControllerSendMessage(
         id: string,
         requestBody: ChatSendMessageDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<SendMessageResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/chat/sessions/{id}/messages',

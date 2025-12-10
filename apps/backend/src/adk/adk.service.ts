@@ -9,6 +9,8 @@ import {
   SendMessageRequest,
   SendMessageResponse,
 } from './dto/adk.types';
+import { AdkEventTransformer } from './adk.transformer';
+import { ChatMessageEvent } from '../chat/events/chat.events';
 
 /**
  * ADK Client Service
@@ -231,6 +233,35 @@ export class AdkService {
       }
     } finally {
       reader.releaseLock();
+    }
+  }
+
+  /**
+   * Send a message to an agent (non-streaming) and return transformed events
+   *
+   * @param payload - The message request payload
+   * @returns Transformed chat message events
+   */
+  async runTransformed(
+    payload: SendMessageRequest,
+  ): Promise<ChatMessageEvent[]> {
+    const adkEvents = await this.run(payload);
+    return AdkEventTransformer.transformEvents(adkEvents);
+  }
+
+  /**
+   * Send a message to an agent with SSE streaming and return transformed events
+   *
+   * @param payload - The message request payload
+   * @returns Async generator yielding transformed chat message events
+   */
+  async *runSSETransformed(
+    payload: SendMessageRequest,
+  ): AsyncGenerator<ChatMessageEvent> {
+    const adkEventStream = this.runSSE(payload);
+
+    for await (const adkEvent of adkEventStream) {
+      yield AdkEventTransformer.transformEvent(adkEvent);
     }
   }
 }

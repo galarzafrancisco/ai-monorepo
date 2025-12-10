@@ -3108,7 +3108,14 @@
         },
         "responses": {
           "200": {
-            "description": "Message sent successfully"
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponseDto"
+                }
+              }
+            }
           }
         },
         "summary": "Send a message to the ADK agent (non-streaming)",
@@ -5505,6 +5512,141 @@
         },
         "required": [
           "message"
+        ]
+      },
+      "FunctionCallDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "args": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "args"
+        ]
+      },
+      "FunctionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "response": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "response"
+        ]
+      },
+      "ChatMessagePartDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "functionCall": {
+            "$ref": "#/components/schemas/FunctionCallDto"
+          },
+          "functionResponse": {
+            "$ref": "#/components/schemas/FunctionResponseDto"
+          }
+        }
+      },
+      "ChatMessageContentDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessagePartDto"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "parts"
+        ]
+      },
+      "UsageMetadataDto": {
+        "type": "object",
+        "properties": {
+          "promptTokenCount": {
+            "type": "number"
+          },
+          "candidatesTokenCount": {
+            "type": "number"
+          },
+          "totalTokenCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "promptTokenCount",
+          "candidatesTokenCount",
+          "totalTokenCount"
+        ]
+      },
+      "ChatMessageEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "number"
+          },
+          "author": {
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/ChatMessageContentDto"
+          },
+          "partial": {
+            "type": "boolean"
+          },
+          "invocationId": {
+            "type": "string"
+          },
+          "usageMetadata": {
+            "$ref": "#/components/schemas/UsageMetadataDto"
+          }
+        },
+        "required": [
+          "id",
+          "timestamp",
+          "author",
+          "content"
+        ]
+      },
+      "SendMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageEventDto"
+            }
+          }
+        },
+        "required": [
+          "events"
         ]
       },
       "LoginDto": {

@@ -31,6 +31,7 @@ import {
 } from './dto/service/chat.service.types';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { ChatSendMessageDto } from './dto/send-message.dto';
+import { SendMessageResponseDto } from './dto/message-response.dto';
 
 @ApiTags('Chat')
 @Controller('chat/sessions')
@@ -113,11 +114,11 @@ export class ChatController {
 
   @Post(':id/messages')
   @ApiOperation({ summary: 'Send a message to the ADK agent (non-streaming)' })
-  @ApiOkResponse({ description: 'Message sent successfully' })
+  @ApiOkResponse({ type: SendMessageResponseDto })
   async sendMessage(
     @Param() params: SessionParamsDto,
     @Body() dto: ChatSendMessageDto,
-  ): Promise<{ events: any[] }> {
+  ): Promise<SendMessageResponseDto> {
     return await this.chatService.sendMessage(params.id, dto.message);
   }
 
