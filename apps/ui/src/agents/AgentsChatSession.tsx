@@ -13,7 +13,13 @@ interface Message {
   isStreaming?: boolean;
 }
 
-const resolveRole = (role?: string): MessageRole => (role === 'user' ? 'user' : 'assistant');
+const resolveRole = (parts: ChatMessagePartDto[] = [], role?: string): MessageRole => {
+  const hasToolContent = parts.some((part) => part.functionCall || part.functionResponse);
+
+  if (hasToolContent) return 'assistant';
+
+  return role === 'user' ? 'user' : 'assistant';
+};
 
 const mergeTextParts = (parts: ChatMessagePartDto[]): ChatMessagePartDto[] => {
   const merged: ChatMessagePartDto[] = [];
@@ -41,9 +47,44 @@ const partsToText = (parts: ChatMessagePartDto[]) =>
     .map((p) => p.text)
     .join('');
 
+const mergeStreamingParts = (
+  existingParts: ChatMessagePartDto[],
+  newParts: ChatMessagePartDto[]
+): ChatMessagePartDto[] => {
+  const mergedParts = [...existingParts];
+
+  for (const part of newParts) {
+    if (part.functionCall) {
+      const index = mergedParts.findIndex((p) => p.functionCall?.name === part.functionCall?.name);
+      if (index >= 0) {
+        mergedParts[index] = part;
+      } else {
+        mergedParts.push(part);
+      }
+      continue;
+    }
+
+    if (part.functionResponse) {
+      const index = mergedParts.findIndex(
+        (p) => p.functionResponse?.name === part.functionResponse?.name
+      );
+      if (index >= 0) {
+        mergedParts[index] = part;
+      } else {
+        mergedParts.push(part);
+      }
+      continue;
+    }
+
+    mergedParts.push(part);
+  }
+
+  return mergeTextParts(mergedParts);
+};
+
 const mapEventToMessage = (event: ChatMessageEventDto, isStreaming = false): Message => ({
   id: event.id,
-  role: resolveRole(event.content.role),
+  role: resolveRole(event.content.parts, event.content.role),
   parts: mergeTextParts(event.content.parts),
   timestamp: new Date(event.timestamp),
   isStreaming,
@@ -169,17 +210,17 @@ export function AgentsChatSession() {
             const targetId = streamingMessageIdRef.current ?? event.id;
 
             if (isPartial) {
-              streamingPartsRef.current = mergeTextParts([
-                ...streamingPartsRef.current,
-                ...event.content.parts,
-              ]);
+              streamingPartsRef.current = mergeStreamingParts(
+                streamingPartsRef.current,
+                event.content.parts
+              );
 
               setMessages((prev) => {
                 const updated = [...prev];
                 const index = updated.findIndex((msg) => msg.id === targetId);
                 const streamingMessage: Message = {
                   id: targetId ?? `streaming-${Date.now()}`,
-                  role: resolveRole(event.content.role),
+                  role: resolveRole(event.content.parts, event.content.role),
                   parts: streamingPartsRef.current,
                   timestamp: new Date(),
                   isStreaming: true,
@@ -341,7 +382,7 @@ export function AgentsChatSession() {
                   }`}
                 >
                   <div className="agents-chat-message-role">
-                    {message.role === 'user' ? 'You' : 'Assistant'}
+                    {message.role === 'user' ? 'You' : agentId || 'Assistant'}
                     {message.isStreaming && <span className="agents-chat-streaming">typing…</span>}
                   </div>
                   <div className="agents-chat-bubbles">
