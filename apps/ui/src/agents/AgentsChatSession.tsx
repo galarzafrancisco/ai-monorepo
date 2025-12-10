@@ -1,15 +1,53 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ChatService, OpenAPI } from './api';
 import type { ChatSessionResponseDto, ChatMessageEventDto, ChatMessagePartDto } from 'shared';
 
+type MessageRole = 'user' | 'assistant';
+
 interface Message {
-  role: 'user' | 'assistant';
-  content: string;
+  id: string;
+  role: MessageRole;
+  parts: ChatMessagePartDto[];
   timestamp: Date;
-  parts?: ChatMessagePartDto[];
   isStreaming?: boolean;
 }
+
+const resolveRole = (role?: string): MessageRole => (role === 'user' ? 'user' : 'assistant');
+
+const mergeTextParts = (parts: ChatMessagePartDto[]): ChatMessagePartDto[] => {
+  const merged: ChatMessagePartDto[] = [];
+
+  for (const part of parts) {
+    const isTextPart = part.text && !part.functionCall && !part.functionResponse;
+    const last = merged[merged.length - 1];
+
+    if (isTextPart && last?.text && !last.functionCall && !last.functionResponse) {
+      merged[merged.length - 1] = {
+        ...last,
+        text: `${last.text}${part.text}`,
+      };
+    } else {
+      merged.push(part);
+    }
+  }
+
+  return merged;
+};
+
+const partsToText = (parts: ChatMessagePartDto[]) =>
+  mergeTextParts(parts)
+    .filter((p) => p.text)
+    .map((p) => p.text)
+    .join('');
+
+const mapEventToMessage = (event: ChatMessageEventDto, isStreaming = false): Message => ({
+  id: event.id,
+  role: resolveRole(event.content.role),
+  parts: mergeTextParts(event.content.parts),
+  timestamp: new Date(event.timestamp),
+  isStreaming,
+});
 
 export function AgentsChatSession() {
   const { agentId, sessionId } = useParams<{ agentId: string; sessionId: string }>();
@@ -20,6 +58,8 @@ export function AgentsChatSession() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamingPartsRef = useRef<ChatMessagePartDto[]>([]);
+  const streamingMessageIdRef = useRef<string | null>(null);
 
   // Load session details
   useEffect(() => {
@@ -56,27 +96,29 @@ export function AgentsChatSession() {
 
     if (!inputValue.trim() || !sessionId || isSending) return;
 
+    const messageContent = inputValue.trim();
     const userMessage: Message = {
+      id: `user-${Date.now()}`,
       role: 'user',
-      content: inputValue.trim(),
+      parts: [{ text: messageContent }],
       timestamp: new Date(),
     };
 
-    // Add user message immediately
     setMessages((prev) => [...prev, userMessage]);
-    const messageContent = inputValue.trim();
     setInputValue('');
     setIsSending(true);
 
-    // Add placeholder for assistant response
-    const assistantMessageIndex = messages.length + 1;
+    const streamingId = crypto.randomUUID?.() ?? `streaming-${Date.now()}`;
+    streamingPartsRef.current = [];
+    streamingMessageIdRef.current = streamingId;
+
     setMessages((prev) => [
       ...prev,
       {
+        id: streamingId,
         role: 'assistant',
-        content: '',
-        timestamp: new Date(),
         parts: [],
+        timestamp: new Date(),
         isStreaming: true,
       },
     ]);
@@ -106,7 +148,6 @@ export function AgentsChatSession() {
       }
 
       let buffer = '';
-      const allEvents: ChatMessageEventDto[] = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -117,64 +158,149 @@ export function AgentsChatSession() {
         buffer = lines.pop() || '';
 
         for (const line of lines) {
-          if (line.startsWith('data:')) {
-            const data = line.slice(5).trim();
-            if (data === '[DONE]') continue;
+          if (!line.startsWith('data:')) continue;
 
-            try {
-              const event: ChatMessageEventDto = JSON.parse(data);
-              allEvents.push(event);
+          const data = line.slice(5).trim();
+          if (data === '[DONE]') continue;
 
-              // Update the assistant message with accumulated content
+          try {
+            const event: ChatMessageEventDto = JSON.parse(data);
+            const isPartial = event.partial !== false;
+            const targetId = streamingMessageIdRef.current ?? event.id;
+
+            if (isPartial) {
+              streamingPartsRef.current = mergeTextParts([
+                ...streamingPartsRef.current,
+                ...event.content.parts,
+              ]);
+
               setMessages((prev) => {
-                const newMessages = [...prev];
-                const assistantMsg = newMessages[assistantMessageIndex];
-                if (assistantMsg) {
-                  // Combine all text from all events
-                  const combinedParts = allEvents.flatMap((e) => e.content.parts);
-                  const text = combinedParts
-                    .filter((p) => p.text)
-                    .map((p) => p.text)
-                    .join('');
+                const updated = [...prev];
+                const index = updated.findIndex((msg) => msg.id === targetId);
+                const streamingMessage: Message = {
+                  id: targetId ?? `streaming-${Date.now()}`,
+                  role: resolveRole(event.content.role),
+                  parts: streamingPartsRef.current,
+                  timestamp: new Date(),
+                  isStreaming: true,
+                };
 
-                  assistantMsg.content = text;
-                  assistantMsg.parts = combinedParts;
-                  assistantMsg.isStreaming = event.partial !== false;
+                if (index >= 0) {
+                  updated[index] = streamingMessage;
+                } else {
+                  updated.push(streamingMessage);
                 }
-                return newMessages;
+
+                return updated;
               });
-            } catch (error) {
-              console.warn('Failed to parse SSE event:', data, error);
+            } else {
+              const finalMessage = mapEventToMessage(event, false);
+              streamingPartsRef.current = [];
+
+              setMessages((prev) => {
+                const updated = [...prev];
+                const index = updated.findIndex((msg) => msg.id === targetId || msg.id === event.id);
+                const messageWithId = {
+                  ...finalMessage,
+                  id: finalMessage.id || targetId || `message-${Date.now()}`,
+                };
+
+                if (index >= 0) {
+                  updated[index] = messageWithId;
+                } else {
+                  updated.push(messageWithId);
+                }
+
+                return updated;
+              });
+
+              streamingMessageIdRef.current = null;
             }
+          } catch (error) {
+            console.warn('Failed to parse SSE event:', data, error);
           }
         }
       }
-
-      // Mark streaming as complete
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        const assistantMsg = newMessages[assistantMessageIndex];
-        if (assistantMsg) {
-          assistantMsg.isStreaming = false;
-        }
-        return newMessages;
-      });
     } catch (error) {
       console.error('Failed to send message:', error);
-      // Update the assistant message with error
+
+      const streamingIdCurrent = streamingMessageIdRef.current;
+      streamingPartsRef.current = [];
+      streamingMessageIdRef.current = null;
+
       setMessages((prev) => {
-        const newMessages = [...prev];
-        newMessages[assistantMessageIndex] = {
+        const updated = [...prev];
+        const errorMessage: Message = {
+          id: streamingIdCurrent ?? `error-${Date.now()}`,
           role: 'assistant',
-          content: 'Sorry, I encountered an error processing your message.',
+          parts: [
+            {
+              text: 'Sorry, I encountered an error processing your message.',
+            },
+          ],
           timestamp: new Date(),
           isStreaming: false,
         };
-        return newMessages;
+
+        const index = updated.findIndex((msg) => msg.id === streamingIdCurrent);
+        if (index >= 0) {
+          updated[index] = errorMessage;
+        } else {
+          updated.push(errorMessage);
+        }
+
+        return updated;
       });
     } finally {
       setIsSending(false);
     }
+  };
+
+  const renderMessagePart = (
+    part: ChatMessagePartDto,
+    role: MessageRole,
+    isStreaming?: boolean
+  ) => {
+    const thinking = (part as { thinking?: string; thoughts?: string }).thinking ??
+      (part as { thinking?: string; thoughts?: string }).thoughts;
+
+    if (thinking) {
+      return (
+        <details className="chat-bubble bubble-thinking">
+          <summary>🤔 Thinking</summary>
+          <pre>{thinking}</pre>
+        </details>
+      );
+    }
+
+    if (part.functionCall) {
+      return (
+        <details className="chat-bubble bubble-tool-call">
+          <summary>🛠️ Tool call: {part.functionCall.name}</summary>
+          <pre>{JSON.stringify(part.functionCall.args, null, 2)}</pre>
+        </details>
+      );
+    }
+
+    if (part.functionResponse) {
+      return (
+        <details className="chat-bubble bubble-tool-response">
+          <summary>📄 Tool response: {part.functionResponse.name}</summary>
+          <pre>{JSON.stringify(part.functionResponse.response, null, 2)}</pre>
+        </details>
+      );
+    }
+
+    if (part.text) {
+      return (
+        <div className={`chat-bubble bubble-${role}`}>
+          <div className="bubble-text">{part.text}</div>
+          {isStreaming && <span className="typing-indicator">...</span>}
+        </div>
+      );
+    }
+
+    return null;
   };
 
   if (isLoading) {
@@ -204,48 +330,36 @@ export function AgentsChatSession() {
           </div>
         ) : (
           <>
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`agents-chat-message ${message.role === 'user' ? 'user' : 'assistant'}`}
-              >
-                <div className="agents-chat-message-role">
-                  {message.role === 'user' ? 'You' : 'Assistant'}
-                  {message.isStreaming && <span className="agents-chat-streaming"> (streaming...)</span>}
-                </div>
-                <div className="agents-chat-message-content">
-                  {message.parts && message.parts.length > 0 ? (
-                    <div className="agents-chat-message-parts">
-                      {message.parts.map((part, partIndex) => (
-                        <div key={partIndex} className="agents-chat-message-part">
-                          {part.text && <div className="agents-chat-text">{part.text}</div>}
-                          {part.functionCall && (
-                            <div className="agents-chat-function-call">
-                              <strong>🔧 Tool Call:</strong> {part.functionCall.name}
-                              <details>
-                                <summary>Arguments</summary>
-                                <pre>{JSON.stringify(part.functionCall.args, null, 2)}</pre>
-                              </details>
-                            </div>
-                          )}
-                          {part.functionResponse && (
-                            <div className="agents-chat-function-response">
-                              <strong>✅ Tool Response:</strong> {part.functionResponse.name}
-                              <details>
-                                <summary>Result</summary>
-                                <pre>{part.functionResponse.response.result}</pre>
-                              </details>
-                            </div>
-                          )}
+            {messages.map((message) => {
+              const textContent = partsToText(message.parts);
+
+              return (
+                <div
+                  key={message.id}
+                  className={`agents-chat-message ${message.role} ${
+                    message.isStreaming ? 'is-streaming' : ''
+                  }`}
+                >
+                  <div className="agents-chat-message-role">
+                    {message.role === 'user' ? 'You' : 'Assistant'}
+                    {message.isStreaming && <span className="agents-chat-streaming">typing…</span>}
+                  </div>
+                  <div className="agents-chat-bubbles">
+                    {message.parts.length > 0 ? (
+                      message.parts.map((part, partIndex) => (
+                        <div key={`${message.id}-${partIndex}`} className="agents-chat-message-part">
+                          {renderMessagePart(part, message.role, message.isStreaming)}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    message.content
-                  )}
+                      ))
+                    ) : (
+                      <div className={`chat-bubble bubble-${message.role}`}>
+                        <div className="bubble-text">{textContent || '...'}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={messagesEndRef} />
           </>
         )}
