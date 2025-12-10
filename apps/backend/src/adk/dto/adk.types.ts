@@ -62,6 +62,7 @@ export interface SendMessageRequest {
   user_id: string;
   session_id: string;
   new_message: NewMessage;
+  streaming: boolean;
 }
 
 export type ListAppsResponse = string[];

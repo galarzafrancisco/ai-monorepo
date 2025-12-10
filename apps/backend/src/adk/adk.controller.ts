@@ -81,6 +81,7 @@ export class AdkController {
         role: 'user',
         parts: [{ text: dto.message }],
       },
+      streaming: false,
     });
   }
 
@@ -100,6 +101,7 @@ export class AdkController {
           role: 'user',
           parts: [{ text: dto.message }],
         },
+        streaming: true,
       });
 
       (async () => {
