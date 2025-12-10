@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { SessionEntity } from './session.entity';
 import { TaskEntity } from '../taskeroo/task.entity';
 import { AgentEntity } from '../agents/agent.entity';
@@ -26,7 +26,6 @@ import {
   TaskSubscribedEvent,
   TaskUnsubscribedEvent,
 } from './events/chat.events';
-import { randomUUID } from 'crypto';
 import { AdkService } from '../adk/adk.service';
 import { LlmHelperService } from '../llm-helper/llm-helper.service';
 
@@ -415,8 +414,13 @@ export class ChatService {
       // Check if we should generate a title for this message
       const shouldGenerateTitle = this.shouldGenerateTitle(session);
 
+      // Start title generation first (don't await)
+      const titlePromise = shouldGenerateTitle
+        ? this.generateTitle(message)
+        : Promise.resolve(null);
+
       // Send message to ADK
-      const response = await this.adkService.run({
+      const adkPromise = this.adkService.run({
         app_name: session.agent.slug,
         user_id: session.agentId,
         session_id: session.adkSessionId,
@@ -427,13 +431,25 @@ export class ChatService {
         streaming: false,
       });
 
-      // Update lastMessageAt
-      session.lastMessageAt = new Date();
-      await this.sessionRepository.save(session);
+      // Wait for both promises
+      const [generatedTitle, response] = await Promise.all([
+        titlePromise,
+        adkPromise,
+      ]);
 
-      // Generate and update title if needed
-      if (shouldGenerateTitle) {
-        await this.generateAndUpdateTitle(session, message);
+      // Update session with new title (if generated) and lastMessageAt
+      if (generatedTitle) {
+        session.title = generatedTitle;
+      }
+      session.lastMessageAt = new Date();
+      const updatedSession = await this.sessionRepository.save(session);
+
+      // Emit session updated event if title was changed
+      if (generatedTitle) {
+        this.eventEmitter.emit(
+          'session.updated',
+          new SessionUpdatedEvent(updatedSession),
+        );
       }
 
       return { events: response };
@@ -469,6 +485,11 @@ export class ChatService {
       // Check if we should generate a title for this message
       const shouldGenerateTitle = this.shouldGenerateTitle(session);
 
+      // Start title generation first (don't await)
+      const titlePromise = shouldGenerateTitle
+        ? this.generateTitle(message)
+        : Promise.resolve(null);
+
       // Send message to ADK with streaming
       const stream = this.adkService.runSSE({
         app_name: session.agent.slug,
@@ -485,13 +506,22 @@ export class ChatService {
         yield event;
       }
 
-      // Update lastMessageAt after stream completes
-      session.lastMessageAt = new Date();
-      await this.sessionRepository.save(session);
+      // Wait for title generation to complete
+      const generatedTitle = await titlePromise;
 
-      // Generate and update title if needed
-      if (shouldGenerateTitle) {
-        await this.generateAndUpdateTitle(session, message);
+      // Update session with new title (if generated) and lastMessageAt
+      if (generatedTitle) {
+        session.title = generatedTitle;
+      }
+      session.lastMessageAt = new Date();
+      const updatedSession = await this.sessionRepository.save(session);
+
+      // Emit session updated event if title was changed
+      if (generatedTitle) {
+        this.eventEmitter.emit(
+          'session.updated',
+          new SessionUpdatedEvent(updatedSession),
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -508,36 +538,19 @@ export class ChatService {
     return session.title.startsWith('Chat with');
   }
 
-  private async generateAndUpdateTitle(
-    session: SessionEntity,
-    message: string,
-  ): Promise<void> {
+  private async generateTitle(message: string): Promise<string | null> {
     try {
-      this.logger.log(
-        `Generating title for session ${session.id} from message`,
-      );
+      this.logger.log(`Generating title for message`);
 
       // Generate title using LLM helper
       const generatedTitle = await this.llmHelperService.generateTitle(message);
 
-      // Update session with new title
-      session.title = generatedTitle;
-      const updatedSession = await this.sessionRepository.save(session);
-
-      // Emit session updated event so WebSocket listeners can notify clients
-      this.eventEmitter.emit(
-        'session.updated',
-        new SessionUpdatedEvent(updatedSession),
-      );
-
-      this.logger.log(
-        `Successfully updated session ${session.id} with generated title: ${generatedTitle}`,
-      );
+      this.logger.log(`Successfully generated title: ${generatedTitle}`);
+      return generatedTitle;
     } catch (error) {
-      this.logger.error(
-        `Failed to generate and update title for session ${session.id}: ${error}`,
-      );
-      // Don't throw - title generation failure shouldn't break message sending
+      this.logger.error(`Failed to generate title: ${error}`);
+      // Fallback: return null if generation fails
+      return null;
     }
   }
 }

@@ -20,7 +20,7 @@ export class LlmHelperService {
         messages: [
           {
             role: 'user',
-            content: `Create a concise title for this message, without any formatting: ${message}`,
+            content: `Create a concise title for this message, without any formatting or quotes: ${message}. Title:`,
           },
         ],
       });
