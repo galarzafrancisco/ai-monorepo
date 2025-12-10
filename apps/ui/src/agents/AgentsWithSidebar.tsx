@@ -111,23 +111,6 @@ export function AgentsWithSidebar() {
       <main className="agents-content">
         <Outlet />
       </main>
-
-      {/* Right sidebar for resources */}
-      <aside className="agents-resources-sidebar">
-        <div className="agents-resources-header">
-          <h3 className="agents-resources-title">Resources</h3>
-        </div>
-        <div className="agents-resources-content">
-          <div className="agents-resource-section">
-            <h4>Tasks</h4>
-            <div className="agents-resource-placeholder">No tasks yet</div>
-          </div>
-          <div className="agents-resource-section">
-            <h4>Referenced Content</h4>
-            <div className="agents-resource-placeholder">No content referenced</div>
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }
