@@ -144,11 +144,12 @@ export class AdkService {
     );
 
     const url = this.buildUrl('/run');
+    const requestPayload = { ...payload, streaming: false };
 
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(requestPayload),
     });
 
     if (!response.ok) {
@@ -171,6 +172,7 @@ export class AdkService {
     );
 
     const url = this.buildUrl('/run_sse');
+    const requestPayload = { ...payload, streaming: true };
 
     const response = await fetch(url, {
       method: 'POST',
@@ -178,7 +180,7 @@ export class AdkService {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(requestPayload),
     });
 
     if (!response.ok) {

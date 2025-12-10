@@ -419,6 +419,7 @@ export class ChatService {
           role: 'user',
           parts: [{ text: message }],
         },
+        streaming: false,
       });
 
       // Update lastMessageAt
@@ -464,6 +465,7 @@ export class ChatService {
           role: 'user',
           parts: [{ text: message }],
         },
+        streaming: true,
       });
 
       for await (const event of stream) {
