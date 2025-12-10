@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
-import { ChatService } from './api';
-import type { ChatSessionResponseDto } from 'shared';
+import { useChatSessions } from './useChatSessions';
 
 const STORAGE_KEY = 'agents-sidebar-collapsed';
 
@@ -15,26 +14,8 @@ export function AgentsWithSidebar() {
     return stored === 'true';
   });
 
-  // Sessions state
-  const [sessions, setSessions] = useState<ChatSessionResponseDto[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(false);
-
-  // Load sessions on mount
-  useEffect(() => {
-    loadSessions();
-  }, []);
-
-  const loadSessions = async () => {
-    setSessionsLoading(true);
-    try {
-      const response = await ChatService.chatControllerListSessions();
-      setSessions(response.items || []);
-    } catch (error) {
-      console.error('Failed to load sessions:', error);
-    } finally {
-      setSessionsLoading(false);
-    }
-  };
+  // Use WebSocket hook for real-time session updates
+  const { sessions, loading: sessionsLoading, isConnected } = useChatSessions();
 
   // Save to localStorage on change
   useEffect(() => {
@@ -55,7 +36,13 @@ export function AgentsWithSidebar() {
           {!agentsSidebarCollapsed && (
             <div>
               <div className="agents-sidebar-header">
-                <h2 className="agents-sidebar-title">🤖 Agents</h2>
+                <h2 className="agents-sidebar-title">
+                  🤖 Agents
+                  <span
+                    className={`agents-status-dot ${isConnected ? 'connected' : 'disconnected'}`}
+                    title={isConnected ? 'WebSocket connected' : 'WebSocket disconnected'}
+                  />
+                </h2>
               </div>
 
               {/* Navigation Section */}
