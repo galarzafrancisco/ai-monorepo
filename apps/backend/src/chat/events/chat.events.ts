@@ -32,3 +32,46 @@ export class TaskUnsubscribedEvent {
     public readonly taskId: string,
   ) {}
 }
+
+// Chat Message Events - represent chat interactions and agent responses
+
+export interface FunctionCall {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
+}
+
+export interface FunctionResponse {
+  id: string;
+  name: string;
+  response: {
+    result: string;
+  };
+}
+
+export interface ChatMessagePart {
+  text?: string;
+  functionCall?: FunctionCall;
+  functionResponse?: FunctionResponse;
+}
+
+export interface ChatMessageContent {
+  role: string;
+  parts: ChatMessagePart[];
+}
+
+export interface UsageMetadata {
+  promptTokenCount: number;
+  candidatesTokenCount: number;
+  totalTokenCount: number;
+}
+
+export interface ChatMessageEvent {
+  id: string;
+  timestamp: number;
+  author: string;
+  content: ChatMessageContent;
+  partial?: boolean;
+  invocationId?: string;
+  usageMetadata?: UsageMetadata;
+}

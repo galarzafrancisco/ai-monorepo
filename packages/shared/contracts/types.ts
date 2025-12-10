@@ -2618,6 +2618,42 @@ export interface components {
              */
             message: string;
         };
+        FunctionCallDto: {
+            id: string;
+            name: string;
+            args: Record<string, never>;
+        };
+        FunctionResponseDto: {
+            id: string;
+            name: string;
+            response: Record<string, never>;
+        };
+        ChatMessagePartDto: {
+            text?: string;
+            functionCall?: components["schemas"]["FunctionCallDto"];
+            functionResponse?: components["schemas"]["FunctionResponseDto"];
+        };
+        ChatMessageContentDto: {
+            role: string;
+            parts: components["schemas"]["ChatMessagePartDto"][];
+        };
+        UsageMetadataDto: {
+            promptTokenCount: number;
+            candidatesTokenCount: number;
+            totalTokenCount: number;
+        };
+        ChatMessageEventDto: {
+            id: string;
+            timestamp: number;
+            author: string;
+            content: components["schemas"]["ChatMessageContentDto"];
+            partial?: boolean;
+            invocationId?: string;
+            usageMetadata?: components["schemas"]["UsageMetadataDto"];
+        };
+        SendMessageResponseDto: {
+            events: components["schemas"]["ChatMessageEventDto"][];
+        };
         LoginDto: {
             /** @example user@example.com */
             email: string;
@@ -5008,12 +5044,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Message sent successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SendMessageResponseDto"];
+                };
             };
         };
     };

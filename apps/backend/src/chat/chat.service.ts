@@ -25,6 +25,7 @@ import {
   TaskReferencedEvent,
   TaskSubscribedEvent,
   TaskUnsubscribedEvent,
+  ChatMessageEvent,
 } from './events/chat.events';
 import { AdkService } from '../adk/adk.service';
 import { LlmHelperService } from '../llm-helper/llm-helper.service';
@@ -395,7 +396,7 @@ export class ChatService {
   async sendMessage(
     sessionId: string,
     message: string,
-  ): Promise<{ events: any[] }> {
+  ): Promise<{ events: ChatMessageEvent[] }> {
     // Get session with agent relation
     const session = await this.sessionRepository.findOne({
       where: { id: sessionId },
@@ -419,8 +420,8 @@ export class ChatService {
         ? this.generateTitle(message)
         : Promise.resolve(null);
 
-      // Send message to ADK
-      const adkPromise = this.adkService.run({
+      // Send message to ADK using the transformed method
+      const adkPromise = this.adkService.runTransformed({
         app_name: session.agent.slug,
         user_id: session.agentId,
         session_id: session.adkSessionId,
@@ -466,7 +467,7 @@ export class ChatService {
   async *sendMessageStream(
     sessionId: string,
     message: string,
-  ): AsyncGenerator<any, void, unknown> {
+  ): AsyncGenerator<ChatMessageEvent, void, unknown> {
     // Get session with agent relation
     const session = await this.sessionRepository.findOne({
       where: { id: sessionId },
@@ -490,8 +491,8 @@ export class ChatService {
         ? this.generateTitle(message)
         : Promise.resolve(null);
 
-      // Send message to ADK with streaming
-      const stream = this.adkService.runSSE({
+      // Send message to ADK with streaming using the transformed method
+      const stream = this.adkService.runSSETransformed({
         app_name: session.agent.slug,
         user_id: session.agentId,
         session_id: session.adkSessionId,
