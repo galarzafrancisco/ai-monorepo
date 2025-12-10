@@ -20,11 +20,11 @@ export function AgentsHome() {
         <div className="agents-empty">No agents available. Create one in the admin panel.</div>
       )}
 
-      <div className="agents-grid">
+      <div className="agents-admin-grid">
         {agents.map((agent) => (
           <div
             key={agent.id}
-            className="agent-card"
+            className="agent-admin-card"
             onClick={() => navigate(`/agents/${agent.slug || agent.id}/session/new`)}
             role="button"
             tabIndex={0}
@@ -34,14 +34,22 @@ export function AgentsHome() {
               }
             }}
           >
-            <div className="agent-card-icon">🤖</div>
-            <h3 className="agent-card-title">{agent.name}</h3>
-            <p className="agent-card-description">
+            <div className="agent-admin-card-header">
+              <h3>{agent.name}</h3>
+              <span className={`agent-status ${agent.isActive ? 'active' : 'inactive'}`}>
+                {agent.isActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            <p className="agent-slug">@{agent.slug}</p>
+            <p className="agent-description">
               {typeof agent.description === 'string'
                 ? agent.description
                 : agent.description
                   ? JSON.stringify(agent.description)
                   : 'No description available'}
+            </p>
+            <p className="agent-tools">
+              Tools: {agent.allowedTools.length > 0 ? agent.allowedTools.join(', ') : 'None'}
             </p>
           </div>
         ))}
