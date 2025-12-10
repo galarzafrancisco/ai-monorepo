@@ -48,25 +48,31 @@
   letter-spacing: 0.5px;
 }
 
-.agents-sidebar-button {
-  width: 100%;
-  padding: 10px 12px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+.agents-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agents-nav-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2c3e50;
   cursor: pointer;
-  transition: background 0.2s ease;
-  text-align: left;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.agents-sidebar-button:hover {
+.agents-nav-item:hover {
+  background: #f8f9fa;
+}
+
+.agents-nav-item.active {
   background: #2563eb;
+  color: #ffffff;
 }
 
 .agents-history-list {
@@ -81,11 +87,16 @@
   font-size: 13px;
   color: #2c3e50;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .agents-history-item:hover {
   background: #f8f9fa;
+}
+
+.agents-history-item.active {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 /* Agents Right Sidebar (Resources) */
