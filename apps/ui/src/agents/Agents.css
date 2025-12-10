@@ -171,13 +171,13 @@
 
 /* Agents Home Page */
 .agents-home {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 24px;
 }
 
 .agents-home-header {
   margin-bottom: 32px;
-  text-align: center;
 }
 
 .agents-home-header h2 {
