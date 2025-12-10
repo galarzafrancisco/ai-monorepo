@@ -28,6 +28,7 @@ import {
 } from './events/chat.events';
 import { randomUUID } from 'crypto';
 import { AdkService } from '../adk/adk.service';
+import { LlmHelperService } from '../llm-helper/llm-helper.service';
 
 @Injectable()
 export class ChatService {
@@ -42,6 +43,7 @@ export class ChatService {
     private readonly agentRepository: Repository<AgentEntity>,
     private readonly eventEmitter: EventEmitter2,
     private readonly adkService: AdkService,
+    private readonly llmHelperService: LlmHelperService,
   ) {}
 
   async createSession(input: CreateSessionInput): Promise<SessionResult> {
@@ -410,6 +412,9 @@ export class ChatService {
     }
 
     try {
+      // Check if we should generate a title for this message
+      const shouldGenerateTitle = this.shouldGenerateTitle(session);
+
       // Send message to ADK
       const response = await this.adkService.run({
         app_name: session.agent.slug,
@@ -425,6 +430,11 @@ export class ChatService {
       // Update lastMessageAt
       session.lastMessageAt = new Date();
       await this.sessionRepository.save(session);
+
+      // Generate and update title if needed
+      if (shouldGenerateTitle) {
+        await this.generateAndUpdateTitle(session, message);
+      }
 
       return { events: response };
     } catch (error) {
@@ -456,6 +466,9 @@ export class ChatService {
     }
 
     try {
+      // Check if we should generate a title for this message
+      const shouldGenerateTitle = this.shouldGenerateTitle(session);
+
       // Send message to ADK with streaming
       const stream = this.adkService.runSSE({
         app_name: session.agent.slug,
@@ -475,6 +488,11 @@ export class ChatService {
       // Update lastMessageAt after stream completes
       session.lastMessageAt = new Date();
       await this.sessionRepository.save(session);
+
+      // Generate and update title if needed
+      if (shouldGenerateTitle) {
+        await this.generateAndUpdateTitle(session, message);
+      }
     } catch (error) {
       this.logger.error(
         `Failed to send streaming message to ADK for session ${sessionId}: ${error}`,
@@ -482,6 +500,44 @@ export class ChatService {
       throw new Error(
         `Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
+    }
+  }
+
+  private shouldGenerateTitle(session: SessionEntity): boolean {
+    // Check if the title is still the default one (contains "Chat with")
+    return session.title.startsWith('Chat with');
+  }
+
+  private async generateAndUpdateTitle(
+    session: SessionEntity,
+    message: string,
+  ): Promise<void> {
+    try {
+      this.logger.log(
+        `Generating title for session ${session.id} from message`,
+      );
+
+      // Generate title using LLM helper
+      const generatedTitle = await this.llmHelperService.generateTitle(message);
+
+      // Update session with new title
+      session.title = generatedTitle;
+      const updatedSession = await this.sessionRepository.save(session);
+
+      // Emit session updated event so WebSocket listeners can notify clients
+      this.eventEmitter.emit(
+        'session.updated',
+        new SessionUpdatedEvent(updatedSession),
+      );
+
+      this.logger.log(
+        `Successfully updated session ${session.id} with generated title: ${generatedTitle}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate and update title for session ${session.id}: ${error}`,
+      );
+      // Don't throw - title generation failure shouldn't break message sending
     }
   }
 }
