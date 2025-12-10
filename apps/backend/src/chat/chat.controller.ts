@@ -122,10 +122,11 @@ export class ChatController {
     return await this.chatService.sendMessage(params.id, dto.message);
   }
 
-  @Sse(':id/messages/stream')
+  @Post(':id/messages/stream')
   @ApiOperation({
     summary: 'Send a message to the ADK agent with streaming response',
   })
+  @Sse()
   async sendMessageStream(
     @Param() params: SessionParamsDto,
     @Body() dto: ChatSendMessageDto,
