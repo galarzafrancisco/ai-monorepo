@@ -7,11 +7,13 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { ChatGateway } from './chat.gateway';
 import { AdkModule } from '../adk/adk.module';
+import { LlmHelperModule } from '../llm-helper/llm-helper.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SessionEntity, TaskEntity, AgentEntity]),
     AdkModule,
+    LlmHelperModule,
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatGateway],

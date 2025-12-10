@@ -13,6 +13,7 @@ import { AgentsModule } from './agents/agents.module';
 import { ChatModule } from './chat/chat.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
 import { AdkModule } from './adk/adk.module';
+import { LlmHelperModule } from './llm-helper/llm-helper.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AdkModule } from './adk/adk.module';
     ChatModule,
     IdentityProviderModule,
     AdkModule,
+    LlmHelperModule,
   ],
   controllers: [AppController],
   providers: [AppService],
