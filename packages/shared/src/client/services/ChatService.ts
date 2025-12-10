@@ -148,7 +148,7 @@ export class ChatService {
         requestBody: ChatSendMessageDto,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
-            method: 'GET',
+            method: 'POST',
             url: '/api/v1/chat/sessions/{id}/messages/stream',
             path: {
                 'id': id,

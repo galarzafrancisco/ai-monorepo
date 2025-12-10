@@ -980,10 +980,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Send a message to the ADK agent with streaming response */
-        get: operations["ChatController_sendMessageStream"];
+        get?: never;
         put?: never;
-        post?: never;
+        /** Send a message to the ADK agent with streaming response */
+        post: operations["ChatController_sendMessageStream"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5070,7 +5070,7 @@ export interface operations {
             };
         };
         responses: {
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

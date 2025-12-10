@@ -3125,7 +3125,7 @@
       }
     },
     "/api/v1/chat/sessions/{id}/messages/stream": {
-      "get": {
+      "post": {
         "operationId": "ChatController_sendMessageStream",
         "parameters": [
           {
@@ -3150,7 +3150,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": ""
           }
         },
