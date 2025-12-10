@@ -79,7 +79,7 @@ export class ChatService {
 
     const session = this.sessionRepository.create({
       adkSessionId,
-      agentId: input.agentId,
+      agentId: agent.id,
       title,
       project: input.project ?? null,
       isArchived: false,
