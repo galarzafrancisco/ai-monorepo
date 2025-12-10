@@ -45,6 +45,9 @@ export function AgentsWithSidebar() {
     setAgentsSidebarCollapsed(!agentsSidebarCollapsed);
   };
 
+  const isAdminActive = window.location.pathname.includes('/agents/admin');
+  const isAgentsHomeActive = window.location.pathname === '/agents' || window.location.pathname === '/agents/';
+
   return (
     <div className="agents-with-sidebar">
       <aside className={`sidebar-app-specific ${agentsSidebarCollapsed ? 'collapsed' : ''}`}>
@@ -55,16 +58,38 @@ export function AgentsWithSidebar() {
                 <h2 className="agents-sidebar-title">🤖 Agents</h2>
               </div>
 
-              {/* Admin Section */}
+              {/* Navigation Section */}
               <div className="agents-sidebar-section">
-                <button
-                  className="agents-sidebar-button"
-                  type="button"
-                  onClick={() => navigate('/agents/admin')}
-                  title="Admin"
-                >
-                  ⚙️ Admin
-                </button>
+                <div className="agents-nav-list">
+                  <div
+                    className={`agents-nav-item ${isAgentsHomeActive ? 'active' : ''}`}
+                    onClick={() => navigate('/agents')}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        navigate('/agents');
+                      }
+                    }}
+                    title="Agents"
+                  >
+                    🤖 Agents
+                  </div>
+                  <div
+                    className={`agents-nav-item ${isAdminActive ? 'active' : ''}`}
+                    onClick={() => navigate('/agents/admin')}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        navigate('/agents/admin');
+                      }
+                    }}
+                    title="Admin"
+                  >
+                    ⚙️ Admin
+                  </div>
+                </div>
               </div>
 
               {/* History Section */}
