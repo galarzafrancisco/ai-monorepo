@@ -5,6 +5,7 @@ import { TaskEntity } from '../taskeroo/task.entity';
 import { AgentEntity } from '../agents/agent.entity';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
+import { ChatGateway } from './chat.gateway';
 import { AdkModule } from '../adk/adk.module';
 
 @Module({
@@ -13,7 +14,7 @@ import { AdkModule } from '../adk/adk.module';
     AdkModule,
   ],
   controllers: [ChatController],
-  providers: [ChatService],
+  providers: [ChatService, ChatGateway],
   exports: [ChatService],
 })
 export class ChatModule {}
