@@ -720,6 +720,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * RFC 8693 Token Exchange Endpoint
+         * @description Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.
+         */
+        post: operations["AuthorizationController_tokenExchange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/callback": {
         parameters: {
             query?: never;
@@ -1737,6 +1757,11 @@ export interface components {
              */
             friendlyName: string;
             /**
+             * @description Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
+             * @example google-oauth
+             */
+            providedId?: string;
+            /**
              * @description OAuth client ID for the downstream provider
              * @example github_client_abc123
              */
@@ -1810,6 +1835,11 @@ export interface components {
              * @example GitHub OAuth Connection
              */
             friendlyName?: string;
+            /**
+             * @description Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
+             * @example google-oauth
+             */
+            providedId?: string;
             /**
              * @description OAuth client ID for the downstream provider
              * @example github_client_abc123
@@ -2191,6 +2221,8 @@ export interface components {
              */
             version: Record<string, never>;
         };
+        TokenExchangeRequestDto: Record<string, never>;
+        TokenExchangeResponseDto: Record<string, never>;
         JwkResponseDto: {
             /**
              * @description Key type, for example RSA or EC.
@@ -4567,6 +4599,61 @@ export interface operations {
             };
             /** @description Invalid introspection request parameters */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_tokenExchange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenExchangeRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Token exchange successful - returns downstream access token */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenExchangeResponseDto"];
+                };
+            };
+            /** @description Invalid token exchange request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid or expired MCP JWT */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Insufficient scope - requested scope not entitled */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
