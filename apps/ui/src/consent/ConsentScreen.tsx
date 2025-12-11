@@ -141,41 +141,13 @@ export function ConsentScreen() {
           <div className="oauth-icon">🔐</div>
           <h1>Authorization Request</h1>
           <p className="subtitle">
-            <strong>{flowDetails.client.clientName}</strong> is requesting access to
+            Review the following authorization request carefully
           </p>
         </div>
 
         <div className="consent-details">
           <div className="detail-section">
-            <h2>MCP Server</h2>
-            <div className="server-info">
-              <div className="server-name">{flowDetails.server.name}</div>
-              <div className="server-id">{flowDetails.server.providedId}</div>
-            </div>
-          </div>
-
-          <div className="detail-section">
-            <h2>Resource</h2>
-            <div className="resource-info">
-              <code>{flowDetails.resource}</code>
-            </div>
-          </div>
-
-          {flowDetails.client.scopes && flowDetails.client.scopes.length > 0 && (
-            <div className="detail-section">
-              <h2>Requested Permissions</h2>
-              <ul className="scopes-list">
-                {flowDetails.client.scopes.map((scope) => (
-                  <li key={scope}>
-                    <span className="scope-badge">{scope}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="detail-section">
-            <h2>Client Information</h2>
+            <h2>WHO is requesting access</h2>
             <div className="client-info">
               <div className="info-row">
                 <span className="label">Client Name:</span>
@@ -185,11 +157,54 @@ export function ConsentScreen() {
                 <span className="label">Client ID:</span>
                 <span className="value"><code>{flowDetails.client.clientId}</code></span>
               </div>
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <h2>WHAT access is requested</h2>
+            {flowDetails.client.scopes && flowDetails.client.scopes.length > 0 ? (
+              <>
+                <ul className="scopes-list">
+                  {flowDetails.client.scopes.map((scope) => (
+                    <li key={scope}>
+                      <span className="scope-badge">{scope}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p style={{ marginTop: '12px', fontSize: '13px', color: '#7f8c8d', marginBottom: 0 }}>
+                  These permissions determine what the client can do on your behalf.
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: 0 }}>
+                No specific permissions requested.
+              </p>
+            )}
+          </div>
+
+          <div className="detail-section">
+            <h2>WHERE access is granted</h2>
+            <div className="server-info">
+              <div className="server-name">{flowDetails.server.name}</div>
+              <div className="server-id">Server ID: {flowDetails.server.providedId}</div>
+            </div>
+            <div className="resource-info" style={{ marginTop: '16px' }}>
+              <div style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '8px' }}>Resource:</div>
+              <code>{flowDetails.resource}</code>
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <h2>Redirect Information</h2>
+            <div className="client-info">
               <div className="info-row">
                 <span className="label">Redirect URI:</span>
                 <span className="value"><code>{flowDetails.redirectUri}</code></span>
               </div>
             </div>
+            <p style={{ marginTop: '12px', fontSize: '13px', color: '#7f8c8d', marginBottom: 0 }}>
+              After authorization, you will be redirected to this URL.
+            </p>
           </div>
         </div>
 
@@ -216,8 +231,8 @@ export function ConsentScreen() {
 
         <div className="consent-footer">
           <p>
-            By approving, you allow <strong>{flowDetails.client.clientName}</strong> to access the
-            specified MCP server on your behalf.
+            By approving, you authorize <strong>{flowDetails.client.clientName}</strong> to access the
+            specified resources with the requested permissions.
           </p>
           <HomeLink />
         </div>
