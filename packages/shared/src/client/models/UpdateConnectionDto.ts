@@ -8,6 +8,10 @@ export type UpdateConnectionDto = {
      */
     friendlyName?: string;
     /**
+     * Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
+     */
+    providedId?: string;
+    /**
      * OAuth client ID for the downstream provider
      */
     clientId?: string;
