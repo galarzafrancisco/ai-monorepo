@@ -18,14 +18,10 @@ import { AdkService } from './adk.service';
 import { CreateAdkSessionDto } from './dto/create-adk-session.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { SessionParamsDto } from './dto/session-params.dto';
-import {
-  ChatEvent,
-  CreateSessionResponse,
-  GetSessionResponse,
-  ListAppsResponse,
-  ListSessionsResponse,
-  SendMessageResponse,
-} from './dto/adk.types';
+import { ListAppsResponseDto } from './dto/list-apps-response.dto';
+import { AdkSessionResponseDto } from './dto/adk-session-response.dto';
+import { AdkListSessionsResponseDto } from './dto/list-sessions-response.dto';
+import { AdkSendMessageResponseDto } from './dto/adk-send-message-response.dto';
 
 @ApiTags('ADK')
 @Controller('adk')
@@ -34,34 +30,36 @@ export class AdkController {
 
   @Get('apps')
   @ApiOperation({ summary: 'List all available ADK apps' })
-  @ApiOkResponse({ type: [String] })
-  async listApps(): Promise<ListAppsResponse> {
-    return this.adkService.listApps();
+  @ApiOkResponse({ type: ListAppsResponseDto })
+  async listApps(): Promise<ListAppsResponseDto> {
+    const apps = await this.adkService.listApps();
+    return { apps };
   }
 
   @Post('sessions')
   @ApiOperation({ summary: 'Create a new ADK session' })
-  @ApiCreatedResponse()
+  @ApiCreatedResponse({ type: AdkSessionResponseDto })
   async createSession(
     @Body() dto: CreateAdkSessionDto,
-  ): Promise<CreateSessionResponse> {
+  ): Promise<AdkSessionResponseDto> {
     return this.adkService.createSession(dto.appId, dto.userId, dto.sessionId);
   }
 
   @Get('apps/:appId/users/:userId/sessions')
   @ApiOperation({ summary: 'List sessions for an app and user' })
-  @ApiOkResponse()
+  @ApiOkResponse({ type: AdkListSessionsResponseDto })
   async listSessions(
     @Param('appId') appId: string,
     @Param('userId') userId: string,
-  ): Promise<ListSessionsResponse> {
-    return this.adkService.listSessions(appId, userId);
+  ): Promise<AdkListSessionsResponseDto> {
+    const sessions = await this.adkService.listSessions(appId, userId);
+    return { sessions };
   }
 
   @Get('apps/:appId/users/:userId/sessions/:sessionId')
   @ApiOperation({ summary: 'Get a specific session' })
-  @ApiOkResponse()
-  async getSession(@Param() params: SessionParamsDto): Promise<GetSessionResponse> {
+  @ApiOkResponse({ type: AdkSessionResponseDto })
+  async getSession(@Param() params: SessionParamsDto): Promise<AdkSessionResponseDto> {
     return this.adkService.getSession(
       params.appId,
       params.userId,
@@ -71,9 +69,9 @@ export class AdkController {
 
   @Post('messages')
   @ApiOperation({ summary: 'Send a message to an ADK agent (non-streaming)' })
-  @ApiOkResponse()
-  async sendMessage(@Body() dto: SendMessageDto): Promise<SendMessageResponse> {
-    return this.adkService.run({
+  @ApiOkResponse({ type: AdkSendMessageResponseDto })
+  async sendMessage(@Body() dto: SendMessageDto): Promise<AdkSendMessageResponseDto> {
+    const events = await this.adkService.run({
       app_name: dto.appId,
       user_id: dto.userId,
       session_id: dto.sessionId,
@@ -83,6 +81,7 @@ export class AdkController {
       },
       streaming: false,
     });
+    return { events };
   }
 
   @Sse('messages/stream')

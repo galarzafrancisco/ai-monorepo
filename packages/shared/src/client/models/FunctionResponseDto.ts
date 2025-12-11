@@ -3,8 +3,17 @@
 /* tslint:disable */
 /* eslint-disable */
 export type FunctionResponseDto = {
-    id: string;
-    name: string;
-    response: Record<string, any>;
+    /**
+     * Unique identifier for the function response
+     */
+    id?: string;
+    /**
+     * Name of the function that was called
+     */
+    name?: string;
+    /**
+     * Response from the function execution
+     */
+    response?: Record<string, any>;
 };
 

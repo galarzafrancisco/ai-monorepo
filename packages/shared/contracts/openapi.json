@@ -2765,10 +2765,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
+                  "$ref": "#/components/schemas/ListAppsResponseDto"
                 }
               }
             }
@@ -2796,7 +2793,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdkSessionResponseDto"
+                }
+              }
+            }
           }
         },
         "summary": "Create a new ADK session",
@@ -2828,7 +2832,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdkListSessionsResponseDto"
+                }
+              }
+            }
           }
         },
         "summary": "List sessions for an app and user",
@@ -2871,7 +2882,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdkSessionResponseDto"
+                }
+              }
+            }
           }
         },
         "summary": "Get a specific session",
@@ -2896,7 +2914,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdkSendMessageResponseDto"
+                }
+              }
+            }
           }
         },
         "summary": "Send a message to an ADK agent (non-streaming)",
@@ -5361,6 +5386,25 @@
           }
         }
       },
+      "ListAppsResponseDto": {
+        "type": "object",
+        "properties": {
+          "apps": {
+            "description": "List of available ADK app names",
+            "example": [
+              "buddy",
+              "taskeroo-agent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "apps"
+        ]
+      },
       "CreateAdkSessionDto": {
         "type": "object",
         "properties": {
@@ -5380,6 +5424,237 @@
         "required": [
           "appId",
           "userId"
+        ]
+      },
+      "FunctionCallDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the function call",
+            "example": "call_123"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the function being called",
+            "example": "taskeroo.createTask"
+          },
+          "args": {
+            "type": "object",
+            "description": "Arguments passed to the function",
+            "example": {
+              "name": "My Task",
+              "description": "Task description"
+            }
+          }
+        }
+      },
+      "FunctionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the function response",
+            "example": "call_123"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the function that was called",
+            "example": "taskeroo.createTask"
+          },
+          "response": {
+            "type": "object",
+            "description": "Response from the function execution",
+            "example": {
+              "result": "Task created successfully"
+            }
+          }
+        }
+      },
+      "ChatMessagePartDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Text content of the message part",
+            "example": "Hello, how can I help you?"
+          },
+          "functionCall": {
+            "description": "Function call data if this part is a function call",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionCallDto"
+              }
+            ]
+          },
+          "functionResponse": {
+            "description": "Function response data if this part is a function response",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionResponseDto"
+              }
+            ]
+          }
+        }
+      },
+      "ChatMessageContentDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Role of the message author (user, agent, system)",
+            "example": "agent"
+          },
+          "parts": {
+            "description": "Parts of the message content",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessagePartDto"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "parts"
+        ]
+      },
+      "UsageMetadataDto": {
+        "type": "object",
+        "properties": {
+          "promptTokenCount": {
+            "type": "number",
+            "description": "Number of tokens in the prompt",
+            "example": 150
+          },
+          "candidatesTokenCount": {
+            "type": "number",
+            "description": "Number of tokens in the candidates",
+            "example": 200
+          },
+          "totalTokenCount": {
+            "type": "number",
+            "description": "Total token count",
+            "example": 350
+          }
+        },
+        "required": [
+          "promptTokenCount",
+          "candidatesTokenCount",
+          "totalTokenCount"
+        ]
+      },
+      "ChatEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the chat event",
+            "example": "evt_123e4567"
+          },
+          "timestamp": {
+            "type": "number",
+            "description": "Unix timestamp when the event occurred",
+            "example": 1701234567890
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the event (user ID or agent ID)",
+            "example": "user-123"
+          },
+          "content": {
+            "description": "Content of the chat message",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatMessageContentDto"
+              }
+            ]
+          },
+          "partial": {
+            "type": "boolean",
+            "description": "Whether this is a partial event (streaming)",
+            "example": false
+          },
+          "invocationId": {
+            "type": "string",
+            "description": "Invocation identifier for the chat turn",
+            "example": "inv_123e4567"
+          },
+          "usageMetadata": {
+            "description": "Token usage metadata for the event",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UsageMetadataDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "timestamp",
+          "author",
+          "content"
+        ]
+      },
+      "AdkSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the session",
+            "example": "session-123e4567"
+          },
+          "appName": {
+            "type": "string",
+            "description": "Name of the ADK app",
+            "example": "buddy"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID associated with the session",
+            "example": "user-123"
+          },
+          "state": {
+            "type": "object",
+            "description": "Session state data",
+            "example": {
+              "conversationContext": "greeting"
+            }
+          },
+          "events": {
+            "description": "List of chat events in the session",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatEventDto"
+            }
+          },
+          "lastUpdateTime": {
+            "type": "number",
+            "description": "Unix timestamp of the last update to the session",
+            "example": 1701234567890
+          }
+        },
+        "required": [
+          "id",
+          "appName",
+          "userId",
+          "state",
+          "events",
+          "lastUpdateTime"
+        ]
+      },
+      "AdkListSessionsResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "description": "List of ADK sessions",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdkSessionResponseDto"
+            }
+          }
+        },
+        "required": [
+          "sessions"
         ]
       },
       "SendMessageDto": {
@@ -5407,6 +5682,21 @@
           "userId",
           "sessionId",
           "message"
+        ]
+      },
+      "AdkSendMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "description": "List of chat events generated from sending the message",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatEventDto"
+            }
+          }
+        },
+        "required": [
+          "events"
         ]
       },
       "CreateSessionDto": {
@@ -5592,95 +5882,6 @@
         },
         "required": [
           "message"
-        ]
-      },
-      "FunctionCallDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "args": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "args"
-        ]
-      },
-      "FunctionResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "response": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "response"
-        ]
-      },
-      "ChatMessagePartDto": {
-        "type": "object",
-        "properties": {
-          "text": {
-            "type": "string"
-          },
-          "functionCall": {
-            "$ref": "#/components/schemas/FunctionCallDto"
-          },
-          "functionResponse": {
-            "$ref": "#/components/schemas/FunctionResponseDto"
-          }
-        }
-      },
-      "ChatMessageContentDto": {
-        "type": "object",
-        "properties": {
-          "role": {
-            "type": "string"
-          },
-          "parts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChatMessagePartDto"
-            }
-          }
-        },
-        "required": [
-          "role",
-          "parts"
-        ]
-      },
-      "UsageMetadataDto": {
-        "type": "object",
-        "properties": {
-          "promptTokenCount": {
-            "type": "number"
-          },
-          "candidatesTokenCount": {
-            "type": "number"
-          },
-          "totalTokenCount": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "promptTokenCount",
-          "candidatesTokenCount",
-          "totalTokenCount"
         ]
       },
       "ChatMessageEventDto": {

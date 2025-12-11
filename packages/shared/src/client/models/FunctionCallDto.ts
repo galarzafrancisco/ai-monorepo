@@ -3,8 +3,17 @@
 /* tslint:disable */
 /* eslint-disable */
 export type FunctionCallDto = {
-    id: string;
-    name: string;
-    args: Record<string, any>;
+    /**
+     * Unique identifier for the function call
+     */
+    id?: string;
+    /**
+     * Name of the function being called
+     */
+    name?: string;
+    /**
+     * Arguments passed to the function
+     */
+    args?: Record<string, any>;
 };
 

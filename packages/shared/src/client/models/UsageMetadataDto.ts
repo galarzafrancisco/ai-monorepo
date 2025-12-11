@@ -3,8 +3,17 @@
 /* tslint:disable */
 /* eslint-disable */
 export type UsageMetadataDto = {
+    /**
+     * Number of tokens in the prompt
+     */
     promptTokenCount: number;
+    /**
+     * Number of tokens in the candidates
+     */
     candidatesTokenCount: number;
+    /**
+     * Total token count
+     */
     totalTokenCount: number;
 };
 
