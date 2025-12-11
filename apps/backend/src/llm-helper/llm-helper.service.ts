@@ -8,6 +8,10 @@ export class LlmHelperService {
   private readonly ollama = new Ollama({ host: this.host });
   private readonly model = 'qwen2.5:0.5b';
 
+  constructor() {
+    void this.ensureModelAvailable();
+  }
+
   private async ensureModelAvailable(): Promise<void> {
     try {
       const { models } = await this.ollama.list();
@@ -36,8 +40,6 @@ export class LlmHelperService {
     try {
       this.logger.debug(`Generating title for message: ${message.substring(0, 50)}...`);
 
-      await this.ensureModelAvailable();
-
       const response = await this.ollama.chat({
         model: this.model,
         messages: [
@@ -54,6 +56,7 @@ export class LlmHelperService {
       return title;
     } catch (error) {
       this.logger.error('Failed to generate title', error);
+      void this.ensureModelAvailable();
       // Fallback: return a truncated version of the message
       return message.substring(0, 50) + (message.length > 50 ? '...' : '');
     }
