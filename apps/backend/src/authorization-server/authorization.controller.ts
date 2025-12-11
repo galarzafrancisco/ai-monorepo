@@ -22,12 +22,15 @@ import {
 import type { Response } from 'express';
 import { AuthorizationService } from './authorization.service';
 import { TokenService } from './token.service';
+import { TokenExchangeService } from './token-exchange.service';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { IntrospectTokenRequestDto } from './dto/introspect-token-request.dto';
 import { IntrospectTokenResponseDto } from './dto/introspect-token-response.dto';
+import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
+import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { getFrontendPath } from '../config/frontend.config';
@@ -39,6 +42,7 @@ export class AuthorizationController {
   constructor(
     private readonly authorizationService: AuthorizationService,
     private readonly tokenService: TokenService,
+    private readonly tokenExchangeService: TokenExchangeService,
   ) {}
 
   @Get('authorize/mcp/:serverIdentifier/:version')
@@ -192,6 +196,40 @@ export class AuthorizationController {
     @Param('version') version: string,
   ): Promise<IntrospectTokenResponseDto> {
     return this.tokenService.introspectToken(introspectRequest);
+  }
+
+  @Post('token-exchange/mcp/:serverIdentifier/:version')
+  @ApiOperation({
+    summary: 'RFC 8693 Token Exchange Endpoint',
+    description:
+      'Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.',
+  })
+  @ApiOkResponse({
+    description: 'Token exchange successful - returns downstream access token',
+    type: TokenExchangeResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid token exchange request parameters',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired MCP JWT',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient scope - requested scope not entitled',
+  })
+  @ApiNotFoundResponse({
+    description: 'Connection not found',
+  })
+  async tokenExchange(
+    @Body() tokenExchangeRequest: TokenExchangeRequestDto,
+    @Param('serverIdentifier') serverIdentifier: string,
+    @Param('version') version: string,
+  ): Promise<TokenExchangeResponseDto> {
+    return this.tokenExchangeService.exchangeToken(
+      tokenExchangeRequest,
+      serverIdentifier,
+    );
   }
 
   @Get('callback')
