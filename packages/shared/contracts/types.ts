@@ -2501,6 +2501,16 @@ export interface components {
              */
             concurrencyLimit?: number;
         };
+        ListAppsResponseDto: {
+            /**
+             * @description List of available ADK app names
+             * @example [
+             *       "buddy",
+             *       "taskeroo-agent"
+             *     ]
+             */
+            apps: string[];
+        };
         CreateAdkSessionDto: {
             /** @description App ID */
             appId: string;
@@ -2508,6 +2518,148 @@ export interface components {
             userId: string;
             /** @description Optional session ID */
             sessionId?: string;
+        };
+        FunctionCallDto: {
+            /**
+             * @description Unique identifier for the function call
+             * @example call_123
+             */
+            id?: string;
+            /**
+             * @description Name of the function being called
+             * @example taskeroo.createTask
+             */
+            name?: string;
+            /**
+             * @description Arguments passed to the function
+             * @example {
+             *       "name": "My Task",
+             *       "description": "Task description"
+             *     }
+             */
+            args?: Record<string, never>;
+        };
+        FunctionResponseDto: {
+            /**
+             * @description Unique identifier for the function response
+             * @example call_123
+             */
+            id?: string;
+            /**
+             * @description Name of the function that was called
+             * @example taskeroo.createTask
+             */
+            name?: string;
+            /**
+             * @description Response from the function execution
+             * @example {
+             *       "result": "Task created successfully"
+             *     }
+             */
+            response?: Record<string, never>;
+        };
+        ChatMessagePartDto: {
+            /**
+             * @description Text content of the message part
+             * @example Hello, how can I help you?
+             */
+            text?: string;
+            /** @description Function call data if this part is a function call */
+            functionCall?: components["schemas"]["FunctionCallDto"];
+            /** @description Function response data if this part is a function response */
+            functionResponse?: components["schemas"]["FunctionResponseDto"];
+        };
+        ChatMessageContentDto: {
+            /**
+             * @description Role of the message author (user, agent, system)
+             * @example agent
+             */
+            role: string;
+            /** @description Parts of the message content */
+            parts: components["schemas"]["ChatMessagePartDto"][];
+        };
+        UsageMetadataDto: {
+            /**
+             * @description Number of tokens in the prompt
+             * @example 150
+             */
+            promptTokenCount: number;
+            /**
+             * @description Number of tokens in the candidates
+             * @example 200
+             */
+            candidatesTokenCount: number;
+            /**
+             * @description Total token count
+             * @example 350
+             */
+            totalTokenCount: number;
+        };
+        ChatEventDto: {
+            /**
+             * @description Unique identifier for the chat event
+             * @example evt_123e4567
+             */
+            id: string;
+            /**
+             * @description Unix timestamp when the event occurred
+             * @example 1701234567890
+             */
+            timestamp: number;
+            /**
+             * @description Author of the event (user ID or agent ID)
+             * @example user-123
+             */
+            author: string;
+            /** @description Content of the chat message */
+            content: components["schemas"]["ChatMessageContentDto"];
+            /**
+             * @description Whether this is a partial event (streaming)
+             * @example false
+             */
+            partial?: boolean;
+            /**
+             * @description Invocation identifier for the chat turn
+             * @example inv_123e4567
+             */
+            invocationId?: string;
+            /** @description Token usage metadata for the event */
+            usageMetadata?: components["schemas"]["UsageMetadataDto"];
+        };
+        AdkSessionResponseDto: {
+            /**
+             * @description Unique identifier for the session
+             * @example session-123e4567
+             */
+            id: string;
+            /**
+             * @description Name of the ADK app
+             * @example buddy
+             */
+            appName: string;
+            /**
+             * @description User ID associated with the session
+             * @example user-123
+             */
+            userId: string;
+            /**
+             * @description Session state data
+             * @example {
+             *       "conversationContext": "greeting"
+             *     }
+             */
+            state: Record<string, never>;
+            /** @description List of chat events in the session */
+            events: components["schemas"]["ChatEventDto"][];
+            /**
+             * @description Unix timestamp of the last update to the session
+             * @example 1701234567890
+             */
+            lastUpdateTime: number;
+        };
+        AdkListSessionsResponseDto: {
+            /** @description List of ADK sessions */
+            sessions: components["schemas"]["AdkSessionResponseDto"][];
         };
         SendMessageDto: {
             /** @description App ID (agent name) */
@@ -2518,6 +2670,10 @@ export interface components {
             sessionId: string;
             /** @description Message content */
             message: string;
+        };
+        AdkSendMessageResponseDto: {
+            /** @description List of chat events generated from sending the message */
+            events: components["schemas"]["ChatEventDto"][];
         };
         CreateSessionDto: {
             /**
@@ -2649,30 +2805,6 @@ export interface components {
              * @example Hello, how can you help me today?
              */
             message: string;
-        };
-        FunctionCallDto: {
-            id: string;
-            name: string;
-            args: Record<string, never>;
-        };
-        FunctionResponseDto: {
-            id: string;
-            name: string;
-            response: Record<string, never>;
-        };
-        ChatMessagePartDto: {
-            text?: string;
-            functionCall?: components["schemas"]["FunctionCallDto"];
-            functionResponse?: components["schemas"]["FunctionResponseDto"];
-        };
-        ChatMessageContentDto: {
-            role: string;
-            parts: components["schemas"]["ChatMessagePartDto"][];
-        };
-        UsageMetadataDto: {
-            promptTokenCount: number;
-            candidatesTokenCount: number;
-            totalTokenCount: number;
         };
         ChatMessageEventDto: {
             id: string;
@@ -4880,7 +5012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": components["schemas"]["ListAppsResponseDto"];
                 };
             };
         };
@@ -4902,7 +5034,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdkSessionResponseDto"];
+                };
             };
         };
     };
@@ -4922,7 +5056,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdkListSessionsResponseDto"];
+                };
             };
         };
     };
@@ -4946,7 +5082,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdkSessionResponseDto"];
+                };
             };
         };
     };
@@ -4967,7 +5105,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdkSendMessageResponseDto"];
+                };
             };
         };
     };

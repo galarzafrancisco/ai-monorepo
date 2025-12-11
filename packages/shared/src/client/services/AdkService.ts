@@ -2,7 +2,11 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AdkListSessionsResponseDto } from '../models/AdkListSessionsResponseDto';
+import type { AdkSendMessageResponseDto } from '../models/AdkSendMessageResponseDto';
+import type { AdkSessionResponseDto } from '../models/AdkSessionResponseDto';
 import type { CreateAdkSessionDto } from '../models/CreateAdkSessionDto';
+import type { ListAppsResponseDto } from '../models/ListAppsResponseDto';
 import type { SendMessageDto } from '../models/SendMessageDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -10,10 +14,10 @@ import { request as __request } from '../core/request';
 export class AdkService {
     /**
      * List all available ADK apps
-     * @returns string
+     * @returns ListAppsResponseDto
      * @throws ApiError
      */
-    public static adkControllerListApps(): CancelablePromise<Array<string>> {
+    public static adkControllerListApps(): CancelablePromise<ListAppsResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/adk/apps',
@@ -22,12 +26,12 @@ export class AdkService {
     /**
      * Create a new ADK session
      * @param requestBody
-     * @returns any
+     * @returns AdkSessionResponseDto
      * @throws ApiError
      */
     public static adkControllerCreateSession(
         requestBody: CreateAdkSessionDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<AdkSessionResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/adk/sessions',
@@ -39,13 +43,13 @@ export class AdkService {
      * List sessions for an app and user
      * @param appId
      * @param userId
-     * @returns any
+     * @returns AdkListSessionsResponseDto
      * @throws ApiError
      */
     public static adkControllerListSessions(
         appId: string,
         userId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<AdkListSessionsResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/adk/apps/{appId}/users/{userId}/sessions',
@@ -60,14 +64,14 @@ export class AdkService {
      * @param appId App ID
      * @param userId User ID
      * @param sessionId Session ID
-     * @returns any
+     * @returns AdkSessionResponseDto
      * @throws ApiError
      */
     public static adkControllerGetSession(
         appId: string,
         userId: string,
         sessionId: string,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<AdkSessionResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/adk/apps/{appId}/users/{userId}/sessions/{sessionId}',
@@ -81,12 +85,12 @@ export class AdkService {
     /**
      * Send a message to an ADK agent (non-streaming)
      * @param requestBody
-     * @returns any
+     * @returns AdkSendMessageResponseDto
      * @throws ApiError
      */
     public static adkControllerSendMessage(
         requestBody: SendMessageDto,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<AdkSendMessageResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/adk/messages',
