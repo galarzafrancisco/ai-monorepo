@@ -90,7 +90,7 @@ export class AuthorizationServerService {
      * @param resource Resource server URL that the client wants to access
      * @param serverIdentifier
      * @param version
-     * @param scope Comma separated list of scopes
+     * @param scope Space-delimited list of scopes being requested
      * @returns void
      * @throws ApiError
      */
@@ -276,7 +276,7 @@ export class AuthorizationServerService {
      * @param code Authorization code from downstream OAuth provider
      * @param state State parameter that identifies the connection flow
      * @param error Error code if authorization failed
-     * @param scope Scopes that were granted
+     * @param scope Space-delimited list of scopes that were granted
      * @param errorDescription Error description if authorization failed
      * @returns void
      * @throws ApiError

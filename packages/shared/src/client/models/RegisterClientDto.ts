@@ -35,12 +35,33 @@ export type RegisterClientDto = {
      * Terms of service URI for the client registration
      */
     tos_uri?: string;
+    /**
+     * URL of the home page of the client
+     */
     client_uri?: string;
+    /**
+     * URL that references a logo for the client application
+     */
     logo_uri?: string;
+    /**
+     * URL that the client provides to the end-user to read about how the profile data will be used
+     */
     policy_uri?: string;
+    /**
+     * URL for the client JSON Web Key Set document. If specified, must not include jwks parameter
+     */
     jwks_uri?: string;
+    /**
+     * Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter
+     */
     jwks?: string;
+    /**
+     * Unique identifier string assigned by the client developer or software publisher
+     */
     software_id?: string;
+    /**
+     * Version identifier string for the client software
+     */
     software_version?: string;
 };
 export namespace RegisterClientDto {
