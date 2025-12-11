@@ -23,7 +23,8 @@ export class AuthorizationRequestDto {
   response_type!: ResponseType;
 
   @ApiPropertyOptional({
-    description: 'Comma separated list of scopes'
+    description: 'Space-delimited list of scopes being requested',
+    example: 'tasks:read tasks:write',
   })
   @IsString()
   scope?: string;

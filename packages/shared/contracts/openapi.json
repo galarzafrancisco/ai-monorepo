@@ -2051,8 +2051,9 @@
             "name": "scope",
             "required": false,
             "in": "query",
-            "description": "Comma separated list of scopes",
+            "description": "Space-delimited list of scopes being requested",
             "schema": {
+              "example": "tasks:read tasks:write",
               "type": "string"
             }
           },
@@ -2445,8 +2446,9 @@
             "name": "scope",
             "required": false,
             "in": "query",
-            "description": "Scopes that were granted",
+            "description": "Space-delimited list of scopes that were granted",
             "schema": {
+              "example": "tasks:read tasks:write",
               "type": "string"
             }
           },
@@ -4628,25 +4630,39 @@
             "example": "https://example.com/tos"
           },
           "client_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "URL of the home page of the client",
+            "example": "https://example.com"
           },
           "logo_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "URL that references a logo for the client application",
+            "example": "https://example.com/logo.png"
           },
           "policy_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "URL that the client provides to the end-user to read about how the profile data will be used",
+            "example": "https://example.com/privacy"
           },
           "jwks_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "URL for the client JSON Web Key Set document. If specified, must not include jwks parameter",
+            "example": "https://example.com/.well-known/jwks.json"
           },
           "jwks": {
-            "type": "string"
+            "type": "string",
+            "description": "Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter",
+            "example": "{\"keys\":[{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"key-1\",\"n\":\"...\",\"e\":\"AQAB\"}]}"
           },
           "software_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Unique identifier string assigned by the client developer or software publisher",
+            "example": "my-oauth-app-v1"
           },
           "software_version": {
-            "type": "string"
+            "type": "string",
+            "description": "Version identifier string for the client software",
+            "example": "1.0.0"
           }
         },
         "required": [
@@ -4993,11 +5009,82 @@
       },
       "TokenExchangeRequestDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "description": "Grant type for token exchange as defined in RFC 8693",
+            "enum": [
+              "urn:ietf:params:oauth:grant-type:token-exchange"
+            ],
+            "example": "urn:ietf:params:oauth:grant-type:token-exchange"
+          },
+          "subject_token": {
+            "type": "string",
+            "description": "The access token that represents the identity of the party on behalf of whom the request is being made",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "subject_token_type": {
+            "type": "string",
+            "description": "Type identifier for the subject_token as defined in RFC 8693",
+            "enum": [
+              "urn:ietf:params:oauth:token-type:access_token"
+            ],
+            "example": "urn:ietf:params:oauth:token-type:access_token"
+          },
+          "resource": {
+            "type": "string",
+            "description": "Resource server URL that the client wants to access with the exchanged token",
+            "example": "http://localhost:4001/"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Optional space-delimited list of scopes for the exchanged token",
+            "example": "tasks:read tasks:write"
+          }
+        },
+        "required": [
+          "grant_type",
+          "subject_token",
+          "subject_token_type",
+          "resource"
+        ]
       },
       "TokenExchangeResponseDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "The newly issued access token after successful exchange",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "issued_token_type": {
+            "type": "string",
+            "description": "Type identifier for the issued token as defined in RFC 8693",
+            "example": "urn:ietf:params:oauth:token-type:access_token"
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Type of token issued, always Bearer for MCP clients",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "number",
+            "description": "Lifetime of the access token in seconds",
+            "example": 3600
+          },
+          "scope": {
+            "type": "string",
+            "description": "Space-delimited list of scopes granted for the exchanged token",
+            "example": "tasks:read tasks:write"
+          }
+        },
+        "required": [
+          "access_token",
+          "issued_token_type",
+          "token_type",
+          "expires_in",
+          "scope"
+        ]
       },
       "JwkResponseDto": {
         "type": "object",
@@ -5024,7 +5111,8 @@
           },
           "n": {
             "type": "string",
-            "description": "RSA modulus encoded using base64url."
+            "description": "RSA modulus encoded using base64url.",
+            "example": "xGOr-H7A..."
           },
           "e": {
             "type": "string",
@@ -5033,11 +5121,13 @@
           },
           "x": {
             "type": "string",
-            "description": "Public coordinate X for EC keys encoded using base64url."
+            "description": "Public coordinate X for EC keys encoded using base64url.",
+            "example": "WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis"
           },
           "y": {
             "type": "string",
-            "description": "Public coordinate Y for EC keys encoded using base64url."
+            "description": "Public coordinate Y for EC keys encoded using base64url.",
+            "example": "y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE"
           },
           "crv": {
             "type": "string",

@@ -1984,12 +1984,40 @@ export interface components {
              * @example https://example.com/tos
              */
             tos_uri?: string;
+            /**
+             * @description URL of the home page of the client
+             * @example https://example.com
+             */
             client_uri?: string;
+            /**
+             * @description URL that references a logo for the client application
+             * @example https://example.com/logo.png
+             */
             logo_uri?: string;
+            /**
+             * @description URL that the client provides to the end-user to read about how the profile data will be used
+             * @example https://example.com/privacy
+             */
             policy_uri?: string;
+            /**
+             * @description URL for the client JSON Web Key Set document. If specified, must not include jwks parameter
+             * @example https://example.com/.well-known/jwks.json
+             */
             jwks_uri?: string;
+            /**
+             * @description Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter
+             * @example {"keys":[{"kty":"RSA","use":"sig","kid":"key-1","n":"...","e":"AQAB"}]}
+             */
             jwks?: string;
+            /**
+             * @description Unique identifier string assigned by the client developer or software publisher
+             * @example my-oauth-app-v1
+             */
             software_id?: string;
+            /**
+             * @description Version identifier string for the client software
+             * @example 1.0.0
+             */
             software_version?: string;
         };
         ClientRegistrationResponseDto: {
@@ -2221,8 +2249,62 @@ export interface components {
              */
             version: Record<string, never>;
         };
-        TokenExchangeRequestDto: Record<string, never>;
-        TokenExchangeResponseDto: Record<string, never>;
+        TokenExchangeRequestDto: {
+            /**
+             * @description Grant type for token exchange as defined in RFC 8693
+             * @example urn:ietf:params:oauth:grant-type:token-exchange
+             * @enum {string}
+             */
+            grant_type: "urn:ietf:params:oauth:grant-type:token-exchange";
+            /**
+             * @description The access token that represents the identity of the party on behalf of whom the request is being made
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            subject_token: string;
+            /**
+             * @description Type identifier for the subject_token as defined in RFC 8693
+             * @example urn:ietf:params:oauth:token-type:access_token
+             * @enum {string}
+             */
+            subject_token_type: "urn:ietf:params:oauth:token-type:access_token";
+            /**
+             * @description Resource server URL that the client wants to access with the exchanged token
+             * @example http://localhost:4001/
+             */
+            resource: string;
+            /**
+             * @description Optional space-delimited list of scopes for the exchanged token
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+        };
+        TokenExchangeResponseDto: {
+            /**
+             * @description The newly issued access token after successful exchange
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            access_token: string;
+            /**
+             * @description Type identifier for the issued token as defined in RFC 8693
+             * @example urn:ietf:params:oauth:token-type:access_token
+             */
+            issued_token_type: string;
+            /**
+             * @description Type of token issued, always Bearer for MCP clients
+             * @example Bearer
+             */
+            token_type: string;
+            /**
+             * @description Lifetime of the access token in seconds
+             * @example 3600
+             */
+            expires_in: number;
+            /**
+             * @description Space-delimited list of scopes granted for the exchanged token
+             * @example tasks:read tasks:write
+             */
+            scope: string;
+        };
         JwkResponseDto: {
             /**
              * @description Key type, for example RSA or EC.
@@ -2244,16 +2326,25 @@ export interface components {
              * @example RS256
              */
             alg: string;
-            /** @description RSA modulus encoded using base64url. */
+            /**
+             * @description RSA modulus encoded using base64url.
+             * @example xGOr-H7A...
+             */
             n?: string;
             /**
              * @description RSA public exponent encoded using base64url.
              * @example AQAB
              */
             e?: string;
-            /** @description Public coordinate X for EC keys encoded using base64url. */
+            /**
+             * @description Public coordinate X for EC keys encoded using base64url.
+             * @example WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis
+             */
             x?: string;
-            /** @description Public coordinate Y for EC keys encoded using base64url. */
+            /**
+             * @description Public coordinate Y for EC keys encoded using base64url.
+             * @example y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE
+             */
             y?: string;
             /**
              * @description Curve name for EC keys.
@@ -4541,7 +4632,7 @@ export interface operations {
             query: {
                 /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
                 response_type: "code";
-                /** @description Comma separated list of scopes */
+                /** @description Space-delimited list of scopes being requested */
                 scope?: string;
                 /** @description Client identifier issued during registration */
                 client_id: string;
@@ -4802,7 +4893,7 @@ export interface operations {
                 state: string;
                 /** @description Error code if authorization failed */
                 error?: string;
-                /** @description Scopes that were granted */
+                /** @description Space-delimited list of scopes that were granted */
                 scope?: string;
                 /** @description Error description if authorization failed */
                 error_description?: string;
