@@ -27,6 +27,7 @@ type McpConnection = {
   authorizeUrl: string;
   tokenUrl: string;
   friendlyName: string;
+  providedId?: string;
   createdAt: string;
   updatedAt: string;
 };
