@@ -6,8 +6,11 @@ import type { AddWikiTagDto } from '../models/AddWikiTagDto';
 import type { AppendPageDto } from '../models/AppendPageDto';
 import type { CreatePageDto } from '../models/CreatePageDto';
 import type { CreateWikiTagDto } from '../models/CreateWikiTagDto';
+import type { MovePageDto } from '../models/MovePageDto';
 import type { PageListResponseDto } from '../models/PageListResponseDto';
 import type { PageResponseDto } from '../models/PageResponseDto';
+import type { PageTreeResponseDto } from '../models/PageTreeResponseDto';
+import type { ReorderPageDto } from '../models/ReorderPageDto';
 import type { UpdatePageDto } from '../models/UpdatePageDto';
 import type { WikiTagResponseDto } from '../models/WikiTagResponseDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -48,6 +51,17 @@ export class WikirooService {
             query: {
                 'tag': tag,
             },
+        });
+    }
+    /**
+     * Get page hierarchy tree
+     * @returns PageTreeResponseDto Page hierarchy tree
+     * @throws ApiError
+     */
+    public static wikirooControllerGetPageTree(): CancelablePromise<Array<PageTreeResponseDto>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/wikiroo/pages/tree',
         });
     }
     /**
@@ -127,6 +141,51 @@ export class WikirooService {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Reorder a page within siblings
+     * @param id Wiki page identifier
+     * @param requestBody
+     * @returns PageResponseDto Page reordered successfully
+     * @throws ApiError
+     */
+    public static wikirooControllerReorderPage(
+        id: string,
+        requestBody: ReorderPageDto,
+    ): CancelablePromise<PageResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/wikiroo/pages/{id}/reorder',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Move page to different parent
+     * @param id Wiki page identifier
+     * @param requestBody
+     * @returns PageResponseDto Page moved successfully
+     * @throws ApiError
+     */
+    public static wikirooControllerMovePage(
+        id: string,
+        requestBody: MovePageDto,
+    ): CancelablePromise<PageResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/wikiroo/pages/{id}/move',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Circular reference detected or parent not found`,
+            },
         });
     }
     /**

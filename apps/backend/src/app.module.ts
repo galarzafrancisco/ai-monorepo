@@ -9,6 +9,11 @@ import { McpRegistryModule } from './mcp-registry/mcp-registry.module';
 import { AuthorizationServerModule } from './authorization-server/authorization-server.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
+import { AgentsModule } from './agents/agents.module';
+import { ChatModule } from './chat/chat.module';
+import { IdentityProviderModule } from './identity-provider/identity-provider.module';
+import { AdkModule } from './adk/adk.module';
+import { LlmHelperModule } from './llm-helper/llm-helper.module';
 
 @Module({
   imports: [
@@ -25,6 +30,11 @@ import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
     AuthJourneysModule,
     AuthorizationServerModule,
     DiscoveryModule,
+    AgentsModule,
+    ChatModule,
+    IdentityProviderModule,
+    AdkModule,
+    LlmHelperModule,
   ],
   controllers: [AppController],
   providers: [AppService],

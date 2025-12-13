@@ -38,6 +38,20 @@ export class TaskEntity {
   @Column({ type: 'text', nullable: true, name: 'session_id' })
   sessionId!: string | null;
 
+  @Column({ type: 'text', nullable: false, name: 'created_by', default: 'Fran' })
+  createdBy!: string;
+
+  @ManyToMany(() => TaskEntity, (task) => task.dependents)
+  @JoinTable({
+    name: 'task_dependencies',
+    joinColumn: { name: 'task_id' },
+    inverseJoinColumn: { name: 'depends_on_task_id' },
+  })
+  dependsOn!: TaskEntity[];
+
+  @ManyToMany(() => TaskEntity, (task) => task.dependsOn)
+  dependents!: TaskEntity[];
+
   @OneToMany(() => CommentEntity, (comment) => comment.task, { cascade: true })
   comments!: CommentEntity[];
 

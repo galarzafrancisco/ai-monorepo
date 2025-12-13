@@ -43,4 +43,22 @@ export class CreateTaskDto {
   @IsString({ each: true })
   @IsOptional()
   tagNames?: string[];
+
+  @ApiProperty({
+    description: 'Name of the person who created the task',
+    example: 'Fran',
+  })
+  @IsString()
+  @IsNotEmpty()
+  createdBy!: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of task IDs that this task depends on',
+    example: ['uuid-1', 'uuid-2'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  dependsOnIds?: string[];
 }

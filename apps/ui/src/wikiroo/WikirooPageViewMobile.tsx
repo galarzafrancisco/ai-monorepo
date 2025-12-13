@@ -4,6 +4,7 @@ import { useWikiroo } from './useWikiroo';
 import { MarkdownPreview } from './MarkdownPreview';
 import { WikiPageForm } from './WikiPageForm';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Breadcrumb } from './Breadcrumb';
 import type { UpdatePageDto } from 'shared';
 import './WikirooMobile.css';
 
@@ -11,6 +12,7 @@ export function WikirooPageViewMobile() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
   const {
+    pages,
     selectedPage,
     isLoadingPage,
     error,
@@ -119,6 +121,7 @@ export function WikirooPageViewMobile() {
       {/* Page Detail */}
       {!showEditModal && (
       <div className="mobile-wikiroo-page-detail">
+        {pageId && <Breadcrumb pageId={pageId} pages={pages} />}
         <h1 className="mobile-wikiroo-page-detail-title">{selectedPage.title}</h1>
         <div className="mobile-wikiroo-page-detail-meta">
           <span>By {selectedPage.author}</span>
@@ -181,6 +184,7 @@ export function WikirooPageViewMobile() {
             <WikiPageForm
               mode="edit"
               page={selectedPage}
+              pages={pages}
               onSubmit={handleUpdate}
               onCancel={() => setShowEditModal(false)}
               isSubmitting={isUpdating}

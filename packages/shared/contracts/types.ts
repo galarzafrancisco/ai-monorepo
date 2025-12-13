@@ -228,6 +228,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/wikiroo/pages/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get page hierarchy tree */
+        get: operations["WikirooController_getPageTree"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wikiroo/pages/{id}": {
         parameters: {
             query?: never;
@@ -262,6 +279,40 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Reorder a page within siblings */
+        patch: operations["WikirooController_reorderPage"];
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Move page to different parent */
+        patch: operations["WikirooController_movePage"];
         trace?: never;
     };
     "/api/v1/wikiroo/pages/{id}/tags": {
@@ -669,6 +720,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * RFC 8693 Token Exchange Endpoint
+         * @description Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.
+         */
+        post: operations["AuthorizationController_tokenExchange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/callback": {
         parameters: {
             query?: never;
@@ -729,6 +800,267 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List agents with optional filtering and pagination */
+        get: operations["AgentsController_listAgents"];
+        put?: never;
+        /** Create a new agent */
+        post: operations["AgentsController_createAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an agent by ID or slug */
+        get: operations["AgentsController_getAgent"];
+        put?: never;
+        post?: never;
+        /** Delete an agent */
+        delete: operations["AgentsController_deleteAgent"];
+        options?: never;
+        head?: never;
+        /** Update an agent */
+        patch: operations["AgentsController_updateAgent"];
+        trace?: never;
+    };
+    "/api/v1/adk/apps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all available ADK apps */
+        get: operations["AdkController_listApps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/adk/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a new ADK session */
+        post: operations["AdkController_createSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/adk/apps/{appId}/users/{userId}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List sessions for an app and user */
+        get: operations["AdkController_listSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/adk/apps/{appId}/users/{userId}/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a specific session */
+        get: operations["AdkController_getSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/adk/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a message to an ADK agent (non-streaming) */
+        post: operations["AdkController_sendMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/adk/messages/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Send a message to an ADK agent with SSE streaming */
+        get: operations["AdkController_sendMessageStream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chat/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List chat sessions with optional filtering and pagination */
+        get: operations["ChatController_listSessions"];
+        put?: never;
+        /** Create a new chat session */
+        post: operations["ChatController_createSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chat/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a chat session by ID */
+        get: operations["ChatController_getSession"];
+        put?: never;
+        post?: never;
+        /** Delete a chat session */
+        delete: operations["ChatController_deleteSession"];
+        options?: never;
+        head?: never;
+        /** Update a chat session */
+        patch: operations["ChatController_updateSession"];
+        trace?: never;
+    };
+    "/api/v1/chat/sessions/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a message to the ADK agent (non-streaming) */
+        post: operations["ChatController_sendMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chat/sessions/{id}/messages/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a message to the ADK agent with streaming response */
+        post: operations["ChatController_sendMessageStream"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login with email and password */
+        post: operations["IdentityProviderController_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout and clear session */
+        post: operations["IdentityProviderController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current session information */
+        get: operations["IdentityProviderController_getSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -762,6 +1094,19 @@ export interface components {
              *     ]
              */
             tagNames?: string[];
+            /**
+             * @description Name of the person who created the task
+             * @example Fran
+             */
+            createdBy: string;
+            /**
+             * @description Array of task IDs that this task depends on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds?: string[];
         };
         CommentResponseDto: {
             /**
@@ -862,6 +1207,19 @@ export interface components {
              */
             tags: components["schemas"]["TagResponseDto"][];
             /**
+             * @description Name of the person who created the task
+             * @example Fran
+             */
+            createdBy: string;
+            /**
+             * @description Array of task IDs that this task depends on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds: string[];
+            /**
              * @description Task creation timestamp
              * @example 2025-11-03T10:30:00.000Z
              */
@@ -901,6 +1259,19 @@ export interface components {
              *     ]
              */
             tagNames?: string[];
+            /**
+             * @description Name of the person who created the task
+             * @example Fran
+             */
+            createdBy?: string;
+            /**
+             * @description Array of task IDs that this task depends on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds?: string[];
         };
         AssignTaskDto: {
             /**
@@ -1007,6 +1378,11 @@ export interface components {
              *     ]
              */
             tagNames?: string[];
+            /**
+             * @description Parent page ID for nesting
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId?: string;
         };
         WikiTagResponseDto: {
             /**
@@ -1056,6 +1432,16 @@ export interface components {
              */
             tags: components["schemas"]["WikiTagResponseDto"][];
             /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
              */
@@ -1097,6 +1483,16 @@ export interface components {
              */
             tags: components["schemas"]["WikiTagResponseDto"][];
             /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
              */
@@ -1110,6 +1506,48 @@ export interface components {
         PageListResponseDto: {
             /** @description List of wiki pages */
             items: components["schemas"]["PageSummaryDto"][];
+        };
+        PageTreeResponseDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
+             * @description Child pages
+             * @example []
+             */
+            children: components["schemas"]["PageTreeResponseDto"][];
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
         };
         UpdatePageDto: {
             /**
@@ -1135,6 +1573,16 @@ export interface components {
              *     ]
              */
             tagNames?: string[];
+            /**
+             * @description Parent page ID (null to remove parent)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId?: string | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order?: number;
         };
         AppendPageDto: {
             /**
@@ -1142,6 +1590,20 @@ export interface components {
              * @example ## Additional details
              */
             content: string;
+        };
+        ReorderPageDto: {
+            /**
+             * @description New order position within siblings
+             * @example 2
+             */
+            newOrder: number;
+        };
+        MovePageDto: {
+            /**
+             * @description New parent page ID (null to move to root)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            newParentId: Record<string, never> | null;
         };
         AddWikiTagDto: {
             /**
@@ -1295,6 +1757,11 @@ export interface components {
              */
             friendlyName: string;
             /**
+             * @description Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
+             * @example google-oauth
+             */
+            providedId?: string;
+            /**
              * @description OAuth client ID for the downstream provider
              * @example github_client_abc123
              */
@@ -1368,6 +1835,11 @@ export interface components {
              * @example GitHub OAuth Connection
              */
             friendlyName?: string;
+            /**
+             * @description Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
+             * @example google-oauth
+             */
+            providedId?: string;
             /**
              * @description OAuth client ID for the downstream provider
              * @example github_client_abc123
@@ -1512,12 +1984,40 @@ export interface components {
              * @example https://example.com/tos
              */
             tos_uri?: string;
+            /**
+             * @description URL of the home page of the client
+             * @example https://example.com
+             */
             client_uri?: string;
+            /**
+             * @description URL that references a logo for the client application
+             * @example https://example.com/logo.png
+             */
             logo_uri?: string;
+            /**
+             * @description URL that the client provides to the end-user to read about how the profile data will be used
+             * @example https://example.com/privacy
+             */
             policy_uri?: string;
+            /**
+             * @description URL for the client JSON Web Key Set document. If specified, must not include jwks parameter
+             * @example https://example.com/.well-known/jwks.json
+             */
             jwks_uri?: string;
+            /**
+             * @description Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter
+             * @example {"keys":[{"kty":"RSA","use":"sig","kid":"key-1","n":"...","e":"AQAB"}]}
+             */
             jwks?: string;
+            /**
+             * @description Unique identifier string assigned by the client developer or software publisher
+             * @example my-oauth-app-v1
+             */
             software_id?: string;
+            /**
+             * @description Version identifier string for the client software
+             * @example 1.0.0
+             */
             software_version?: string;
         };
         ClientRegistrationResponseDto: {
@@ -1749,6 +2249,62 @@ export interface components {
              */
             version: Record<string, never>;
         };
+        TokenExchangeRequestDto: {
+            /**
+             * @description Grant type for token exchange as defined in RFC 8693
+             * @example urn:ietf:params:oauth:grant-type:token-exchange
+             * @enum {string}
+             */
+            grant_type: "urn:ietf:params:oauth:grant-type:token-exchange";
+            /**
+             * @description The access token that represents the identity of the party on behalf of whom the request is being made
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            subject_token: string;
+            /**
+             * @description Type identifier for the subject_token as defined in RFC 8693
+             * @example urn:ietf:params:oauth:token-type:access_token
+             * @enum {string}
+             */
+            subject_token_type: "urn:ietf:params:oauth:token-type:access_token";
+            /**
+             * @description Resource server URL that the client wants to access with the exchanged token
+             * @example http://localhost:4001/
+             */
+            resource: string;
+            /**
+             * @description Optional space-delimited list of scopes for the exchanged token
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+        };
+        TokenExchangeResponseDto: {
+            /**
+             * @description The newly issued access token after successful exchange
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            access_token: string;
+            /**
+             * @description Type identifier for the issued token as defined in RFC 8693
+             * @example urn:ietf:params:oauth:token-type:access_token
+             */
+            issued_token_type: string;
+            /**
+             * @description Type of token issued, always Bearer for MCP clients
+             * @example Bearer
+             */
+            token_type: string;
+            /**
+             * @description Lifetime of the access token in seconds
+             * @example 3600
+             */
+            expires_in: number;
+            /**
+             * @description Space-delimited list of scopes granted for the exchanged token
+             * @example tasks:read tasks:write
+             */
+            scope: string;
+        };
         JwkResponseDto: {
             /**
              * @description Key type, for example RSA or EC.
@@ -1770,16 +2326,25 @@ export interface components {
              * @example RS256
              */
             alg: string;
-            /** @description RSA modulus encoded using base64url. */
+            /**
+             * @description RSA modulus encoded using base64url.
+             * @example xGOr-H7A...
+             */
             n?: string;
             /**
              * @description RSA public exponent encoded using base64url.
              * @example AQAB
              */
             e?: string;
-            /** @description Public coordinate X for EC keys encoded using base64url. */
+            /**
+             * @description Public coordinate X for EC keys encoded using base64url.
+             * @example WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis
+             */
             x?: string;
-            /** @description Public coordinate Y for EC keys encoded using base64url. */
+            /**
+             * @description Public coordinate Y for EC keys encoded using base64url.
+             * @example y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE
+             */
             y?: string;
             /**
              * @description Curve name for EC keys.
@@ -1852,6 +2417,511 @@ export interface components {
              *     ]
              */
             code_challenge_methods_supported: string[];
+        };
+        CreateAgentDto: {
+            /**
+             * @description Unique, human-readable identifier for the agent
+             * @example buddy
+             */
+            slug: string;
+            /**
+             * @description Display name for the agent
+             * @example Buddy
+             */
+            name: string;
+            /**
+             * @description Short description of what this agent does
+             * @example A helpful assistant agent
+             */
+            description?: string;
+            /**
+             * @description Core instructions/persona for this agent
+             * @example You are a helpful assistant that helps users with tasks.
+             */
+            systemPrompt: string;
+            /**
+             * @description List of tool identifiers this agent is allowed to use
+             * @example [
+             *       "taskeroo.createTask",
+             *       "taskeroo.readTask",
+             *       "wikiroo.search"
+             *     ]
+             */
+            allowedTools: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @default true
+             * @example true
+             */
+            isActive: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: number;
+        };
+        AgentResponseDto: {
+            /**
+             * @description Unique identifier for the agent
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Unique, human-readable identifier
+             * @example buddy
+             */
+            slug: string;
+            /**
+             * @description Display name for the agent
+             * @example Buddy
+             */
+            name: string;
+            /**
+             * @description Short description of what this agent does
+             * @example A helpful assistant agent
+             */
+            description?: Record<string, never>;
+            /**
+             * @description Core instructions/persona for this agent
+             * @example You are a helpful assistant that helps users with tasks.
+             */
+            systemPrompt: string;
+            /**
+             * @description List of tool identifiers this agent is allowed to use
+             * @example [
+             *       "taskeroo.createTask",
+             *       "taskeroo.readTask",
+             *       "wikiroo.search"
+             *     ]
+             */
+            allowedTools: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @example true
+             */
+            isActive: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: Record<string, never>;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description Agent creation timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Agent last update timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            updatedAt: string;
+            /**
+             * @description Agent deletion timestamp (soft delete)
+             * @example null
+             */
+            deletedAt?: Record<string, never>;
+        };
+        AgentListResponseDto: {
+            /** @description List of agents */
+            items: components["schemas"]["AgentResponseDto"][];
+            /**
+             * @description Total number of agents matching the query
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 3
+             */
+            totalPages: number;
+        };
+        UpdateAgentDto: {
+            /**
+             * @description Unique, human-readable identifier for the agent
+             * @example buddy
+             */
+            slug?: string;
+            /**
+             * @description Display name for the agent
+             * @example Buddy
+             */
+            name?: string;
+            /**
+             * @description Short description of what this agent does
+             * @example A helpful assistant agent
+             */
+            description?: string;
+            /**
+             * @description Core instructions/persona for this agent
+             * @example You are a helpful assistant that helps users with tasks.
+             */
+            systemPrompt?: string;
+            /**
+             * @description List of tool identifiers this agent is allowed to use
+             * @example [
+             *       "taskeroo.createTask",
+             *       "taskeroo.readTask",
+             *       "wikiroo.search"
+             *     ]
+             */
+            allowedTools?: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @default true
+             * @example true
+             */
+            isActive: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: number;
+        };
+        ListAppsResponseDto: {
+            /**
+             * @description List of available ADK app names
+             * @example [
+             *       "buddy",
+             *       "taskeroo-agent"
+             *     ]
+             */
+            apps: string[];
+        };
+        CreateAdkSessionDto: {
+            /** @description App ID */
+            appId: string;
+            /** @description User ID */
+            userId: string;
+            /** @description Optional session ID */
+            sessionId?: string;
+        };
+        FunctionCallDto: {
+            /**
+             * @description Unique identifier for the function call
+             * @example call_123
+             */
+            id?: string;
+            /**
+             * @description Name of the function being called
+             * @example taskeroo.createTask
+             */
+            name?: string;
+            /**
+             * @description Arguments passed to the function
+             * @example {
+             *       "name": "My Task",
+             *       "description": "Task description"
+             *     }
+             */
+            args?: Record<string, never>;
+        };
+        FunctionResponseDto: {
+            /**
+             * @description Unique identifier for the function response
+             * @example call_123
+             */
+            id?: string;
+            /**
+             * @description Name of the function that was called
+             * @example taskeroo.createTask
+             */
+            name?: string;
+            /**
+             * @description Response from the function execution
+             * @example {
+             *       "result": "Task created successfully"
+             *     }
+             */
+            response?: Record<string, never>;
+        };
+        ChatMessagePartDto: {
+            /**
+             * @description Text content of the message part
+             * @example Hello, how can I help you?
+             */
+            text?: string;
+            /** @description Function call data if this part is a function call */
+            functionCall?: components["schemas"]["FunctionCallDto"];
+            /** @description Function response data if this part is a function response */
+            functionResponse?: components["schemas"]["FunctionResponseDto"];
+        };
+        ChatMessageContentDto: {
+            /**
+             * @description Role of the message author (user, agent, system)
+             * @example agent
+             */
+            role: string;
+            /** @description Parts of the message content */
+            parts: components["schemas"]["ChatMessagePartDto"][];
+        };
+        UsageMetadataDto: {
+            /**
+             * @description Number of tokens in the prompt
+             * @example 150
+             */
+            promptTokenCount: number;
+            /**
+             * @description Number of tokens in the candidates
+             * @example 200
+             */
+            candidatesTokenCount: number;
+            /**
+             * @description Total token count
+             * @example 350
+             */
+            totalTokenCount: number;
+        };
+        ChatEventDto: {
+            /**
+             * @description Unique identifier for the chat event
+             * @example evt_123e4567
+             */
+            id: string;
+            /**
+             * @description Unix timestamp when the event occurred
+             * @example 1701234567890
+             */
+            timestamp: number;
+            /**
+             * @description Author of the event (user ID or agent ID)
+             * @example user-123
+             */
+            author: string;
+            /** @description Content of the chat message */
+            content: components["schemas"]["ChatMessageContentDto"];
+            /**
+             * @description Whether this is a partial event (streaming)
+             * @example false
+             */
+            partial?: boolean;
+            /**
+             * @description Invocation identifier for the chat turn
+             * @example inv_123e4567
+             */
+            invocationId?: string;
+            /** @description Token usage metadata for the event */
+            usageMetadata?: components["schemas"]["UsageMetadataDto"];
+        };
+        AdkSessionResponseDto: {
+            /**
+             * @description Unique identifier for the session
+             * @example session-123e4567
+             */
+            id: string;
+            /**
+             * @description Name of the ADK app
+             * @example buddy
+             */
+            appName: string;
+            /**
+             * @description User ID associated with the session
+             * @example user-123
+             */
+            userId: string;
+            /**
+             * @description Session state data
+             * @example {
+             *       "conversationContext": "greeting"
+             *     }
+             */
+            state: Record<string, never>;
+            /** @description List of chat events in the session */
+            events: components["schemas"]["ChatEventDto"][];
+            /**
+             * @description Unix timestamp of the last update to the session
+             * @example 1701234567890
+             */
+            lastUpdateTime: number;
+        };
+        AdkListSessionsResponseDto: {
+            /** @description List of ADK sessions */
+            sessions: components["schemas"]["AdkSessionResponseDto"][];
+        };
+        SendMessageDto: {
+            /** @description App ID (agent name) */
+            appId: string;
+            /** @description User ID */
+            userId: string;
+            /** @description Session ID */
+            sessionId: string;
+            /** @description Message content */
+            message: string;
+        };
+        AdkSendMessageResponseDto: {
+            /** @description List of chat events generated from sending the message */
+            events: components["schemas"]["ChatEventDto"][];
+        };
+        CreateSessionDto: {
+            /**
+             * @description ID of the agent for this chat session
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            agentId: string;
+            /**
+             * @description Human-readable title for this session
+             * @example Banana MCP - design with Architect
+             */
+            title?: string;
+            /**
+             * @description Optional project label for this session
+             * @example project:banana-mcp
+             */
+            project?: string;
+        };
+        ChatSessionResponseDto: {
+            /**
+             * @description Unique identifier for the session
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description ADK session identifier
+             * @example adk-session-123e4567-e89b-12d3-a456-426614174000
+             */
+            adkSessionId: string;
+            /**
+             * @description ID of the agent for this chat session
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            agentId: string;
+            /**
+             * @description Human-readable title for this session
+             * @example Chat with Buddy - 2025-11-28
+             */
+            title: string;
+            /**
+             * @description Optional project label for this session
+             * @example project:banana-mcp
+             */
+            project?: Record<string, never>;
+            /**
+             * @description Whether the session is archived
+             * @example false
+             */
+            isArchived: boolean;
+            /**
+             * @description Whether the session is pinned
+             * @example false
+             */
+            isPinned: boolean;
+            /**
+             * @description Timestamp of the last message in this chat
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            lastMessageAt: string;
+            /** @description Tasks referenced in this session */
+            referencedTasks?: components["schemas"]["TaskResponseDto"][];
+            /** @description Tasks subscribed to in this session */
+            subscribedTasks?: components["schemas"]["TaskResponseDto"][];
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description Session creation timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Session last update timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            updatedAt: string;
+            /**
+             * @description Session deletion timestamp (soft delete)
+             * @example null
+             */
+            deletedAt?: Record<string, never>;
+        };
+        SessionListResponseDto: {
+            /** @description List of sessions */
+            items: components["schemas"]["ChatSessionResponseDto"][];
+            /**
+             * @description Total number of sessions matching the filters
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
+        };
+        UpdateSessionDto: {
+            /**
+             * @description Human-readable title for this session
+             * @example Updated Chat Title
+             */
+            title?: string;
+            /**
+             * @description Optional project label for this session
+             * @example project:banana-mcp
+             */
+            project?: string;
+            /**
+             * @description Whether the session should be archived
+             * @example false
+             */
+            isArchived?: boolean;
+            /**
+             * @description Whether the session should be pinned
+             * @example true
+             */
+            isPinned?: boolean;
+        };
+        ChatSendMessageDto: {
+            /**
+             * @description The message content to send
+             * @example Hello, how can you help me today?
+             */
+            message: string;
+        };
+        ChatMessageEventDto: {
+            id: string;
+            timestamp: number;
+            author: string;
+            content: components["schemas"]["ChatMessageContentDto"];
+            partial?: boolean;
+            invocationId?: string;
+            usageMetadata?: components["schemas"]["UsageMetadataDto"];
+        };
+        SendMessageResponseDto: {
+            events: components["schemas"]["ChatMessageEventDto"][];
+        };
+        LoginDto: {
+            /** @example user@example.com */
+            email: string;
+            /** @example password123 */
+            password: string;
+        };
+        UserDto: {
+            id: string;
+            email: string;
+            displayName: string;
+        };
+        SessionResponseDto: {
+            user: components["schemas"]["UserDto"];
         };
     };
     responses: never;
@@ -2488,6 +3558,26 @@ export interface operations {
             };
         };
     };
+    WikirooController_getPageTree: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Page hierarchy tree */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageTreeResponseDto"][];
+                };
+            };
+        };
+    };
     WikirooController_getPage: {
         parameters: {
             query?: never;
@@ -2590,6 +3680,67 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PageResponseDto"];
                 };
+            };
+        };
+    };
+    WikirooController_reorderPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderPageDto"];
+            };
+        };
+        responses: {
+            /** @description Page reordered successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_movePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MovePageDto"];
+            };
+        };
+        responses: {
+            /** @description Page moved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Circular reference detected or parent not found */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3481,7 +4632,7 @@ export interface operations {
             query: {
                 /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
                 response_type: "code";
-                /** @description Comma separated list of scopes */
+                /** @description Space-delimited list of scopes being requested */
                 scope?: string;
                 /** @description Client identifier issued during registration */
                 client_id: string;
@@ -3678,6 +4829,61 @@ export interface operations {
             };
         };
     };
+    AuthorizationController_tokenExchange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenExchangeRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Token exchange successful - returns downstream access token */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenExchangeResponseDto"];
+                };
+            };
+            /** @description Invalid token exchange request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid or expired MCP JWT */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Insufficient scope - requested scope not entitled */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Connection not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AuthorizationController_callback: {
         parameters: {
             query: {
@@ -3687,7 +4893,7 @@ export interface operations {
                 state: string;
                 /** @description Error code if authorization failed */
                 error?: string;
-                /** @description Scopes that were granted */
+                /** @description Space-delimited list of scopes that were granted */
                 scope?: string;
                 /** @description Error description if authorization failed */
                 error_description?: string;
@@ -3762,6 +4968,489 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthorizationServerMetadataDto"];
+                };
+            };
+        };
+    };
+    AgentsController_listAgents: {
+        parameters: {
+            query?: {
+                /** @description Filter by active status */
+                isActive?: boolean;
+                /** @description Page number for pagination */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentListResponseDto"];
+                };
+            };
+        };
+    };
+    AgentsController_createAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAgentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AgentsController_getAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent ID or slug */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AgentsController_deleteAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent ID or slug */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AgentsController_updateAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent ID or slug */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAgentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AdkController_listApps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListAppsResponseDto"];
+                };
+            };
+        };
+    };
+    AdkController_createSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdkSessionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdkSessionResponseDto"];
+                };
+            };
+        };
+    };
+    AdkController_listSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdkListSessionsResponseDto"];
+                };
+            };
+        };
+    };
+    AdkController_getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description App ID */
+                appId: string;
+                /** @description User ID */
+                userId: string;
+                /** @description Session ID */
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdkSessionResponseDto"];
+                };
+            };
+        };
+    };
+    AdkController_sendMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdkSendMessageResponseDto"];
+                };
+            };
+        };
+    };
+    AdkController_sendMessageStream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChatController_listSessions: {
+        parameters: {
+            query?: {
+                /** @description Filter by agent ID */
+                agentId?: string;
+                /** @description Filter by project label */
+                project?: string;
+                /** @description Filter by archived status */
+                isArchived?: boolean;
+                /** @description Filter by pinned status */
+                isPinned?: boolean;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionListResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_createSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSessionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSessionResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSessionResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChatController_updateSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSessionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSessionResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_sendMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSendMessageDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendMessageResponseDto"];
+                };
+            };
+        };
+    };
+    ChatController_sendMessageStream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSendMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IdentityProviderController_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginDto"];
+            };
+        };
+        responses: {
+            /** @description Login successful */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IdentityProviderController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Logout successful */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IdentityProviderController_getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponseDto"];
                 };
             };
         };

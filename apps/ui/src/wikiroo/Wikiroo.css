@@ -1,27 +1,52 @@
 .wikiroo {
   min-height: 100vh;
-  background: #f8f9fa;
-  padding: 24px;
+  background: #ffffff;
+  padding: 0;
   color: #2c3e50;
+}
+
+/* Wikiroo with sidebar layout */
+.wikiroo-with-sidebar {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.wikiroo-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.wikiroo-body .wikiroo-content {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .wikiroo-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  padding: 12px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e4e6eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .wikiroo-header h1 {
   margin: 0;
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1877f2;
 }
 
 .wikiroo-header p {
-  margin: 4px 0 0;
-  color: #95a5a6;
+  display: none;
 }
 
 .wikiroo-actions {
@@ -36,7 +61,7 @@
   justify-content: center;
   gap: 8px;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 10px 16px;
   font-size: 14px;
   font-weight: 600;
@@ -45,8 +70,8 @@
 }
 
 .wikiroo-button.primary {
-  background: #3498db;
-  color: #ffffff;
+  background: #3b82f6;
+  color: white;
 }
 
 .wikiroo-button.secondary {
@@ -68,10 +93,9 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 24px;
-  padding: 16px;
-  border-radius: 12px;
-  background: #f5f7fa;
+  /* padding: 24px; */
+  background: #ffffff;
+  border-bottom: 1px solid #e4e6eb;
 }
 
 .wikiroo-form-group {
@@ -107,6 +131,14 @@
   gap: 18px;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   margin-bottom: 24px;
+}
+
+.wikiroo-tree-container {
+  margin-bottom: 24px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .wikiroo-card {
@@ -161,6 +193,55 @@
 
 .wikiroo-page-view {
   /* Removed max-width constraint to allow full-width display */
+}
+
+/* WikirooLayout - Sidebar + Content Layout */
+.wikiroo-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.wikiroo-main-container {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  align-items: flex-start;
+  min-height: calc(100vh - 60px);
+}
+
+.wikiroo-content {
+  flex: 1;
+  background: #ffffff;
+  min-width: 0;
+  overflow-y: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.wikiroo-welcome {
+  text-align: center;
+  padding: 48px 24px;
+  color: #7f8c8d;
+}
+
+.wikiroo-welcome h2 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.wikiroo-welcome p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1024px) {
+  .wikiroo-main-container {
+    flex-direction: column;
+  }
 }
 
 .wikiroo-meta {
@@ -298,7 +379,7 @@
 .wikiroo-page-detail {
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0;
 }
 
 .wikiroo-page-detail-header {
@@ -359,6 +440,116 @@
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
+/* Rich Editor Styles */
+.rich-editor {
+  width: 100%;
+  border: 1px solid #dce4ec;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.rich-editor-panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 400px;
+}
+
+.rich-editor-pane {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.rich-editor-edit {
+  border-right: 1px solid #dce4ec;
+}
+
+.rich-editor-label {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dce4ec;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7f8c8d;
+}
+
+.rich-editor-textarea {
+  flex: 1;
+  border: none;
+  padding: 16px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+}
+
+.rich-editor-textarea::placeholder {
+  color: #95a5a6;
+}
+
+.rich-editor-preview-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.rich-editor-empty {
+  color: #95a5a6;
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* Slash Command Menu Styles */
+.slash-command-menu {
+  position: absolute;
+  background: #ffffff;
+  border: 1px solid #dce4ec;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px 0;
+}
+
+.slash-command-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.slash-command-item:hover,
+.slash-command-item.selected {
+  background: #f8f9fa;
+}
+
+.slash-command-item.selected {
+  background: #e3f2fd;
+}
+
+.slash-command-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-family: 'Source Code Pro', Consolas, 'Courier New', monospace;
+}
+
+.slash-command-description {
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
 @media (max-width: 768px) {
   .wikiroo {
     padding: 16px;
@@ -379,5 +570,307 @@
 
   .wikiroo-page-detail-meta {
     flex-wrap: wrap;
+  }
+
+  .rich-editor-panes {
+    grid-template-columns: 1fr;
+    min-height: 600px;
+  }
+
+  .rich-editor-edit {
+    border-right: none;
+    border-bottom: 1px solid #dce4ec;
+  }
+
+  .rich-editor-pane {
+    min-height: 300px;
+  }
+}
+
+/* Sidebar header and new page button */
+.wikiroo-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* gap: 12px; */
+  /* margin-bottom: 12px; */
+  /* padding-bottom: 12px; */
+  border-bottom: 1px solid #e4e6eb;
+}
+
+.wikiroo-sidebar-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.wikiroo-sidebar-new-page {
+  padding: 6px 12px;
+  margin-right: 10px;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wikiroo-empty-sidebar {
+  padding: 16px 0;
+  text-align: center;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+/* Collapsed sidebar state */
+.sidebar-app-specific.collapsed .wikiroo-sidebar-header {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 8px;
+  gap: 8px;
+}
+
+.sidebar-app-specific.collapsed .wikiroo-sidebar-title {
+  display: none;
+}
+
+.sidebar-app-specific.collapsed .wikiroo-sidebar-new-page {
+  padding: 8px;
+  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-app-specific.collapsed .page-tree,
+.sidebar-app-specific.collapsed .wikiroo-status,
+.sidebar-app-specific.collapsed .wikiroo-empty-sidebar {
+  display: none;
+}
+
+/* Page Tree Styles */
+.sidebar-app-specific .sidebar-content {
+  padding: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.page-tree {
+  background: white;
+  border: none;
+  border-radius: 0;
+  overflow-y: auto;
+}
+
+.page-tree-item {
+  user-select: none;
+}
+
+.tree-item-content {
+  display: flex;
+  align-items: center;
+  /* padding: 4px 8px; */
+  transition: background-color 0.2s ease;
+}
+
+.tree-item-content:hover {
+  background-color: #f8f9fa;
+}
+
+.tree-item-content.active {
+  background-color: #e3f2fd;
+  border-left: 3px solid #2196f3;
+}
+
+.tree-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-right: 3px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #7f8c8d;
+  transition: color 0.2s ease;
+}
+
+.tree-toggle:hover {
+  color: #2c3e50;
+}
+
+.tree-toggle:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.tree-spacer {
+  display: inline-block;
+  width: 19px;
+}
+
+.tree-item-link {
+  flex: 1;
+  color: #2c3e50;
+  text-decoration: none;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 0;
+  transition: color 0.2s ease;
+}
+
+.tree-item-link:hover {
+  color: #2196f3;
+  text-decoration: underline;
+}
+
+.tree-item-link:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.tree-item-content.active .tree-item-link {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.tree-item-add-child {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  margin-left: 4px;
+  font-size: 16px;
+  color: #7f8c8d;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tree-item-content:hover .tree-item-add-child {
+  opacity: 1;
+}
+
+.tree-item-add-child:hover {
+  background-color: #e3f2fd;
+  color: #2196f3;
+}
+
+.tree-item-add-child:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+.tree-item-children {
+  /* Children are naturally indented via paddingLeft in PageTreeItem */
+}
+
+/* Breadcrumb Styles */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+.breadcrumb-link {
+  color: #2196f3;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+  color: #1976d2;
+  text-decoration: underline;
+}
+
+.breadcrumb-link:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumb-separator {
+  margin: 0 8px;
+  color: #bdc3c7;
+}
+
+.breadcrumb-current {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+/* WebSocket status indicator dot */
+.wikiroo-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 8px;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.wikiroo-status-dot.connected {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.wikiroo-status-dot.disconnected {
+  background-color: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Mobile-specific styles for touch targets */
+@media (max-width: 768px) {
+  .tree-toggle {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  .tree-item-link {
+    padding: 12px 4px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .breadcrumb {
+    padding: 8px 0;
+  }
+
+  .breadcrumb-link {
+    padding: 8px 4px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 }

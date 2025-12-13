@@ -3,7 +3,7 @@
 .mcp-registry {
   min-height: 100vh;
   background: #f8f9fa;
-  padding: 20px;
+  padding: 0 20px;
 }
 
 .mcp-registry-header {

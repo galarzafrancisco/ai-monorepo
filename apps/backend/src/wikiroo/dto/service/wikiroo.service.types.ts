@@ -3,6 +3,7 @@ export interface CreatePageInput {
   content: string;
   author: string;
   tagNames?: string[];
+  parentId?: string | null;
 }
 
 export interface UpdatePageInput {
@@ -10,6 +11,8 @@ export interface UpdatePageInput {
   content?: string;
   author?: string;
   tagNames?: string[];
+  parentId?: string | null;
+  order?: number;
 }
 
 export interface AppendPageInput {
@@ -43,6 +46,9 @@ export interface PageResult {
   content: string;
   author: string;
   tags: TagResult[];
+  parentId: string | null;
+  order: number;
+  children?: PageResult[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +58,19 @@ export interface PageSummaryResult {
   title: string;
   author: string;
   tags: TagResult[];
+  parentId: string | null;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PageTreeResult {
+  id: string;
+  title: string;
+  author: string;
+  parentId: string | null;
+  order: number;
+  children: PageTreeResult[];
   createdAt: Date;
   updatedAt: Date;
 }

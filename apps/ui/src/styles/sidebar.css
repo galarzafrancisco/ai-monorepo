@@ -1,0 +1,284 @@
+/* Sidebar Design System */
+
+/* ===========================
+   CSS Custom Properties
+   =========================== */
+:root {
+  /* Colors */
+  --sidebar-bg: #0b1220;
+  --sidebar-text: #e2e8f0;
+  --sidebar-text-muted: #94a3b8;
+  --sidebar-border: #1e293b;
+  --sidebar-hover-bg: #1e293b;
+  --sidebar-active-bg: #2563eb;
+  --sidebar-active-text: #ffffff;
+
+  /* Dimensions */
+  --sidebar-app-nav-width: 240px;
+  --sidebar-app-nav-collapsed-width: 64px;
+  --sidebar-app-specific-width: 300px;
+  --sidebar-app-specific-collapsed-width: 64px;
+  --sidebar-toggle-size: 40px;
+  --sidebar-padding: 16px;
+  --sidebar-gap: 8px;
+
+  /* Transitions */
+  --sidebar-transition: all 300ms ease-in-out;
+  --sidebar-transition-fast: all 150ms ease-in-out;
+
+  /* Z-index */
+  --sidebar-z-index: 100;
+  --sidebar-toggle-z-index: 101;
+
+  /* Breakpoints (used in media queries) */
+  --breakpoint-mobile: 768px;
+  --breakpoint-tablet: 1024px;
+}
+
+/* ===========================
+   Root Layout
+   =========================== */
+.root-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.root-layout-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: var(--sidebar-transition);
+}
+
+/* ===========================
+   Sidebar Base Styles
+   =========================== */
+.sidebar-app-nav,
+.sidebar-app-specific {
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  transition: var(--sidebar-transition);
+  overflow: hidden;
+  border-right: 1px solid var(--sidebar-border);
+}
+
+.sidebar-app-nav {
+  width: var(--sidebar-app-nav-width);
+  z-index: var(--sidebar-z-index);
+}
+
+.sidebar-app-nav.collapsed {
+  width: var(--sidebar-app-nav-collapsed-width);
+}
+
+.sidebar-app-specific {
+  width: var(--sidebar-app-specific-width);
+  z-index: calc(var(--sidebar-z-index) - 1);
+  background-color: #ffffff;
+  color: #2c3e50;
+}
+
+.sidebar-app-specific.collapsed {
+  width: var(--sidebar-app-specific-collapsed-width);
+}
+
+/* ===========================
+   Sidebar Content
+   =========================== */
+.sidebar-content {
+  flex: 1;
+  padding: var(--sidebar-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sidebar-gap);
+  overflow-y: auto;
+}
+
+/* ===========================
+   Sidebar Toggle Button
+   =========================== */
+.sidebar-toggle {
+  width: 100%;
+  height: var(--sidebar-toggle-size);
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  border: none;
+  border-top: 1px solid var(--sidebar-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--sidebar-transition-fast);
+  flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--sidebar-hover-bg);
+}
+
+.sidebar-toggle:active {
+  transform: scale(0.95);
+}
+
+/* ===========================
+   Navigation Links
+   =========================== */
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--sidebar-padding);
+  color: var(--sidebar-text-muted);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: var(--sidebar-transition-fast);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sidebar-nav-link:hover {
+  background-color: var(--sidebar-hover-bg);
+  color: var(--sidebar-text);
+}
+
+.sidebar-nav-link.active {
+  background-color: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+}
+
+/* Collapsed state - hide text, center icon */
+.sidebar-nav-link.collapsed {
+  justify-content: center;
+  padding: 12px;
+}
+
+.sidebar-nav-link.collapsed .nav-link-text {
+  display: none;
+}
+
+/* ===========================
+   Responsive Breakpoints
+   =========================== */
+
+/* Desktop (>769px) - Default styles above apply */
+
+/* Tablet (768-1024px) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .sidebar-app-nav {
+    width: 200px;
+  }
+
+  .sidebar-app-specific {
+    width: 250px;
+  }
+}
+
+/* Mobile (<768px) */
+@media (max-width: 767px) {
+  .sidebar-app-nav {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: var(--sidebar-z-index);
+    transform: translateX(0);
+  }
+
+  .sidebar-app-nav.collapsed {
+    transform: translateX(calc(-1 * var(--sidebar-app-nav-width)));
+    width: var(--sidebar-app-nav-width);
+  }
+
+  .sidebar-app-specific {
+    position: fixed;
+    left: var(--sidebar-app-nav-width);
+    top: 0;
+    height: 100vh;
+    transform: translateX(0);
+  }
+
+  .sidebar-app-nav.collapsed ~ .sidebar-app-specific {
+    left: 0;
+  }
+
+  /* Mobile toggle positioning */
+  .sidebar-toggle {
+    left: 8px;
+    top: 8px;
+  }
+
+  .sidebar-app-nav.collapsed ~ .sidebar-toggle,
+  .root-layout:has(.sidebar-app-nav.collapsed) .sidebar-toggle {
+    left: 8px;
+  }
+
+  /* Overlay for mobile when sidebar is open */
+  .root-layout::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: calc(var(--sidebar-z-index) - 2);
+    opacity: 1;
+    transition: opacity var(--sidebar-transition);
+    pointer-events: auto;
+  }
+
+  .root-layout:has(.sidebar-app-nav.collapsed)::before {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* ===========================
+   Accessibility
+   =========================== */
+.sidebar-nav-link:focus-visible {
+  outline: 2px solid var(--sidebar-active-bg);
+  outline-offset: 2px;
+}
+
+.sidebar-toggle:focus-visible {
+  outline: 2px solid var(--sidebar-active-bg);
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-app-nav,
+  .sidebar-app-specific,
+  .sidebar-toggle,
+  .sidebar-nav-link,
+  .root-layout-main,
+  .root-layout::before {
+    transition: none;
+  }
+}
+
+/* ===========================
+   Connection Status Indicator
+   =========================== */
+.sidebar-nav-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.connection-status-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background-color: #10b981;
+  border-radius: 50%;
+  border: 2px solid var(--sidebar-bg);
+  box-shadow: 0 0 4px rgba(16, 185, 129, 0.5);
+}

@@ -23,6 +23,9 @@ export class McpConnectionEntity {
   @Column({ type: 'varchar', length: 255 })
   friendlyName!: string;
 
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  providedId?: string;
+
   @Column({ type: 'varchar', length: 500 })
   clientId!: string;
 

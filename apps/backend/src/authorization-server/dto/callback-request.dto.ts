@@ -27,7 +27,8 @@ export class CallbackRequestDto {
   error?: string;
 
   @ApiPropertyOptional({
-    description: 'Scopes that were granted'
+    description: 'Space-delimited list of scopes that were granted',
+    example: 'tasks:read tasks:write',
   })
   @IsString()
   @IsOptional()

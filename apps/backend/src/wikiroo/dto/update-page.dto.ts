@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, IsArray } from 'class-validator';
+import { IsOptional, IsString, MaxLength, IsArray, IsUUID, IsInt, Min, ValidateIf } from 'class-validator';
 
 export class UpdatePageDto {
   @ApiPropertyOptional({
@@ -37,4 +37,24 @@ export class UpdatePageDto {
   @IsString({ each: true })
   @IsOptional()
   tagNames?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Parent page ID (null to remove parent)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+    nullable: true,
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.parentId !== null)
+  @IsUUID('4', { message: 'Parent ID must be a valid UUID' })
+  parentId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Order within siblings',
+    example: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  order?: number;
 }

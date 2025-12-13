@@ -1,22 +1,15 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { HomeLink } from '../components/HomeLink';
 import './Wikiroo.css';
 import { useWikiroo } from './useWikiroo';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
-import { TagBadge } from './TagBadge';
 import { WikiPageForm } from './WikiPageForm';
+import { PageTree } from './PageTree';
 import type { CreatePageDto } from 'shared';
-
-function formatDate(value: string) {
-  try {
-    return new Date(value).toLocaleDateString();
-  } catch {
-    return value;
-  }
-}
+import type { WikiPageTree } from './types';
 
 export function WikirooHomePage() {
   const {
@@ -26,18 +19,52 @@ export function WikirooHomePage() {
     error,
     loadPages,
     createPage,
+    getPageTree,
   } = useWikiroo();
 
   const navigate = useNavigate();
   const { toasts, showToast, removeToast } = useToast();
   const [showForm, setShowForm] = useState(false);
+  const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
+  const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   usePageTitle('Wikiroo');
+
+  useEffect(() => {
+    async function loadTree() {
+      setIsLoadingTree(true);
+      try {
+        const tree = await getPageTree();
+        setPageTree(tree);
+      } catch (err) {
+        console.error('Failed to load page tree:', err);
+      } finally {
+        setIsLoadingTree(false);
+      }
+    }
+    loadTree();
+  }, [getPageTree]);
 
   const handleCreatePage = async (data: CreatePageDto) => {
     const created = await createPage(data);
     setShowForm(false);
-    navigate(`/wikiroo/${created.id}`);
+    // Reload tree to show new page
+    const tree = await getPageTree();
+    setPageTree(tree);
+    navigate(`/wikiroo/page/${created.id}`);
+  };
+
+  const handleRefresh = async () => {
+    loadPages();
+    setIsLoadingTree(true);
+    try {
+      const tree = await getPageTree();
+      setPageTree(tree);
+    } catch (err) {
+      console.error('Failed to load page tree:', err);
+    } finally {
+      setIsLoadingTree(false);
+    }
   };
 
   return (
@@ -52,10 +79,10 @@ export function WikirooHomePage() {
           <button
             className="wikiroo-button secondary"
             type="button"
-            onClick={loadPages}
-            disabled={isLoadingList}
+            onClick={handleRefresh}
+            disabled={isLoadingList || isLoadingTree}
           >
-            {isLoadingList ? 'Refreshing…' : 'Refresh'}
+            {isLoadingList || isLoadingTree ? 'Refreshing…' : 'Refresh'}
           </button>
           <button
             className="wikiroo-button primary"
@@ -70,40 +97,31 @@ export function WikirooHomePage() {
       {showForm && (
         <WikiPageForm
           mode="create"
+          pages={pages}
           onSubmit={handleCreatePage}
           onCancel={() => setShowForm(false)}
           isSubmitting={isCreating}
         />
       )}
 
-      <section className="wikiroo-grid" aria-live="polite">
-        {pages.map((page) => (
-          <Link key={page.id} to={`/wikiroo/${page.id}`} className="wikiroo-card">
-            <h3>{page.title}</h3>
-            <p>By {page.author}</p>
-            {page.tags && page.tags.length > 0 && (
-              <div style={{ margin: '8px 0', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                {page.tags.map((tag) => (
-                  <TagBadge key={tag.name} tag={tag} small />
-                ))}
-              </div>
-            )}
-            <div className="wikiroo-card-meta">
-              <span>Updated {formatDate(page.updatedAt)}</span>
-              <span>Created {formatDate(page.createdAt)}</span>
-            </div>
-          </Link>
-        ))}
+      <section className="wikiroo-tree-container" aria-live="polite">
+        {pageTree.length > 0 && (
+          <PageTree
+            pages={pageTree}
+            currentPageId={undefined}
+            onPageClick={(id) => navigate(`/wikiroo/page/${id}`)}
+          />
+        )}
       </section>
 
-      {pages.length === 0 && !isLoadingList && (
+      {pageTree.length === 0 && !isLoadingTree && (
         <div className="wikiroo-empty">
           <strong>No pages yet</strong>
           <span>Create your first entry to share knowledge.</span>
         </div>
       )}
 
-      {isLoadingList && <div className="wikiroo-status">Loading pages…</div>}
+      {isLoadingTree && <div className="wikiroo-status">Loading pages…</div>}
       {error && <div className="wikiroo-error">{error}</div>}
 
       {toasts.map((toast) => (

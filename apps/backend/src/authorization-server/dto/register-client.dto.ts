@@ -110,37 +110,58 @@ export class RegisterClientDto {
   @IsOptional()
   tos_uri?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'URL of the home page of the client',
+    example: 'https://example.com',
+  })
   @IsUrl()
   @IsOptional()
   client_uri?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'URL that references a logo for the client application',
+    example: 'https://example.com/logo.png',
+  })
   @IsUrl()
   @IsOptional()
   logo_uri?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'URL that the client provides to the end-user to read about how the profile data will be used',
+    example: 'https://example.com/privacy',
+  })
   @IsUrl()
   @IsOptional()
   policy_uri?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'URL for the client JSON Web Key Set document. If specified, must not include jwks parameter',
+    example: 'https://example.com/.well-known/jwks.json',
+  })
   @IsUrl()
   @IsOptional()
   jwks_uri?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter',
+    example: '{"keys":[{"kty":"RSA","use":"sig","kid":"key-1","n":"...","e":"AQAB"}]}',
+  })
   @IsString()
   @IsOptional()
   jwks?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Unique identifier string assigned by the client developer or software publisher',
+    example: 'my-oauth-app-v1',
+  })
   @IsString()
   @IsOptional()
   software_id?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Version identifier string for the client software',
+    example: '1.0.0',
+  })
   @IsString()
   @IsOptional()
   software_version?: string;

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
 import type { CreatePageDto, UpdatePageDto } from 'shared';
 import { WikirooService } from './api';
-import type { WikiPage, WikiPageSummary } from './types';
+import { getWebSocketUrl } from '../config/api';
+import type { WikiPage, WikiPageSummary, WikiPageTree } from './types';
+
+const SOCKET_URL = getWebSocketUrl('/wikiroo');
 
 export const useWikiroo = () => {
   const [pages, setPages] = useState<WikiPageSummary[]>([]);
@@ -12,6 +16,8 @@ export const useWikiroo = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   const loadPages = useCallback(async () => {
     setIsLoadingList(true);
@@ -54,6 +60,8 @@ export const useWikiroo = () => {
               title: created.title,
               author: created.author,
               tags: created.tags,
+              parentId: created.parentId,
+              order: created.order,
               createdAt: created.createdAt,
               updatedAt: created.updatedAt,
             },
@@ -93,6 +101,8 @@ export const useWikiroo = () => {
                   title: updated.title,
                   author: updated.author,
                   tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
                   createdAt: updated.createdAt,
                   updatedAt: updated.updatedAt,
                 }
@@ -166,6 +176,8 @@ export const useWikiroo = () => {
                   title: updated.title,
                   author: updated.author,
                   tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
                   createdAt: updated.createdAt,
                   updatedAt: updated.updatedAt,
                 }
@@ -197,6 +209,8 @@ export const useWikiroo = () => {
                   title: updated.title,
                   author: updated.author,
                   tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
                   createdAt: updated.createdAt,
                   updatedAt: updated.updatedAt,
                 }
@@ -215,6 +229,164 @@ export const useWikiroo = () => {
     [selectedPage],
   );
 
+  const getPageTree = useCallback(async (): Promise<WikiPageTree[]> => {
+    setError(null);
+    try {
+      const tree = await WikirooService.wikirooControllerGetPageTree();
+      return tree;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch page tree');
+      throw err;
+    }
+  }, []);
+
+  const reorderPage = useCallback(
+    async (pageId: string, newOrder: number) => {
+      setError(null);
+      try {
+        const updated = await WikirooService.wikirooControllerReorderPage(pageId, {
+          newOrder,
+        });
+        setPages((prev) =>
+          prev.map((p) =>
+            p.id === pageId
+              ? {
+                  id: updated.id,
+                  title: updated.title,
+                  author: updated.author,
+                  tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
+                  createdAt: updated.createdAt,
+                  updatedAt: updated.updatedAt,
+                }
+              : p,
+          ),
+        );
+        if (selectedPage?.id === pageId) {
+          setSelectedPage(updated);
+        }
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to reorder page');
+        throw err;
+      }
+    },
+    [selectedPage],
+  );
+
+  const movePage = useCallback(
+    async (pageId: string, newParentId: string | null) => {
+      setError(null);
+      try {
+        const updated = await WikirooService.wikirooControllerMovePage(pageId, {
+          newParentId: newParentId as any,
+        });
+        setPages((prev) =>
+          prev.map((p) =>
+            p.id === pageId
+              ? {
+                  id: updated.id,
+                  title: updated.title,
+                  author: updated.author,
+                  tags: updated.tags,
+                  parentId: updated.parentId,
+                  order: updated.order,
+                  createdAt: updated.createdAt,
+                  updatedAt: updated.updatedAt,
+                }
+              : p,
+          ),
+        );
+        if (selectedPage?.id === pageId) {
+          setSelectedPage(updated);
+        }
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to move page');
+        throw err;
+      }
+    },
+    [selectedPage],
+  );
+
+  // Setup WebSocket
+  useEffect(() => {
+    const newSocket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Connected to Wikiroo websocket');
+      setIsConnected(true);
+      loadPages();
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Wikiroo WebSocket disconnected');
+      setIsConnected(false);
+    });
+
+    newSocket.on('page.created', (page: WikiPage) => {
+      setPages((prev) => {
+        // Avoid duplicates
+        if (prev.some((p) => p.id === page.id)) {
+          return prev;
+        }
+        return [
+          {
+            id: page.id,
+            title: page.title,
+            author: page.author,
+            tags: page.tags,
+            parentId: page.parentId,
+            order: page.order,
+            createdAt: page.createdAt,
+            updatedAt: page.updatedAt,
+          },
+          ...prev,
+        ];
+      });
+    });
+
+    newSocket.on('page.updated', (page: WikiPage) => {
+      setPages((prev) =>
+        prev.map((p) =>
+          p.id === page.id
+            ? {
+                id: page.id,
+                title: page.title,
+                author: page.author,
+                tags: page.tags,
+                parentId: page.parentId,
+                order: page.order,
+                createdAt: page.createdAt,
+                updatedAt: page.updatedAt,
+              }
+            : p,
+        ),
+      );
+      // Update selected page if it's the one being updated
+      if (selectedPage?.id === page.id) {
+        setSelectedPage(page);
+      }
+    });
+
+    newSocket.on('page.deleted', ({ pageId }: { pageId: string }) => {
+      setPages((prev) => prev.filter((p) => p.id !== pageId));
+      // Clear selected page if it was deleted
+      if (selectedPage?.id === pageId) {
+        setSelectedPage(null);
+      }
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [loadPages, selectedPage?.id]);
+
   useEffect(() => {
     loadPages();
   }, [loadPages]);
@@ -228,6 +400,8 @@ export const useWikiroo = () => {
     isUpdating,
     isDeleting,
     error,
+    isConnected,
+    socket,
     loadPages,
     createPage,
     selectPage,
@@ -236,5 +410,8 @@ export const useWikiroo = () => {
     deletePage,
     addTagToPage,
     removeTagFromPage,
+    getPageTree,
+    reorderPage,
+    movePage,
   };
 };

@@ -19,7 +19,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "dev": "npm run start:dev",
     "typecheck": "tsc --noEmit",
-    "does-it-start": "(nest start & ) && sleep 10 && kill $! || true"
+    "does-it-start": "(nest start & ) && sleep 10 && kill $! || true",
+    "init-test-user": "ts-node -r tsconfig-paths/register src/scripts/init-test-user.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.21.1",
@@ -31,8 +32,11 @@
     "@nestjs/swagger": "^11.2.1",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.8",
+    "@types/cookie-parser": "^1.4.10",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "cookie-parser": "^1.4.7",
+    "ollama": "^0.6.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
@@ -66,22 +70,5 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }

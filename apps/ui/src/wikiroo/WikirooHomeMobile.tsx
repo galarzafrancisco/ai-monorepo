@@ -12,6 +12,7 @@ export function WikirooHomeMobile() {
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
   const [tagNames, setTagNames] = useState<string[]>([]);
+  const [parentId, setParentId] = useState<string | null>(null);
 
   const handleCreatePage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +25,7 @@ export function WikirooHomeMobile() {
       author: author.trim(),
       content: content.trim(),
       ...(tagNames.length > 0 && { tagNames }),
+      ...(parentId && { parentId }),
     });
 
     // Reset form and close modal
@@ -31,6 +33,7 @@ export function WikirooHomeMobile() {
     setAuthor('');
     setContent('');
     setTagNames([]);
+    setParentId(null);
     setShowCreateModal(false);
   };
 
@@ -97,7 +100,7 @@ export function WikirooHomeMobile() {
         {!isLoadingList && !error && pages.map((page) => (
           <Link
             key={page.id}
-            to={`/wikiroo/${page.id}`}
+            to={`/wikiroo/page/${page.id}`}
             className="mobile-wikiroo-page-item"
           >
             <h3 className="mobile-wikiroo-page-title">{page.title}</h3>
@@ -173,6 +176,22 @@ export function WikirooHomeMobile() {
                     placeholder="Your name"
                     required
                   />
+                </div>
+
+                <div className="mobile-wikiroo-form-group">
+                  <label className="mobile-wikiroo-form-label">Parent Page</label>
+                  <select
+                    className="mobile-wikiroo-form-input"
+                    value={parentId ?? ''}
+                    onChange={(e) => setParentId(e.target.value || null)}
+                  >
+                    <option value="">None (top level)</option>
+                    {pages.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="mobile-wikiroo-form-group">

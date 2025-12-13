@@ -8,6 +8,8 @@ import type { IntrospectTokenRequestDto } from '../models/IntrospectTokenRequest
 import type { IntrospectTokenResponseDto } from '../models/IntrospectTokenResponseDto';
 import type { McpAuthorizationFlowEntity } from '../models/McpAuthorizationFlowEntity';
 import type { RegisterClientDto } from '../models/RegisterClientDto';
+import type { TokenExchangeRequestDto } from '../models/TokenExchangeRequestDto';
+import type { TokenExchangeResponseDto } from '../models/TokenExchangeResponseDto';
 import type { TokenRequestDto } from '../models/TokenRequestDto';
 import type { TokenResponseDto } from '../models/TokenResponseDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -88,7 +90,7 @@ export class AuthorizationServerService {
      * @param resource Resource server URL that the client wants to access
      * @param serverIdentifier
      * @param version
-     * @param scope Comma separated list of scopes
+     * @param scope Space-delimited list of scopes being requested
      * @returns void
      * @throws ApiError
      */
@@ -238,12 +240,43 @@ export class AuthorizationServerService {
         });
     }
     /**
+     * RFC 8693 Token Exchange Endpoint
+     * Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.
+     * @param serverIdentifier
+     * @param version
+     * @param requestBody
+     * @returns TokenExchangeResponseDto Token exchange successful - returns downstream access token
+     * @throws ApiError
+     */
+    public static authorizationControllerTokenExchange(
+        serverIdentifier: string,
+        version: string,
+        requestBody: TokenExchangeRequestDto,
+    ): CancelablePromise<TokenExchangeResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}',
+            path: {
+                'serverIdentifier': serverIdentifier,
+                'version': version,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid token exchange request parameters`,
+                401: `Invalid or expired MCP JWT`,
+                403: `Insufficient scope - requested scope not entitled`,
+                404: `Connection not found`,
+            },
+        });
+    }
+    /**
      * OAuth 2.0 Callback Endpoint for Downstream Systems
      * Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.
      * @param code Authorization code from downstream OAuth provider
      * @param state State parameter that identifies the connection flow
      * @param error Error code if authorization failed
-     * @param scope Scopes that were granted
+     * @param scope Space-delimited list of scopes that were granted
      * @param errorDescription Error description if authorization failed
      * @returns void
      * @throws ApiError

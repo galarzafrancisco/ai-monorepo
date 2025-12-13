@@ -14,7 +14,7 @@ body {
 .task-board {
   min-height: 100vh;
   background: #f8f9fa;
-  padding: 20px;
+  padding: 0 20px;
 }
 
 .task-board-header {
@@ -75,6 +75,8 @@ body {
   padding: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   min-height: 400px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .column-header {
@@ -154,6 +156,8 @@ body {
   padding: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
+  word-wrap: break-word;
 }
 
 .task-card:hover {
@@ -401,9 +405,6 @@ body {
 }
 
 /* Form */
-form {
-  padding: 0 24px 24px 24px;
-}
 
 .form-group {
   margin-bottom: 20px;
@@ -620,6 +621,7 @@ form {
   margin: 6px 0;
   color: #34495e;
   font-size: 14px;
+  white-space: pre-wrap;
 }
 
 .comment-date {

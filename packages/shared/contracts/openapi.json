@@ -731,6 +731,31 @@
         ]
       }
     },
+    "/api/v1/wikiroo/pages/tree": {
+      "get": {
+        "operationId": "WikirooController_getPageTree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Page hierarchy tree",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PageTreeResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get page hierarchy tree",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
     "/api/v1/wikiroo/pages/{id}": {
       "get": {
         "operationId": "WikirooController_getPage",
@@ -870,6 +895,95 @@
           }
         },
         "summary": "Append content to an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/reorder": {
+      "patch": {
+        "operationId": "WikirooController_reorderPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page reordered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorder a page within siblings",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/move": {
+      "patch": {
+        "operationId": "WikirooController_movePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page moved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Circular reference detected or parent not found"
+          }
+        },
+        "summary": "Move page to different parent",
         "tags": [
           "Wikiroo"
         ]
@@ -1937,8 +2051,9 @@
             "name": "scope",
             "required": false,
             "in": "query",
-            "description": "Comma separated list of scopes",
+            "description": "Space-delimited list of scopes being requested",
             "schema": {
+              "example": "tasks:read tasks:write",
               "type": "string"
             }
           },
@@ -2230,6 +2345,68 @@
         ]
       }
     },
+    "/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}": {
+      "post": {
+        "description": "Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.",
+        "operationId": "AuthorizationController_tokenExchange",
+        "parameters": [
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenExchangeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token exchange successful - returns downstream access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenExchangeResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token exchange request parameters"
+          },
+          "401": {
+            "description": "Invalid or expired MCP JWT"
+          },
+          "403": {
+            "description": "Insufficient scope - requested scope not entitled"
+          },
+          "404": {
+            "description": "Connection not found"
+          }
+        },
+        "summary": "RFC 8693 Token Exchange Endpoint",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
     "/api/v1/auth/callback": {
       "get": {
         "description": "Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.",
@@ -2269,8 +2446,9 @@
             "name": "scope",
             "required": false,
             "in": "query",
-            "description": "Scopes that were granted",
+            "description": "Space-delimited list of scopes that were granted",
             "schema": {
+              "example": "tasks:read tasks:write",
               "type": "string"
             }
           },
@@ -2368,6 +2546,770 @@
           "Discovery"
         ]
       }
+    },
+    "/api/v1/agents": {
+      "post": {
+        "operationId": "AgentsController_createAgent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new agent",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "get": {
+        "operationId": "AgentsController_listAgents",
+        "parameters": [
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List agents with optional filtering and pagination",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agents/{id}": {
+      "get": {
+        "operationId": "AgentsController_getAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Agent ID or slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              },
+              "byId": {
+                "summary": "By ID",
+                "value": "123e4567-e89b-12d3-a456-426614174000"
+              }
+            },
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get an agent by ID or slug",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "patch": {
+        "operationId": "AgentsController_updateAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Agent ID or slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              },
+              "byId": {
+                "summary": "By ID",
+                "value": "123e4567-e89b-12d3-a456-426614174000"
+              }
+            },
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAgentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update an agent",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "delete": {
+        "operationId": "AgentsController_deleteAgent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Agent ID or slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              },
+              "byId": {
+                "summary": "By ID",
+                "value": "123e4567-e89b-12d3-a456-426614174000"
+              }
+            },
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Delete an agent",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/adk/apps": {
+      "get": {
+        "operationId": "AdkController_listApps",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAppsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all available ADK apps",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/sessions": {
+      "post": {
+        "operationId": "AdkController_createSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdkSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdkSessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new ADK session",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/apps/{appId}/users/{userId}/sessions": {
+      "get": {
+        "operationId": "AdkController_listSessions",
+        "parameters": [
+          {
+            "name": "appId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdkListSessionsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List sessions for an app and user",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/apps/{appId}/users/{userId}/sessions/{sessionId}": {
+      "get": {
+        "operationId": "AdkController_getSession",
+        "parameters": [
+          {
+            "name": "appId",
+            "required": true,
+            "in": "path",
+            "description": "App ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdkSessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a specific session",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/messages": {
+      "post": {
+        "operationId": "AdkController_sendMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdkSendMessageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Send a message to an ADK agent (non-streaming)",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/adk/messages/stream": {
+      "get": {
+        "operationId": "AdkController_sendMessageStream",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Send a message to an ADK agent with SSE streaming",
+        "tags": [
+          "ADK"
+        ]
+      }
+    },
+    "/api/v1/chat/sessions": {
+      "post": {
+        "operationId": "ChatController_createSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new chat session",
+        "tags": [
+          "Chat"
+        ]
+      },
+      "get": {
+        "operationId": "ChatController_listSessions",
+        "parameters": [
+          {
+            "name": "agentId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by agent ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": false,
+            "in": "query",
+            "description": "Filter by project label",
+            "schema": {
+              "example": "project:banana-mcp",
+              "type": "string"
+            }
+          },
+          {
+            "name": "isArchived",
+            "required": false,
+            "in": "query",
+            "description": "Filter by archived status",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isPinned",
+            "required": false,
+            "in": "query",
+            "description": "Filter by pinned status",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List chat sessions with optional filtering and pagination",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/api/v1/chat/sessions/{id}": {
+      "get": {
+        "operationId": "ChatController_getSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a chat session by ID",
+        "tags": [
+          "Chat"
+        ]
+      },
+      "patch": {
+        "operationId": "ChatController_updateSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatSessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a chat session",
+        "tags": [
+          "Chat"
+        ]
+      },
+      "delete": {
+        "operationId": "ChatController_deleteSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Delete a chat session",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/api/v1/chat/sessions/{id}/messages": {
+      "post": {
+        "operationId": "ChatController_sendMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Send a message to the ADK agent (non-streaming)",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/api/v1/chat/sessions/{id}/messages/stream": {
+      "post": {
+        "operationId": "ChatController_sendMessageStream",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Session ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatSendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Send a message to the ADK agent with streaming response",
+        "tags": [
+          "Chat"
+        ]
+      }
+    },
+    "/api/v1/login": {
+      "post": {
+        "operationId": "IdentityProviderController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful"
+          }
+        },
+        "summary": "Login with email and password",
+        "tags": [
+          "Identity Provider"
+        ]
+      }
+    },
+    "/api/v1/logout": {
+      "post": {
+        "operationId": "IdentityProviderController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        },
+        "summary": "Logout and clear session",
+        "tags": [
+          "Identity Provider"
+        ]
+      }
+    },
+    "/api/v1/session": {
+      "get": {
+        "operationId": "IdentityProviderController_getSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get current session information",
+        "tags": [
+          "Identity Provider"
+        ]
+      }
     }
   },
   "info": {
@@ -2418,11 +3360,28 @@
             "items": {
               "type": "string"
             }
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "Name of the person who created the task",
+            "example": "Fran"
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "name",
-          "description"
+          "description",
+          "createdBy"
         ]
       },
       "CommentResponseDto": {
@@ -2554,6 +3513,22 @@
               "$ref": "#/components/schemas/TagResponseDto"
             }
           },
+          "createdBy": {
+            "type": "string",
+            "description": "Name of the person who created the task",
+            "example": "Fran"
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "createdAt": {
             "type": "string",
             "description": "Task creation timestamp",
@@ -2572,6 +3547,8 @@
           "status",
           "comments",
           "tags",
+          "createdBy",
+          "dependsOnIds",
           "createdAt",
           "updatedAt"
         ]
@@ -2604,6 +3581,22 @@
             "example": [
               "bug",
               "urgent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "Name of the person who created the task",
+            "example": "Fran"
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
             ],
             "type": "array",
             "items": {
@@ -2768,6 +3761,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Parent page ID for nesting",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
         "required": [
@@ -2834,6 +3832,17 @@
               "$ref": "#/components/schemas/WikiTagResponseDto"
             }
           },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
           "createdAt": {
             "type": "string",
             "description": "Creation timestamp",
@@ -2851,6 +3860,8 @@
           "content",
           "author",
           "tags",
+          "parentId",
+          "order",
           "createdAt",
           "updatedAt"
         ]
@@ -2890,6 +3901,17 @@
               "$ref": "#/components/schemas/WikiTagResponseDto"
             }
           },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
           "createdAt": {
             "type": "string",
             "description": "Creation timestamp",
@@ -2906,6 +3928,8 @@
           "title",
           "author",
           "tags",
+          "parentId",
+          "order",
           "createdAt",
           "updatedAt"
         ]
@@ -2923,6 +3947,65 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "PageTreeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
+          "children": {
+            "description": "Child pages",
+            "example": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageTreeResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "author",
+          "parentId",
+          "order",
+          "children",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "UpdatePageDto": {
@@ -2953,6 +4036,17 @@
             "items": {
               "type": "string"
             }
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Parent page ID (null to remove parent)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
           }
         }
       },
@@ -2967,6 +4061,33 @@
         },
         "required": [
           "content"
+        ]
+      },
+      "ReorderPageDto": {
+        "type": "object",
+        "properties": {
+          "newOrder": {
+            "type": "number",
+            "description": "New order position within siblings",
+            "example": 2
+          }
+        },
+        "required": [
+          "newOrder"
+        ]
+      },
+      "MovePageDto": {
+        "type": "object",
+        "properties": {
+          "newParentId": {
+            "type": "object",
+            "description": "New parent page ID (null to move to root)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          }
+        },
+        "required": [
+          "newParentId"
         ]
       },
       "AddWikiTagDto": {
@@ -3197,6 +4318,11 @@
             "description": "Friendly name to identify this OAuth connection",
             "example": "GitHub OAuth Connection"
           },
+          "providedId": {
+            "type": "string",
+            "description": "Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.",
+            "example": "google-oauth"
+          },
           "clientId": {
             "type": "string",
             "description": "OAuth client ID for the downstream provider",
@@ -3294,6 +4420,11 @@
             "type": "string",
             "description": "Friendly name to identify this OAuth connection",
             "example": "GitHub OAuth Connection"
+          },
+          "providedId": {
+            "type": "string",
+            "description": "Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.",
+            "example": "google-oauth"
           },
           "clientId": {
             "type": "string",
@@ -3499,25 +4630,39 @@
             "example": "https://example.com/tos"
           },
           "client_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "URL of the home page of the client",
+            "example": "https://example.com"
           },
           "logo_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "URL that references a logo for the client application",
+            "example": "https://example.com/logo.png"
           },
           "policy_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "URL that the client provides to the end-user to read about how the profile data will be used",
+            "example": "https://example.com/privacy"
           },
           "jwks_uri": {
-            "type": "string"
+            "type": "string",
+            "description": "URL for the client JSON Web Key Set document. If specified, must not include jwks parameter",
+            "example": "https://example.com/.well-known/jwks.json"
           },
           "jwks": {
-            "type": "string"
+            "type": "string",
+            "description": "Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter",
+            "example": "{\"keys\":[{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"key-1\",\"n\":\"...\",\"e\":\"AQAB\"}]}"
           },
           "software_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Unique identifier string assigned by the client developer or software publisher",
+            "example": "my-oauth-app-v1"
           },
           "software_version": {
-            "type": "string"
+            "type": "string",
+            "description": "Version identifier string for the client software",
+            "example": "1.0.0"
           }
         },
         "required": [
@@ -3862,6 +5007,85 @@
           "version"
         ]
       },
+      "TokenExchangeRequestDto": {
+        "type": "object",
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "description": "Grant type for token exchange as defined in RFC 8693",
+            "enum": [
+              "urn:ietf:params:oauth:grant-type:token-exchange"
+            ],
+            "example": "urn:ietf:params:oauth:grant-type:token-exchange"
+          },
+          "subject_token": {
+            "type": "string",
+            "description": "The access token that represents the identity of the party on behalf of whom the request is being made",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "subject_token_type": {
+            "type": "string",
+            "description": "Type identifier for the subject_token as defined in RFC 8693",
+            "enum": [
+              "urn:ietf:params:oauth:token-type:access_token"
+            ],
+            "example": "urn:ietf:params:oauth:token-type:access_token"
+          },
+          "resource": {
+            "type": "string",
+            "description": "Resource server URL that the client wants to access with the exchanged token",
+            "example": "http://localhost:4001/"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Optional space-delimited list of scopes for the exchanged token",
+            "example": "tasks:read tasks:write"
+          }
+        },
+        "required": [
+          "grant_type",
+          "subject_token",
+          "subject_token_type",
+          "resource"
+        ]
+      },
+      "TokenExchangeResponseDto": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "The newly issued access token after successful exchange",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "issued_token_type": {
+            "type": "string",
+            "description": "Type identifier for the issued token as defined in RFC 8693",
+            "example": "urn:ietf:params:oauth:token-type:access_token"
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Type of token issued, always Bearer for MCP clients",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "number",
+            "description": "Lifetime of the access token in seconds",
+            "example": 3600
+          },
+          "scope": {
+            "type": "string",
+            "description": "Space-delimited list of scopes granted for the exchanged token",
+            "example": "tasks:read tasks:write"
+          }
+        },
+        "required": [
+          "access_token",
+          "issued_token_type",
+          "token_type",
+          "expires_in",
+          "scope"
+        ]
+      },
       "JwkResponseDto": {
         "type": "object",
         "properties": {
@@ -3887,7 +5111,8 @@
           },
           "n": {
             "type": "string",
-            "description": "RSA modulus encoded using base64url."
+            "description": "RSA modulus encoded using base64url.",
+            "example": "xGOr-H7A..."
           },
           "e": {
             "type": "string",
@@ -3896,11 +5121,13 @@
           },
           "x": {
             "type": "string",
-            "description": "Public coordinate X for EC keys encoded using base64url."
+            "description": "Public coordinate X for EC keys encoded using base64url.",
+            "example": "WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis"
           },
           "y": {
             "type": "string",
-            "description": "Public coordinate Y for EC keys encoded using base64url."
+            "description": "Public coordinate Y for EC keys encoded using base64url.",
+            "example": "y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE"
           },
           "crv": {
             "type": "string",
@@ -4023,6 +5250,821 @@
           "grant_types_supported",
           "token_endpoint_auth_methods_supported",
           "code_challenge_methods_supported"
+        ]
+      },
+      "CreateAgentDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier for the agent",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "taskeroo.createTask",
+              "taskeroo.readTask",
+              "wikiroo.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true,
+            "default": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "systemPrompt",
+          "allowedTools"
+        ]
+      },
+      "AgentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the agent",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "description": {
+            "type": "object",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "taskeroo.createTask",
+              "taskeroo.readTask",
+              "wikiroo.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true
+          },
+          "concurrencyLimit": {
+            "type": "object",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Agent creation timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Agent last update timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "deletedAt": {
+            "type": "object",
+            "description": "Agent deletion timestamp (soft delete)",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "systemPrompt",
+          "allowedTools",
+          "isActive",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AgentListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of agents",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of agents matching the query",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "UpdateAgentDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier for the agent",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "taskeroo.createTask",
+              "taskeroo.readTask",
+              "wikiroo.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true,
+            "default": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          }
+        }
+      },
+      "ListAppsResponseDto": {
+        "type": "object",
+        "properties": {
+          "apps": {
+            "description": "List of available ADK app names",
+            "example": [
+              "buddy",
+              "taskeroo-agent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "apps"
+        ]
+      },
+      "CreateAdkSessionDto": {
+        "type": "object",
+        "properties": {
+          "appId": {
+            "type": "string",
+            "description": "App ID"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Optional session ID"
+          }
+        },
+        "required": [
+          "appId",
+          "userId"
+        ]
+      },
+      "FunctionCallDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the function call",
+            "example": "call_123"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the function being called",
+            "example": "taskeroo.createTask"
+          },
+          "args": {
+            "type": "object",
+            "description": "Arguments passed to the function",
+            "example": {
+              "name": "My Task",
+              "description": "Task description"
+            }
+          }
+        }
+      },
+      "FunctionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the function response",
+            "example": "call_123"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the function that was called",
+            "example": "taskeroo.createTask"
+          },
+          "response": {
+            "type": "object",
+            "description": "Response from the function execution",
+            "example": {
+              "result": "Task created successfully"
+            }
+          }
+        }
+      },
+      "ChatMessagePartDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Text content of the message part",
+            "example": "Hello, how can I help you?"
+          },
+          "functionCall": {
+            "description": "Function call data if this part is a function call",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionCallDto"
+              }
+            ]
+          },
+          "functionResponse": {
+            "description": "Function response data if this part is a function response",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionResponseDto"
+              }
+            ]
+          }
+        }
+      },
+      "ChatMessageContentDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Role of the message author (user, agent, system)",
+            "example": "agent"
+          },
+          "parts": {
+            "description": "Parts of the message content",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessagePartDto"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "parts"
+        ]
+      },
+      "UsageMetadataDto": {
+        "type": "object",
+        "properties": {
+          "promptTokenCount": {
+            "type": "number",
+            "description": "Number of tokens in the prompt",
+            "example": 150
+          },
+          "candidatesTokenCount": {
+            "type": "number",
+            "description": "Number of tokens in the candidates",
+            "example": 200
+          },
+          "totalTokenCount": {
+            "type": "number",
+            "description": "Total token count",
+            "example": 350
+          }
+        },
+        "required": [
+          "promptTokenCount",
+          "candidatesTokenCount",
+          "totalTokenCount"
+        ]
+      },
+      "ChatEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the chat event",
+            "example": "evt_123e4567"
+          },
+          "timestamp": {
+            "type": "number",
+            "description": "Unix timestamp when the event occurred",
+            "example": 1701234567890
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the event (user ID or agent ID)",
+            "example": "user-123"
+          },
+          "content": {
+            "description": "Content of the chat message",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatMessageContentDto"
+              }
+            ]
+          },
+          "partial": {
+            "type": "boolean",
+            "description": "Whether this is a partial event (streaming)",
+            "example": false
+          },
+          "invocationId": {
+            "type": "string",
+            "description": "Invocation identifier for the chat turn",
+            "example": "inv_123e4567"
+          },
+          "usageMetadata": {
+            "description": "Token usage metadata for the event",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UsageMetadataDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "timestamp",
+          "author",
+          "content"
+        ]
+      },
+      "AdkSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the session",
+            "example": "session-123e4567"
+          },
+          "appName": {
+            "type": "string",
+            "description": "Name of the ADK app",
+            "example": "buddy"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID associated with the session",
+            "example": "user-123"
+          },
+          "state": {
+            "type": "object",
+            "description": "Session state data",
+            "example": {
+              "conversationContext": "greeting"
+            }
+          },
+          "events": {
+            "description": "List of chat events in the session",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatEventDto"
+            }
+          },
+          "lastUpdateTime": {
+            "type": "number",
+            "description": "Unix timestamp of the last update to the session",
+            "example": 1701234567890
+          }
+        },
+        "required": [
+          "id",
+          "appName",
+          "userId",
+          "state",
+          "events",
+          "lastUpdateTime"
+        ]
+      },
+      "AdkListSessionsResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "description": "List of ADK sessions",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdkSessionResponseDto"
+            }
+          }
+        },
+        "required": [
+          "sessions"
+        ]
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {
+          "appId": {
+            "type": "string",
+            "description": "App ID (agent name)"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message content"
+          }
+        },
+        "required": [
+          "appId",
+          "userId",
+          "sessionId",
+          "message"
+        ]
+      },
+      "AdkSendMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "description": "List of chat events generated from sending the message",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatEventDto"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "CreateSessionDto": {
+        "type": "object",
+        "properties": {
+          "agentId": {
+            "type": "string",
+            "description": "ID of the agent for this chat session",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title for this session",
+            "example": "Banana MCP - design with Architect"
+          },
+          "project": {
+            "type": "string",
+            "description": "Optional project label for this session",
+            "example": "project:banana-mcp"
+          }
+        },
+        "required": [
+          "agentId"
+        ]
+      },
+      "ChatSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the session",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "adkSessionId": {
+            "type": "string",
+            "description": "ADK session identifier",
+            "example": "adk-session-123e4567-e89b-12d3-a456-426614174000"
+          },
+          "agentId": {
+            "type": "string",
+            "description": "ID of the agent for this chat session",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable title for this session",
+            "example": "Chat with Buddy - 2025-11-28"
+          },
+          "project": {
+            "type": "object",
+            "description": "Optional project label for this session",
+            "example": "project:banana-mcp"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "description": "Whether the session is archived",
+            "example": false
+          },
+          "isPinned": {
+            "type": "boolean",
+            "description": "Whether the session is pinned",
+            "example": false
+          },
+          "lastMessageAt": {
+            "type": "string",
+            "description": "Timestamp of the last message in this chat",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "referencedTasks": {
+            "description": "Tasks referenced in this session",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskResponseDto"
+            }
+          },
+          "subscribedTasks": {
+            "description": "Tasks subscribed to in this session",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskResponseDto"
+            }
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Session creation timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Session last update timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "deletedAt": {
+            "type": "object",
+            "description": "Session deletion timestamp (soft delete)",
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "adkSessionId",
+          "agentId",
+          "title",
+          "isArchived",
+          "isPinned",
+          "lastMessageAt",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SessionListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of sessions",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatSessionResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of sessions matching the filters",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "UpdateSessionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Human-readable title for this session",
+            "example": "Updated Chat Title"
+          },
+          "project": {
+            "type": "string",
+            "description": "Optional project label for this session",
+            "example": "project:banana-mcp"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "description": "Whether the session should be archived",
+            "example": false
+          },
+          "isPinned": {
+            "type": "boolean",
+            "description": "Whether the session should be pinned",
+            "example": true
+          }
+        }
+      },
+      "ChatSendMessageDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The message content to send",
+            "example": "Hello, how can you help me today?"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "ChatMessageEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "number"
+          },
+          "author": {
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/ChatMessageContentDto"
+          },
+          "partial": {
+            "type": "boolean"
+          },
+          "invocationId": {
+            "type": "string"
+          },
+          "usageMetadata": {
+            "$ref": "#/components/schemas/UsageMetadataDto"
+          }
+        },
+        "required": [
+          "id",
+          "timestamp",
+          "author",
+          "content"
+        ]
+      },
+      "SendMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageEventDto"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "UserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName"
+        ]
+      },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          }
+        },
+        "required": [
+          "user"
         ]
       }
     }

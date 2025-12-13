@@ -62,6 +62,8 @@ export class TaskerooController {
       assignee: dto.assignee,
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
+      createdBy: dto.createdBy,
+      dependsOnIds: dto.dependsOnIds,
     });
     return this.mapResultToResponse(result);
   }
@@ -84,6 +86,8 @@ export class TaskerooController {
       assignee: dto.assignee,
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
+      createdBy: dto.createdBy,
+      dependsOnIds: dto.dependsOnIds,
     });
     return this.mapResultToResponse(result);
   }
@@ -269,6 +273,8 @@ export class TaskerooController {
       sessionId: result.sessionId ?? '',
       comments: result.comments.map((c) => this.mapCommentResultToResponse(c)),
       tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
+      createdBy: result.createdBy,
+      dependsOnIds: result.dependsOnIds,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     };

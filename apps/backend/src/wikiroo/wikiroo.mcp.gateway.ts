@@ -60,18 +60,22 @@ export class WikirooMcpGateway {
       'create_page',
       {
         title: 'Create wiki page',
-        description: 'Create a new wiki page with title, content, and author',
+        description: 'Create a new wiki page with title, content, author, and optional parent',
         inputSchema: {
           title: z.string(),
           content: z.string(),
           author: z.string(),
+          parentId: z.string().optional(),
+          tagNames: z.array(z.string()).optional(),
         },
       },
-      async ({ title, content, author }) => {
+      async ({ title, content, author, parentId, tagNames }) => {
         const page = await this.wikirooService.createPage({
           title,
           content,
           author,
+          parentId,
+          tagNames,
         });
         return {
           content: [{
@@ -86,16 +90,18 @@ export class WikirooMcpGateway {
       'update_page',
       {
         title: 'Update wiki page',
-        description: 'Update the title, content, or author of an existing wiki page',
+        description: 'Update the title, content, author, parent, or tags of an existing wiki page',
         inputSchema: {
           pageId: z.string(),
           title: z.string().optional(),
           content: z.string().optional(),
           author: z.string().optional(),
+          parentId: z.string().nullable().optional(),
+          tagNames: z.array(z.string()).optional(),
         },
       },
-      async ({ pageId, title, content, author }) => {
-        if (title === undefined && content === undefined && author === undefined) {
+      async ({ pageId, title, content, author, parentId, tagNames }) => {
+        if (title === undefined && content === undefined && author === undefined && parentId === undefined && tagNames === undefined) {
           throw new Error('At least one field must be provided to update the page.');
         }
 
@@ -103,6 +109,8 @@ export class WikirooMcpGateway {
           title,
           content,
           author,
+          parentId,
+          tagNames,
         });
 
         return {
@@ -215,6 +223,43 @@ export class WikirooMcpGateway {
           content: [{
             type: "text",
             text: JSON.stringify(tags),
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'get_child_pages',
+      {
+        title: 'Get child pages',
+        description: 'Get all child pages for a given parent page ID (or null for root pages)',
+        inputSchema: {
+          parentId: z.string().nullable(),
+        },
+      },
+      async ({ parentId }) => {
+        const children = await this.wikirooService.getChildPages(parentId);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(children),
+          }],
+        }
+      }
+    )
+
+    server.registerTool(
+      'get_page_tree',
+      {
+        title: 'Get page tree',
+        description: 'Get the complete hierarchical tree structure of all pages',
+      },
+      async ({}) => {
+        const tree = await this.wikirooService.getPageTree();
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(tree),
           }],
         }
       }

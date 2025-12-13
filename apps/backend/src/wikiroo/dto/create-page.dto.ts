@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength, IsArray, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, IsArray, IsOptional, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePageDto {
@@ -37,4 +37,12 @@ export class CreatePageDto {
   @IsString({ each: true })
   @IsOptional()
   tagNames?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Parent page ID for nesting',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsUUID()
+  parentId?: string;
 }

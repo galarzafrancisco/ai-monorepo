@@ -7,20 +7,31 @@ import {
   DeleteDateColumn,
   VersionColumn,
   ManyToMany,
+  ManyToOne,
+  OneToMany,
   JoinTable,
+  JoinColumn,
+  Index,
 } from 'typeorm';
 import { WikiTagEntity } from './tag.entity';
 
 @Entity({ name: 'wiki_pages' })
+@Index(['parentId', 'order'])
 export class WikiPageEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text' })
   title!: string;
 
   @Column('text')
   content!: string;
+
+  @Column({ type: 'uuid', nullable: true, name: 'parent_id' })
+  parentId?: string | null;
+
+  @Column({ type: 'integer', default: 0 })
+  order!: number;
 
   @Column({ type: 'text' })
   author!: string;
@@ -32,6 +43,13 @@ export class WikiPageEntity {
     inverseJoinColumn: { name: 'tag_id' },
   })
   tags!: WikiTagEntity[];
+
+  @ManyToOne(() => WikiPageEntity, page => page.children, { nullable: true })
+  @JoinColumn({ name: 'parent_id' })
+  parent?: WikiPageEntity | null;
+
+  @OneToMany(() => WikiPageEntity, page => page.parent)
+  children!: WikiPageEntity[];
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

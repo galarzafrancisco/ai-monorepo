@@ -27,6 +27,7 @@ export class JwkResponseDto {
 
   @ApiPropertyOptional({
     description: 'RSA modulus encoded using base64url.',
+    example: 'xGOr-H7A...',
   })
   n?: string;
 
@@ -38,11 +39,13 @@ export class JwkResponseDto {
 
   @ApiPropertyOptional({
     description: 'Public coordinate X for EC keys encoded using base64url.',
+    example: 'WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis',
   })
   x?: string;
 
   @ApiPropertyOptional({
     description: 'Public coordinate Y for EC keys encoded using base64url.',
+    example: 'y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE',
   })
   y?: string;
 

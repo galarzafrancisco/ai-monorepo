@@ -1,36 +1,82 @@
-import { useState, useEffect, FormEvent } from 'react';
-import type { WikiPage } from './types';
+import { useState, useEffect, FormEvent, useMemo } from 'react';
+import type { WikiPage, WikiPageSummary } from './types';
 import type { CreatePageDto, UpdatePageDto } from 'shared';
 import { TagInput } from './TagInput';
+import { RichEditor } from './RichEditor';
+
+// Helper to get all descendant IDs of a page (to prevent circular references)
+function getDescendantIds(pageId: string, allPages: WikiPageSummary[]): Set<string> {
+  const descendants = new Set<string>();
+  const queue = [pageId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    descendants.add(currentId);
+
+    // Find all children of current page
+    const children = allPages.filter(p => {
+      const pid = p.parentId;
+      return typeof pid === 'string' && pid === currentId;
+    });
+    children.forEach(child => queue.push(child.id));
+  }
+
+  return descendants;
+}
 
 type WikiPageFormProps =
   | {
       mode: 'create';
       page?: never;
+      pages: WikiPageSummary[];
       onSubmit: (data: CreatePageDto) => Promise<void>;
       onCancel: () => void;
       isSubmitting: boolean;
+      defaultParentId?: string;
     }
   | {
       mode: 'edit';
       page: WikiPage;
+      pages: WikiPageSummary[];
       onSubmit: (data: UpdatePageDto) => Promise<void>;
       onCancel: () => void;
       isSubmitting: boolean;
+      defaultParentId?: never;
     };
 
 export function WikiPageForm({
   mode,
   page,
+  pages,
   onSubmit,
   onCancel,
   isSubmitting,
+  defaultParentId,
 }: WikiPageFormProps) {
   const [title, setTitle] = useState(page?.title || '');
   const [content, setContent] = useState(page?.content || '');
   const [author, setAuthor] = useState(page?.author || '');
   const [tagNames, setTagNames] = useState<string[]>(page?.tags?.map(t => t.name) || []);
+  const [parentId, setParentId] = useState<string | null>(() => {
+    if (mode === 'create' && defaultParentId) {
+      return defaultParentId;
+    }
+    const pid = page?.parentId;
+    return typeof pid === 'string' ? pid : null;
+  });
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Compute available parents based on mode
+  const availableParents = useMemo(() => {
+    if (mode === 'create') {
+      // When creating, all pages are valid parents
+      return pages;
+    } else {
+      // When editing, exclude current page and its descendants
+      const excludedIds = getDescendantIds(page.id, pages);
+      return pages.filter(p => !excludedIds.has(p.id));
+    }
+  }, [mode, pages, page]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -56,6 +102,7 @@ export function WikiPageForm({
           author: author.trim(),
           content: content.trim(),
           ...(tagNames.length > 0 && { tagNames }),
+          ...(parentId && { parentId }),
         };
         await onSubmit(payload);
       } else {
@@ -80,6 +127,12 @@ export function WikiPageForm({
         const tagsChanged = JSON.stringify(tagNames.sort()) !== JSON.stringify(currentTagNames.sort());
         if (tagsChanged) {
           payload.tagNames = tagNames;
+          hasChanges = true;
+        }
+
+        const currentParentId = typeof page.parentId === 'string' ? page.parentId : null;
+        if (parentId !== currentParentId) {
+          payload.parentId = parentId;
           hasChanges = true;
         }
 
@@ -132,14 +185,28 @@ export function WikiPageForm({
       </div>
 
       <div className="wikiroo-form-group">
+        <label htmlFor={`${mode}-parent`}>Parent Page</label>
+        <select
+          id={`${mode}-parent`}
+          value={parentId ?? ''}
+          onChange={(e) => setParentId(e.target.value || null)}
+          disabled={isSubmitting}
+        >
+          <option value="">None (top level)</option>
+          {availableParents.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="wikiroo-form-group">
         <label htmlFor={`${mode}-content`}>Content *</label>
-        <textarea
-          id={`${mode}-content`}
+        <RichEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Write in markdown or plain text"
-          rows={mode === 'create' ? 6 : 15}
-          required
+          onChange={setContent}
+          placeholder="Write in markdown or use / for commands"
           disabled={isSubmitting}
         />
       </div>

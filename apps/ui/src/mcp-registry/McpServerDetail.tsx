@@ -46,6 +46,7 @@ export function McpServerDetail() {
     authorizeUrl: '',
     tokenUrl: '',
     friendlyName: '',
+    providedId: '',
   });
   const [mappingForm, setMappingForm] = useState({
     scopeId: '',
@@ -89,6 +90,7 @@ export function McpServerDetail() {
         authorizeUrl: '',
         tokenUrl: '',
         friendlyName: '',
+        providedId: '',
       });
     } catch (err) {
       console.error('Failed to create connection', err);
@@ -105,6 +107,7 @@ export function McpServerDetail() {
         authorizeUrl: connection.authorizeUrl,
         tokenUrl: connection.tokenUrl,
         friendlyName: connection.friendlyName,
+        providedId: connection.providedId || '',
       });
       setActiveForm('edit-connection');
     }
@@ -121,9 +124,11 @@ export function McpServerDetail() {
         authorizeUrl?: string;
         tokenUrl?: string;
         friendlyName?: string;
+        providedId?: string;
       } = {};
 
       if (connectionForm.friendlyName) updateData.friendlyName = connectionForm.friendlyName;
+      if (connectionForm.providedId) updateData.providedId = connectionForm.providedId;
       if (connectionForm.clientId) updateData.clientId = connectionForm.clientId;
       if (connectionForm.clientSecret) updateData.clientSecret = connectionForm.clientSecret;
       if (connectionForm.authorizeUrl) updateData.authorizeUrl = connectionForm.authorizeUrl;
@@ -138,6 +143,7 @@ export function McpServerDetail() {
         authorizeUrl: '',
         tokenUrl: '',
         friendlyName: '',
+        providedId: '',
       });
     } catch (err) {
       console.error('Failed to update connection', err);
@@ -454,6 +460,26 @@ export function McpServerDetail() {
                 />
               </div>
               <div className="form-group">
+                <label htmlFor="providedId">
+                  Provided ID <span style={{ color: '#888', fontWeight: 'normal' }}>(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="providedId"
+                  value={connectionForm.providedId}
+                  onChange={(e) =>
+                    setConnectionForm({ ...connectionForm, providedId: e.target.value })
+                  }
+                  placeholder="e.g., google-oauth, github-integration"
+                  pattern="[a-zA-Z0-9_-]+"
+                  title="Only alphanumeric characters, dashes, and underscores are allowed"
+                  autoComplete="off"
+                />
+                <small style={{ color: '#888', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                  Unique identifier for token exchange (alphanumeric, dash, underscore only)
+                </small>
+              </div>
+              <div className="form-group">
                 <label htmlFor="clientId">Client ID</label>
                 <input
                   type="text"
@@ -539,6 +565,26 @@ export function McpServerDetail() {
                 />
               </div>
               <div className="form-group">
+                <label htmlFor="editProvidedId">
+                  Provided ID <span style={{ color: '#888', fontWeight: 'normal' }}>(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="editProvidedId"
+                  value={connectionForm.providedId}
+                  onChange={(e) =>
+                    setConnectionForm({ ...connectionForm, providedId: e.target.value })
+                  }
+                  placeholder="e.g., google-oauth, github-integration"
+                  pattern="[a-zA-Z0-9_-]+"
+                  title="Only alphanumeric characters, dashes, and underscores are allowed"
+                  autoComplete="off"
+                />
+                <small style={{ color: '#888', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                  Unique identifier for token exchange (alphanumeric, dash, underscore only)
+                </small>
+              </div>
+              <div className="form-group">
                 <label htmlFor="editClientId">Client ID</label>
                 <input
                   type="text"
@@ -602,6 +648,7 @@ export function McpServerDetail() {
                       authorizeUrl: '',
                       tokenUrl: '',
                       friendlyName: '',
+                      providedId: '',
                     });
                   }}
                   className="btn-secondary"

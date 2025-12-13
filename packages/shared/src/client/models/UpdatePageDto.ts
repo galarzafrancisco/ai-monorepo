@@ -19,5 +19,13 @@ export type UpdatePageDto = {
      * Array of tag names to associate with the page
      */
     tagNames?: Array<string>;
+    /**
+     * Parent page ID (null to remove parent)
+     */
+    parentId?: string | null;
+    /**
+     * Order within siblings
+     */
+    order?: number;
 };
 

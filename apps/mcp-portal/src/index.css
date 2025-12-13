@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* -------------------------------------------------------------------
+   Global base styles (all pure CSS)
+------------------------------------------------------------------- */
+
+/* Font & colour defaults */
+:root {
+  /* dark navy gradient—matches your dashboard bg */
+  --bg-start: #0b1220;
+  --bg-end:   #0e0f19;
+
+  /* text & link colours */
+  --text-main: #cbd5e1;     /* slate-300 */
+  --link:      #38bdf8;     /* sky-400  */
+  --link-hover:#7dd3fc;     /* sky-300  */
+}
+
+/* Reset and body styling */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+               sans-serif;
+  color: var(--text-main);
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Anchors */
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+a:hover,
+a:focus {
+  color: var(--link-hover);
+}
+a:visited {
+  color: var(--link);   /* kill the default purple */
+}
+
+body {
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Buttons – neutral pill you can override in components */
+button {
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+button:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
