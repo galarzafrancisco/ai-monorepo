@@ -780,6 +780,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/.well-known/oauth-authorization-server/mcp/issuer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the authorization server issuer URL
+         * @description Returns the configured authorization server issuer URL from environment configuration
+         */
+        get: operations["DiscoveryController_getIssuer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
         parameters: {
             query?: never;
@@ -4943,6 +4963,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JwksResponseDto"];
+                };
+            };
+        };
+    };
+    DiscoveryController_getIssuer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Issuer URL retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example http://localhost:4000 */
+                        issuer?: string;
+                    };
                 };
             };
         };

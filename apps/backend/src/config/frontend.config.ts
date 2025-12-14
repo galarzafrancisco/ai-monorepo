@@ -8,6 +8,8 @@
  * - In development: Frontend runs on a different port (absolute URLs)
  */
 
+import { getConfig, isDevelopment } from './env.config';
+
 /**
  * Get the frontend base URL for redirects and links
  *
@@ -15,9 +17,9 @@
  */
 export function getFrontendUrl(): string {
   // In development, frontend runs on a different port
-  if (process.env.NODE_ENV !== 'production') {
-    const uiPort = process.env.VITE_PORT || '5173';
-    return `http://localhost:${uiPort}`;
+  if (isDevelopment()) {
+    const config = getConfig();
+    return `http://localhost:${config.vitePort}`;
   }
 
   // In production, frontend is served from the same origin
@@ -40,20 +42,5 @@ export function getFrontendPath(path: string): string {
   return `${baseUrl}${normalizedPath}`;
 }
 
-/**
- * Check if the application is running in development mode
- *
- * @returns true if running in development, false otherwise
- */
-export function isDevelopment(): boolean {
-  return process.env.NODE_ENV !== 'production';
-}
-
-/**
- * Check if the application is running in production mode
- *
- * @returns true if running in production, false otherwise
- */
-export function isProduction(): boolean {
-  return process.env.NODE_ENV === 'production';
-}
+// Re-export environment checks from env.config for convenience
+export { isDevelopment, isProduction } from './env.config';
