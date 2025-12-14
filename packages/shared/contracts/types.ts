@@ -449,7 +449,8 @@ export interface paths {
         delete: operations["McpRegistryController_deleteServer"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update MCP server details */
+        patch: operations["McpRegistryController_updateServer"];
         trace?: never;
     };
     "/api/v1/mcp/servers/{serverId}/scopes": {
@@ -1721,6 +1722,23 @@ export interface components {
              * @example 50
              */
             limit: number;
+        };
+        UpdateServerDto: {
+            /**
+             * @description Display name of the MCP server
+             * @example GitHub Integration
+             */
+            name?: string;
+            /**
+             * @description Short description of the MCP server
+             * @example Provides access to GitHub repositories and issues
+             */
+            description?: string;
+            /**
+             * @description URL that MCP Clients will use to connect to the server
+             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             */
+            url?: string;
         };
         DeleteServerResponseDto: {
             /**
@@ -4135,6 +4153,40 @@ export interface operations {
             };
             /** @description Server has dependencies */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_updateServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateServerDto"];
+            };
+        };
+        responses: {
+            /** @description Server updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerResponseDto"];
+                };
+            };
+            /** @description Server not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

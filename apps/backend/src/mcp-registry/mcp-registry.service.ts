@@ -9,6 +9,7 @@ import {
 } from './entities';
 import {
   CreateServerInput,
+  UpdateServerInput,
   CreateScopeInput,
   CreateConnectionInput,
   UpdateConnectionInput,
@@ -120,6 +121,25 @@ export class McpRegistryService {
         this.mapConnectionEntityToRecord(connection),
       ),
     };
+  }
+
+  async updateServer(
+    serverId: string,
+    input: UpdateServerInput,
+  ): Promise<ServerRecord> {
+    const server = await this.serverRepository.findOne({
+      where: { id: serverId },
+    });
+
+    if (!server) {
+      throw new ServerNotFoundError(serverId);
+    }
+
+    // Update only provided fields
+    Object.assign(server, input);
+
+    const updatedServer = await this.serverRepository.save(server);
+    return this.mapServerEntityToRecord(updatedServer);
   }
 
   async deleteServer(id: string): Promise<void> {

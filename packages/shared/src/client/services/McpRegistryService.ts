@@ -16,6 +16,7 @@ import type { ScopeResponseDto } from '../models/ScopeResponseDto';
 import type { ServerListResponseDto } from '../models/ServerListResponseDto';
 import type { ServerResponseDto } from '../models/ServerResponseDto';
 import type { UpdateConnectionDto } from '../models/UpdateConnectionDto';
+import type { UpdateServerDto } from '../models/UpdateServerDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -74,6 +75,30 @@ export class McpRegistryService {
             path: {
                 'serverId': serverId,
             },
+            errors: {
+                404: `Server not found`,
+            },
+        });
+    }
+    /**
+     * Update MCP server details
+     * @param serverId Server UUID
+     * @param requestBody
+     * @returns ServerResponseDto Server updated successfully
+     * @throws ApiError
+     */
+    public static mcpRegistryControllerUpdateServer(
+        serverId: string,
+        requestBody: UpdateServerDto,
+    ): CancelablePromise<ServerResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/mcp/servers/{serverId}',
+            path: {
+                'serverId': serverId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 404: `Server not found`,
             },

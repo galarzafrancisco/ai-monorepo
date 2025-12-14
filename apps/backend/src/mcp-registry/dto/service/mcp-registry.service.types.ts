@@ -10,6 +10,12 @@ export type CreateServerInput = {
   url?: string;
 };
 
+export type UpdateServerInput = {
+  name?: string;
+  description?: string;
+  url?: string;
+};
+
 export type CreateScopeInput = {
   scopeId: string;
   description: string;

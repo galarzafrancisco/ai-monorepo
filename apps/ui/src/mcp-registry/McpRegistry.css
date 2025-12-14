@@ -683,9 +683,9 @@
   background: transparent;
   color: #ef4444;
   border: 1px solid #ef4444;
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -756,8 +756,17 @@
 }
 
 .table-col-actions {
-  width: 100px;
+  width: 160px;
   text-align: right;
+  white-space: nowrap;
+}
+
+.table-col-actions button {
+  margin-left: 8px;
+}
+
+.table-col-actions button:first-child {
+  margin-left: 0;
 }
 
 /* Subsection descriptions */
@@ -770,17 +779,21 @@
 
 /* Table Add Row */
 .table-add-row {
-  display: flex;
-  align-items: center;
-  padding: 14px 16px;
-  background: #f7fafc;
-  border-top: 1px solid #e2e8f0;
+  display: table-row;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.table-add-row:hover {
+.table-add-row:hover .add-row-cell {
   background: #edf2f7;
+}
+
+.table-add-row .add-row-cell {
+  display: table-cell;
+  padding: 14px 16px;
+  background: #f7fafc;
+  border-top: 1px solid #e2e8f0;
+  transition: all 0.15s ease;
 }
 
 .add-row-text {

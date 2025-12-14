@@ -130,6 +130,28 @@ export const useMcpRegistry = () => {
     }
   };
 
+  // Update server
+  const updateServer = async (
+    serverId: string,
+    data: { name?: string; description?: string; url?: string }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedServer = await McpRegistryService.mcpRegistryControllerUpdateServer(serverId, data);
+      if (selectedServer?.id === serverId) {
+        setSelectedServer(updatedServer);
+      }
+      await loadServers();
+      return updatedServer;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update server');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Create scope
   const createScope = async (serverId: string, scopeId: string, description: string) => {
     setIsLoading(true);
@@ -290,6 +312,7 @@ export const useMcpRegistry = () => {
     loadServers,
     loadServerDetails,
     createServer,
+    updateServer,
     createScope,
     createConnection,
     updateConnection,

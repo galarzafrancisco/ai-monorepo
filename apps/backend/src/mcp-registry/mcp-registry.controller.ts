@@ -15,6 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from 
 import { McpRegistryService } from './mcp-registry.service';
 import {
   CreateServerDto,
+  UpdateServerDto,
   CreateScopeDto,
   CreateConnectionDto,
   UpdateConnectionDto,
@@ -78,6 +79,19 @@ export class McpRegistryController {
     const server = this.isUuid(serverId)
       ? await this.mcpRegistryService.getServerById(serverId)
       : await this.mcpRegistryService.getServerByProvidedId(serverId);
+    return this.mapServerToResponse(server);
+  }
+
+  @Patch('servers/:serverId')
+  @ApiOperation({ summary: 'Update MCP server details' })
+  @ApiParam({ name: 'serverId', description: 'Server UUID' })
+  @ApiResponse({ status: 200, description: 'Server updated successfully', type: ServerResponseDto })
+  @ApiResponse({ status: 404, description: 'Server not found' })
+  async updateServer(
+    @Param('serverId', ParseUUIDPipe) serverId: string,
+    @Body() dto: UpdateServerDto,
+  ): Promise<ServerResponseDto> {
+    const server = await this.mcpRegistryService.updateServer(serverId, dto);
     return this.mapServerToResponse(server);
   }
 
