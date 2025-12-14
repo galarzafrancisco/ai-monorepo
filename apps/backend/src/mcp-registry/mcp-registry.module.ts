@@ -8,6 +8,7 @@ import {
   McpConnectionEntity,
   McpScopeMappingEntity,
 } from './entities';
+import { AuthJourneysModule } from '../auth-journeys/auth-journeys.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import {
       McpConnectionEntity,
       McpScopeMappingEntity,
     ]),
+    AuthJourneysModule,
   ],
   controllers: [McpRegistryController],
   providers: [McpRegistryService],
