@@ -433,7 +433,9 @@ export function McpServerDetail() {
           {scopes.length === 0 ? (
             <div className="proper-table">
               <div className="table-add-row" onClick={() => setActiveForm('scope')}>
-                <span className="add-row-text">Add permission...</span>
+                <div className="add-row-cell">
+                  <span className="add-row-text">Add permission...</span>
+                </div>
               </div>
             </div>
           ) : (
@@ -458,7 +460,9 @@ export function McpServerDetail() {
                 </div>
               ))}
               <div className="table-add-row" onClick={() => setActiveForm('scope')}>
-                <span className="add-row-text">Add permission...</span>
+                <div className="add-row-cell">
+                  <span className="add-row-text">Add permission...</span>
+                </div>
               </div>
             </div>
           )}
@@ -477,7 +481,9 @@ export function McpServerDetail() {
           {connections.length === 0 ? (
             <div className="proper-table">
               <div className="table-add-row" onClick={() => setActiveForm('connection')}>
-                <span className="add-row-text">Add connection...</span>
+                <div className="add-row-cell">
+                  <span className="add-row-text">Add connection...</span>
+                </div>
               </div>
             </div>
           ) : (
@@ -510,7 +516,9 @@ export function McpServerDetail() {
                 </div>
               ))}
               <div className="table-add-row" onClick={() => setActiveForm('connection')}>
-                <span className="add-row-text">Add connection...</span>
+                <div className="add-row-cell">
+                  <span className="add-row-text">Add connection...</span>
+                </div>
               </div>
             </div>
           )}
