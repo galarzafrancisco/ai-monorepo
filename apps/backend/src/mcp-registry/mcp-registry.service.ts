@@ -446,6 +446,7 @@ export class McpRegistryService {
       providedId: server.providedId,
       name: server.name,
       description: server.description,
+      url: server.url,
       createdAt: server.createdAt instanceof Date ? server.createdAt : new Date(server.createdAt),
       updatedAt: server.updatedAt instanceof Date ? server.updatedAt : new Date(server.updatedAt),
     };

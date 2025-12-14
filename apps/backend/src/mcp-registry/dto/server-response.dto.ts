@@ -26,6 +26,13 @@ export class ServerResponseDto {
   description!: string;
 
   @ApiProperty({
+    description: 'URL that MCP Clients will use to connect to the server',
+    example: 'http://localhost:3000/api/v1/taskeroo/tasks/mcp',
+    required: false,
+  })
+  url?: string;
+
+  @ApiProperty({
     description: 'Timestamp when the server was created',
     example: '2025-11-05T08:00:00.000Z',
   })

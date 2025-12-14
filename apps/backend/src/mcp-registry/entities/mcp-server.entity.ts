@@ -24,6 +24,9 @@ export class McpServerEntity {
   @Column({ type: 'text' })
   description!: string;
 
+  @Column({ type: 'varchar', length: 2048, nullable: true })
+  url?: string;
+
   @OneToMany(() => McpScopeEntity, (scope) => scope.server, { cascade: true })
   scopes!: McpScopeEntity[];
 
