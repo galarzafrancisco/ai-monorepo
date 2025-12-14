@@ -186,6 +186,16 @@ export class AuthorizationService {
       return this.completeMcpAuthFlow(journeyId);
     }
 
+    // Check if any scopes were requested in the MCP auth flow
+    const mcpAuthFlow = connectionFlows[0]?.authJourney?.mcpAuthorizationFlow;
+    const hasRequestedScopes = mcpAuthFlow?.scope && mcpAuthFlow.scope.trim().length > 0;
+
+    // If no scopes were requested, skip downstream flows and complete MCP auth
+    if (!hasRequestedScopes) {
+      this.logger.log('No scopes requested, skipping downstream OAuth flows and completing MCP auth');
+      return this.completeMcpAuthFlow(journeyId);
+    }
+
     // Find the next pending connection flow
     const nextPendingFlow = connectionFlows.find(flow => flow.status === 'pending');
 
