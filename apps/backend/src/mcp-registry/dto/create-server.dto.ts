@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsOptional, IsUrl } from 'class-validator';
 
 export class CreateServerDto {
   @ApiProperty({
@@ -27,4 +27,15 @@ export class CreateServerDto {
   @IsString()
   @IsNotEmpty()
   description!: string;
+
+  @ApiProperty({
+    description: 'URL that MCP Clients will use to connect to the server',
+    example: 'http://localhost:3000/api/v1/taskeroo/tasks/mcp',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  @MaxLength(2048)
+  url?: string;
 }

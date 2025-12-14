@@ -15,14 +15,19 @@ export function McpRegistryDashboard() {
     providedId: '',
     name: '',
     description: '',
+    url: '',
   });
 
   const handleCreateServer = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const createdServer = await createServer(formData);
+      const serverData = {
+        ...formData,
+        url: formData.url || undefined,
+      };
+      const createdServer = await createServer(serverData);
       setShowCreateForm(false);
-      setFormData({ providedId: '', name: '', description: '' });
+      setFormData({ providedId: '', name: '', description: '', url: '' });
       // Navigate to the newly created server's detail page
       if (createdServer) {
         navigate(`/mcp-registry/${createdServer.id}`);
@@ -121,6 +126,18 @@ export function McpRegistryDashboard() {
                   rows={3}
                   required
                 />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="url">Server URL (optional)</label>
+                <input
+                  type="url"
+                  id="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  placeholder="e.g., http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+                />
+                <small>URL that MCP clients will use to connect to this server</small>
               </div>
 
               <div className="form-actions">

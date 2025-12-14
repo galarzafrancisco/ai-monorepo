@@ -15,5 +15,9 @@ export type CreateServerDto = {
      * Short description of the MCP server
      */
     description: string;
+    /**
+     * URL that MCP Clients will use to connect to the server
+     */
+    url?: string;
 };
 

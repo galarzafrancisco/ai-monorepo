@@ -271,6 +271,7 @@ export class McpRegistryController {
       providedId: server.providedId,
       name: server.name,
       description: server.description,
+      url: server.url,
       createdAt: this.formatDate(server.createdAt),
       updatedAt: this.formatDate(server.updatedAt),
     };

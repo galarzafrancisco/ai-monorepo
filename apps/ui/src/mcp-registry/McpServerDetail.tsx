@@ -337,6 +337,23 @@ export function McpServerDetail() {
               <span className="info-value">{scopes.map(s => s.scopeId).join(', ')}</span>
             </div>
           )}
+          {selectedServer.url && (
+            <div className="info-item inspector-command-item">
+              <span className="info-label">Inspector Command</span>
+              <div className="inspector-command">
+                <code className="inspector-code">npx @modelcontextprotocol/inspector --transport http {selectedServer.url}</code>
+                <button
+                  className="btn-secondary btn-sm copy-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`npx @modelcontextprotocol/inspector --transport http ${selectedServer.url}`);
+                  }}
+                  title="Copy to clipboard"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Authorization Server Metadata */}

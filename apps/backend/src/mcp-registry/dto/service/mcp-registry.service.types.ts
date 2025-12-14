@@ -7,6 +7,7 @@ export type CreateServerInput = {
   providedId: string;
   name: string;
   description: string;
+  url?: string;
 };
 
 export type CreateScopeInput = {
@@ -35,6 +36,7 @@ export type ServerRecord = {
   providedId: string;
   name: string;
   description: string;
+  url?: string;
   createdAt: Date;
   updatedAt: Date;
 };
