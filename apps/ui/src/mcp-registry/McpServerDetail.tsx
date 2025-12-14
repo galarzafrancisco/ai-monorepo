@@ -245,6 +245,46 @@ export function McpServerDetail() {
     });
   };
 
+  // Group mappings by MCP Scope, then by Connection
+  const groupedMappings = useMemo(() => {
+    const groups: {
+      [scopeId: string]: {
+        scope: typeof scopes[0];
+        connections: {
+          [connectionId: string]: {
+            connection: typeof connections[0];
+            mappings: typeof mappings;
+          };
+        };
+      };
+    } = {};
+
+    mappings.forEach((mapping) => {
+      const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
+      const connection = connections.find((c) => c.id === mapping.connectionId);
+
+      if (!scope || !connection) return;
+
+      if (!groups[mapping.scopeId]) {
+        groups[mapping.scopeId] = {
+          scope,
+          connections: {},
+        };
+      }
+
+      if (!groups[mapping.scopeId].connections[mapping.connectionId]) {
+        groups[mapping.scopeId].connections[mapping.connectionId] = {
+          connection,
+          mappings: [],
+        };
+      }
+
+      groups[mapping.scopeId].connections[mapping.connectionId].mappings.push(mapping);
+    });
+
+    return groups;
+  }, [mappings, scopes, connections]);
+
   if (isLoading && !selectedServer) {
     return <div className="loading">Loading server details...</div>;
   }
@@ -379,31 +419,38 @@ export function McpServerDetail() {
                 + Add Mapping
               </button>
             </div>
-            <div className="items-list">
-              {mappings.length === 0 ? (
-                <p className="empty-text">No mappings configured</p>
-              ) : (
-                mappings.map((mapping) => {
-                  const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
-                  const connection = connections.find((c) => c.id === mapping.connectionId);
-                  return (
-                    <div key={mapping.id} className="item-card">
-                      <div className="item-content">
-                        <h3>{scope?.scopeId || mapping.scopeId}</h3>
-                        <p>→ {mapping.downstreamScope}</p>
-                        <p className="small-text">via {connection?.friendlyName || 'Unknown'}</p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteMapping(mapping.id)}
-                        className="btn-delete"
-                      >
-                        Delete
-                      </button>
+            {mappings.length === 0 ? (
+              <p className="empty-text">No mappings configured</p>
+            ) : (
+              <div className="grouped-mappings">
+                {Object.entries(groupedMappings).map(([scopeId, scopeGroup]) => (
+                  <div key={scopeId} className="scope-group">
+                    <h3 className="scope-group-title">{scopeGroup.scope.scopeId}</h3>
+                    <div className="connection-groups">
+                      {Object.entries(scopeGroup.connections).map(([connectionId, connectionGroup]) => (
+                        <div key={connectionId} className="connection-group">
+                          <h4 className="connection-group-title">{connectionGroup.connection.friendlyName}</h4>
+                          <div className="mapping-items">
+                            {connectionGroup.mappings.map((mapping) => (
+                              <div key={mapping.id} className="mapping-item">
+                                <span className="mapping-scope">{mapping.downstreamScope}</span>
+                                <button
+                                  onClick={() => handleDeleteMapping(mapping.id)}
+                                  className="btn-delete-small"
+                                  title="Delete mapping"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  );
-                })
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
