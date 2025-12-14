@@ -7,7 +7,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
 import { useAuthorizationServer } from './useAuthorizationServer';
 
-type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | null;
+type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | 'edit-server' | null;
 
 interface ConfirmState {
   message: string;
@@ -27,6 +27,7 @@ export function McpServerDetail() {
     loadServerDetails,
     createScope,
     createConnection,
+    updateServer,
     updateConnection,
     createMapping,
     deleteScope,
@@ -40,6 +41,7 @@ export function McpServerDetail() {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
+  const [serverForm, setServerForm] = useState({ name: '', description: '', url: '' });
   const [scopeForm, setScopeForm] = useState({ scopeId: '', description: '' });
   const [connectionForm, setConnectionForm] = useState({
     clientId: '',
@@ -66,6 +68,33 @@ export function McpServerDetail() {
     if (!selectedServer) return;
     loadAuthorizationServerMetadata(selectedServer.providedId, "0.0.0");
   }, [selectedServer])
+
+  const handleEditServer = () => {
+    if (!selectedServer) return;
+    setServerForm({
+      name: selectedServer.name,
+      description: selectedServer.description,
+      url: selectedServer.url || '',
+    });
+    setActiveForm('edit-server');
+  };
+
+  const handleUpdateServer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!serverId) return;
+    try {
+      const updateData: { name?: string; description?: string; url?: string } = {};
+      if (serverForm.name) updateData.name = serverForm.name;
+      if (serverForm.description) updateData.description = serverForm.description;
+      if (serverForm.url) updateData.url = serverForm.url;
+
+      await updateServer(serverId, updateData);
+      setActiveForm(null);
+      setServerForm({ name: '', description: '', url: '' });
+    } catch (err) {
+      console.error('Failed to update server', err);
+    }
+  };
 
   const handleCreateScope = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -313,7 +342,12 @@ export function McpServerDetail() {
 
       {/* Info Section */}
       <div className="info-section">
-        <h2 className="section-title">Information</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 className="section-title">Information</h2>
+          <button onClick={handleEditServer} className="btn-secondary btn-sm">
+            Edit
+          </button>
+        </div>
         <div className="section-divider"></div>
 
         <div className="info-grid">
@@ -812,6 +846,66 @@ export function McpServerDetail() {
                 </button>
                 <button type="submit" className="btn-primary">
                   Update Connection
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Server Modal */}
+      {activeForm === 'edit-server' && (
+        <div className="modal-overlay" onClick={() => setActiveForm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Server</h2>
+            <form onSubmit={handleUpdateServer}>
+              <div className="form-group">
+                <label htmlFor="editServerName">Name</label>
+                <input
+                  type="text"
+                  id="editServerName"
+                  value={serverForm.name}
+                  onChange={(e) => setServerForm({ ...serverForm, name: e.target.value })}
+                  placeholder="e.g., GitHub Integration"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editServerDescription">Description</label>
+                <textarea
+                  id="editServerDescription"
+                  value={serverForm.description}
+                  onChange={(e) => setServerForm({ ...serverForm, description: e.target.value })}
+                  placeholder="What does this server provide?"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editServerUrl">
+                  URL <span style={{ color: '#888', fontWeight: 'normal' }}>(optional)</span>
+                </label>
+                <input
+                  type="url"
+                  id="editServerUrl"
+                  value={serverForm.url}
+                  onChange={(e) => setServerForm({ ...serverForm, url: e.target.value })}
+                  placeholder="http://localhost:3000/api/v1/mcp"
+                />
+              </div>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveForm(null);
+                    setServerForm({ name: '', description: '', url: '' });
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Update Server
                 </button>
               </div>
             </form>
