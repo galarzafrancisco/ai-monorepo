@@ -375,15 +375,16 @@ export function McpServerDetail() {
         <div className="admin-subsection">
           <div className="subsection-header">
             <h3>Permissions</h3>
-            <button onClick={() => setActiveForm('scope')} className="btn-secondary btn-sm">
-              + Add
-            </button>
           </div>
           <p className="subsection-description">
             Define the scopes (permissions) that will be available for MCP clients to request when connecting to this server.
           </p>
           {scopes.length === 0 ? (
-            <p className="empty-text">No permissions defined</p>
+            <div className="proper-table">
+              <div className="table-add-row" onClick={() => setActiveForm('scope')}>
+                <span className="add-row-text">Add permission...</span>
+              </div>
+            </div>
           ) : (
             <div className="proper-table">
               <div className="table-header">
@@ -405,6 +406,9 @@ export function McpServerDetail() {
                   </div>
                 </div>
               ))}
+              <div className="table-add-row" onClick={() => setActiveForm('scope')}>
+                <span className="add-row-text">Add permission...</span>
+              </div>
             </div>
           )}
         </div>
@@ -415,15 +419,16 @@ export function McpServerDetail() {
         <div className="admin-subsection">
           <div className="subsection-header">
             <h3>Connections</h3>
-            <button onClick={() => setActiveForm('connection')} className="btn-secondary btn-sm">
-              + Add
-            </button>
           </div>
           <p className="subsection-description">
             Configure connections to downstream systems that support OAuth. The MCP server acts as a secure proxy, managing authentication and authorization on behalf of clients.
           </p>
           {connections.length === 0 ? (
-            <p className="empty-text">No connections configured</p>
+            <div className="proper-table">
+              <div className="table-add-row" onClick={() => setActiveForm('connection')}>
+                <span className="add-row-text">Add connection...</span>
+              </div>
+            </div>
           ) : (
             <div className="proper-table">
               <div className="table-header">
@@ -453,6 +458,9 @@ export function McpServerDetail() {
                   </div>
                 </div>
               ))}
+              <div className="table-add-row" onClick={() => setActiveForm('connection')}>
+                <span className="add-row-text">Add connection...</span>
+              </div>
             </div>
           )}
         </div>
@@ -464,19 +472,22 @@ export function McpServerDetail() {
             <div className="admin-subsection">
               <div className="subsection-header">
                 <h3>Scope Mappings</h3>
-                <button
-                  onClick={() => setActiveForm('mapping')}
-                  className="btn-secondary btn-sm"
-                  disabled={scopes.length === 0}
-                >
-                  + Add
-                </button>
               </div>
               <p className="subsection-description">
                 Map MCP server scopes to downstream connection scopes. When a client requests an MCP scope, the server will request the corresponding downstream scopes from the configured connections.
               </p>
               {mappings.length === 0 ? (
-                <p className="empty-text">No scope mappings configured</p>
+                <div className="mapping-group">
+                  <div
+                    className="table-add-row"
+                    onClick={() => scopes.length > 0 && setActiveForm('mapping')}
+                    style={{ opacity: scopes.length === 0 ? 0.5 : 1, cursor: scopes.length === 0 ? 'not-allowed' : 'pointer' }}
+                  >
+                    <span className="add-row-text">
+                      {scopes.length === 0 ? 'Add permissions first to create mappings...' : 'Add scope mapping...'}
+                    </span>
+                  </div>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {Object.entries(groupedMappings).map(([scopeId, scopeGroup]) => (
@@ -507,6 +518,17 @@ export function McpServerDetail() {
                       </div>
                     </div>
                   ))}
+                  <div className="mapping-group">
+                    <div
+                      className="table-add-row"
+                      onClick={() => scopes.length > 0 && setActiveForm('mapping')}
+                      style={{ opacity: scopes.length === 0 ? 0.5 : 1, cursor: scopes.length === 0 ? 'not-allowed' : 'pointer' }}
+                    >
+                      <span className="add-row-text">
+                        {scopes.length === 0 ? 'Add permissions first to create mappings...' : 'Add scope mapping...'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

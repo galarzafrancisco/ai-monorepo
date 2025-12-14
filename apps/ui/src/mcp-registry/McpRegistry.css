@@ -767,3 +767,24 @@
   font-size: 14px;
   line-height: 1.5;
 }
+
+/* Table Add Row */
+.table-add-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #f7fafc;
+  border-top: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.table-add-row:hover {
+  background: #edf2f7;
+}
+
+.add-row-text {
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 500;
+}
