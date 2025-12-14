@@ -30,6 +30,7 @@ export class McpFlowResponseDto {
     description: 'Client name for display',
     example: 'My MCP Client',
     nullable: true,
+    type: String,
   })
   clientName?: string | null;
 
@@ -44,6 +45,7 @@ export class McpFlowResponseDto {
     description: 'Scopes requested by the client',
     example: 'tool:read tool:execute',
     nullable: true,
+    type: String,
   })
   scope?: string | null;
 
@@ -51,6 +53,7 @@ export class McpFlowResponseDto {
     description: 'When the authorization code expires',
     example: '2025-12-15T09:00:00.000Z',
     nullable: true,
+    type: String,
   })
   authorizationCodeExpiresAt?: string | null;
 

@@ -18,7 +18,7 @@ export type ConnectionFlowResponseDto = {
     /**
      * Connection friendly name
      */
-    connectionName?: Record<string, any> | null;
+    connectionName?: string | null;
     /**
      * Current status of the connection flow
      */
@@ -26,7 +26,7 @@ export type ConnectionFlowResponseDto = {
     /**
      * When the access token expires
      */
-    tokenExpiresAt?: Record<string, any> | null;
+    tokenExpiresAt?: string | null;
     /**
      * Timestamp when the flow was created
      */

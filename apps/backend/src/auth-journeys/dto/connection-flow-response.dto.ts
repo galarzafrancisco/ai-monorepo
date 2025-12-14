@@ -23,6 +23,7 @@ export class ConnectionFlowResponseDto {
     description: 'Connection friendly name',
     example: 'GitHub OAuth Connection',
     nullable: true,
+    type: String,
   })
   connectionName?: string | null;
 
@@ -37,6 +38,7 @@ export class ConnectionFlowResponseDto {
     description: 'When the access token expires',
     example: '2025-12-15T10:00:00.000Z',
     nullable: true,
+    type: String,
   })
   tokenExpiresAt?: string | null;
 

@@ -4712,7 +4712,7 @@
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "clientName": {
-            "type": "object",
+            "type": "string",
             "description": "Client name for display",
             "example": "My MCP Client",
             "nullable": true
@@ -4733,13 +4733,13 @@
             ]
           },
           "scope": {
-            "type": "object",
+            "type": "string",
             "description": "Scopes requested by the client",
             "example": "tool:read tool:execute",
             "nullable": true
           },
           "authorizationCodeExpiresAt": {
-            "type": "object",
+            "type": "string",
             "description": "When the authorization code expires",
             "example": "2025-12-15T09:00:00.000Z",
             "nullable": true
@@ -4790,7 +4790,7 @@
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "connectionName": {
-            "type": "object",
+            "type": "string",
             "description": "Connection friendly name",
             "example": "GitHub OAuth Connection",
             "nullable": true
@@ -4806,7 +4806,7 @@
             ]
           },
           "tokenExpiresAt": {
-            "type": "object",
+            "type": "string",
             "description": "When the access token expires",
             "example": "2025-12-15T10:00:00.000Z",
             "nullable": true
