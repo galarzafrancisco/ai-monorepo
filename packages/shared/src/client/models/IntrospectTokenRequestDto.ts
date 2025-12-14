@@ -12,9 +12,9 @@ export type IntrospectTokenRequestDto = {
      */
     token_type_hint?: IntrospectTokenRequestDto.token_type_hint;
     /**
-     * Client identifier making the request (required for public MCP clients)
+     * Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.
      */
-    client_id: string;
+    client_id?: string;
     /**
      * Client secret for confidential clients (MCP clients typically omit this)
      */

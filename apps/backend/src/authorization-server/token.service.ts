@@ -202,7 +202,7 @@ export class TokenService {
    * Implements OAuth 2.0 Token Introspection (RFC 7662)
    */
   async introspectToken(request: IntrospectTokenRequestDto): Promise<IntrospectTokenResponseDto> {
-    this.logger.debug(`Introspecting token for client: ${request.client_id}`);
+    this.logger.debug(`Introspecting token${request.client_id ? ` for client: ${request.client_id}` : ''}`);
 
     try {
       // Get all valid public keys for verification
@@ -239,8 +239,9 @@ export class TokenService {
       // Cast payload to our expected type
       const mcpPayload = payload as unknown as McpJwtPayload;
 
-      // Validate client_id matches the token
-      if (mcpPayload.client_id !== request.client_id) {
+      // If client_id was provided in the request, validate it matches the token (optional additional security)
+      // Per RFC 7662, client_id is not required in the request - it's extracted from the token
+      if (request.client_id && mcpPayload.client_id !== request.client_id) {
         this.logger.warn('Client ID mismatch during introspection');
         return { active: false } as IntrospectTokenResponseDto;
       }
@@ -263,7 +264,7 @@ export class TokenService {
         version: mcpPayload.version,
       };
 
-      this.logger.log(`Token introspection successful for client: ${request.client_id}`);
+      this.logger.log(`Token introspection successful for client: ${mcpPayload.client_id}`);
       return response;
     } catch (error) {
       // Token is invalid (expired, bad signature, etc.)
