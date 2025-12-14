@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { jwtVerify } from 'jose';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
-import { McpServerEntity } from '../mcp-registry/entities/mcp-server.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { JwksService } from './jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
@@ -21,19 +21,14 @@ interface DownstreamTokenInfo {
 export class TokenExchangeService {
   private readonly logger = new Logger(TokenExchangeService.name);
 
-  // In-memory cache for server providedId -> UUID resolution
-  // MCP servers rarely change, so this is safe and fast
-  private readonly serverIdCache = new Map<string, string>();
-
   constructor(
     @InjectRepository(McpConnectionEntity)
     private readonly mcpConnectionRepository: Repository<McpConnectionEntity>,
-    @InjectRepository(McpServerEntity)
-    private readonly mcpServerRepository: Repository<McpServerEntity>,
     @InjectRepository(McpScopeMappingEntity)
     private readonly mcpScopeMappingRepository: Repository<McpScopeMappingEntity>,
     @InjectRepository(ConnectionAuthorizationFlowEntity)
     private readonly connectionAuthorizationFlowRepository: Repository<ConnectionAuthorizationFlowEntity>,
+    private readonly mcpRegistryService: McpRegistryService,
     private readonly jwksService: JwksService,
   ) {}
 
@@ -47,7 +42,7 @@ export class TokenExchangeService {
     this.logger.debug(`Processing token exchange for resource: ${request.resource}`);
 
     // Step 1: Resolve MCP Server UUID from providedId (with caching)
-    const serverId = await this.resolveServerId(serverIdentifier);
+    const serverId = await this.mcpRegistryService.resolveServerIdFromProvidedId(serverIdentifier);
     if (!serverId) {
       this.logger.warn(`MCP Server not found: ${serverIdentifier}`);
       throw new NotFoundException('MCP Server not found');
@@ -93,32 +88,6 @@ export class TokenExchangeService {
       this.calculateExpiresIn(downstreamToken.expiresAt),
       requestedScopes.join(' '),
     );
-  }
-
-  /**
-   * Resolve MCP Server UUID from providedId with caching
-   * This is in the hot path, so we use an in-memory cache
-   */
-  private async resolveServerId(serverProvidedId: string): Promise<string | null> {
-    // Check cache first
-    const cached = this.serverIdCache.get(serverProvidedId);
-    if (cached) {
-      return cached;
-    }
-
-    // Query database
-    const server = await this.mcpServerRepository.findOne({
-      where: { providedId: serverProvidedId },
-      select: ['id'], // Only fetch the ID for performance
-    });
-
-    if (server) {
-      // Cache the result
-      this.serverIdCache.set(serverProvidedId, server.id);
-      return server.id;
-    }
-
-    return null;
   }
 
   /**
