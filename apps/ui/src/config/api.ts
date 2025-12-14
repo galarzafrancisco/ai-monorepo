@@ -1,34 +1,29 @@
 /**
  * Centralized API configuration for the frontend application.
  *
- * This module provides a single source of truth for backend URL configuration,
- * handling both production and development environments.
+ * This module provides a single source of truth for backend URL configuration.
  *
- * - In production: Uses relative paths ("/")
- * - In development: Uses http://localhost:{BACKEND_PORT}
+ * With Vite proxy configured in development mode, the frontend always uses
+ * relative paths for API requests. The proxy handles forwarding requests to
+ * the backend server in development, while in production the frontend is
+ * served from the same origin as the backend.
  */
-
-/**
- * Get the backend port from environment variables
- */
-const getBackendPort = (): number => {
-  return import.meta.env.VITE_BACKEND_PORT || 3000;
-};
 
 /**
  * Get the base URL for API requests
  *
- * @returns "/" in production, "http://localhost:{port}" in development
+ * @returns Empty string (relative paths) in all environments
  */
 export const getBFFBaseUrl = (): string => {
-  if (import.meta.env.PROD) {
-    return '';
-  }
-  return `http://localhost:${getBackendPort()}`;
+  // Always use relative paths - Vite proxy handles dev mode routing
+  return '';
 };
 
 /**
  * Get the WebSocket URL for real-time connections
+ *
+ * WebSockets cannot be proxied by Vite in the same way as HTTP requests,
+ * so in development mode we need to construct the full URL to the backend.
  *
  * @param path - The WebSocket path (e.g., "/taskeroo")
  * @returns WebSocket-compatible URL
@@ -37,7 +32,9 @@ export const getUIWebSocketUrl = (path: string): string => {
   if (import.meta.env.PROD) {
     return path;
   }
-  return `http://localhost:${getBackendPort()}${path}`;
+  // In dev mode, construct full URL since WebSockets can't use Vite proxy
+  const backendPort = import.meta.env.VITE_BACKEND_PORT || 3000;
+  return `http://localhost:${backendPort}${path}`;
 };
 
 /**
