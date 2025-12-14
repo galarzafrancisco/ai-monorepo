@@ -7,13 +7,18 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: Number(process.env.VITE_PORT) || 5173,
-    // proxy: {
-    //   "/api": {
-    //     target: "http://localhost:3000",
-    //     changeOrigin: true,
-    //     secure: false,
-    //   },
-    // },
+    proxy: {
+      "/api": {
+        target: `http://localhost:${process.env.VITE_BACKEND_PORT || 3000}`,
+        changeOrigin: true,
+        secure: false,
+      },
+      "/.well-known": {
+        target: `http://localhost:${process.env.VITE_BACKEND_PORT || 3000}`,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   build: {
     outDir: './dist',
