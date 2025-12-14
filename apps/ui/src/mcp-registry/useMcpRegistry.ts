@@ -7,6 +7,7 @@ type McpServer = {
   providedId: string;
   name: string;
   description: string;
+  url?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -114,7 +115,7 @@ export const useMcpRegistry = () => {
   };
 
   // Create server
-  const createServer = async (data: { providedId: string; name: string; description: string }) => {
+  const createServer = async (data: { providedId: string; name: string; description: string; url?: string }) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -123,6 +124,28 @@ export const useMcpRegistry = () => {
       return createdServer;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create server');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update server
+  const updateServer = async (
+    serverId: string,
+    data: { name?: string; description?: string; url?: string }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedServer = await McpRegistryService.mcpRegistryControllerUpdateServer(serverId, data);
+      if (selectedServer?.id === serverId) {
+        setSelectedServer(updatedServer);
+      }
+      await loadServers();
+      return updatedServer;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update server');
       throw err;
     } finally {
       setIsLoading(false);
@@ -289,6 +312,7 @@ export const useMcpRegistry = () => {
     loadServers,
     loadServerDetails,
     createServer,
+    updateServer,
     createScope,
     createConnection,
     updateConnection,

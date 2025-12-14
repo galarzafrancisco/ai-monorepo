@@ -14,6 +14,7 @@ import type { Request, Response } from 'express';
 import { IdentityProviderService } from './identity-provider.service';
 import { LoginDto } from './dto/login.dto';
 import { SessionResponseDto } from './dto/session-response.dto';
+import { isProduction } from '../config/env.config';
 
 const SESSION_COOKIE_NAME = 'mcp_portal_session';
 const COOKIE_MAX_AGE = 60 * 60 * 1000; // 1 hour
@@ -40,7 +41,7 @@ export class IdentityProviderController {
 
     response.cookie(SESSION_COOKIE_NAME, user.id, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction(),
       sameSite: 'lax',
       maxAge: COOKIE_MAX_AGE,
     });

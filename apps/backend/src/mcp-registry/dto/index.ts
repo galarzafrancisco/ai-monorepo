@@ -1,4 +1,5 @@
 export * from './create-server.dto';
+export * from './update-server.dto';
 export * from './create-scope.dto';
 export * from './create-connection.dto';
 export * from './update-connection.dto';

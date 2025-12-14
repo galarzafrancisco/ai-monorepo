@@ -2,10 +2,10 @@ import { io, Socket } from 'socket.io-client';
 import { TaskerooService } from './api'
 import { Task, Comment } from './types';
 import { useEffect, useState } from 'react';
-import { getWebSocketUrl } from '../config/api';
+import { getUIWebSocketUrl } from '../config/api';
 
 // Use centralized API configuration
-const SOCKET_URL = getWebSocketUrl('/taskeroo');
+const SOCKET_URL = getUIWebSocketUrl('/taskeroo');
 
 export const useTaskeroo = () => {
 

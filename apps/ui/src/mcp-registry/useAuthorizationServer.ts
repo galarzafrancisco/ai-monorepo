@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { McpRegistryService } from './api';
-import { getApiBaseUrl } from '../config/api';
+import { useState } from 'react';
+import { getBFFBaseUrl } from '../config/api';
 
 
-export const useAuthorizationServer = (mcpServerId?: string, mcpServerVersion?: string) => {
+export const useAuthorizationServer = () => {
 
   // UI feedback
   const [isLoading, setIsLoading] = useState(false);
@@ -15,20 +14,34 @@ export const useAuthorizationServer = (mcpServerId?: string, mcpServerVersion?: 
   const [metadata, setMetadata] = useState<any>(null);
 
   async function loadMetadata(mcpServerId: string, mcpServerVersion: string) {
+    setIsLoading(true);
+    setError(null);
 
-    // Make base url using centralized config
-    const baseUrl = getApiBaseUrl();
+    try {
+      // Fetch the authorization server issuer URL from the backend
+      const bffBaseUrl = getBFFBaseUrl();
+      const issuerResponse = await fetch(`${bffBaseUrl}/.well-known/oauth-authorization-server/mcp/issuer`);
 
-    // Make authorization server url
-    const asUrl = new URL(`${baseUrl}/mcp/${mcpServerId}/${mcpServerVersion}`);
-    setAuthorizationServerUrl(asUrl);
+      if (!issuerResponse.ok) {
+        throw new Error('Failed to fetch authorization server issuer URL');
+      }
 
+      const { issuer } = await issuerResponse.json();
+      console.log('Authorization Server Issuer:', issuer);
 
-    // Make metadata url
-    const asMetadataUrl = new URL(`${asUrl.origin}/.well-known/oauth-authorization-server${asUrl.pathname}`);
-    setAuthorizationServerMetadataUrl(asMetadataUrl);
+      // Make authorization server url using the issuer from backend
+      const asUrl = new URL(`${issuer}/mcp/${mcpServerId}/${mcpServerVersion}`);
+      setAuthorizationServerUrl(asUrl);
 
-    fetchMetadata(asMetadataUrl);
+      // Make metadata url
+      const asMetadataUrl = new URL(`${asUrl.origin}/.well-known/oauth-authorization-server${asUrl.pathname}`);
+      setAuthorizationServerMetadataUrl(asMetadataUrl);
+
+      await fetchMetadata(asMetadataUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load authorization server configuration');
+      setIsLoading(false);
+    }
   }
 
   async function fetchMetadata(authorizationServerMetadataUrl: URL) {

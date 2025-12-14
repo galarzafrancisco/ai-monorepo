@@ -7,7 +7,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
 import { useAuthorizationServer } from './useAuthorizationServer';
 
-type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | null;
+type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | 'edit-server' | null;
 
 interface ConfirmState {
   message: string;
@@ -27,6 +27,7 @@ export function McpServerDetail() {
     loadServerDetails,
     createScope,
     createConnection,
+    updateServer,
     updateConnection,
     createMapping,
     deleteScope,
@@ -39,6 +40,8 @@ export function McpServerDetail() {
   const [activeForm, setActiveForm] = useState<FormType>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
+  const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
+  const [serverForm, setServerForm] = useState({ name: '', description: '', url: '' });
   const [scopeForm, setScopeForm] = useState({ scopeId: '', description: '' });
   const [connectionForm, setConnectionForm] = useState({
     clientId: '',
@@ -65,6 +68,33 @@ export function McpServerDetail() {
     if (!selectedServer) return;
     loadAuthorizationServerMetadata(selectedServer.providedId, "0.0.0");
   }, [selectedServer])
+
+  const handleEditServer = () => {
+    if (!selectedServer) return;
+    setServerForm({
+      name: selectedServer.name,
+      description: selectedServer.description,
+      url: selectedServer.url || '',
+    });
+    setActiveForm('edit-server');
+  };
+
+  const handleUpdateServer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!serverId) return;
+    try {
+      const updateData: { name?: string; description?: string; url?: string } = {};
+      if (serverForm.name) updateData.name = serverForm.name;
+      if (serverForm.description) updateData.description = serverForm.description;
+      if (serverForm.url) updateData.url = serverForm.url;
+
+      await updateServer(serverId, updateData);
+      setActiveForm(null);
+      setServerForm({ name: '', description: '', url: '' });
+    } catch (err) {
+      console.error('Failed to update server', err);
+    }
+  };
 
   const handleCreateScope = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,6 +274,46 @@ export function McpServerDetail() {
     });
   };
 
+  // Group mappings by MCP Scope, then by Connection
+  const groupedMappings = useMemo(() => {
+    const groups: {
+      [scopeId: string]: {
+        scope: typeof scopes[0];
+        connections: {
+          [connectionId: string]: {
+            connection: typeof connections[0];
+            mappings: typeof mappings;
+          };
+        };
+      };
+    } = {};
+
+    mappings.forEach((mapping) => {
+      const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
+      const connection = connections.find((c) => c.id === mapping.connectionId);
+
+      if (!scope || !connection) return;
+
+      if (!groups[mapping.scopeId]) {
+        groups[mapping.scopeId] = {
+          scope,
+          connections: {},
+        };
+      }
+
+      if (!groups[mapping.scopeId].connections[mapping.connectionId]) {
+        groups[mapping.scopeId].connections[mapping.connectionId] = {
+          connection,
+          mappings: [],
+        };
+      }
+
+      groups[mapping.scopeId].connections[mapping.connectionId].mappings.push(mapping);
+    });
+
+    return groups;
+  }, [mappings, scopes, connections]);
+
   if (isLoading && !selectedServer) {
     return <div className="loading">Loading server details...</div>;
   }
@@ -270,131 +340,258 @@ export function McpServerDetail() {
 
       {error && <div className="error-message">{error}</div>}
 
+      {/* Info Section */}
+      <div className="info-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 className="section-title">Information</h2>
+          <button onClick={handleEditServer} className="btn-secondary btn-sm">
+            Edit
+          </button>
+        </div>
+        <div className="section-divider"></div>
 
-      <div className="detail-sections">
-        {/* Authorization Server Metadata Section */}
-        {authorizationServerMetadata && (
-          <div className="detail-section">
-            <div className="section-header">
-              <h2>Authorization Server Metadata</h2>
+        <div className="info-grid">
+          <div className="info-item">
+            <span className="info-label">Name</span>
+            <span className="info-value">{selectedServer.name}</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">ID</span>
+            <span className="info-value mono">{selectedServer.providedId}</span>
+          </div>
+          {connections.length > 0 && (
+            <div className="info-item">
+              <span className="info-label">Connections</span>
+              <span className="info-value">{connections.map(c => c.friendlyName).join(', ')}</span>
             </div>
-
-            {authorizationServerMetadataUrl?.toString()}
-            <pre>
-              {JSON.stringify(authorizationServerMetadata, null, 2)}
-            </pre>
-          </div>
-        )}
-
-        {/* Scopes Section */}
-        <div className="detail-section">
-          <div className="section-header">
-            <h2>Scopes</h2>
-            <button onClick={() => setActiveForm('scope')} className="btn-secondary">
-              + Add Scope
-            </button>
-          </div>
-          <div className="items-list">
-            {scopes.length === 0 ? (
-              <p className="empty-text">No scopes defined</p>
-            ) : (
-              scopes.map((scope) => (
-                <div key={scope.id} className="item-card">
-                  <div className="item-content">
-                    <h3>{scope.scopeId}</h3>
-                    <p>{scope.description}</p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteScope(scope.scopeId)}
-                    className="btn-delete"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
+          )}
+          {scopes.length > 0 && (
+            <div className="info-item">
+              <span className="info-label">Scopes</span>
+              <span className="info-value">{scopes.map(s => s.scopeId).join(', ')}</span>
+            </div>
+          )}
+          {selectedServer.url && (
+            <div className="info-item inspector-command-item">
+              <span className="info-label">Inspector Command</span>
+              <div className="inspector-command">
+                <code className="inspector-code">npx @modelcontextprotocol/inspector --transport http {selectedServer.url}</code>
+                <button
+                  className="btn-secondary btn-sm copy-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`npx @modelcontextprotocol/inspector --transport http ${selectedServer.url}`);
+                  }}
+                  title="Copy to clipboard"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Connections Section */}
-        <div className="detail-section">
-          <div className="section-header">
-            <h2>OAuth Connections</h2>
-            <button onClick={() => setActiveForm('connection')} className="btn-secondary">
-              + Add Connection
-            </button>
+        {/* Authorization Server Metadata */}
+        {authorizationServerMetadata ? (
+          <>
+            <div className="section-divider"></div>
+            <div className="metadata-section">
+              <div className="metadata-header">
+                <span className="metadata-status">✓ Authorization Server Metadata found</span>
+                <button
+                  onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
+                  className="btn-link"
+                >
+                  {isMetadataExpanded ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {isMetadataExpanded && (
+                <div className="metadata-content">
+                  <p className="metadata-url">{authorizationServerMetadataUrl?.toString()}</p>
+                  <pre className="metadata-json">
+                    {JSON.stringify(authorizationServerMetadata, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      {/* Admin Section */}
+      <div className="admin-section">
+        <h2 className="section-title">Administration</h2>
+        <div className="section-divider"></div>
+
+        {/* Permissions (Scopes) */}
+        <div className="admin-subsection">
+          <div className="subsection-header">
+            <h3>Permissions</h3>
           </div>
-          <div className="items-list">
-            {connections.length === 0 ? (
-              <p className="empty-text">No connections configured</p>
-            ) : (
-              connections.map((connection) => (
-                <div key={connection.id} className="item-card">
-                  <div className="item-content">
-                    <h3>{connection.friendlyName}</h3>
-                    <p>Client ID: {connection.clientId}</p>
-                    <p className="small-text">Authorize: {connection.authorizeUrl}</p>
-                    <p className="small-text">Token: {connection.tokenUrl}</p>
-                  </div>
-                  <div className="item-actions">
+          <p className="subsection-description">
+            Define the scopes (permissions) that will be available for MCP clients to request when connecting to this server.
+          </p>
+          {scopes.length === 0 ? (
+            <div className="proper-table">
+              <div className="table-add-row" onClick={() => setActiveForm('scope')}>
+                <div className="add-row-cell">
+                  <span className="add-row-text">Add permission...</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="proper-table">
+              <div className="table-header">
+                <div className="table-col-name">Scope Name</div>
+                <div className="table-col-description">Description</div>
+                <div className="table-col-actions"></div>
+              </div>
+              {scopes.map((scope) => (
+                <div key={scope.id} className="table-body-row">
+                  <div className="table-col-name">{scope.scopeId}</div>
+                  <div className="table-col-description">{scope.description}</div>
+                  <div className="table-col-actions">
                     <button
-                      onClick={() => handleEditConnection(connection.id)}
-                      className="btn-secondary"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteConnection(connection.id)}
-                      className="btn-delete"
+                      onClick={() => handleDeleteScope(scope.scopeId)}
+                      className="btn-delete-small"
                     >
                       Delete
                     </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+              <div className="table-add-row" onClick={() => setActiveForm('scope')}>
+                <div className="add-row-cell">
+                  <span className="add-row-text">Add permission...</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Mappings Section - Only show if there are connections */}
-        {connections.length > 0 && (
-          <div className="detail-section">
-            <div className="section-header">
-              <h2>Scope Mappings</h2>
-              <button
-                onClick={() => setActiveForm('mapping')}
-                className="btn-secondary"
-                disabled={scopes.length === 0}
-              >
-                + Add Mapping
-              </button>
+        <div className="section-divider"></div>
+
+        {/* Connections */}
+        <div className="admin-subsection">
+          <div className="subsection-header">
+            <h3>Connections</h3>
+          </div>
+          <p className="subsection-description">
+            Configure connections to downstream systems that support OAuth. The MCP server acts as a secure proxy, managing authentication and authorization on behalf of clients.
+          </p>
+          {connections.length === 0 ? (
+            <div className="proper-table">
+              <div className="table-add-row" onClick={() => setActiveForm('connection')}>
+                <div className="add-row-cell">
+                  <span className="add-row-text">Add connection...</span>
+                </div>
+              </div>
             </div>
-            <div className="items-list">
+          ) : (
+            <div className="proper-table">
+              <div className="table-header">
+                <div className="table-col-name">Connection Name</div>
+                <div className="table-col-description">Description</div>
+                <div className="table-col-actions"></div>
+              </div>
+              {connections.map((connection) => (
+                <div key={connection.id} className="table-body-row">
+                  <div className="table-col-name">{connection.friendlyName}</div>
+                  <div className="table-col-description">
+                    {connection.providedId && <span className="mono">{connection.providedId}</span>}
+                  </div>
+                  <div className="table-col-actions">
+                    <button
+                      onClick={() => handleEditConnection(connection.id)}
+                      className="btn-secondary btn-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteConnection(connection.id)}
+                      className="btn-delete-small"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div className="table-add-row" onClick={() => setActiveForm('connection')}>
+                <div className="add-row-cell">
+                  <span className="add-row-text">Add connection...</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Scope Mappings - Integrated with Connections */}
+        {connections.length > 0 && (
+          <>
+            <div className="section-divider"></div>
+            <div className="admin-subsection">
+              <div className="subsection-header">
+                <h3>Scope Mappings</h3>
+              </div>
+              <p className="subsection-description">
+                Map MCP server scopes to downstream connection scopes. When a client requests an MCP scope, the server will request the corresponding downstream scopes from the configured connections.
+              </p>
               {mappings.length === 0 ? (
-                <p className="empty-text">No mappings configured</p>
+                <div className="mapping-group">
+                  <div
+                    className="table-add-row"
+                    onClick={() => scopes.length > 0 && setActiveForm('mapping')}
+                    style={{ opacity: scopes.length === 0 ? 0.5 : 1, cursor: scopes.length === 0 ? 'not-allowed' : 'pointer' }}
+                  >
+                    <span className="add-row-text">
+                      {scopes.length === 0 ? 'Add permissions first to create mappings...' : 'Add scope mapping...'}
+                    </span>
+                  </div>
+                </div>
               ) : (
-                mappings.map((mapping) => {
-                  const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
-                  const connection = connections.find((c) => c.id === mapping.connectionId);
-                  return (
-                    <div key={mapping.id} className="item-card">
-                      <div className="item-content">
-                        <h3>{scope?.scopeId || mapping.scopeId}</h3>
-                        <p>→ {mapping.downstreamScope}</p>
-                        <p className="small-text">via {connection?.friendlyName || 'Unknown'}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {Object.entries(groupedMappings).map(([scopeId, scopeGroup]) => (
+                    <div key={scopeId} className="mapping-group">
+                      <div className="mapping-group-header">
+                        {scopeGroup.scope.scopeId} → {Object.keys(scopeGroup.connections).length} connection{Object.keys(scopeGroup.connections).length !== 1 ? 's' : ''}
                       </div>
-                      <button
-                        onClick={() => handleDeleteMapping(mapping.id)}
-                        className="btn-delete"
-                      >
-                        Delete
-                      </button>
+                      <div className="mapping-items">
+                        {Object.entries(scopeGroup.connections).map(([connectionId, connectionGroup]) =>
+                          connectionGroup.mappings.map((mapping) => (
+                            <div key={mapping.id} className="mapping-item">
+                              <div>
+                                <div style={{ fontSize: '14px', fontWeight: 500, color: '#1a202c', marginBottom: '4px' }}>
+                                  {connectionGroup.connection.friendlyName}
+                                </div>
+                                <div className="mapping-item-scope">{mapping.downstreamScope}</div>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteMapping(mapping.id)}
+                                className="btn-delete-small"
+                                title="Delete mapping"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  );
-                })
+                  ))}
+                  <div className="mapping-group">
+                    <div
+                      className="table-add-row"
+                      onClick={() => scopes.length > 0 && setActiveForm('mapping')}
+                      style={{ opacity: scopes.length === 0 ? 0.5 : 1, cursor: scopes.length === 0 ? 'not-allowed' : 'pointer' }}
+                    >
+                      <span className="add-row-text">
+                        {scopes.length === 0 ? 'Add permissions first to create mappings...' : 'Add scope mapping...'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
-          </div>
+          </>
         )}
       </div>
 
@@ -402,7 +599,7 @@ export function McpServerDetail() {
       {activeForm === 'scope' && (
         <div className="modal-overlay" onClick={() => setActiveForm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Create Scope</h2>
+            <h2>Create Permission</h2>
             <form onSubmit={handleCreateScope}>
               <div className="form-group">
                 <label htmlFor="scopeId">Scope ID</label>
@@ -443,7 +640,7 @@ export function McpServerDetail() {
       {activeForm === 'connection' && (
         <div className="modal-overlay" onClick={() => setActiveForm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Create OAuth Connection</h2>
+            <h2>Create Connection</h2>
             <form onSubmit={handleCreateConnection} autoComplete="off">
               <div className="form-group">
                 <label htmlFor="friendlyName">Friendly Name</label>
@@ -548,7 +745,7 @@ export function McpServerDetail() {
       {activeForm === 'edit-connection' && (
         <div className="modal-overlay" onClick={() => setActiveForm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Edit OAuth Connection</h2>
+            <h2>Edit Connection</h2>
             <form onSubmit={handleUpdateConnection} autoComplete="off">
               <div className="form-group">
                 <label htmlFor="editFriendlyName">Friendly Name</label>
@@ -657,6 +854,66 @@ export function McpServerDetail() {
                 </button>
                 <button type="submit" className="btn-primary">
                   Update Connection
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Server Modal */}
+      {activeForm === 'edit-server' && (
+        <div className="modal-overlay" onClick={() => setActiveForm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Server</h2>
+            <form onSubmit={handleUpdateServer}>
+              <div className="form-group">
+                <label htmlFor="editServerName">Name</label>
+                <input
+                  type="text"
+                  id="editServerName"
+                  value={serverForm.name}
+                  onChange={(e) => setServerForm({ ...serverForm, name: e.target.value })}
+                  placeholder="e.g., GitHub Integration"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editServerDescription">Description</label>
+                <textarea
+                  id="editServerDescription"
+                  value={serverForm.description}
+                  onChange={(e) => setServerForm({ ...serverForm, description: e.target.value })}
+                  placeholder="What does this server provide?"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editServerUrl">
+                  URL <span style={{ color: '#888', fontWeight: 'normal' }}>(optional)</span>
+                </label>
+                <input
+                  type="url"
+                  id="editServerUrl"
+                  value={serverForm.url}
+                  onChange={(e) => setServerForm({ ...serverForm, url: e.target.value })}
+                  placeholder="http://localhost:3000/api/v1/mcp"
+                />
+              </div>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveForm(null);
+                    setServerForm({ name: '', description: '', url: '' });
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Update Server
                 </button>
               </div>
             </form>

@@ -11,6 +11,7 @@ import { McpAuthorizationFlowEntity, ConnectionAuthorizationFlowEntity } from 's
 import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
 import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
 import { CallbackRequestDto } from './dto/callback-request.dto';
+import { getConfig } from 'src/config/env.config';
 import {
   McpServerNotFoundError,
   McpClientNotFoundError,
@@ -185,6 +186,16 @@ export class AuthorizationService {
       return this.completeMcpAuthFlow(journeyId);
     }
 
+    // Check if any scopes were requested in the MCP auth flow
+    const mcpAuthFlow = connectionFlows[0]?.authJourney?.mcpAuthorizationFlow;
+    const hasRequestedScopes = mcpAuthFlow?.scope && mcpAuthFlow.scope.trim().length > 0;
+
+    // If no scopes were requested, skip downstream flows and complete MCP auth
+    if (!hasRequestedScopes) {
+      this.logger.log('No scopes requested, skipping downstream OAuth flows and completing MCP auth');
+      return this.completeMcpAuthFlow(journeyId);
+    }
+
     // Find the next pending connection flow
     const nextPendingFlow = connectionFlows.find(flow => flow.status === 'pending');
 
@@ -211,8 +222,8 @@ export class AuthorizationService {
    * Initiate OAuth for a single connection
    */
   private async initiateConnectionOAuth(connectionFlow: ConnectionAuthorizationFlowEntity): Promise<string> {
-    const baseCallbackUrl = process.env.CALLBACK_BASE_URL || 'http://localhost:3000';
-    const callbackUrl = `${baseCallbackUrl}/api/v1/auth/callback`;
+    const config = getConfig();
+    const callbackUrl = `${config.callbackBaseUrl}/api/v1/auth/callback`;
 
     // Generate a unique state for this connection flow
     const state = randomBytes(32).toString('base64url');
@@ -339,8 +350,8 @@ export class AuthorizationService {
    * Exchange authorization code for access token with downstream provider
    */
   private async exchangeCodeForToken(connectionFlow: ConnectionAuthorizationFlowEntity): Promise<void> {
-    const baseCallbackUrl = process.env.CALLBACK_BASE_URL || 'http://localhost:3000';
-    const callbackUrl = `${baseCallbackUrl}/api/v1/auth/callback`;
+    const config = getConfig();
+    const callbackUrl = `${config.callbackBaseUrl}/api/v1/auth/callback`;
 
     try {
       // Make the token exchange request

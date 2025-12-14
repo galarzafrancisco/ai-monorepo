@@ -1364,6 +1364,49 @@
           "MCP Registry"
         ]
       },
+      "patch": {
+        "operationId": "McpRegistryController_updateServer",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateServerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Server updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "summary": "Update MCP server details",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
       "delete": {
         "operationId": "McpRegistryController_deleteServer",
         "parameters": [
@@ -2500,6 +2543,35 @@
         "summary": "Get JSON Web Key Set (JWKS)",
         "tags": [
           "JWKS"
+        ]
+      }
+    },
+    "/.well-known/oauth-authorization-server/mcp/issuer": {
+      "get": {
+        "description": "Returns the configured authorization server issuer URL from environment configuration",
+        "operationId": "DiscoveryController_getIssuer",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Issuer URL retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "issuer": {
+                      "type": "string",
+                      "example": "http://localhost:4000"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get the authorization server issuer URL",
+        "tags": [
+          "Discovery"
         ]
       }
     },
@@ -4138,6 +4210,11 @@
             "type": "string",
             "description": "Short description of the MCP server",
             "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
           }
         },
         "required": [
@@ -4168,6 +4245,11 @@
             "type": "string",
             "description": "Short description of the MCP server",
             "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
           },
           "createdAt": {
             "type": "string",
@@ -4221,6 +4303,26 @@
           "page",
           "limit"
         ]
+      },
+      "UpdateServerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name of the MCP server",
+            "example": "GitHub Integration"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the MCP server",
+            "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+          }
+        }
       },
       "DeleteServerResponseDto": {
         "type": "object",
@@ -4887,7 +4989,7 @@
           },
           "client_id": {
             "type": "string",
-            "description": "Client identifier making the request (required for public MCP clients)",
+            "description": "Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.",
             "example": "0bab273987a2e163c3abb40c631ec0a4"
           },
           "client_secret": {
@@ -4898,8 +5000,7 @@
           }
         },
         "required": [
-          "token",
-          "client_id"
+          "token"
         ]
       },
       "IntrospectTokenResponseDto": {

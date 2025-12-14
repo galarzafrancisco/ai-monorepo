@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { AuthorizationServerService, OpenAPI, type ConsentDecisionDto } from './api';
 import { HomeLink } from '../components/HomeLink';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { getApiBaseUrl } from '../config/api';
 import './ConsentScreen.css';
 
 interface AuthFlowDetails {
@@ -27,7 +27,6 @@ export function ConsentScreen() {
   usePageTitle('Authorization Consent - AI Monorepo');
 
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const flowId = searchParams.get('flow');
 
   const [flowDetails, setFlowDetails] = useState<AuthFlowDetails | null>(null);
@@ -52,15 +51,8 @@ export function ConsentScreen() {
     setError(null);
 
     try {
-      const baseUrl = getApiBaseUrl();
-      const response = await fetch(`${baseUrl}/api/v1/auth/flow/${flowId}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to load authorization details: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setFlowDetails(data);
+      const data = await AuthorizationServerService.authorizationControllerGetFlow(flowId);
+      setFlowDetails(data as AuthFlowDetails);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load authorization details');
     } finally {
@@ -68,33 +60,51 @@ export function ConsentScreen() {
     }
   };
 
-  const submitConsent = (approved: boolean) => {
-    if (!flowDetails) return;
+  const submitConsent = async (approved: boolean) => {
+    if (!flowDetails || !flowId) return;
 
-    // Use a form submission to POST the consent decision
-    // This allows the browser to naturally follow the 302 redirect
-    const baseUrl = getApiBaseUrl();
+    setIsApproving(true);
+    setError(null);
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `${baseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`;
+    try {
+      // OAuth 2.0 consent flow requires a server-side redirect to the client application.
+      // The API endpoint (AuthorizationServerService.authorizationControllerAuthorizeConsent)
+      // returns an HTTP 302 redirect to an external URL.
+      //
+      // We cannot use the generated client here because:
+      // 1. Fetch API automatically follows redirects, preventing us from accessing the redirect URL
+      // 2. The redirect URL is external (client application), which requires a full page navigation
+      // 3. Browser security prevents JavaScript from navigating to external URLs via fetch
+      //
+      // Solution: Use form submission (traditional HTML form POST) which allows the browser
+      // to naturally handle the redirect and navigate to the external client application.
+      //
+      // We maintain type safety by using ConsentDecisionDto structure for the form fields.
+      const consentData: ConsentDecisionDto = {
+        flow_id: flowId,
+        approved: approved,
+      };
 
-    // Add flow_id field
-    const flowIdInput = document.createElement('input');
-    flowIdInput.type = 'hidden';
-    flowIdInput.name = 'flow_id';
-    flowIdInput.value = flowId || '';
-    form.appendChild(flowIdInput);
+      const bffBaseUrl = OpenAPI.BASE ?? '';
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `${bffBaseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`;
 
-    // Add approved field
-    const approvedInput = document.createElement('input');
-    approvedInput.type = 'hidden';
-    approvedInput.name = 'approved';
-    approvedInput.value = approved.toString();
-    form.appendChild(approvedInput);
+      // Create form fields matching ConsentDecisionDto
+      Object.entries(consentData).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = String(value);
+        form.appendChild(input);
+      });
 
-    document.body.appendChild(form);
-    form.submit();
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit consent decision');
+      setIsApproving(false);
+    }
   };
 
   const handleApprove = () => {

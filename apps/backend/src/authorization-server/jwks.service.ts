@@ -4,6 +4,7 @@ import { Repository, MoreThan, LessThan } from 'typeorm';
 import { JwksKeyEntity } from './jwks-key.entity';
 import { generateKeyPair, exportJWK, exportPKCS8, exportSPKI, calculateJwkThumbprint, importSPKI, JWK } from 'jose';
 import { createPublicKey, randomBytes } from 'crypto';
+import { getConfig } from 'src/config/env.config';
 
 
 /* -------- algorithm -------- */
@@ -71,9 +72,9 @@ export class JwksService {
     const kid = await calculateJwkThumbprint(publicJwk);
 
     // Calculate expiration date based on TTL
-    const ttlHours = parseInt(process.env.JWKS_KEY_TTL_HOURS || '24', 10);
+    const config = getConfig();
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + ttlHours);
+    expiresAt.setHours(expiresAt.getHours() + config.jwksKeyTtlHours);
 
     // Create and save the new key
     const newKey = this.keyRepository.create({

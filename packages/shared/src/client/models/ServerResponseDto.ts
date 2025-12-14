@@ -20,6 +20,10 @@ export type ServerResponseDto = {
      */
     description: string;
     /**
+     * URL that MCP Clients will use to connect to the server
+     */
+    url?: string;
+    /**
      * Timestamp when the server was created
      */
     createdAt: string;

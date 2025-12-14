@@ -2,19 +2,15 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type CreateServerDto = {
-    /**
-     * Human-readable unique identifier for the MCP server
-     */
-    providedId: string;
+export type UpdateServerDto = {
     /**
      * Display name of the MCP server
      */
-    name: string;
+    name?: string;
     /**
      * Short description of the MCP server
      */
-    description: string;
+    description?: string;
     /**
      * URL that MCP Clients will use to connect to the server
      */

@@ -1,32 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MaxLength, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsUrl } from 'class-validator';
 
-export class CreateServerDto {
-  @ApiProperty({
-    description: 'Human-readable unique identifier for the MCP server',
-    example: 'github-integration',
-  })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  providedId!: string;
-
+export class UpdateServerDto {
   @ApiProperty({
     description: 'Display name of the MCP server',
     example: 'GitHub Integration',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(255)
-  name!: string;
+  name?: string;
 
   @ApiProperty({
     description: 'Short description of the MCP server',
     example: 'Provides access to GitHub repositories and issues',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  description!: string;
+  description?: string;
 
   @ApiProperty({
     description: 'URL that MCP Clients will use to connect to the server',

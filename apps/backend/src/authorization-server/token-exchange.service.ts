@@ -9,6 +9,7 @@ import { JwksService } from './jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { McpJwtPayload } from './types/mcp-jwt-payload.type';
+import { getConfig } from 'src/config/env.config';
 
 interface DownstreamTokenInfo {
   accessToken: string;
@@ -106,8 +107,9 @@ export class TokenExchangeService {
       };
 
       // Verify JWT with our JWKS
+      const config = getConfig();
       const { payload } = await jwtVerify(token, getKey as any, {
-        issuer: process.env.ISSUER_URL || 'http://localhost:4000',
+        issuer: config.issuerUrl,
         audience: expectedAudience,
         algorithms: ['RS256'],
       });

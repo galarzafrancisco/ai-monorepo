@@ -12,6 +12,7 @@ import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
 import { McpJwtPayload } from './types/mcp-jwt-payload.type';
 import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
+import { getConfig } from 'src/config/env.config';
 import {
   InvalidGrantTypeError,
   MissingRequiredParametersError,
@@ -161,8 +162,9 @@ export class TokenService {
 
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
+    const config = getConfig();
     const payload: McpJwtPayload = {
-      iss: process.env.ISSUER_URL || 'http://localhost:4000', // Issuer URL
+      iss: config.issuerUrl, // Issuer URL
       sub: 'user-placeholder', // TODO: Replace with actual user ID when user auth is implemented
       aud: mcpAuthFlow.server.providedId, // MCP server identifier
       exp: now + 3600, // 1 hour expiration
@@ -200,7 +202,7 @@ export class TokenService {
    * Implements OAuth 2.0 Token Introspection (RFC 7662)
    */
   async introspectToken(request: IntrospectTokenRequestDto): Promise<IntrospectTokenResponseDto> {
-    this.logger.debug(`Introspecting token for client: ${request.client_id}`);
+    this.logger.debug(`Introspecting token${request.client_id ? ` for client: ${request.client_id}` : ''}`);
 
     try {
       // Get all valid public keys for verification
@@ -228,16 +230,18 @@ export class TokenService {
       };
 
       // Verify JWT with our JWKS
+      const config = getConfig();
       const { payload } = await jwtVerify(request.token, getKey as any, {
-        issuer: process.env.ISSUER_URL || 'http://localhost:4000',
+        issuer: config.issuerUrl,
         algorithms: ['RS256'],
       });
 
       // Cast payload to our expected type
       const mcpPayload = payload as unknown as McpJwtPayload;
 
-      // Validate client_id matches the token
-      if (mcpPayload.client_id !== request.client_id) {
+      // If client_id was provided in the request, validate it matches the token (optional additional security)
+      // Per RFC 7662, client_id is not required in the request - it's extracted from the token
+      if (request.client_id && mcpPayload.client_id !== request.client_id) {
         this.logger.warn('Client ID mismatch during introspection');
         return { active: false } as IntrospectTokenResponseDto;
       }
@@ -260,7 +264,7 @@ export class TokenService {
         version: mcpPayload.version,
       };
 
-      this.logger.log(`Token introspection successful for client: ${request.client_id}`);
+      this.logger.log(`Token introspection successful for client: ${mcpPayload.client_id}`);
       return response;
     } catch (error) {
       // Token is invalid (expired, bad signature, etc.)

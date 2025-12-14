@@ -449,7 +449,8 @@ export interface paths {
         delete: operations["McpRegistryController_deleteServer"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update MCP server details */
+        patch: operations["McpRegistryController_updateServer"];
         trace?: never;
     };
     "/api/v1/mcp/servers/{serverId}/scopes": {
@@ -772,6 +773,26 @@ export interface paths {
          * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
          */
         get: operations["JwksController_getJwks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/oauth-authorization-server/mcp/issuer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the authorization server issuer URL
+         * @description Returns the configured authorization server issuer URL from environment configuration
+         */
+        get: operations["DiscoveryController_getIssuer"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1640,6 +1661,11 @@ export interface components {
              * @example Provides access to GitHub repositories and issues
              */
             description: string;
+            /**
+             * @description URL that MCP Clients will use to connect to the server
+             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             */
+            url?: string;
         };
         ServerResponseDto: {
             /**
@@ -1662,6 +1688,11 @@ export interface components {
              * @example Provides access to GitHub repositories and issues
              */
             description: string;
+            /**
+             * @description URL that MCP Clients will use to connect to the server
+             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             */
+            url?: string;
             /**
              * @description Timestamp when the server was created
              * @example 2025-11-05T08:00:00.000Z
@@ -1691,6 +1722,23 @@ export interface components {
              * @example 50
              */
             limit: number;
+        };
+        UpdateServerDto: {
+            /**
+             * @description Display name of the MCP server
+             * @example GitHub Integration
+             */
+            name?: string;
+            /**
+             * @description Short description of the MCP server
+             * @example Provides access to GitHub repositories and issues
+             */
+            description?: string;
+            /**
+             * @description URL that MCP Clients will use to connect to the server
+             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             */
+            url?: string;
         };
         DeleteServerResponseDto: {
             /**
@@ -2169,10 +2217,10 @@ export interface components {
              */
             token_type_hint?: "access_token" | "refresh_token";
             /**
-             * @description Client identifier making the request (required for public MCP clients)
+             * @description Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.
              * @example 0bab273987a2e163c3abb40c631ec0a4
              */
-            client_id: string;
+            client_id?: string;
             /**
              * @description Client secret for confidential clients (MCP clients typically omit this)
              * @example s3cr3t
@@ -4112,6 +4160,40 @@ export interface operations {
             };
         };
     };
+    McpRegistryController_updateServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateServerDto"];
+            };
+        };
+        responses: {
+            /** @description Server updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerResponseDto"];
+                };
+            };
+            /** @description Server not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     McpRegistryController_listScopes: {
         parameters: {
             query?: never;
@@ -4943,6 +5025,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JwksResponseDto"];
+                };
+            };
+        };
+    };
+    DiscoveryController_getIssuer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Issuer URL retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example http://localhost:4000 */
+                        issuer?: string;
+                    };
                 };
             };
         };
