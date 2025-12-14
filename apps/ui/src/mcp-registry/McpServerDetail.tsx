@@ -311,129 +311,171 @@ export function McpServerDetail() {
 
       {error && <div className="error-message">{error}</div>}
 
+      {/* Info Section */}
+      <div className="info-section">
+        <h2 className="section-title">Information</h2>
+        <div className="section-divider"></div>
 
-      <div className="detail-sections">
-        {/* Authorization Server Metadata Section */}
-        {authorizationServerMetadata && (
-          <div className="detail-section">
-            <div className="section-header">
-              <h2>Authorization Server Metadata</h2>
-              <button
-                onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
-                className="btn-secondary"
-              >
-                {isMetadataExpanded ? 'Collapse' : 'Expand'}
-              </button>
+        <div className="info-grid">
+          <div className="info-item">
+            <span className="info-label">Name</span>
+            <span className="info-value">{selectedServer.name}</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">ID</span>
+            <span className="info-value mono">{selectedServer.providedId}</span>
+          </div>
+          {connections.length > 0 && (
+            <div className="info-item">
+              <span className="info-label">Connections</span>
+              <span className="info-value">{connections.map(c => c.friendlyName).join(', ')}</span>
             </div>
-            {isMetadataExpanded && (
-              <div>
-                <p className="small-text">{authorizationServerMetadataUrl?.toString()}</p>
-                <pre className="metadata-json">
-                  {JSON.stringify(authorizationServerMetadata, null, 2)}
-                </pre>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Scopes Section */}
-        <div className="detail-section">
-          <div className="section-header">
-            <h2>Scopes</h2>
-            <button onClick={() => setActiveForm('scope')} className="btn-secondary">
-              + Add Scope
-            </button>
-          </div>
-          <div className="items-list">
-            {scopes.length === 0 ? (
-              <p className="empty-text">No scopes defined</p>
-            ) : (
-              scopes.map((scope) => (
-                <div key={scope.id} className="item-card">
-                  <div className="item-content">
-                    <h3>{scope.scopeId}</h3>
-                    <p>{scope.description}</p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteScope(scope.scopeId)}
-                    className="btn-delete"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
+          )}
+          {scopes.length > 0 && (
+            <div className="info-item">
+              <span className="info-label">Scopes</span>
+              <span className="info-value">{scopes.map(s => s.scopeId).join(', ')}</span>
+            </div>
+          )}
         </div>
 
-        {/* Connections Section */}
-        <div className="detail-section">
-          <div className="section-header">
-            <h2>OAuth Connections</h2>
-            <button onClick={() => setActiveForm('connection')} className="btn-secondary">
-              + Add Connection
+        {/* Authorization Server Metadata */}
+        {authorizationServerMetadata ? (
+          <>
+            <div className="section-divider"></div>
+            <div className="metadata-section">
+              <div className="metadata-header">
+                <span className="metadata-status">✓ Authorization Server Metadata found</span>
+                <button
+                  onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
+                  className="btn-link"
+                >
+                  {isMetadataExpanded ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {isMetadataExpanded && (
+                <div className="metadata-content">
+                  <p className="metadata-url">{authorizationServerMetadataUrl?.toString()}</p>
+                  <pre className="metadata-json">
+                    {JSON.stringify(authorizationServerMetadata, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      {/* Admin Section */}
+      <div className="admin-section">
+        <h2 className="section-title">Administration</h2>
+        <div className="section-divider"></div>
+
+        {/* Scopes */}
+        <div className="admin-subsection">
+          <div className="subsection-header">
+            <h3>Scopes</h3>
+            <button onClick={() => setActiveForm('scope')} className="btn-secondary btn-sm">
+              + Add
             </button>
           </div>
-          <div className="items-list">
-            {connections.length === 0 ? (
-              <p className="empty-text">No connections configured</p>
-            ) : (
-              connections.map((connection) => (
-                <div key={connection.id} className="item-card">
-                  <div className="item-content">
-                    <h3>{connection.friendlyName}</h3>
-                    <p>Client ID: {connection.clientId}</p>
-                    <p className="small-text">Authorize: {connection.authorizeUrl}</p>
-                    <p className="small-text">Token: {connection.tokenUrl}</p>
+          {scopes.length === 0 ? (
+            <p className="empty-text">No scopes defined</p>
+          ) : (
+            <div className="compact-table">
+              {scopes.map((scope) => (
+                <div key={scope.id} className="table-row">
+                  <div className="table-cell">
+                    <div className="cell-main">{scope.scopeId}</div>
+                    <div className="cell-sub">{scope.description}</div>
                   </div>
-                  <div className="item-actions">
+                  <div className="table-actions">
                     <button
-                      onClick={() => handleEditConnection(connection.id)}
-                      className="btn-secondary"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteConnection(connection.id)}
-                      className="btn-delete"
+                      onClick={() => handleDeleteScope(scope.scopeId)}
+                      className="btn-delete-small"
                     >
                       Delete
                     </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Mappings Section - Only show if there are connections */}
-        {connections.length > 0 && (
-          <div className="detail-section">
-            <div className="section-header">
-              <h2>Scope Mappings</h2>
-              <button
-                onClick={() => setActiveForm('mapping')}
-                className="btn-secondary"
-                disabled={scopes.length === 0}
-              >
-                + Add Mapping
-              </button>
+        <div className="section-divider"></div>
+
+        {/* Connections */}
+        <div className="admin-subsection">
+          <div className="subsection-header">
+            <h3>OAuth Connections</h3>
+            <button onClick={() => setActiveForm('connection')} className="btn-secondary btn-sm">
+              + Add
+            </button>
+          </div>
+          {connections.length === 0 ? (
+            <p className="empty-text">No connections configured</p>
+          ) : (
+            <div className="compact-table">
+              {connections.map((connection) => (
+                <div key={connection.id} className="table-row">
+                  <div className="table-cell">
+                    <div className="cell-main">{connection.friendlyName}</div>
+                    <div className="cell-sub">Client ID: {connection.clientId}</div>
+                    <div className="cell-sub">Authorize: {connection.authorizeUrl}</div>
+                    <div className="cell-sub">Token: {connection.tokenUrl}</div>
+                  </div>
+                  <div className="table-actions">
+                    <button
+                      onClick={() => handleEditConnection(connection.id)}
+                      className="btn-secondary btn-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteConnection(connection.id)}
+                      className="btn-delete-small"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            {mappings.length === 0 ? (
-              <p className="empty-text">No mappings configured</p>
-            ) : (
-              <div className="grouped-mappings">
-                {Object.entries(groupedMappings).map(([scopeId, scopeGroup]) => (
-                  <div key={scopeId} className="scope-group">
-                    <h3 className="scope-group-title">{scopeGroup.scope.scopeId}</h3>
-                    <div className="connection-groups">
+          )}
+        </div>
+
+        {/* Mappings - Only show if there are connections */}
+        {connections.length > 0 && (
+          <>
+            <div className="section-divider"></div>
+            <div className="admin-subsection">
+              <div className="subsection-header">
+                <h3>Scope Mappings</h3>
+                <button
+                  onClick={() => setActiveForm('mapping')}
+                  className="btn-secondary btn-sm"
+                  disabled={scopes.length === 0}
+                >
+                  + Add
+                </button>
+              </div>
+              {mappings.length === 0 ? (
+                <p className="empty-text">No mappings configured</p>
+              ) : (
+                <div className="compact-table">
+                  {Object.entries(groupedMappings).map(([scopeId, scopeGroup]) => (
+                    <div key={scopeId} className="mapping-group">
+                      <div className="mapping-group-header">{scopeGroup.scope.scopeId}</div>
                       {Object.entries(scopeGroup.connections).map(([connectionId, connectionGroup]) => (
-                        <div key={connectionId} className="connection-group">
-                          <h4 className="connection-group-title">{connectionGroup.connection.friendlyName}</h4>
-                          <div className="mapping-items">
-                            {connectionGroup.mappings.map((mapping) => (
-                              <div key={mapping.id} className="mapping-item">
-                                <span className="mapping-scope">{mapping.downstreamScope}</span>
+                        <div key={connectionId} className="mapping-subgroup">
+                          <div className="mapping-subgroup-header">{connectionGroup.connection.friendlyName}</div>
+                          {connectionGroup.mappings.map((mapping) => (
+                            <div key={mapping.id} className="table-row">
+                              <div className="table-cell">
+                                <span className="mono">{mapping.downstreamScope}</span>
+                              </div>
+                              <div className="table-actions">
                                 <button
                                   onClick={() => handleDeleteMapping(mapping.id)}
                                   className="btn-delete-small"
@@ -442,16 +484,16 @@ export function McpServerDetail() {
                                   Delete
                                 </button>
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
