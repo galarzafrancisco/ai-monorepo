@@ -788,3 +788,34 @@
   font-size: 14px;
   font-weight: 500;
 }
+
+/* Inspector Command */
+.inspector-command-item {
+  grid-column: 1 / -1;
+}
+
+.inspector-command {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.inspector-code {
+  flex: 1;
+  font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  color: #1a202c;
+  word-break: break-all;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.copy-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}

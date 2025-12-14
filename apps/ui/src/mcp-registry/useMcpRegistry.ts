@@ -7,6 +7,7 @@ type McpServer = {
   providedId: string;
   name: string;
   description: string;
+  url?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -114,7 +115,7 @@ export const useMcpRegistry = () => {
   };
 
   // Create server
-  const createServer = async (data: { providedId: string; name: string; description: string }) => {
+  const createServer = async (data: { providedId: string; name: string; description: string; url?: string }) => {
     setIsLoading(true);
     setError(null);
     try {
