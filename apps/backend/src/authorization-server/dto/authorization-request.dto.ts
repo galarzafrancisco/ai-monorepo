@@ -5,6 +5,7 @@ import {
   IsUrl,
   Length,
   Matches,
+  IsOptional,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ResponseType } from '../enums';
@@ -26,6 +27,7 @@ export class AuthorizationRequestDto {
     description: 'Space-delimited list of scopes being requested',
     example: 'tasks:read tasks:write',
   })
+  @IsOptional()
   @IsString()
   scope?: string;
 
