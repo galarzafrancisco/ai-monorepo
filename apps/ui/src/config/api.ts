@@ -22,19 +22,15 @@ export const getBFFBaseUrl = (): string => {
 /**
  * Get the WebSocket URL for real-time connections
  *
- * WebSockets cannot be proxied by Vite in the same way as HTTP requests,
- * so in development mode we need to construct the full URL to the backend.
+ * With Vite proxy configured for Socket.IO WebSockets (ws: true on /socket.io),
+ * the frontend can use relative paths for WebSocket connections in all environments.
  *
  * @param path - The WebSocket path (e.g., "/taskeroo")
- * @returns WebSocket-compatible URL
+ * @returns WebSocket-compatible URL (relative path)
  */
 export const getUIWebSocketUrl = (path: string): string => {
-  if (import.meta.env.PROD) {
-    return path;
-  }
-  // In dev mode, construct full URL since WebSockets can't use Vite proxy
-  const backendPort = import.meta.env.VITE_BACKEND_PORT || 3000;
-  return `http://localhost:${backendPort}${path}`;
+  // Always use relative paths - Vite proxy handles WebSocket routing in dev mode
+  return path;
 };
 
 /**

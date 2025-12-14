@@ -85,9 +85,9 @@ export function loadConfig(): AppConfig {
 function getDefaultIssuerUrl(): string {
   if (process.env.NODE_ENV === 'production') {
     logger.warn('ISSUER_URL not set in production, using default. This should be configured!');
-    return 'http://localhost:4000';
+    return 'http://localhost:3000';
   }
-  return 'http://localhost:4000';
+  return 'http://localhost:3000';
 }
 
 /**
