@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req } from '@nestjs/common';
+import { Controller, Get, Logger, Param, Req } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -14,6 +14,7 @@ import { DiscoveryService } from './discovery.service';
 @ApiTags('Discovery')
 @Controller('.well-known/oauth-authorization-server/mcp')
 export class DiscoveryController {
+  private logger = new Logger(DiscoveryController.name);
   constructor(private readonly discoveryService: DiscoveryService) {}
 
   @Get(':mcpServerId/:version')

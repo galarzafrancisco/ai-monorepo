@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { HomeLink } from '../components/HomeLink';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { getApiBaseUrl } from '../config/api';
+import { getBFFBaseUrl } from '../config/api'; // TODO: why are we not using centralized API client?
 import './ConsentScreen.css';
 
 interface AuthFlowDetails {
@@ -27,7 +27,6 @@ export function ConsentScreen() {
   usePageTitle('Authorization Consent - AI Monorepo');
 
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const flowId = searchParams.get('flow');
 
   const [flowDetails, setFlowDetails] = useState<AuthFlowDetails | null>(null);
@@ -52,8 +51,8 @@ export function ConsentScreen() {
     setError(null);
 
     try {
-      const baseUrl = getApiBaseUrl();
-      const response = await fetch(`${baseUrl}/api/v1/auth/flow/${flowId}`);
+      const bffBaseUrl = getBFFBaseUrl();
+      const response = await fetch(`${bffBaseUrl}/api/v1/auth/flow/${flowId}`);
 
       if (!response.ok) {
         throw new Error(`Failed to load authorization details: ${response.statusText}`);
@@ -73,11 +72,11 @@ export function ConsentScreen() {
 
     // Use a form submission to POST the consent decision
     // This allows the browser to naturally follow the 302 redirect
-    const baseUrl = getApiBaseUrl();
+    const bffBaseUrl = getBFFBaseUrl();
 
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = `${baseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`;
+    form.action = `${bffBaseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`;
 
     // Add flow_id field
     const flowIdInput = document.createElement('input');
