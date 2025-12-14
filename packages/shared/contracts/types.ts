@@ -577,6 +577,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get authorization journeys for an MCP server (debug/monitoring) */
+        get: operations["McpRegistryController_getAuthJourneys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
         parameters: {
             query?: never;
@@ -1976,6 +1993,134 @@ export interface components {
              * @example Mapping deleted successfully
              */
             message: string;
+        };
+        McpFlowResponseDto: {
+            /**
+             * @description System-generated UUID for the MCP authorization flow
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the authorization journey this flow belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            authorizationJourneyId: string;
+            /**
+             * @description UUID of the MCP server
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description UUID of the registered MCP client
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            clientId: string;
+            /**
+             * @description Client name for display
+             * @example My MCP Client
+             */
+            clientName?: Record<string, never> | null;
+            /**
+             * @description Current status of the MCP authorization flow
+             * @example CLIENT_REGISTERED
+             * @enum {string}
+             */
+            status: "CLIENT_NOT_REGISTERED" | "CLIENT_REGISTERED" | "AUTHORIZATION_REQUEST_STARTED" | "USER_CONSENT_OK" | "USER_CONSENT_REJECTED" | "WAITING_ON_DOWNSTREAM_AUTH" | "AUTHORIZATION_CODE_ISSUED" | "AUTHORIZATION_CODE_EXCHANGED";
+            /**
+             * @description Scopes requested by the client
+             * @example tool:read tool:execute
+             */
+            scope?: Record<string, never> | null;
+            /**
+             * @description When the authorization code expires
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            authorizationCodeExpiresAt?: Record<string, never> | null;
+            /**
+             * @description Whether the authorization code has been used
+             * @example false
+             */
+            authorizationCodeUsed: boolean;
+            /**
+             * @description Timestamp when the flow was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the flow was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        ConnectionFlowResponseDto: {
+            /**
+             * @description System-generated UUID for the connection authorization flow
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the authorization journey this flow belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            authorizationJourneyId: string;
+            /**
+             * @description UUID of the MCP connection this flow uses
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            mcpConnectionId: string;
+            /**
+             * @description Connection friendly name
+             * @example GitHub OAuth Connection
+             */
+            connectionName?: Record<string, never> | null;
+            /**
+             * @description Current status of the connection flow
+             * @example pending
+             * @enum {string}
+             */
+            status: "pending" | "authorized" | "failed";
+            /**
+             * @description When the access token expires
+             * @example 2025-12-15T10:00:00.000Z
+             */
+            tokenExpiresAt?: Record<string, never> | null;
+            /**
+             * @description Timestamp when the flow was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the flow was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        AuthJourneyResponseDto: {
+            /**
+             * @description System-generated UUID for the authorization journey
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Current status of the authorization journey
+             * @example mcp_auth_flow_started
+             * @enum {string}
+             */
+            status: "not_started" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
+            /** @description The MCP authorization flow for this journey */
+            mcpAuthorizationFlow: components["schemas"]["McpFlowResponseDto"];
+            /** @description Connection authorization flows for this journey */
+            connectionAuthorizationFlows: components["schemas"]["ConnectionFlowResponseDto"][];
+            /**
+             * @description Timestamp when the journey was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the journey was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
         };
         RegisterClientDto: {
             /**
@@ -4611,6 +4756,36 @@ export interface operations {
                 };
             };
             /** @description Mapping not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    McpRegistryController_getAuthJourneys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of authorization journeys */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthJourneyResponseDto"][];
+                };
+            };
+            /** @description Server not found */
             404: {
                 headers: {
                     [name: string]: unknown;

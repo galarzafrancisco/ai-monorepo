@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   AuthJourneyEntity,
@@ -15,7 +15,7 @@ import { McpRegistryModule } from 'src/mcp-registry/mcp-registry.module';
       McpAuthorizationFlowEntity,
       ConnectionAuthorizationFlowEntity,
     ]),
-    McpRegistryModule,
+    forwardRef(() => McpRegistryModule),
   ],
   providers: [AuthJourneysService],
   exports: [AuthJourneysService],
