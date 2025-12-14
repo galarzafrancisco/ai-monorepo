@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { getWebSocketUrl } from '../config/api';
+import { getUIWebSocketUrl } from '../config/api';
 import { ChatService } from './api';
 import type { ChatSessionResponseDto } from 'shared';
 
-const SOCKET_URL = getWebSocketUrl('/chat');
+const SOCKET_URL = getUIWebSocketUrl('/chat');
 
 export const useChatSessions = () => {
   const [socket, setSocket] = useState<Socket | null>(null);

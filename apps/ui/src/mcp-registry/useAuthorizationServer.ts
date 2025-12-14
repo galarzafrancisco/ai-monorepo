@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { McpRegistryService } from './api';
-import { getApiBaseUrl } from '../config/api';
+import { useState } from 'react';
+import { getBFFBaseUrl } from '../config/api';
 
 
-export const useAuthorizationServer = (mcpServerId?: string, mcpServerVersion?: string) => {
+export const useAuthorizationServer = () => {
 
   // UI feedback
   const [isLoading, setIsLoading] = useState(false);
@@ -17,10 +16,11 @@ export const useAuthorizationServer = (mcpServerId?: string, mcpServerVersion?: 
   async function loadMetadata(mcpServerId: string, mcpServerVersion: string) {
 
     // Make base url using centralized config
-    const baseUrl = getApiBaseUrl();
+    const bffBaseUrl = getBFFBaseUrl();
+    console.log('BFF Base URL:', bffBaseUrl);
 
     // Make authorization server url
-    const asUrl = new URL(`${baseUrl}/mcp/${mcpServerId}/${mcpServerVersion}`);
+    const asUrl = new URL(`${bffBaseUrl}/mcp/${mcpServerId}/${mcpServerVersion}`);
     setAuthorizationServerUrl(asUrl);
 
 

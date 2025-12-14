@@ -20,21 +20,9 @@ const getBackendPort = (): number => {
  *
  * @returns "/" in production, "http://localhost:{port}" in development
  */
-export const getApiBaseUrl = (): string => {
+export const getBFFBaseUrl = (): string => {
   if (import.meta.env.PROD) {
     return '';
-  }
-  return `http://localhost:${getBackendPort()}`;
-};
-
-/**
- * Get the full backend URL including protocol and host
- *
- * @returns Full URL in development, "/" in production
- */
-export const getBackendUrl = (): string => {
-  if (import.meta.env.PROD) {
-    return '/';
   }
   return `http://localhost:${getBackendPort()}`;
 };
@@ -45,7 +33,7 @@ export const getBackendUrl = (): string => {
  * @param path - The WebSocket path (e.g., "/taskeroo")
  * @returns WebSocket-compatible URL
  */
-export const getWebSocketUrl = (path: string): string => {
+export const getUIWebSocketUrl = (path: string): string => {
   if (import.meta.env.PROD) {
     return path;
   }
@@ -55,4 +43,4 @@ export const getWebSocketUrl = (path: string): string => {
 /**
  * Pre-configured base URL for OpenAPI clients
  */
-export const API_BASE_URL = getApiBaseUrl();
+export const BFF_BASE_URL = getBFFBaseUrl();

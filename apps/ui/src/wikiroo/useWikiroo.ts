@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { CreatePageDto, UpdatePageDto } from 'shared';
 import { WikirooService } from './api';
-import { getWebSocketUrl } from '../config/api';
+import { getUIWebSocketUrl } from '../config/api';
 import type { WikiPage, WikiPageSummary, WikiPageTree } from './types';
 
-const SOCKET_URL = getWebSocketUrl('/wikiroo');
+const SOCKET_URL = getUIWebSocketUrl('/wikiroo');
 
 export const useWikiroo = () => {
   const [pages, setPages] = useState<WikiPageSummary[]>([]);
