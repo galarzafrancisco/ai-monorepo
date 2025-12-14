@@ -35,7 +35,7 @@ export class CreateServerDto {
   })
   @IsOptional()
   @IsString()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   @MaxLength(2048)
   url?: string;
 }
