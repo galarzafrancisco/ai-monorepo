@@ -78,6 +78,7 @@ export { TokenResponseDto } from './models/TokenResponseDto';
 export type { UpdateAgentDto } from './models/UpdateAgentDto';
 export type { UpdateConnectionDto } from './models/UpdateConnectionDto';
 export type { UpdatePageDto } from './models/UpdatePageDto';
+export type { UpdateServerDto } from './models/UpdateServerDto';
 export type { UpdateSessionDto } from './models/UpdateSessionDto';
 export type { UpdateTaskDto } from './models/UpdateTaskDto';
 export type { UsageMetadataDto } from './models/UsageMetadataDto';

@@ -1364,6 +1364,49 @@
           "MCP Registry"
         ]
       },
+      "patch": {
+        "operationId": "McpRegistryController_updateServer",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateServerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Server updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "summary": "Update MCP server details",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
       "delete": {
         "operationId": "McpRegistryController_deleteServer",
         "parameters": [
@@ -4260,6 +4303,26 @@
           "page",
           "limit"
         ]
+      },
+      "UpdateServerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name of the MCP server",
+            "example": "GitHub Integration"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the MCP server",
+            "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+          }
+        }
       },
       "DeleteServerResponseDto": {
         "type": "object",
