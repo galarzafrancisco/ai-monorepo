@@ -13,6 +13,7 @@ import {
 import { randomBytes } from 'crypto';
 import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
+import { getConfig } from 'src/config/env.config';
 
 @Injectable()
 export class ClientRegistrationService {
@@ -169,11 +170,8 @@ export class ClientRegistrationService {
   }
 
   private generateClientSecret(): string {
-    const secretLength = parseInt(
-      process.env.CLIENT_SECRET_LENGTH || '32',
-      10,
-    );
-    return randomBytes(secretLength).toString('base64url');
+    const config = getConfig();
+    return randomBytes(config.clientSecretLength).toString('base64url');
   }
 
   private hashSecret(secret: string): string {

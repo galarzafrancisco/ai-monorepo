@@ -14,12 +14,13 @@ import { ChatModule } from './chat/chat.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
 import { AdkModule } from './adk/adk.module';
 import { LlmHelperModule } from './llm-helper/llm-helper.module';
+import { getConfig } from './config/env.config';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: process.env.DATABASE_PATH || 'data/database.sqlite',
+      database: getConfig().databasePath,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),

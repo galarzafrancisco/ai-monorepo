@@ -12,6 +12,7 @@ import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
 import { McpJwtPayload } from './types/mcp-jwt-payload.type';
 import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
+import { getConfig } from 'src/config/env.config';
 import {
   InvalidGrantTypeError,
   MissingRequiredParametersError,
@@ -161,8 +162,9 @@ export class TokenService {
 
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
+    const config = getConfig();
     const payload: McpJwtPayload = {
-      iss: process.env.ISSUER_URL || 'http://localhost:4000', // Issuer URL
+      iss: config.issuerUrl, // Issuer URL
       sub: 'user-placeholder', // TODO: Replace with actual user ID when user auth is implemented
       aud: mcpAuthFlow.server.providedId, // MCP server identifier
       exp: now + 3600, // 1 hour expiration
@@ -228,8 +230,9 @@ export class TokenService {
       };
 
       // Verify JWT with our JWKS
+      const config = getConfig();
       const { payload } = await jwtVerify(request.token, getKey as any, {
-        issuer: process.env.ISSUER_URL || 'http://localhost:4000',
+        issuer: config.issuerUrl,
         algorithms: ['RS256'],
       });
 

@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Ollama } from 'ollama';
+import { getConfig } from '../config/env.config';
 
 @Injectable()
 export class LlmHelperService {
   private readonly logger = new Logger(LlmHelperService.name);
-  private readonly host = process.env.OLLAMA_HOST ?? 'http://localhost:11434';
+  private readonly host = getConfig().ollamaHost;
   private readonly ollama = new Ollama({ host: this.host });
   private readonly model = 'qwen2.5:0.5b';
 

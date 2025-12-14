@@ -7,6 +7,7 @@ import { join } from 'path';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import { getConfig } from './config/env.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -40,13 +41,13 @@ async function bootstrap() {
       }],
   });
 
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('AI Monorepo API')
     .setDescription('The AI Monorepo API description')
     .setVersion('1.0')
     .addTag('ai-monorepo')
     .build();
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
 
   // Check if --generate-spec flag is present
   const generateSpec = process.argv.includes('--generate-spec');
@@ -80,8 +81,8 @@ async function bootstrap() {
     });
   }
 
-  const PORT = process.env.BACKEND_PORT || 3000;
-  await app.listen(PORT);
-  console.log(`Application is running on: http://localhost:${PORT}`);
+  const config = getConfig();
+  await app.listen(config.port);
+  console.log(`Application is running on: http://localhost:${config.port}`);
 }
 bootstrap();

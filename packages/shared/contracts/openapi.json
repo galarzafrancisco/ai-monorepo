@@ -2503,6 +2503,35 @@
         ]
       }
     },
+    "/.well-known/oauth-authorization-server/mcp/issuer": {
+      "get": {
+        "description": "Returns the configured authorization server issuer URL from environment configuration",
+        "operationId": "DiscoveryController_getIssuer",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Issuer URL retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "issuer": {
+                      "type": "string",
+                      "example": "http://localhost:4000"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get the authorization server issuer URL",
+        "tags": [
+          "Discovery"
+        ]
+      }
+    },
     "/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}": {
       "get": {
         "description": "Provides discovery metadata (RFC 8414) for OAuth 2.0 clients integrating with a specific MCP server version. Accepts either the server UUID or the providedId.",

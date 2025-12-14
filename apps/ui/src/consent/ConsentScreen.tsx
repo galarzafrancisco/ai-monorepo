@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { AuthorizationServerService, OpenAPI } from './api';
 import { HomeLink } from '../components/HomeLink';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { getBFFBaseUrl } from '../config/api'; // TODO: why are we not using centralized API client?
 import './ConsentScreen.css';
 
 interface AuthFlowDetails {
@@ -51,15 +51,8 @@ export function ConsentScreen() {
     setError(null);
 
     try {
-      const bffBaseUrl = getBFFBaseUrl();
-      const response = await fetch(`${bffBaseUrl}/api/v1/auth/flow/${flowId}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to load authorization details: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setFlowDetails(data);
+      const data = await AuthorizationServerService.authorizationControllerGetFlow(flowId);
+      setFlowDetails(data as AuthFlowDetails);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load authorization details');
     } finally {
@@ -72,7 +65,7 @@ export function ConsentScreen() {
 
     // Use a form submission to POST the consent decision
     // This allows the browser to naturally follow the 302 redirect
-    const bffBaseUrl = getBFFBaseUrl();
+    const bffBaseUrl = OpenAPI.BASE ?? '';
 
     const form = document.createElement('form');
     form.method = 'POST';
