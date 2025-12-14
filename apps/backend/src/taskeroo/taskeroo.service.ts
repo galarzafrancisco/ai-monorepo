@@ -507,6 +507,7 @@ export class TaskerooService {
       throw new TaskNotFoundError(taskId);
     }
 
+    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(taskWithRelations));
     return this.mapTaskToResult(taskWithRelations);
   }
 
@@ -538,7 +539,18 @@ export class TaskerooService {
     // Check if tag is now orphaned and clean it up
     await this.cleanupOrphanedTag(tagId);
 
-    return this.mapTaskToResult(task);
+    // Reload with relations to get updated task
+    const taskWithRelations = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ['comments', 'tags', 'dependsOn'],
+    });
+
+    if (!taskWithRelations) {
+      throw new TaskNotFoundError(taskId);
+    }
+
+    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(taskWithRelations));
+    return this.mapTaskToResult(taskWithRelations);
   }
 
   async getAllTags(): Promise<TagResult[]> {
