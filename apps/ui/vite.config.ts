@@ -18,6 +18,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/socket.io": {
+        target: `http://localhost:${process.env.VITE_BACKEND_PORT || 3000}`,
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
     },
   },
   build: {
