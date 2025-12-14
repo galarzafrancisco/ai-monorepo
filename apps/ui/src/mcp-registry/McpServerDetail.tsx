@@ -39,6 +39,7 @@ export function McpServerDetail() {
   const [activeForm, setActiveForm] = useState<FormType>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
+  const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [scopeForm, setScopeForm] = useState({ scopeId: '', description: '' });
   const [connectionForm, setConnectionForm] = useState({
     clientId: '',
@@ -277,12 +278,21 @@ export function McpServerDetail() {
           <div className="detail-section">
             <div className="section-header">
               <h2>Authorization Server Metadata</h2>
+              <button
+                onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
+                className="btn-secondary"
+              >
+                {isMetadataExpanded ? 'Collapse' : 'Expand'}
+              </button>
             </div>
-
-            {authorizationServerMetadataUrl?.toString()}
-            <pre>
-              {JSON.stringify(authorizationServerMetadata, null, 2)}
-            </pre>
+            {isMetadataExpanded && (
+              <div>
+                <p className="small-text">{authorizationServerMetadataUrl?.toString()}</p>
+                <pre className="metadata-json">
+                  {JSON.stringify(authorizationServerMetadata, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         )}
 
