@@ -22,7 +22,7 @@ export type McpFlowResponseDto = {
     /**
      * Client name for display
      */
-    clientName?: Record<string, any> | null;
+    clientName?: string | null;
     /**
      * Current status of the MCP authorization flow
      */
@@ -30,11 +30,11 @@ export type McpFlowResponseDto = {
     /**
      * Scopes requested by the client
      */
-    scope?: Record<string, any> | null;
+    scope?: string | null;
     /**
      * When the authorization code expires
      */
-    authorizationCodeExpiresAt?: Record<string, any> | null;
+    authorizationCodeExpiresAt?: string | null;
     /**
      * Whether the authorization code has been used
      */

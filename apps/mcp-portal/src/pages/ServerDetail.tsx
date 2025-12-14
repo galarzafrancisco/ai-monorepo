@@ -599,14 +599,14 @@ export default function ServerDetailPage() {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold">{journey.mcpAuthorizationFlow.clientName || 'Unknown Client'}</h3>
+                        <h3 className="font-semibold">{journey.mcpAuthorizationFlow.clientName ?? 'Unknown Client'}</h3>
                         <span className={`text-xs px-2 py-0.5 rounded ${
-                          journey.status === 'AUTHORIZATION_CODE_EXCHANGED' ? 'bg-green-500/20 text-green-300' :
-                          journey.status === 'MCP_AUTH_FLOW_STARTED' ? 'bg-blue-500/20 text-blue-300' :
-                          journey.status === 'CONNECTIONS_FLOW_STARTED' ? 'bg-yellow-500/20 text-yellow-300' :
+                          journey.status === 'authorization_code_exchanged' ? 'bg-green-500/20 text-green-300' :
+                          journey.status === 'mcp_auth_flow_started' ? 'bg-blue-500/20 text-blue-300' :
+                          journey.status === 'connections_flow_started' ? 'bg-yellow-500/20 text-yellow-300' :
                           'bg-gray-500/20 text-gray-300'
                         }`}>
-                          {journey.status.replace(/_/g, ' ')}
+                          {journey.status.replace(/_/g, ' ').toUpperCase()}
                         </span>
                       </div>
                       <div className="text-xs text-white/50 space-y-0.5">
@@ -642,7 +642,7 @@ export default function ServerDetailPage() {
                         {journey.connectionAuthorizationFlows.map((connFlow) => (
                           <div key={connFlow.id} className="bg-white/5 rounded px-3 py-2">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{connFlow.connectionName || 'Unknown Connection'}</span>
+                              <span className="text-sm font-medium">{connFlow.connectionName ?? 'Unknown Connection'}</span>
                               <span className={`text-xs px-2 py-0.5 rounded ${
                                 connFlow.status === 'authorized' ? 'bg-green-500/20 text-green-300' :
                                 connFlow.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :

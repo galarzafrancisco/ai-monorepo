@@ -2019,7 +2019,7 @@ export interface components {
              * @description Client name for display
              * @example My MCP Client
              */
-            clientName?: Record<string, never> | null;
+            clientName?: string | null;
             /**
              * @description Current status of the MCP authorization flow
              * @example CLIENT_REGISTERED
@@ -2030,12 +2030,12 @@ export interface components {
              * @description Scopes requested by the client
              * @example tool:read tool:execute
              */
-            scope?: Record<string, never> | null;
+            scope?: string | null;
             /**
              * @description When the authorization code expires
              * @example 2025-12-15T09:00:00.000Z
              */
-            authorizationCodeExpiresAt?: Record<string, never> | null;
+            authorizationCodeExpiresAt?: string | null;
             /**
              * @description Whether the authorization code has been used
              * @example false
@@ -2072,7 +2072,7 @@ export interface components {
              * @description Connection friendly name
              * @example GitHub OAuth Connection
              */
-            connectionName?: Record<string, never> | null;
+            connectionName?: string | null;
             /**
              * @description Current status of the connection flow
              * @example pending
@@ -2083,7 +2083,7 @@ export interface components {
              * @description When the access token expires
              * @example 2025-12-15T10:00:00.000Z
              */
-            tokenExpiresAt?: Record<string, never> | null;
+            tokenExpiresAt?: string | null;
             /**
              * @description Timestamp when the flow was created
              * @example 2025-12-15T08:00:00.000Z
