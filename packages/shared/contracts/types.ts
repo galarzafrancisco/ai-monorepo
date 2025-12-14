@@ -2217,10 +2217,10 @@ export interface components {
              */
             token_type_hint?: "access_token" | "refresh_token";
             /**
-             * @description Client identifier making the request (required for public MCP clients)
+             * @description Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.
              * @example 0bab273987a2e163c3abb40c631ec0a4
              */
-            client_id: string;
+            client_id?: string;
             /**
              * @description Client secret for confidential clients (MCP clients typically omit this)
              * @example s3cr3t
