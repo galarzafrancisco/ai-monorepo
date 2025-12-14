@@ -371,25 +371,31 @@ export function McpServerDetail() {
         <h2 className="section-title">Administration</h2>
         <div className="section-divider"></div>
 
-        {/* Scopes */}
+        {/* Permissions (Scopes) */}
         <div className="admin-subsection">
           <div className="subsection-header">
-            <h3>Scopes</h3>
+            <h3>Permissions</h3>
             <button onClick={() => setActiveForm('scope')} className="btn-secondary btn-sm">
               + Add
             </button>
           </div>
+          <p className="subsection-description">
+            Define the scopes (permissions) that will be available for MCP clients to request when connecting to this server.
+          </p>
           {scopes.length === 0 ? (
-            <p className="empty-text">No scopes defined</p>
+            <p className="empty-text">No permissions defined</p>
           ) : (
-            <div className="compact-table">
+            <div className="proper-table">
+              <div className="table-header">
+                <div className="table-col-name">Scope Name</div>
+                <div className="table-col-description">Description</div>
+                <div className="table-col-actions"></div>
+              </div>
               {scopes.map((scope) => (
-                <div key={scope.id} className="table-row">
-                  <div className="table-cell">
-                    <div className="cell-main">{scope.scopeId}</div>
-                    <div className="cell-sub">{scope.description}</div>
-                  </div>
-                  <div className="table-actions">
+                <div key={scope.id} className="table-body-row">
+                  <div className="table-col-name">{scope.scopeId}</div>
+                  <div className="table-col-description">{scope.description}</div>
+                  <div className="table-col-actions">
                     <button
                       onClick={() => handleDeleteScope(scope.scopeId)}
                       className="btn-delete-small"
@@ -408,24 +414,30 @@ export function McpServerDetail() {
         {/* Connections */}
         <div className="admin-subsection">
           <div className="subsection-header">
-            <h3>OAuth Connections</h3>
+            <h3>Connections</h3>
             <button onClick={() => setActiveForm('connection')} className="btn-secondary btn-sm">
               + Add
             </button>
           </div>
+          <p className="subsection-description">
+            Configure connections to downstream systems that support OAuth. The MCP server acts as a secure proxy, managing authentication and authorization on behalf of clients.
+          </p>
           {connections.length === 0 ? (
             <p className="empty-text">No connections configured</p>
           ) : (
-            <div className="compact-table">
+            <div className="proper-table">
+              <div className="table-header">
+                <div className="table-col-name">Connection Name</div>
+                <div className="table-col-description">Description</div>
+                <div className="table-col-actions"></div>
+              </div>
               {connections.map((connection) => (
-                <div key={connection.id} className="table-row">
-                  <div className="table-cell">
-                    <div className="cell-main">{connection.friendlyName}</div>
-                    <div className="cell-sub">Client ID: {connection.clientId}</div>
-                    <div className="cell-sub">Authorize: {connection.authorizeUrl}</div>
-                    <div className="cell-sub">Token: {connection.tokenUrl}</div>
+                <div key={connection.id} className="table-body-row">
+                  <div className="table-col-name">{connection.friendlyName}</div>
+                  <div className="table-col-description">
+                    {connection.providedId && <span className="mono">{connection.providedId}</span>}
                   </div>
-                  <div className="table-actions">
+                  <div className="table-col-actions">
                     <button
                       onClick={() => handleEditConnection(connection.id)}
                       className="btn-secondary btn-sm"
@@ -445,7 +457,7 @@ export function McpServerDetail() {
           )}
         </div>
 
-        {/* Mappings - Only show if there are connections */}
+        {/* Scope Mappings - Integrated with Connections */}
         {connections.length > 0 && (
           <>
             <div className="section-divider"></div>
@@ -460,34 +472,39 @@ export function McpServerDetail() {
                   + Add
                 </button>
               </div>
+              <p className="subsection-description">
+                Map MCP server scopes to downstream connection scopes. When a client requests an MCP scope, the server will request the corresponding downstream scopes from the configured connections.
+              </p>
               {mappings.length === 0 ? (
-                <p className="empty-text">No mappings configured</p>
+                <p className="empty-text">No scope mappings configured</p>
               ) : (
-                <div className="compact-table">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {Object.entries(groupedMappings).map(([scopeId, scopeGroup]) => (
                     <div key={scopeId} className="mapping-group">
-                      <div className="mapping-group-header">{scopeGroup.scope.scopeId}</div>
-                      {Object.entries(scopeGroup.connections).map(([connectionId, connectionGroup]) => (
-                        <div key={connectionId} className="mapping-subgroup">
-                          <div className="mapping-subgroup-header">{connectionGroup.connection.friendlyName}</div>
-                          {connectionGroup.mappings.map((mapping) => (
-                            <div key={mapping.id} className="table-row">
-                              <div className="table-cell">
-                                <span className="mono">{mapping.downstreamScope}</span>
+                      <div className="mapping-group-header">
+                        {scopeGroup.scope.scopeId} → {Object.keys(scopeGroup.connections).length} connection{Object.keys(scopeGroup.connections).length !== 1 ? 's' : ''}
+                      </div>
+                      <div className="mapping-items">
+                        {Object.entries(scopeGroup.connections).map(([connectionId, connectionGroup]) =>
+                          connectionGroup.mappings.map((mapping) => (
+                            <div key={mapping.id} className="mapping-item">
+                              <div>
+                                <div style={{ fontSize: '14px', fontWeight: 500, color: '#1a202c', marginBottom: '4px' }}>
+                                  {connectionGroup.connection.friendlyName}
+                                </div>
+                                <div className="mapping-item-scope">{mapping.downstreamScope}</div>
                               </div>
-                              <div className="table-actions">
-                                <button
-                                  onClick={() => handleDeleteMapping(mapping.id)}
-                                  className="btn-delete-small"
-                                  title="Delete mapping"
-                                >
-                                  Delete
-                                </button>
-                              </div>
+                              <button
+                                onClick={() => handleDeleteMapping(mapping.id)}
+                                className="btn-delete-small"
+                                title="Delete mapping"
+                              >
+                                Delete
+                              </button>
                             </div>
-                          ))}
-                        </div>
-                      ))}
+                          ))
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -501,7 +518,7 @@ export function McpServerDetail() {
       {activeForm === 'scope' && (
         <div className="modal-overlay" onClick={() => setActiveForm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Create Scope</h2>
+            <h2>Create Permission</h2>
             <form onSubmit={handleCreateScope}>
               <div className="form-group">
                 <label htmlFor="scopeId">Scope ID</label>
@@ -542,7 +559,7 @@ export function McpServerDetail() {
       {activeForm === 'connection' && (
         <div className="modal-overlay" onClick={() => setActiveForm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Create OAuth Connection</h2>
+            <h2>Create Connection</h2>
             <form onSubmit={handleCreateConnection} autoComplete="off">
               <div className="form-group">
                 <label htmlFor="friendlyName">Friendly Name</label>
@@ -647,7 +664,7 @@ export function McpServerDetail() {
       {activeForm === 'edit-connection' && (
         <div className="modal-overlay" onClick={() => setActiveForm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Edit OAuth Connection</h2>
+            <h2>Edit Connection</h2>
             <form onSubmit={handleUpdateConnection} autoComplete="off">
               <div className="form-group">
                 <label htmlFor="editFriendlyName">Friendly Name</label>
