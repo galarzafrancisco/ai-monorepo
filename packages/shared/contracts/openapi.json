@@ -4167,6 +4167,11 @@
             "type": "string",
             "description": "Short description of the MCP server",
             "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
           }
         },
         "required": [
@@ -4197,6 +4202,11 @@
             "type": "string",
             "description": "Short description of the MCP server",
             "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
           },
           "createdAt": {
             "type": "string",
