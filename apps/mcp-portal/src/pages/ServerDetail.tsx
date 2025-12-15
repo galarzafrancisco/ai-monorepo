@@ -3,8 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import StarRating from "../components/StarRating";
 import { McpRegistryService } from "../lib/api";
-import type { ServerResponseDto, ScopeResponseDto, ConnectionResponseDto, MappingResponseDto, CreateScopeDto, CreateConnectionDto, CreateMappingDto, AuthJourneyResponseDto } from "shared";
-import { AuthJourneyResponseDto as AuthJourneyTypes, McpFlowResponseDto as McpFlowTypes } from "shared";
+import type { ServerResponseDto, ScopeResponseDto, ConnectionResponseDto, MappingResponseDto, CreateScopeDto, CreateConnectionDto, CreateMappingDto } from "shared";
 
 // Colourful tag helper
 const Tag = ({ text, color }: { text: string; color: string }) => (
@@ -18,7 +17,6 @@ export default function ServerDetailPage() {
   const [scopes, setScopes] = useState<ScopeResponseDto[]>([]);
   const [connections, setConnections] = useState<ConnectionResponseDto[]>([]);
   const [mappings, setMappings] = useState<MappingResponseDto[]>([]);
-  const [authJourneys, setAuthJourneys] = useState<AuthJourneyResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -184,16 +182,14 @@ export default function ServerDetailPage() {
         const serverData = await McpRegistryService.mcpRegistryControllerGetServer(id);
         setServer(serverData);
 
-        // Load scopes, connections, and auth journeys
-        const [scopesData, connectionsData, authJourneysData] = await Promise.all([
+        // Load scopes and connections
+        const [scopesData, connectionsData] = await Promise.all([
           McpRegistryService.mcpRegistryControllerListScopes(id),
           McpRegistryService.mcpRegistryControllerListConnections(id),
-          McpRegistryService.mcpRegistryControllerGetAuthJourneys(id).catch(() => []),
         ]);
 
         setScopes(scopesData);
         setConnections(connectionsData);
-        setAuthJourneys(authJourneysData);
 
         // Load mappings for each scope (if there are scopes)
         if (scopesData.length > 0) {
@@ -580,94 +576,6 @@ export default function ServerDetailPage() {
             )}
           </div>
         )}
-
-        {/* Auth Journeys Section (Debug/Monitoring) */}
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold">Client Connections & Auth Flows</h2>
-              <p className="text-sm text-white/60 mt-1">Live monitoring of client connections and their authorization state</p>
-            </div>
-          </div>
-
-          {authJourneys.length === 0 ? (
-            <p className="text-white/60 text-sm">No active client connections</p>
-          ) : (
-            <div className="space-y-4">
-              {authJourneys.map((journey) => (
-                <div key={journey.id} className="bg-white/5 border border-white/10 rounded-lg p-4">
-                  {/* Journey header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold">{journey.mcpAuthorizationFlow.clientName ?? 'Unknown Client'}</h3>
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          journey.status === AuthJourneyTypes.status.AUTHORIZATION_CODE_EXCHANGED ? 'bg-green-500/20 text-green-300' :
-                          journey.status === AuthJourneyTypes.status.MCP_AUTH_FLOW_STARTED ? 'bg-blue-500/20 text-blue-300' :
-                          journey.status === AuthJourneyTypes.status.CONNECTIONS_FLOW_STARTED ? 'bg-yellow-500/20 text-yellow-300' :
-                          'bg-gray-500/20 text-gray-300'
-                        }`}>
-                          {journey.status.replace(/_/g, ' ').toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="text-xs text-white/50 space-y-0.5">
-                        <div>Journey ID: {journey.id}</div>
-                        <div>Started: {new Date(journey.createdAt).toLocaleString()}</div>
-                        <div>Last Update: {new Date(journey.updatedAt).toLocaleString()}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* MCP Auth Flow Details */}
-                  <div className="mb-3 pl-4 border-l-2 border-white/10">
-                    <div className="text-sm font-medium text-white/80 mb-1">MCP Authorization</div>
-                    <div className="text-xs text-white/60 space-y-0.5">
-                      <div>Status: <span className={`font-medium ${
-                        journey.mcpAuthorizationFlow.status === McpFlowTypes.status.AUTHORIZATION_CODE_EXCHANGED ? 'text-green-400' :
-                        journey.mcpAuthorizationFlow.status === McpFlowTypes.status.CLIENT_REGISTERED ? 'text-blue-400' :
-                        'text-gray-400'
-                      }`}>{journey.mcpAuthorizationFlow.status.replace(/_/g, ' ')}</span></div>
-                      {journey.mcpAuthorizationFlow.scope && <div>Scopes: {journey.mcpAuthorizationFlow.scope}</div>}
-                      {journey.mcpAuthorizationFlow.authorizationCodeExpiresAt && (
-                        <div>Code Expires: {new Date(journey.mcpAuthorizationFlow.authorizationCodeExpiresAt).toLocaleString()}</div>
-                      )}
-                      <div>Code Used: {journey.mcpAuthorizationFlow.authorizationCodeUsed ? 'Yes' : 'No'}</div>
-                    </div>
-                  </div>
-
-                  {/* Connection Flows */}
-                  {journey.connectionAuthorizationFlows.length > 0 && (
-                    <div className="pl-4 border-l-2 border-white/10">
-                      <div className="text-sm font-medium text-white/80 mb-2">Downstream Connections ({journey.connectionAuthorizationFlows.length})</div>
-                      <div className="space-y-2">
-                        {journey.connectionAuthorizationFlows.map((connFlow) => (
-                          <div key={connFlow.id} className="bg-white/5 rounded px-3 py-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{connFlow.connectionName ?? 'Unknown Connection'}</span>
-                              <span className={`text-xs px-2 py-0.5 rounded ${
-                                connFlow.status === 'authorized' ? 'bg-green-500/20 text-green-300' :
-                                connFlow.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                                'bg-red-500/20 text-red-300'
-                              }`}>
-                                {connFlow.status}
-                              </span>
-                            </div>
-                            <div className="text-xs text-white/50 space-y-0.5">
-                              {connFlow.tokenExpiresAt && (
-                                <div>Token Expires: {new Date(connFlow.tokenExpiresAt).toLocaleString()}</div>
-                              )}
-                              <div>Created: {new Date(connFlow.createdAt).toLocaleString()}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

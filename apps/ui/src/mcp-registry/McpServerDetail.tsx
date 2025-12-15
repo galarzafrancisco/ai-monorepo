@@ -6,6 +6,9 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
 import { useAuthorizationServer } from './useAuthorizationServer';
+import { McpRegistryService } from './api';
+import type { AuthJourneyResponseDto } from 'shared';
+import { AuthJourneyResponseDto as AuthJourneyTypes, McpFlowResponseDto as McpFlowTypes } from 'shared';
 
 type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | 'edit-server' | null;
 
@@ -37,6 +40,7 @@ export function McpServerDetail() {
 
   const { metadata: authorizationServerMetadata, authorizationServerMetadataUrl, loadMetadata: loadAuthorizationServerMetadata } = useAuthorizationServer();
 
+  const [authJourneys, setAuthJourneys] = useState<AuthJourneyResponseDto[]>([]);
   const [activeForm, setActiveForm] = useState<FormType>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
@@ -61,6 +65,10 @@ export function McpServerDetail() {
   useEffect(() => {
     if (serverId) {
       loadServerDetails(serverId);
+      // Load auth journeys
+      McpRegistryService.mcpRegistryControllerGetAuthJourneys(serverId)
+        .then(setAuthJourneys)
+        .catch(() => setAuthJourneys([]));
     }
   }, [serverId]);
 
@@ -592,6 +600,107 @@ export function McpServerDetail() {
               )}
             </div>
           </>
+        )}
+      </div>
+
+      {/* Auth Journeys Section (Debug/Monitoring) */}
+      <div className="admin-section">
+        <h2 className="section-title">Client Connections & Auth Flows</h2>
+        <div className="section-divider"></div>
+        <p className="subsection-description" style={{ marginBottom: '16px' }}>
+          Live monitoring of client connections and their authorization state
+        </p>
+
+        {authJourneys.length === 0 ? (
+          <p style={{ color: '#888', fontSize: '14px' }}>No active client connections</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {authJourneys.map((journey) => (
+              <div key={journey.id} style={{ backgroundColor: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: '8px', padding: '16px' }}>
+                {/* Journey header */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{journey.mcpAuthorizationFlow.clientName ?? 'Unknown Client'}</h3>
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        backgroundColor: journey.status === AuthJourneyTypes.status.AUTHORIZATION_CODE_EXCHANGED ? '#d4edda' :
+                          journey.status === AuthJourneyTypes.status.MCP_AUTH_FLOW_STARTED ? '#cfe2ff' :
+                          journey.status === AuthJourneyTypes.status.CONNECTIONS_FLOW_STARTED ? '#fff3cd' :
+                          '#e2e3e5',
+                        color: journey.status === AuthJourneyTypes.status.AUTHORIZATION_CODE_EXCHANGED ? '#155724' :
+                          journey.status === AuthJourneyTypes.status.MCP_AUTH_FLOW_STARTED ? '#084298' :
+                          journey.status === AuthJourneyTypes.status.CONNECTIONS_FLOW_STARTED ? '#664d03' :
+                          '#383d41'
+                      }}>
+                        {journey.status.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#6c757d', lineHeight: '1.5' }}>
+                      <div>Journey ID: {journey.id}</div>
+                      <div>Started: {new Date(journey.createdAt).toLocaleString()}</div>
+                      <div>Last Update: {new Date(journey.updatedAt).toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* MCP Auth Flow Details */}
+                <div style={{ marginBottom: '12px', paddingLeft: '16px', borderLeft: '2px solid #dee2e6' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 500, color: '#495057', marginBottom: '4px' }}>MCP Authorization</div>
+                  <div style={{ fontSize: '11px', color: '#6c757d', lineHeight: '1.5' }}>
+                    <div>Status: <span style={{
+                      fontWeight: 500,
+                      color: journey.mcpAuthorizationFlow.status === McpFlowTypes.status.AUTHORIZATION_CODE_EXCHANGED ? '#28a745' :
+                        journey.mcpAuthorizationFlow.status === McpFlowTypes.status.CLIENT_REGISTERED ? '#007bff' :
+                        '#6c757d'
+                    }}>{journey.mcpAuthorizationFlow.status.replace(/_/g, ' ')}</span></div>
+                    {journey.mcpAuthorizationFlow.scope && <div>Scopes: {journey.mcpAuthorizationFlow.scope}</div>}
+                    {journey.mcpAuthorizationFlow.authorizationCodeExpiresAt && (
+                      <div>Code Expires: {new Date(journey.mcpAuthorizationFlow.authorizationCodeExpiresAt).toLocaleString()}</div>
+                    )}
+                    <div>Code Used: {journey.mcpAuthorizationFlow.authorizationCodeUsed ? 'Yes' : 'No'}</div>
+                  </div>
+                </div>
+
+                {/* Connection Flows */}
+                {journey.connectionAuthorizationFlows.length > 0 && (
+                  <div style={{ paddingLeft: '16px', borderLeft: '2px solid #dee2e6' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: '#495057', marginBottom: '8px' }}>Downstream Connections ({journey.connectionAuthorizationFlows.length})</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {journey.connectionAuthorizationFlows.map((connFlow) => (
+                        <div key={connFlow.id} style={{ backgroundColor: '#ffffff', borderRadius: '4px', padding: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 500 }}>{connFlow.connectionName ?? 'Unknown Connection'}</span>
+                            <span style={{
+                              fontSize: '11px',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              backgroundColor: connFlow.status === 'authorized' ? '#d4edda' :
+                                connFlow.status === 'pending' ? '#fff3cd' :
+                                '#f8d7da',
+                              color: connFlow.status === 'authorized' ? '#155724' :
+                                connFlow.status === 'pending' ? '#664d03' :
+                                '#721c24'
+                            }}>
+                              {connFlow.status}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#6c757d', lineHeight: '1.5' }}>
+                            {connFlow.tokenExpiresAt && (
+                              <div>Token Expires: {new Date(connFlow.tokenExpiresAt).toLocaleString()}</div>
+                            )}
+                            <div>Created: {new Date(connFlow.createdAt).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
