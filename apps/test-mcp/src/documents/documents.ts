@@ -2,13 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { z } from 'zod';
 import { DocumentsService } from './documents.service';
-import { GcsService } from './gcs.service';
-import { TokenExchangeService } from '../auth/token-exchange.service';
 import { SELF_NAME, SELF_VERSION } from 'src/config/self.config';
 import type { AuthContext } from 'src/auth/auth.types';
-import { BUCKET_NAME } from 'src/config/gcp.config';
 
 @Injectable()
 export class Documents {
@@ -17,8 +13,6 @@ export class Documents {
 
   constructor(
     private readonly documentsService: DocumentsService,
-    private readonly gcsService: GcsService,
-    private readonly tokenExchangeService: TokenExchangeService,
   ) {}
 
   private buildServer(auth: AuthContext): McpServer {
@@ -39,14 +33,7 @@ export class Documents {
       },
       async () => {
         try {
-          // Exchange the MCP token for a Google token
-          const tokenResponse = await this.tokenExchangeService.exchangeToken(auth.token);
-
-          // List the bucket contents using the exchanged token
-          const files = await this.gcsService.listBucketContents(
-            tokenResponse.access_token,
-            BUCKET_NAME,
-          );
+          const files = await this.documentsService.listDocuments(auth.token);
 
           return {
             content: [
@@ -58,46 +45,6 @@ export class Documents {
           };
         } catch (error) {
           this.logger.error('Error listing documents:', error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Error: ${error.message}`,
-              }
-            ],
-            isError: true,
-          };
-        }
-      }
-    );
-
-    server.registerTool(
-      'list_gcs_bucket',
-      {
-        title: 'List GCS bucket contents',
-        description: 'Lists the contents of a Google Cloud Storage bucket using token exchange',
-      },
-      async () => {
-        try {
-          // Exchange the MCP token for a Google token
-          const tokenResponse = await this.tokenExchangeService.exchangeToken(auth.token);
-
-          // List the bucket contents using the exchanged token
-          const files = await this.gcsService.listBucketContents(
-            tokenResponse.access_token,
-            BUCKET_NAME,
-          );
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(files, null, 2),
-              }
-            ]
-          };
-        } catch (error) {
-          this.logger.error('Error listing GCS bucket:', error);
           return {
             content: [
               {
