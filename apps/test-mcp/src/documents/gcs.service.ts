@@ -19,27 +19,32 @@ export class GcsService {
     this.logger.debug(`Listing contents of bucket: ${bucket}`);
 
     try {
-      const storage = new Storage({
-        authClient: {
-          getAccessToken: async () => ({
-            token: accessToken,
-          }),
-        } as any,
-      });
+      const response = await fetch(
+        `https://storage.googleapis.com/storage/v1/b/${bucket}/o`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to list bucket contents: ${response.status} ${response.statusText} - ${errorText}`);
+      }
 
-      const [files] = await storage.bucket(bucket).getFiles();
+      const data = await response.json();
 
-      const fileList: GcsFile[] = files.map(file => ({
-        name: file.name,
-        size: typeof file.metadata.size === 'string' ? parseInt(file.metadata.size) : (file.metadata.size || 0),
-        updated: file.metadata.updated || '',
-        contentType: file.metadata.contentType,
+      const blobs = (data.items || []).map((item: any) => ({
+        name: item.name,
+        size: item.size,
+        timeCreated: item.timeCreated,
+        contentType: item.contentType,
       }));
 
-      this.logger.debug(`Found ${fileList.length} files in bucket ${bucket}`);
-      return fileList;
+      return blobs;
     } catch (error) {
-      this.logger.error(`Error listing bucket contents: ${error.message}`, error);
+      this.logger.error('Error listing bucket contents:', error);
       throw error;
     }
   }

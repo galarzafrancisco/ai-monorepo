@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SELF_NAME, SELF_VERSION, TOKEN_EXCHANGE_RESOURCE, TOKEN_EXCHANGE_SCOPE } from '../config/self.config';
+import { TOKEN_EXCHANGE_URL } from 'src/config/as.config';
 
 export interface TokenExchangeRequest {
   grant_type: string;
@@ -20,8 +21,7 @@ export interface TokenExchangeResponse {
 @Injectable()
 export class TokenExchangeService {
   private readonly logger = new Logger(TokenExchangeService.name);
-  private readonly tokenExchangeUrl = `http://localhost:3000/api/v1/auth/token-exchange/mcp/${SELF_NAME}/${SELF_VERSION}`;
-
+  
   async exchangeToken(mcpToken: string): Promise<TokenExchangeResponse> {
     const requestBody: TokenExchangeRequest = {
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
@@ -31,10 +31,10 @@ export class TokenExchangeService {
       scope: TOKEN_EXCHANGE_SCOPE,
     };
 
-    this.logger.debug(`Exchanging token at ${this.tokenExchangeUrl}`);
+    this.logger.debug(`Exchanging token at ${TOKEN_EXCHANGE_URL}`);
 
     try {
-      const response = await fetch(this.tokenExchangeUrl, {
+      const response = await fetch(TOKEN_EXCHANGE_URL, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
