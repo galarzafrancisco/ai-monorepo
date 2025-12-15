@@ -615,7 +615,9 @@ export function McpServerDetail() {
           <p style={{ color: '#888', fontSize: '14px' }}>No active client connections</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {authJourneys.map((journey) => (
+            {authJourneys
+              .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+              .map((journey) => (
               <div key={journey.id} style={{ backgroundColor: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: '8px', padding: '16px' }}>
                 {/* Journey header */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
