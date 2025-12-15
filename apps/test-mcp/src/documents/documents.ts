@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { z } from 'zod';
 import { DocumentsService } from './documents.service';
 import { GcsService } from './gcs.service';
 import { TokenExchangeService } from '../auth/token-exchange.service';
@@ -54,13 +55,7 @@ export class Documents {
         title: 'List GCS bucket contents',
         description: 'Lists the contents of a Google Cloud Storage bucket using token exchange',
         inputSchema: {
-          type: 'object',
-          properties: {
-            bucketName: {
-              type: 'string',
-              description: 'Optional: The name of the GCS bucket to list. If not provided, uses the default configured bucket.',
-            },
-          },
+          bucketName: z.string().optional().describe('The name of the GCS bucket to list. If not provided, uses the default configured bucket.'),
         },
       },
       async (params: { bucketName?: string }) => {

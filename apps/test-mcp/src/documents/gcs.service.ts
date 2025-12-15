@@ -31,7 +31,7 @@ export class GcsService {
 
       const fileList: GcsFile[] = files.map(file => ({
         name: file.name,
-        size: parseInt(file.metadata.size || '0'),
+        size: typeof file.metadata.size === 'string' ? parseInt(file.metadata.size) : (file.metadata.size || 0),
         updated: file.metadata.updated || '',
         contentType: file.metadata.contentType,
       }));
