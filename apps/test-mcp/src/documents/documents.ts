@@ -22,7 +22,10 @@ export class Documents {
       version: SELF_VERSION,
     });
 
-
+    this.logger.debug(`User: ${auth.payload.sub}`);
+    this.logger.debug(`Client ID: ${auth.payload.client_id}`);
+    this.logger.debug(`Scopes received:`, auth.scopes);
+    this.logger.debug(auth.payload)
     server.registerTool(
       'list_documents',
       {

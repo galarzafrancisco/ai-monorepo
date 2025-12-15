@@ -1,5 +1,5 @@
 // Meta
-export const SELF_NAME = 'test-server';
+export const SELF_NAME = 'test-mcp';
 export const SELF_VERSION = '0.0.0';
 
 // Auth
