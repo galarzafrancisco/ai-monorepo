@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import StarRating from "../components/StarRating";
 import { McpRegistryService } from "../lib/api";
 import type { ServerResponseDto, ScopeResponseDto, ConnectionResponseDto, MappingResponseDto, CreateScopeDto, CreateConnectionDto, CreateMappingDto, AuthJourneyResponseDto } from "shared";
+import { AuthJourneyResponseDto as AuthJourneyTypes, McpFlowResponseDto as McpFlowTypes } from "shared";
 
 // Colourful tag helper
 const Tag = ({ text, color }: { text: string; color: string }) => (
@@ -601,9 +602,9 @@ export default function ServerDetailPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold">{journey.mcpAuthorizationFlow.clientName ?? 'Unknown Client'}</h3>
                         <span className={`text-xs px-2 py-0.5 rounded ${
-                          journey.status === 'authorization_code_exchanged' ? 'bg-green-500/20 text-green-300' :
-                          journey.status === 'mcp_auth_flow_started' ? 'bg-blue-500/20 text-blue-300' :
-                          journey.status === 'connections_flow_started' ? 'bg-yellow-500/20 text-yellow-300' :
+                          journey.status === AuthJourneyTypes.status.AUTHORIZATION_CODE_EXCHANGED ? 'bg-green-500/20 text-green-300' :
+                          journey.status === AuthJourneyTypes.status.MCP_AUTH_FLOW_STARTED ? 'bg-blue-500/20 text-blue-300' :
+                          journey.status === AuthJourneyTypes.status.CONNECTIONS_FLOW_STARTED ? 'bg-yellow-500/20 text-yellow-300' :
                           'bg-gray-500/20 text-gray-300'
                         }`}>
                           {journey.status.replace(/_/g, ' ').toUpperCase()}
@@ -622,8 +623,8 @@ export default function ServerDetailPage() {
                     <div className="text-sm font-medium text-white/80 mb-1">MCP Authorization</div>
                     <div className="text-xs text-white/60 space-y-0.5">
                       <div>Status: <span className={`font-medium ${
-                        journey.mcpAuthorizationFlow.status === 'AUTHORIZATION_CODE_EXCHANGED' ? 'text-green-400' :
-                        journey.mcpAuthorizationFlow.status === 'CLIENT_REGISTERED' ? 'text-blue-400' :
+                        journey.mcpAuthorizationFlow.status === McpFlowTypes.status.AUTHORIZATION_CODE_EXCHANGED ? 'text-green-400' :
+                        journey.mcpAuthorizationFlow.status === McpFlowTypes.status.CLIENT_REGISTERED ? 'text-blue-400' :
                         'text-gray-400'
                       }`}>{journey.mcpAuthorizationFlow.status.replace(/_/g, ' ')}</span></div>
                       {journey.mcpAuthorizationFlow.scope && <div>Scopes: {journey.mcpAuthorizationFlow.scope}</div>}
