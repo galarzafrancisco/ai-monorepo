@@ -62,16 +62,13 @@ export class Documents {
       'read_document',
       {
         title: 'Read document',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            fileName: {
-              type: 'string',
-              description: 'The name of the file to read',
-            },
+        properties: {
+          fileName: {
+            type: 'string',
+            description: 'The name of the file to read',
           },
-          required: ['fileName'],
         },
+        required: ['fileName'],
       },
       async (args: { fileName: string }) => {
         try {
@@ -104,20 +101,17 @@ export class Documents {
       'upload_document',
       {
         title: 'Upload document',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            fileName: {
-              type: 'string',
-              description: 'The name of the file to upload',
-            },
-            content: {
-              type: 'string',
-              description: 'The text content to upload',
-            },
+        properties: {
+          fileName: {
+            type: 'string',
+            description: 'The name of the file to upload',
           },
-          required: ['fileName', 'content'],
+          content: {
+            type: 'string',
+            description: 'The text content to upload',
+          },
         },
+        required: ['fileName', 'content'],
       },
       async (args: { fileName: string; content: string }) => {
         try {
