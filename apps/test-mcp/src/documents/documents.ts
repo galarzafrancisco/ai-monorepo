@@ -57,6 +57,89 @@ export class Documents {
         }
       }
     );
+
+    server.registerTool(
+      'read_document',
+      {
+        title: 'Read document',
+        properties: {
+          fileName: {
+            type: 'string',
+            description: 'The name of the file to read',
+          },
+        },
+        required: ['fileName'],
+      },
+      async (args: { fileName: string }) => {
+        try {
+          const content = await this.documentsService.readDocument(auth.token, args.fileName);
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: content,
+              }
+            ]
+          };
+        } catch (error) {
+          this.logger.error('Error reading document:', error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: ${error.message}`,
+              }
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    server.registerTool(
+      'upload_document',
+      {
+        title: 'Upload document',
+        properties: {
+          fileName: {
+            type: 'string',
+            description: 'The name of the file to upload',
+          },
+          content: {
+            type: 'string',
+            description: 'The text content to upload',
+          },
+        },
+        required: ['fileName', 'content'],
+      },
+      async (args: { fileName: string; content: string }) => {
+        try {
+          await this.documentsService.uploadDocument(auth.token, args.fileName, args.content);
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `File ${args.fileName} uploaded successfully`,
+              }
+            ]
+          };
+        } catch (error) {
+          this.logger.error('Error uploading document:', error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: ${error.message}`,
+              }
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
     return server;
   }
 
