@@ -24,4 +24,31 @@ export class DocumentsService {
 
     return files;
   }
+
+  async readDocument(token: string, fileName: string): Promise<string> {
+    // Exchange the MCP token for a Google token
+    const tokenResponse = await this.tokenExchangeService.exchangeToken(token);
+
+    // Read the file using the exchanged token
+    const content = await this.gcsService.readFile(
+      tokenResponse.access_token,
+      fileName,
+      BUCKET_NAME,
+    );
+
+    return content;
+  }
+
+  async uploadDocument(token: string, fileName: string, content: string): Promise<void> {
+    // Exchange the MCP token for a Google token
+    const tokenResponse = await this.tokenExchangeService.exchangeToken(token);
+
+    // Upload the file using the exchanged token
+    await this.gcsService.uploadFile(
+      tokenResponse.access_token,
+      fileName,
+      content,
+      BUCKET_NAME,
+    );
+  }
 }
