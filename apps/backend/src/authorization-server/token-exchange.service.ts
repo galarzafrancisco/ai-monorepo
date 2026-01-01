@@ -5,6 +5,7 @@ import { jwtVerify } from 'jose';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { JwksService } from './jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
@@ -27,6 +28,7 @@ export class TokenExchangeService {
     private readonly mcpScopeMappingRepository: Repository<McpScopeMappingEntity>,
     @InjectRepository(ConnectionAuthorizationFlowEntity)
     private readonly connectionAuthorizationFlowRepository: Repository<ConnectionAuthorizationFlowEntity>,
+    private readonly mcpRegistryService: McpRegistryService,
     private readonly jwksService: JwksService,
   ) {}
 
@@ -39,39 +41,46 @@ export class TokenExchangeService {
   ): Promise<TokenExchangeResponseDto> {
     this.logger.debug(`Processing token exchange for resource: ${request.resource}`);
 
-    // Step 1: Validate and decode MCP JWT
+    // Step 1: Resolve MCP Server UUID from providedId (with caching)
+    const serverId = await this.mcpRegistryService.resolveServerIdFromProvidedId(serverIdentifier);
+    if (!serverId) {
+      this.logger.warn(`MCP Server not found: ${serverIdentifier}`);
+      throw new NotFoundException('MCP Server not found');
+    }
+
+    // Step 2: Validate and decode MCP JWT
     const mcpTokenPayload = await this.validateMcpJwt(request.subject_token, serverIdentifier);
 
-    // Step 2: Extract MCP scopes from JWT
+    // Step 3: Extract MCP scopes from JWT
     const mcpScopes = mcpTokenPayload.scope;
 
-    // Step 3: Lookup connection by resource (providedId or UUID)
-    const connection = await this.findConnection(request.resource, serverIdentifier);
+    // Step 4: Lookup connection by resource (providedId or UUID)
+    const connection = await this.findConnection(request.resource, serverId);
     if (!connection) {
       this.logger.warn(`Connection not found: ${request.resource}`);
       throw new NotFoundException('Connection not found');
     }
 
-    // Step 4: Resolve downstream scope entitlements
+    // Step 5: Resolve downstream scope entitlements
     const entitledDownstreamScopes = await this.resolveDownstreamScopes(
       mcpScopes,
       connection.id,
     );
 
-    // Step 5: Validate requested scopes (if provided)
+    // Step 6: Validate requested scopes (if provided)
     const requestedScopes = request.scope
       ? request.scope.split(' ')
       : entitledDownstreamScopes;
     this.validateScopeEntitlement(requestedScopes, entitledDownstreamScopes);
 
-    // Step 6: Get or refresh downstream token
+    // Step 7: Get or refresh downstream token
     const downstreamToken = await this.getDownstreamToken(
       connection,
       mcpTokenPayload.client_id,
       requestedScopes,
     );
 
-    // Step 7: Return RFC 8693 response
+    // Step 8: Return RFC 8693 response
     return new TokenExchangeResponseDto(
       downstreamToken.accessToken,
       'urn:ietf:params:oauth:token-type:access_token',

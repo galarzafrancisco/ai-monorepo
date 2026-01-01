@@ -76,6 +76,18 @@ const mergeStreamingParts = (
       continue;
     }
 
+    if (part.text) {
+      const lastTextIndex = mergedParts.findLastIndex(
+        (p) => p.text && !p.functionCall && !p.functionResponse
+      );
+      if (lastTextIndex >= 0) {
+        mergedParts[lastTextIndex] = part;
+      } else {
+        mergedParts.push(part);
+      }
+      continue;
+    }
+
     mergedParts.push(part);
   }
 

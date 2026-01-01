@@ -39,6 +39,10 @@ import {
 
 @Injectable()
 export class McpRegistryService {
+  // In-memory cache for server providedId -> UUID resolution
+  // Used for hot-path operations like token exchange
+  private readonly serverIdCache = new Map<string, string>();
+
   constructor(
     @InjectRepository(McpServerEntity)
     private readonly serverRepository: Repository<McpServerEntity>,
@@ -121,6 +125,33 @@ export class McpRegistryService {
         this.mapConnectionEntityToRecord(connection),
       ),
     };
+  }
+
+  /**
+   * Resolve MCP Server UUID from providedId with caching
+   * Optimized for hot-path operations (e.g., token exchange)
+   * @returns Server UUID or null if not found
+   */
+  async resolveServerIdFromProvidedId(providedId: string): Promise<string | null> {
+    // Check cache first
+    const cached = this.serverIdCache.get(providedId);
+    if (cached) {
+      return cached;
+    }
+
+    // Query database - only select ID for minimal overhead
+    const server = await this.serverRepository.findOne({
+      where: { providedId },
+      select: ['id'],
+    });
+
+    if (server) {
+      // Cache the result for future lookups
+      this.serverIdCache.set(providedId, server.id);
+      return server.id;
+    }
+
+    return null;
   }
 
   async updateServer(

@@ -1,0 +1,1 @@
+export const BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'default-bucket-name';

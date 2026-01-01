@@ -22,22 +22,39 @@ export class Documents {
       version: SELF_VERSION,
     });
 
-
+    this.logger.debug(`User: ${auth.payload.sub}`);
+    this.logger.debug(`Client ID: ${auth.payload.client_id}`);
+    this.logger.debug(`Scopes received:`, auth.scopes);
+    this.logger.debug(auth.payload)
     server.registerTool(
       'list_documents',
       {
         title: 'List documents',
       },
       async () => {
-        const docs = await this.documentsService.listDocuments();
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(docs),
-            }
-          ]
-        };
+        try {
+          const files = await this.documentsService.listDocuments(auth.token);
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(files, null, 2),
+              }
+            ]
+          };
+        } catch (error) {
+          this.logger.error('Error listing documents:', error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: ${error.message}`,
+              }
+            ],
+            isError: true,
+          };
+        }
       }
     );
     return server;

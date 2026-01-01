@@ -1955,6 +1955,44 @@
         ]
       }
     },
+    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
+      "get": {
+        "operationId": "McpRegistryController_getAuthJourneys",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of authorization journeys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuthJourneyResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "summary": "Get authorization journeys for an MCP server (debug/monitoring)",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
     "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
       "post": {
         "description": "Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.",
@@ -4648,6 +4686,206 @@
         },
         "required": [
           "message"
+        ]
+      },
+      "McpFlowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the MCP authorization flow",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "authorizationJourneyId": {
+            "type": "string",
+            "description": "UUID of the authorization journey this flow belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "UUID of the registered MCP client",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "clientName": {
+            "type": "string",
+            "description": "Client name for display",
+            "example": "My MCP Client",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the MCP authorization flow",
+            "example": "CLIENT_REGISTERED",
+            "enum": [
+              "CLIENT_NOT_REGISTERED",
+              "CLIENT_REGISTERED",
+              "AUTHORIZATION_REQUEST_STARTED",
+              "USER_CONSENT_OK",
+              "USER_CONSENT_REJECTED",
+              "WAITING_ON_DOWNSTREAM_AUTH",
+              "AUTHORIZATION_CODE_ISSUED",
+              "AUTHORIZATION_CODE_EXCHANGED"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "description": "Scopes requested by the client",
+            "example": "tool:read tool:execute",
+            "nullable": true
+          },
+          "authorizationCodeExpiresAt": {
+            "type": "string",
+            "description": "When the authorization code expires",
+            "example": "2025-12-15T09:00:00.000Z",
+            "nullable": true
+          },
+          "authorizationCodeUsed": {
+            "type": "boolean",
+            "description": "Whether the authorization code has been used",
+            "example": false
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "authorizationJourneyId",
+          "serverId",
+          "clientId",
+          "status",
+          "authorizationCodeUsed",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ConnectionFlowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the connection authorization flow",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "authorizationJourneyId": {
+            "type": "string",
+            "description": "UUID of the authorization journey this flow belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "mcpConnectionId": {
+            "type": "string",
+            "description": "UUID of the MCP connection this flow uses",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "connectionName": {
+            "type": "string",
+            "description": "Connection friendly name",
+            "example": "GitHub OAuth Connection",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the connection flow",
+            "example": "pending",
+            "enum": [
+              "pending",
+              "authorized",
+              "failed"
+            ]
+          },
+          "tokenExpiresAt": {
+            "type": "string",
+            "description": "When the access token expires",
+            "example": "2025-12-15T10:00:00.000Z",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "authorizationJourneyId",
+          "mcpConnectionId",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AuthJourneyResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the authorization journey",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the authorization journey",
+            "example": "mcp_auth_flow_started",
+            "enum": [
+              "not_started",
+              "mcp_auth_flow_started",
+              "mcp_auth_flow_completed",
+              "connections_flow_started",
+              "connections_flow_completed",
+              "authorization_code_issued",
+              "authorization_code_exchanged"
+            ]
+          },
+          "mcpAuthorizationFlow": {
+            "description": "The MCP authorization flow for this journey",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/McpFlowResponseDto"
+              }
+            ]
+          },
+          "connectionAuthorizationFlows": {
+            "description": "Connection authorization flows for this journey",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionFlowResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the journey was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the journey was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "mcpAuthorizationFlow",
+          "connectionAuthorizationFlows",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "RegisterClientDto": {
