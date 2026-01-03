@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi, AuthUser } from './api';
+import { WebAuthenticationService, type AuthUser } from './api';
 
 /**
  * Authentication state interface
@@ -43,8 +43,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check auth status on mount
   useEffect(() => {
-    authApi
-      .getCurrentUser()
+    WebAuthenticationService.webAuthControllerMe()
       .then((userData) => {
         setUser(userData);
       })
@@ -65,8 +64,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const refreshInterval = setInterval(
       async () => {
         try {
-          const userData = await authApi.refresh();
-          setUser(userData);
+          const response = await WebAuthenticationService.webAuthControllerRefresh();
+          setUser(response.user);
         } catch (error) {
           // Refresh failed - user needs to re-authenticate
           console.error('Token refresh failed:', error);
@@ -84,8 +83,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Sets httpOnly cookies and updates user state
    */
   const login = async (email: string, password: string): Promise<void> => {
-    const userData = await authApi.login(email, password);
-    setUser(userData);
+    const response = await WebAuthenticationService.webAuthControllerLogin({ email, password });
+    setUser(response.user);
   };
 
   /**
@@ -94,7 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
    */
   const logout = async (): Promise<void> => {
     try {
-      await authApi.logout();
+      await WebAuthenticationService.webAuthControllerLogout();
     } finally {
       // Always clear user state, even if API call fails
       setUser(null);
@@ -106,8 +105,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Useful for recovering from temporary network issues
    */
   const refreshAuth = async (): Promise<void> => {
-    const userData = await authApi.refresh();
-    setUser(userData);
+    const response = await WebAuthenticationService.webAuthControllerRefresh();
+    setUser(response.user);
   };
 
   const value: AuthState = {
