@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class IdentityProviderService {
@@ -20,8 +20,8 @@ export class IdentityProviderService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const passwordHash = this.hashPassword(password);
-    if (user.passwordHash !== passwordHash) {
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -39,7 +39,7 @@ export class IdentityProviderService {
     displayName: string,
     password: string,
   ): Promise<User> {
-    const passwordHash = this.hashPassword(password);
+    const passwordHash = await this.hashPassword(password);
     const user = this.userRepository.create({
       email,
       displayName,
@@ -48,7 +48,8 @@ export class IdentityProviderService {
     return this.userRepository.save(user);
   }
 
-  private hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(password).digest('hex');
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = 12;
+    return bcrypt.hash(password, saltRounds);
   }
 }
