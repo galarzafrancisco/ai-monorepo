@@ -2584,6 +2584,119 @@
         ]
       }
     },
+    "/api/v1/api/v1/auth/login": {
+      "post": {
+        "operationId": "WebAuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful, tokens set in httpOnly cookies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Login with email and password",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "WebAuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully, new tokens set in cookies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        },
+        "summary": "Refresh access token using refresh token",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/api/v1/auth/logout": {
+      "post": {
+        "operationId": "WebAuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful, cookies cleared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Logout and revoke refresh token",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/api/v1/auth/me": {
+      "get": {
+        "operationId": "WebAuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current user information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        },
+        "summary": "Get current authenticated user",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
     "/.well-known/oauth-authorization-server/mcp/issuer": {
       "get": {
         "description": "Returns the configured authorization server issuer URL from environment configuration",
@@ -5432,6 +5545,82 @@
         },
         "required": [
           "keys"
+        ]
+      },
+      "LoginRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "UserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "User display name",
+            "example": "John Doe"
+          },
+          "role": {
+            "type": "string",
+            "description": "User role",
+            "enum": [
+              "admin",
+              "standard"
+            ],
+            "example": "standard"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName",
+          "role"
+        ]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "description": "Authenticated user information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserResponseDto"
+              }
+            ]
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Access token expiration time in seconds",
+            "example": 600
+          }
+        },
+        "required": [
+          "user",
+          "expiresIn"
         ]
       },
       "AuthorizationServerMetadataDto": {

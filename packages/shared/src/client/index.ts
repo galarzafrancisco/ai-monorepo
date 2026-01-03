@@ -53,6 +53,8 @@ export { IntrospectTokenResponseDto } from './models/IntrospectTokenResponseDto'
 export type { JwkResponseDto } from './models/JwkResponseDto';
 export type { JwksResponseDto } from './models/JwksResponseDto';
 export type { ListAppsResponseDto } from './models/ListAppsResponseDto';
+export type { LoginRequestDto } from './models/LoginRequestDto';
+export type { LoginResponseDto } from './models/LoginResponseDto';
 export type { MappingResponseDto } from './models/MappingResponseDto';
 export type { McpAuthorizationFlowEntity } from './models/McpAuthorizationFlowEntity';
 export { McpFlowResponseDto } from './models/McpFlowResponseDto';
@@ -83,6 +85,7 @@ export type { UpdateServerDto } from './models/UpdateServerDto';
 export type { UpdateSessionDto } from './models/UpdateSessionDto';
 export type { UpdateTaskDto } from './models/UpdateTaskDto';
 export type { UsageMetadataDto } from './models/UsageMetadataDto';
+export { UserResponseDto } from './models/UserResponseDto';
 export type { WikiTagResponseDto } from './models/WikiTagResponseDto';
 
 export { AdkService } from './services/AdkService';
@@ -94,4 +97,5 @@ export { DiscoveryService } from './services/DiscoveryService';
 export { JwksService } from './services/JwksService';
 export { McpRegistryService } from './services/McpRegistryService';
 export { TaskService } from './services/TaskService';
+export { WebAuthenticationService } from './services/WebAuthenticationService';
 export { WikirooService } from './services/WikirooService';
