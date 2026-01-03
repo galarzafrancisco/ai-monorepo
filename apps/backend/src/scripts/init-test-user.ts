@@ -47,13 +47,14 @@ async function bootstrap() {
     console.log('  Role:', role);
     console.log('');
   } catch (error: any) {
-    if (error.code === '23505') {
-      // Unique constraint violation
+    if (error.code === '23505' || error.code === 'SQLITE_CONSTRAINT') {
+      // Unique constraint violation (PostgreSQL: 23505, SQLite: SQLITE_CONSTRAINT)
       console.log('ℹ️  Test user already exists');
       console.log('');
       console.log('Login credentials:');
       console.log('  Email:', testEmail);
       console.log('  Password:', testPassword);
+      console.log('  Role:', role);
       console.log('');
     } else {
       console.error('❌ Error creating test user:', error.message);
