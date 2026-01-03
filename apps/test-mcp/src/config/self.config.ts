@@ -10,8 +10,10 @@ export const TOKEN_EXCHANGE_RESOURCE = process.env.TOKEN_EXCHANGE_RESOURCE || 'n
 export const TOKEN_EXCHANGE_SCOPE = process.env.TOKEN_EXCHANGE_SCOPE || 'https://www.googleapis.com/auth/devstorage.read_only';
 
 // GCS
-export const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'your-bucket-name';
+export const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'default-bucket-name';
 
 // Runtime
 export const SELF_PORT = process.env.PORT || 1111;
-export const SELF_URL = `http://localhost:${SELF_PORT}`;
+export const SELF_HOST = process.env.HOST || 'localhost';
+export const SELF_PROTOCOL = process.env.PROTOCOL || 'http';
+export const SELF_URL = `${SELF_PROTOCOL}://${SELF_HOST}:${SELF_PORT}`;

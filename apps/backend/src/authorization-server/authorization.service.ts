@@ -223,7 +223,7 @@ export class AuthorizationService {
    */
   private async initiateConnectionOAuth(connectionFlow: ConnectionAuthorizationFlowEntity): Promise<string> {
     const config = getConfig();
-    const callbackUrl = `${config.callbackBaseUrl}/api/v1/auth/callback`;
+    const callbackUrl = config.callbackUrl;
 
     // Generate a unique state for this connection flow
     const state = randomBytes(32).toString('base64url');
@@ -351,7 +351,7 @@ export class AuthorizationService {
    */
   private async exchangeCodeForToken(connectionFlow: ConnectionAuthorizationFlowEntity): Promise<void> {
     const config = getConfig();
-    const callbackUrl = `${config.callbackBaseUrl}/api/v1/auth/callback`;
+    const callbackUrl = config.callbackUrl;
 
     try {
       // Make the token exchange request

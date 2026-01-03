@@ -9,7 +9,7 @@ services:
       - "${HOST_PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      # - PORT=3000 // does nothing
       - DATABASE_PATH=/app/data/database.sqlite
       # Add any other environment variables here
     volumes:

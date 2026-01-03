@@ -5,7 +5,7 @@ import { getConfig } from '../config/env.config';
 @Injectable()
 export class LlmHelperService {
   private readonly logger = new Logger(LlmHelperService.name);
-  private readonly host = getConfig().ollamaHost;
+  private readonly host = getConfig().ollamaUrl;
   private readonly ollama = new Ollama({ host: this.host });
   private readonly model = 'qwen2.5:0.5b';
 

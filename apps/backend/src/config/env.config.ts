@@ -10,24 +10,25 @@ import { Logger } from '@nestjs/common';
 
 const logger = new Logger('EnvConfig');
 
+export type NodeEnv = 'development' | 'production';
 /**
  * Configuration interface for type safety
  */
 export interface AppConfig {
   // Server Configuration
   port: number;
-  nodeEnv: string;
+  nodeEnv: NodeEnv;
 
   // Authorization Server URLs
   issuerUrl: string;
-  callbackBaseUrl: string;
+  callbackUrl: string;
 
   // Database Configuration
   databasePath: string;
 
   // External Services
   adkUrl: string;
-  ollamaHost: string;
+  ollamaUrl: string;
 
   // Security Configuration
   clientSecretLength: number;
@@ -45,18 +46,18 @@ export function loadConfig(): AppConfig {
   const config: AppConfig = {
     // Server Configuration
     port: parseInt(process.env.BACKEND_PORT || '3000', 10),
-    nodeEnv: process.env.NODE_ENV || 'development',
+    nodeEnv: getEnv(),
 
     // Authorization Server URLs
-    issuerUrl: process.env.ISSUER_URL || getDefaultIssuerUrl(),
-    callbackBaseUrl: process.env.CALLBACK_BASE_URL || getDefaultCallbackUrl(),
+    issuerUrl: getIssuerUrl(),
+    callbackUrl: getCallbackUrl(),
 
     // Database Configuration
     databasePath: process.env.DATABASE_PATH || 'data/database.sqlite',
 
     // External Services
-    adkUrl: process.env.ADK_URL || 'http://localhost:8000',
-    ollamaHost: process.env.OLLAMA_HOST || 'http://localhost:11434',
+    adkUrl: getADKUrl(),
+    ollamaUrl: getOllamaUrl(),
 
     // Security Configuration
     clientSecretLength: parseInt(process.env.CLIENT_SECRET_LENGTH || '32', 10),
@@ -71,34 +72,67 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Port: ${config.port}`);
   logger.log(`  - Node Environment: ${config.nodeEnv}`);
   logger.log(`  - Issuer URL: ${config.issuerUrl}`);
-  logger.log(`  - Callback Base URL: ${config.callbackBaseUrl}`);
+  logger.log(`  - Callback URL: ${config.callbackUrl}`);
   logger.log(`  - Database Path: ${config.databasePath}`);
   logger.log(`  - ADK URL: ${config.adkUrl}`);
-  logger.log(`  - Ollama Host: ${config.ollamaHost}`);
+  logger.log(`  - Ollama URL: ${config.ollamaUrl}`);
 
   return config;
 }
 
-/**
- * Get default issuer URL based on environment
- */
-function getDefaultIssuerUrl(): string {
-  if (process.env.NODE_ENV === 'production') {
-    logger.warn('ISSUER_URL not set in production, using default. This should be configured!');
-    return 'http://localhost:3000';
+function getEnv(): NodeEnv {
+  const env = process.env.NODE_ENV;
+  if (env === 'production' || env === 'development') {
+    return env;
   }
+  return 'development';
+}
+
+function getIssuerUrl(): string {
+  const issuerUrl = process.env.ISSUER_URL;
+  if (issuerUrl) {
+    return issuerUrl;
+  }
+  if (getEnv() === 'production') {
+    logger.error('ISSUER_URL is not set in production environment');
+    throw new Error('ISSUER_URL must be set in production');
+  }
+  // Default for development
+  logger.warn('Using default ISSUER_URL for development');
   return 'http://localhost:3000';
 }
 
-/**
- * Get default callback URL based on environment
- */
-function getDefaultCallbackUrl(): string {
-  if (process.env.NODE_ENV === 'production') {
-    logger.warn('CALLBACK_BASE_URL not set in production, using default. This should be configured!');
-    return 'http://localhost:3000';
+function getCallbackUrl(): string {
+  const issuerUrl = getIssuerUrl();
+  return `${issuerUrl}/api/v1/auth/callback`;
+}
+
+function getADKUrl(): string {
+  const adkUrl = process.env.ADK_URL;
+  if (adkUrl) {
+    return adkUrl;
   }
-  return 'http://localhost:3000';
+  if (getEnv() === 'production') {
+    logger.error('ADK_URL is not set in production environment');
+    throw new Error('ADK_URL must be set in production');
+  }
+  // Default for development
+  logger.warn('Using default ADK_URL for development');
+  return 'http://localhost:8000';
+}
+
+function getOllamaUrl(): string {
+  const ollamaUrl = process.env.OLLAMA_URL;
+  if (ollamaUrl) {
+    return ollamaUrl;
+  }
+  if (getEnv() === 'production') {
+    logger.error('OLLAMA_URL is not set in production environment');
+    throw new Error('OLLAMA_URL must be set in production');
+  }
+  // Default for development
+  logger.warn('Using default OLLAMA_URL for development');
+  return 'http://localhost:11434';
 }
 
 /**
