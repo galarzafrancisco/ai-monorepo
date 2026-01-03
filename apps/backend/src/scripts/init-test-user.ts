@@ -4,10 +4,12 @@
  *
  * This script creates a test user with credentials:
  * - Email: test@example.com
- * - Password: password123
+ * - Password: testpassword
  * - Display Name: Test User
  *
- * Run with: npm run init-test-user
+ * Usage:
+ *   npm run init-test-user           # Creates standard user
+ *   npm run init-test-user admin     # Creates admin user
  */
 
 import { NestFactory } from '@nestjs/core';
@@ -21,20 +23,28 @@ async function bootstrap() {
   const testEmail = 'test@example.com';
   const testPassword = 'testpassword';
   const testDisplayName = 'Test User';
+  const role = process.argv[2] === 'admin' ? 'admin' : 'standard';
 
   try {
-    console.log('Creating test user...');
+    console.log(`Creating test user (${role})...`);
     const user = await identityService.createUser(
       testEmail,
       testDisplayName,
       testPassword,
     );
+
+    // Update role if admin
+    if (role === 'admin') {
+      await identityService.updateUserRole(user.id, 'admin');
+    }
+
     console.log('✅ Test user created successfully!');
     console.log('');
     console.log('Login credentials:');
     console.log('  Email:', testEmail);
     console.log('  Password:', testPassword);
     console.log('  User ID:', user.id);
+    console.log('  Role:', role);
     console.log('');
   } catch (error: any) {
     if (error.code === '23505') {
