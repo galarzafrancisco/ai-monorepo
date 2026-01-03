@@ -20,7 +20,8 @@
     "dev": "npm run start:dev",
     "typecheck": "tsc --noEmit",
     "does-it-start": "(nest start & ) && sleep 10 && kill $! || true",
-    "init-test-user": "ts-node -r tsconfig-paths/register src/scripts/init-test-user.ts"
+    "init-test-user": "npm run build && node dist/apps/backend/src/scripts/init-test-user.js",
+    "create-admin": "npm run build && node dist/apps/backend/src/scripts/create-admin-user.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.21.1",
@@ -32,7 +33,9 @@
     "@nestjs/swagger": "^11.2.1",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.8",
+    "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
