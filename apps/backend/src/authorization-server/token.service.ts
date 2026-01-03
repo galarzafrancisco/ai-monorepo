@@ -1,9 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { SignJWT, importPKCS8, jwtVerify, createRemoteJWKSet, errors } from 'jose';
 import { createHash, randomBytes } from 'crypto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
+import { IdentityProviderService } from 'src/identity-provider/identity-provider.service';
 import { JwksService } from './jwks.service';
+import { RefreshTokenEntity } from './refresh-token.entity';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { IntrospectTokenRequestDto } from './dto/introspect-token-request.dto';
@@ -32,6 +36,9 @@ export class TokenService {
   constructor(
     private readonly authJourneysService: AuthJourneysService,
     private readonly jwksService: JwksService,
+    private readonly identityProviderService: IdentityProviderService,
+    @InjectRepository(RefreshTokenEntity)
+    private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
   ) {}
 
   /**
@@ -280,5 +287,210 @@ export class TokenService {
       // Per RFC 7662, we should not reveal why the token is invalid
       return { active: false } as IntrospectTokenResponseDto;
     }
+  }
+
+  /**
+   * Web Authentication: Login with email and password
+   * Returns access and refresh tokens
+   */
+  async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+    this.logger.debug(`Login attempt for email: ${email}`);
+
+    // Validate user credentials
+    const user = await this.identityProviderService.validateUser(email, password);
+
+    // Generate access token (10 min expiration)
+    const accessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role);
+
+    // Generate refresh token (1 day expiration)
+    const refreshToken = await this.generateAndStoreRefreshToken(user.id);
+
+    this.logger.log(`User logged in successfully: ${email}`);
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: 600, // 10 minutes
+    };
+  }
+
+  /**
+   * Web Authentication: Refresh access token using refresh token
+   * Returns new access and refresh tokens
+   */
+  async refreshWebToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+    this.logger.debug('Refresh token request');
+
+    // Hash the provided refresh token to compare with stored hash
+    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+
+    // Find the refresh token in database
+    const storedToken = await this.refreshTokenRepository.findOne({
+      where: { tokenHash },
+      relations: ['user'],
+    });
+
+    if (!storedToken) {
+      this.logger.warn('Refresh token not found');
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Check if token is revoked
+    if (storedToken.revokedAt) {
+      this.logger.warn('Refresh token has been revoked');
+      throw new UnauthorizedException('Refresh token revoked');
+    }
+
+    // Check if token is expired
+    if (new Date() > storedToken.expiresAt) {
+      this.logger.warn('Refresh token expired');
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    // Revoke the old refresh token
+    storedToken.revokedAt = new Date();
+    await this.refreshTokenRepository.save(storedToken);
+
+    // Generate new tokens
+    const user = storedToken.user;
+    const newAccessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role);
+    const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
+
+    this.logger.log(`Refresh token exchanged successfully for user: ${user.email}`);
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      expiresIn: 600, // 10 minutes
+    };
+  }
+
+  /**
+   * Web Authentication: Validate access token
+   * Returns decoded JWT payload
+   */
+  async validateWebToken(accessToken: string): Promise<any> {
+    this.logger.debug('Validating web access token');
+
+    try {
+      // Get all valid public keys for verification
+      const publicKeys = await this.jwksService.getPublicKeys();
+
+      if (publicKeys.length === 0) {
+        this.logger.error('No valid public keys available for token verification');
+        throw new UnauthorizedException('Token validation failed');
+      }
+
+      // Create a local JWKS resolver
+      const getKey = async (header: any) => {
+        const key = publicKeys.find((k) => k.kid === header.kid);
+        if (!key) {
+          throw new Error('Key not found');
+        }
+        return key as any;
+      };
+
+      // Verify JWT with our JWKS
+      const config = getConfig();
+      const { payload } = await jwtVerify(accessToken, getKey as any, {
+        issuer: config.issuerUrl,
+        algorithms: ['RS256'],
+      });
+
+      // Verify token type is 'access'
+      if ((payload as any).type !== 'access') {
+        this.logger.warn('Token type mismatch');
+        throw new UnauthorizedException('Invalid token type');
+      }
+
+      this.logger.debug('Web access token validated successfully');
+      return payload;
+    } catch (error) {
+      if (error instanceof errors.JWTExpired) {
+        this.logger.debug('Access token expired');
+        throw new UnauthorizedException('Token expired');
+      } else if (error instanceof errors.JWSSignatureVerificationFailed) {
+        this.logger.warn('Token signature verification failed');
+        throw new UnauthorizedException('Invalid token signature');
+      } else {
+        this.logger.warn(`Token validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new UnauthorizedException('Token validation failed');
+      }
+    }
+  }
+
+  /**
+   * Generate a signed JWT access token for web authentication
+   */
+  private async generateWebAccessToken(
+    userId: string,
+    email: string,
+    displayName: string,
+    role: 'admin' | 'standard',
+  ): Promise<string> {
+    // Get active signing key
+    const signingKey = await this.jwksService.getActiveSigningKey();
+
+    // Import private key from PEM
+    const privateKey = await importPKCS8(signingKey.privateKeyPem, signingKey.algorithm);
+
+    // Build JWT payload
+    const now = Math.floor(Date.now() / 1000);
+    const config = getConfig();
+
+    // Determine scopes based on role
+    const scope = role === 'admin' ? ['monolith:user', 'monolith:admin'] : ['monolith:user'];
+
+    const payload = {
+      iss: config.issuerUrl,
+      sub: userId,
+      email,
+      displayName,
+      scope,
+      iat: now,
+      exp: now + 600, // 10 minutes
+      jti: randomBytes(16).toString('hex'),
+      type: 'access',
+    };
+
+    // Sign and return JWT
+    const jwt = await new SignJWT(payload as any)
+      .setProtectedHeader({
+        alg: signingKey.algorithm,
+        kid: signingKey.kid,
+        typ: 'JWT',
+      })
+      .sign(privateKey);
+
+    return jwt;
+  }
+
+  /**
+   * Generate and store a refresh token in the database
+   * Returns the unhashed token (to be sent to client)
+   */
+  private async generateAndStoreRefreshToken(userId: string): Promise<string> {
+    // Generate a cryptographically secure random token
+    const token = randomBytes(32).toString('base64url');
+
+    // Hash the token before storing
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    // Calculate expiration (1 day)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 1);
+
+    // Store in database
+    const refreshToken = this.refreshTokenRepository.create({
+      userId,
+      tokenHash,
+      expiresAt,
+      revokedAt: null,
+    });
+
+    await this.refreshTokenRepository.save(refreshToken);
+
+    // Return the unhashed token
+    return token;
   }
 }
