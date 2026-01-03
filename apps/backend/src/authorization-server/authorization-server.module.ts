@@ -12,6 +12,7 @@ import { JwksService } from './jwks.service';
 import { JwksController } from './jwks.controller';
 import { AuthJourneysModule } from 'src/auth-journeys/auth-journeys.module';
 import { McpRegistryModule } from 'src/mcp-registry/mcp-registry.module';
+import { IdentityProviderModule } from 'src/identity-provider/identity-provider.module';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
@@ -28,6 +29,7 @@ import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/con
     ]),
     AuthJourneysModule,
     McpRegistryModule,
+    IdentityProviderModule,
   ],
   providers: [
     ClientRegistrationService,
