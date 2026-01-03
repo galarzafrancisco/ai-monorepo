@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GcsService } from './gcs.service';
 import { TokenExchangeService } from '../auth/token-exchange.service';
-import { BUCKET_NAME } from 'src/config/gcp.config';
+import { GCS_BUCKET_NAME } from 'src/config/self.config';
 
 @Injectable()
 export class DocumentsService {
@@ -19,7 +19,7 @@ export class DocumentsService {
     // List the bucket contents using the exchanged token
     const files = await this.gcsService.listBucketContents(
       tokenResponse.access_token,
-      BUCKET_NAME,
+      GCS_BUCKET_NAME,
     );
 
     return files;
