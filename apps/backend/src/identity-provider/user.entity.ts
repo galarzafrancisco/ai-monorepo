@@ -25,6 +25,9 @@ export class User {
   @Column({ default: true })
   isActive!: boolean;
 
+  @Column({ type: 'varchar', default: 'standard' })
+  role!: 'admin' | 'standard';
+
   @VersionColumn()
   rowVersion!: number;
 
