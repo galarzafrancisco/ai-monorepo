@@ -6,7 +6,7 @@ import { LoginResponseDto } from './dto/login-response.dto';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { WebAuthJwtPayload } from './types/jwt-payload.type';
+import type { WebAuthJwtPayload } from './types/jwt-payload.type';
 
 @ApiTags('auth')
 @Controller('auth')
