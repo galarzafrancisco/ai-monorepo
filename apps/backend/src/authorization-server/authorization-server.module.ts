@@ -11,6 +11,7 @@ import { JwksKeyEntity } from './jwks-key.entity';
 import { RefreshTokenEntity } from './refresh-token.entity';
 import { JwksService } from './jwks.service';
 import { JwksController } from './jwks.controller';
+import { WebAuthController } from './web-auth.controller';
 import { AuthJourneysModule } from 'src/auth-journeys/auth-journeys.module';
 import { McpRegistryModule } from 'src/mcp-registry/mcp-registry.module';
 import { IdentityProviderModule } from 'src/identity-provider/identity-provider.module';
@@ -40,7 +41,12 @@ import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/con
     TokenExchangeService,
     JwksService,
   ],
-  controllers: [ClientRegistrationController, AuthorizationController, JwksController],
+  controllers: [
+    ClientRegistrationController,
+    AuthorizationController,
+    JwksController,
+    WebAuthController,
+  ],
   exports: [
     ClientRegistrationService,
     AuthorizationService,
