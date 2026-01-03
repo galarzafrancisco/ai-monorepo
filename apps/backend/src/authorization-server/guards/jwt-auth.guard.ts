@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { TokenService } from '../token.service';
+import { COOKIE_KEYS } from '../constants/cookie-keys.constant';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -13,7 +14,7 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const token = request.cookies?.['access_token'];
+    const token = request.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
 
     if (!token) {
       throw new UnauthorizedException('No access token provided');

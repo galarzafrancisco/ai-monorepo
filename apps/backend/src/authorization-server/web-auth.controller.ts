@@ -17,6 +17,7 @@ import { LoginRequestDto } from './dto/login-request.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { getConfig } from '../config/env.config';
+import { COOKIE_KEYS } from './constants/cookie-keys.constant';
 
 @ApiTags('Web Authentication')
 @Controller('api/v1/auth')
@@ -68,12 +69,12 @@ export class WebAuthController {
       path: '/',
     };
 
-    response.cookie('access_token', accessToken, {
+    response.cookie(COOKIE_KEYS.ACCESS_TOKEN, accessToken, {
       ...cookieOptions,
       maxAge: expiresIn * 1000, // 10 minutes in milliseconds
     });
 
-    response.cookie('refresh_token', refreshToken, {
+    response.cookie(COOKIE_KEYS.REFRESH_TOKEN, refreshToken, {
       ...cookieOptions,
       maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
     });
@@ -107,7 +108,7 @@ export class WebAuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<LoginResponseDto> {
     // Get refresh token from cookie
-    const refreshTokenFromCookie = request.cookies?.['refresh_token'];
+    const refreshTokenFromCookie = request.cookies?.[COOKIE_KEYS.REFRESH_TOKEN];
 
     if (!refreshTokenFromCookie) {
       throw new UnauthorizedException('Refresh token not found');
@@ -139,12 +140,12 @@ export class WebAuthController {
       path: '/',
     };
 
-    response.cookie('access_token', accessToken, {
+    response.cookie(COOKIE_KEYS.ACCESS_TOKEN, accessToken, {
       ...cookieOptions,
       maxAge: expiresIn * 1000,
     });
 
-    response.cookie('refresh_token', refreshToken, {
+    response.cookie(COOKIE_KEYS.REFRESH_TOKEN, refreshToken, {
       ...cookieOptions,
       maxAge: 24 * 60 * 60 * 1000,
     });
@@ -179,7 +180,7 @@ export class WebAuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ ok: boolean }> {
     // Get refresh token from cookie
-    const refreshTokenFromCookie = request.cookies?.['refresh_token'];
+    const refreshTokenFromCookie = request.cookies?.[COOKIE_KEYS.REFRESH_TOKEN];
 
     // If refresh token exists, revoke it in the database
     // Note: We silently handle the case where token doesn't exist
@@ -197,8 +198,8 @@ export class WebAuthController {
     }
 
     // Clear cookies
-    response.clearCookie('access_token', { path: '/' });
-    response.clearCookie('refresh_token', { path: '/' });
+    response.clearCookie(COOKIE_KEYS.ACCESS_TOKEN, { path: '/' });
+    response.clearCookie(COOKIE_KEYS.REFRESH_TOKEN, { path: '/' });
 
     return { ok: true };
   }
@@ -216,7 +217,7 @@ export class WebAuthController {
   })
   async me(@Req() request: Request): Promise<UserResponseDto> {
     // Get access token from cookie
-    const accessToken = request.cookies?.['access_token'];
+    const accessToken = request.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
 
     if (!accessToken) {
       throw new UnauthorizedException('Not authenticated');
