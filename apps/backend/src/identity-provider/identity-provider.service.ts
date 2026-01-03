@@ -34,6 +34,21 @@ export class IdentityProviderService {
     });
   }
 
+  async getUserByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email, isActive: true },
+    });
+  }
+
+  async updateUserRole(userId: string, role: 'admin' | 'standard'): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    user.role = role;
+    return this.userRepository.save(user);
+  }
+
   async createUser(
     email: string,
     displayName: string,
