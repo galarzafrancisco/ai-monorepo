@@ -8,6 +8,7 @@ import { TokenService } from './token.service';
 import { TokenExchangeService } from './token-exchange.service';
 import { RegisteredClientEntity } from './registered-client.entity';
 import { JwksKeyEntity } from './jwks-key.entity';
+import { RefreshTokenEntity } from './refresh-token.entity';
 import { JwksService } from './jwks.service';
 import { JwksController } from './jwks.controller';
 import { AuthJourneysModule } from 'src/auth-journeys/auth-journeys.module';
@@ -23,6 +24,7 @@ import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/con
     TypeOrmModule.forFeature([
       RegisteredClientEntity,
       JwksKeyEntity,
+      RefreshTokenEntity,
       McpConnectionEntity,
       McpScopeMappingEntity,
       ConnectionAuthorizationFlowEntity,
