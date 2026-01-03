@@ -1,4 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './auth/AuthContext';
+import { ProtectedRoute } from './auth/ProtectedRoute';
+import { LoginPage } from './auth/LoginPage';
 import { RootLayout } from './layouts/RootLayout';
 import { HomePage } from './home/HomePage';
 import { TaskBoard } from './taskeroo/TaskBoard';
@@ -29,34 +32,46 @@ function TaskerooRouter() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<RootLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="taskeroo" element={<TaskerooRouter />} />
-          <Route path="mcp-registry" element={<McpRegistryDashboard />} />
-          <Route path="mcp-registry/:serverId" element={<McpServerDetail />} />
-          <Route path="consent" element={<ConsentScreen />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public route - login page */}
+          <Route path="/login" element={<LoginPage />} />
 
-          {/* Wikiroo nested routes with WikirooWithSidebar layout */}
-          <Route path="wikiroo" element={<WikirooWithSidebar />}>
-            <Route index element={<WikirooHome />} />
-            <Route path="new" element={<WikirooCreate />} />
-            <Route path="page/:pageId" element={<WikirooPageView />} />
-            <Route path="page/:pageId/edit" element={<WikirooPageEdit />} />
-            <Route path="page/:pageId/new" element={<WikirooCreate />} />
-          </Route>
+          {/* Protected routes - require authentication */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <RootLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<HomePage />} />
+            <Route path="taskeroo" element={<TaskerooRouter />} />
+            <Route path="mcp-registry" element={<McpRegistryDashboard />} />
+            <Route path="mcp-registry/:serverId" element={<McpServerDetail />} />
+            <Route path="consent" element={<ConsentScreen />} />
 
-          {/* Agents nested routes with AgentsWithSidebar layout */}
-          <Route path="agents" element={<AgentsWithSidebar />}>
-            <Route index element={<AgentsHome />} />
-            <Route path="admin" element={<AgentsAdminList />} />
-            <Route path=":agentId/admin" element={<AgentAdminDetail />} />
-            <Route path=":agentId/session/new" element={<AgentsChatSessionNew />} />
-            <Route path=":agentId/session/:sessionId" element={<AgentsChatSession />} />
+            {/* Wikiroo nested routes with WikirooWithSidebar layout */}
+            <Route path="wikiroo" element={<WikirooWithSidebar />}>
+              <Route index element={<WikirooHome />} />
+              <Route path="new" element={<WikirooCreate />} />
+              <Route path="page/:pageId" element={<WikirooPageView />} />
+              <Route path="page/:pageId/edit" element={<WikirooPageEdit />} />
+              <Route path="page/:pageId/new" element={<WikirooCreate />} />
+            </Route>
+
+            {/* Agents nested routes with AgentsWithSidebar layout */}
+            <Route path="agents" element={<AgentsWithSidebar />}>
+              <Route index element={<AgentsHome />} />
+              <Route path="admin" element={<AgentsAdminList />} />
+              <Route path=":agentId/admin" element={<AgentAdminDetail />} />
+              <Route path=":agentId/session/new" element={<AgentsChatSessionNew />} />
+              <Route path=":agentId/session/:sessionId" element={<AgentsChatSession />} />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
