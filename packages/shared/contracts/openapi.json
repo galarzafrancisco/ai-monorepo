@@ -3358,68 +3358,6 @@
           "Chat"
         ]
       }
-    },
-    "/api/v1/login": {
-      "post": {
-        "operationId": "IdentityProviderController_login",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful"
-          }
-        },
-        "summary": "Login with email and password",
-        "tags": [
-          "Identity Provider"
-        ]
-      }
-    },
-    "/api/v1/logout": {
-      "post": {
-        "operationId": "IdentityProviderController_logout",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Logout successful"
-          }
-        },
-        "summary": "Logout and clear session",
-        "tags": [
-          "Identity Provider"
-        ]
-      }
-    },
-    "/api/v1/session": {
-      "get": {
-        "operationId": "IdentityProviderController_getSession",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get current session information",
-        "tags": [
-          "Identity Provider"
-        ]
-      }
     }
   },
   "info": {
@@ -6357,53 +6295,6 @@
         },
         "required": [
           "events"
-        ]
-      },
-      "LoginDto": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "example": "user@example.com"
-          },
-          "password": {
-            "type": "string",
-            "example": "password123"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ]
-      },
-      "UserDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "displayName"
-        ]
-      },
-      "SessionResponseDto": {
-        "type": "object",
-        "properties": {
-          "user": {
-            "$ref": "#/components/schemas/UserDto"
-          }
-        },
-        "required": [
-          "user"
         ]
       }
     }
