@@ -45,7 +45,7 @@ import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 import { Public } from '../authorization-server/decorators/public.decorator';
 import { CurrentUser } from '../authorization-server/decorators/current-user.decorator';
-import { WebAuthJwtPayload } from '../authorization-server/types';
+import type { WebAuthJwtPayload } from '../authorization-server/types';
 
 @ApiTags('Wikiroo')
 @ApiCookieAuth('JWT-Cookie')
