@@ -414,7 +414,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/v1/auth/login": {
+    "/api/v1/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -431,7 +431,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/v1/auth/refresh": {
+    "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -448,7 +448,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/v1/auth/logout": {
+    "/api/v1/auth/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -465,7 +465,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/v1/auth/me": {
+    "/api/v1/auth/me": {
         parameters: {
             query?: never;
             header?: never;

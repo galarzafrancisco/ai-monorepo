@@ -20,7 +20,7 @@ export class WebAuthenticationService {
     ): CancelablePromise<LoginResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/api/v1/auth/login',
+            url: '/api/v1/auth/login',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -36,7 +36,7 @@ export class WebAuthenticationService {
     public static webAuthControllerRefresh(): CancelablePromise<LoginResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/api/v1/auth/refresh',
+            url: '/api/v1/auth/refresh',
             errors: {
                 401: `Invalid or expired refresh token`,
             },
@@ -52,7 +52,7 @@ export class WebAuthenticationService {
     }> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/api/v1/auth/logout',
+            url: '/api/v1/auth/logout',
         });
     }
     /**
@@ -63,7 +63,7 @@ export class WebAuthenticationService {
     public static webAuthControllerMe(): CancelablePromise<UserResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/api/v1/auth/me',
+            url: '/api/v1/auth/me',
             errors: {
                 401: `Not authenticated`,
             },
