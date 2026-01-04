@@ -44,13 +44,13 @@ export class CreateTaskDto {
   @IsOptional()
   tagNames?: string[];
 
-  @ApiProperty({
-    description: 'Name of the person who created the task',
+  @ApiPropertyOptional({
+    description: 'Name of the person who created the task (auto-populated from authenticated user if not provided)',
     example: 'Fran',
   })
   @IsString()
-  @IsNotEmpty()
-  createdBy!: string;
+  @IsOptional()
+  createdBy?: string;
 
   @ApiPropertyOptional({
     description: 'Array of task IDs that this task depends on',

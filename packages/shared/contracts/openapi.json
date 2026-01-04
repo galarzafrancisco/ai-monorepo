@@ -53,6 +53,11 @@
             "description": "Invalid input data"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create a new task",
         "tags": [
           "Task"
@@ -126,6 +131,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List tasks with optional filtering and pagination",
         "tags": [
           "Task"
@@ -175,6 +185,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Update task description",
         "tags": [
           "Task"
@@ -202,6 +217,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete a task",
         "tags": [
           "Task"
@@ -236,6 +256,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get a task by ID",
         "tags": [
           "Task"
@@ -285,6 +310,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Assign a task to someone",
         "tags": [
           "Task"
@@ -334,6 +364,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Add a comment to a task",
         "tags": [
           "Task"
@@ -383,6 +418,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Change task status",
         "tags": [
           "Task"
@@ -432,6 +472,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Add a tag to a task",
         "tags": [
           "Task"
@@ -474,6 +519,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Remove a tag from a task",
         "tags": [
           "Task"
@@ -509,6 +559,11 @@
             "description": "Invalid input data"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create a new tag",
         "tags": [
           "Task"
@@ -534,6 +589,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get all tags",
         "tags": [
           "Task"
@@ -561,6 +621,11 @@
             "description": "Tag not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete a tag from the system",
         "tags": [
           "Task"
@@ -576,6 +641,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -588,6 +658,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -600,6 +675,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -612,6 +692,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -624,6 +709,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -636,6 +726,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -648,6 +743,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -660,1336 +760,13 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages": {
-      "post": {
-        "operationId": "WikirooController_createPage",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Wiki page created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "summary": "Create a new wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "get": {
-        "operationId": "WikirooController_listPages",
-        "parameters": [
-          {
-            "name": "tag",
-            "required": false,
-            "in": "query",
-            "description": "Filter pages by tag name",
-            "schema": {
-              "example": "tutorial",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of wiki pages",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageListResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "List wiki pages without content",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/tree": {
-      "get": {
-        "operationId": "WikirooController_getPageTree",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Page hierarchy tree",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PageTreeResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get page hierarchy tree",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}": {
-      "get": {
-        "operationId": "WikirooController_getPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Wiki page retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Fetch a wiki page by ID",
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "patch": {
-        "operationId": "WikirooController_updatePage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Wiki page updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "No update fields provided"
-          }
-        },
-        "summary": "Update an existing wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "delete": {
-        "operationId": "WikirooController_deletePage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Wiki page deleted successfully"
-          }
-        },
-        "summary": "Delete a wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/append": {
-      "post": {
-        "operationId": "WikirooController_appendToPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppendPageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Wiki page content appended successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Append content to an existing wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/reorder": {
-      "patch": {
-        "operationId": "WikirooController_reorderPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReorderPageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Page reordered successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Reorder a page within siblings",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/move": {
-      "patch": {
-        "operationId": "WikirooController_movePage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MovePageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Page moved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Circular reference detected or parent not found"
-          }
-        },
-        "summary": "Move page to different parent",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/tags": {
-      "post": {
-        "operationId": "WikirooController_addTagToPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddWikiTagDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tag added to page successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "summary": "Add a tag to a wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
-      "delete": {
-        "operationId": "WikirooController_removeTagFromPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tagId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Tag removed from page successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Remove a tag from a wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/tags": {
-      "post": {
-        "operationId": "WikirooController_createTag",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateWikiTagDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tag created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WikiTagResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "summary": "Create a new tag",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/tags/all": {
-      "get": {
-        "operationId": "WikirooController_getAllTags",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of all tags",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WikiTagResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get all tags",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/tags/{tagId}": {
-      "delete": {
-        "operationId": "WikirooController_deleteTag",
-        "parameters": [
-          {
-            "name": "tagId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Tag deleted successfully"
-          }
-        },
-        "summary": "Delete a tag from the system",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/mcp": {
-      "get": {
-        "operationId": "WikirooController_handleMcp_get",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "post": {
-        "operationId": "WikirooController_handleMcp_post",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "put": {
-        "operationId": "WikirooController_handleMcp_put",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "delete": {
-        "operationId": "WikirooController_handleMcp_delete",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "patch": {
-        "operationId": "WikirooController_handleMcp_patch",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "options": {
-        "operationId": "WikirooController_handleMcp_options",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "head": {
-        "operationId": "WikirooController_handleMcp_head",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "search": {
-        "operationId": "WikirooController_handleMcp_search",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/mcp/servers": {
-      "post": {
-        "operationId": "McpRegistryController_createServer",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateServerDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Server created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Server with providedId already exists"
-          }
-        },
-        "summary": "Register a new MCP server",
-        "tags": [
-          "MCP Registry"
-        ]
-      },
-      "get": {
-        "operationId": "McpRegistryController_listServers",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 50,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of servers",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerListResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "List all MCP servers with pagination",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/servers/{serverId}": {
-      "get": {
-        "operationId": "McpRegistryController_getServer",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID or provided ID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Server found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Server not found"
-          }
-        },
-        "summary": "Get MCP server by UUID or provided ID",
-        "tags": [
-          "MCP Registry"
-        ]
-      },
-      "patch": {
-        "operationId": "McpRegistryController_updateServer",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateServerDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Server updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServerResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Server not found"
-          }
-        },
-        "summary": "Update MCP server details",
-        "tags": [
-          "MCP Registry"
-        ]
-      },
-      "delete": {
-        "operationId": "McpRegistryController_deleteServer",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Server deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteServerResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Server not found"
-          },
-          "409": {
-            "description": "Server has dependencies"
-          }
-        },
-        "summary": "Delete MCP server (must have no dependencies)",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/servers/{serverId}/scopes": {
-      "post": {
-        "operationId": "McpRegistryController_createScopes",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "Array of scopes to create",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CreateScopeDto"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Scope(s) created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ScopeResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Server not found"
-          },
-          "409": {
-            "description": "Scope already exists"
-          }
-        },
-        "summary": "Create MCP scope(s) for a server",
-        "tags": [
-          "MCP Registry"
-        ]
-      },
-      "get": {
-        "operationId": "McpRegistryController_listScopes",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of scopes",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ScopeResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Server not found"
-          }
-        },
-        "summary": "List all scopes for an MCP server",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}": {
-      "get": {
-        "operationId": "McpRegistryController_getScope",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "scopeId",
-            "required": true,
-            "in": "path",
-            "description": "Scope ID string",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Scope found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ScopeResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Scope not found"
-          }
-        },
-        "summary": "Get a specific MCP scope",
-        "tags": [
-          "MCP Registry"
-        ]
-      },
-      "delete": {
-        "operationId": "McpRegistryController_deleteScope",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "scopeId",
-            "required": true,
-            "in": "path",
-            "description": "Scope ID string",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Scope deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteScopeResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Scope not found"
-          },
-          "409": {
-            "description": "Scope has mappings"
-          }
-        },
-        "summary": "Delete MCP scope (must have no mappings)",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/servers/{serverId}/connections": {
-      "post": {
-        "operationId": "McpRegistryController_createConnection",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateConnectionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Connection created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConnectionResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Server not found"
-          },
-          "409": {
-            "description": "Connection name conflict"
-          }
-        },
-        "summary": "Create OAuth connection for an MCP server",
-        "tags": [
-          "MCP Registry"
-        ]
-      },
-      "get": {
-        "operationId": "McpRegistryController_listConnections",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of connections",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ConnectionResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Server not found"
-          }
-        },
-        "summary": "List all connections for an MCP server",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/connections/{connectionId}": {
-      "get": {
-        "operationId": "McpRegistryController_getConnection",
-        "parameters": [
-          {
-            "name": "connectionId",
-            "required": true,
-            "in": "path",
-            "description": "Connection UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Connection found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConnectionResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Connection not found"
-          }
-        },
-        "summary": "Get a specific connection",
-        "tags": [
-          "MCP Registry"
-        ]
-      },
-      "patch": {
-        "operationId": "McpRegistryController_updateConnection",
-        "parameters": [
-          {
-            "name": "connectionId",
-            "required": true,
-            "in": "path",
-            "description": "Connection UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateConnectionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Connection updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConnectionResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Connection not found"
-          },
-          "409": {
-            "description": "Connection name conflict"
-          }
-        },
-        "summary": "Update connection details",
-        "tags": [
-          "MCP Registry"
-        ]
-      },
-      "delete": {
-        "operationId": "McpRegistryController_deleteConnection",
-        "parameters": [
-          {
-            "name": "connectionId",
-            "required": true,
-            "in": "path",
-            "description": "Connection UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Connection deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteConnectionResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Connection not found"
-          },
-          "409": {
-            "description": "Connection has mappings"
-          }
-        },
-        "summary": "Delete connection (must have no mappings)",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/servers/{serverId}/mappings": {
-      "post": {
-        "operationId": "McpRegistryController_createMapping",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateMappingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Mapping created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MappingResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid mapping"
-          },
-          "404": {
-            "description": "Scope or connection not found"
-          }
-        },
-        "summary": "Create scope mapping",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings": {
-      "get": {
-        "operationId": "McpRegistryController_listMappings",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "scopeId",
-            "required": true,
-            "in": "path",
-            "description": "Scope ID string",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of mappings",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MappingResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Scope not found"
-          }
-        },
-        "summary": "List downstream scopes for an MCP scope",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/mappings/{mappingId}": {
-      "delete": {
-        "operationId": "McpRegistryController_deleteMapping",
-        "parameters": [
-          {
-            "name": "mappingId",
-            "required": true,
-            "in": "path",
-            "description": "Mapping UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Mapping deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteMappingResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Mapping not found"
-          }
-        },
-        "summary": "Delete scope mapping",
-        "tags": [
-          "MCP Registry"
-        ]
-      }
-    },
-    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
-      "get": {
-        "operationId": "McpRegistryController_getAuthJourneys",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of authorization journeys",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuthJourneyResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Server not found"
-          }
-        },
-        "summary": "Get authorization journeys for an MCP server (debug/monitoring)",
-        "tags": [
-          "MCP Registry"
         ]
       }
     },
@@ -2584,6 +1361,1647 @@
         ]
       }
     },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "WebAuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful, tokens set in httpOnly cookies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Login with email and password",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "WebAuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully, new tokens set in cookies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        },
+        "summary": "Refresh access token using refresh token",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "WebAuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful, cookies cleared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Logout and revoke refresh token",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "WebAuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current user information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        },
+        "summary": "Get current authenticated user",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers": {
+      "post": {
+        "operationId": "McpRegistryController_createServer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateServerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Server created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Server with providedId already exists"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Register a new MCP server",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "get": {
+        "operationId": "McpRegistryController_listServers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of servers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all MCP servers with pagination",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}": {
+      "get": {
+        "operationId": "McpRegistryController_getServer",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID or provided ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get MCP server by UUID or provided ID",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "patch": {
+        "operationId": "McpRegistryController_updateServer",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateServerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Server updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update MCP server details",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "delete": {
+        "operationId": "McpRegistryController_deleteServer",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteServerResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          },
+          "409": {
+            "description": "Server has dependencies"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete MCP server (must have no dependencies)",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/scopes": {
+      "post": {
+        "operationId": "McpRegistryController_createScopes",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Array of scopes to create",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CreateScopeDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Scope(s) created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScopeResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          },
+          "409": {
+            "description": "Scope already exists"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create MCP scope(s) for a server",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "get": {
+        "operationId": "McpRegistryController_listScopes",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of scopes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScopeResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all scopes for an MCP server",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}": {
+      "get": {
+        "operationId": "McpRegistryController_getScope",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "path",
+            "description": "Scope ID string",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scope found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScopeResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scope not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a specific MCP scope",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "delete": {
+        "operationId": "McpRegistryController_deleteScope",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "path",
+            "description": "Scope ID string",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scope deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteScopeResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scope not found"
+          },
+          "409": {
+            "description": "Scope has mappings"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete MCP scope (must have no mappings)",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/connections": {
+      "post": {
+        "operationId": "McpRegistryController_createConnection",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Connection created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          },
+          "409": {
+            "description": "Connection name conflict"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create OAuth connection for an MCP server",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "get": {
+        "operationId": "McpRegistryController_listConnections",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of connections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectionResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all connections for an MCP server",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/connections/{connectionId}": {
+      "get": {
+        "operationId": "McpRegistryController_getConnection",
+        "parameters": [
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "description": "Connection UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a specific connection",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "patch": {
+        "operationId": "McpRegistryController_updateConnection",
+        "parameters": [
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "description": "Connection UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConnectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connection updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connection not found"
+          },
+          "409": {
+            "description": "Connection name conflict"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update connection details",
+        "tags": [
+          "MCP Registry"
+        ]
+      },
+      "delete": {
+        "operationId": "McpRegistryController_deleteConnection",
+        "parameters": [
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "description": "Connection UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteConnectionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connection not found"
+          },
+          "409": {
+            "description": "Connection has mappings"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete connection (must have no mappings)",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/mappings": {
+      "post": {
+        "operationId": "McpRegistryController_createMapping",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMappingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mapping created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid mapping"
+          },
+          "404": {
+            "description": "Scope or connection not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create scope mapping",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings": {
+      "get": {
+        "operationId": "McpRegistryController_listMappings",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "path",
+            "description": "Scope ID string",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of mappings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MappingResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scope not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List downstream scopes for an MCP scope",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/mappings/{mappingId}": {
+      "delete": {
+        "operationId": "McpRegistryController_deleteMapping",
+        "parameters": [
+          {
+            "name": "mappingId",
+            "required": true,
+            "in": "path",
+            "description": "Mapping UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapping deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteMappingResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mapping not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete scope mapping",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
+      "get": {
+        "operationId": "McpRegistryController_getAuthJourneys",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of authorization journeys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuthJourneyResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get authorization journeys for an MCP server (debug/monitoring)",
+        "tags": [
+          "MCP Registry"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages": {
+      "post": {
+        "operationId": "WikirooController_createPage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Wiki page created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "get": {
+        "operationId": "WikirooController_listPages",
+        "parameters": [
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Filter pages by tag name",
+            "schema": {
+              "example": "tutorial",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of wiki pages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List wiki pages without content",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tree": {
+      "get": {
+        "operationId": "WikirooController_getPageTree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Page hierarchy tree",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PageTreeResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get page hierarchy tree",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}": {
+      "get": {
+        "operationId": "WikirooController_getPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wiki page retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Fetch a wiki page by ID",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "patch": {
+        "operationId": "WikirooController_updatePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wiki page updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No update fields provided"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "delete": {
+        "operationId": "WikirooController_deletePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Wiki page deleted successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/append": {
+      "post": {
+        "operationId": "WikirooController_appendToPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wiki page content appended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Append content to an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/reorder": {
+      "patch": {
+        "operationId": "WikirooController_reorderPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page reordered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Reorder a page within siblings",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/move": {
+      "patch": {
+        "operationId": "WikirooController_movePage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page moved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Circular reference detected or parent not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Move page to different parent",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/tags": {
+      "post": {
+        "operationId": "WikirooController_addTagToPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddWikiTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag added to page successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Add a tag to a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "WikirooController_removeTagFromPage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag removed from page successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Remove a tag from a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags": {
+      "post": {
+        "operationId": "WikirooController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWikiTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WikiTagResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new tag",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags/all": {
+      "get": {
+        "operationId": "WikirooController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WikiTagResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get all tags",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags/{tagId}": {
+      "delete": {
+        "operationId": "WikirooController_deleteTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tag deleted successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a tag from the system",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/mcp": {
+      "get": {
+        "operationId": "WikirooController_handleMcp_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "post": {
+        "operationId": "WikirooController_handleMcp_post",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "put": {
+        "operationId": "WikirooController_handleMcp_put",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "delete": {
+        "operationId": "WikirooController_handleMcp_delete",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "patch": {
+        "operationId": "WikirooController_handleMcp_patch",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "options": {
+        "operationId": "WikirooController_handleMcp_options",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "head": {
+        "operationId": "WikirooController_handleMcp_head",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "search": {
+        "operationId": "WikirooController_handleMcp_search",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
     "/.well-known/oauth-authorization-server/mcp/issuer": {
       "get": {
         "description": "Returns the configured authorization server issuer URL from environment configuration",
@@ -2607,6 +3025,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get the authorization server issuer URL",
         "tags": [
           "Discovery"
@@ -2651,6 +3074,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Expose OAuth 2.0 Authorization Server metadata for a registered MCP server version",
         "tags": [
           "Discovery"
@@ -2683,6 +3111,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create a new agent",
         "tags": [
           "Agent"
@@ -2736,6 +3169,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List agents with optional filtering and pagination",
         "tags": [
           "Agent"
@@ -2778,6 +3216,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get an agent by ID or slug",
         "tags": [
           "Agent"
@@ -2828,6 +3271,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Update an agent",
         "tags": [
           "Agent"
@@ -2861,6 +3309,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete an agent",
         "tags": [
           "Agent"
@@ -3358,68 +3811,6 @@
           "Chat"
         ]
       }
-    },
-    "/api/v1/login": {
-      "post": {
-        "operationId": "IdentityProviderController_login",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful"
-          }
-        },
-        "summary": "Login with email and password",
-        "tags": [
-          "Identity Provider"
-        ]
-      }
-    },
-    "/api/v1/logout": {
-      "post": {
-        "operationId": "IdentityProviderController_logout",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Logout successful"
-          }
-        },
-        "summary": "Logout and clear session",
-        "tags": [
-          "Identity Provider"
-        ]
-      }
-    },
-    "/api/v1/session": {
-      "get": {
-        "operationId": "IdentityProviderController_getSession",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get current session information",
-        "tags": [
-          "Identity Provider"
-        ]
-      }
     }
   },
   "info": {
@@ -3436,6 +3827,15 @@
   ],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "JWT-Cookie": {
+        "type": "http",
+        "in": "cookie",
+        "name": "access_token",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
       "CreateTaskDto": {
         "type": "object",
@@ -3473,7 +3873,7 @@
           },
           "createdBy": {
             "type": "string",
-            "description": "Name of the person who created the task",
+            "description": "Name of the person who created the task (auto-populated from authenticated user if not provided)",
             "example": "Fran"
           },
           "dependsOnIds": {
@@ -3490,8 +3890,7 @@
         },
         "required": [
           "name",
-          "description",
-          "createdBy"
+          "description"
         ]
       },
       "CommentResponseDto": {
@@ -3699,7 +4098,7 @@
           },
           "createdBy": {
             "type": "string",
-            "description": "Name of the person who created the task",
+            "description": "Name of the person who created the task (auto-populated from authenticated user if not provided)",
             "example": "Fran"
           },
           "dependsOnIds": {
@@ -3774,7 +4173,7 @@
         "properties": {
           "commenterName": {
             "type": "string",
-            "description": "Name of the person or agent commenting",
+            "description": "Name of the person or agent commenting (auto-populated from authenticated user if not provided)",
             "example": "AgentBeta"
           },
           "content": {
@@ -3784,7 +4183,6 @@
           }
         },
         "required": [
-          "commenterName",
           "content"
         ]
       },
@@ -3843,392 +4241,688 @@
           "name"
         ]
       },
-      "CreatePageDto": {
+      "RegisterClientDto": {
         "type": "object",
         "properties": {
-          "title": {
-            "type": "string",
-            "description": "Title of the wiki page",
-            "example": "How to onboard new agents"
-          },
-          "content": {
-            "type": "string",
-            "description": "Markdown content of the page",
-            "example": "# Welcome to Wikiroo\nThis is the onboarding guide."
-          },
-          "author": {
-            "type": "string",
-            "description": "Author of the page",
-            "example": "Agent Roo"
-          },
-          "tagNames": {
-            "description": "Array of tag names to associate with the page",
+          "redirect_uris": {
+            "description": "Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)",
             "example": [
-              "documentation",
-              "onboarding"
+              "http://localhost:3000/callback",
+              "https://example.com/callback"
             ],
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "parentId": {
+          "token_endpoint_auth_method": {
             "type": "string",
-            "description": "Parent page ID for nesting",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          }
-        },
-        "required": [
-          "title",
-          "content",
-          "author"
-        ]
-      },
-      "WikiTagResponseDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "project-alpha"
+            "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
+            "example": "none",
+            "enum": [
+              "none"
+            ]
           },
-          "color": {
-            "type": "string",
-            "description": "Color for the tag (hex format)",
-            "example": "#FF5733"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "PageResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the page",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Title of the wiki page",
-            "example": "How to onboard new agents"
-          },
-          "content": {
-            "type": "string",
-            "description": "Markdown content of the wiki page",
-            "example": "# Welcome to Wikiroo"
-          },
-          "author": {
-            "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
-          },
-          "tags": {
-            "description": "Tags associated with the page",
+          "grant_types": {
+            "type": "array",
+            "description": "Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.",
             "example": [
-              {
-                "id": "123",
-                "name": "project-alpha",
-                "color": "#FF5733",
-                "description": "Project Alpha notes",
-                "createdAt": "2025-01-01T12:00:00.000Z",
-                "updatedAt": "2025-01-01T12:00:00.000Z"
-              }
+              "authorization_code",
+              "refresh_token"
             ],
-            "type": "array",
             "items": {
-              "$ref": "#/components/schemas/WikiTagResponseDto"
+              "type": "string",
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ]
             }
           },
-          "parentId": {
-            "type": "object",
-            "description": "Parent page ID (null if root page)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "order": {
-            "type": "number",
-            "description": "Order within siblings",
-            "example": 0
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Creation timestamp",
-            "example": "2025-01-01T12:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Last update timestamp",
-            "example": "2025-01-02T15:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "content",
-          "author",
-          "tags",
-          "parentId",
-          "order",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "PageSummaryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the page",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Title of the wiki page",
-            "example": "How to onboard new agents"
-          },
-          "author": {
-            "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
-          },
-          "tags": {
-            "description": "Tags associated with the page",
+          "response_types": {
+            "type": "array",
+            "description": "Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.",
             "example": [
-              {
-                "id": "123",
-                "name": "project-alpha",
-                "color": "#FF5733",
-                "description": "Project Alpha notes",
-                "createdAt": "2025-01-01T12:00:00.000Z",
-                "updatedAt": "2025-01-01T12:00:00.000Z"
-              }
+              "code"
             ],
-            "type": "array",
             "items": {
-              "$ref": "#/components/schemas/WikiTagResponseDto"
+              "type": "string",
+              "enum": [
+                "code"
+              ]
             }
           },
-          "parentId": {
-            "type": "object",
-            "description": "Parent page ID (null if root page)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "order": {
-            "type": "number",
-            "description": "Order within siblings",
-            "example": 0
-          },
-          "createdAt": {
+          "client_name": {
             "type": "string",
-            "description": "Creation timestamp",
-            "example": "2025-01-01T12:00:00.000Z"
+            "description": "Human-readable name of the client",
+            "example": "My OAuth Client"
           },
-          "updatedAt": {
-            "type": "string",
-            "description": "Last update timestamp",
-            "example": "2025-01-02T15:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "author",
-          "tags",
-          "parentId",
-          "order",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "PageListResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "List of wiki pages",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PageSummaryDto"
-            }
-          }
-        },
-        "required": [
-          "items"
-        ]
-      },
-      "PageTreeResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the page",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Title of the wiki page",
-            "example": "How to onboard new agents"
-          },
-          "author": {
-            "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
-          },
-          "parentId": {
-            "type": "object",
-            "description": "Parent page ID (null if root page)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "order": {
-            "type": "number",
-            "description": "Order within siblings",
-            "example": 0
-          },
-          "children": {
-            "description": "Child pages",
-            "example": [],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PageTreeResponseDto"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Creation timestamp",
-            "example": "2025-01-01T12:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Last update timestamp",
-            "example": "2025-01-02T15:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "author",
-          "parentId",
-          "order",
-          "children",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdatePageDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Updated title of the wiki page",
-            "example": "Updated onboarding guide"
-          },
-          "content": {
-            "type": "string",
-            "description": "Updated markdown content of the page",
-            "example": "## Updated content"
-          },
-          "author": {
-            "type": "string",
-            "description": "Updated author of the page",
-            "example": "Agent Roo"
-          },
-          "tagNames": {
-            "description": "Array of tag names to associate with the page",
+          "scope": {
+            "description": "Requested scopes for the client",
             "example": [
-              "documentation",
-              "onboarding"
+              "data:read",
+              "data:write"
             ],
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "parentId": {
+          "contacts": {
+            "description": "Contact emails for the client registration",
+            "example": [
+              "admin@example.com"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tos_uri": {
             "type": "string",
-            "description": "Parent page ID (null to remove parent)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "description": "Terms of service URI for the client registration",
+            "example": "https://example.com/tos"
+          },
+          "client_uri": {
+            "type": "string",
+            "description": "URL of the home page of the client",
+            "example": "https://example.com"
+          },
+          "logo_uri": {
+            "type": "string",
+            "description": "URL that references a logo for the client application",
+            "example": "https://example.com/logo.png"
+          },
+          "policy_uri": {
+            "type": "string",
+            "description": "URL that the client provides to the end-user to read about how the profile data will be used",
+            "example": "https://example.com/privacy"
+          },
+          "jwks_uri": {
+            "type": "string",
+            "description": "URL for the client JSON Web Key Set document. If specified, must not include jwks parameter",
+            "example": "https://example.com/.well-known/jwks.json"
+          },
+          "jwks": {
+            "type": "string",
+            "description": "Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter",
+            "example": "{\"keys\":[{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"key-1\",\"n\":\"...\",\"e\":\"AQAB\"}]}"
+          },
+          "software_id": {
+            "type": "string",
+            "description": "Unique identifier string assigned by the client developer or software publisher",
+            "example": "my-oauth-app-v1"
+          },
+          "software_version": {
+            "type": "string",
+            "description": "Version identifier string for the client software",
+            "example": "1.0.0"
+          }
+        },
+        "required": [
+          "redirect_uris",
+          "token_endpoint_auth_method",
+          "grant_types",
+          "response_types",
+          "client_name"
+        ]
+      },
+      "ClientRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "description": "Unique client identifier",
+            "example": "8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b"
+          },
+          "client_name": {
+            "type": "string",
+            "description": "Human-readable name of the client",
+            "example": "My OAuth Client"
+          },
+          "redirect_uris": {
+            "description": "Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)",
+            "example": [
+              "http://localhost:3000/callback",
+              "https://example.com/callback"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grant_types": {
+            "type": "array",
+            "description": "Grant types the client is authorized to use",
+            "example": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ]
+            }
+          },
+          "token_endpoint_auth_method": {
+            "type": "string",
+            "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
+            "example": "none",
+            "enum": [
+              "none"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "description": "Scopes granted to the client",
+            "example": "openid profile email",
             "nullable": true
           },
-          "order": {
+          "contacts": {
+            "description": "Contact emails for the client",
+            "example": [
+              "admin@example.com"
+            ],
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "client_id_issued_at": {
             "type": "number",
-            "description": "Order within siblings",
-            "example": 0
+            "description": "Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.",
+            "example": "604846800"
           }
-        }
+        },
+        "required": [
+          "client_id",
+          "client_name",
+          "redirect_uris",
+          "grant_types",
+          "token_endpoint_auth_method",
+          "client_id_issued_at"
+        ]
       },
-      "AppendPageDto": {
+      "ConsentDecisionDto": {
         "type": "object",
         "properties": {
-          "content": {
+          "flow_id": {
             "type": "string",
-            "description": "Markdown content to append to the existing page content",
-            "example": "\n## Additional details"
+            "description": "Authorization flow ID (serves as CSRF protection token)",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "approved": {
+            "type": "boolean",
+            "description": "Whether the user approved the authorization request",
+            "example": true
           }
         },
         "required": [
-          "content"
+          "flow_id",
+          "approved"
         ]
       },
-      "ReorderPageDto": {
+      "McpAuthorizationFlowEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "TokenRequestDto": {
         "type": "object",
         "properties": {
-          "newOrder": {
+          "grant_type": {
+            "type": "string",
+            "description": "Grant type that determines which parameters must be supplied",
+            "enum": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "example": "authorization_code"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Client identifier issued during dynamic registration",
+            "example": "0bab273987a2e163c3abb40c631ec0a4"
+          },
+          "code": {
+            "type": "string",
+            "description": "Authorization code that was issued by the /authorize endpoint",
+            "example": "SplxlOBeZQQYbYS6WxSbIA"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "description": "Redirect URI used during authorization (required when code is present)",
+            "example": "http://localhost:6274/oauth/callback/debug"
+          },
+          "code_verifier": {
+            "type": "string",
+            "description": "PKCE code verifier used to validate the authorization code exchange",
+            "example": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "Refresh token issued earlier by the authorization server",
+            "example": "def5020091c58c49fbb..."
+          },
+          "scope": {
+            "type": "string",
+            "description": "Optional list of scopes to narrow when refreshing a token (space-delimited)",
+            "example": "tasks:read tasks:write"
+          },
+          "resource": {
+            "type": "string",
+            "description": "Optional resource indicator (RFC 8707) - identifies the target resource server",
+            "example": "http://localhost:4001/"
+          }
+        },
+        "required": [
+          "grant_type",
+          "client_id"
+        ]
+      },
+      "TokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "Opaque access token used to access protected resources",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Type of token issued (MCP clients always receive Bearer tokens)",
+            "enum": [
+              "Bearer"
+            ],
+            "example": "Bearer",
+            "default": "Bearer"
+          },
+          "expires_in": {
             "type": "number",
-            "description": "New order position within siblings",
-            "example": 2
+            "description": "Lifetime of the access token in seconds",
+            "example": 3600
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "Refresh token that can be exchanged for a new access token",
+            "example": "def5020091c58c49fbb..."
+          },
+          "scope": {
+            "type": "string",
+            "description": "Space-delimited scopes that were granted for this token",
+            "example": "tasks:read tasks:write"
           }
         },
         "required": [
-          "newOrder"
+          "access_token",
+          "token_type",
+          "expires_in",
+          "refresh_token"
         ]
       },
-      "MovePageDto": {
+      "IntrospectTokenRequestDto": {
         "type": "object",
         "properties": {
-          "newParentId": {
+          "token": {
+            "type": "string",
+            "description": "Access or refresh token that should be validated",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "token_type_hint": {
+            "type": "string",
+            "description": "Hint to help the server determine the token lookup strategy",
+            "enum": [
+              "access_token",
+              "refresh_token"
+            ],
+            "example": "access_token"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.",
+            "example": "0bab273987a2e163c3abb40c631ec0a4"
+          },
+          "client_secret": {
+            "type": "string",
+            "description": "Client secret for confidential clients (MCP clients typically omit this)",
+            "example": "s3cr3t",
+            "nullable": true
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "IntrospectTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "description": "Indicates whether the token is currently valid",
+            "example": true
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Token type, always Bearer for MCP clients",
+            "enum": [
+              "Bearer"
+            ],
+            "example": "Bearer"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Client identifier associated with the token",
+            "example": "0bab273987a2e163c3abb40c631ec0a4"
+          },
+          "sub": {
             "type": "object",
-            "description": "New parent page ID (null to move to root)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          }
-        },
-        "required": [
-          "newParentId"
-        ]
-      },
-      "AddWikiTagDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "project-alpha"
+            "description": "Subject of the token (resource owner or actor)",
+            "example": "journey:1234"
           },
-          "color": {
+          "aud": {
+            "description": "Audience that should accept this token",
+            "oneOf": [
+              {
+                "type": "string",
+                "example": "taskeroo-api"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": [
+                  "taskeroo-api"
+                ]
+              }
+            ]
+          },
+          "iss": {
+            "type": "object",
+            "description": "Issuer that minted the token",
+            "example": "https://auth.taskeroo.local/auth"
+          },
+          "jti": {
+            "type": "object",
+            "description": "Unique token identifier for replay detection",
+            "example": "b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c"
+          },
+          "exp": {
+            "type": "object",
+            "description": "Expiration timestamp (seconds since Unix epoch)",
+            "example": 1731145219
+          },
+          "iat": {
+            "type": "object",
+            "description": "Issued-at timestamp (seconds since Unix epoch)",
+            "example": 1731141619
+          },
+          "nbf": {
+            "type": "number",
+            "description": "Not-before timestamp (seconds since Unix epoch)",
+            "example": 1731141019
+          },
+          "scope": {
             "type": "string",
-            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
-            "example": "#FF5733"
+            "description": "Granted scopes (space-delimited) for display purposes",
+            "example": "tasks:read tasks:write"
+          },
+          "server_identifier": {
+            "type": "object",
+            "description": "MCP server identifier the token is scoped to",
+            "example": "taskeroo"
+          },
+          "resource": {
+            "type": "object",
+            "description": "Resource URL that was used during authorization",
+            "example": "http://localhost:4001/"
+          },
+          "version": {
+            "type": "object",
+            "description": "Version of the MCP server contract",
+            "example": "1.0.0"
           }
         },
         "required": [
-          "name"
+          "active",
+          "token_type",
+          "client_id",
+          "sub",
+          "aud",
+          "iss",
+          "jti",
+          "exp",
+          "iat",
+          "server_identifier",
+          "resource",
+          "version"
         ]
       },
-      "CreateWikiTagDto": {
+      "TokenExchangeRequestDto": {
         "type": "object",
         "properties": {
-          "name": {
+          "grant_type": {
             "type": "string",
-            "description": "Name of the tag",
-            "example": "project-alpha"
+            "description": "Grant type for token exchange as defined in RFC 8693",
+            "enum": [
+              "urn:ietf:params:oauth:grant-type:token-exchange"
+            ],
+            "example": "urn:ietf:params:oauth:grant-type:token-exchange"
+          },
+          "subject_token": {
+            "type": "string",
+            "description": "The access token that represents the identity of the party on behalf of whom the request is being made",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "subject_token_type": {
+            "type": "string",
+            "description": "Type identifier for the subject_token as defined in RFC 8693",
+            "enum": [
+              "urn:ietf:params:oauth:token-type:access_token"
+            ],
+            "example": "urn:ietf:params:oauth:token-type:access_token"
+          },
+          "resource": {
+            "type": "string",
+            "description": "Resource server URL that the client wants to access with the exchanged token",
+            "example": "http://localhost:4001/"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Optional space-delimited list of scopes for the exchanged token",
+            "example": "tasks:read tasks:write"
           }
         },
         "required": [
-          "name"
+          "grant_type",
+          "subject_token",
+          "subject_token_type",
+          "resource"
+        ]
+      },
+      "TokenExchangeResponseDto": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "The newly issued access token after successful exchange",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "issued_token_type": {
+            "type": "string",
+            "description": "Type identifier for the issued token as defined in RFC 8693",
+            "example": "urn:ietf:params:oauth:token-type:access_token"
+          },
+          "token_type": {
+            "type": "string",
+            "description": "Type of token issued, always Bearer for MCP clients",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "number",
+            "description": "Lifetime of the access token in seconds",
+            "example": 3600
+          },
+          "scope": {
+            "type": "string",
+            "description": "Space-delimited list of scopes granted for the exchanged token",
+            "example": "tasks:read tasks:write"
+          }
+        },
+        "required": [
+          "access_token",
+          "issued_token_type",
+          "token_type",
+          "expires_in",
+          "scope"
+        ]
+      },
+      "JwkResponseDto": {
+        "type": "object",
+        "properties": {
+          "kty": {
+            "type": "string",
+            "description": "Key type, for example RSA or EC.",
+            "example": "RSA"
+          },
+          "use": {
+            "type": "string",
+            "description": "Key usage indicating how the key can be used.",
+            "example": "sig"
+          },
+          "kid": {
+            "type": "string",
+            "description": "Unique identifier for the key used for rotation.",
+            "example": "1234567890abcdef"
+          },
+          "alg": {
+            "type": "string",
+            "description": "Algorithm intended for use with this key.",
+            "example": "RS256"
+          },
+          "n": {
+            "type": "string",
+            "description": "RSA modulus encoded using base64url.",
+            "example": "xGOr-H7A..."
+          },
+          "e": {
+            "type": "string",
+            "description": "RSA public exponent encoded using base64url.",
+            "example": "AQAB"
+          },
+          "x": {
+            "type": "string",
+            "description": "Public coordinate X for EC keys encoded using base64url.",
+            "example": "WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis"
+          },
+          "y": {
+            "type": "string",
+            "description": "Public coordinate Y for EC keys encoded using base64url.",
+            "example": "y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE"
+          },
+          "crv": {
+            "type": "string",
+            "description": "Curve name for EC keys.",
+            "example": "P-256"
+          }
+        },
+        "required": [
+          "kty",
+          "use",
+          "kid",
+          "alg"
+        ]
+      },
+      "JwksResponseDto": {
+        "type": "object",
+        "properties": {
+          "keys": {
+            "description": "Collection of JSON Web Keys currently valid for signature verification.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JwkResponseDto"
+            }
+          }
+        },
+        "required": [
+          "keys"
+        ]
+      },
+      "LoginRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "UserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "User display name",
+            "example": "John Doe"
+          },
+          "role": {
+            "type": "string",
+            "description": "User role",
+            "enum": [
+              "admin",
+              "standard"
+            ],
+            "example": "standard"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName",
+          "role"
+        ]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "description": "Authenticated user information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserResponseDto"
+              }
+            ]
+          },
+          "expiresIn": {
+            "type": "number",
+            "description": "Access token expiration time in seconds",
+            "example": 600
+          }
+        },
+        "required": [
+          "user",
+          "expiresIn"
         ]
       },
       "CreateServerDto": {
@@ -4888,612 +5582,391 @@
           "updatedAt"
         ]
       },
-      "RegisterClientDto": {
+      "CreatePageDto": {
         "type": "object",
         "properties": {
-          "redirect_uris": {
-            "description": "Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)",
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "content": {
+            "type": "string",
+            "description": "Markdown content of the page",
+            "example": "# Welcome to Wikiroo\nThis is the onboarding guide."
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the page (auto-populated from authenticated user if not provided)",
+            "example": "Agent Roo"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the page",
             "example": [
-              "http://localhost:3000/callback",
-              "https://example.com/callback"
+              "documentation",
+              "onboarding"
             ],
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "token_endpoint_auth_method": {
+          "parentId": {
             "type": "string",
-            "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
-            "example": "none",
-            "enum": [
-              "none"
-            ]
-          },
-          "grant_types": {
-            "type": "array",
-            "description": "Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.",
-            "example": [
-              "authorization_code",
-              "refresh_token"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "authorization_code",
-                "refresh_token"
-              ]
-            }
-          },
-          "response_types": {
-            "type": "array",
-            "description": "Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.",
-            "example": [
-              "code"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "code"
-              ]
-            }
-          },
-          "client_name": {
-            "type": "string",
-            "description": "Human-readable name of the client",
-            "example": "My OAuth Client"
-          },
-          "scope": {
-            "description": "Requested scopes for the client",
-            "example": [
-              "data:read",
-              "data:write"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "contacts": {
-            "description": "Contact emails for the client registration",
-            "example": [
-              "admin@example.com"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "tos_uri": {
-            "type": "string",
-            "description": "Terms of service URI for the client registration",
-            "example": "https://example.com/tos"
-          },
-          "client_uri": {
-            "type": "string",
-            "description": "URL of the home page of the client",
-            "example": "https://example.com"
-          },
-          "logo_uri": {
-            "type": "string",
-            "description": "URL that references a logo for the client application",
-            "example": "https://example.com/logo.png"
-          },
-          "policy_uri": {
-            "type": "string",
-            "description": "URL that the client provides to the end-user to read about how the profile data will be used",
-            "example": "https://example.com/privacy"
-          },
-          "jwks_uri": {
-            "type": "string",
-            "description": "URL for the client JSON Web Key Set document. If specified, must not include jwks parameter",
-            "example": "https://example.com/.well-known/jwks.json"
-          },
-          "jwks": {
-            "type": "string",
-            "description": "Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter",
-            "example": "{\"keys\":[{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"key-1\",\"n\":\"...\",\"e\":\"AQAB\"}]}"
-          },
-          "software_id": {
-            "type": "string",
-            "description": "Unique identifier string assigned by the client developer or software publisher",
-            "example": "my-oauth-app-v1"
-          },
-          "software_version": {
-            "type": "string",
-            "description": "Version identifier string for the client software",
-            "example": "1.0.0"
+            "description": "Parent page ID for nesting",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
         "required": [
-          "redirect_uris",
-          "token_endpoint_auth_method",
-          "grant_types",
-          "response_types",
-          "client_name"
+          "title",
+          "content"
         ]
       },
-      "ClientRegistrationResponseDto": {
+      "WikiTagResponseDto": {
         "type": "object",
         "properties": {
-          "client_id": {
+          "name": {
             "type": "string",
-            "description": "Unique client identifier",
-            "example": "8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b"
+            "description": "Name of the tag",
+            "example": "project-alpha"
           },
-          "client_name": {
+          "color": {
             "type": "string",
-            "description": "Human-readable name of the client",
-            "example": "My OAuth Client"
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           },
-          "redirect_uris": {
-            "description": "Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)",
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "content": {
+            "type": "string",
+            "description": "Markdown content of the wiki page",
+            "example": "# Welcome to Wikiroo"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "tags": {
+            "description": "Tags associated with the page",
             "example": [
-              "http://localhost:3000/callback",
-              "https://example.com/callback"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "grant_types": {
-            "type": "array",
-            "description": "Grant types the client is authorized to use",
-            "example": [
-              "authorization_code",
-              "refresh_token"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "authorization_code",
-                "refresh_token"
-              ]
-            }
-          },
-          "token_endpoint_auth_method": {
-            "type": "string",
-            "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
-            "example": "none",
-            "enum": [
-              "none"
-            ]
-          },
-          "scope": {
-            "type": "string",
-            "description": "Scopes granted to the client",
-            "example": "openid profile email",
-            "nullable": true
-          },
-          "contacts": {
-            "description": "Contact emails for the client",
-            "example": [
-              "admin@example.com"
-            ],
-            "nullable": true,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "client_id_issued_at": {
-            "type": "number",
-            "description": "Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.",
-            "example": "604846800"
-          }
-        },
-        "required": [
-          "client_id",
-          "client_name",
-          "redirect_uris",
-          "grant_types",
-          "token_endpoint_auth_method",
-          "client_id_issued_at"
-        ]
-      },
-      "ConsentDecisionDto": {
-        "type": "object",
-        "properties": {
-          "flow_id": {
-            "type": "string",
-            "description": "Authorization flow ID (serves as CSRF protection token)",
-            "example": "550e8400-e29b-41d4-a716-446655440000"
-          },
-          "approved": {
-            "type": "boolean",
-            "description": "Whether the user approved the authorization request",
-            "example": true
-          }
-        },
-        "required": [
-          "flow_id",
-          "approved"
-        ]
-      },
-      "McpAuthorizationFlowEntity": {
-        "type": "object",
-        "properties": {}
-      },
-      "TokenRequestDto": {
-        "type": "object",
-        "properties": {
-          "grant_type": {
-            "type": "string",
-            "description": "Grant type that determines which parameters must be supplied",
-            "enum": [
-              "authorization_code",
-              "refresh_token"
-            ],
-            "example": "authorization_code"
-          },
-          "client_id": {
-            "type": "string",
-            "description": "Client identifier issued during dynamic registration",
-            "example": "0bab273987a2e163c3abb40c631ec0a4"
-          },
-          "code": {
-            "type": "string",
-            "description": "Authorization code that was issued by the /authorize endpoint",
-            "example": "SplxlOBeZQQYbYS6WxSbIA"
-          },
-          "redirect_uri": {
-            "type": "string",
-            "description": "Redirect URI used during authorization (required when code is present)",
-            "example": "http://localhost:6274/oauth/callback/debug"
-          },
-          "code_verifier": {
-            "type": "string",
-            "description": "PKCE code verifier used to validate the authorization code exchange",
-            "example": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
-          },
-          "refresh_token": {
-            "type": "string",
-            "description": "Refresh token issued earlier by the authorization server",
-            "example": "def5020091c58c49fbb..."
-          },
-          "scope": {
-            "type": "string",
-            "description": "Optional list of scopes to narrow when refreshing a token (space-delimited)",
-            "example": "tasks:read tasks:write"
-          },
-          "resource": {
-            "type": "string",
-            "description": "Optional resource indicator (RFC 8707) - identifies the target resource server",
-            "example": "http://localhost:4001/"
-          }
-        },
-        "required": [
-          "grant_type",
-          "client_id"
-        ]
-      },
-      "TokenResponseDto": {
-        "type": "object",
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "description": "Opaque access token used to access protected resources",
-            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-          },
-          "token_type": {
-            "type": "string",
-            "description": "Type of token issued (MCP clients always receive Bearer tokens)",
-            "enum": [
-              "Bearer"
-            ],
-            "example": "Bearer",
-            "default": "Bearer"
-          },
-          "expires_in": {
-            "type": "number",
-            "description": "Lifetime of the access token in seconds",
-            "example": 3600
-          },
-          "refresh_token": {
-            "type": "string",
-            "description": "Refresh token that can be exchanged for a new access token",
-            "example": "def5020091c58c49fbb..."
-          },
-          "scope": {
-            "type": "string",
-            "description": "Space-delimited scopes that were granted for this token",
-            "example": "tasks:read tasks:write"
-          }
-        },
-        "required": [
-          "access_token",
-          "token_type",
-          "expires_in",
-          "refresh_token"
-        ]
-      },
-      "IntrospectTokenRequestDto": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string",
-            "description": "Access or refresh token that should be validated",
-            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-          },
-          "token_type_hint": {
-            "type": "string",
-            "description": "Hint to help the server determine the token lookup strategy",
-            "enum": [
-              "access_token",
-              "refresh_token"
-            ],
-            "example": "access_token"
-          },
-          "client_id": {
-            "type": "string",
-            "description": "Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.",
-            "example": "0bab273987a2e163c3abb40c631ec0a4"
-          },
-          "client_secret": {
-            "type": "string",
-            "description": "Client secret for confidential clients (MCP clients typically omit this)",
-            "example": "s3cr3t",
-            "nullable": true
-          }
-        },
-        "required": [
-          "token"
-        ]
-      },
-      "IntrospectTokenResponseDto": {
-        "type": "object",
-        "properties": {
-          "active": {
-            "type": "boolean",
-            "description": "Indicates whether the token is currently valid",
-            "example": true
-          },
-          "token_type": {
-            "type": "string",
-            "description": "Token type, always Bearer for MCP clients",
-            "enum": [
-              "Bearer"
-            ],
-            "example": "Bearer"
-          },
-          "client_id": {
-            "type": "string",
-            "description": "Client identifier associated with the token",
-            "example": "0bab273987a2e163c3abb40c631ec0a4"
-          },
-          "sub": {
-            "type": "object",
-            "description": "Subject of the token (resource owner or actor)",
-            "example": "journey:1234"
-          },
-          "aud": {
-            "description": "Audience that should accept this token",
-            "oneOf": [
               {
-                "type": "string",
-                "example": "taskeroo-api"
-              },
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "example": [
-                  "taskeroo-api"
-                ]
+                "id": "123",
+                "name": "project-alpha",
+                "color": "#FF5733",
+                "description": "Project Alpha notes",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-01T12:00:00.000Z"
               }
-            ]
-          },
-          "iss": {
-            "type": "object",
-            "description": "Issuer that minted the token",
-            "example": "https://auth.taskeroo.local/auth"
-          },
-          "jti": {
-            "type": "object",
-            "description": "Unique token identifier for replay detection",
-            "example": "b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c"
-          },
-          "exp": {
-            "type": "object",
-            "description": "Expiration timestamp (seconds since Unix epoch)",
-            "example": 1731145219
-          },
-          "iat": {
-            "type": "object",
-            "description": "Issued-at timestamp (seconds since Unix epoch)",
-            "example": 1731141619
-          },
-          "nbf": {
-            "type": "number",
-            "description": "Not-before timestamp (seconds since Unix epoch)",
-            "example": 1731141019
-          },
-          "scope": {
-            "type": "string",
-            "description": "Granted scopes (space-delimited) for display purposes",
-            "example": "tasks:read tasks:write"
-          },
-          "server_identifier": {
-            "type": "object",
-            "description": "MCP server identifier the token is scoped to",
-            "example": "taskeroo"
-          },
-          "resource": {
-            "type": "object",
-            "description": "Resource URL that was used during authorization",
-            "example": "http://localhost:4001/"
-          },
-          "version": {
-            "type": "object",
-            "description": "Version of the MCP server contract",
-            "example": "1.0.0"
-          }
-        },
-        "required": [
-          "active",
-          "token_type",
-          "client_id",
-          "sub",
-          "aud",
-          "iss",
-          "jti",
-          "exp",
-          "iat",
-          "server_identifier",
-          "resource",
-          "version"
-        ]
-      },
-      "TokenExchangeRequestDto": {
-        "type": "object",
-        "properties": {
-          "grant_type": {
-            "type": "string",
-            "description": "Grant type for token exchange as defined in RFC 8693",
-            "enum": [
-              "urn:ietf:params:oauth:grant-type:token-exchange"
             ],
-            "example": "urn:ietf:params:oauth:grant-type:token-exchange"
-          },
-          "subject_token": {
-            "type": "string",
-            "description": "The access token that represents the identity of the party on behalf of whom the request is being made",
-            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-          },
-          "subject_token_type": {
-            "type": "string",
-            "description": "Type identifier for the subject_token as defined in RFC 8693",
-            "enum": [
-              "urn:ietf:params:oauth:token-type:access_token"
-            ],
-            "example": "urn:ietf:params:oauth:token-type:access_token"
-          },
-          "resource": {
-            "type": "string",
-            "description": "Resource server URL that the client wants to access with the exchanged token",
-            "example": "http://localhost:4001/"
-          },
-          "scope": {
-            "type": "string",
-            "description": "Optional space-delimited list of scopes for the exchanged token",
-            "example": "tasks:read tasks:write"
-          }
-        },
-        "required": [
-          "grant_type",
-          "subject_token",
-          "subject_token_type",
-          "resource"
-        ]
-      },
-      "TokenExchangeResponseDto": {
-        "type": "object",
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "description": "The newly issued access token after successful exchange",
-            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-          },
-          "issued_token_type": {
-            "type": "string",
-            "description": "Type identifier for the issued token as defined in RFC 8693",
-            "example": "urn:ietf:params:oauth:token-type:access_token"
-          },
-          "token_type": {
-            "type": "string",
-            "description": "Type of token issued, always Bearer for MCP clients",
-            "example": "Bearer"
-          },
-          "expires_in": {
-            "type": "number",
-            "description": "Lifetime of the access token in seconds",
-            "example": 3600
-          },
-          "scope": {
-            "type": "string",
-            "description": "Space-delimited list of scopes granted for the exchanged token",
-            "example": "tasks:read tasks:write"
-          }
-        },
-        "required": [
-          "access_token",
-          "issued_token_type",
-          "token_type",
-          "expires_in",
-          "scope"
-        ]
-      },
-      "JwkResponseDto": {
-        "type": "object",
-        "properties": {
-          "kty": {
-            "type": "string",
-            "description": "Key type, for example RSA or EC.",
-            "example": "RSA"
-          },
-          "use": {
-            "type": "string",
-            "description": "Key usage indicating how the key can be used.",
-            "example": "sig"
-          },
-          "kid": {
-            "type": "string",
-            "description": "Unique identifier for the key used for rotation.",
-            "example": "1234567890abcdef"
-          },
-          "alg": {
-            "type": "string",
-            "description": "Algorithm intended for use with this key.",
-            "example": "RS256"
-          },
-          "n": {
-            "type": "string",
-            "description": "RSA modulus encoded using base64url.",
-            "example": "xGOr-H7A..."
-          },
-          "e": {
-            "type": "string",
-            "description": "RSA public exponent encoded using base64url.",
-            "example": "AQAB"
-          },
-          "x": {
-            "type": "string",
-            "description": "Public coordinate X for EC keys encoded using base64url.",
-            "example": "WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis"
-          },
-          "y": {
-            "type": "string",
-            "description": "Public coordinate Y for EC keys encoded using base64url.",
-            "example": "y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE"
-          },
-          "crv": {
-            "type": "string",
-            "description": "Curve name for EC keys.",
-            "example": "P-256"
-          }
-        },
-        "required": [
-          "kty",
-          "use",
-          "kid",
-          "alg"
-        ]
-      },
-      "JwksResponseDto": {
-        "type": "object",
-        "properties": {
-          "keys": {
-            "description": "Collection of JSON Web Keys currently valid for signature verification.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/JwkResponseDto"
+              "$ref": "#/components/schemas/WikiTagResponseDto"
+            }
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "author",
+          "tags",
+          "parentId",
+          "order",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PageSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "tags": {
+            "description": "Tags associated with the page",
+            "example": [
+              {
+                "id": "123",
+                "name": "project-alpha",
+                "color": "#FF5733",
+                "description": "Project Alpha notes",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-01T12:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WikiTagResponseDto"
+            }
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "author",
+          "tags",
+          "parentId",
+          "order",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PageListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of wiki pages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageSummaryDto"
             }
           }
         },
         "required": [
-          "keys"
+          "items"
+        ]
+      },
+      "PageTreeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
+          "children": {
+            "description": "Child pages",
+            "example": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageTreeResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "author",
+          "parentId",
+          "order",
+          "children",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdatePageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Updated title of the wiki page",
+            "example": "Updated onboarding guide"
+          },
+          "content": {
+            "type": "string",
+            "description": "Updated markdown content of the page",
+            "example": "## Updated content"
+          },
+          "author": {
+            "type": "string",
+            "description": "Updated author of the page",
+            "example": "Agent Roo"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the page",
+            "example": [
+              "documentation",
+              "onboarding"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Parent page ID (null to remove parent)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          }
+        }
+      },
+      "AppendPageDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Markdown content to append to the existing page content",
+            "example": "\n## Additional details"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "ReorderPageDto": {
+        "type": "object",
+        "properties": {
+          "newOrder": {
+            "type": "number",
+            "description": "New order position within siblings",
+            "example": 2
+          }
+        },
+        "required": [
+          "newOrder"
+        ]
+      },
+      "MovePageDto": {
+        "type": "object",
+        "properties": {
+          "newParentId": {
+            "type": "object",
+            "description": "New parent page ID (null to move to root)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          }
+        },
+        "required": [
+          "newParentId"
+        ]
+      },
+      "AddWikiTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateWikiTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "AuthorizationServerMetadataDto": {
@@ -6357,53 +6830,6 @@
         },
         "required": [
           "events"
-        ]
-      },
-      "LoginDto": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "example": "user@example.com"
-          },
-          "password": {
-            "type": "string",
-            "example": "password123"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ]
-      },
-      "UserDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "displayName"
-        ]
-      },
-      "SessionResponseDto": {
-        "type": "object",
-        "properties": {
-          "user": {
-            "$ref": "#/components/schemas/UserDto"
-          }
-        },
-        "required": [
-          "user"
         ]
       }
     }

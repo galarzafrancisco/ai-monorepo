@@ -13,9 +13,11 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -40,9 +42,15 @@ import { ReorderPageDto } from './dto/reorder-page.dto';
 import { MovePageDto } from './dto/move-page.dto';
 import { PageResult, PageSummaryResult, TagResult, PageTreeResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
+import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
+import { Public } from '../authorization-server/decorators/public.decorator';
+import { CurrentUser } from '../authorization-server/decorators/current-user.decorator';
+import type { WebAuthJwtPayload } from '../authorization-server/types';
 
 @ApiTags('Wikiroo')
+@ApiCookieAuth('JWT-Cookie')
 @Controller('wikiroo/pages')
+@UseGuards(JwtAuthGuard)
 export class WikirooController {
   constructor(
     private readonly wikirooService: WikirooService,
@@ -56,11 +64,14 @@ export class WikirooController {
     description: 'Wiki page created successfully',
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async createPage(@Body() dto: CreatePageDto): Promise<PageResponseDto> {
+  async createPage(
+    @Body() dto: CreatePageDto,
+    @CurrentUser() user: WebAuthJwtPayload,
+  ): Promise<PageResponseDto> {
     const result = await this.wikirooService.createPage({
       title: dto.title,
       content: dto.content,
-      author: dto.author,
+      author: dto.author ?? user.email,
       tagNames: dto.tagNames,
       parentId: dto.parentId,
     });
@@ -115,6 +126,7 @@ export class WikirooController {
   async updatePage(
     @Param() params: PageParamsDto,
     @Body() dto: UpdatePageDto,
+    @CurrentUser() user: WebAuthJwtPayload,
   ): Promise<PageResponseDto> {
     if (
       dto.title === undefined &&
@@ -130,7 +142,7 @@ export class WikirooController {
     const result = await this.wikirooService.updatePage(params.id, {
       title: dto.title,
       content: dto.content,
-      author: dto.author,
+      author: dto.author ?? user.email,
       tagNames: dto.tagNames,
       parentId: dto.parentId,
       order: dto.order,
@@ -307,6 +319,7 @@ export class WikirooController {
     };
   }
 
+  @Public()
   @All('mcp')
   async handleMcp(@Req() req: Request, @Res() res: Response) {
     await this.gateway.handleRequest(req, res);

@@ -4,10 +4,13 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { ProblemDetailsFilter } from './../src/http/problem-details.filter';
+import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import cookieParser from 'cookie-parser';
 
 describe('Wikiroo E2E Tests', () => {
   let app: INestApplication<App>;
   let httpServer: App;
+  let authCookies: string;
   let createdPageId: string;
 
   beforeAll(async () => {
@@ -17,6 +20,7 @@ describe('Wikiroo E2E Tests', () => {
 
     app = moduleFixture.createNestApplication();
 
+    app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -29,6 +33,10 @@ describe('Wikiroo E2E Tests', () => {
 
     await app.init();
     httpServer = app.getHttpServer();
+
+    // Setup authentication
+    await ensureTestUser(app);
+    authCookies = await getAuthCookies(httpServer);
   });
 
   afterAll(async () => {
@@ -38,6 +46,7 @@ describe('Wikiroo E2E Tests', () => {
   it('should create a wiki page', async () => {
     const response = await request(httpServer)
       .post('/api/v1/wikiroo/pages')
+      .set('Cookie', authCookies)
       .send({
         title: 'Test Page',
         content: 'This is a wikiroo page created during tests.',
@@ -58,6 +67,7 @@ describe('Wikiroo E2E Tests', () => {
   it('should list wiki pages without content field', async () => {
     const response = await request(httpServer)
       .get('/api/v1/wikiroo/pages')
+      .set('Cookie', authCookies)
       .expect(200);
 
     expect(Array.isArray(response.body.items)).toBe(true);
@@ -73,6 +83,7 @@ describe('Wikiroo E2E Tests', () => {
   it('should fetch the wiki page by id including content', async () => {
     const response = await request(httpServer)
       .get(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .set('Cookie', authCookies)
       .expect(200);
 
     expect(response.body.id).toBe(createdPageId);
@@ -86,6 +97,7 @@ describe('Wikiroo E2E Tests', () => {
   it('should reject updates without any fields', async () => {
     await request(httpServer)
       .patch(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .set('Cookie', authCookies)
       .send({})
       .expect(400);
   });
@@ -93,6 +105,7 @@ describe('Wikiroo E2E Tests', () => {
   it('should update the wiki page title', async () => {
     const response = await request(httpServer)
       .patch(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .set('Cookie', authCookies)
       .send({
         title: 'Updated Test Page',
       })
@@ -108,6 +121,7 @@ describe('Wikiroo E2E Tests', () => {
     const appendText = '\nAdditional wikiroo details.';
     const response = await request(httpServer)
       .post(`/api/v1/wikiroo/pages/${createdPageId}/append`)
+      .set('Cookie', authCookies)
       .send({
         content: appendText,
       })
@@ -119,6 +133,7 @@ describe('Wikiroo E2E Tests', () => {
   it('should delete the wiki page', async () => {
     await request(httpServer)
       .delete(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .set('Cookie', authCookies)
       .expect(204);
   });
 
@@ -133,6 +148,7 @@ describe('Wikiroo E2E Tests', () => {
   it('should return 404 when fetching a deleted page', async () => {
     await request(httpServer)
       .get(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .set('Cookie', authCookies)
       .expect(404);
   });
 });

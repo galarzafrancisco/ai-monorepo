@@ -24,9 +24,9 @@ export type CreateTaskDto = {
      */
     tagNames?: Array<string>;
     /**
-     * Name of the person who created the task
+     * Name of the person who created the task (auto-populated from authenticated user if not provided)
      */
-    createdBy: string;
+    createdBy?: string;
     /**
      * Array of task IDs that this task depends on
      */

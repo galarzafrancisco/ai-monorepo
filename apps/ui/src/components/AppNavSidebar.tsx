@@ -5,6 +5,7 @@ interface AppNavSidebarProps {
 }
 
 export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
+
   const menuItems = [
     {
       name: 'Home',
@@ -48,26 +49,48 @@ export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
   ];
 
   return (
-    <nav>
-      {menuItems.map((item) => (
+    <nav className="sidebar-nav-container">
+      <div className="sidebar-nav-main">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              `sidebar-nav-link ${isActive ? 'active' : ''} ${collapsed ? 'collapsed' : ''}`
+            }
+            end={item.path === '/'}
+          >
+            <div className="sidebar-nav-icon">
+              {typeof item.icon === 'string' ? (
+                <span>{item.icon}</span>
+              ) : (
+                item.icon
+              )}
+            </div>
+            <span className="nav-link-text">{item.name}</span>
+          </NavLink>
+        ))}
+      </div>
+      <div className="sidebar-nav-bottom">
         <NavLink
-          key={item.path}
-          to={item.path}
+          key="213"
+          to="/logout"
           className={({ isActive }) =>
             `sidebar-nav-link ${isActive ? 'active' : ''} ${collapsed ? 'collapsed' : ''}`
           }
-          end={item.path === '/'}
+          end={true}
         >
           <div className="sidebar-nav-icon">
-            {typeof item.icon === 'string' ? (
-              <span>{item.icon}</span>
+            {typeof '🔓' === 'string' ? (
+              <span>{'🔓'}</span>
             ) : (
-              item.icon
+              '🔓'
             )}
           </div>
-          <span className="nav-link-text">{item.name}</span>
+          <span className="nav-link-text">Logout</span>
         </NavLink>
-      ))}
+      </div>
+
     </nav>
   );
 }

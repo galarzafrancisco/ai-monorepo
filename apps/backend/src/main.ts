@@ -46,6 +46,15 @@ async function bootstrap() {
     .setDescription('The AI Monorepo API description')
     .setVersion('1.0')
     .addTag('ai-monorepo')
+    .addCookieAuth(
+      'access_token',
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'JWT-Cookie',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
 

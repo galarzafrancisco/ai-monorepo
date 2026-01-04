@@ -10,8 +10,9 @@ import {
   ParseIntPipe,
   ParseUUIDPipe,
   ParseArrayPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiCookieAuth } from '@nestjs/swagger';
 import { McpRegistryService } from './mcp-registry.service';
 import {
   CreateServerDto,
@@ -37,9 +38,12 @@ import {
 import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
 import { AuthJourneyResponseDto, McpFlowResponseDto, ConnectionFlowResponseDto } from '../auth-journeys/dto';
 import { AuthJourneyEntity } from '../auth-journeys/entities';
+import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 
 @ApiTags('MCP Registry')
+@ApiCookieAuth('JWT-Cookie')
 @Controller('mcp')
+@UseGuards(JwtAuthGuard)
 export class McpRegistryController {
   constructor(
     private readonly mcpRegistryService: McpRegistryService,
