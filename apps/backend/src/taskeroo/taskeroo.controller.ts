@@ -12,6 +12,7 @@ import {
   Req,
   All,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,9 +40,11 @@ import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.service.types';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
+import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 
 @ApiTags('Task')
 @Controller('taskeroo/tasks')
+@UseGuards(JwtAuthGuard)
 export class TaskerooController {
   constructor(
     private readonly taskerooService: TaskerooService,
