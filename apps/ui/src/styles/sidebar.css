@@ -129,6 +129,25 @@
 /* ===========================
    Navigation Links
    =========================== */
+.sidebar-nav-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebar-nav-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sidebar-gap);
+}
+
+.sidebar-nav-bottom {
+  margin-top: auto;
+  padding-top: var(--sidebar-padding);
+  border-top: 1px solid var(--sidebar-border);
+}
+
 .sidebar-nav-link {
   display: flex;
   align-items: center;
@@ -140,6 +159,12 @@
   transition: var(--sidebar-transition-fast);
   white-space: nowrap;
   cursor: pointer;
+  /* background: none; */
+  /* border: none; */
+  /* width: 100%; */
+  /* text-align: left; */
+  /* font-family: inherit; */
+  /* font-size: inherit; */
 }
 
 .sidebar-nav-link:hover {
@@ -150,6 +175,15 @@
 .sidebar-nav-link.active {
   background-color: var(--sidebar-active-bg);
   color: var(--sidebar-active-text);
+}
+
+.sidebar-nav-link.logout-button {
+  color: #ef4444;
+}
+
+.sidebar-nav-link.logout-button:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
 }
 
 /* Collapsed state - hide text, center icon */

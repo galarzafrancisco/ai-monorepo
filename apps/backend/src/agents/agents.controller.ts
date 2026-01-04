@@ -9,12 +9,14 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiCookieAuth,
 } from '@nestjs/swagger';
 import { AgentsService } from './agents.service';
 import { CreateAgentDto } from './dto/create-agent.dto';
@@ -24,9 +26,12 @@ import { AgentListResponseDto } from './dto/agent-list-response.dto';
 import { ListAgentsQueryDto } from './dto/list-agents-query.dto';
 import { AgentParamsDto } from './dto/agent-params.dto';
 import { AgentResult } from './dto/service/agents.service.types';
+import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 
 @ApiTags('Agent')
+@ApiCookieAuth('JWT-Cookie')
 @Controller('agents')
+@UseGuards(JwtAuthGuard)
 export class AgentsController {
   constructor(private readonly agentsService: AgentsService) {}
 

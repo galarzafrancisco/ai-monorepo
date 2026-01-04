@@ -19,14 +19,14 @@ export class CreatePageDto {
   @IsNotEmpty()
   content!: string;
 
-  @ApiProperty({
-    description: 'Author of the page',
+  @ApiPropertyOptional({
+    description: 'Author of the page (auto-populated from authenticated user if not provided)',
     example: 'Agent Roo',
   })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MaxLength(120)
-  author!: string;
+  author?: string;
 
   @ApiPropertyOptional({
     description: 'Array of tag names to associate with the page',

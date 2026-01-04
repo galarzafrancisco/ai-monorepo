@@ -1,14 +1,14 @@
-import { IsString, IsNotEmpty } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCommentDto {
-  @ApiProperty({
-    description: 'Name of the person or agent commenting',
+  @ApiPropertyOptional({
+    description: 'Name of the person or agent commenting (auto-populated from authenticated user if not provided)',
     example: 'AgentBeta',
   })
   @IsString()
-  @IsNotEmpty()
-  commenterName!: string;
+  @IsOptional()
+  commenterName?: string;
 
   @ApiProperty({
     description: 'Content of the comment',

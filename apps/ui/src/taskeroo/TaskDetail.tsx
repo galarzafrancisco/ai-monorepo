@@ -16,7 +16,6 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   const [sessionId, setSessionId] = useState(task.sessionId || '');
   const [tagNames, setTagNames] = useState<string[]>(task.tags?.map(t => t.name) || []);
   const [comment, setComment] = useState('');
-  const [commenterName, setCommenterName] = useState('');
   const [statusComment, setStatusComment] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -72,19 +71,18 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   };
 
   const handleAddComment = async () => {
-    if (!comment.trim() || !commenterName.trim()) return;
+    if (!comment.trim()) return;
 
     try {
       await TaskerooService.taskerooControllerAddComment(
         task.id,
-        { commenterName, content: comment }
+        { content: comment }
       );
 
       // Refresh task to get updated comments
       const updated = await TaskerooService.taskerooControllerGetTask(task.id);
       onUpdate(updated);
       setComment('');
-      setCommenterName('');
       setErrorMessage('');
     } catch (err: any) {
       console.error('Failed to add comment:', err);
@@ -267,12 +265,6 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
           </div>
 
           <div className="add-comment">
-            <input
-              type="text"
-              placeholder="Your name"
-              value={commenterName}
-              onChange={(e) => setCommenterName(e.target.value)}
-            />
             <textarea
               placeholder="Add a comment..."
               value={comment}

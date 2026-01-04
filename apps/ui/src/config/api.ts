@@ -9,6 +9,8 @@
  * served from the same origin as the backend.
  */
 
+import { OpenAPI } from 'shared';
+
 /**
  * Get the base URL for API requests
  *
@@ -37,3 +39,10 @@ export const getUIWebSocketUrl = (path: string): string => {
  * Pre-configured base URL for OpenAPI clients
  */
 export const BFF_BASE_URL = getBFFBaseUrl();
+
+/**
+ * Configure OpenAPI client to send cookies with all requests
+ * This ensures authentication tokens stored in httpOnly cookies are sent automatically
+ */
+OpenAPI.BASE = BFF_BASE_URL;
+OpenAPI.CREDENTIALS = 'include';

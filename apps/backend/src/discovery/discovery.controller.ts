@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import {
+  ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -10,9 +11,12 @@ import { getConfig } from '../config/env.config';
 import { AuthorizationServerMetadataDto } from './dto/authorization-server-metadata.dto';
 import { GetAuthorizationServerMetadataParamsDto } from './dto/get-authorization-server-metadata-params.dto';
 import { DiscoveryService } from './discovery.service';
+import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 
 @ApiTags('Discovery')
+@ApiCookieAuth('JWT-Cookie')
 @Controller('.well-known/oauth-authorization-server/mcp')
+@UseGuards(JwtAuthGuard)
 export class DiscoveryController {
   constructor(private readonly discoveryService: DiscoveryService) {}
 

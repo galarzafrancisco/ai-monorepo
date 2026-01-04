@@ -15,7 +15,6 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
   const [assignee, setAssignee] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [tagNames, setTagNames] = useState<string[]>([]);
-  const [createdBy, setCreatedBy] = useState('');
   const [dependsOnIds, setDependsOnIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -37,7 +36,6 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
       await TaskerooService.taskerooControllerCreateTask({
         name,
         description,
-        createdBy,
         ...(assignee && { assignee }),
         ...(sessionId && { sessionId }),
         ...(tagNames.length > 0 && { tagNames }),
@@ -83,18 +81,6 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
               required
               placeholder="Enter task description"
               rows={4}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="createdBy">Created By *</label>
-            <input
-              id="createdBy"
-              type="text"
-              value={createdBy}
-              onChange={(e) => setCreatedBy(e.target.value)}
-              required
-              placeholder="Your name"
             />
           </div>
 

@@ -96,11 +96,11 @@ export function WikiPageForm({
 
     try {
       if (mode === 'create') {
-        // Create mode: send all fields
+        // Create mode: send all fields (author is auto-populated if not provided)
         const payload: CreatePageDto = {
           title: title.trim(),
-          author: author.trim(),
           content: content.trim(),
+          ...(author.trim() && { author: author.trim() }),
           ...(tagNames.length > 0 && { tagNames }),
           ...(parentId && { parentId }),
         };
@@ -172,14 +172,13 @@ export function WikiPageForm({
       </div>
 
       <div className="wikiroo-form-group">
-        <label htmlFor={`${mode}-author`}>Author *</label>
+        <label htmlFor={`${mode}-author`}>Author</label>
         <input
           id={`${mode}-author`}
           type="text"
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
-          placeholder="Who wrote this?"
-          required
+          placeholder="Leave blank to use your account"
           disabled={isSubmitting}
         />
       </div>

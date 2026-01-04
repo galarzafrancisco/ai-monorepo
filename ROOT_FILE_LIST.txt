@@ -1,0 +1,50 @@
+Root directory listing of the ai-monorepo repository:
+
+This document provides a high‑level overview of the top‑level files and directories present in the repository. It is useful for quickly understanding the project structure and locating key components such as the backend, UI, shared packages, documentation, CI workflows, and configuration files.
+
+---
+
+/Users/franciscogalarza/github/ai-monorepo/
+├─ .claude/
+│   ├─ commands/
+│   └─ ...
+├─ .github/
+│   └─ workflows/
+├─ .vscode/
+├─ apps/
+│   ├─ adk-ts/
+│   ├─ backend/
+│   ├─ mcp-server-1/
+│   ├─ ui/
+│   └─ ...
+├─ data/
+│   └─ database.sqlite
+├─ docs/
+│   ├─ architecture/
+│   ├─ best‑practices/
+│   ├─ how‑to‑guides/
+│   ├─ notes/
+│   ├─ review‑guides/
+│   └─ ...
+├─ features/
+├─ packages/
+│   └─ shared/
+├─ .dockerignore
+├─ .env.example
+├─ .gitignore
+├─ .mcp.json
+├─ Dockerfile
+├─ LICENSE
+├─ README.md
+├─ package-lock.json
+├─ package.json
+├─ run-docker.sh
+├─ run-prod.sh
+├─ run-tests.sh
+├─ TEST_SUITE_README.md
+├─ tsconfig.base.json
+└─ (other top‑level files and directories)
+
+---
+
+The list above was generated programmatically using a glob pattern to capture all entries at the repository root. It includes both files and directories, with ellipses (…) indicating additional nested contents that are not shown for brevity.

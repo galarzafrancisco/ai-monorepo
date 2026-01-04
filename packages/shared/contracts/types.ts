@@ -210,6 +210,456 @@ export interface paths {
         patch: operations["TaskerooController_handleMcp_patch"];
         trace?: never;
     };
+    "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a new OAuth 2.0 client (Dynamic Client Registration)
+         * @description Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.
+         */
+        post: operations["ClientRegistrationController_registerClient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/clients/{clientId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrieve client registration information
+         * @description Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.
+         */
+        get: operations["ClientRegistrationController_getClient"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/clients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all registered clients (Admin)
+         * @description Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.
+         */
+        get: operations["ClientRegistrationController_listClients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OAuth 2.0 Authorization Endpoint
+         * @description Handles authorization requests from MCP clients. Validates the request, stores PKCE parameters, and redirects to the consent screen UI.
+         */
+        get: operations["AuthorizationController_authorize"];
+        put?: never;
+        /**
+         * OAuth 2.0 Authorization Consent Handler
+         * @description Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.
+         */
+        post: operations["AuthorizationController_authorizeConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/flow/{flowId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get authorization flow details
+         * @description Retrieves authorization flow details for the consent screen
+         */
+        get: operations["AuthorizationController_getFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/token/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * OAuth 2.0 Token Endpoint
+         * @description Exchanges authorization code for access token. Validates PKCE code_verifier, issues signed JWT access token and refresh token.
+         */
+        post: operations["AuthorizationController_token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * OAuth 2.0 Token Introspection Endpoint
+         * @description Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.
+         */
+        post: operations["AuthorizationController_introspect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * RFC 8693 Token Exchange Endpoint
+         * @description Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.
+         */
+        post: operations["AuthorizationController_tokenExchange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OAuth 2.0 Callback Endpoint for Downstream Systems
+         * @description Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.
+         */
+        get: operations["AuthorizationController_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/jwks.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get JSON Web Key Set (JWKS)
+         * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
+         */
+        get: operations["JwksController_getJwks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login with email and password */
+        post: operations["WebAuthController_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh access token using refresh token */
+        post: operations["WebAuthController_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout and revoke refresh token */
+        post: operations["WebAuthController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current authenticated user */
+        get: operations["WebAuthController_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all MCP servers with pagination */
+        get: operations["McpRegistryController_listServers"];
+        put?: never;
+        /** Register a new MCP server */
+        post: operations["McpRegistryController_createServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get MCP server by UUID or provided ID */
+        get: operations["McpRegistryController_getServer"];
+        put?: never;
+        post?: never;
+        /** Delete MCP server (must have no dependencies) */
+        delete: operations["McpRegistryController_deleteServer"];
+        options?: never;
+        head?: never;
+        /** Update MCP server details */
+        patch: operations["McpRegistryController_updateServer"];
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all scopes for an MCP server */
+        get: operations["McpRegistryController_listScopes"];
+        put?: never;
+        /** Create MCP scope(s) for a server */
+        post: operations["McpRegistryController_createScopes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a specific MCP scope */
+        get: operations["McpRegistryController_getScope"];
+        put?: never;
+        post?: never;
+        /** Delete MCP scope (must have no mappings) */
+        delete: operations["McpRegistryController_deleteScope"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all connections for an MCP server */
+        get: operations["McpRegistryController_listConnections"];
+        put?: never;
+        /** Create OAuth connection for an MCP server */
+        post: operations["McpRegistryController_createConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/connections/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a specific connection */
+        get: operations["McpRegistryController_getConnection"];
+        put?: never;
+        post?: never;
+        /** Delete connection (must have no mappings) */
+        delete: operations["McpRegistryController_deleteConnection"];
+        options?: never;
+        head?: never;
+        /** Update connection details */
+        patch: operations["McpRegistryController_updateConnection"];
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create scope mapping */
+        post: operations["McpRegistryController_createMapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List downstream scopes for an MCP scope */
+        get: operations["McpRegistryController_listMappings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/mappings/{mappingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete scope mapping */
+        delete: operations["McpRegistryController_deleteMapping"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get authorization journeys for an MCP server (debug/monitoring) */
+        get: operations["McpRegistryController_getAuthJourneys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wikiroo/pages": {
         parameters: {
             query?: never;
@@ -414,388 +864,6 @@ export interface paths {
         options: operations["WikirooController_handleMcp_options"];
         head: operations["WikirooController_handleMcp_head"];
         patch: operations["WikirooController_handleMcp_patch"];
-        trace?: never;
-    };
-    "/api/v1/mcp/servers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all MCP servers with pagination */
-        get: operations["McpRegistryController_listServers"];
-        put?: never;
-        /** Register a new MCP server */
-        post: operations["McpRegistryController_createServer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get MCP server by UUID or provided ID */
-        get: operations["McpRegistryController_getServer"];
-        put?: never;
-        post?: never;
-        /** Delete MCP server (must have no dependencies) */
-        delete: operations["McpRegistryController_deleteServer"];
-        options?: never;
-        head?: never;
-        /** Update MCP server details */
-        patch: operations["McpRegistryController_updateServer"];
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/scopes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all scopes for an MCP server */
-        get: operations["McpRegistryController_listScopes"];
-        put?: never;
-        /** Create MCP scope(s) for a server */
-        post: operations["McpRegistryController_createScopes"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a specific MCP scope */
-        get: operations["McpRegistryController_getScope"];
-        put?: never;
-        post?: never;
-        /** Delete MCP scope (must have no mappings) */
-        delete: operations["McpRegistryController_deleteScope"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/connections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all connections for an MCP server */
-        get: operations["McpRegistryController_listConnections"];
-        put?: never;
-        /** Create OAuth connection for an MCP server */
-        post: operations["McpRegistryController_createConnection"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/connections/{connectionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a specific connection */
-        get: operations["McpRegistryController_getConnection"];
-        put?: never;
-        post?: never;
-        /** Delete connection (must have no mappings) */
-        delete: operations["McpRegistryController_deleteConnection"];
-        options?: never;
-        head?: never;
-        /** Update connection details */
-        patch: operations["McpRegistryController_updateConnection"];
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/mappings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create scope mapping */
-        post: operations["McpRegistryController_createMapping"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List downstream scopes for an MCP scope */
-        get: operations["McpRegistryController_listMappings"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/mappings/{mappingId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete scope mapping */
-        delete: operations["McpRegistryController_deleteMapping"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get authorization journeys for an MCP server (debug/monitoring) */
-        get: operations["McpRegistryController_getAuthJourneys"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Register a new OAuth 2.0 client (Dynamic Client Registration)
-         * @description Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.
-         */
-        post: operations["ClientRegistrationController_registerClient"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/clients/{clientId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Retrieve client registration information
-         * @description Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.
-         */
-        get: operations["ClientRegistrationController_getClient"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/clients": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List all registered clients (Admin)
-         * @description Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.
-         */
-        get: operations["ClientRegistrationController_listClients"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * OAuth 2.0 Authorization Endpoint
-         * @description Handles authorization requests from MCP clients. Validates the request, stores PKCE parameters, and redirects to the consent screen UI.
-         */
-        get: operations["AuthorizationController_authorize"];
-        put?: never;
-        /**
-         * OAuth 2.0 Authorization Consent Handler
-         * @description Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.
-         */
-        post: operations["AuthorizationController_authorizeConsent"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/flow/{flowId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get authorization flow details
-         * @description Retrieves authorization flow details for the consent screen
-         */
-        get: operations["AuthorizationController_getFlow"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/token/mcp/{serverIdentifier}/{version}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * OAuth 2.0 Token Endpoint
-         * @description Exchanges authorization code for access token. Validates PKCE code_verifier, issues signed JWT access token and refresh token.
-         */
-        post: operations["AuthorizationController_token"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * OAuth 2.0 Token Introspection Endpoint
-         * @description Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.
-         */
-        post: operations["AuthorizationController_introspect"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * RFC 8693 Token Exchange Endpoint
-         * @description Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.
-         */
-        post: operations["AuthorizationController_tokenExchange"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/callback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * OAuth 2.0 Callback Endpoint for Downstream Systems
-         * @description Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.
-         */
-        get: operations["AuthorizationController_callback"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/.well-known/jwks.json": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get JSON Web Key Set (JWKS)
-         * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
-         */
-        get: operations["JwksController_getJwks"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/.well-known/oauth-authorization-server/mcp/issuer": {
@@ -1048,57 +1116,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Login with email and password */
-        post: operations["IdentityProviderController_login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Logout and clear session */
-        post: operations["IdentityProviderController_logout"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get current session information */
-        get: operations["IdentityProviderController_getSession"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1133,10 +1150,10 @@ export interface components {
              */
             tagNames?: string[];
             /**
-             * @description Name of the person who created the task
+             * @description Name of the person who created the task (auto-populated from authenticated user if not provided)
              * @example Fran
              */
-            createdBy: string;
+            createdBy?: string;
             /**
              * @description Array of task IDs that this task depends on
              * @example [
@@ -1298,7 +1315,7 @@ export interface components {
              */
             tagNames?: string[];
             /**
-             * @description Name of the person who created the task
+             * @description Name of the person who created the task (auto-populated from authenticated user if not provided)
              * @example Fran
              */
             createdBy?: string;
@@ -1349,10 +1366,10 @@ export interface components {
         };
         CreateCommentDto: {
             /**
-             * @description Name of the person or agent commenting
+             * @description Name of the person or agent commenting (auto-populated from authenticated user if not provided)
              * @example AgentBeta
              */
-            commenterName: string;
+            commenterName?: string;
             /**
              * @description Content of the comment
              * @example Task completed successfully. All tests passing.
@@ -1391,276 +1408,476 @@ export interface components {
              */
             name: string;
         };
-        CreatePageDto: {
+        RegisterClientDto: {
             /**
-             * @description Title of the wiki page
-             * @example How to onboard new agents
-             */
-            title: string;
-            /**
-             * @description Markdown content of the page
-             * @example # Welcome to Wikiroo
-             *     This is the onboarding guide.
-             */
-            content: string;
-            /**
-             * @description Author of the page
-             * @example Agent Roo
-             */
-            author: string;
-            /**
-             * @description Array of tag names to associate with the page
+             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
              * @example [
-             *       "documentation",
-             *       "onboarding"
+             *       "http://localhost:3000/callback",
+             *       "https://example.com/callback"
              *     ]
              */
-            tagNames?: string[];
+            redirect_uris: string[];
             /**
-             * @description Parent page ID for nesting
-             * @example 123e4567-e89b-12d3-a456-426614174000
+             * @description Authentication method for the token endpoint (MCP clients use "none")
+             * @example none
+             * @enum {string}
              */
-            parentId?: string;
+            token_endpoint_auth_method: "none";
+            /**
+             * @description Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
+             * @example [
+             *       "authorization_code",
+             *       "refresh_token"
+             *     ]
+             */
+            grant_types: ("authorization_code" | "refresh_token")[];
+            /**
+             * @description Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.
+             * @example [
+             *       "code"
+             *     ]
+             */
+            response_types: "code"[];
+            /**
+             * @description Human-readable name of the client
+             * @example My OAuth Client
+             */
+            client_name: string;
+            /**
+             * @description Requested scopes for the client
+             * @example [
+             *       "data:read",
+             *       "data:write"
+             *     ]
+             */
+            scope?: string[];
+            /**
+             * @description Contact emails for the client registration
+             * @example [
+             *       "admin@example.com"
+             *     ]
+             */
+            contacts?: string[];
+            /**
+             * @description Terms of service URI for the client registration
+             * @example https://example.com/tos
+             */
+            tos_uri?: string;
+            /**
+             * @description URL of the home page of the client
+             * @example https://example.com
+             */
+            client_uri?: string;
+            /**
+             * @description URL that references a logo for the client application
+             * @example https://example.com/logo.png
+             */
+            logo_uri?: string;
+            /**
+             * @description URL that the client provides to the end-user to read about how the profile data will be used
+             * @example https://example.com/privacy
+             */
+            policy_uri?: string;
+            /**
+             * @description URL for the client JSON Web Key Set document. If specified, must not include jwks parameter
+             * @example https://example.com/.well-known/jwks.json
+             */
+            jwks_uri?: string;
+            /**
+             * @description Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter
+             * @example {"keys":[{"kty":"RSA","use":"sig","kid":"key-1","n":"...","e":"AQAB"}]}
+             */
+            jwks?: string;
+            /**
+             * @description Unique identifier string assigned by the client developer or software publisher
+             * @example my-oauth-app-v1
+             */
+            software_id?: string;
+            /**
+             * @description Version identifier string for the client software
+             * @example 1.0.0
+             */
+            software_version?: string;
         };
-        WikiTagResponseDto: {
+        ClientRegistrationResponseDto: {
             /**
-             * @description Name of the tag
-             * @example project-alpha
+             * @description Unique client identifier
+             * @example 8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b
              */
-            name: string;
+            client_id: string;
             /**
-             * @description Color for the tag (hex format)
-             * @example #FF5733
+             * @description Human-readable name of the client
+             * @example My OAuth Client
              */
-            color?: string;
+            client_name: string;
+            /**
+             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
+             * @example [
+             *       "http://localhost:3000/callback",
+             *       "https://example.com/callback"
+             *     ]
+             */
+            redirect_uris: string[];
+            /**
+             * @description Grant types the client is authorized to use
+             * @example [
+             *       "authorization_code",
+             *       "refresh_token"
+             *     ]
+             */
+            grant_types: ("authorization_code" | "refresh_token")[];
+            /**
+             * @description Authentication method for the token endpoint (MCP clients use "none")
+             * @example none
+             * @enum {string}
+             */
+            token_endpoint_auth_method: "none";
+            /**
+             * @description Scopes granted to the client
+             * @example openid profile email
+             */
+            scope?: string | null;
+            /**
+             * @description Contact emails for the client
+             * @example [
+             *       "admin@example.com"
+             *     ]
+             */
+            contacts?: string[] | null;
+            /**
+             * @description Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.
+             * @example 604846800
+             */
+            client_id_issued_at: number;
         };
-        PageResponseDto: {
+        ConsentDecisionDto: {
             /**
-             * @description Unique identifier for the page
+             * @description Authorization flow ID (serves as CSRF protection token)
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            flow_id: string;
+            /**
+             * @description Whether the user approved the authorization request
+             * @example true
+             */
+            approved: boolean;
+        };
+        McpAuthorizationFlowEntity: Record<string, never>;
+        TokenRequestDto: {
+            /**
+             * @description Grant type that determines which parameters must be supplied
+             * @example authorization_code
+             * @enum {string}
+             */
+            grant_type: "authorization_code" | "refresh_token";
+            /**
+             * @description Client identifier issued during dynamic registration
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            client_id: string;
+            /**
+             * @description Authorization code that was issued by the /authorize endpoint
+             * @example SplxlOBeZQQYbYS6WxSbIA
+             */
+            code?: string;
+            /**
+             * @description Redirect URI used during authorization (required when code is present)
+             * @example http://localhost:6274/oauth/callback/debug
+             */
+            redirect_uri?: string;
+            /**
+             * @description PKCE code verifier used to validate the authorization code exchange
+             * @example dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
+             */
+            code_verifier?: string;
+            /**
+             * @description Refresh token issued earlier by the authorization server
+             * @example def5020091c58c49fbb...
+             */
+            refresh_token?: string;
+            /**
+             * @description Optional list of scopes to narrow when refreshing a token (space-delimited)
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+            /**
+             * @description Optional resource indicator (RFC 8707) - identifies the target resource server
+             * @example http://localhost:4001/
+             */
+            resource?: string;
+        };
+        TokenResponseDto: {
+            /**
+             * @description Opaque access token used to access protected resources
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            access_token: string;
+            /**
+             * @description Type of token issued (MCP clients always receive Bearer tokens)
+             * @default Bearer
+             * @example Bearer
+             * @enum {string}
+             */
+            token_type: "Bearer";
+            /**
+             * @description Lifetime of the access token in seconds
+             * @example 3600
+             */
+            expires_in: number;
+            /**
+             * @description Refresh token that can be exchanged for a new access token
+             * @example def5020091c58c49fbb...
+             */
+            refresh_token: string;
+            /**
+             * @description Space-delimited scopes that were granted for this token
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+        };
+        IntrospectTokenRequestDto: {
+            /**
+             * @description Access or refresh token that should be validated
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            token: string;
+            /**
+             * @description Hint to help the server determine the token lookup strategy
+             * @example access_token
+             * @enum {string}
+             */
+            token_type_hint?: "access_token" | "refresh_token";
+            /**
+             * @description Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            client_id?: string;
+            /**
+             * @description Client secret for confidential clients (MCP clients typically omit this)
+             * @example s3cr3t
+             */
+            client_secret?: string | null;
+        };
+        IntrospectTokenResponseDto: {
+            /**
+             * @description Indicates whether the token is currently valid
+             * @example true
+             */
+            active: boolean;
+            /**
+             * @description Token type, always Bearer for MCP clients
+             * @example Bearer
+             * @enum {string}
+             */
+            token_type: "Bearer";
+            /**
+             * @description Client identifier associated with the token
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            client_id: string;
+            /**
+             * @description Subject of the token (resource owner or actor)
+             * @example journey:1234
+             */
+            sub: Record<string, never>;
+            /** @description Audience that should accept this token */
+            aud: string | string[];
+            /**
+             * @description Issuer that minted the token
+             * @example https://auth.taskeroo.local/auth
+             */
+            iss: Record<string, never>;
+            /**
+             * @description Unique token identifier for replay detection
+             * @example b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c
+             */
+            jti: Record<string, never>;
+            /**
+             * @description Expiration timestamp (seconds since Unix epoch)
+             * @example 1731145219
+             */
+            exp: Record<string, never>;
+            /**
+             * @description Issued-at timestamp (seconds since Unix epoch)
+             * @example 1731141619
+             */
+            iat: Record<string, never>;
+            /**
+             * @description Not-before timestamp (seconds since Unix epoch)
+             * @example 1731141019
+             */
+            nbf?: number;
+            /**
+             * @description Granted scopes (space-delimited) for display purposes
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+            /**
+             * @description MCP server identifier the token is scoped to
+             * @example taskeroo
+             */
+            server_identifier: Record<string, never>;
+            /**
+             * @description Resource URL that was used during authorization
+             * @example http://localhost:4001/
+             */
+            resource: Record<string, never>;
+            /**
+             * @description Version of the MCP server contract
+             * @example 1.0.0
+             */
+            version: Record<string, never>;
+        };
+        TokenExchangeRequestDto: {
+            /**
+             * @description Grant type for token exchange as defined in RFC 8693
+             * @example urn:ietf:params:oauth:grant-type:token-exchange
+             * @enum {string}
+             */
+            grant_type: "urn:ietf:params:oauth:grant-type:token-exchange";
+            /**
+             * @description The access token that represents the identity of the party on behalf of whom the request is being made
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            subject_token: string;
+            /**
+             * @description Type identifier for the subject_token as defined in RFC 8693
+             * @example urn:ietf:params:oauth:token-type:access_token
+             * @enum {string}
+             */
+            subject_token_type: "urn:ietf:params:oauth:token-type:access_token";
+            /**
+             * @description Resource server URL that the client wants to access with the exchanged token
+             * @example http://localhost:4001/
+             */
+            resource: string;
+            /**
+             * @description Optional space-delimited list of scopes for the exchanged token
+             * @example tasks:read tasks:write
+             */
+            scope?: string;
+        };
+        TokenExchangeResponseDto: {
+            /**
+             * @description The newly issued access token after successful exchange
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            access_token: string;
+            /**
+             * @description Type identifier for the issued token as defined in RFC 8693
+             * @example urn:ietf:params:oauth:token-type:access_token
+             */
+            issued_token_type: string;
+            /**
+             * @description Type of token issued, always Bearer for MCP clients
+             * @example Bearer
+             */
+            token_type: string;
+            /**
+             * @description Lifetime of the access token in seconds
+             * @example 3600
+             */
+            expires_in: number;
+            /**
+             * @description Space-delimited list of scopes granted for the exchanged token
+             * @example tasks:read tasks:write
+             */
+            scope: string;
+        };
+        JwkResponseDto: {
+            /**
+             * @description Key type, for example RSA or EC.
+             * @example RSA
+             */
+            kty: string;
+            /**
+             * @description Key usage indicating how the key can be used.
+             * @example sig
+             */
+            use: string;
+            /**
+             * @description Unique identifier for the key used for rotation.
+             * @example 1234567890abcdef
+             */
+            kid: string;
+            /**
+             * @description Algorithm intended for use with this key.
+             * @example RS256
+             */
+            alg: string;
+            /**
+             * @description RSA modulus encoded using base64url.
+             * @example xGOr-H7A...
+             */
+            n?: string;
+            /**
+             * @description RSA public exponent encoded using base64url.
+             * @example AQAB
+             */
+            e?: string;
+            /**
+             * @description Public coordinate X for EC keys encoded using base64url.
+             * @example WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis
+             */
+            x?: string;
+            /**
+             * @description Public coordinate Y for EC keys encoded using base64url.
+             * @example y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE
+             */
+            y?: string;
+            /**
+             * @description Curve name for EC keys.
+             * @example P-256
+             */
+            crv?: string;
+        };
+        JwksResponseDto: {
+            /** @description Collection of JSON Web Keys currently valid for signature verification. */
+            keys: components["schemas"]["JwkResponseDto"][];
+        };
+        LoginRequestDto: {
+            /**
+             * @description User email address
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description User password
+             * @example password123
+             */
+            password: string;
+        };
+        UserResponseDto: {
+            /**
+             * @description User ID
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             id: string;
             /**
-             * @description Title of the wiki page
-             * @example How to onboard new agents
+             * @description User email address
+             * @example user@example.com
              */
-            title: string;
+            email: string;
             /**
-             * @description Markdown content of the wiki page
-             * @example # Welcome to Wikiroo
+             * @description User display name
+             * @example John Doe
              */
-            content: string;
+            displayName: string;
             /**
-             * @description Author of the wiki page
-             * @example Agent Roo
+             * @description User role
+             * @example standard
+             * @enum {string}
              */
-            author: string;
-            /**
-             * @description Tags associated with the page
-             * @example [
-             *       {
-             *         "id": "123",
-             *         "name": "project-alpha",
-             *         "color": "#FF5733",
-             *         "description": "Project Alpha notes",
-             *         "createdAt": "2025-01-01T12:00:00.000Z",
-             *         "updatedAt": "2025-01-01T12:00:00.000Z"
-             *       }
-             *     ]
-             */
-            tags: components["schemas"]["WikiTagResponseDto"][];
-            /**
-             * @description Parent page ID (null if root page)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId: Record<string, never> | null;
-            /**
-             * @description Order within siblings
-             * @example 0
-             */
-            order: number;
-            /**
-             * @description Creation timestamp
-             * @example 2025-01-01T12:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Last update timestamp
-             * @example 2025-01-02T15:30:00.000Z
-             */
-            updatedAt: string;
+            role: "admin" | "standard";
         };
-        PageSummaryDto: {
+        LoginResponseDto: {
+            /** @description Authenticated user information */
+            user: components["schemas"]["UserResponseDto"];
             /**
-             * @description Unique identifier for the page
-             * @example 123e4567-e89b-12d3-a456-426614174000
+             * @description Access token expiration time in seconds
+             * @example 600
              */
-            id: string;
-            /**
-             * @description Title of the wiki page
-             * @example How to onboard new agents
-             */
-            title: string;
-            /**
-             * @description Author of the wiki page
-             * @example Agent Roo
-             */
-            author: string;
-            /**
-             * @description Tags associated with the page
-             * @example [
-             *       {
-             *         "id": "123",
-             *         "name": "project-alpha",
-             *         "color": "#FF5733",
-             *         "description": "Project Alpha notes",
-             *         "createdAt": "2025-01-01T12:00:00.000Z",
-             *         "updatedAt": "2025-01-01T12:00:00.000Z"
-             *       }
-             *     ]
-             */
-            tags: components["schemas"]["WikiTagResponseDto"][];
-            /**
-             * @description Parent page ID (null if root page)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId: Record<string, never> | null;
-            /**
-             * @description Order within siblings
-             * @example 0
-             */
-            order: number;
-            /**
-             * @description Creation timestamp
-             * @example 2025-01-01T12:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Last update timestamp
-             * @example 2025-01-02T15:30:00.000Z
-             */
-            updatedAt: string;
-        };
-        PageListResponseDto: {
-            /** @description List of wiki pages */
-            items: components["schemas"]["PageSummaryDto"][];
-        };
-        PageTreeResponseDto: {
-            /**
-             * @description Unique identifier for the page
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Title of the wiki page
-             * @example How to onboard new agents
-             */
-            title: string;
-            /**
-             * @description Author of the wiki page
-             * @example Agent Roo
-             */
-            author: string;
-            /**
-             * @description Parent page ID (null if root page)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId: Record<string, never> | null;
-            /**
-             * @description Order within siblings
-             * @example 0
-             */
-            order: number;
-            /**
-             * @description Child pages
-             * @example []
-             */
-            children: components["schemas"]["PageTreeResponseDto"][];
-            /**
-             * @description Creation timestamp
-             * @example 2025-01-01T12:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Last update timestamp
-             * @example 2025-01-02T15:30:00.000Z
-             */
-            updatedAt: string;
-        };
-        UpdatePageDto: {
-            /**
-             * @description Updated title of the wiki page
-             * @example Updated onboarding guide
-             */
-            title?: string;
-            /**
-             * @description Updated markdown content of the page
-             * @example ## Updated content
-             */
-            content?: string;
-            /**
-             * @description Updated author of the page
-             * @example Agent Roo
-             */
-            author?: string;
-            /**
-             * @description Array of tag names to associate with the page
-             * @example [
-             *       "documentation",
-             *       "onboarding"
-             *     ]
-             */
-            tagNames?: string[];
-            /**
-             * @description Parent page ID (null to remove parent)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId?: string | null;
-            /**
-             * @description Order within siblings
-             * @example 0
-             */
-            order?: number;
-        };
-        AppendPageDto: {
-            /**
-             * @description Markdown content to append to the existing page content
-             * @example ## Additional details
-             */
-            content: string;
-        };
-        ReorderPageDto: {
-            /**
-             * @description New order position within siblings
-             * @example 2
-             */
-            newOrder: number;
-        };
-        MovePageDto: {
-            /**
-             * @description New parent page ID (null to move to root)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            newParentId: Record<string, never> | null;
-        };
-        AddWikiTagDto: {
-            /**
-             * @description Name of the tag
-             * @example project-alpha
-             */
-            name: string;
-            /**
-             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
-             * @example #FF5733
-             */
-            color?: string;
-        };
-        CreateWikiTagDto: {
-            /**
-             * @description Name of the tag
-             * @example project-alpha
-             */
-            name: string;
+            expiresIn: number;
         };
         CreateServerDto: {
             /**
@@ -2122,432 +2339,276 @@ export interface components {
              */
             updatedAt: string;
         };
-        RegisterClientDto: {
+        CreatePageDto: {
             /**
-             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Markdown content of the page
+             * @example # Welcome to Wikiroo
+             *     This is the onboarding guide.
+             */
+            content: string;
+            /**
+             * @description Author of the page (auto-populated from authenticated user if not provided)
+             * @example Agent Roo
+             */
+            author?: string;
+            /**
+             * @description Array of tag names to associate with the page
              * @example [
-             *       "http://localhost:3000/callback",
-             *       "https://example.com/callback"
+             *       "documentation",
+             *       "onboarding"
              *     ]
              */
-            redirect_uris: string[];
+            tagNames?: string[];
             /**
-             * @description Authentication method for the token endpoint (MCP clients use "none")
-             * @example none
-             * @enum {string}
+             * @description Parent page ID for nesting
+             * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            token_endpoint_auth_method: "none";
+            parentId?: string;
+        };
+        WikiTagResponseDto: {
             /**
-             * @description Grant types the client will use. Must include authorization_code and refresh_token per MCP requirements.
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
+        };
+        PageResponseDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Markdown content of the wiki page
+             * @example # Welcome to Wikiroo
+             */
+            content: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Tags associated with the page
              * @example [
-             *       "authorization_code",
-             *       "refresh_token"
+             *       {
+             *         "id": "123",
+             *         "name": "project-alpha",
+             *         "color": "#FF5733",
+             *         "description": "Project Alpha notes",
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-01T12:00:00.000Z"
+             *       }
              *     ]
              */
-            grant_types: ("authorization_code" | "refresh_token")[];
+            tags: components["schemas"]["WikiTagResponseDto"][];
             /**
-             * @description Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        PageSummaryDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Tags associated with the page
              * @example [
-             *       "code"
+             *       {
+             *         "id": "123",
+             *         "name": "project-alpha",
+             *         "color": "#FF5733",
+             *         "description": "Project Alpha notes",
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-01T12:00:00.000Z"
+             *       }
              *     ]
              */
-            response_types: "code"[];
+            tags: components["schemas"]["WikiTagResponseDto"][];
             /**
-             * @description Human-readable name of the client
-             * @example My OAuth Client
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            client_name: string;
+            parentId: Record<string, never> | null;
             /**
-             * @description Requested scopes for the client
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        PageListResponseDto: {
+            /** @description List of wiki pages */
+            items: components["schemas"]["PageSummaryDto"][];
+        };
+        PageTreeResponseDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
+             * @description Child pages
+             * @example []
+             */
+            children: components["schemas"]["PageTreeResponseDto"][];
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdatePageDto: {
+            /**
+             * @description Updated title of the wiki page
+             * @example Updated onboarding guide
+             */
+            title?: string;
+            /**
+             * @description Updated markdown content of the page
+             * @example ## Updated content
+             */
+            content?: string;
+            /**
+             * @description Updated author of the page
+             * @example Agent Roo
+             */
+            author?: string;
+            /**
+             * @description Array of tag names to associate with the page
              * @example [
-             *       "data:read",
-             *       "data:write"
+             *       "documentation",
+             *       "onboarding"
              *     ]
              */
-            scope?: string[];
+            tagNames?: string[];
             /**
-             * @description Contact emails for the client registration
-             * @example [
-             *       "admin@example.com"
-             *     ]
+             * @description Parent page ID (null to remove parent)
+             * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            contacts?: string[];
+            parentId?: string | null;
             /**
-             * @description Terms of service URI for the client registration
-             * @example https://example.com/tos
+             * @description Order within siblings
+             * @example 0
              */
-            tos_uri?: string;
-            /**
-             * @description URL of the home page of the client
-             * @example https://example.com
-             */
-            client_uri?: string;
-            /**
-             * @description URL that references a logo for the client application
-             * @example https://example.com/logo.png
-             */
-            logo_uri?: string;
-            /**
-             * @description URL that the client provides to the end-user to read about how the profile data will be used
-             * @example https://example.com/privacy
-             */
-            policy_uri?: string;
-            /**
-             * @description URL for the client JSON Web Key Set document. If specified, must not include jwks parameter
-             * @example https://example.com/.well-known/jwks.json
-             */
-            jwks_uri?: string;
-            /**
-             * @description Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter
-             * @example {"keys":[{"kty":"RSA","use":"sig","kid":"key-1","n":"...","e":"AQAB"}]}
-             */
-            jwks?: string;
-            /**
-             * @description Unique identifier string assigned by the client developer or software publisher
-             * @example my-oauth-app-v1
-             */
-            software_id?: string;
-            /**
-             * @description Version identifier string for the client software
-             * @example 1.0.0
-             */
-            software_version?: string;
+            order?: number;
         };
-        ClientRegistrationResponseDto: {
+        AppendPageDto: {
             /**
-             * @description Unique client identifier
-             * @example 8f7a9c2e-4b1d-4e6f-9a2b-3c4d5e6f7a8b
+             * @description Markdown content to append to the existing page content
+             * @example ## Additional details
              */
-            client_id: string;
-            /**
-             * @description Human-readable name of the client
-             * @example My OAuth Client
-             */
-            client_name: string;
-            /**
-             * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
-             * @example [
-             *       "http://localhost:3000/callback",
-             *       "https://example.com/callback"
-             *     ]
-             */
-            redirect_uris: string[];
-            /**
-             * @description Grant types the client is authorized to use
-             * @example [
-             *       "authorization_code",
-             *       "refresh_token"
-             *     ]
-             */
-            grant_types: ("authorization_code" | "refresh_token")[];
-            /**
-             * @description Authentication method for the token endpoint (MCP clients use "none")
-             * @example none
-             * @enum {string}
-             */
-            token_endpoint_auth_method: "none";
-            /**
-             * @description Scopes granted to the client
-             * @example openid profile email
-             */
-            scope?: string | null;
-            /**
-             * @description Contact emails for the client
-             * @example [
-             *       "admin@example.com"
-             *     ]
-             */
-            contacts?: string[] | null;
-            /**
-             * @description Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.
-             * @example 604846800
-             */
-            client_id_issued_at: number;
+            content: string;
         };
-        ConsentDecisionDto: {
+        ReorderPageDto: {
             /**
-             * @description Authorization flow ID (serves as CSRF protection token)
-             * @example 550e8400-e29b-41d4-a716-446655440000
+             * @description New order position within siblings
+             * @example 2
              */
-            flow_id: string;
-            /**
-             * @description Whether the user approved the authorization request
-             * @example true
-             */
-            approved: boolean;
+            newOrder: number;
         };
-        McpAuthorizationFlowEntity: Record<string, never>;
-        TokenRequestDto: {
+        MovePageDto: {
             /**
-             * @description Grant type that determines which parameters must be supplied
-             * @example authorization_code
-             * @enum {string}
+             * @description New parent page ID (null to move to root)
+             * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            grant_type: "authorization_code" | "refresh_token";
-            /**
-             * @description Client identifier issued during dynamic registration
-             * @example 0bab273987a2e163c3abb40c631ec0a4
-             */
-            client_id: string;
-            /**
-             * @description Authorization code that was issued by the /authorize endpoint
-             * @example SplxlOBeZQQYbYS6WxSbIA
-             */
-            code?: string;
-            /**
-             * @description Redirect URI used during authorization (required when code is present)
-             * @example http://localhost:6274/oauth/callback/debug
-             */
-            redirect_uri?: string;
-            /**
-             * @description PKCE code verifier used to validate the authorization code exchange
-             * @example dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
-             */
-            code_verifier?: string;
-            /**
-             * @description Refresh token issued earlier by the authorization server
-             * @example def5020091c58c49fbb...
-             */
-            refresh_token?: string;
-            /**
-             * @description Optional list of scopes to narrow when refreshing a token (space-delimited)
-             * @example tasks:read tasks:write
-             */
-            scope?: string;
-            /**
-             * @description Optional resource indicator (RFC 8707) - identifies the target resource server
-             * @example http://localhost:4001/
-             */
-            resource?: string;
+            newParentId: Record<string, never> | null;
         };
-        TokenResponseDto: {
+        AddWikiTagDto: {
             /**
-             * @description Opaque access token used to access protected resources
-             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             * @description Name of the tag
+             * @example project-alpha
              */
-            access_token: string;
+            name: string;
             /**
-             * @description Type of token issued (MCP clients always receive Bearer tokens)
-             * @default Bearer
-             * @example Bearer
-             * @enum {string}
+             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
+             * @example #FF5733
              */
-            token_type: "Bearer";
-            /**
-             * @description Lifetime of the access token in seconds
-             * @example 3600
-             */
-            expires_in: number;
-            /**
-             * @description Refresh token that can be exchanged for a new access token
-             * @example def5020091c58c49fbb...
-             */
-            refresh_token: string;
-            /**
-             * @description Space-delimited scopes that were granted for this token
-             * @example tasks:read tasks:write
-             */
-            scope?: string;
+            color?: string;
         };
-        IntrospectTokenRequestDto: {
+        CreateWikiTagDto: {
             /**
-             * @description Access or refresh token that should be validated
-             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             * @description Name of the tag
+             * @example project-alpha
              */
-            token: string;
-            /**
-             * @description Hint to help the server determine the token lookup strategy
-             * @example access_token
-             * @enum {string}
-             */
-            token_type_hint?: "access_token" | "refresh_token";
-            /**
-             * @description Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.
-             * @example 0bab273987a2e163c3abb40c631ec0a4
-             */
-            client_id?: string;
-            /**
-             * @description Client secret for confidential clients (MCP clients typically omit this)
-             * @example s3cr3t
-             */
-            client_secret?: string | null;
-        };
-        IntrospectTokenResponseDto: {
-            /**
-             * @description Indicates whether the token is currently valid
-             * @example true
-             */
-            active: boolean;
-            /**
-             * @description Token type, always Bearer for MCP clients
-             * @example Bearer
-             * @enum {string}
-             */
-            token_type: "Bearer";
-            /**
-             * @description Client identifier associated with the token
-             * @example 0bab273987a2e163c3abb40c631ec0a4
-             */
-            client_id: string;
-            /**
-             * @description Subject of the token (resource owner or actor)
-             * @example journey:1234
-             */
-            sub: Record<string, never>;
-            /** @description Audience that should accept this token */
-            aud: string | string[];
-            /**
-             * @description Issuer that minted the token
-             * @example https://auth.taskeroo.local/auth
-             */
-            iss: Record<string, never>;
-            /**
-             * @description Unique token identifier for replay detection
-             * @example b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c
-             */
-            jti: Record<string, never>;
-            /**
-             * @description Expiration timestamp (seconds since Unix epoch)
-             * @example 1731145219
-             */
-            exp: Record<string, never>;
-            /**
-             * @description Issued-at timestamp (seconds since Unix epoch)
-             * @example 1731141619
-             */
-            iat: Record<string, never>;
-            /**
-             * @description Not-before timestamp (seconds since Unix epoch)
-             * @example 1731141019
-             */
-            nbf?: number;
-            /**
-             * @description Granted scopes (space-delimited) for display purposes
-             * @example tasks:read tasks:write
-             */
-            scope?: string;
-            /**
-             * @description MCP server identifier the token is scoped to
-             * @example taskeroo
-             */
-            server_identifier: Record<string, never>;
-            /**
-             * @description Resource URL that was used during authorization
-             * @example http://localhost:4001/
-             */
-            resource: Record<string, never>;
-            /**
-             * @description Version of the MCP server contract
-             * @example 1.0.0
-             */
-            version: Record<string, never>;
-        };
-        TokenExchangeRequestDto: {
-            /**
-             * @description Grant type for token exchange as defined in RFC 8693
-             * @example urn:ietf:params:oauth:grant-type:token-exchange
-             * @enum {string}
-             */
-            grant_type: "urn:ietf:params:oauth:grant-type:token-exchange";
-            /**
-             * @description The access token that represents the identity of the party on behalf of whom the request is being made
-             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-             */
-            subject_token: string;
-            /**
-             * @description Type identifier for the subject_token as defined in RFC 8693
-             * @example urn:ietf:params:oauth:token-type:access_token
-             * @enum {string}
-             */
-            subject_token_type: "urn:ietf:params:oauth:token-type:access_token";
-            /**
-             * @description Resource server URL that the client wants to access with the exchanged token
-             * @example http://localhost:4001/
-             */
-            resource: string;
-            /**
-             * @description Optional space-delimited list of scopes for the exchanged token
-             * @example tasks:read tasks:write
-             */
-            scope?: string;
-        };
-        TokenExchangeResponseDto: {
-            /**
-             * @description The newly issued access token after successful exchange
-             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-             */
-            access_token: string;
-            /**
-             * @description Type identifier for the issued token as defined in RFC 8693
-             * @example urn:ietf:params:oauth:token-type:access_token
-             */
-            issued_token_type: string;
-            /**
-             * @description Type of token issued, always Bearer for MCP clients
-             * @example Bearer
-             */
-            token_type: string;
-            /**
-             * @description Lifetime of the access token in seconds
-             * @example 3600
-             */
-            expires_in: number;
-            /**
-             * @description Space-delimited list of scopes granted for the exchanged token
-             * @example tasks:read tasks:write
-             */
-            scope: string;
-        };
-        JwkResponseDto: {
-            /**
-             * @description Key type, for example RSA or EC.
-             * @example RSA
-             */
-            kty: string;
-            /**
-             * @description Key usage indicating how the key can be used.
-             * @example sig
-             */
-            use: string;
-            /**
-             * @description Unique identifier for the key used for rotation.
-             * @example 1234567890abcdef
-             */
-            kid: string;
-            /**
-             * @description Algorithm intended for use with this key.
-             * @example RS256
-             */
-            alg: string;
-            /**
-             * @description RSA modulus encoded using base64url.
-             * @example xGOr-H7A...
-             */
-            n?: string;
-            /**
-             * @description RSA public exponent encoded using base64url.
-             * @example AQAB
-             */
-            e?: string;
-            /**
-             * @description Public coordinate X for EC keys encoded using base64url.
-             * @example WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis
-             */
-            x?: string;
-            /**
-             * @description Public coordinate Y for EC keys encoded using base64url.
-             * @example y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE
-             */
-            y?: string;
-            /**
-             * @description Curve name for EC keys.
-             * @example P-256
-             */
-            crv?: string;
-        };
-        JwksResponseDto: {
-            /** @description Collection of JSON Web Keys currently valid for signature verification. */
-            keys: components["schemas"]["JwkResponseDto"][];
+            name: string;
         };
         AuthorizationServerMetadataDto: {
             /**
@@ -3101,20 +3162,6 @@ export interface components {
         };
         SendMessageResponseDto: {
             events: components["schemas"]["ChatMessageEventDto"][];
-        };
-        LoginDto: {
-            /** @example user@example.com */
-            email: string;
-            /** @example password123 */
-            password: string;
-        };
-        UserDto: {
-            id: string;
-            email: string;
-            displayName: string;
-        };
-        SessionResponseDto: {
-            user: components["schemas"]["UserDto"];
         };
     };
     responses: never;
@@ -3697,52 +3744,290 @@ export interface operations {
             };
         };
     };
-    WikirooController_listPages: {
-        parameters: {
-            query?: {
-                /** @description Filter pages by tag name */
-                tag?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of wiki pages */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageListResponseDto"];
-                };
-            };
-        };
-    };
-    WikirooController_createPage: {
+    ClientRegistrationController_registerClient: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                serverId: string;
+                version: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreatePageDto"];
+                "application/json": components["schemas"]["RegisterClientDto"];
             };
         };
         responses: {
-            /** @description Wiki page created successfully */
+            /** @description Client registered successfully with generated credentials */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
                 };
             };
-            /** @description Invalid input data */
+            /** @description Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A client with this name is already registered */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_getClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Client registration information retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
+                };
+            };
+            /** @description Client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_listClients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of registered clients */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
+                };
+            };
+        };
+    };
+    AuthorizationController_authorize: {
+        parameters: {
+            query: {
+                /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
+                response_type: "code";
+                /** @description Space-delimited list of scopes being requested */
+                scope?: string;
+                /** @description Client identifier issued during registration */
+                client_id: string;
+                /** @description PKCE code challenge derived from the code verifier */
+                code_challenge: string;
+                /** @description PKCE code challenge method (S256 for SHA-256) */
+                code_challenge_method: string;
+                /** @description Redirect URI where the authorization response will be sent */
+                redirect_uri: string;
+                /** @description Opaque state value for CSRF protection */
+                state: string;
+                /** @description Resource server URL that the client wants to access */
+                resource: string;
+            };
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirects to consent screen with authorization request ID */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid authorization request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description MCP server or client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_authorizeConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentDecisionDto"];
+            };
+        };
+        responses: {
+            /** @description Redirects to client redirect_uri with authorization code or error */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid consent decision or flow state */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization flow has already been used */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization flow not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_getFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flowId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorization flow details retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpAuthorizationFlowEntity"];
+                };
+            };
+            /** @description Authorization flow not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Access token issued successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponseDto"];
+                };
+            };
+            /** @description Invalid token request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid authorization code, code_verifier, or expired code */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_introspect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntrospectTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Token introspection response (active true/false with metadata) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntrospectTokenResponseDto"];
+                };
+            };
+            /** @description Invalid introspection request parameters */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3751,219 +4036,97 @@ export interface operations {
             };
         };
     };
-    WikirooController_getPageTree: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Page hierarchy tree */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageTreeResponseDto"][];
-                };
-            };
-        };
-    };
-    WikirooController_getPage: {
+    AuthorizationController_tokenExchange: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Wiki page retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
-            };
-        };
-    };
-    WikirooController_deletePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Wiki page deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_updatePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
+                serverIdentifier: string;
+                version: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdatePageDto"];
+                "application/json": components["schemas"]["TokenExchangeRequestDto"];
             };
         };
         responses: {
-            /** @description Wiki page updated successfully */
+            /** @description Token exchange successful - returns downstream access token */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["TokenExchangeResponseDto"];
                 };
             };
-            /** @description No update fields provided */
+            /** @description Invalid token exchange request parameters */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-        };
-    };
-    WikirooController_appendToPage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AppendPageDto"];
-            };
-        };
-        responses: {
-            /** @description Wiki page content appended successfully */
-            200: {
+            /** @description Invalid or expired MCP JWT */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
+                content?: never;
             };
-        };
-    };
-    WikirooController_reorderPage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReorderPageDto"];
-            };
-        };
-        responses: {
-            /** @description Page reordered successfully */
-            200: {
+            /** @description Insufficient scope - requested scope not entitled */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
+                content?: never;
             };
-        };
-    };
-    WikirooController_movePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MovePageDto"];
-            };
-        };
-        responses: {
-            /** @description Page moved successfully */
-            200: {
+            /** @description Connection not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
+                content?: never;
             };
-            /** @description Circular reference detected or parent not found */
+        };
+    };
+    AuthorizationController_callback: {
+        parameters: {
+            query: {
+                /** @description Authorization code from downstream OAuth provider */
+                code: string;
+                /** @description State parameter that identifies the connection flow */
+                state: string;
+                /** @description Error code if authorization failed */
+                error?: string;
+                /** @description Space-delimited list of scopes that were granted */
+                scope?: string;
+                /** @description Error description if authorization failed */
+                error_description?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirects to next step in the authorization flow */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid callback parameters or state */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-        };
-    };
-    WikirooController_addTagToPage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddWikiTagDto"];
-            };
-        };
-        responses: {
-            /** @description Tag added to page successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
+            /** @description Connection flow not found for provided state */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3971,30 +4134,27 @@ export interface operations {
             };
         };
     };
-    WikirooController_removeTagFromPage: {
+    JwksController_getJwks: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: string;
-                tagId: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Tag removed from page successfully */
+            /** @description JWKS retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["JwksResponseDto"];
                 };
             };
         };
     };
-    WikirooController_createTag: {
+    WebAuthController_login: {
         parameters: {
             query?: never;
             header?: never;
@@ -4003,61 +4163,21 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateWikiTagDto"];
+                "application/json": components["schemas"]["LoginRequestDto"];
             };
         };
         responses: {
-            /** @description Tag created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_getAllTags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of all tags */
+            /** @description Login successful, tokens set in httpOnly cookies */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"][];
+                    "application/json": components["schemas"]["LoginResponseDto"];
                 };
             };
-        };
-    };
-    WikirooController_deleteTag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tagId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Tag deleted successfully */
-            204: {
+            /** @description Invalid credentials */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4065,7 +4185,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_get: {
+    WebAuthController_refresh: {
         parameters: {
             query?: never;
             header?: never;
@@ -4074,7 +4194,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Token refreshed successfully, new tokens set in cookies */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponseDto"];
+                };
+            };
+            /** @description Invalid or expired refresh token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4082,7 +4212,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_put: {
+    WebAuthController_logout: {
         parameters: {
             query?: never;
             header?: never;
@@ -4091,15 +4221,21 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Logout successful, cookies cleared */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        ok?: boolean;
+                    };
+                };
             };
         };
     };
-    WikirooController_handleMcp_post: {
+    WebAuthController_me: {
         parameters: {
             query?: never;
             header?: never;
@@ -4108,75 +4244,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Current user information */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_handleMcp_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
                 };
-                content?: never;
             };
-        };
-    };
-    WikirooController_handleMcp_options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_handleMcp_head: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_handleMcp_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
+            /** @description Not authenticated */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4794,77 +4872,61 @@ export interface operations {
             };
         };
     };
-    ClientRegistrationController_registerClient: {
+    WikirooController_listPages: {
+        parameters: {
+            query?: {
+                /** @description Filter pages by tag name */
+                tag?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of wiki pages */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageListResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_createPage: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                serverId: string;
-                version: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RegisterClientDto"];
+                "application/json": components["schemas"]["CreatePageDto"];
             };
         };
         responses: {
-            /** @description Client registered successfully with generated credentials */
+            /** @description Wiki page created successfully */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
             };
-            /** @description Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured) */
+            /** @description Invalid input data */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description A client with this name is already registered */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
         };
     };
-    ClientRegistrationController_getClient: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clientId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Client registration information retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
-                };
-            };
-            /** @description Client not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ClientRegistrationController_listClients: {
+    WikirooController_getPageTree: {
         parameters: {
             query?: never;
             header?: never;
@@ -4873,137 +4935,54 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of registered clients */
+            /** @description Page hierarchy tree */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
+                    "application/json": components["schemas"]["PageTreeResponseDto"][];
                 };
             };
         };
     };
-    AuthorizationController_authorize: {
+    WikirooController_getPage: {
         parameters: {
-            query: {
-                /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
-                response_type: "code";
-                /** @description Space-delimited list of scopes being requested */
-                scope?: string;
-                /** @description Client identifier issued during registration */
-                client_id: string;
-                /** @description PKCE code challenge derived from the code verifier */
-                code_challenge: string;
-                /** @description PKCE code challenge method (S256 for SHA-256) */
-                code_challenge_method: string;
-                /** @description Redirect URI where the authorization response will be sent */
-                redirect_uri: string;
-                /** @description Opaque state value for CSRF protection */
-                state: string;
-                /** @description Resource server URL that the client wants to access */
-                resource: string;
-            };
+            query?: never;
             header?: never;
             path: {
-                serverIdentifier: string;
-                version: string;
+                /** @description Wiki page identifier */
+                id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Redirects to consent screen with authorization request ID */
-            302: {
+            /** @description Wiki page retrieved successfully */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-            /** @description Invalid authorization request parameters */
-            400: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
-                content?: never;
-            };
-            /** @description MCP server or client not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
-    AuthorizationController_authorizeConsent: {
+    WikirooController_deletePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serverIdentifier: string;
-                version: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConsentDecisionDto"];
-            };
-        };
-        responses: {
-            /** @description Redirects to client redirect_uri with authorization code or error */
-            302: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid consent decision or flow state */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Authorization flow has already been used */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Authorization flow not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AuthorizationController_getFlow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                flowId: string;
+                /** @description Wiki page identifier */
+                id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Authorization flow details retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["McpAuthorizationFlowEntity"];
-                };
-            };
-            /** @description Authorization flow not found */
-            404: {
+            /** @description Wiki page deleted successfully */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5011,73 +4990,32 @@ export interface operations {
             };
         };
     };
-    AuthorizationController_token: {
+    WikirooController_updatePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serverIdentifier: string;
-                version: string;
+                /** @description Wiki page identifier */
+                id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TokenRequestDto"];
+                "application/json": components["schemas"]["UpdatePageDto"];
             };
         };
         responses: {
-            /** @description Access token issued successfully */
+            /** @description Wiki page updated successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenResponseDto"];
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
             };
-            /** @description Invalid token request parameters */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid authorization code, code_verifier, or expired code */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AuthorizationController_introspect: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                serverIdentifier: string;
-                version: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IntrospectTokenRequestDto"];
-            };
-        };
-        responses: {
-            /** @description Token introspection response (active true/false with metadata) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IntrospectTokenResponseDto"];
-                };
-            };
-            /** @description Invalid introspection request parameters */
+            /** @description No update fields provided */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5086,54 +5024,87 @@ export interface operations {
             };
         };
     };
-    AuthorizationController_tokenExchange: {
+    WikirooController_appendToPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serverIdentifier: string;
-                version: string;
+                /** @description Wiki page identifier */
+                id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TokenExchangeRequestDto"];
+                "application/json": components["schemas"]["AppendPageDto"];
             };
         };
         responses: {
-            /** @description Token exchange successful - returns downstream access token */
+            /** @description Wiki page content appended successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenExchangeResponseDto"];
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
             };
-            /** @description Invalid token exchange request parameters */
+        };
+    };
+    WikirooController_reorderPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderPageDto"];
+            };
+        };
+        responses: {
+            /** @description Page reordered successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_movePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MovePageDto"];
+            };
+        };
+        responses: {
+            /** @description Page moved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Circular reference detected or parent not found */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid or expired MCP JWT */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Insufficient scope - requested scope not entitled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Connection not found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5141,42 +5112,87 @@ export interface operations {
             };
         };
     };
-    AuthorizationController_callback: {
+    WikirooController_addTagToPage: {
         parameters: {
-            query: {
-                /** @description Authorization code from downstream OAuth provider */
-                code: string;
-                /** @description State parameter that identifies the connection flow */
-                state: string;
-                /** @description Error code if authorization failed */
-                error?: string;
-                /** @description Space-delimited list of scopes that were granted */
-                scope?: string;
-                /** @description Error description if authorization failed */
-                error_description?: string;
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
             };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddWikiTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag added to page successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_removeTagFromPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed from page successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_createTag: {
+        parameters: {
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWikiTagDto"];
+            };
+        };
         responses: {
-            /** @description Redirects to next step in the authorization flow */
-            302: {
+            /** @description Tag created successfully */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["WikiTagResponseDto"];
+                };
             };
-            /** @description Invalid callback parameters or state */
+            /** @description Invalid input data */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Connection flow not found for provided state */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5184,7 +5200,7 @@ export interface operations {
             };
         };
     };
-    JwksController_getJwks: {
+    WikirooController_getAllTags: {
         parameters: {
             query?: never;
             header?: never;
@@ -5193,14 +5209,153 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description JWKS retrieved successfully */
+            /** @description List of all tags */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JwksResponseDto"];
+                    "application/json": components["schemas"]["WikiTagResponseDto"][];
                 };
+            };
+        };
+    };
+    WikirooController_deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5673,65 +5828,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    IdentityProviderController_login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginDto"];
-            };
-        };
-        responses: {
-            /** @description Login successful */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    IdentityProviderController_logout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Logout successful */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    IdentityProviderController_getSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionResponseDto"];
-                };
             };
         };
     };
