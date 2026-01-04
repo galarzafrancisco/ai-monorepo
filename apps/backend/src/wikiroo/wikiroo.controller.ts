@@ -71,7 +71,7 @@ export class WikirooController {
     const result = await this.wikirooService.createPage({
       title: dto.title,
       content: dto.content,
-      author: user.email,
+      author: dto.author ?? user.email,
       tagNames: dto.tagNames,
       parentId: dto.parentId,
     });

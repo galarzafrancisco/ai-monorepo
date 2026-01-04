@@ -73,7 +73,7 @@ export class TaskerooController {
       assignee: dto.assignee,
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
-      createdBy: user.email,
+      createdBy: dto.createdBy ?? user.email,
       dependsOnIds: dto.dependsOnIds,
     });
     return this.mapResultToResponse(result);
@@ -180,7 +180,7 @@ export class TaskerooController {
     @CurrentUser() user: WebAuthJwtPayload,
   ): Promise<CommentResponseDto> {
     const result = await this.taskerooService.addComment(params.id, {
-      commenterName: user.email,
+      commenterName: dto.commenterName ?? user.email,
       content: dto.content,
     });
     return this.mapCommentResultToResponse(result);
