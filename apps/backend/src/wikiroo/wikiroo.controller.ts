@@ -44,6 +44,8 @@ import { PageResult, PageSummaryResult, TagResult, PageTreeResult } from './dto/
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 import { Public } from '../authorization-server/decorators/public.decorator';
+import { CurrentUser } from '../authorization-server/decorators/current-user.decorator';
+import { WebAuthJwtPayload } from '../authorization-server/types';
 
 @ApiTags('Wikiroo')
 @ApiCookieAuth('JWT-Cookie')
@@ -62,11 +64,14 @@ export class WikirooController {
     description: 'Wiki page created successfully',
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async createPage(@Body() dto: CreatePageDto): Promise<PageResponseDto> {
+  async createPage(
+    @Body() dto: CreatePageDto,
+    @CurrentUser() user: WebAuthJwtPayload,
+  ): Promise<PageResponseDto> {
     const result = await this.wikirooService.createPage({
       title: dto.title,
       content: dto.content,
-      author: dto.author,
+      author: user.email,
       tagNames: dto.tagNames,
       parentId: dto.parentId,
     });
@@ -121,6 +126,7 @@ export class WikirooController {
   async updatePage(
     @Param() params: PageParamsDto,
     @Body() dto: UpdatePageDto,
+    @CurrentUser() user: WebAuthJwtPayload,
   ): Promise<PageResponseDto> {
     if (
       dto.title === undefined &&
@@ -136,7 +142,7 @@ export class WikirooController {
     const result = await this.wikirooService.updatePage(params.id, {
       title: dto.title,
       content: dto.content,
-      author: dto.author,
+      author: dto.author ?? user.email,
       tagNames: dto.tagNames,
       parentId: dto.parentId,
       order: dto.order,
