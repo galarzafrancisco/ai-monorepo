@@ -55,13 +55,13 @@ describe('Taskeroo E2E Tests', () => {
         .send({
           name: 'Test Task Without Assignee',
           description: 'This is a test task without an assignee',
-          createdBy: 'TestUser',
         })
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
       expect(response.body.name).toBe('Test Task Without Assignee');
       expect(response.body.description).toBe('This is a test task without an assignee');
+      expect(response.body.createdBy).toBe('test@example.com');
       // API returns empty string for null assignee
       expect(response.body.assignee).toBeFalsy();
       expect(response.body.status).toBe('NOT_STARTED');
@@ -77,13 +77,13 @@ describe('Taskeroo E2E Tests', () => {
           name: 'Test Task With Assignee',
           description: 'This is a test task with an assignee',
           assignee: 'john.doe@example.com',
-          createdBy: 'TestUser',
         })
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
       expect(response.body.name).toBe('Test Task With Assignee');
       expect(response.body.description).toBe('This is a test task with an assignee');
+      expect(response.body.createdBy).toBe('test@example.com');
       expect(response.body.assignee).toBe('john.doe@example.com');
       expect(response.body.status).toBe('NOT_STARTED');
 
@@ -101,7 +101,6 @@ describe('Taskeroo E2E Tests', () => {
         .send({
           name: 'Task Assignment Target',
           description: 'This task will be assigned during tests',
-          createdBy: 'TestUser',
         })
         .expect(201);
 
@@ -216,13 +215,12 @@ describe('Taskeroo E2E Tests', () => {
         .post(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}/comments`)
         .set('Cookie', authCookies)
         .send({
-          commenterName: 'Jane Smith',
           content: 'This is a test comment on the task',
         })
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
-      expect(response.body.commenterName).toBe('Jane Smith');
+      expect(response.body.commenterName).toBe('test@example.com');
       expect(response.body.content).toBe('This is a test comment on the task');
       expect(response.body.taskId).toBe(taskWithAssigneeId);
     });
