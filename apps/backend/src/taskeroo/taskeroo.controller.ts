@@ -145,7 +145,7 @@ export class TaskerooController {
       sessionId: query.sessionId,
       tag: query.tag,
       page: query.page ?? 1,
-      limit: query.limit ?? 20,
+      limit: query.limit ?? 200,
     });
 
     return {
