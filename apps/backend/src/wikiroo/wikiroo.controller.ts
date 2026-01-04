@@ -17,6 +17,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -45,6 +46,7 @@ import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 import { Public } from '../authorization-server/decorators/public.decorator';
 
 @ApiTags('Wikiroo')
+@ApiCookieAuth('JWT-Cookie')
 @Controller('wikiroo/pages')
 @UseGuards(JwtAuthGuard)
 export class WikirooController {
