@@ -1150,10 +1150,10 @@ export interface components {
              */
             tagNames?: string[];
             /**
-             * @description Name of the person who created the task
+             * @description Name of the person who created the task (auto-populated from authenticated user if not provided)
              * @example Fran
              */
-            createdBy: string;
+            createdBy?: string;
             /**
              * @description Array of task IDs that this task depends on
              * @example [
@@ -1315,7 +1315,7 @@ export interface components {
              */
             tagNames?: string[];
             /**
-             * @description Name of the person who created the task
+             * @description Name of the person who created the task (auto-populated from authenticated user if not provided)
              * @example Fran
              */
             createdBy?: string;
@@ -1366,10 +1366,10 @@ export interface components {
         };
         CreateCommentDto: {
             /**
-             * @description Name of the person or agent commenting
+             * @description Name of the person or agent commenting (auto-populated from authenticated user if not provided)
              * @example AgentBeta
              */
-            commenterName: string;
+            commenterName?: string;
             /**
              * @description Content of the comment
              * @example Task completed successfully. All tests passing.
@@ -2352,10 +2352,10 @@ export interface components {
              */
             content: string;
             /**
-             * @description Author of the page
+             * @description Author of the page (auto-populated from authenticated user if not provided)
              * @example Agent Roo
              */
-            author: string;
+            author?: string;
             /**
              * @description Array of tag names to associate with the page
              * @example [

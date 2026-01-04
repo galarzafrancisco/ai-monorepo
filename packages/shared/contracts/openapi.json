@@ -3873,7 +3873,7 @@
           },
           "createdBy": {
             "type": "string",
-            "description": "Name of the person who created the task",
+            "description": "Name of the person who created the task (auto-populated from authenticated user if not provided)",
             "example": "Fran"
           },
           "dependsOnIds": {
@@ -3890,8 +3890,7 @@
         },
         "required": [
           "name",
-          "description",
-          "createdBy"
+          "description"
         ]
       },
       "CommentResponseDto": {
@@ -4099,7 +4098,7 @@
           },
           "createdBy": {
             "type": "string",
-            "description": "Name of the person who created the task",
+            "description": "Name of the person who created the task (auto-populated from authenticated user if not provided)",
             "example": "Fran"
           },
           "dependsOnIds": {
@@ -4174,7 +4173,7 @@
         "properties": {
           "commenterName": {
             "type": "string",
-            "description": "Name of the person or agent commenting",
+            "description": "Name of the person or agent commenting (auto-populated from authenticated user if not provided)",
             "example": "AgentBeta"
           },
           "content": {
@@ -4184,7 +4183,6 @@
           }
         },
         "required": [
-          "commenterName",
           "content"
         ]
       },
@@ -5599,7 +5597,7 @@
           },
           "author": {
             "type": "string",
-            "description": "Author of the page",
+            "description": "Author of the page (auto-populated from authenticated user if not provided)",
             "example": "Agent Roo"
           },
           "tagNames": {
@@ -5621,8 +5619,7 @@
         },
         "required": [
           "title",
-          "content",
-          "author"
+          "content"
         ]
       },
       "WikiTagResponseDto": {

@@ -1,13 +1,10 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
+import { NavLink } from 'react-router-dom';
 
 interface AppNavSidebarProps {
   collapsed: boolean;
 }
 
 export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
 
   const menuItems = [
     {
@@ -51,11 +48,6 @@ export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
     },
   ];
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
-
   return (
     <nav className="sidebar-nav-container">
       <div className="sidebar-nav-main">
@@ -80,30 +72,25 @@ export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
         ))}
       </div>
       <div className="sidebar-nav-bottom">
-        <button
-          onClick={handleLogout}
-          className={`sidebar-nav-link logout-button ${collapsed ? 'collapsed' : ''}`}
-          aria-label="Logout"
+        <NavLink
+          key="213"
+          to="/logout"
+          className={({ isActive }) =>
+            `sidebar-nav-link ${isActive ? 'active' : ''} ${collapsed ? 'collapsed' : ''}`
+          }
+          end={true}
         >
           <div className="sidebar-nav-icon">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
+            {typeof '🔓' === 'string' ? (
+              <span>{'🔓'}</span>
+            ) : (
+              '🔓'
+            )}
           </div>
           <span className="nav-link-text">Logout</span>
-        </button>
+        </NavLink>
       </div>
+
     </nav>
   );
 }

@@ -159,12 +159,12 @@
   transition: var(--sidebar-transition-fast);
   white-space: nowrap;
   cursor: pointer;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-  font-size: inherit;
+  /* background: none; */
+  /* border: none; */
+  /* width: 100%; */
+  /* text-align: left; */
+  /* font-family: inherit; */
+  /* font-size: inherit; */
 }
 
 .sidebar-nav-link:hover {
