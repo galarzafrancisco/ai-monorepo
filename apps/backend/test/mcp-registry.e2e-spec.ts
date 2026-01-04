@@ -8,10 +8,11 @@ import { CreateConnectionDto } from '../src/mcp-registry/dto/create-connection.d
 import { CreateMappingDto } from '../src/mcp-registry/dto/create-mapping.dto';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
+import cookieParser from 'cookie-parser';
 
 describe('MCP Registry (e2e)', () => {
   let app: INestApplication;
-  let authCookies: string[];
+  let authCookies: string;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -21,6 +22,7 @@ describe('MCP Registry (e2e)', () => {
     app = moduleFixture.createNestApplication();
 
     // Apply global filters and pipes like in main.ts
+    app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -29,6 +31,7 @@ describe('MCP Registry (e2e)', () => {
       }),
     );
     app.useGlobalFilters(new ProblemDetailsFilter());
+    app.setGlobalPrefix('api/v1');
 
     await app.init();
 
@@ -49,8 +52,9 @@ describe('MCP Registry (e2e)', () => {
         description: 'A test MCP server for e2e testing',
       };
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
@@ -67,19 +71,21 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test server',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(409);
     });
 
     it('should list servers with pagination', async () => {
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .get('/mcp/servers?page=1&limit=10')
         .expect(200);
 
@@ -96,14 +102,15 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test',
       };
 
-      const createResponse = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const createResponse = await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(createDto)
         .expect(201);
 
       const serverId = createResponse.body.id;
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}`)
         .expect(200);
 
@@ -118,12 +125,13 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(createDto)
         .expect(201);
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${createDto.providedId}`)
         .expect(200);
 
@@ -141,8 +149,9 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test',
       };
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
 
@@ -155,7 +164,7 @@ describe('MCP Registry (e2e)', () => {
         description: 'Read access to tools',
       };
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(dto)
         .expect(201);
@@ -172,7 +181,7 @@ describe('MCP Registry (e2e)', () => {
         { scopeId: 'data:read', description: 'Read data' },
       ];
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(dtos)
         .expect(201);
@@ -187,12 +196,12 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test scope',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(dto)
         .expect(201);
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}/scopes`)
         .expect(200);
 
@@ -206,12 +215,12 @@ describe('MCP Registry (e2e)', () => {
         description: 'Specific scope',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(dto)
         .expect(201);
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}/scopes/${dto.scopeId}`)
         .expect(200);
 
@@ -224,12 +233,12 @@ describe('MCP Registry (e2e)', () => {
         description: 'Duplicate scope',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(dto)
         .expect(201);
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(dto)
         .expect(409);
@@ -246,8 +255,9 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test',
       };
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
 
@@ -263,7 +273,7 @@ describe('MCP Registry (e2e)', () => {
         tokenUrl: 'https://github.com/login/oauth/access_token',
       };
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
         .send(dto)
         .expect(201);
@@ -282,12 +292,12 @@ describe('MCP Registry (e2e)', () => {
         tokenUrl: 'https://example.com/token',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
         .send(dto)
         .expect(201);
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}/connections`)
         .expect(200);
 
@@ -304,12 +314,12 @@ describe('MCP Registry (e2e)', () => {
         tokenUrl: 'https://example.com/token',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
         .send(dto)
         .expect(201);
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
         .send(dto)
         .expect(409);
@@ -329,8 +339,9 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test',
       };
 
-      const serverResponse = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const serverResponse = await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
 
@@ -342,7 +353,7 @@ describe('MCP Registry (e2e)', () => {
         description: 'Execute tools',
       };
 
-      const scopeResponse = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const scopeResponse = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(scopeDto)
         .expect(201);
@@ -358,7 +369,7 @@ describe('MCP Registry (e2e)', () => {
         tokenUrl: 'https://example.com/token',
       };
 
-      const connectionResponse = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const connectionResponse = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
         .send(connectionDto)
         .expect(201);
@@ -373,7 +384,7 @@ describe('MCP Registry (e2e)', () => {
         downstreamScope: 'repo:write',
       };
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/mappings`)
         .send(dto)
         .expect(201);
@@ -391,12 +402,12 @@ describe('MCP Registry (e2e)', () => {
         downstreamScope: 'test:scope',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/mappings`)
         .send(dto)
         .expect(201);
 
-      const response = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}/scopes/${scopeId}/mappings`)
         .expect(200);
 
@@ -413,8 +424,9 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test',
       };
 
-      const serverResponse = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const serverResponse = await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
 
@@ -425,12 +437,12 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test scope',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(scopeDto)
         .expect(201);
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .delete(`/mcp/servers/${serverId}`)
         .expect(409);
     });
@@ -442,8 +454,9 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test',
       };
 
-      const serverResponse = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const serverResponse = await request(app.getHttpServer())
         .post('/mcp/servers')
+        .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
 
@@ -454,7 +467,7 @@ describe('MCP Registry (e2e)', () => {
         description: 'Test',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
         .send(scopeDto)
         .expect(201);
@@ -467,7 +480,7 @@ describe('MCP Registry (e2e)', () => {
         tokenUrl: 'https://example.com/token',
       };
 
-      const connectionResponse = await request(app.getHttpServer()).set('Cookie', authCookies)
+      const connectionResponse = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
         .send(connectionDto)
         .expect(201);
@@ -478,12 +491,12 @@ describe('MCP Registry (e2e)', () => {
         downstreamScope: 'test',
       };
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/mappings`)
         .send(mappingDto)
         .expect(201);
 
-      await request(app.getHttpServer()).set('Cookie', authCookies)
+      await request(app.getHttpServer())
         .delete(`/mcp/servers/${serverId}/scopes/${scopeDto.scopeId}`)
         .expect(409);
     });
