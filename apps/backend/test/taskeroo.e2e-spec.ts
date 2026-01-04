@@ -4,10 +4,12 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { ProblemDetailsFilter } from './../src/http/problem-details.filter';
+import { ensureTestUser, getAuthCookies, authenticatedRequest } from './helpers/auth.helper';
 
 describe('Taskeroo E2E Tests', () => {
   let app: INestApplication<App>;
   let httpServer: App;
+  let authCookies: string[];
 
   // Store task IDs created during tests
   let taskWithoutAssigneeId: string;
@@ -33,6 +35,10 @@ describe('Taskeroo E2E Tests', () => {
 
     await app.init();
     httpServer = app.getHttpServer();
+
+    // Setup authentication
+    await ensureTestUser(app);
+    authCookies = await getAuthCookies(httpServer);
   });
 
   afterAll(async () => {
@@ -41,8 +47,9 @@ describe('Taskeroo E2E Tests', () => {
 
   describe('Task Creation', () => {
     it('should create a task without assignee', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .post('/api/v1/taskeroo/tasks')
+        .set('Cookie', authCookies)
         .send({
           name: 'Test Task Without Assignee',
           description: 'This is a test task without an assignee',
@@ -61,7 +68,7 @@ describe('Taskeroo E2E Tests', () => {
     });
 
     it('should create a task with assignee', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .post('/api/v1/taskeroo/tasks')
         .send({
           name: 'Test Task With Assignee',
@@ -85,7 +92,7 @@ describe('Taskeroo E2E Tests', () => {
     let assignableTaskId: string;
 
     beforeAll(async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .post('/api/v1/taskeroo/tasks')
         .send({
           name: 'Task Assignment Target',
@@ -98,7 +105,7 @@ describe('Taskeroo E2E Tests', () => {
     });
 
     it('should assign a task with session id', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .patch(`/api/v1/taskeroo/tasks/${assignableTaskId}/assign`)
         .send({
           assignee: 'AgentAlpha',
@@ -111,7 +118,7 @@ describe('Taskeroo E2E Tests', () => {
     });
 
     it('should keep the existing session id when not provided', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .patch(`/api/v1/taskeroo/tasks/${assignableTaskId}/assign`)
         .send({
           assignee: 'AgentBeta',
@@ -125,7 +132,7 @@ describe('Taskeroo E2E Tests', () => {
 
   describe('Task Fetching', () => {
     it('should fetch all tasks and see both created tasks', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .get('/api/v1/taskeroo/tasks')
         .expect(200);
 
@@ -139,7 +146,7 @@ describe('Taskeroo E2E Tests', () => {
     });
 
     it('should fetch task by ID and see one task', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .get(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}`)
         .expect(200);
 
@@ -151,7 +158,7 @@ describe('Taskeroo E2E Tests', () => {
 
   describe('Task Status Changes', () => {
     it('should fail to move task without assignee to In Progress', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .patch(`/api/v1/taskeroo/tasks/${taskWithoutAssigneeId}/status`)
         .send({
           status: 'IN_PROGRESS',
@@ -167,7 +174,7 @@ describe('Taskeroo E2E Tests', () => {
     });
 
     it('should successfully move task with assignee to In Progress', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .patch(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}/status`)
         .send({
           status: 'IN_PROGRESS',
@@ -180,7 +187,7 @@ describe('Taskeroo E2E Tests', () => {
     });
 
     it('should fail to move task to Done without comment when no comments exist', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .patch(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}/status`)
         .send({
           status: 'DONE',
@@ -194,7 +201,7 @@ describe('Taskeroo E2E Tests', () => {
 
   describe('Task Comments', () => {
     it('should add a comment to a task', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .post(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}/comments`)
         .send({
           commenterName: 'Jane Smith',
@@ -209,7 +216,7 @@ describe('Taskeroo E2E Tests', () => {
     });
 
     it('should allow moving task to Done without new comment when comments exist', async () => {
-      const response = await request(httpServer)
+      const response = await request(httpServer).set('Cookie', authCookies)
         .patch(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}/status`)
         .send({
           status: 'DONE',
@@ -226,7 +233,7 @@ describe('Taskeroo E2E Tests', () => {
       // Ensure we have a valid task ID before attempting deletion
       expect(taskWithoutAssigneeId).toBeDefined();
 
-      await request(httpServer)
+      await request(httpServer).set('Cookie', authCookies)
         .delete(`/api/v1/taskeroo/tasks/${taskWithoutAssigneeId}`)
         .expect(204);
     });
@@ -236,12 +243,12 @@ describe('Taskeroo E2E Tests', () => {
       expect(taskWithoutAssigneeId).toBeDefined();
 
       // Verify the deleted task returns 404
-      await request(httpServer)
+      await request(httpServer).set('Cookie', authCookies)
         .get(`/api/v1/taskeroo/tasks/${taskWithoutAssigneeId}`)
         .expect(404);
 
       // Fetch all tasks
-      const allTasksResponse = await request(httpServer)
+      const allTasksResponse = await request(httpServer).set('Cookie', authCookies)
         .get('/api/v1/taskeroo/tasks')
         .expect(200);
 
@@ -254,7 +261,7 @@ describe('Taskeroo E2E Tests', () => {
       expect(taskIds).toContain(taskWithAssigneeId);
 
       // Verify the task with comment can still be fetched
-      const taskWithCommentResponse = await request(httpServer)
+      const taskWithCommentResponse = await request(httpServer).set('Cookie', authCookies)
         .get(`/api/v1/taskeroo/tasks/${taskWithAssigneeId}`)
         .expect(200);
 
