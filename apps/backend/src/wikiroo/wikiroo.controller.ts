@@ -42,6 +42,7 @@ import { MovePageDto } from './dto/move-page.dto';
 import { PageResult, PageSummaryResult, TagResult, PageTreeResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
+import { Public } from '../authorization-server/decorators/public.decorator';
 
 @ApiTags('Wikiroo')
 @Controller('wikiroo/pages')
@@ -310,6 +311,7 @@ export class WikirooController {
     };
   }
 
+  @Public()
   @All('mcp')
   async handleMcp(@Req() req: Request, @Res() res: Response) {
     await this.gateway.handleRequest(req, res);

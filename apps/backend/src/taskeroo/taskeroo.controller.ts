@@ -41,6 +41,7 @@ import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.service.types';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
 import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
+import { Public } from '../authorization-server/decorators/public.decorator';
 
 @ApiTags('Task')
 @Controller('taskeroo/tasks')
@@ -283,6 +284,7 @@ export class TaskerooController {
     };
   }
 
+  @Public()
   @All('mcp')
   async handleMcp(@Req() req: Request, @Res() res: Response) {
     await this.gateway.handleRequest(req, res);
