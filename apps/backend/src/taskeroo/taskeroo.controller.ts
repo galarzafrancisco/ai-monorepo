@@ -43,6 +43,8 @@ import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.ser
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
 import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 import { Public } from '../authorization-server/decorators/public.decorator';
+import { CurrentUser } from '../authorization-server/decorators/current-user.decorator';
+import { WebAuthJwtPayload } from '../authorization-server/types';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
@@ -61,14 +63,17 @@ export class TaskerooController {
     description: 'Task created successfully',
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async createTask(@Body() dto: CreateTaskDto): Promise<TaskResponseDto> {
+  async createTask(
+    @Body() dto: CreateTaskDto,
+    @CurrentUser() user: WebAuthJwtPayload,
+  ): Promise<TaskResponseDto> {
     const result = await this.taskerooService.createTask({
       name: dto.name,
       description: dto.description,
       assignee: dto.assignee,
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
-      createdBy: dto.createdBy,
+      createdBy: user.email,
       dependsOnIds: dto.dependsOnIds,
     });
     return this.mapResultToResponse(result);
@@ -172,9 +177,10 @@ export class TaskerooController {
   async addComment(
     @Param() params: TaskParamsDto,
     @Body() dto: CreateCommentDto,
+    @CurrentUser() user: WebAuthJwtPayload,
   ): Promise<CommentResponseDto> {
     const result = await this.taskerooService.addComment(params.id, {
-      commenterName: dto.commenterName,
+      commenterName: user.email,
       content: dto.content,
     });
     return this.mapCommentResultToResponse(result);
