@@ -7,9 +7,13 @@ import { TaskerooService } from './taskeroo.service';
 import { TaskerooController } from './taskeroo.controller';
 import { TaskerooGateway } from './taskeroo.gateway';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
+import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TaskEntity, CommentEntity, TagEntity])],
+  imports: [
+    TypeOrmModule.forFeature([TaskEntity, CommentEntity, TagEntity]),
+    AuthorizationServerModule,
+  ],
   controllers: [TaskerooController],
   providers: [TaskerooService, TaskerooGateway, TaskerooMcpGateway],
   exports: [TaskerooService],

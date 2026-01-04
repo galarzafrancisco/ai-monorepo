@@ -13,6 +13,7 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -40,9 +41,11 @@ import { ReorderPageDto } from './dto/reorder-page.dto';
 import { MovePageDto } from './dto/move-page.dto';
 import { PageResult, PageSummaryResult, TagResult, PageTreeResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
+import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 
 @ApiTags('Wikiroo')
 @Controller('wikiroo/pages')
+@UseGuards(JwtAuthGuard)
 export class WikirooController {
   constructor(
     private readonly wikirooService: WikirooService,

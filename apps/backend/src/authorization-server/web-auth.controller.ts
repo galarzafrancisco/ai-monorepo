@@ -20,7 +20,7 @@ import { getConfig } from '../config/env.config';
 import { COOKIE_KEYS } from './constants/cookie-keys.constant';
 
 @ApiTags('Web Authentication')
-@Controller('api/v1/auth')
+@Controller('auth')
 export class WebAuthController {
   constructor(
     private readonly tokenService: TokenService,

@@ -210,390 +210,6 @@ export interface paths {
         patch: operations["TaskerooController_handleMcp_patch"];
         trace?: never;
     };
-    "/api/v1/wikiroo/pages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List wiki pages without content */
-        get: operations["WikirooController_listPages"];
-        put?: never;
-        /** Create a new wiki page */
-        post: operations["WikirooController_createPage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/tree": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get page hierarchy tree */
-        get: operations["WikirooController_getPageTree"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Fetch a wiki page by ID */
-        get: operations["WikirooController_getPage"];
-        put?: never;
-        post?: never;
-        /** Delete a wiki page */
-        delete: operations["WikirooController_deletePage"];
-        options?: never;
-        head?: never;
-        /** Update an existing wiki page */
-        patch: operations["WikirooController_updatePage"];
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/{id}/append": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Append content to an existing wiki page */
-        post: operations["WikirooController_appendToPage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/{id}/reorder": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Reorder a page within siblings */
-        patch: operations["WikirooController_reorderPage"];
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/{id}/move": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Move page to different parent */
-        patch: operations["WikirooController_movePage"];
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/{id}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a tag to a wiki page */
-        post: operations["WikirooController_addTagToPage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove a tag from a wiki page */
-        delete: operations["WikirooController_removeTagFromPage"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a new tag */
-        post: operations["WikirooController_createTag"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/tags/all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all tags */
-        get: operations["WikirooController_getAllTags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/tags/{tagId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a tag from the system */
-        delete: operations["WikirooController_deleteTag"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/wikiroo/pages/mcp": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["WikirooController_handleMcp_get"];
-        put: operations["WikirooController_handleMcp_put"];
-        post: operations["WikirooController_handleMcp_post"];
-        delete: operations["WikirooController_handleMcp_delete"];
-        options: operations["WikirooController_handleMcp_options"];
-        head: operations["WikirooController_handleMcp_head"];
-        patch: operations["WikirooController_handleMcp_patch"];
-        trace?: never;
-    };
-    "/api/v1/mcp/servers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all MCP servers with pagination */
-        get: operations["McpRegistryController_listServers"];
-        put?: never;
-        /** Register a new MCP server */
-        post: operations["McpRegistryController_createServer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get MCP server by UUID or provided ID */
-        get: operations["McpRegistryController_getServer"];
-        put?: never;
-        post?: never;
-        /** Delete MCP server (must have no dependencies) */
-        delete: operations["McpRegistryController_deleteServer"];
-        options?: never;
-        head?: never;
-        /** Update MCP server details */
-        patch: operations["McpRegistryController_updateServer"];
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/scopes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all scopes for an MCP server */
-        get: operations["McpRegistryController_listScopes"];
-        put?: never;
-        /** Create MCP scope(s) for a server */
-        post: operations["McpRegistryController_createScopes"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a specific MCP scope */
-        get: operations["McpRegistryController_getScope"];
-        put?: never;
-        post?: never;
-        /** Delete MCP scope (must have no mappings) */
-        delete: operations["McpRegistryController_deleteScope"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/connections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all connections for an MCP server */
-        get: operations["McpRegistryController_listConnections"];
-        put?: never;
-        /** Create OAuth connection for an MCP server */
-        post: operations["McpRegistryController_createConnection"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/connections/{connectionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a specific connection */
-        get: operations["McpRegistryController_getConnection"];
-        put?: never;
-        post?: never;
-        /** Delete connection (must have no mappings) */
-        delete: operations["McpRegistryController_deleteConnection"];
-        options?: never;
-        head?: never;
-        /** Update connection details */
-        patch: operations["McpRegistryController_updateConnection"];
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/mappings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create scope mapping */
-        post: operations["McpRegistryController_createMapping"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List downstream scopes for an MCP scope */
-        get: operations["McpRegistryController_listMappings"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/mappings/{mappingId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete scope mapping */
-        delete: operations["McpRegistryController_deleteMapping"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get authorization journeys for an MCP server (debug/monitoring) */
-        get: operations["McpRegistryController_getAuthJourneys"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
         parameters: {
             query?: never;
@@ -798,7 +414,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/v1/auth/login": {
+    "/api/v1/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -815,7 +431,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/v1/auth/refresh": {
+    "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -832,7 +448,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/v1/auth/logout": {
+    "/api/v1/auth/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -849,7 +465,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/api/v1/auth/me": {
+    "/api/v1/auth/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -864,6 +480,390 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all MCP servers with pagination */
+        get: operations["McpRegistryController_listServers"];
+        put?: never;
+        /** Register a new MCP server */
+        post: operations["McpRegistryController_createServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get MCP server by UUID or provided ID */
+        get: operations["McpRegistryController_getServer"];
+        put?: never;
+        post?: never;
+        /** Delete MCP server (must have no dependencies) */
+        delete: operations["McpRegistryController_deleteServer"];
+        options?: never;
+        head?: never;
+        /** Update MCP server details */
+        patch: operations["McpRegistryController_updateServer"];
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all scopes for an MCP server */
+        get: operations["McpRegistryController_listScopes"];
+        put?: never;
+        /** Create MCP scope(s) for a server */
+        post: operations["McpRegistryController_createScopes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a specific MCP scope */
+        get: operations["McpRegistryController_getScope"];
+        put?: never;
+        post?: never;
+        /** Delete MCP scope (must have no mappings) */
+        delete: operations["McpRegistryController_deleteScope"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all connections for an MCP server */
+        get: operations["McpRegistryController_listConnections"];
+        put?: never;
+        /** Create OAuth connection for an MCP server */
+        post: operations["McpRegistryController_createConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/connections/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a specific connection */
+        get: operations["McpRegistryController_getConnection"];
+        put?: never;
+        post?: never;
+        /** Delete connection (must have no mappings) */
+        delete: operations["McpRegistryController_deleteConnection"];
+        options?: never;
+        head?: never;
+        /** Update connection details */
+        patch: operations["McpRegistryController_updateConnection"];
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create scope mapping */
+        post: operations["McpRegistryController_createMapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List downstream scopes for an MCP scope */
+        get: operations["McpRegistryController_listMappings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/mappings/{mappingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete scope mapping */
+        delete: operations["McpRegistryController_deleteMapping"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get authorization journeys for an MCP server (debug/monitoring) */
+        get: operations["McpRegistryController_getAuthJourneys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List wiki pages without content */
+        get: operations["WikirooController_listPages"];
+        put?: never;
+        /** Create a new wiki page */
+        post: operations["WikirooController_createPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get page hierarchy tree */
+        get: operations["WikirooController_getPageTree"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fetch a wiki page by ID */
+        get: operations["WikirooController_getPage"];
+        put?: never;
+        post?: never;
+        /** Delete a wiki page */
+        delete: operations["WikirooController_deletePage"];
+        options?: never;
+        head?: never;
+        /** Update an existing wiki page */
+        patch: operations["WikirooController_updatePage"];
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/append": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Append content to an existing wiki page */
+        post: operations["WikirooController_appendToPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Reorder a page within siblings */
+        patch: operations["WikirooController_reorderPage"];
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Move page to different parent */
+        patch: operations["WikirooController_movePage"];
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a tag to a wiki page */
+        post: operations["WikirooController_addTagToPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a tag from a wiki page */
+        delete: operations["WikirooController_removeTagFromPage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a new tag */
+        post: operations["WikirooController_createTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all tags */
+        get: operations["WikirooController_getAllTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a tag from the system */
+        delete: operations["WikirooController_deleteTag"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wikiroo/pages/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WikirooController_handleMcp_get"];
+        put: operations["WikirooController_handleMcp_put"];
+        post: operations["WikirooController_handleMcp_post"];
+        delete: operations["WikirooController_handleMcp_delete"];
+        options: operations["WikirooController_handleMcp_options"];
+        head: operations["WikirooController_handleMcp_head"];
+        patch: operations["WikirooController_handleMcp_patch"];
         trace?: never;
     };
     "/.well-known/oauth-authorization-server/mcp/issuer": {
@@ -1408,737 +1408,6 @@ export interface components {
              */
             name: string;
         };
-        CreatePageDto: {
-            /**
-             * @description Title of the wiki page
-             * @example How to onboard new agents
-             */
-            title: string;
-            /**
-             * @description Markdown content of the page
-             * @example # Welcome to Wikiroo
-             *     This is the onboarding guide.
-             */
-            content: string;
-            /**
-             * @description Author of the page
-             * @example Agent Roo
-             */
-            author: string;
-            /**
-             * @description Array of tag names to associate with the page
-             * @example [
-             *       "documentation",
-             *       "onboarding"
-             *     ]
-             */
-            tagNames?: string[];
-            /**
-             * @description Parent page ID for nesting
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId?: string;
-        };
-        WikiTagResponseDto: {
-            /**
-             * @description Name of the tag
-             * @example project-alpha
-             */
-            name: string;
-            /**
-             * @description Color for the tag (hex format)
-             * @example #FF5733
-             */
-            color?: string;
-        };
-        PageResponseDto: {
-            /**
-             * @description Unique identifier for the page
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Title of the wiki page
-             * @example How to onboard new agents
-             */
-            title: string;
-            /**
-             * @description Markdown content of the wiki page
-             * @example # Welcome to Wikiroo
-             */
-            content: string;
-            /**
-             * @description Author of the wiki page
-             * @example Agent Roo
-             */
-            author: string;
-            /**
-             * @description Tags associated with the page
-             * @example [
-             *       {
-             *         "id": "123",
-             *         "name": "project-alpha",
-             *         "color": "#FF5733",
-             *         "description": "Project Alpha notes",
-             *         "createdAt": "2025-01-01T12:00:00.000Z",
-             *         "updatedAt": "2025-01-01T12:00:00.000Z"
-             *       }
-             *     ]
-             */
-            tags: components["schemas"]["WikiTagResponseDto"][];
-            /**
-             * @description Parent page ID (null if root page)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId: Record<string, never> | null;
-            /**
-             * @description Order within siblings
-             * @example 0
-             */
-            order: number;
-            /**
-             * @description Creation timestamp
-             * @example 2025-01-01T12:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Last update timestamp
-             * @example 2025-01-02T15:30:00.000Z
-             */
-            updatedAt: string;
-        };
-        PageSummaryDto: {
-            /**
-             * @description Unique identifier for the page
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Title of the wiki page
-             * @example How to onboard new agents
-             */
-            title: string;
-            /**
-             * @description Author of the wiki page
-             * @example Agent Roo
-             */
-            author: string;
-            /**
-             * @description Tags associated with the page
-             * @example [
-             *       {
-             *         "id": "123",
-             *         "name": "project-alpha",
-             *         "color": "#FF5733",
-             *         "description": "Project Alpha notes",
-             *         "createdAt": "2025-01-01T12:00:00.000Z",
-             *         "updatedAt": "2025-01-01T12:00:00.000Z"
-             *       }
-             *     ]
-             */
-            tags: components["schemas"]["WikiTagResponseDto"][];
-            /**
-             * @description Parent page ID (null if root page)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId: Record<string, never> | null;
-            /**
-             * @description Order within siblings
-             * @example 0
-             */
-            order: number;
-            /**
-             * @description Creation timestamp
-             * @example 2025-01-01T12:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Last update timestamp
-             * @example 2025-01-02T15:30:00.000Z
-             */
-            updatedAt: string;
-        };
-        PageListResponseDto: {
-            /** @description List of wiki pages */
-            items: components["schemas"]["PageSummaryDto"][];
-        };
-        PageTreeResponseDto: {
-            /**
-             * @description Unique identifier for the page
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Title of the wiki page
-             * @example How to onboard new agents
-             */
-            title: string;
-            /**
-             * @description Author of the wiki page
-             * @example Agent Roo
-             */
-            author: string;
-            /**
-             * @description Parent page ID (null if root page)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId: Record<string, never> | null;
-            /**
-             * @description Order within siblings
-             * @example 0
-             */
-            order: number;
-            /**
-             * @description Child pages
-             * @example []
-             */
-            children: components["schemas"]["PageTreeResponseDto"][];
-            /**
-             * @description Creation timestamp
-             * @example 2025-01-01T12:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Last update timestamp
-             * @example 2025-01-02T15:30:00.000Z
-             */
-            updatedAt: string;
-        };
-        UpdatePageDto: {
-            /**
-             * @description Updated title of the wiki page
-             * @example Updated onboarding guide
-             */
-            title?: string;
-            /**
-             * @description Updated markdown content of the page
-             * @example ## Updated content
-             */
-            content?: string;
-            /**
-             * @description Updated author of the page
-             * @example Agent Roo
-             */
-            author?: string;
-            /**
-             * @description Array of tag names to associate with the page
-             * @example [
-             *       "documentation",
-             *       "onboarding"
-             *     ]
-             */
-            tagNames?: string[];
-            /**
-             * @description Parent page ID (null to remove parent)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            parentId?: string | null;
-            /**
-             * @description Order within siblings
-             * @example 0
-             */
-            order?: number;
-        };
-        AppendPageDto: {
-            /**
-             * @description Markdown content to append to the existing page content
-             * @example ## Additional details
-             */
-            content: string;
-        };
-        ReorderPageDto: {
-            /**
-             * @description New order position within siblings
-             * @example 2
-             */
-            newOrder: number;
-        };
-        MovePageDto: {
-            /**
-             * @description New parent page ID (null to move to root)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            newParentId: Record<string, never> | null;
-        };
-        AddWikiTagDto: {
-            /**
-             * @description Name of the tag
-             * @example project-alpha
-             */
-            name: string;
-            /**
-             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
-             * @example #FF5733
-             */
-            color?: string;
-        };
-        CreateWikiTagDto: {
-            /**
-             * @description Name of the tag
-             * @example project-alpha
-             */
-            name: string;
-        };
-        CreateServerDto: {
-            /**
-             * @description Human-readable unique identifier for the MCP server
-             * @example github-integration
-             */
-            providedId: string;
-            /**
-             * @description Display name of the MCP server
-             * @example GitHub Integration
-             */
-            name: string;
-            /**
-             * @description Short description of the MCP server
-             * @example Provides access to GitHub repositories and issues
-             */
-            description: string;
-            /**
-             * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
-             */
-            url?: string;
-        };
-        ServerResponseDto: {
-            /**
-             * @description System-generated UUID for the MCP server
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Human-readable unique identifier for the MCP server
-             * @example github-integration
-             */
-            providedId: string;
-            /**
-             * @description Display name of the MCP server
-             * @example GitHub Integration
-             */
-            name: string;
-            /**
-             * @description Short description of the MCP server
-             * @example Provides access to GitHub repositories and issues
-             */
-            description: string;
-            /**
-             * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
-             */
-            url?: string;
-            /**
-             * @description Timestamp when the server was created
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the server was last updated
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        ServerListResponseDto: {
-            /** @description List of MCP servers */
-            items: components["schemas"]["ServerResponseDto"][];
-            /**
-             * @description Total number of servers
-             * @example 100
-             */
-            total: number;
-            /**
-             * @description Current page number
-             * @example 1
-             */
-            page: number;
-            /**
-             * @description Number of items per page
-             * @example 50
-             */
-            limit: number;
-        };
-        UpdateServerDto: {
-            /**
-             * @description Display name of the MCP server
-             * @example GitHub Integration
-             */
-            name?: string;
-            /**
-             * @description Short description of the MCP server
-             * @example Provides access to GitHub repositories and issues
-             */
-            description?: string;
-            /**
-             * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
-             */
-            url?: string;
-        };
-        DeleteServerResponseDto: {
-            /**
-             * @description Confirmation message indicating the server was deleted
-             * @example Server deleted successfully
-             */
-            message: string;
-        };
-        CreateScopeDto: {
-            /**
-             * @description Unique scope identifier (e.g., tool:read, tool:write)
-             * @example tool:read
-             */
-            scopeId: string;
-            /**
-             * @description Description of what this scope grants access to
-             * @example Read access to MCP tools
-             */
-            description: string;
-        };
-        ScopeResponseDto: {
-            /**
-             * @description System-generated UUID for the scope
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Unique scope identifier (e.g., tool:read)
-             * @example tool:read
-             */
-            scopeId: string;
-            /**
-             * @description Description of what this scope allows
-             * @example Read access to tools
-             */
-            description: string;
-            /**
-             * @description UUID of the MCP server this scope belongs to
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            serverId: string;
-            /**
-             * @description Timestamp when the scope was created
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the scope was last updated
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        DeleteScopeResponseDto: {
-            /**
-             * @description Confirmation message indicating the scope was deleted
-             * @example Scope deleted successfully
-             */
-            message: string;
-        };
-        CreateConnectionDto: {
-            /**
-             * @description Friendly name to identify this OAuth connection
-             * @example GitHub OAuth Connection
-             */
-            friendlyName: string;
-            /**
-             * @description Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
-             * @example google-oauth
-             */
-            providedId?: string;
-            /**
-             * @description OAuth client ID for the downstream provider
-             * @example github_client_abc123
-             */
-            clientId: string;
-            /**
-             * @description OAuth client secret for the downstream provider
-             * @example secret_xyz789
-             */
-            clientSecret: string;
-            /**
-             * @description OAuth authorization endpoint URL
-             * @example https://github.com/login/oauth/authorize
-             */
-            authorizeUrl: string;
-            /**
-             * @description OAuth token endpoint URL
-             * @example https://github.com/login/oauth/access_token
-             */
-            tokenUrl: string;
-        };
-        ConnectionResponseDto: {
-            /**
-             * @description System-generated UUID for the connection
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description UUID of the MCP server this connection belongs to
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            serverId: string;
-            /**
-             * @description Friendly name for operators to distinguish connections
-             * @example Production GitHub OAuth
-             */
-            friendlyName: string;
-            /**
-             * @description OAuth client ID
-             * @example client_abc123
-             */
-            clientId: string;
-            /**
-             * @description OAuth client secret (masked for security)
-             * @example null
-             */
-            clientSecret?: string | null;
-            /**
-             * @description OAuth authorization URL
-             * @example https://github.com/login/oauth/authorize
-             */
-            authorizeUrl: string;
-            /**
-             * @description OAuth token URL
-             * @example https://github.com/login/oauth/access_token
-             */
-            tokenUrl: string;
-            /**
-             * @description Timestamp when the connection was created
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the connection was last updated
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        UpdateConnectionDto: {
-            /**
-             * @description Friendly name to identify this OAuth connection
-             * @example GitHub OAuth Connection
-             */
-            friendlyName?: string;
-            /**
-             * @description Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
-             * @example google-oauth
-             */
-            providedId?: string;
-            /**
-             * @description OAuth client ID for the downstream provider
-             * @example github_client_abc123
-             */
-            clientId?: string;
-            /**
-             * @description OAuth client secret for the downstream provider
-             * @example secret_xyz789
-             */
-            clientSecret?: string;
-            /**
-             * @description OAuth authorization endpoint URL
-             * @example https://github.com/login/oauth/authorize
-             */
-            authorizeUrl?: string;
-            /**
-             * @description OAuth token endpoint URL
-             * @example https://github.com/login/oauth/access_token
-             */
-            tokenUrl?: string;
-        };
-        DeleteConnectionResponseDto: {
-            /**
-             * @description Confirmation message indicating the connection was deleted
-             * @example Connection deleted successfully
-             */
-            message: string;
-        };
-        CreateMappingDto: {
-            /**
-             * @description MCP scope ID to map from
-             * @example tool:read
-             */
-            scopeId: string;
-            /**
-             * @description Connection ID that owns this mapping
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            connectionId: string;
-            /**
-             * @description Downstream OAuth scope string
-             * @example repo:read
-             */
-            downstreamScope: string;
-        };
-        MappingResponseDto: {
-            /**
-             * @description System-generated UUID for the mapping
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description MCP scope identifier
-             * @example tool:read
-             */
-            scopeId: string;
-            /**
-             * @description UUID of the MCP server
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            serverId: string;
-            /**
-             * @description UUID of the downstream OAuth connection
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            connectionId: string;
-            /**
-             * @description Downstream provider scope string
-             * @example repo:read
-             */
-            downstreamScope: string;
-            /**
-             * @description Timestamp when the mapping was created
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the mapping was last updated
-             * @example 2025-11-05T08:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        DeleteMappingResponseDto: {
-            /**
-             * @description Confirmation message indicating the mapping was deleted
-             * @example Mapping deleted successfully
-             */
-            message: string;
-        };
-        McpFlowResponseDto: {
-            /**
-             * @description System-generated UUID for the MCP authorization flow
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description UUID of the authorization journey this flow belongs to
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            authorizationJourneyId: string;
-            /**
-             * @description UUID of the MCP server
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            serverId: string;
-            /**
-             * @description UUID of the registered MCP client
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            clientId: string;
-            /**
-             * @description Client name for display
-             * @example My MCP Client
-             */
-            clientName?: string | null;
-            /**
-             * @description Current status of the MCP authorization flow
-             * @example CLIENT_REGISTERED
-             * @enum {string}
-             */
-            status: "CLIENT_NOT_REGISTERED" | "CLIENT_REGISTERED" | "AUTHORIZATION_REQUEST_STARTED" | "USER_CONSENT_OK" | "USER_CONSENT_REJECTED" | "WAITING_ON_DOWNSTREAM_AUTH" | "AUTHORIZATION_CODE_ISSUED" | "AUTHORIZATION_CODE_EXCHANGED";
-            /**
-             * @description Scopes requested by the client
-             * @example tool:read tool:execute
-             */
-            scope?: string | null;
-            /**
-             * @description When the authorization code expires
-             * @example 2025-12-15T09:00:00.000Z
-             */
-            authorizationCodeExpiresAt?: string | null;
-            /**
-             * @description Whether the authorization code has been used
-             * @example false
-             */
-            authorizationCodeUsed: boolean;
-            /**
-             * @description Timestamp when the flow was created
-             * @example 2025-12-15T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the flow was last updated
-             * @example 2025-12-15T09:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        ConnectionFlowResponseDto: {
-            /**
-             * @description System-generated UUID for the connection authorization flow
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description UUID of the authorization journey this flow belongs to
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            authorizationJourneyId: string;
-            /**
-             * @description UUID of the MCP connection this flow uses
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            mcpConnectionId: string;
-            /**
-             * @description Connection friendly name
-             * @example GitHub OAuth Connection
-             */
-            connectionName?: string | null;
-            /**
-             * @description Current status of the connection flow
-             * @example pending
-             * @enum {string}
-             */
-            status: "pending" | "authorized" | "failed";
-            /**
-             * @description When the access token expires
-             * @example 2025-12-15T10:00:00.000Z
-             */
-            tokenExpiresAt?: string | null;
-            /**
-             * @description Timestamp when the flow was created
-             * @example 2025-12-15T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the flow was last updated
-             * @example 2025-12-15T09:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        AuthJourneyResponseDto: {
-            /**
-             * @description System-generated UUID for the authorization journey
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Current status of the authorization journey
-             * @example mcp_auth_flow_started
-             * @enum {string}
-             */
-            status: "not_started" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
-            /** @description The MCP authorization flow for this journey */
-            mcpAuthorizationFlow: components["schemas"]["McpFlowResponseDto"];
-            /** @description Connection authorization flows for this journey */
-            connectionAuthorizationFlows: components["schemas"]["ConnectionFlowResponseDto"][];
-            /**
-             * @description Timestamp when the journey was created
-             * @example 2025-12-15T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the journey was last updated
-             * @example 2025-12-15T09:00:00.000Z
-             */
-            updatedAt: string;
-        };
         RegisterClientDto: {
             /**
              * @description Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)
@@ -2609,6 +1878,737 @@ export interface components {
              * @example 600
              */
             expiresIn: number;
+        };
+        CreateServerDto: {
+            /**
+             * @description Human-readable unique identifier for the MCP server
+             * @example github-integration
+             */
+            providedId: string;
+            /**
+             * @description Display name of the MCP server
+             * @example GitHub Integration
+             */
+            name: string;
+            /**
+             * @description Short description of the MCP server
+             * @example Provides access to GitHub repositories and issues
+             */
+            description: string;
+            /**
+             * @description URL that MCP Clients will use to connect to the server
+             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             */
+            url?: string;
+        };
+        ServerResponseDto: {
+            /**
+             * @description System-generated UUID for the MCP server
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Human-readable unique identifier for the MCP server
+             * @example github-integration
+             */
+            providedId: string;
+            /**
+             * @description Display name of the MCP server
+             * @example GitHub Integration
+             */
+            name: string;
+            /**
+             * @description Short description of the MCP server
+             * @example Provides access to GitHub repositories and issues
+             */
+            description: string;
+            /**
+             * @description URL that MCP Clients will use to connect to the server
+             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             */
+            url?: string;
+            /**
+             * @description Timestamp when the server was created
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the server was last updated
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        ServerListResponseDto: {
+            /** @description List of MCP servers */
+            items: components["schemas"]["ServerResponseDto"][];
+            /**
+             * @description Total number of servers
+             * @example 100
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 50
+             */
+            limit: number;
+        };
+        UpdateServerDto: {
+            /**
+             * @description Display name of the MCP server
+             * @example GitHub Integration
+             */
+            name?: string;
+            /**
+             * @description Short description of the MCP server
+             * @example Provides access to GitHub repositories and issues
+             */
+            description?: string;
+            /**
+             * @description URL that MCP Clients will use to connect to the server
+             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             */
+            url?: string;
+        };
+        DeleteServerResponseDto: {
+            /**
+             * @description Confirmation message indicating the server was deleted
+             * @example Server deleted successfully
+             */
+            message: string;
+        };
+        CreateScopeDto: {
+            /**
+             * @description Unique scope identifier (e.g., tool:read, tool:write)
+             * @example tool:read
+             */
+            scopeId: string;
+            /**
+             * @description Description of what this scope grants access to
+             * @example Read access to MCP tools
+             */
+            description: string;
+        };
+        ScopeResponseDto: {
+            /**
+             * @description System-generated UUID for the scope
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Unique scope identifier (e.g., tool:read)
+             * @example tool:read
+             */
+            scopeId: string;
+            /**
+             * @description Description of what this scope allows
+             * @example Read access to tools
+             */
+            description: string;
+            /**
+             * @description UUID of the MCP server this scope belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description Timestamp when the scope was created
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the scope was last updated
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        DeleteScopeResponseDto: {
+            /**
+             * @description Confirmation message indicating the scope was deleted
+             * @example Scope deleted successfully
+             */
+            message: string;
+        };
+        CreateConnectionDto: {
+            /**
+             * @description Friendly name to identify this OAuth connection
+             * @example GitHub OAuth Connection
+             */
+            friendlyName: string;
+            /**
+             * @description Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
+             * @example google-oauth
+             */
+            providedId?: string;
+            /**
+             * @description OAuth client ID for the downstream provider
+             * @example github_client_abc123
+             */
+            clientId: string;
+            /**
+             * @description OAuth client secret for the downstream provider
+             * @example secret_xyz789
+             */
+            clientSecret: string;
+            /**
+             * @description OAuth authorization endpoint URL
+             * @example https://github.com/login/oauth/authorize
+             */
+            authorizeUrl: string;
+            /**
+             * @description OAuth token endpoint URL
+             * @example https://github.com/login/oauth/access_token
+             */
+            tokenUrl: string;
+        };
+        ConnectionResponseDto: {
+            /**
+             * @description System-generated UUID for the connection
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the MCP server this connection belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description Friendly name for operators to distinguish connections
+             * @example Production GitHub OAuth
+             */
+            friendlyName: string;
+            /**
+             * @description OAuth client ID
+             * @example client_abc123
+             */
+            clientId: string;
+            /**
+             * @description OAuth client secret (masked for security)
+             * @example null
+             */
+            clientSecret?: string | null;
+            /**
+             * @description OAuth authorization URL
+             * @example https://github.com/login/oauth/authorize
+             */
+            authorizeUrl: string;
+            /**
+             * @description OAuth token URL
+             * @example https://github.com/login/oauth/access_token
+             */
+            tokenUrl: string;
+            /**
+             * @description Timestamp when the connection was created
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the connection was last updated
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdateConnectionDto: {
+            /**
+             * @description Friendly name to identify this OAuth connection
+             * @example GitHub OAuth Connection
+             */
+            friendlyName?: string;
+            /**
+             * @description Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.
+             * @example google-oauth
+             */
+            providedId?: string;
+            /**
+             * @description OAuth client ID for the downstream provider
+             * @example github_client_abc123
+             */
+            clientId?: string;
+            /**
+             * @description OAuth client secret for the downstream provider
+             * @example secret_xyz789
+             */
+            clientSecret?: string;
+            /**
+             * @description OAuth authorization endpoint URL
+             * @example https://github.com/login/oauth/authorize
+             */
+            authorizeUrl?: string;
+            /**
+             * @description OAuth token endpoint URL
+             * @example https://github.com/login/oauth/access_token
+             */
+            tokenUrl?: string;
+        };
+        DeleteConnectionResponseDto: {
+            /**
+             * @description Confirmation message indicating the connection was deleted
+             * @example Connection deleted successfully
+             */
+            message: string;
+        };
+        CreateMappingDto: {
+            /**
+             * @description MCP scope ID to map from
+             * @example tool:read
+             */
+            scopeId: string;
+            /**
+             * @description Connection ID that owns this mapping
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            connectionId: string;
+            /**
+             * @description Downstream OAuth scope string
+             * @example repo:read
+             */
+            downstreamScope: string;
+        };
+        MappingResponseDto: {
+            /**
+             * @description System-generated UUID for the mapping
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description MCP scope identifier
+             * @example tool:read
+             */
+            scopeId: string;
+            /**
+             * @description UUID of the MCP server
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description UUID of the downstream OAuth connection
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            connectionId: string;
+            /**
+             * @description Downstream provider scope string
+             * @example repo:read
+             */
+            downstreamScope: string;
+            /**
+             * @description Timestamp when the mapping was created
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the mapping was last updated
+             * @example 2025-11-05T08:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        DeleteMappingResponseDto: {
+            /**
+             * @description Confirmation message indicating the mapping was deleted
+             * @example Mapping deleted successfully
+             */
+            message: string;
+        };
+        McpFlowResponseDto: {
+            /**
+             * @description System-generated UUID for the MCP authorization flow
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the authorization journey this flow belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            authorizationJourneyId: string;
+            /**
+             * @description UUID of the MCP server
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description UUID of the registered MCP client
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            clientId: string;
+            /**
+             * @description Client name for display
+             * @example My MCP Client
+             */
+            clientName?: string | null;
+            /**
+             * @description Current status of the MCP authorization flow
+             * @example CLIENT_REGISTERED
+             * @enum {string}
+             */
+            status: "CLIENT_NOT_REGISTERED" | "CLIENT_REGISTERED" | "AUTHORIZATION_REQUEST_STARTED" | "USER_CONSENT_OK" | "USER_CONSENT_REJECTED" | "WAITING_ON_DOWNSTREAM_AUTH" | "AUTHORIZATION_CODE_ISSUED" | "AUTHORIZATION_CODE_EXCHANGED";
+            /**
+             * @description Scopes requested by the client
+             * @example tool:read tool:execute
+             */
+            scope?: string | null;
+            /**
+             * @description When the authorization code expires
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            authorizationCodeExpiresAt?: string | null;
+            /**
+             * @description Whether the authorization code has been used
+             * @example false
+             */
+            authorizationCodeUsed: boolean;
+            /**
+             * @description Timestamp when the flow was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the flow was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        ConnectionFlowResponseDto: {
+            /**
+             * @description System-generated UUID for the connection authorization flow
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the authorization journey this flow belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            authorizationJourneyId: string;
+            /**
+             * @description UUID of the MCP connection this flow uses
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            mcpConnectionId: string;
+            /**
+             * @description Connection friendly name
+             * @example GitHub OAuth Connection
+             */
+            connectionName?: string | null;
+            /**
+             * @description Current status of the connection flow
+             * @example pending
+             * @enum {string}
+             */
+            status: "pending" | "authorized" | "failed";
+            /**
+             * @description When the access token expires
+             * @example 2025-12-15T10:00:00.000Z
+             */
+            tokenExpiresAt?: string | null;
+            /**
+             * @description Timestamp when the flow was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the flow was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        AuthJourneyResponseDto: {
+            /**
+             * @description System-generated UUID for the authorization journey
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Current status of the authorization journey
+             * @example mcp_auth_flow_started
+             * @enum {string}
+             */
+            status: "not_started" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
+            /** @description The MCP authorization flow for this journey */
+            mcpAuthorizationFlow: components["schemas"]["McpFlowResponseDto"];
+            /** @description Connection authorization flows for this journey */
+            connectionAuthorizationFlows: components["schemas"]["ConnectionFlowResponseDto"][];
+            /**
+             * @description Timestamp when the journey was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the journey was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        CreatePageDto: {
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Markdown content of the page
+             * @example # Welcome to Wikiroo
+             *     This is the onboarding guide.
+             */
+            content: string;
+            /**
+             * @description Author of the page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Array of tag names to associate with the page
+             * @example [
+             *       "documentation",
+             *       "onboarding"
+             *     ]
+             */
+            tagNames?: string[];
+            /**
+             * @description Parent page ID for nesting
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId?: string;
+        };
+        WikiTagResponseDto: {
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
+        };
+        PageResponseDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Markdown content of the wiki page
+             * @example # Welcome to Wikiroo
+             */
+            content: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Tags associated with the page
+             * @example [
+             *       {
+             *         "id": "123",
+             *         "name": "project-alpha",
+             *         "color": "#FF5733",
+             *         "description": "Project Alpha notes",
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-01T12:00:00.000Z"
+             *       }
+             *     ]
+             */
+            tags: components["schemas"]["WikiTagResponseDto"][];
+            /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        PageSummaryDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Tags associated with the page
+             * @example [
+             *       {
+             *         "id": "123",
+             *         "name": "project-alpha",
+             *         "color": "#FF5733",
+             *         "description": "Project Alpha notes",
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-01T12:00:00.000Z"
+             *       }
+             *     ]
+             */
+            tags: components["schemas"]["WikiTagResponseDto"][];
+            /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        PageListResponseDto: {
+            /** @description List of wiki pages */
+            items: components["schemas"]["PageSummaryDto"][];
+        };
+        PageTreeResponseDto: {
+            /**
+             * @description Unique identifier for the page
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Title of the wiki page
+             * @example How to onboard new agents
+             */
+            title: string;
+            /**
+             * @description Author of the wiki page
+             * @example Agent Roo
+             */
+            author: string;
+            /**
+             * @description Parent page ID (null if root page)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId: Record<string, never> | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order: number;
+            /**
+             * @description Child pages
+             * @example []
+             */
+            children: components["schemas"]["PageTreeResponseDto"][];
+            /**
+             * @description Creation timestamp
+             * @example 2025-01-01T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2025-01-02T15:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdatePageDto: {
+            /**
+             * @description Updated title of the wiki page
+             * @example Updated onboarding guide
+             */
+            title?: string;
+            /**
+             * @description Updated markdown content of the page
+             * @example ## Updated content
+             */
+            content?: string;
+            /**
+             * @description Updated author of the page
+             * @example Agent Roo
+             */
+            author?: string;
+            /**
+             * @description Array of tag names to associate with the page
+             * @example [
+             *       "documentation",
+             *       "onboarding"
+             *     ]
+             */
+            tagNames?: string[];
+            /**
+             * @description Parent page ID (null to remove parent)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentId?: string | null;
+            /**
+             * @description Order within siblings
+             * @example 0
+             */
+            order?: number;
+        };
+        AppendPageDto: {
+            /**
+             * @description Markdown content to append to the existing page content
+             * @example ## Additional details
+             */
+            content: string;
+        };
+        ReorderPageDto: {
+            /**
+             * @description New order position within siblings
+             * @example 2
+             */
+            newOrder: number;
+        };
+        MovePageDto: {
+            /**
+             * @description New parent page ID (null to move to root)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            newParentId: Record<string, never> | null;
+        };
+        AddWikiTagDto: {
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
+             * @example #FF5733
+             */
+            color?: string;
+        };
+        CreateWikiTagDto: {
+            /**
+             * @description Name of the tag
+             * @example project-alpha
+             */
+            name: string;
         };
         AuthorizationServerMetadataDto: {
             /**
@@ -3744,52 +3744,290 @@ export interface operations {
             };
         };
     };
-    WikirooController_listPages: {
-        parameters: {
-            query?: {
-                /** @description Filter pages by tag name */
-                tag?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of wiki pages */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageListResponseDto"];
-                };
-            };
-        };
-    };
-    WikirooController_createPage: {
+    ClientRegistrationController_registerClient: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                serverId: string;
+                version: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreatePageDto"];
+                "application/json": components["schemas"]["RegisterClientDto"];
             };
         };
         responses: {
-            /** @description Wiki page created successfully */
+            /** @description Client registered successfully with generated credentials */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
                 };
             };
-            /** @description Invalid input data */
+            /** @description Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A client with this name is already registered */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_getClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Client registration information retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
+                };
+            };
+            /** @description Client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClientRegistrationController_listClients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of registered clients */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
+                };
+            };
+        };
+    };
+    AuthorizationController_authorize: {
+        parameters: {
+            query: {
+                /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
+                response_type: "code";
+                /** @description Space-delimited list of scopes being requested */
+                scope?: string;
+                /** @description Client identifier issued during registration */
+                client_id: string;
+                /** @description PKCE code challenge derived from the code verifier */
+                code_challenge: string;
+                /** @description PKCE code challenge method (S256 for SHA-256) */
+                code_challenge_method: string;
+                /** @description Redirect URI where the authorization response will be sent */
+                redirect_uri: string;
+                /** @description Opaque state value for CSRF protection */
+                state: string;
+                /** @description Resource server URL that the client wants to access */
+                resource: string;
+            };
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirects to consent screen with authorization request ID */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid authorization request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description MCP server or client not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_authorizeConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentDecisionDto"];
+            };
+        };
+        responses: {
+            /** @description Redirects to client redirect_uri with authorization code or error */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid consent decision or flow state */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization flow has already been used */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authorization flow not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_getFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flowId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authorization flow details retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpAuthorizationFlowEntity"];
+                };
+            };
+            /** @description Authorization flow not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Access token issued successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponseDto"];
+                };
+            };
+            /** @description Invalid token request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid authorization code, code_verifier, or expired code */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthorizationController_introspect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serverIdentifier: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntrospectTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Token introspection response (active true/false with metadata) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntrospectTokenResponseDto"];
+                };
+            };
+            /** @description Invalid introspection request parameters */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3798,219 +4036,97 @@ export interface operations {
             };
         };
     };
-    WikirooController_getPageTree: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Page hierarchy tree */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageTreeResponseDto"][];
-                };
-            };
-        };
-    };
-    WikirooController_getPage: {
+    AuthorizationController_tokenExchange: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Wiki page retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
-            };
-        };
-    };
-    WikirooController_deletePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Wiki page deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_updatePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
+                serverIdentifier: string;
+                version: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdatePageDto"];
+                "application/json": components["schemas"]["TokenExchangeRequestDto"];
             };
         };
         responses: {
-            /** @description Wiki page updated successfully */
+            /** @description Token exchange successful - returns downstream access token */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["TokenExchangeResponseDto"];
                 };
             };
-            /** @description No update fields provided */
+            /** @description Invalid token exchange request parameters */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-        };
-    };
-    WikirooController_appendToPage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AppendPageDto"];
-            };
-        };
-        responses: {
-            /** @description Wiki page content appended successfully */
-            200: {
+            /** @description Invalid or expired MCP JWT */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
+                content?: never;
             };
-        };
-    };
-    WikirooController_reorderPage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReorderPageDto"];
-            };
-        };
-        responses: {
-            /** @description Page reordered successfully */
-            200: {
+            /** @description Insufficient scope - requested scope not entitled */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
+                content?: never;
             };
-        };
-    };
-    WikirooController_movePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MovePageDto"];
-            };
-        };
-        responses: {
-            /** @description Page moved successfully */
-            200: {
+            /** @description Connection not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
+                content?: never;
             };
-            /** @description Circular reference detected or parent not found */
+        };
+    };
+    AuthorizationController_callback: {
+        parameters: {
+            query: {
+                /** @description Authorization code from downstream OAuth provider */
+                code: string;
+                /** @description State parameter that identifies the connection flow */
+                state: string;
+                /** @description Error code if authorization failed */
+                error?: string;
+                /** @description Space-delimited list of scopes that were granted */
+                scope?: string;
+                /** @description Error description if authorization failed */
+                error_description?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirects to next step in the authorization flow */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid callback parameters or state */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-        };
-    };
-    WikirooController_addTagToPage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Wiki page identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddWikiTagDto"];
-            };
-        };
-        responses: {
-            /** @description Tag added to page successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
+            /** @description Connection flow not found for provided state */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4018,30 +4134,27 @@ export interface operations {
             };
         };
     };
-    WikirooController_removeTagFromPage: {
+    JwksController_getJwks: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: string;
-                tagId: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Tag removed from page successfully */
+            /** @description JWKS retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["JwksResponseDto"];
                 };
             };
         };
     };
-    WikirooController_createTag: {
+    WebAuthController_login: {
         parameters: {
             query?: never;
             header?: never;
@@ -4050,61 +4163,21 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateWikiTagDto"];
+                "application/json": components["schemas"]["LoginRequestDto"];
             };
         };
         responses: {
-            /** @description Tag created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_getAllTags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of all tags */
+            /** @description Login successful, tokens set in httpOnly cookies */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"][];
+                    "application/json": components["schemas"]["LoginResponseDto"];
                 };
             };
-        };
-    };
-    WikirooController_deleteTag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tagId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Tag deleted successfully */
-            204: {
+            /** @description Invalid credentials */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4112,7 +4185,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_get: {
+    WebAuthController_refresh: {
         parameters: {
             query?: never;
             header?: never;
@@ -4121,7 +4194,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Token refreshed successfully, new tokens set in cookies */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponseDto"];
+                };
+            };
+            /** @description Invalid or expired refresh token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4129,7 +4212,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_put: {
+    WebAuthController_logout: {
         parameters: {
             query?: never;
             header?: never;
@@ -4138,15 +4221,21 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Logout successful, cookies cleared */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        ok?: boolean;
+                    };
+                };
             };
         };
     };
-    WikirooController_handleMcp_post: {
+    WebAuthController_me: {
         parameters: {
             query?: never;
             header?: never;
@@ -4155,75 +4244,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Current user information */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_handleMcp_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
                 };
-                content?: never;
             };
-        };
-    };
-    WikirooController_handleMcp_options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_handleMcp_head: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    WikirooController_handleMcp_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
+            /** @description Not authenticated */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4841,77 +4872,61 @@ export interface operations {
             };
         };
     };
-    ClientRegistrationController_registerClient: {
+    WikirooController_listPages: {
+        parameters: {
+            query?: {
+                /** @description Filter pages by tag name */
+                tag?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of wiki pages */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageListResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_createPage: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                serverId: string;
-                version: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RegisterClientDto"];
+                "application/json": components["schemas"]["CreatePageDto"];
             };
         };
         responses: {
-            /** @description Client registered successfully with generated credentials */
+            /** @description Wiki page created successfully */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
             };
-            /** @description Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured) */
+            /** @description Invalid input data */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description A client with this name is already registered */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
         };
     };
-    ClientRegistrationController_getClient: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clientId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Client registration information retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"];
-                };
-            };
-            /** @description Client not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ClientRegistrationController_listClients: {
+    WikirooController_getPageTree: {
         parameters: {
             query?: never;
             header?: never;
@@ -4920,137 +4935,54 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of registered clients */
+            /** @description Page hierarchy tree */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClientRegistrationResponseDto"][];
+                    "application/json": components["schemas"]["PageTreeResponseDto"][];
                 };
             };
         };
     };
-    AuthorizationController_authorize: {
+    WikirooController_getPage: {
         parameters: {
-            query: {
-                /** @description OAuth 2.0 response type (must be "code" for authorization code flow) */
-                response_type: "code";
-                /** @description Space-delimited list of scopes being requested */
-                scope?: string;
-                /** @description Client identifier issued during registration */
-                client_id: string;
-                /** @description PKCE code challenge derived from the code verifier */
-                code_challenge: string;
-                /** @description PKCE code challenge method (S256 for SHA-256) */
-                code_challenge_method: string;
-                /** @description Redirect URI where the authorization response will be sent */
-                redirect_uri: string;
-                /** @description Opaque state value for CSRF protection */
-                state: string;
-                /** @description Resource server URL that the client wants to access */
-                resource: string;
-            };
+            query?: never;
             header?: never;
             path: {
-                serverIdentifier: string;
-                version: string;
+                /** @description Wiki page identifier */
+                id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Redirects to consent screen with authorization request ID */
-            302: {
+            /** @description Wiki page retrieved successfully */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-            /** @description Invalid authorization request parameters */
-            400: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
-                content?: never;
-            };
-            /** @description MCP server or client not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
-    AuthorizationController_authorizeConsent: {
+    WikirooController_deletePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serverIdentifier: string;
-                version: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConsentDecisionDto"];
-            };
-        };
-        responses: {
-            /** @description Redirects to client redirect_uri with authorization code or error */
-            302: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid consent decision or flow state */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Authorization flow has already been used */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Authorization flow not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AuthorizationController_getFlow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                flowId: string;
+                /** @description Wiki page identifier */
+                id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Authorization flow details retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["McpAuthorizationFlowEntity"];
-                };
-            };
-            /** @description Authorization flow not found */
-            404: {
+            /** @description Wiki page deleted successfully */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5058,73 +4990,32 @@ export interface operations {
             };
         };
     };
-    AuthorizationController_token: {
+    WikirooController_updatePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serverIdentifier: string;
-                version: string;
+                /** @description Wiki page identifier */
+                id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TokenRequestDto"];
+                "application/json": components["schemas"]["UpdatePageDto"];
             };
         };
         responses: {
-            /** @description Access token issued successfully */
+            /** @description Wiki page updated successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenResponseDto"];
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
             };
-            /** @description Invalid token request parameters */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid authorization code, code_verifier, or expired code */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AuthorizationController_introspect: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                serverIdentifier: string;
-                version: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IntrospectTokenRequestDto"];
-            };
-        };
-        responses: {
-            /** @description Token introspection response (active true/false with metadata) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IntrospectTokenResponseDto"];
-                };
-            };
-            /** @description Invalid introspection request parameters */
+            /** @description No update fields provided */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5133,54 +5024,87 @@ export interface operations {
             };
         };
     };
-    AuthorizationController_tokenExchange: {
+    WikirooController_appendToPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serverIdentifier: string;
-                version: string;
+                /** @description Wiki page identifier */
+                id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TokenExchangeRequestDto"];
+                "application/json": components["schemas"]["AppendPageDto"];
             };
         };
         responses: {
-            /** @description Token exchange successful - returns downstream access token */
+            /** @description Wiki page content appended successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenExchangeResponseDto"];
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
             };
-            /** @description Invalid token exchange request parameters */
+        };
+    };
+    WikirooController_reorderPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderPageDto"];
+            };
+        };
+        responses: {
+            /** @description Page reordered successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+        };
+    };
+    WikirooController_movePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MovePageDto"];
+            };
+        };
+        responses: {
+            /** @description Page moved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Circular reference detected or parent not found */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid or expired MCP JWT */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Insufficient scope - requested scope not entitled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Connection not found */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5188,70 +5112,64 @@ export interface operations {
             };
         };
     };
-    AuthorizationController_callback: {
+    WikirooController_addTagToPage: {
         parameters: {
-            query: {
-                /** @description Authorization code from downstream OAuth provider */
-                code: string;
-                /** @description State parameter that identifies the connection flow */
-                state: string;
-                /** @description Error code if authorization failed */
-                error?: string;
-                /** @description Space-delimited list of scopes that were granted */
-                scope?: string;
-                /** @description Error description if authorization failed */
-                error_description?: string;
-            };
+            query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description Wiki page identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddWikiTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag added to page successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_removeTagFromPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tagId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Redirects to next step in the authorization flow */
-            302: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid callback parameters or state */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Connection flow not found for provided state */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    JwksController_getJwks: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description JWKS retrieved successfully */
+            /** @description Tag removed from page successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JwksResponseDto"];
+                    "application/json": components["schemas"]["PageResponseDto"];
                 };
             };
         };
     };
-    WebAuthController_login: {
+    WikirooController_createTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -5260,21 +5178,21 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LoginRequestDto"];
+                "application/json": components["schemas"]["CreateWikiTagDto"];
             };
         };
         responses: {
-            /** @description Login successful, tokens set in httpOnly cookies */
-            200: {
+            /** @description Tag created successfully */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LoginResponseDto"];
+                    "application/json": components["schemas"]["WikiTagResponseDto"];
                 };
             };
-            /** @description Invalid credentials */
-            401: {
+            /** @description Invalid input data */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5282,7 +5200,7 @@ export interface operations {
             };
         };
     };
-    WebAuthController_refresh: {
+    WikirooController_getAllTags: {
         parameters: {
             query?: never;
             header?: never;
@@ -5291,17 +5209,30 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Token refreshed successfully, new tokens set in cookies */
+            /** @description List of all tags */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LoginResponseDto"];
+                    "application/json": components["schemas"]["WikiTagResponseDto"][];
                 };
             };
-            /** @description Invalid or expired refresh token */
-            401: {
+        };
+    };
+    WikirooController_deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag deleted successfully */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5309,7 +5240,7 @@ export interface operations {
             };
         };
     };
-    WebAuthController_logout: {
+    WikirooController_handleMcp_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5318,21 +5249,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Logout successful, cookies cleared */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": {
-                        /** @example true */
-                        ok?: boolean;
-                    };
-                };
+                content?: never;
             };
         };
     };
-    WebAuthController_me: {
+    WikirooController_handleMcp_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -5341,17 +5266,92 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Current user information */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["UserResponseDto"];
-                };
+                content?: never;
             };
-            /** @description Not authenticated */
-            401: {
+        };
+    };
+    WikirooController_handleMcp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WikirooController_handleMcp_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

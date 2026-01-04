@@ -665,594 +665,707 @@
         ]
       }
     },
-    "/api/v1/wikiroo/pages": {
+    "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
       "post": {
-        "operationId": "WikirooController_createPage",
-        "parameters": [],
+        "description": "Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.",
+        "operationId": "ClientRegistrationController_registerClient",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreatePageDto"
+                "$ref": "#/components/schemas/RegisterClientDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Wiki page created successfully",
+            "description": "Client registered successfully with generated credentials",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/ClientRegistrationResponseDto"
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid input data"
+            "description": "Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured)"
+          },
+          "409": {
+            "description": "A client with this name is already registered"
           }
         },
-        "summary": "Create a new wiki page",
+        "summary": "Register a new OAuth 2.0 client (Dynamic Client Registration)",
         "tags": [
-          "Wikiroo"
+          "Authorization Server"
         ]
-      },
+      }
+    },
+    "/api/v1/auth/clients/{clientId}": {
       "get": {
-        "operationId": "WikirooController_listPages",
+        "description": "Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.",
+        "operationId": "ClientRegistrationController_getClient",
         "parameters": [
           {
-            "name": "tag",
+            "name": "clientId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Client registration information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientRegistrationResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        },
+        "summary": "Retrieve client registration information",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/clients": {
+      "get": {
+        "description": "Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.",
+        "operationId": "ClientRegistrationController_listClients",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of registered clients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClientRegistrationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all registered clients (Admin)",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}": {
+      "get": {
+        "description": "Handles authorization requests from MCP clients. Validates the request, stores PKCE parameters, and redirects to the consent screen UI.",
+        "operationId": "AuthorizationController_authorize",
+        "parameters": [
+          {
+            "name": "response_type",
+            "required": true,
+            "in": "query",
+            "description": "OAuth 2.0 response type (must be \"code\" for authorization code flow)",
+            "schema": {
+              "example": "code",
+              "type": "string",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "name": "scope",
             "required": false,
             "in": "query",
-            "description": "Filter pages by tag name",
+            "description": "Space-delimited list of scopes being requested",
             "schema": {
-              "example": "tutorial",
+              "example": "tasks:read tasks:write",
+              "type": "string"
+            }
+          },
+          {
+            "name": "client_id",
+            "required": true,
+            "in": "query",
+            "description": "Client identifier issued during registration",
+            "schema": {
+              "example": "0bab273987a2e163c3abb40c631ec0a4",
+              "type": "string"
+            }
+          },
+          {
+            "name": "code_challenge",
+            "required": true,
+            "in": "query",
+            "description": "PKCE code challenge derived from the code verifier",
+            "schema": {
+              "example": "SVDkCojJ1edZzG47VFce6y2o5ieCQG19ueoYMQ_xloo",
+              "type": "string"
+            }
+          },
+          {
+            "name": "code_challenge_method",
+            "required": true,
+            "in": "query",
+            "description": "PKCE code challenge method (S256 for SHA-256)",
+            "schema": {
+              "example": "S256",
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "required": true,
+            "in": "query",
+            "description": "Redirect URI where the authorization response will be sent",
+            "schema": {
+              "example": "http://localhost:6274/oauth/callback/debug",
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "description": "Opaque state value for CSRF protection",
+            "schema": {
+              "example": "c5d4fa797d8c0a9025237aafb780ef7e9c38a721a00530372bc26c89572b1833",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource",
+            "required": true,
+            "in": "query",
+            "description": "Resource server URL that the client wants to access",
+            "schema": {
+              "example": "http://localhost:4001/",
+              "type": "string"
+            }
+          },
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirects to consent screen with authorization request ID"
+          },
+          "400": {
+            "description": "Invalid authorization request parameters"
+          },
+          "404": {
+            "description": "MCP server or client not found"
+          }
+        },
+        "summary": "OAuth 2.0 Authorization Endpoint",
+        "tags": [
+          "Authorization Server"
+        ]
+      },
+      "post": {
+        "description": "Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.",
+        "operationId": "AuthorizationController_authorizeConsent",
+        "parameters": [
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Redirects to client redirect_uri with authorization code or error"
+          },
+          "400": {
+            "description": "Invalid consent decision or flow state"
+          },
+          "401": {
+            "description": "Authorization flow has already been used"
+          },
+          "404": {
+            "description": "Authorization flow not found"
+          }
+        },
+        "summary": "OAuth 2.0 Authorization Consent Handler",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/flow/{flowId}": {
+      "get": {
+        "description": "Retrieves authorization flow details for the consent screen",
+        "operationId": "AuthorizationController_getFlow",
+        "parameters": [
+          {
+            "name": "flowId",
+            "required": true,
+            "in": "path",
+            "schema": {
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of wiki pages",
+            "description": "Authorization flow details retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageListResponseDto"
+                  "$ref": "#/components/schemas/McpAuthorizationFlowEntity"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Authorization flow not found"
+          }
+        },
+        "summary": "Get authorization flow details",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/token/mcp/{serverIdentifier}/{version}": {
+      "post": {
+        "description": "Exchanges authorization code for access token. Validates PKCE code_verifier, issues signed JWT access token and refresh token.",
+        "operationId": "AuthorizationController_token",
+        "parameters": [
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access token issued successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token request parameters"
+          },
+          "401": {
+            "description": "Invalid authorization code, code_verifier, or expired code"
+          }
+        },
+        "summary": "OAuth 2.0 Token Endpoint",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}": {
+      "post": {
+        "description": "Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.",
+        "operationId": "AuthorizationController_introspect",
+        "parameters": [
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntrospectTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token introspection response (active true/false with metadata)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntrospectTokenResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid introspection request parameters"
+          }
+        },
+        "summary": "OAuth 2.0 Token Introspection Endpoint",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}": {
+      "post": {
+        "description": "Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.",
+        "operationId": "AuthorizationController_tokenExchange",
+        "parameters": [
+          {
+            "name": "serverIdentifier",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenExchangeRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token exchange successful - returns downstream access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenExchangeResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token exchange request parameters"
+          },
+          "401": {
+            "description": "Invalid or expired MCP JWT"
+          },
+          "403": {
+            "description": "Insufficient scope - requested scope not entitled"
+          },
+          "404": {
+            "description": "Connection not found"
+          }
+        },
+        "summary": "RFC 8693 Token Exchange Endpoint",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/api/v1/auth/callback": {
+      "get": {
+        "description": "Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.",
+        "operationId": "AuthorizationController_callback",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "description": "Authorization code from downstream OAuth provider",
+            "schema": {
+              "example": "abc123xyz",
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "description": "State parameter that identifies the connection flow",
+            "schema": {
+              "example": "xyz789abc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "required": false,
+            "in": "query",
+            "description": "Error code if authorization failed",
+            "schema": {
+              "example": "access_denied",
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Space-delimited list of scopes that were granted",
+            "schema": {
+              "example": "tasks:read tasks:write",
+              "type": "string"
+            }
+          },
+          {
+            "name": "error_description",
+            "required": false,
+            "in": "query",
+            "description": "Error description if authorization failed",
+            "schema": {
+              "example": "User denied the authorization request",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirects to next step in the authorization flow"
+          },
+          "400": {
+            "description": "Invalid callback parameters or state"
+          },
+          "404": {
+            "description": "Connection flow not found for provided state"
+          }
+        },
+        "summary": "OAuth 2.0 Callback Endpoint for Downstream Systems",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
+    "/.well-known/jwks.json": {
+      "get": {
+        "description": "Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.",
+        "operationId": "JwksController_getJwks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "JWKS retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JwksResponseDto"
                 }
               }
             }
           }
         },
-        "summary": "List wiki pages without content",
+        "summary": "Get JSON Web Key Set (JWKS)",
         "tags": [
-          "Wikiroo"
+          "JWKS"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/tree": {
-      "get": {
-        "operationId": "WikirooController_getPageTree",
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "WebAuthController_login",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Page hierarchy tree",
+            "description": "Login successful, tokens set in httpOnly cookies",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PageTreeResponseDto"
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Login with email and password",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "WebAuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully, new tokens set in cookies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        },
+        "summary": "Refresh access token using refresh token",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "WebAuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful, cookies cleared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
                   }
                 }
               }
             }
           }
         },
-        "summary": "Get page hierarchy tree",
+        "summary": "Logout and revoke refresh token",
         "tags": [
-          "Wikiroo"
+          "Web Authentication"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/{id}": {
+    "/api/v1/auth/me": {
       "get": {
-        "operationId": "WikirooController_getPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
+        "operationId": "WebAuthController_me",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "Wiki page retrieved successfully",
+            "description": "Current user information",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Fetch a wiki page by ID",
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "patch": {
-        "operationId": "WikirooController_updatePage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Wiki page updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/UserResponseDto"
                 }
               }
             }
           },
-          "400": {
-            "description": "No update fields provided"
+          "401": {
+            "description": "Not authenticated"
           }
         },
-        "summary": "Update an existing wiki page",
+        "summary": "Get current authenticated user",
         "tags": [
-          "Wikiroo"
-        ]
-      },
-      "delete": {
-        "operationId": "WikirooController_deletePage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Wiki page deleted successfully"
-          }
-        },
-        "summary": "Delete a wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/append": {
-      "post": {
-        "operationId": "WikirooController_appendToPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AppendPageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Wiki page content appended successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Append content to an existing wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/reorder": {
-      "patch": {
-        "operationId": "WikirooController_reorderPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReorderPageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Page reordered successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Reorder a page within siblings",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/move": {
-      "patch": {
-        "operationId": "WikirooController_movePage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MovePageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Page moved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Circular reference detected or parent not found"
-          }
-        },
-        "summary": "Move page to different parent",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/tags": {
-      "post": {
-        "operationId": "WikirooController_addTagToPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Wiki page identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddWikiTagDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tag added to page successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "summary": "Add a tag to a wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
-      "delete": {
-        "operationId": "WikirooController_removeTagFromPage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tagId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Tag removed from page successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Remove a tag from a wiki page",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/tags": {
-      "post": {
-        "operationId": "WikirooController_createTag",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateWikiTagDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tag created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WikiTagResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "summary": "Create a new tag",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/tags/all": {
-      "get": {
-        "operationId": "WikirooController_getAllTags",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of all tags",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WikiTagResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get all tags",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/tags/{tagId}": {
-      "delete": {
-        "operationId": "WikirooController_deleteTag",
-        "parameters": [
-          {
-            "name": "tagId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Tag deleted successfully"
-          }
-        },
-        "summary": "Delete a tag from the system",
-        "tags": [
-          "Wikiroo"
-        ]
-      }
-    },
-    "/api/v1/wikiroo/pages/mcp": {
-      "get": {
-        "operationId": "WikirooController_handleMcp_get",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "post": {
-        "operationId": "WikirooController_handleMcp_post",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "put": {
-        "operationId": "WikirooController_handleMcp_put",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "delete": {
-        "operationId": "WikirooController_handleMcp_delete",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "patch": {
-        "operationId": "WikirooController_handleMcp_patch",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "options": {
-        "operationId": "WikirooController_handleMcp_options",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "head": {
-        "operationId": "WikirooController_handleMcp_head",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
-        ]
-      },
-      "search": {
-        "operationId": "WikirooController_handleMcp_search",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Wikiroo"
+          "Web Authentication"
         ]
       }
     },
@@ -1993,213 +2106,382 @@
         ]
       }
     },
-    "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
+    "/api/v1/wikiroo/pages": {
       "post": {
-        "description": "Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.",
-        "operationId": "ClientRegistrationController_registerClient",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "version",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "operationId": "WikirooController_createPage",
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterClientDto"
+                "$ref": "#/components/schemas/CreatePageDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Client registered successfully with generated credentials",
+            "description": "Wiki page created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClientRegistrationResponseDto"
+                  "$ref": "#/components/schemas/PageResponseDto"
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid client metadata (missing fields, invalid redirect URIs, unsupported grant types, or PKCE not configured)"
-          },
-          "409": {
-            "description": "A client with this name is already registered"
+            "description": "Invalid input data"
           }
         },
-        "summary": "Register a new OAuth 2.0 client (Dynamic Client Registration)",
+        "summary": "Create a new wiki page",
         "tags": [
-          "Authorization Server"
+          "Wikiroo"
         ]
-      }
-    },
-    "/api/v1/auth/clients/{clientId}": {
+      },
       "get": {
-        "description": "Returns the registration metadata for a client. The client_secret is NOT included in the response for security reasons.",
-        "operationId": "ClientRegistrationController_getClient",
+        "operationId": "WikirooController_listPages",
         "parameters": [
           {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Filter pages by tag name",
             "schema": {
+              "example": "tutorial",
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Client registration information retrieved successfully",
+            "description": "List of wiki pages",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClientRegistrationResponseDto"
+                  "$ref": "#/components/schemas/PageListResponseDto"
                 }
               }
             }
-          },
-          "404": {
-            "description": "Client not found"
           }
         },
-        "summary": "Retrieve client registration information",
+        "summary": "List wiki pages without content",
         "tags": [
-          "Authorization Server"
+          "Wikiroo"
         ]
       }
     },
-    "/api/v1/auth/clients": {
+    "/api/v1/wikiroo/pages/tree": {
       "get": {
-        "description": "Returns a list of all registered OAuth clients. Intended for administrative purposes. Client secrets are not included.",
-        "operationId": "ClientRegistrationController_listClients",
+        "operationId": "WikirooController_getPageTree",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "List of registered clients",
+            "description": "Page hierarchy tree",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ClientRegistrationResponseDto"
+                    "$ref": "#/components/schemas/PageTreeResponseDto"
                   }
                 }
               }
             }
           }
         },
-        "summary": "List all registered clients (Admin)",
+        "summary": "Get page hierarchy tree",
         "tags": [
-          "Authorization Server"
+          "Wikiroo"
         ]
       }
     },
-    "/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}": {
+    "/api/v1/wikiroo/pages/{id}": {
       "get": {
-        "description": "Handles authorization requests from MCP clients. Validates the request, stores PKCE parameters, and redirects to the consent screen UI.",
-        "operationId": "AuthorizationController_authorize",
+        "operationId": "WikirooController_getPage",
         "parameters": [
           {
-            "name": "response_type",
+            "name": "id",
             "required": true,
-            "in": "query",
-            "description": "OAuth 2.0 response type (must be \"code\" for authorization code flow)",
+            "in": "path",
+            "description": "Wiki page identifier",
             "schema": {
-              "example": "code",
-              "type": "string",
-              "enum": [
-                "code"
-              ]
-            }
-          },
-          {
-            "name": "scope",
-            "required": false,
-            "in": "query",
-            "description": "Space-delimited list of scopes being requested",
-            "schema": {
-              "example": "tasks:read tasks:write",
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
-          },
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wiki page retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fetch a wiki page by ID",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "patch": {
+        "operationId": "WikirooController_updatePage",
+        "parameters": [
           {
-            "name": "client_id",
+            "name": "id",
             "required": true,
-            "in": "query",
-            "description": "Client identifier issued during registration",
+            "in": "path",
+            "description": "Wiki page identifier",
             "schema": {
-              "example": "0bab273987a2e163c3abb40c631ec0a4",
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
-          },
-          {
-            "name": "code_challenge",
-            "required": true,
-            "in": "query",
-            "description": "PKCE code challenge derived from the code verifier",
-            "schema": {
-              "example": "SVDkCojJ1edZzG47VFce6y2o5ieCQG19ueoYMQ_xloo",
-              "type": "string"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wiki page updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
             }
           },
+          "400": {
+            "description": "No update fields provided"
+          }
+        },
+        "summary": "Update an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "delete": {
+        "operationId": "WikirooController_deletePage",
+        "parameters": [
           {
-            "name": "code_challenge_method",
+            "name": "id",
             "required": true,
-            "in": "query",
-            "description": "PKCE code challenge method (S256 for SHA-256)",
+            "in": "path",
+            "description": "Wiki page identifier",
             "schema": {
-              "example": "S256",
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
-          },
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Wiki page deleted successfully"
+          }
+        },
+        "summary": "Delete a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/append": {
+      "post": {
+        "operationId": "WikirooController_appendToPage",
+        "parameters": [
           {
-            "name": "redirect_uri",
+            "name": "id",
             "required": true,
-            "in": "query",
-            "description": "Redirect URI where the authorization response will be sent",
+            "in": "path",
+            "description": "Wiki page identifier",
             "schema": {
-              "example": "http://localhost:6274/oauth/callback/debug",
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
-          },
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wiki page content appended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Append content to an existing wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/reorder": {
+      "patch": {
+        "operationId": "WikirooController_reorderPage",
+        "parameters": [
           {
-            "name": "state",
+            "name": "id",
             "required": true,
-            "in": "query",
-            "description": "Opaque state value for CSRF protection",
+            "in": "path",
+            "description": "Wiki page identifier",
             "schema": {
-              "example": "c5d4fa797d8c0a9025237aafb780ef7e9c38a721a00530372bc26c89572b1833",
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
-          },
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page reordered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorder a page within siblings",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/move": {
+      "patch": {
+        "operationId": "WikirooController_movePage",
+        "parameters": [
           {
-            "name": "resource",
+            "name": "id",
             "required": true,
-            "in": "query",
-            "description": "Resource server URL that the client wants to access",
+            "in": "path",
+            "description": "Wiki page identifier",
             "schema": {
-              "example": "http://localhost:4001/",
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovePageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Page moved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
           },
+          "400": {
+            "description": "Circular reference detected or parent not found"
+          }
+        },
+        "summary": "Move page to different parent",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/tags": {
+      "post": {
+        "operationId": "WikirooController_addTagToPage",
+        "parameters": [
           {
-            "name": "serverIdentifier",
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Wiki page identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddWikiTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag added to page successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Add a tag to a wiki page",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "WikirooController_removeTagFromPage",
+        "parameters": [
+          {
+            "name": "id",
             "required": true,
             "in": "path",
             "schema": {
@@ -2207,7 +2489,7 @@
             }
           },
           {
-            "name": "version",
+            "name": "tagId",
             "required": true,
             "in": "path",
             "schema": {
@@ -2216,484 +2498,202 @@
           }
         ],
         "responses": {
-          "302": {
-            "description": "Redirects to consent screen with authorization request ID"
-          },
-          "400": {
-            "description": "Invalid authorization request parameters"
-          },
-          "404": {
-            "description": "MCP server or client not found"
+          "200": {
+            "description": "Tag removed from page successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseDto"
+                }
+              }
+            }
           }
         },
-        "summary": "OAuth 2.0 Authorization Endpoint",
+        "summary": "Remove a tag from a wiki page",
         "tags": [
-          "Authorization Server"
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags": {
+      "post": {
+        "operationId": "WikirooController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWikiTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WikiTagResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "summary": "Create a new tag",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags/all": {
+      "get": {
+        "operationId": "WikirooController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WikiTagResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all tags",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/tags/{tagId}": {
+      "delete": {
+        "operationId": "WikirooController_deleteTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tag deleted successfully"
+          }
+        },
+        "summary": "Delete a tag from the system",
+        "tags": [
+          "Wikiroo"
+        ]
+      }
+    },
+    "/api/v1/wikiroo/pages/mcp": {
+      "get": {
+        "operationId": "WikirooController_handleMcp_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
         ]
       },
       "post": {
-        "description": "Handles user consent decision. Validates the flow ID (CSRF token), generates an authorization code if approved, and redirects back to the client with the code or error.",
-        "operationId": "AuthorizationController_authorizeConsent",
-        "parameters": [
-          {
-            "name": "serverIdentifier",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "version",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConsentDecisionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "302": {
-            "description": "Redirects to client redirect_uri with authorization code or error"
-          },
-          "400": {
-            "description": "Invalid consent decision or flow state"
-          },
-          "401": {
-            "description": "Authorization flow has already been used"
-          },
-          "404": {
-            "description": "Authorization flow not found"
-          }
-        },
-        "summary": "OAuth 2.0 Authorization Consent Handler",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/api/v1/auth/flow/{flowId}": {
-      "get": {
-        "description": "Retrieves authorization flow details for the consent screen",
-        "operationId": "AuthorizationController_getFlow",
-        "parameters": [
-          {
-            "name": "flowId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Authorization flow details retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/McpAuthorizationFlowEntity"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Authorization flow not found"
-          }
-        },
-        "summary": "Get authorization flow details",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/api/v1/auth/token/mcp/{serverIdentifier}/{version}": {
-      "post": {
-        "description": "Exchanges authorization code for access token. Validates PKCE code_verifier, issues signed JWT access token and refresh token.",
-        "operationId": "AuthorizationController_token",
-        "parameters": [
-          {
-            "name": "serverIdentifier",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "version",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TokenRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Access token issued successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid token request parameters"
-          },
-          "401": {
-            "description": "Invalid authorization code, code_verifier, or expired code"
-          }
-        },
-        "summary": "OAuth 2.0 Token Endpoint",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}": {
-      "post": {
-        "description": "Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.",
-        "operationId": "AuthorizationController_introspect",
-        "parameters": [
-          {
-            "name": "serverIdentifier",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "version",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IntrospectTokenRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Token introspection response (active true/false with metadata)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntrospectTokenResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid introspection request parameters"
-          }
-        },
-        "summary": "OAuth 2.0 Token Introspection Endpoint",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}": {
-      "post": {
-        "description": "Exchanges MCP JWT access token for downstream system tokens. Validates MCP token, resolves scope mappings, and returns downstream access token with automatic refresh if needed.",
-        "operationId": "AuthorizationController_tokenExchange",
-        "parameters": [
-          {
-            "name": "serverIdentifier",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "version",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TokenExchangeRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Token exchange successful - returns downstream access token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenExchangeResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid token exchange request parameters"
-          },
-          "401": {
-            "description": "Invalid or expired MCP JWT"
-          },
-          "403": {
-            "description": "Insufficient scope - requested scope not entitled"
-          },
-          "404": {
-            "description": "Connection not found"
-          }
-        },
-        "summary": "RFC 8693 Token Exchange Endpoint",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/api/v1/auth/callback": {
-      "get": {
-        "description": "Handles callbacks from downstream OAuth providers. Validates the state, exchanges authorization code for tokens, and continues the auth flow.",
-        "operationId": "AuthorizationController_callback",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "query",
-            "description": "Authorization code from downstream OAuth provider",
-            "schema": {
-              "example": "abc123xyz",
-              "type": "string"
-            }
-          },
-          {
-            "name": "state",
-            "required": true,
-            "in": "query",
-            "description": "State parameter that identifies the connection flow",
-            "schema": {
-              "example": "xyz789abc",
-              "type": "string"
-            }
-          },
-          {
-            "name": "error",
-            "required": false,
-            "in": "query",
-            "description": "Error code if authorization failed",
-            "schema": {
-              "example": "access_denied",
-              "type": "string"
-            }
-          },
-          {
-            "name": "scope",
-            "required": false,
-            "in": "query",
-            "description": "Space-delimited list of scopes that were granted",
-            "schema": {
-              "example": "tasks:read tasks:write",
-              "type": "string"
-            }
-          },
-          {
-            "name": "error_description",
-            "required": false,
-            "in": "query",
-            "description": "Error description if authorization failed",
-            "schema": {
-              "example": "User denied the authorization request",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "302": {
-            "description": "Redirects to next step in the authorization flow"
-          },
-          "400": {
-            "description": "Invalid callback parameters or state"
-          },
-          "404": {
-            "description": "Connection flow not found for provided state"
-          }
-        },
-        "summary": "OAuth 2.0 Callback Endpoint for Downstream Systems",
-        "tags": [
-          "Authorization Server"
-        ]
-      }
-    },
-    "/.well-known/jwks.json": {
-      "get": {
-        "description": "Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.",
-        "operationId": "JwksController_getJwks",
+        "operationId": "WikirooController_handleMcp_post",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "JWKS retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JwksResponseDto"
-                }
-              }
-            }
+            "description": ""
           }
         },
-        "summary": "Get JSON Web Key Set (JWKS)",
         "tags": [
-          "JWKS"
+          "Wikiroo"
         ]
-      }
-    },
-    "/api/v1/api/v1/auth/login": {
-      "post": {
-        "operationId": "WebAuthController_login",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful, tokens set in httpOnly cookies",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LoginResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid credentials"
-          }
-        },
-        "summary": "Login with email and password",
-        "tags": [
-          "Web Authentication"
-        ]
-      }
-    },
-    "/api/v1/api/v1/auth/refresh": {
-      "post": {
-        "operationId": "WebAuthController_refresh",
+      },
+      "put": {
+        "operationId": "WikirooController_handleMcp_put",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Token refreshed successfully, new tokens set in cookies",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LoginResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid or expired refresh token"
+            "description": ""
           }
         },
-        "summary": "Refresh access token using refresh token",
         "tags": [
-          "Web Authentication"
+          "Wikiroo"
         ]
-      }
-    },
-    "/api/v1/api/v1/auth/logout": {
-      "post": {
-        "operationId": "WebAuthController_logout",
+      },
+      "delete": {
+        "operationId": "WikirooController_handleMcp_delete",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Logout successful, cookies cleared",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean",
-                      "example": true
-                    }
-                  }
-                }
-              }
-            }
+            "description": ""
           }
         },
-        "summary": "Logout and revoke refresh token",
         "tags": [
-          "Web Authentication"
+          "Wikiroo"
         ]
-      }
-    },
-    "/api/v1/api/v1/auth/me": {
-      "get": {
-        "operationId": "WebAuthController_me",
+      },
+      "patch": {
+        "operationId": "WikirooController_handleMcp_patch",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Current user information",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not authenticated"
+            "description": ""
           }
         },
-        "summary": "Get current authenticated user",
         "tags": [
-          "Web Authentication"
+          "Wikiroo"
+        ]
+      },
+      "options": {
+        "operationId": "WikirooController_handleMcp_options",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "head": {
+        "operationId": "WikirooController_handleMcp_head",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
+        ]
+      },
+      "search": {
+        "operationId": "WikirooController_handleMcp_search",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wikiroo"
         ]
       }
     },
@@ -3894,1051 +3894,6 @@
           "name"
         ]
       },
-      "CreatePageDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Title of the wiki page",
-            "example": "How to onboard new agents"
-          },
-          "content": {
-            "type": "string",
-            "description": "Markdown content of the page",
-            "example": "# Welcome to Wikiroo\nThis is the onboarding guide."
-          },
-          "author": {
-            "type": "string",
-            "description": "Author of the page",
-            "example": "Agent Roo"
-          },
-          "tagNames": {
-            "description": "Array of tag names to associate with the page",
-            "example": [
-              "documentation",
-              "onboarding"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "parentId": {
-            "type": "string",
-            "description": "Parent page ID for nesting",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          }
-        },
-        "required": [
-          "title",
-          "content",
-          "author"
-        ]
-      },
-      "WikiTagResponseDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "project-alpha"
-          },
-          "color": {
-            "type": "string",
-            "description": "Color for the tag (hex format)",
-            "example": "#FF5733"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "PageResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the page",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Title of the wiki page",
-            "example": "How to onboard new agents"
-          },
-          "content": {
-            "type": "string",
-            "description": "Markdown content of the wiki page",
-            "example": "# Welcome to Wikiroo"
-          },
-          "author": {
-            "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
-          },
-          "tags": {
-            "description": "Tags associated with the page",
-            "example": [
-              {
-                "id": "123",
-                "name": "project-alpha",
-                "color": "#FF5733",
-                "description": "Project Alpha notes",
-                "createdAt": "2025-01-01T12:00:00.000Z",
-                "updatedAt": "2025-01-01T12:00:00.000Z"
-              }
-            ],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WikiTagResponseDto"
-            }
-          },
-          "parentId": {
-            "type": "object",
-            "description": "Parent page ID (null if root page)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "order": {
-            "type": "number",
-            "description": "Order within siblings",
-            "example": 0
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Creation timestamp",
-            "example": "2025-01-01T12:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Last update timestamp",
-            "example": "2025-01-02T15:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "content",
-          "author",
-          "tags",
-          "parentId",
-          "order",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "PageSummaryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the page",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Title of the wiki page",
-            "example": "How to onboard new agents"
-          },
-          "author": {
-            "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
-          },
-          "tags": {
-            "description": "Tags associated with the page",
-            "example": [
-              {
-                "id": "123",
-                "name": "project-alpha",
-                "color": "#FF5733",
-                "description": "Project Alpha notes",
-                "createdAt": "2025-01-01T12:00:00.000Z",
-                "updatedAt": "2025-01-01T12:00:00.000Z"
-              }
-            ],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WikiTagResponseDto"
-            }
-          },
-          "parentId": {
-            "type": "object",
-            "description": "Parent page ID (null if root page)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "order": {
-            "type": "number",
-            "description": "Order within siblings",
-            "example": 0
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Creation timestamp",
-            "example": "2025-01-01T12:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Last update timestamp",
-            "example": "2025-01-02T15:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "author",
-          "tags",
-          "parentId",
-          "order",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "PageListResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "List of wiki pages",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PageSummaryDto"
-            }
-          }
-        },
-        "required": [
-          "items"
-        ]
-      },
-      "PageTreeResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the page",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Title of the wiki page",
-            "example": "How to onboard new agents"
-          },
-          "author": {
-            "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
-          },
-          "parentId": {
-            "type": "object",
-            "description": "Parent page ID (null if root page)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "order": {
-            "type": "number",
-            "description": "Order within siblings",
-            "example": 0
-          },
-          "children": {
-            "description": "Child pages",
-            "example": [],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PageTreeResponseDto"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Creation timestamp",
-            "example": "2025-01-01T12:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Last update timestamp",
-            "example": "2025-01-02T15:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "author",
-          "parentId",
-          "order",
-          "children",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdatePageDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Updated title of the wiki page",
-            "example": "Updated onboarding guide"
-          },
-          "content": {
-            "type": "string",
-            "description": "Updated markdown content of the page",
-            "example": "## Updated content"
-          },
-          "author": {
-            "type": "string",
-            "description": "Updated author of the page",
-            "example": "Agent Roo"
-          },
-          "tagNames": {
-            "description": "Array of tag names to associate with the page",
-            "example": [
-              "documentation",
-              "onboarding"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "parentId": {
-            "type": "string",
-            "description": "Parent page ID (null to remove parent)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "order": {
-            "type": "number",
-            "description": "Order within siblings",
-            "example": 0
-          }
-        }
-      },
-      "AppendPageDto": {
-        "type": "object",
-        "properties": {
-          "content": {
-            "type": "string",
-            "description": "Markdown content to append to the existing page content",
-            "example": "\n## Additional details"
-          }
-        },
-        "required": [
-          "content"
-        ]
-      },
-      "ReorderPageDto": {
-        "type": "object",
-        "properties": {
-          "newOrder": {
-            "type": "number",
-            "description": "New order position within siblings",
-            "example": 2
-          }
-        },
-        "required": [
-          "newOrder"
-        ]
-      },
-      "MovePageDto": {
-        "type": "object",
-        "properties": {
-          "newParentId": {
-            "type": "object",
-            "description": "New parent page ID (null to move to root)",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          }
-        },
-        "required": [
-          "newParentId"
-        ]
-      },
-      "AddWikiTagDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "project-alpha"
-          },
-          "color": {
-            "type": "string",
-            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
-            "example": "#FF5733"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "CreateWikiTagDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "project-alpha"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "CreateServerDto": {
-        "type": "object",
-        "properties": {
-          "providedId": {
-            "type": "string",
-            "description": "Human-readable unique identifier for the MCP server",
-            "example": "github-integration"
-          },
-          "name": {
-            "type": "string",
-            "description": "Display name of the MCP server",
-            "example": "GitHub Integration"
-          },
-          "description": {
-            "type": "string",
-            "description": "Short description of the MCP server",
-            "example": "Provides access to GitHub repositories and issues"
-          },
-          "url": {
-            "type": "string",
-            "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
-          }
-        },
-        "required": [
-          "providedId",
-          "name",
-          "description"
-        ]
-      },
-      "ServerResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the MCP server",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "providedId": {
-            "type": "string",
-            "description": "Human-readable unique identifier for the MCP server",
-            "example": "github-integration"
-          },
-          "name": {
-            "type": "string",
-            "description": "Display name of the MCP server",
-            "example": "GitHub Integration"
-          },
-          "description": {
-            "type": "string",
-            "description": "Short description of the MCP server",
-            "example": "Provides access to GitHub repositories and issues"
-          },
-          "url": {
-            "type": "string",
-            "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the server was created",
-            "example": "2025-11-05T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the server was last updated",
-            "example": "2025-11-05T08:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "providedId",
-          "name",
-          "description",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "ServerListResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "List of MCP servers",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ServerResponseDto"
-            }
-          },
-          "total": {
-            "type": "number",
-            "description": "Total number of servers",
-            "example": 100
-          },
-          "page": {
-            "type": "number",
-            "description": "Current page number",
-            "example": 1
-          },
-          "limit": {
-            "type": "number",
-            "description": "Number of items per page",
-            "example": 50
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "limit"
-        ]
-      },
-      "UpdateServerDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Display name of the MCP server",
-            "example": "GitHub Integration"
-          },
-          "description": {
-            "type": "string",
-            "description": "Short description of the MCP server",
-            "example": "Provides access to GitHub repositories and issues"
-          },
-          "url": {
-            "type": "string",
-            "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
-          }
-        }
-      },
-      "DeleteServerResponseDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "Confirmation message indicating the server was deleted",
-            "example": "Server deleted successfully"
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "CreateScopeDto": {
-        "type": "object",
-        "properties": {
-          "scopeId": {
-            "type": "string",
-            "description": "Unique scope identifier (e.g., tool:read, tool:write)",
-            "example": "tool:read"
-          },
-          "description": {
-            "type": "string",
-            "description": "Description of what this scope grants access to",
-            "example": "Read access to MCP tools"
-          }
-        },
-        "required": [
-          "scopeId",
-          "description"
-        ]
-      },
-      "ScopeResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the scope",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "scopeId": {
-            "type": "string",
-            "description": "Unique scope identifier (e.g., tool:read)",
-            "example": "tool:read"
-          },
-          "description": {
-            "type": "string",
-            "description": "Description of what this scope allows",
-            "example": "Read access to tools"
-          },
-          "serverId": {
-            "type": "string",
-            "description": "UUID of the MCP server this scope belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the scope was created",
-            "example": "2025-11-05T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the scope was last updated",
-            "example": "2025-11-05T08:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "scopeId",
-          "description",
-          "serverId",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "DeleteScopeResponseDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "Confirmation message indicating the scope was deleted",
-            "example": "Scope deleted successfully"
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "CreateConnectionDto": {
-        "type": "object",
-        "properties": {
-          "friendlyName": {
-            "type": "string",
-            "description": "Friendly name to identify this OAuth connection",
-            "example": "GitHub OAuth Connection"
-          },
-          "providedId": {
-            "type": "string",
-            "description": "Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.",
-            "example": "google-oauth"
-          },
-          "clientId": {
-            "type": "string",
-            "description": "OAuth client ID for the downstream provider",
-            "example": "github_client_abc123"
-          },
-          "clientSecret": {
-            "type": "string",
-            "description": "OAuth client secret for the downstream provider",
-            "example": "secret_xyz789"
-          },
-          "authorizeUrl": {
-            "type": "string",
-            "description": "OAuth authorization endpoint URL",
-            "example": "https://github.com/login/oauth/authorize"
-          },
-          "tokenUrl": {
-            "type": "string",
-            "description": "OAuth token endpoint URL",
-            "example": "https://github.com/login/oauth/access_token"
-          }
-        },
-        "required": [
-          "friendlyName",
-          "clientId",
-          "clientSecret",
-          "authorizeUrl",
-          "tokenUrl"
-        ]
-      },
-      "ConnectionResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the connection",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "serverId": {
-            "type": "string",
-            "description": "UUID of the MCP server this connection belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "friendlyName": {
-            "type": "string",
-            "description": "Friendly name for operators to distinguish connections",
-            "example": "Production GitHub OAuth"
-          },
-          "clientId": {
-            "type": "string",
-            "description": "OAuth client ID",
-            "example": "client_abc123"
-          },
-          "clientSecret": {
-            "type": "string",
-            "description": "OAuth client secret (masked for security)",
-            "example": null,
-            "nullable": true
-          },
-          "authorizeUrl": {
-            "type": "string",
-            "description": "OAuth authorization URL",
-            "example": "https://github.com/login/oauth/authorize"
-          },
-          "tokenUrl": {
-            "type": "string",
-            "description": "OAuth token URL",
-            "example": "https://github.com/login/oauth/access_token"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the connection was created",
-            "example": "2025-11-05T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the connection was last updated",
-            "example": "2025-11-05T08:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "serverId",
-          "friendlyName",
-          "clientId",
-          "authorizeUrl",
-          "tokenUrl",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateConnectionDto": {
-        "type": "object",
-        "properties": {
-          "friendlyName": {
-            "type": "string",
-            "description": "Friendly name to identify this OAuth connection",
-            "example": "GitHub OAuth Connection"
-          },
-          "providedId": {
-            "type": "string",
-            "description": "Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.",
-            "example": "google-oauth"
-          },
-          "clientId": {
-            "type": "string",
-            "description": "OAuth client ID for the downstream provider",
-            "example": "github_client_abc123"
-          },
-          "clientSecret": {
-            "type": "string",
-            "description": "OAuth client secret for the downstream provider",
-            "example": "secret_xyz789"
-          },
-          "authorizeUrl": {
-            "type": "string",
-            "description": "OAuth authorization endpoint URL",
-            "example": "https://github.com/login/oauth/authorize"
-          },
-          "tokenUrl": {
-            "type": "string",
-            "description": "OAuth token endpoint URL",
-            "example": "https://github.com/login/oauth/access_token"
-          }
-        }
-      },
-      "DeleteConnectionResponseDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "Confirmation message indicating the connection was deleted",
-            "example": "Connection deleted successfully"
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "CreateMappingDto": {
-        "type": "object",
-        "properties": {
-          "scopeId": {
-            "type": "string",
-            "description": "MCP scope ID to map from",
-            "example": "tool:read"
-          },
-          "connectionId": {
-            "type": "string",
-            "description": "Connection ID that owns this mapping",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "downstreamScope": {
-            "type": "string",
-            "description": "Downstream OAuth scope string",
-            "example": "repo:read"
-          }
-        },
-        "required": [
-          "scopeId",
-          "connectionId",
-          "downstreamScope"
-        ]
-      },
-      "MappingResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the mapping",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "scopeId": {
-            "type": "string",
-            "description": "MCP scope identifier",
-            "example": "tool:read"
-          },
-          "serverId": {
-            "type": "string",
-            "description": "UUID of the MCP server",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "connectionId": {
-            "type": "string",
-            "description": "UUID of the downstream OAuth connection",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "downstreamScope": {
-            "type": "string",
-            "description": "Downstream provider scope string",
-            "example": "repo:read"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the mapping was created",
-            "example": "2025-11-05T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the mapping was last updated",
-            "example": "2025-11-05T08:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "scopeId",
-          "serverId",
-          "connectionId",
-          "downstreamScope",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "DeleteMappingResponseDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "Confirmation message indicating the mapping was deleted",
-            "example": "Mapping deleted successfully"
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "McpFlowResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the MCP authorization flow",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "authorizationJourneyId": {
-            "type": "string",
-            "description": "UUID of the authorization journey this flow belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "serverId": {
-            "type": "string",
-            "description": "UUID of the MCP server",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "clientId": {
-            "type": "string",
-            "description": "UUID of the registered MCP client",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "clientName": {
-            "type": "string",
-            "description": "Client name for display",
-            "example": "My MCP Client",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "description": "Current status of the MCP authorization flow",
-            "example": "CLIENT_REGISTERED",
-            "enum": [
-              "CLIENT_NOT_REGISTERED",
-              "CLIENT_REGISTERED",
-              "AUTHORIZATION_REQUEST_STARTED",
-              "USER_CONSENT_OK",
-              "USER_CONSENT_REJECTED",
-              "WAITING_ON_DOWNSTREAM_AUTH",
-              "AUTHORIZATION_CODE_ISSUED",
-              "AUTHORIZATION_CODE_EXCHANGED"
-            ]
-          },
-          "scope": {
-            "type": "string",
-            "description": "Scopes requested by the client",
-            "example": "tool:read tool:execute",
-            "nullable": true
-          },
-          "authorizationCodeExpiresAt": {
-            "type": "string",
-            "description": "When the authorization code expires",
-            "example": "2025-12-15T09:00:00.000Z",
-            "nullable": true
-          },
-          "authorizationCodeUsed": {
-            "type": "boolean",
-            "description": "Whether the authorization code has been used",
-            "example": false
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the flow was created",
-            "example": "2025-12-15T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the flow was last updated",
-            "example": "2025-12-15T09:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "authorizationJourneyId",
-          "serverId",
-          "clientId",
-          "status",
-          "authorizationCodeUsed",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "ConnectionFlowResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the connection authorization flow",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "authorizationJourneyId": {
-            "type": "string",
-            "description": "UUID of the authorization journey this flow belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "mcpConnectionId": {
-            "type": "string",
-            "description": "UUID of the MCP connection this flow uses",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "connectionName": {
-            "type": "string",
-            "description": "Connection friendly name",
-            "example": "GitHub OAuth Connection",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "description": "Current status of the connection flow",
-            "example": "pending",
-            "enum": [
-              "pending",
-              "authorized",
-              "failed"
-            ]
-          },
-          "tokenExpiresAt": {
-            "type": "string",
-            "description": "When the access token expires",
-            "example": "2025-12-15T10:00:00.000Z",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the flow was created",
-            "example": "2025-12-15T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the flow was last updated",
-            "example": "2025-12-15T09:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "authorizationJourneyId",
-          "mcpConnectionId",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "AuthJourneyResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the authorization journey",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "status": {
-            "type": "string",
-            "description": "Current status of the authorization journey",
-            "example": "mcp_auth_flow_started",
-            "enum": [
-              "not_started",
-              "mcp_auth_flow_started",
-              "mcp_auth_flow_completed",
-              "connections_flow_started",
-              "connections_flow_completed",
-              "authorization_code_issued",
-              "authorization_code_exchanged"
-            ]
-          },
-          "mcpAuthorizationFlow": {
-            "description": "The MCP authorization flow for this journey",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/McpFlowResponseDto"
-              }
-            ]
-          },
-          "connectionAuthorizationFlows": {
-            "description": "Connection authorization flows for this journey",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConnectionFlowResponseDto"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the journey was created",
-            "example": "2025-12-15T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the journey was last updated",
-            "example": "2025-12-15T09:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "status",
-          "mcpAuthorizationFlow",
-          "connectionAuthorizationFlows",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
       "RegisterClientDto": {
         "type": "object",
         "properties": {
@@ -5621,6 +4576,1051 @@
         "required": [
           "user",
           "expiresIn"
+        ]
+      },
+      "CreateServerDto": {
+        "type": "object",
+        "properties": {
+          "providedId": {
+            "type": "string",
+            "description": "Human-readable unique identifier for the MCP server",
+            "example": "github-integration"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the MCP server",
+            "example": "GitHub Integration"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the MCP server",
+            "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+          }
+        },
+        "required": [
+          "providedId",
+          "name",
+          "description"
+        ]
+      },
+      "ServerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the MCP server",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "providedId": {
+            "type": "string",
+            "description": "Human-readable unique identifier for the MCP server",
+            "example": "github-integration"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the MCP server",
+            "example": "GitHub Integration"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the MCP server",
+            "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the server was created",
+            "example": "2025-11-05T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the server was last updated",
+            "example": "2025-11-05T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "providedId",
+          "name",
+          "description",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ServerListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of MCP servers",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServerResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of servers",
+            "example": 100
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 50
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "UpdateServerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name of the MCP server",
+            "example": "GitHub Integration"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the MCP server",
+            "example": "Provides access to GitHub repositories and issues"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL that MCP Clients will use to connect to the server",
+            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+          }
+        }
+      },
+      "DeleteServerResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the server was deleted",
+            "example": "Server deleted successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "CreateScopeDto": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "type": "string",
+            "description": "Unique scope identifier (e.g., tool:read, tool:write)",
+            "example": "tool:read"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this scope grants access to",
+            "example": "Read access to MCP tools"
+          }
+        },
+        "required": [
+          "scopeId",
+          "description"
+        ]
+      },
+      "ScopeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the scope",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "scopeId": {
+            "type": "string",
+            "description": "Unique scope identifier (e.g., tool:read)",
+            "example": "tool:read"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this scope allows",
+            "example": "Read access to tools"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server this scope belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the scope was created",
+            "example": "2025-11-05T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the scope was last updated",
+            "example": "2025-11-05T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "scopeId",
+          "description",
+          "serverId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DeleteScopeResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the scope was deleted",
+            "example": "Scope deleted successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "CreateConnectionDto": {
+        "type": "object",
+        "properties": {
+          "friendlyName": {
+            "type": "string",
+            "description": "Friendly name to identify this OAuth connection",
+            "example": "GitHub OAuth Connection"
+          },
+          "providedId": {
+            "type": "string",
+            "description": "Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.",
+            "example": "google-oauth"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client ID for the downstream provider",
+            "example": "github_client_abc123"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "OAuth client secret for the downstream provider",
+            "example": "secret_xyz789"
+          },
+          "authorizeUrl": {
+            "type": "string",
+            "description": "OAuth authorization endpoint URL",
+            "example": "https://github.com/login/oauth/authorize"
+          },
+          "tokenUrl": {
+            "type": "string",
+            "description": "OAuth token endpoint URL",
+            "example": "https://github.com/login/oauth/access_token"
+          }
+        },
+        "required": [
+          "friendlyName",
+          "clientId",
+          "clientSecret",
+          "authorizeUrl",
+          "tokenUrl"
+        ]
+      },
+      "ConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the connection",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server this connection belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "friendlyName": {
+            "type": "string",
+            "description": "Friendly name for operators to distinguish connections",
+            "example": "Production GitHub OAuth"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client ID",
+            "example": "client_abc123"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "OAuth client secret (masked for security)",
+            "example": null,
+            "nullable": true
+          },
+          "authorizeUrl": {
+            "type": "string",
+            "description": "OAuth authorization URL",
+            "example": "https://github.com/login/oauth/authorize"
+          },
+          "tokenUrl": {
+            "type": "string",
+            "description": "OAuth token URL",
+            "example": "https://github.com/login/oauth/access_token"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the connection was created",
+            "example": "2025-11-05T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the connection was last updated",
+            "example": "2025-11-05T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "serverId",
+          "friendlyName",
+          "clientId",
+          "authorizeUrl",
+          "tokenUrl",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateConnectionDto": {
+        "type": "object",
+        "properties": {
+          "friendlyName": {
+            "type": "string",
+            "description": "Friendly name to identify this OAuth connection",
+            "example": "GitHub OAuth Connection"
+          },
+          "providedId": {
+            "type": "string",
+            "description": "Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.",
+            "example": "google-oauth"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client ID for the downstream provider",
+            "example": "github_client_abc123"
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "OAuth client secret for the downstream provider",
+            "example": "secret_xyz789"
+          },
+          "authorizeUrl": {
+            "type": "string",
+            "description": "OAuth authorization endpoint URL",
+            "example": "https://github.com/login/oauth/authorize"
+          },
+          "tokenUrl": {
+            "type": "string",
+            "description": "OAuth token endpoint URL",
+            "example": "https://github.com/login/oauth/access_token"
+          }
+        }
+      },
+      "DeleteConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the connection was deleted",
+            "example": "Connection deleted successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "CreateMappingDto": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "type": "string",
+            "description": "MCP scope ID to map from",
+            "example": "tool:read"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "Connection ID that owns this mapping",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "downstreamScope": {
+            "type": "string",
+            "description": "Downstream OAuth scope string",
+            "example": "repo:read"
+          }
+        },
+        "required": [
+          "scopeId",
+          "connectionId",
+          "downstreamScope"
+        ]
+      },
+      "MappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the mapping",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "scopeId": {
+            "type": "string",
+            "description": "MCP scope identifier",
+            "example": "tool:read"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "UUID of the downstream OAuth connection",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "downstreamScope": {
+            "type": "string",
+            "description": "Downstream provider scope string",
+            "example": "repo:read"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the mapping was created",
+            "example": "2025-11-05T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the mapping was last updated",
+            "example": "2025-11-05T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "scopeId",
+          "serverId",
+          "connectionId",
+          "downstreamScope",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DeleteMappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Confirmation message indicating the mapping was deleted",
+            "example": "Mapping deleted successfully"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "McpFlowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the MCP authorization flow",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "authorizationJourneyId": {
+            "type": "string",
+            "description": "UUID of the authorization journey this flow belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "UUID of the registered MCP client",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "clientName": {
+            "type": "string",
+            "description": "Client name for display",
+            "example": "My MCP Client",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the MCP authorization flow",
+            "example": "CLIENT_REGISTERED",
+            "enum": [
+              "CLIENT_NOT_REGISTERED",
+              "CLIENT_REGISTERED",
+              "AUTHORIZATION_REQUEST_STARTED",
+              "USER_CONSENT_OK",
+              "USER_CONSENT_REJECTED",
+              "WAITING_ON_DOWNSTREAM_AUTH",
+              "AUTHORIZATION_CODE_ISSUED",
+              "AUTHORIZATION_CODE_EXCHANGED"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "description": "Scopes requested by the client",
+            "example": "tool:read tool:execute",
+            "nullable": true
+          },
+          "authorizationCodeExpiresAt": {
+            "type": "string",
+            "description": "When the authorization code expires",
+            "example": "2025-12-15T09:00:00.000Z",
+            "nullable": true
+          },
+          "authorizationCodeUsed": {
+            "type": "boolean",
+            "description": "Whether the authorization code has been used",
+            "example": false
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "authorizationJourneyId",
+          "serverId",
+          "clientId",
+          "status",
+          "authorizationCodeUsed",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ConnectionFlowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the connection authorization flow",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "authorizationJourneyId": {
+            "type": "string",
+            "description": "UUID of the authorization journey this flow belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "mcpConnectionId": {
+            "type": "string",
+            "description": "UUID of the MCP connection this flow uses",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "connectionName": {
+            "type": "string",
+            "description": "Connection friendly name",
+            "example": "GitHub OAuth Connection",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the connection flow",
+            "example": "pending",
+            "enum": [
+              "pending",
+              "authorized",
+              "failed"
+            ]
+          },
+          "tokenExpiresAt": {
+            "type": "string",
+            "description": "When the access token expires",
+            "example": "2025-12-15T10:00:00.000Z",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "authorizationJourneyId",
+          "mcpConnectionId",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AuthJourneyResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the authorization journey",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the authorization journey",
+            "example": "mcp_auth_flow_started",
+            "enum": [
+              "not_started",
+              "mcp_auth_flow_started",
+              "mcp_auth_flow_completed",
+              "connections_flow_started",
+              "connections_flow_completed",
+              "authorization_code_issued",
+              "authorization_code_exchanged"
+            ]
+          },
+          "mcpAuthorizationFlow": {
+            "description": "The MCP authorization flow for this journey",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/McpFlowResponseDto"
+              }
+            ]
+          },
+          "connectionAuthorizationFlows": {
+            "description": "Connection authorization flows for this journey",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionFlowResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the journey was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the journey was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "mcpAuthorizationFlow",
+          "connectionAuthorizationFlows",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreatePageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "content": {
+            "type": "string",
+            "description": "Markdown content of the page",
+            "example": "# Welcome to Wikiroo\nThis is the onboarding guide."
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the page",
+            "example": "Agent Roo"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the page",
+            "example": [
+              "documentation",
+              "onboarding"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Parent page ID for nesting",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "author"
+        ]
+      },
+      "WikiTagResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "content": {
+            "type": "string",
+            "description": "Markdown content of the wiki page",
+            "example": "# Welcome to Wikiroo"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "tags": {
+            "description": "Tags associated with the page",
+            "example": [
+              {
+                "id": "123",
+                "name": "project-alpha",
+                "color": "#FF5733",
+                "description": "Project Alpha notes",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-01T12:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WikiTagResponseDto"
+            }
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "author",
+          "tags",
+          "parentId",
+          "order",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PageSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "tags": {
+            "description": "Tags associated with the page",
+            "example": [
+              {
+                "id": "123",
+                "name": "project-alpha",
+                "color": "#FF5733",
+                "description": "Project Alpha notes",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-01T12:00:00.000Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WikiTagResponseDto"
+            }
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "author",
+          "tags",
+          "parentId",
+          "order",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PageListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of wiki pages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PageTreeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the page",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the wiki page",
+            "example": "How to onboard new agents"
+          },
+          "author": {
+            "type": "string",
+            "description": "Author of the wiki page",
+            "example": "Agent Roo"
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Parent page ID (null if root page)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          },
+          "children": {
+            "description": "Child pages",
+            "example": [],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageTreeResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2025-01-01T12:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2025-01-02T15:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "author",
+          "parentId",
+          "order",
+          "children",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdatePageDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Updated title of the wiki page",
+            "example": "Updated onboarding guide"
+          },
+          "content": {
+            "type": "string",
+            "description": "Updated markdown content of the page",
+            "example": "## Updated content"
+          },
+          "author": {
+            "type": "string",
+            "description": "Updated author of the page",
+            "example": "Agent Roo"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the page",
+            "example": [
+              "documentation",
+              "onboarding"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Parent page ID (null to remove parent)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "order": {
+            "type": "number",
+            "description": "Order within siblings",
+            "example": 0
+          }
+        }
+      },
+      "AppendPageDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Markdown content to append to the existing page content",
+            "example": "\n## Additional details"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "ReorderPageDto": {
+        "type": "object",
+        "properties": {
+          "newOrder": {
+            "type": "number",
+            "description": "New order position within siblings",
+            "example": 2
+          }
+        },
+        "required": [
+          "newOrder"
+        ]
+      },
+      "MovePageDto": {
+        "type": "object",
+        "properties": {
+          "newParentId": {
+            "type": "object",
+            "description": "New parent page ID (null to move to root)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          }
+        },
+        "required": [
+          "newParentId"
+        ]
+      },
+      "AddWikiTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateWikiTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "project-alpha"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "AuthorizationServerMetadataDto": {
