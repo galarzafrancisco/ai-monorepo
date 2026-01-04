@@ -20,6 +20,7 @@ import { AgentsChatSession } from './agents/AgentsChatSession';
 import { AgentsChatSessionNew } from './agents/AgentsChatSessionNew';
 import { AgentsAdminList } from './agents/AgentsAdminList';
 import { AgentAdminDetail } from './agents/AgentAdminDetail';
+import { LogoutPage } from './auth/LogoutPage';
 
 // Simple mobile detection
 const isMobile = () => {
@@ -37,6 +38,7 @@ export default function App() {
         <Routes>
           {/* Public route - login page */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/logout" element={<LogoutPage />} />
 
           {/* Protected routes - require authentication */}
           <Route
