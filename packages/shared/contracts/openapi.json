@@ -53,6 +53,11 @@
             "description": "Invalid input data"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create a new task",
         "tags": [
           "Task"
@@ -126,6 +131,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List tasks with optional filtering and pagination",
         "tags": [
           "Task"
@@ -175,6 +185,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Update task description",
         "tags": [
           "Task"
@@ -202,6 +217,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete a task",
         "tags": [
           "Task"
@@ -236,6 +256,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get a task by ID",
         "tags": [
           "Task"
@@ -285,6 +310,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Assign a task to someone",
         "tags": [
           "Task"
@@ -334,6 +364,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Add a comment to a task",
         "tags": [
           "Task"
@@ -383,6 +418,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Change task status",
         "tags": [
           "Task"
@@ -432,6 +472,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Add a tag to a task",
         "tags": [
           "Task"
@@ -474,6 +519,11 @@
             "description": "Task not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Remove a tag from a task",
         "tags": [
           "Task"
@@ -509,6 +559,11 @@
             "description": "Invalid input data"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create a new tag",
         "tags": [
           "Task"
@@ -534,6 +589,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get all tags",
         "tags": [
           "Task"
@@ -561,6 +621,11 @@
             "description": "Tag not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete a tag from the system",
         "tags": [
           "Task"
@@ -576,6 +641,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -588,6 +658,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -600,6 +675,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -612,6 +692,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -624,6 +709,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -636,6 +726,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -648,6 +743,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -660,6 +760,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Task"
         ]
@@ -1398,6 +1503,11 @@
             "description": "Server with providedId already exists"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Register a new MCP server",
         "tags": [
           "MCP Registry"
@@ -1437,6 +1547,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List all MCP servers with pagination",
         "tags": [
           "MCP Registry"
@@ -1472,6 +1587,11 @@
             "description": "Server not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get MCP server by UUID or provided ID",
         "tags": [
           "MCP Registry"
@@ -1515,6 +1635,11 @@
             "description": "Server not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Update MCP server details",
         "tags": [
           "MCP Registry"
@@ -1551,6 +1676,11 @@
             "description": "Server has dependencies"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete MCP server (must have no dependencies)",
         "tags": [
           "MCP Registry"
@@ -1606,6 +1736,11 @@
             "description": "Scope already exists"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create MCP scope(s) for a server",
         "tags": [
           "MCP Registry"
@@ -1642,6 +1777,11 @@
             "description": "Server not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List all scopes for an MCP server",
         "tags": [
           "MCP Registry"
@@ -1686,6 +1826,11 @@
             "description": "Scope not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get a specific MCP scope",
         "tags": [
           "MCP Registry"
@@ -1731,6 +1876,11 @@
             "description": "Scope has mappings"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete MCP scope (must have no mappings)",
         "tags": [
           "MCP Registry"
@@ -1779,6 +1929,11 @@
             "description": "Connection name conflict"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create OAuth connection for an MCP server",
         "tags": [
           "MCP Registry"
@@ -1815,6 +1970,11 @@
             "description": "Server not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List all connections for an MCP server",
         "tags": [
           "MCP Registry"
@@ -1850,6 +2010,11 @@
             "description": "Connection not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get a specific connection",
         "tags": [
           "MCP Registry"
@@ -1896,6 +2061,11 @@
             "description": "Connection name conflict"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Update connection details",
         "tags": [
           "MCP Registry"
@@ -1932,6 +2102,11 @@
             "description": "Connection has mappings"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete connection (must have no mappings)",
         "tags": [
           "MCP Registry"
@@ -1980,6 +2155,11 @@
             "description": "Scope or connection not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create scope mapping",
         "tags": [
           "MCP Registry"
@@ -2027,6 +2207,11 @@
             "description": "Scope not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List downstream scopes for an MCP scope",
         "tags": [
           "MCP Registry"
@@ -2062,6 +2247,11 @@
             "description": "Mapping not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete scope mapping",
         "tags": [
           "MCP Registry"
@@ -2100,6 +2290,11 @@
             "description": "Server not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get authorization journeys for an MCP server (debug/monitoring)",
         "tags": [
           "MCP Registry"
@@ -2135,6 +2330,11 @@
             "description": "Invalid input data"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create a new wiki page",
         "tags": [
           "Wikiroo"
@@ -2166,6 +2366,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List wiki pages without content",
         "tags": [
           "Wikiroo"
@@ -2191,6 +2396,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get page hierarchy tree",
         "tags": [
           "Wikiroo"
@@ -2224,6 +2434,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Fetch a wiki page by ID",
         "tags": [
           "Wikiroo"
@@ -2268,6 +2483,11 @@
             "description": "No update fields provided"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Update an existing wiki page",
         "tags": [
           "Wikiroo"
@@ -2292,6 +2512,11 @@
             "description": "Wiki page deleted successfully"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete a wiki page",
         "tags": [
           "Wikiroo"
@@ -2335,6 +2560,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Append content to an existing wiki page",
         "tags": [
           "Wikiroo"
@@ -2378,6 +2608,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Reorder a page within siblings",
         "tags": [
           "Wikiroo"
@@ -2424,6 +2659,11 @@
             "description": "Circular reference detected or parent not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Move page to different parent",
         "tags": [
           "Wikiroo"
@@ -2470,6 +2710,11 @@
             "description": "Invalid input data"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Add a tag to a wiki page",
         "tags": [
           "Wikiroo"
@@ -2509,6 +2754,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Remove a tag from a wiki page",
         "tags": [
           "Wikiroo"
@@ -2544,6 +2794,11 @@
             "description": "Invalid input data"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create a new tag",
         "tags": [
           "Wikiroo"
@@ -2569,6 +2824,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get all tags",
         "tags": [
           "Wikiroo"
@@ -2593,6 +2853,11 @@
             "description": "Tag deleted successfully"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete a tag from the system",
         "tags": [
           "Wikiroo"
@@ -2608,6 +2873,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Wikiroo"
         ]
@@ -2620,6 +2890,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Wikiroo"
         ]
@@ -2632,6 +2907,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Wikiroo"
         ]
@@ -2644,6 +2924,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Wikiroo"
         ]
@@ -2656,6 +2941,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Wikiroo"
         ]
@@ -2668,6 +2958,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Wikiroo"
         ]
@@ -2680,6 +2975,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Wikiroo"
         ]
@@ -2692,6 +2992,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "tags": [
           "Wikiroo"
         ]
@@ -2720,6 +3025,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get the authorization server issuer URL",
         "tags": [
           "Discovery"
@@ -2764,6 +3074,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Expose OAuth 2.0 Authorization Server metadata for a registered MCP server version",
         "tags": [
           "Discovery"
@@ -2796,6 +3111,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Create a new agent",
         "tags": [
           "Agent"
@@ -2849,6 +3169,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List agents with optional filtering and pagination",
         "tags": [
           "Agent"
@@ -2891,6 +3216,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get an agent by ID or slug",
         "tags": [
           "Agent"
@@ -2941,6 +3271,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Update an agent",
         "tags": [
           "Agent"
@@ -2974,6 +3309,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Delete an agent",
         "tags": [
           "Agent"
@@ -3487,6 +3827,15 @@
   ],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "JWT-Cookie": {
+        "type": "http",
+        "in": "cookie",
+        "name": "access_token",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
       "CreateTaskDto": {
         "type": "object",
