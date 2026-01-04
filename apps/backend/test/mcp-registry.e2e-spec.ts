@@ -87,6 +87,7 @@ describe('MCP Registry (e2e)', () => {
     it('should list servers with pagination', async () => {
       const response = await request(app.getHttpServer())
         .get('/mcp/servers?page=1&limit=10')
+        .set('Cookie', authCookies)
         .expect(200);
 
       expect(response.body.items).toBeInstanceOf(Array);
@@ -112,6 +113,7 @@ describe('MCP Registry (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}`)
+        .set('Cookie', authCookies)
         .expect(200);
 
       expect(response.body.id).toBe(serverId);
@@ -166,6 +168,7 @@ describe('MCP Registry (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
@@ -183,6 +186,7 @@ describe('MCP Registry (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(dtos)
         .expect(201);
 
@@ -198,11 +202,13 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .expect(200);
 
       expect(response.body).toBeInstanceOf(Array);
@@ -217,11 +223,13 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}/scopes/${dto.scopeId}`)
+        .set('Cookie', authCookies)
         .expect(200);
 
       expect(response.body.scopeId).toBe(dto.scopeId);
@@ -235,11 +243,13 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(409);
     });
@@ -275,6 +285,7 @@ describe('MCP Registry (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
@@ -294,11 +305,13 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
         .expect(200);
 
       expect(response.body).toBeInstanceOf(Array);
@@ -316,11 +329,13 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(409);
     });
@@ -355,6 +370,7 @@ describe('MCP Registry (e2e)', () => {
 
       const scopeResponse = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(scopeDto)
         .expect(201);
 
@@ -371,6 +387,7 @@ describe('MCP Registry (e2e)', () => {
 
       const connectionResponse = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
         .send(connectionDto)
         .expect(201);
 
@@ -386,6 +403,7 @@ describe('MCP Registry (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/mappings`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
@@ -404,11 +422,13 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/mappings`)
+        .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       const response = await request(app.getHttpServer())
         .get(`/mcp/servers/${serverId}/scopes/${scopeId}/mappings`)
+        .set('Cookie', authCookies)
         .expect(200);
 
       expect(response.body).toBeInstanceOf(Array);
@@ -439,11 +459,13 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(scopeDto)
         .expect(201);
 
       await request(app.getHttpServer())
         .delete(`/mcp/servers/${serverId}`)
+        .set('Cookie', authCookies)
         .expect(409);
     });
 
@@ -469,6 +491,7 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
         .send(scopeDto)
         .expect(201);
 
@@ -482,6 +505,7 @@ describe('MCP Registry (e2e)', () => {
 
       const connectionResponse = await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
         .send(connectionDto)
         .expect(201);
 
@@ -493,11 +517,13 @@ describe('MCP Registry (e2e)', () => {
 
       await request(app.getHttpServer())
         .post(`/mcp/servers/${serverId}/mappings`)
+        .set('Cookie', authCookies)
         .send(mappingDto)
         .expect(201);
 
       await request(app.getHttpServer())
         .delete(`/mcp/servers/${serverId}/scopes/${scopeDto.scopeId}`)
+        .set('Cookie', authCookies)
         .expect(409);
     });
   });

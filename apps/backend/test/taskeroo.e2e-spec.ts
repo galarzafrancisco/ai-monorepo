@@ -97,6 +97,7 @@ describe('Taskeroo E2E Tests', () => {
     beforeAll(async () => {
       const response = await request(httpServer)
         .post('/api/v1/taskeroo/tasks')
+        .set('Cookie', authCookies)
         .send({
           name: 'Task Assignment Target',
           description: 'This task will be assigned during tests',
