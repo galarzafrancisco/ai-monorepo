@@ -1,5 +1,6 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import {
+  ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -13,6 +14,7 @@ import { DiscoveryService } from './discovery.service';
 import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 
 @ApiTags('Discovery')
+@ApiCookieAuth('JWT-Cookie')
 @Controller('.well-known/oauth-authorization-server/mcp')
 @UseGuards(JwtAuthGuard)
 export class DiscoveryController {

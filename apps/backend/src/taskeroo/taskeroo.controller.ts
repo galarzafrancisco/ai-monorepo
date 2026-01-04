@@ -22,6 +22,7 @@ import {
   ApiNoContentResponse,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
+  ApiCookieAuth,
 } from '@nestjs/swagger';
 import type { Request, Response } from "express";
 import { TaskerooService } from './taskeroo.service';
@@ -44,6 +45,7 @@ import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 import { Public } from '../authorization-server/decorators/public.decorator';
 
 @ApiTags('Task')
+@ApiCookieAuth('JWT-Cookie')
 @Controller('taskeroo/tasks')
 @UseGuards(JwtAuthGuard)
 export class TaskerooController {

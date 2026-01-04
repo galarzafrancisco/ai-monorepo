@@ -16,6 +16,7 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiCookieAuth,
 } from '@nestjs/swagger';
 import { AgentsService } from './agents.service';
 import { CreateAgentDto } from './dto/create-agent.dto';
@@ -28,6 +29,7 @@ import { AgentResult } from './dto/service/agents.service.types';
 import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 
 @ApiTags('Agent')
+@ApiCookieAuth('JWT-Cookie')
 @Controller('agents')
 @UseGuards(JwtAuthGuard)
 export class AgentsController {
