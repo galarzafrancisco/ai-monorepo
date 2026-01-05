@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ai-stack
+  namespace: ai-stack
+spec:
+  dnsNames:
+    - ${DOMAIN}
+  secretName: ai-stack-tls
+  issuerRef:
+    name: letsencrypt-cluster-issuer
+    kind: ClusterIssuer

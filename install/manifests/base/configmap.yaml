@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-stack-config
+  namespace: ai-stack
+data:
+  NODE_ENV: "production"
+  BACKEND_PORT: "3000"
+  ISSUER_URL: ${ISSUER_URL}
+  ADK_URL: ${ADK_URL}
+  OLLAMA_URL: ${OLLAMA_URL}
+  DATABASE_PATH: "/app/data/database.sqlite"
