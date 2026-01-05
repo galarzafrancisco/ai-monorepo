@@ -7,10 +7,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - ${DOMAIN}
+        - PLACEHOLDER_DOMAIN
       secretName: ai-stack-tls
   rules:
-    - host: ${DOMAIN}
+    - host: PLACEHOLDER_DOMAIN
       http:
         paths:
           - path: /

@@ -1,5 +1,73 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+configMapGenerator:
+  - name: env
+    envs:
+      - env.env
+
 resources:
 - ../../base
+
+replacements:
+  # Replace DOMAIN in Certificate and Ingress
+  - source:
+      kind: ConfigMap
+      name: env
+      fieldPath: data.DOMAIN
+    targets:
+      - select:
+          kind: Certificate
+          name: ai-stack
+        fieldPaths:
+          - spec.dnsNames.0
+      - select:
+          kind: Ingress
+          name: ai-stack
+        fieldPaths:
+          - spec.tls.0.hosts.0
+          - spec.rules.0.host
+  # Replace STORAGE_PATH in volume hostPath
+  - source:
+      kind: ConfigMap
+      name: env
+      fieldPath: data.STORAGE_PATH
+    targets:
+      - select:
+          kind: Deployment
+          name: ai-stack
+        fieldPaths:
+          - spec.template.spec.volumes.[name=data].hostPath.path
+  # Replace ADK_URL in ai-stack-config ConfigMap
+  - source:
+      kind: ConfigMap
+      name: env
+      fieldPath: data.ADK_URL
+    targets:
+      - select:
+          kind: ConfigMap
+          name: ai-stack-config
+        fieldPaths:
+          - data.ADK_URL
+  # Replace OLLAMA_URL in ai-stack-config ConfigMap
+  - source:
+      kind: ConfigMap
+      name: env
+      fieldPath: data.OLLAMA_URL
+    targets:
+      - select:
+          kind: ConfigMap
+          name: ai-stack-config
+        fieldPaths:
+          - data.OLLAMA_URL
+  # Replace ISSUER_URL in ai-stack-config ConfigMap
+  - source:
+      kind: ConfigMap
+      name: env
+      fieldPath: data.ISSUER_URL
+    targets:
+      - select:
+          kind: ConfigMap
+          name: ai-stack-config
+        fieldPaths:
+          - data.ISSUER_URL

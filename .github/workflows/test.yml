@@ -183,5 +183,4 @@ jobs:
 
           labels: |
             automated-deployment
-            production
             ai-stack
