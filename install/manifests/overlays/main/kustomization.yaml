@@ -21,6 +21,9 @@ replacements:
           name: ai-stack
         fieldPaths:
           - spec.dnsNames.0
+        options:
+          delimiter: "."
+          index: 1
       - select:
           kind: Ingress
           name: ai-stack
