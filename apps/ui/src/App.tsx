@@ -21,14 +21,11 @@ import { AgentsChatSessionNew } from './agents/AgentsChatSessionNew';
 import { AgentsAdminList } from './agents/AgentsAdminList';
 import { AgentAdminDetail } from './agents/AgentAdminDetail';
 import { LogoutPage } from './auth/LogoutPage';
-
-// Simple mobile detection
-const isMobile = () => {
-  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
-};
+import { useIsMobile } from './hooks/useIsMobile';
 
 function TaskerooRouter() {
-  return isMobile() ? <TaskBoardMobile /> : <TaskBoard />;
+  const isMobile = useIsMobile();
+  return isMobile ? <TaskBoardMobile /> : <TaskBoard />;
 }
 
 export default function App() {
