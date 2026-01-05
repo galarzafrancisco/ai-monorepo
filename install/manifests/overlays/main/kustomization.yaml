@@ -27,6 +27,9 @@ replacements:
         fieldPaths:
           - spec.tls.0.hosts.0
           - spec.rules.0.host
+        options:
+          delimiter: "."
+          index: 1
   # Replace STORAGE_PATH in volume hostPath
   - source:
       kind: ConfigMap

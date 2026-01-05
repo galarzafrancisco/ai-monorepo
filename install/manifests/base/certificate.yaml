@@ -5,7 +5,7 @@ metadata:
   namespace: ai-stack
 spec:
   dnsNames:
-    - PLACEHOLDER_DOMAIN
+    - ai-stack.PLACEHOLDER_DOMAIN
   secretName: ai-stack-tls
   issuerRef:
     name: letsencrypt-cluster-issuer
