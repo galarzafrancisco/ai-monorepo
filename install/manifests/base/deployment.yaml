@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-stack
+  namespace: ai-stack
+  labels:
+    app: ai-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-stack
+  template:
+    metadata:
+      labels:
+        app: ai-stack
+    spec:
+      containers:
+      - name: ai-stack
+        image: ghcr.io/galarzafrancisco/ai-monorepo:main-6a2a84c
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: ai-stack-config
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: data
+        hostPath:
+          path: ${STORAGE_PATH}
+          type: DirectoryOrCreate
