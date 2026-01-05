@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: ai-stack
   namespace: ai-stack
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   ingressClassName: traefik
   tls:
