@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { AppNavSidebar } from '../components/AppNavSidebar';
+import { isMobile } from '../hooks/useIsMobile';
 
 const STORAGE_KEY = 'app-nav-collapsed';
-
-const isMobile = () => {
-  return window.innerWidth < 768;
-};
 
 export function RootLayout() {
   // Initialize from localStorage, or default to collapsed on mobile

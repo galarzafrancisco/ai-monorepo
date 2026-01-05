@@ -3,12 +3,9 @@ import { useParams, useNavigate, Outlet } from 'react-router-dom';
 import { PageTree } from './PageTree';
 import { useWikiroo } from './useWikiroo';
 import type { WikiPageTree } from './types';
+import { isMobile } from '../hooks/useIsMobile';
 
 const STORAGE_KEY = 'wikiroo-sidebar-collapsed';
-
-const isMobile = () => {
-  return window.innerWidth < 768;
-};
 
 export function WikirooWithSidebar() {
   const { pageId } = useParams<{ pageId: string }>();

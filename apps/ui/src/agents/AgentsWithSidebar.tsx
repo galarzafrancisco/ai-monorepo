@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
 import { useChatSessions } from './useChatSessions';
+import { isMobile } from '../hooks/useIsMobile';
 
 const STORAGE_KEY = 'agents-sidebar-collapsed';
-
-const isMobile = () => {
-  return window.innerWidth < 768;
-};
 
 export function AgentsWithSidebar() {
   const { agentId, sessionId } = useParams<{ agentId: string; sessionId: string }>();
