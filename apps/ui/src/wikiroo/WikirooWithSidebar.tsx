@@ -6,6 +6,10 @@ import type { WikiPageTree } from './types';
 
 const STORAGE_KEY = 'wikiroo-sidebar-collapsed';
 
+const isMobile = () => {
+  return window.innerWidth < 768;
+};
+
 export function WikirooWithSidebar() {
   const { pageId } = useParams<{ pageId: string }>();
   const navigate = useNavigate();
@@ -14,10 +18,14 @@ export function WikirooWithSidebar() {
   const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
-  // Initialize from localStorage, default to false
+  // Initialize from localStorage, or default to collapsed on mobile
   const [wikirooSidebarCollapsed, setWikirooSidebarCollapsed] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'true';
+    if (stored !== null) {
+      return stored === 'true';
+    }
+    // Default to collapsed on mobile, expanded on desktop
+    return isMobile();
   });
 
   // Save to localStorage on change
