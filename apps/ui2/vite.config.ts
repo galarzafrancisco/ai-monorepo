@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   // @ts-expect-error - monorepo vite version mismatch
   plugins: [react()],
+  base: '/beta/',
   resolve: {
     // Fix multiple React instances in monorepo by deduplicating
     dedupe: ['react', 'react-dom', 'react-router-dom'],

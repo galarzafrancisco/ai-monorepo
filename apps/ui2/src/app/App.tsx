@@ -27,7 +27,7 @@ function AppRoutes() {
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename='/beta'>
       <ThemeProvider>
         <AuthProvider>
           <InAppNavProvider>

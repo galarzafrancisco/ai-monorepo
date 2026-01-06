@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --noEmit && vite build",
+    "build:prod": "npm run build && cp -r ./dist ../backend/dist/public/beta",
     "lint": "eslint .",
     "preview": "vite preview"
   },
