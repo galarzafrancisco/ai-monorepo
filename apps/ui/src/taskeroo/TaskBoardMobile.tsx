@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react';
 import { TaskDetail } from './TaskDetail';
-import './TaskBoardMobile.css';
+import './themes/TaskBoardMobile.theme.classic-ui.css';
+// import './themes/TaskBoardMobile.theme.matrix-classic.css';
+// import './themes/TaskBoardMobile.theme.vscode-dark.css';
+// import './themes/TaskBoardMobile.theme.matrix-soft.css';
+// import './themes/TaskBoardMobile.theme.sunset.css';
+// import './themes/TaskBoardMobile.theme.midnight.css';
 import { useTaskeroo } from './useTaskeroo';
 import { Task, TaskStatus } from './types';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -42,6 +47,16 @@ const STATUS_META: Record<TaskStatusValue, { label: string; icon: string; sublab
     sublabel: 'Mission complete',
   },
 };
+
+function shortenDescription(description: string): string {
+  const maxLength = 100;
+  const trim = maxLength - 3;
+  if (description.length > trim) {
+    description = description.slice(0, trim);
+    description = `${description}...`;
+  }
+  return description;
+}
 
 export function TaskBoardMobile() {
   const { tasks, isConnected } = useTaskeroo();
@@ -88,18 +103,18 @@ export function TaskBoardMobile() {
         <header className="matrix-header">
           <HamburgerMenu />
           <div className="matrix-header-copy">
-            <span className="matrix-pretitle">taskeroo ops terminal</span>
+            {/* <span className="matrix-pretitle">taskeroo ops terminal</span> */}
             <h1>Taskeroo</h1>
           </div>
           <div className="matrix-connection">
             <span className={`matrix-connection-dot ${isConnected ? 'online' : 'offline'}`} aria-hidden />
-            <span>{isConnected ? 'socket live' : 'offline'}</span>
+            <span>{isConnected ? '' : 'offline'}</span>
           </div>
         </header>
 
         <section className="matrix-status-panel">
           <div>
-            <p className="matrix-status-label">Active lane</p>
+            {/* <p className="matrix-status-label">Active lane</p> */}
             <h2>{STATUS_META[activeStatus].label}</h2>
             <p className="matrix-status-sub">{STATUS_META[activeStatus].sublabel}</p>
           </div>
@@ -136,6 +151,7 @@ export function TaskBoardMobile() {
                 <span className="matrix-task-updated">{formatDate(task.updatedAt)}</span>
               </div>
               <h3>{task.name}</h3>
+              {/* <p>{shortenDescription(task.description)}</p> */}
               <p>{task.description}</p>
 
               {task.tags && task.tags.length > 0 && (

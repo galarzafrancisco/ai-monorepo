@@ -48,6 +48,11 @@ export function HamburgerMenu() {
       icon: '🔌',
       color: '#8b5cf6',
     },
+    {
+      name: 'Logout',
+      path: '/logout',
+      icon: '🔒',
+    }
   ];
 
   return (

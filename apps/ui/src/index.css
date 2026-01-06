@@ -1,0 +1,22 @@
+:root {
+  --app-bg: #57c432; /* Green just to test */
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--app-bg);
+}
+
+#root {
+  min-height: 100%;
+  background: var(--app-bg);
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--app-bg);
+  /* padding-top: env(safe-area-inset-top); */
+  /* padding-bottom: env(safe-area-inset-bottom); */
+}
