@@ -15,13 +15,13 @@ export function LoginForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  console.log('login page');
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get the page user was trying to access (or default to home)
   const from = (location.state as any)?.from?.pathname || '/';
+  const redirect = from === "/logout" ? "/" : from;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,7 +31,7 @@ export function LoginForm() {
     try {
       await login(email, password);
       // Redirect to original destination or home
-      navigate(from, { replace: true });
+      navigate(redirect, { replace: true });
     } catch (err) {
       setError('Invalid email or password');
     } finally {
