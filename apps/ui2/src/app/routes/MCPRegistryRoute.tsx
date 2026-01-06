@@ -1,6 +1,6 @@
 import { Stack, Text, Card } from '../../ui/primitives';
 
-export function MCPRegistryPage() {
+export function MCPRegistryRoute() {
   return (
     <Stack spacing="5">
       <Stack spacing="2">

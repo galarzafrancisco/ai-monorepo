@@ -61,6 +61,7 @@
   --fs-4: 20px;
   --fs-5: 24px;
   --fs-6: 32px;
+  --fs-input-mobile-safe: 16px; /* important: mobile-safe minimum */
 
   /* Typography - Line Heights */
   --lh-tight: 1.25;
