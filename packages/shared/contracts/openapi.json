@@ -3025,11 +3025,6 @@
             }
           }
         },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
         "summary": "Get the authorization server issuer URL",
         "tags": [
           "Discovery"
@@ -3074,11 +3069,6 @@
             }
           }
         },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
         "summary": "Expose OAuth 2.0 Authorization Server metadata for a registered MCP server version",
         "tags": [
           "Discovery"

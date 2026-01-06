@@ -5,6 +5,7 @@ export const APP_NAV_ITEMS = [
   { path: '/mcp-registry', label: 'MCP Registry', icon: '🔌' },
   { path: '/agents', label: 'Agents', icon: '🤖' },
   { path: '/settings', label: 'Settings', icon: '⚙️' },
+  { path: '/logout', label: 'Logout', icon: '🚪' },
 ];
 
 export function getPageTitle(pathname: string): string {
