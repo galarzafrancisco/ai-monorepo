@@ -43,6 +43,7 @@
   height: 100vh;
   overflow: hidden;
   position: relative;
+  background: var(--app-bg);
 }
 
 .root-layout-main {

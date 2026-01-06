@@ -1,0 +1,209 @@
+.mobile-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg);
+
+  /* iOS safe area support */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-shell__header {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-4);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mobile-shell__hamburger {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text);
+  cursor: pointer;
+  padding: var(--space-2);
+  margin: calc(var(--space-2) * -1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-2);
+  transition: background-color 0.15s ease;
+}
+
+.mobile-shell__hamburger:hover {
+  background-color: var(--surface-2);
+}
+
+.mobile-shell__hamburger:active {
+  background-color: var(--surface-3);
+}
+
+.mobile-shell__main {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+/* Hide page title in content since it's shown in header */
+.mobile-shell__main .text--size-6.text--weight-bold {
+  display: none;
+}
+
+.mobile-shell__bottom-nav {
+  background-color: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: var(--space-2) var(--space-3);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.mobile-shell__nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  min-width: 60px;
+  text-decoration: none;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+  border-radius: var(--r-2);
+}
+
+.mobile-shell__nav-item:hover {
+  text-decoration: none;
+  background-color: var(--surface-2);
+}
+
+.mobile-shell__nav-item--active {
+  color: var(--accent);
+}
+
+.mobile-shell__nav-icon {
+  font-size: 20px;
+}
+
+.mobile-shell__nav-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+/* Drawer overlay */
+.mobile-shell__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Drawer */
+.mobile-shell__drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 80vw;
+  background-color: var(--surface);
+  border-right: 1px solid var(--border);
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.mobile-shell__drawer--open {
+  transform: translateX(0);
+}
+
+.mobile-shell__drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.mobile-shell__drawer-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-2);
+  margin: calc(var(--space-2) * -1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-2);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mobile-shell__drawer-close:hover {
+  background-color: var(--surface-2);
+  color: var(--text);
+}
+
+.mobile-shell__drawer-nav {
+  flex: 1;
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.mobile-shell__drawer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  text-decoration: none;
+  color: var(--text);
+  border-radius: var(--r-2);
+  transition: background-color 0.15s ease;
+  margin-bottom: var(--space-1);
+}
+
+.mobile-shell__drawer-item:hover {
+  background-color: var(--surface-2);
+  text-decoration: none;
+}
+
+.mobile-shell__drawer-item--active {
+  background-color: var(--surface-2);
+  color: var(--accent);
+  font-weight: var(--fw-medium);
+}
+
+.mobile-shell__drawer-icon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+.mobile-shell__drawer-label {
+  font-size: var(--fs-2);
+}
+
+/* Hide on desktop */
+@media (min-width: 769px) {
+  .mobile-shell {
+    display: none;
+  }
+}

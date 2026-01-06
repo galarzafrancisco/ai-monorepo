@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
 import { useChatSessions } from './useChatSessions';
+import { isMobile } from '../hooks/useIsMobile';
 
 const STORAGE_KEY = 'agents-sidebar-collapsed';
 
@@ -8,10 +9,14 @@ export function AgentsWithSidebar() {
   const { agentId, sessionId } = useParams<{ agentId: string; sessionId: string }>();
   const navigate = useNavigate();
 
-  // Initialize from localStorage, default to false
+  // Initialize from localStorage, or default to collapsed on mobile
   const [agentsSidebarCollapsed, setAgentsSidebarCollapsed] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'true';
+    if (stored !== null) {
+      return stored === 'true';
+    }
+    // Default to collapsed on mobile, expanded on desktop
+    return isMobile();
   });
 
   // Use WebSocket hook for real-time session updates

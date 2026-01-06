@@ -1,0 +1,26 @@
+@import '../TaskBoardMobile.base.css';
+
+:root {
+  --task-mobile-font: 'IBM Plex Mono', 'Space Mono', 'Courier New', monospace;
+  --task-mobile-bg: #050907;
+  --task-mobile-surface: rgba(5, 20, 15, 0.92);
+  --task-mobile-surface-alt: rgba(3, 14, 11, 0.82);
+  --task-mobile-border: #12392f;
+  --task-mobile-accent: #8fd8be;
+  --task-mobile-accent-strong: #52b58d;
+  --task-mobile-muted: #6c8776;
+  --task-mobile-text: #e6f5ef;
+  --task-mobile-grid: rgba(38, 90, 72, 0.18);
+  --task-mobile-halo: rgba(8, 35, 28, 0.65);
+  --task-mobile-online: var(--task-mobile-accent);
+  --task-mobile-offline: #ff6b6b;
+  --task-mobile-nav-bg: rgba(4, 10, 9, 0.88);
+  --task-mobile-overlay: rgba(0, 0, 0, 0.78);
+  --task-mobile-sheet-bg: #04100d;
+  --task-mobile-input-bg: rgba(5, 25, 18, 0.45);
+  --task-mobile-tag-bg: rgba(4, 18, 14, 0.85);
+  --task-mobile-fab-text: #04140e;
+  --task-mobile-submit-gradient-start: #2c7c65;
+  --task-mobile-submit-gradient-end: #59b68f;
+  --task-mobile-submit-text: #041812;
+}

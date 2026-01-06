@@ -9,6 +9,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
 
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
@@ -74,6 +75,7 @@ async function bootstrap() {
   // Serve static files from the UI build (in production)
   // __dirname is dist/apps/backend/src, so we need to go up to dist/public
   const staticPath = join(__dirname, '..', '..', '..', 'public');
+  const betaStaticPath = join(__dirname, '..', '..', '..', 'public/beta');  // new UI build
   if (existsSync(staticPath)) {
     app.useStaticAssets(staticPath);
     console.log(`Serving static files from ${staticPath}`);
@@ -84,6 +86,10 @@ async function bootstrap() {
       // Don't intercept API routes, static assets, or well-known routes
       if (req.path.startsWith('/api/') || req.path.startsWith('/assets/') || req.path.startsWith('/.well-known/')) {
         return next();
+      }
+      // Serve Beta
+      if (req.path.startsWith('/beta')) {
+        res.sendFile(join(betaStaticPath, 'index.html'));
       }
       // Serve index.html for all other routes
       res.sendFile(join(staticPath, 'index.html'));

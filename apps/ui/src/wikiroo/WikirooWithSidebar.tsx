@@ -3,6 +3,7 @@ import { useParams, useNavigate, Outlet } from 'react-router-dom';
 import { PageTree } from './PageTree';
 import { useWikiroo } from './useWikiroo';
 import type { WikiPageTree } from './types';
+import { isMobile } from '../hooks/useIsMobile';
 
 const STORAGE_KEY = 'wikiroo-sidebar-collapsed';
 
@@ -14,10 +15,14 @@ export function WikirooWithSidebar() {
   const [pageTree, setPageTree] = useState<WikiPageTree[]>([]);
   const [isLoadingTree, setIsLoadingTree] = useState(false);
 
-  // Initialize from localStorage, default to false
+  // Initialize from localStorage, or default to collapsed on mobile
   const [wikirooSidebarCollapsed, setWikirooSidebarCollapsed] = useState<boolean>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'true';
+    if (stored !== null) {
+      return stored === 'true';
+    }
+    // Default to collapsed on mobile, expanded on desktop
+    return isMobile();
   });
 
   // Save to localStorage on change

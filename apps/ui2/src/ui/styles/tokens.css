@@ -1,0 +1,222 @@
+/*
+ * Design Tokens
+ * These CSS variables are the single source of truth for theming.
+ * All themes override these tokens; components reference them.
+ */
+
+/* ===== DEFAULT THEME (Light) ===== */
+:root {
+  /* Colors - Background */
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --surface-2: #ffffff;
+
+  /* Colors - Text */
+  --text: #1f2328;
+  --text-muted: #59636e;
+  --text-inverse: #ffffff;
+
+  /* Colors - Borders */
+  --border: #d1d9e0;
+  --border-subtle: #eaeef2;
+
+  /* Colors - Interactive */
+  --accent: #0969da;
+  --accent-contrast: #ffffff;
+  --accent-hover: #0550ae;
+
+  /* Colors - Semantic */
+  --success: #1a7f37;
+  --warning: #9a6700;
+  --danger: #d1242f;
+
+  /* Colors - Focus */
+  --focus-ring: #0969da;
+
+  /* Spacing Scale */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Border Radius */
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 8px;
+  --r-4: 12px;
+
+  /* Typography - Font Families */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* Typography - Font Sizes */
+  --fs-1: 12px;
+  --fs-2: 14px;
+  --fs-3: 16px;
+  --fs-4: 20px;
+  --fs-5: 24px;
+  --fs-6: 32px;
+  --fs-input-mobile-safe: 16px; /* important: mobile-safe minimum */
+
+  /* Typography - Line Heights */
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.75;
+
+  /* Typography - Font Weights */
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(31, 35, 40, 0.12);
+  --shadow-2: 0 4px 8px rgba(31, 35, 40, 0.12);
+  --shadow-3: 0 8px 24px rgba(31, 35, 40, 0.16);
+}
+
+/* ===== DARK THEME ===== */
+[data-theme='dark'] {
+  /* Colors - Background */
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-2: #21262d;
+
+  /* Colors - Text */
+  --text: #e6edf3;
+  --text-muted: #8d96a0;
+  --text-inverse: #0d1117;
+
+  /* Colors - Borders */
+  --border: #30363d;
+  --border-subtle: #21262d;
+
+  /* Colors - Interactive */
+  --accent: #2f81f7;
+  --accent-contrast: #ffffff;
+  --accent-hover: #539bf5;
+
+  /* Colors - Semantic */
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+
+  /* Colors - Focus */
+  --focus-ring: #2f81f7;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== GITHUB THEME (Light variant with GitHub branding) ===== */
+[data-theme='github'] {
+  /* Colors - Background */
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --surface-2: #ffffff;
+
+  /* Colors - Text */
+  --text: #24292f;
+  --text-muted: #57606a;
+  --text-inverse: #ffffff;
+
+  /* Colors - Borders */
+  --border: #d0d7de;
+  --border-subtle: #d8dee4;
+
+  /* Colors - Interactive */
+  --accent: #1f883d;
+  --accent-contrast: #ffffff;
+  --accent-hover: #1a7f37;
+
+  /* Colors - Semantic */
+  --success: #1a7f37;
+  --warning: #bf8700;
+  --danger: #cf222e;
+
+  /* Colors - Focus */
+  --focus-ring: #1f883d;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(31, 35, 40, 0.12);
+  --shadow-2: 0 4px 8px rgba(31, 35, 40, 0.12);
+  --shadow-3: 0 8px 24px rgba(31, 35, 40, 0.16);
+}
+
+/* ===== FOREST THEME (Dark green nature theme) ===== */
+[data-theme='forest'] {
+  /* Colors - Background */
+  --bg: #0f1a0f;
+  --surface: #1a2a1a;
+  --surface-2: #253525;
+
+  /* Colors - Text */
+  --text: #e8f5e8;
+  --text-muted: #9eb89e;
+  --text-inverse: #0f1a0f;
+
+  /* Colors - Borders */
+  --border: #354535;
+  --border-subtle: #253525;
+
+  /* Colors - Interactive */
+  --accent: #52c952;
+  --accent-contrast: #0f1a0f;
+  --accent-hover: #6dd66d;
+
+  /* Colors - Semantic */
+  --success: #52c952;
+  --warning: #f0ad4e;
+  --danger: #ff6b6b;
+
+  /* Colors - Focus */
+  --focus-ring: #52c952;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== TERMINAL THEME (Classic terminal aesthetic) ===== */
+[data-theme='terminal'] {
+  /* Colors - Background */
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #1a1a1a;
+  --surface-3: #2a2a2a;
+
+  /* Colors - Text */
+  --text: #00cc00;
+  --text-muted: #009900;
+  --text-inverse: #000000;
+
+  /* Colors - Borders */
+  --border: #003300;
+  --border-subtle: #001a00;
+
+  /* Colors - Interactive */
+  --accent: #00dd00;
+  --accent-contrast: #000000;
+  --accent-hover: #00ff00;
+
+  /* Colors - Semantic */
+  --success: #00cc00;
+  --warning: #cccc00;
+  --danger: #cc0000;
+
+  /* Colors - Focus */
+  --focus-ring: #00cc00;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(0, 204, 0, 0.2);
+  --shadow-2: 0 4px 8px rgba(0, 204, 0, 0.2);
+  --shadow-3: 0 8px 24px rgba(0, 204, 0, 0.3);
+}

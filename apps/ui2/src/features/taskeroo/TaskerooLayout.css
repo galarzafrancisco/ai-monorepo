@@ -1,0 +1,11 @@
+/* Desktop: show tabs */
+.taskeroo-tabs--desktop {
+  display: block;
+}
+
+/* Mobile: hide tabs (bottom tabs will be used instead) */
+@media (max-width: 768px) {
+  .taskeroo-tabs--desktop {
+    display: none;
+  }
+}

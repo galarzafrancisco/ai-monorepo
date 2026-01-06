@@ -100,3 +100,87 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-pr:
+    name: Copy Manifests to spark-ops
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout ai-monorepo
+        uses: actions/checkout@v4
+        with:
+          path: ai-monorepo
+
+      - name: Checkout spark-ops
+        uses: actions/checkout@v4
+        with:
+          repository: galarzafrancisco/spark-ops
+          token: ${{ secrets.SPARK_OPS_TOKEN }}
+          path: spark-ops
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Extract image tag
+        id: image-tag
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
+          TAG="${BRANCH_NAME}-${SHORT_SHA}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Copy manifests to spark-ops
+        run: |
+          # Remove old manifests if they exist
+          rm -rf spark-ops/k8s/ai-stack
+
+          # Copy entire manifests directory
+          mkdir -p spark-ops/k8s
+          cp -r ai-monorepo/install/manifests spark-ops/k8s/ai-stack
+
+          # Update image tag in deployment.yaml
+          cd spark-ops/k8s/ai-stack/base
+
+          # Use kustomize to set image tag
+          kustomize edit set image ghcr.io/galarzafrancisco/ai-monorepo=ghcr.io/galarzafrancisco/ai-monorepo:${{ steps.image-tag.outputs.tag }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.SPARK_OPS_TOKEN }}
+          path: spark-ops
+          commit-message: |
+            deploy: update ai-stack manifests and image to ${{ steps.image-tag.outputs.tag }}
+
+            Source: ${{ github.repository }}@${{ github.sha }}
+            Build: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          branch: deploy/ai-stack-${{ steps.image-tag.outputs.sha }}
+          delete-branch: true
+          title: "Deploy ai-stack (${{ steps.image-tag.outputs.tag }})"
+          body: |
+            ## Deployment Update
+
+            **Service**: ai-stack
+            **Image Tag**: `${{ steps.image-tag.outputs.tag }}`
+            **Source Commit**: ${{ github.sha }}
+
+            ### Changes
+            - Copied latest manifests from `install/manifests/`
+            - Updated image tag to `${{ steps.image-tag.outputs.tag }}`
+
+            ### Build Information
+            - **Build Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - **Image**: `ghcr.io/${{ github.repository }}:${{ steps.image-tag.outputs.tag }}`
+
+            ---
+            *This PR will be automatically validated and merged by spark-ops workflow.*
+
+          labels: |
+            automated-deployment
+            ai-stack

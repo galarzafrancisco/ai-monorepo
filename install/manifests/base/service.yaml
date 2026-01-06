@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-stack
+  namespace: ai-stack
+  labels:
+    app: ai-stack
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-stack
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      protocol: TCP

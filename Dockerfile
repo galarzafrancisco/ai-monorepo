@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
 COPY apps/ui/package*.json ./apps/ui/
+COPY apps/ui2/package*.json ./apps/ui2/
 COPY packages/shared/package*.json ./packages/shared/
 
 # Install all dependencies (including dev dependencies for building)

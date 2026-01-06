@@ -1,0 +1,114 @@
+.desktop-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background-color: var(--bg);
+  transition: grid-template-columns 0.2s ease;
+}
+
+.desktop-shell__sidebar {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: var(--space-5);
+  overflow-y: auto;
+  transition: width 0.2s ease, padding 0.2s ease;
+  width: 240px;
+  gap: var(--space-4);
+}
+
+.desktop-shell__sidebar--collapsed {
+  width: 80px;
+  padding: var(--space-4) var(--space-3);
+}
+
+.desktop-shell__sidebar--collapsed ~ .desktop-shell__main {
+  /* Grid handles this automatically */
+}
+
+/* Update grid when collapsed */
+.desktop-shell:has(.desktop-shell__sidebar--collapsed) {
+  grid-template-columns: 80px 1fr;
+}
+
+.desktop-shell__brand {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  min-height: 48px;
+}
+
+.desktop-shell__nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.desktop-shell__nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-2);
+  color: var(--text);
+  text-decoration: none;
+  font-size: var(--fs-2);
+  transition: background-color 0.15s ease;
+}
+
+.desktop-shell__sidebar--collapsed .desktop-shell__nav-item {
+  justify-content: center;
+  padding: var(--space-2);
+}
+
+.desktop-shell__nav-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.desktop-shell__nav-label {
+  white-space: nowrap;
+}
+
+.desktop-shell__nav-item:hover {
+  background-color: var(--surface-2);
+  text-decoration: none;
+}
+
+.desktop-shell__nav-item--active {
+  background-color: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: var(--fw-medium);
+}
+
+.desktop-shell__nav-item--active:hover {
+  background-color: var(--accent-hover);
+}
+
+.desktop-shell__toggle {
+  margin-top: auto;
+  padding: var(--space-2);
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: var(--fs-3);
+  transition: background-color 0.15s ease;
+  width: 100%;
+}
+
+.desktop-shell__toggle:hover {
+  background-color: var(--border);
+}
+
+.desktop-shell__main {
+  overflow-y: auto;
+  padding: var(--space-6);
+}
+
+/* Hide on mobile */
+@media (max-width: 768px) {
+  .desktop-shell {
+    display: none;
+  }
+}

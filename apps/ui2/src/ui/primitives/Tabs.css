@@ -1,0 +1,41 @@
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  position: relative;
+  bottom: -1px;
+}
+
+.tabs__item:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.tabs__item--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tabs__icon {
+  font-size: 16px;
+}
+
+.tabs__label {
+  /* Label styling */
+}

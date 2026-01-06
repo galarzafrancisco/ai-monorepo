@@ -1,0 +1,58 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Spacing variants */
+.stack--spacing-0 {
+  gap: var(--space-0);
+}
+
+.stack--spacing-1 {
+  gap: var(--space-1);
+}
+
+.stack--spacing-2 {
+  gap: var(--space-2);
+}
+
+.stack--spacing-3 {
+  gap: var(--space-3);
+}
+
+.stack--spacing-4 {
+  gap: var(--space-4);
+}
+
+.stack--spacing-5 {
+  gap: var(--space-5);
+}
+
+.stack--spacing-6 {
+  gap: var(--space-6);
+}
+
+.stack--spacing-7 {
+  gap: var(--space-7);
+}
+
+.stack--spacing-8 {
+  gap: var(--space-8);
+}
+
+/* Alignment variants */
+.stack--align-start {
+  align-items: flex-start;
+}
+
+.stack--align-center {
+  align-items: center;
+}
+
+.stack--align-end {
+  align-items: flex-end;
+}
+
+.stack--align-stretch {
+  align-items: stretch;
+}
