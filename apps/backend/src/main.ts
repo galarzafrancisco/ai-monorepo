@@ -10,24 +10,6 @@ import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
 
 
-function serveSpa(app: NestExpressApplication, opts: { mountPath: string; staticDir: string }) {
-  const { mountPath, staticDir } = opts;
-
-  if (!existsSync(staticDir)) return;
-
-  // Serve assets + static files under mountPath
-  app.useStaticAssets(staticDir, { prefix: mountPath });
-
-  // SPA fallback for that mountPath
-  app.use(mountPath, (req, res, next) => {
-    // If it looks like a file request (has an extension), let static middleware handle it
-    if (req.path.includes('.')) return next();
-    return res.sendFile(join(staticDir, 'index.html'));
-  });
-
-  console.log(`Serving SPA at ${mountPath} from ${staticDir}`);
-}
-
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
@@ -90,31 +72,29 @@ async function bootstrap() {
 
   SwaggerModule.setup('api/v1/docs', app, document);
 
-  const publicV1 = join(__dirname, '..', '..', '..', 'public');     // current UI build (index.html at root)
-  const publicV2 = join(__dirname, '..', '..', '..', 'public/beta');  // new UI build
-  // v2 at /v2
-  serveSpa(app, { mountPath: '/beta', staticDir: publicV2 });
-  // v1 at /
-  serveSpa(app, { mountPath: '/', staticDir: publicV1 });
+  // Serve static files from the UI build (in production)
+  // __dirname is dist/apps/backend/src, so we need to go up to dist/public
+  const staticPath = join(__dirname, '..', '..', '..', 'public');
+  const betaStaticPath = join(__dirname, '..', '..', '..', 'public/beta');  // new UI build
+  if (existsSync(staticPath)) {
+    app.useStaticAssets(staticPath);
+    console.log(`Serving static files from ${staticPath}`);
 
-  // // Serve static files from the UI build (in production)
-  // // __dirname is dist/apps/backend/src, so we need to go up to dist/public
-  // const staticPath = join(__dirname, '..', '..', '..', 'public');
-  // if (existsSync(staticPath)) {
-  //   app.useStaticAssets(staticPath);
-  //   console.log(`Serving static files from ${staticPath}`);
-
-  //   // SPA fallback: serve index.html for all non-API, non-asset routes
-  //   // This allows client-side routing to work
-  //   app.use((req, res, next) => {
-  //     // Don't intercept API routes, static assets, or well-known routes
-  //     if (req.path.startsWith('/api/') || req.path.startsWith('/assets/') || req.path.startsWith('/.well-known/')) {
-  //       return next();
-  //     }
-  //     // Serve index.html for all other routes
-  //     res.sendFile(join(staticPath, 'index.html'));
-  //   });
-  // }
+    // SPA fallback: serve index.html for all non-API, non-asset routes
+    // This allows client-side routing to work
+    app.use((req, res, next) => {
+      // Don't intercept API routes, static assets, or well-known routes
+      if (req.path.startsWith('/api/') || req.path.startsWith('/assets/') || req.path.startsWith('/.well-known/')) {
+        return next();
+      }
+      // Serve Beta
+      if (req.path.startsWith('/beta')) {
+        res.sendFile(join(betaStaticPath, 'index.html'));
+      }
+      // Serve index.html for all other routes
+      res.sendFile(join(staticPath, 'index.html'));
+    });
+  }
 
   const config = getConfig();
   await app.listen(config.port);
