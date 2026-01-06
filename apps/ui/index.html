@@ -2,8 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+
+    <!-- Tells iOS this is an app -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    
+    <!-- This says: “When launched from Home Screen, treat this as an app, not Safari.”  -->
+    <meta name="apple-mobile-web-app-capable" content="yes"> 
+
+    <!-- This says: "Let my page extend under the notch and into the screen corners." -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    
+    <!-- This controls what iOS does with the status bar area. black-translucent means: “I will paint behind the notch myself.” -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <link rel="icon" type="image/svg+xml" href="/roo-favicon.svg" />
     <title>AI Monorepo — Home</title>
   </head>
