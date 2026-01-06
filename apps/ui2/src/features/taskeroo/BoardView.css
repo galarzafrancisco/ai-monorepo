@@ -1,0 +1,67 @@
+.board-view {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  width: 100%;
+  align-items: start;
+}
+
+.board-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 400px;
+  background-color: var(--surface);
+  border-radius: var(--radius-3);
+  padding: var(--space-3);
+}
+
+.board-column__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.board-column__content {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.board-column__empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.board-task-card {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.board-task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-4);
+}
+
+/* Scrollbar styling for column content */
+.board-column__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.board-column__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.board-column__content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-2);
+}
+
+.board-column__content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
