@@ -1,0 +1,25 @@
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Spacing variants (margin top and bottom) */
+.divider--spacing-2 {
+  margin: var(--space-2) 0;
+}
+
+.divider--spacing-3 {
+  margin: var(--space-3) 0;
+}
+
+.divider--spacing-4 {
+  margin: var(--space-4) 0;
+}
+
+.divider--spacing-5 {
+  margin: var(--space-5) 0;
+}
+
+.divider--spacing-6 {
+  margin: var(--space-6) 0;
+}

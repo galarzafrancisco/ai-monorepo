@@ -1,0 +1,112 @@
+/*
+ * Base Styles
+ * Global reset, typography defaults, and element styles
+ */
+
+/* ===== CSS Reset ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: var(--fs-2);
+  line-height: var(--lh-normal);
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+/* ===== Typography ===== */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  color: var(--text);
+}
+
+h1 {
+  font-size: var(--fs-6);
+}
+
+h2 {
+  font-size: var(--fs-5);
+}
+
+h3 {
+  font-size: var(--fs-4);
+}
+
+h4 {
+  font-size: var(--fs-3);
+}
+
+h5, h6 {
+  font-size: var(--fs-2);
+}
+
+p {
+  margin: 0;
+}
+
+/* ===== Links ===== */
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ===== Focus Styles ===== */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ===== Buttons ===== */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ===== Forms ===== */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+/* ===== Lists ===== */
+ul, ol {
+  list-style: none;
+}
+
+/* ===== Root Container ===== */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

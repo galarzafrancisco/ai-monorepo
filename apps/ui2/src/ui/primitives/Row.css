@@ -1,0 +1,71 @@
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Spacing variants */
+.row--spacing-1 {
+  gap: var(--space-1);
+}
+
+.row--spacing-2 {
+  gap: var(--space-2);
+}
+
+.row--spacing-3 {
+  gap: var(--space-3);
+}
+
+.row--spacing-4 {
+  gap: var(--space-4);
+}
+
+.row--spacing-5 {
+  gap: var(--space-5);
+}
+
+.row--spacing-6 {
+  gap: var(--space-6);
+}
+
+.row--spacing-7 {
+  gap: var(--space-7);
+}
+
+.row--spacing-8 {
+  gap: var(--space-8);
+}
+
+/* Alignment variants */
+.row--align-start {
+  align-items: flex-start;
+}
+
+.row--align-center {
+  align-items: center;
+}
+
+.row--align-end {
+  align-items: flex-end;
+}
+
+.row--align-stretch {
+  align-items: stretch;
+}
+
+/* Justify variants */
+.row--justify-start {
+  justify-content: flex-start;
+}
+
+.row--justify-center {
+  justify-content: center;
+}
+
+.row--justify-end {
+  justify-content: flex-end;
+}
+
+.row--justify-space-between {
+  justify-content: space-between;
+}
