@@ -1,9 +1,11 @@
 import { Stack, Text, ListRow, Card, Row } from '../../ui/primitives';
 
+export type TaskStatus = 'not-started' | 'in_progress' | 'in_review' | 'done';
+
 interface Task {
   id: string;
   title: string;
-  status: 'open' | 'in_progress' | 'done';
+  status: TaskStatus;
   assignedTo?: string;
   createdBy: string;
   commentCount: number;
@@ -22,7 +24,7 @@ const PLACEHOLDER_TASKS: Task[] = [
   {
     id: '2',
     title: 'Design new landing page',
-    status: 'open',
+    status: 'not-started',
     createdBy: 'Charlie',
     assignedTo: 'Alice',
     commentCount: 2,
@@ -45,26 +47,43 @@ const PLACEHOLDER_TASKS: Task[] = [
   {
     id: '5',
     title: 'Optimize database queries',
-    status: 'open',
+    status: 'not-started',
     createdBy: 'Charlie',
     assignedTo: 'Bob',
     commentCount: 1,
   },
+  {
+    id: '6',
+    title: 'Write API documentation',
+    status: 'in_review',
+    createdBy: 'Bob',
+    assignedTo: 'Alice',
+    commentCount: 4,
+  },
+  {
+    id: '7',
+    title: 'Set up CI/CD pipeline',
+    status: 'in_review',
+    createdBy: 'Alice',
+    commentCount: 2,
+  },
 ];
 
-const STATUS_COLORS: Record<Task['status'], string> = {
-  open: 'var(--text-muted)',
-  in_progress: 'var(--accent)',
-  done: 'var(--success)',
+const STATUS_COLORS: Record<TaskStatus, string> = {
+  'not-started': 'var(--text-muted)',
+  'in_progress': 'var(--accent)',
+  'in_review': 'var(--warning)',
+  'done': 'var(--success)',
 };
 
-const STATUS_LABELS: Record<Task['status'], string> = {
-  open: 'Open',
-  in_progress: 'In Progress',
-  done: 'Done',
+const STATUS_LABELS: Record<TaskStatus, string> = {
+  'not-started': 'Not Started',
+  'in_progress': 'In Progress',
+  'in_review': 'In Review',
+  'done': 'Done',
 };
 
-function StatusBadge({ status }: { status: Task['status'] }) {
+function StatusBadge({ status }: { status: TaskStatus }) {
   return (
     <span
       style={{
@@ -103,7 +122,8 @@ function TaskRow({ task }: { task: Task }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ status }: { status?: TaskStatus }) {
+  const statusLabel = status ? STATUS_LABELS[status].toLowerCase() : '';
   return (
     <div
       style={{
@@ -112,32 +132,33 @@ function EmptyState() {
       }}
     >
       <Stack spacing="3" align="center">
-        <Text size="4" tone="muted">No tasks found</Text>
-        <Text tone="muted">Create your first task to get started</Text>
+        <Text size="4" tone="muted">No {statusLabel} tasks</Text>
+        <Text tone="muted">Tasks with this status will appear here</Text>
       </Stack>
     </div>
   );
 }
 
-export function TaskerooPage() {
-  const hasTasks = PLACEHOLDER_TASKS.length > 0;
+export interface TaskerooPageProps {
+  status?: TaskStatus;
+}
+
+export function TaskerooPage({ status }: TaskerooPageProps) {
+  const filteredTasks = status
+    ? PLACEHOLDER_TASKS.filter((task) => task.status === status)
+    : PLACEHOLDER_TASKS;
+
+  const hasTasks = filteredTasks.length > 0;
 
   return (
-    <Stack spacing="5">
-      <Stack spacing="2">
-        <Text size="6" weight="bold">Taskeroo</Text>
-        <Text tone="muted">Manage your tasks and track progress</Text>
-      </Stack>
-
-      <Card padding="2">
-        {hasTasks ? (
-          PLACEHOLDER_TASKS.map((task) => (
-            <TaskRow key={task.id} task={task} />
-          ))
-        ) : (
-          <EmptyState />
-        )}
-      </Card>
-    </Stack>
+    <Card padding="2">
+      {hasTasks ? (
+        filteredTasks.map((task) => (
+          <TaskRow key={task.id} task={task} />
+        ))
+      ) : (
+        <EmptyState status={status} />
+      )}
+    </Card>
   );
 }

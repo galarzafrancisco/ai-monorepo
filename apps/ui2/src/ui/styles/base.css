@@ -110,3 +110,13 @@ ul, ol {
   display: flex;
   flex-direction: column;
 }
+
+/* ===== Terminal Theme Typography ===== */
+[data-theme='terminal'] body,
+[data-theme='terminal'] button,
+[data-theme='terminal'] input,
+[data-theme='terminal'] textarea,
+[data-theme='terminal'] select {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}

@@ -1,20 +1,16 @@
 import { Link } from 'react-router-dom';
-import { Stack, Text, ListRow, Card, Divider } from '../../ui/primitives';
-import { useTheme } from '../providers';
-import { Row, Button } from '../../ui/primitives';
+import { Stack, Text, ListRow, Card } from '../../ui/primitives';
 
 const LINKS = [
   { path: '/taskeroo', label: 'Taskeroo', description: 'Task management system' },
   { path: '/wikiroo', label: 'Wikiroo', description: 'Wiki and documentation' },
   { path: '/mcp-registry', label: 'MCP Registry', description: 'Model Context Protocol registry' },
   { path: '/agents', label: 'Agents', description: 'AI agent management' },
+  { path: '/settings', label: 'Settings', description: 'Customize your experience' },
   { path: '/logout', label: 'Logout', description: 'Sign out of your account' },
 ];
 
 export function HomePage() {
-  const { theme, setTheme } = useTheme();
-
-  // console.log(theme)
   return (
     <Stack spacing="6">
       <Stack spacing="3">
@@ -23,45 +19,6 @@ export function HomePage() {
           Choose a section to get started
         </Text>
       </Stack>
-
-      {/* Theme Switcher */}
-      <Card padding="4">
-        <Stack spacing="3">
-          <Text size="3" weight="semibold">Theme</Text>
-          <Row spacing="2">
-            <Button
-              variant={theme === 'light' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setTheme('light')}
-            >
-              Light
-            </Button>
-            <Button
-              variant={theme === 'dark' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setTheme('dark')}
-            >
-              Dark
-            </Button>
-            <Button
-              variant={theme === 'github' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setTheme('github')}
-            >
-              GitHub
-            </Button>
-            <Button
-              variant={theme === 'forest' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setTheme('forest')}
-            >
-              Forest
-            </Button>
-          </Row>
-        </Stack>
-      </Card>
-
-      <Divider />
 
       {/* Navigation Links */}
       <Card padding="2">

@@ -286,3 +286,58 @@ Before merging UI work:
 - If in doubt: promote patterns downward (feature → component → primitive → token).
 
 ---
+
+## 12) Navigation Principles (App-level vs In-app)
+
+### 12.1 Two navigation layers, never mixed
+- The UI has two distinct navigation layers:
+  1) **App-level navigation**: switching between top-level apps (Taskeroo, Wikiroo, MCP Registry, Agents, Settings, Logout)
+  2) **In-app navigation**: navigation within a specific app (e.g., Task states in Taskeroo)
+
+**Rule:** Never combine app-level and in-app destinations in the same navigation control (e.g., don’t put “Taskeroo” and “In Progress” in the same bottom tab bar).
+
+### 12.2 Shell owns app-level navigation
+- App-level navigation belongs to the **shell** (global layout chrome):
+  - **DesktopShell** provides persistent app-level navigation (sidebar).
+  - **MobileShell** provides app-level navigation via a drawer/sheet opened from a hamburger button.
+- Shell navigation must be consistent across all apps.
+
+### 12.3 Features own in-app navigation
+- In-app navigation belongs to the **feature** (domain app):
+  - Taskeroo defines its own sections (Not started / In progress / Review / Done).
+  - Wikiroo defines its own structure (spaces/pages/search/etc.).
+- The shell must not contain domain-specific in-app destinations.
+
+### 12.4 Mobile: bottom tabs are reserved for in-app navigation
+- On mobile, if an app benefits from frequent section switching, it may define a **bottom tab bar**.
+- Bottom tabs on mobile are **never** used for app-level switching.
+- If the current app does not define bottom tabs, the bottom bar is absent.
+
+### 12.5 Desktop: in-app navigation uses tabs/filters, not bottom bars
+- On desktop, in-app navigation appears as:
+  - tabs under a page title
+  - a secondary nav inside the page
+  - filters/segmented controls
+- Desktop avoids mobile-only patterns (like bottom tab bars).
+
+### 12.6 Navigation contract: apps declare in-app nav to the shell
+- Each feature can optionally declare an **in-app navigation model** to the shell.
+- The shell renders that model in the appropriate place:
+  - Mobile: bottom tabs
+  - Desktop: tabs or secondary nav region (depending on the app design)
+- The shell does not hardcode task states or feature-specific items.
+
+### 12.7 Frequency drives placement
+- High-frequency actions/sections must be one-tap (or one-click) reachable.
+- Low-frequency context switches (changing top-level apps) must be accessible but not dominant.
+
+### 12.8 Deep links always work
+- Any tab/section must be addressable via a URL.
+- Navigation state must be derivable from the route (no “hidden UI state” required to reach a section).
+- Refreshing the page must preserve the current section.
+
+### 12.9 Consistent destinations
+- Nav items represent destinations, not actions.
+- “Logout” may be represented as a destination (route) that triggers logout behavior, but the UI should still treat it as a nav outcome.
+
+---
