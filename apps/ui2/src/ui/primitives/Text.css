@@ -57,3 +57,12 @@
 .text--tone-inverse {
   color: var(--text-inverse);
 }
+
+/* Wrap variants */
+/* TODO: This doesn't work, if I do nowrap it extends beyond the width of the parent component  */
+.text--wrap { 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* white-space: nowrap; */
+}
+

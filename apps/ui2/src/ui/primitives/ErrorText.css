@@ -1,0 +1,23 @@
+.error--container {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-2);
+  border: 1px solid var(--danger);
+  border-radius: var(--r-2);
+  animation: shake 0.4s ease;
+}
+.error--text {
+  color: var(--danger);
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}

@@ -4,6 +4,10 @@
 }
 
 /* Spacing variants */
+.stack--spacing-0 {
+  gap: var(--space-0);
+}
+
 .stack--spacing-1 {
   gap: var(--space-1);
 }

@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { Stack, Text, Button } from '../ui/primitives';
 import './LoginPage.css';
+import { ErrorText } from '../ui/primitives/ErrorText';
 
 /**
  * LoginPage component
@@ -85,11 +86,9 @@ export function LoginPage() {
                 </Stack>
 
                 {error && (
-                  <div className="login-error">
-                    <Text size="2" weight="medium" className="login-error-text">
-                      {error}
-                    </Text>
-                  </div>
+                  <ErrorText size="2" weight="medium" className="">
+                    {error}
+                  </ErrorText>
                 )}
 
                 <Button

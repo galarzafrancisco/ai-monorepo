@@ -1,43 +1,15 @@
-import { Stack, Text, ListRow, Card, Row } from '../../ui/primitives';
-import { useTaskeroo } from './useTaskeroo';
+import { Stack, Text, ListRow, Card } from '../../ui/primitives';
+import { useTaskerooCtx } from "./TaskerooProvider";
 import type { Task } from './types';
+import { TaskStatus } from './types';
 
-export type TaskStatus = 'not-started' | 'in_progress' | 'in_review' | 'done' | 'needs_work';
-
-const STATUS_COLORS: Record<string, string> = {
-  'not_started': 'var(--text-muted)',
-  'in_progress': 'var(--accent)',
-  'in_review': 'var(--warning)',
-  'done': 'var(--success)',
-  'needs_work': 'var(--danger)',
+const STATUS_LABELS: Record<Task.status, string> = {
+  [TaskStatus.NOT_STARTED]: 'Not Started',
+  [TaskStatus.IN_PROGRESS]: 'In Progress',
+  [TaskStatus.FOR_REVIEW]: 'In Review',
+  [TaskStatus.DONE]: 'Done',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  'not_started': 'Not Started',
-  'in_progress': 'In Progress',
-  'in_review': 'In Review',
-  'done': 'Done',
-  'needs_work': 'Needs Work',
-};
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        padding: 'var(--space-1) var(--space-2)',
-        borderRadius: 'var(--r-2)',
-        fontSize: 'var(--fs-1)',
-        fontWeight: 'var(--fw-medium)',
-        backgroundColor: 'var(--surface-2)',
-        color: STATUS_COLORS[status] || 'var(--text)',
-        border: `1px solid ${STATUS_COLORS[status] || 'var(--border)'}`,
-      }}
-    >
-      {STATUS_LABELS[status] || status}
-    </span>
-  );
-}
 
 function TaskRow({ task }: { task: Task }) {
   const commentCount = task.comments?.length || 0;
@@ -45,15 +17,14 @@ function TaskRow({ task }: { task: Task }) {
   return (
     <ListRow>
       <div style={{ flex: 1 }}>
-        <Stack spacing="2">
-          <Row spacing="3" align="center">
-            <Text weight="medium">{task.description}</Text>
-            <StatusBadge status={task.status} />
-          </Row>
+        <Stack spacing='0'>
+          <Text tone='muted' weight='normal'>#{task.id.slice(0,6)}</Text>
+          <Text weight="bold">{task.name}</Text>
+          <Text weight="medium" wrap={true}>{task.description}</Text>
           <Text size="1" tone="muted">
             Created by {task.createdBy}
             {task.assignee && ` • Assigned to ${task.assignee}`}
-            {` • ${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}`}
+            {commentCount ? ` • 💬 ${commentCount}`: ''}
           </Text>
         </Stack>
       </div>
@@ -61,7 +32,7 @@ function TaskRow({ task }: { task: Task }) {
   );
 }
 
-function EmptyState({ status }: { status?: string }) {
+function EmptyState({ status }: { status?: Task.status }) {
   const statusLabel = status ? STATUS_LABELS[status]?.toLowerCase() || status : '';
   return (
     <div
@@ -108,11 +79,12 @@ function ErrorState({ error }: { error: string }) {
 }
 
 export interface TaskerooPageProps {
-  status?: string;
+  status?: Task.status
 }
 
 export function TaskerooPage({ status }: TaskerooPageProps) {
-  const { tasks, isLoading, error } = useTaskeroo();
+  
+  const { tasks, isLoading, error } = useTaskerooCtx();
 
   const filteredTasks = status
     ? tasks.filter((task) => task.status === status)
