@@ -31,15 +31,6 @@
   color: #1a202c;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-  .login-card {
-    padding-left: var(--space-3);
-    padding-right: var(--space-3);
-  }
-}
-
-
 .login-card * {
   color: #1a202c;
 }
@@ -109,5 +100,13 @@
 @media (max-width: 480px) {
   .login-page {
     padding: var(--space-3);
+  }
+}
+
+/* Tablet/mobile tweaks */
+@media (max-width: 768px) {
+  .login-card {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
   }
 }

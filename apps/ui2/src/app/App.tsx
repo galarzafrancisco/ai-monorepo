@@ -4,7 +4,6 @@ import { AuthProvider, LoginPage, ProtectedRoute } from '../auth';
 import { HomePage, SettingsPage, TaskerooRoute, WikirooRoute, MCPRegistryRoute, AgentsRoute, LogoutPage } from './routes';
 import { ShellSwitch } from './shells/ShellSwitch';
 
-
 function AppRoutes() {
   return (
     <Routes>
@@ -16,7 +15,7 @@ function AppRoutes() {
       {/* Features ⬇️ */}
 
       {/* Taskeroo with nested routes */}
-      <Route path="/taskeroo/*" element={<TaskerooRoute />}  />
+      <Route path="/taskeroo/*" element={<TaskerooRoute />} />
 
       <Route path="/wikiroo" element={<WikirooRoute />} />
       <Route path="/mcp-registry" element={<MCPRegistryRoute />} />
@@ -27,13 +26,13 @@ function AppRoutes() {
 
 export function App() {
   return (
-    <BrowserRouter basename='/beta'>
+    <BrowserRouter basename="/beta">
       <ThemeProvider>
         <AuthProvider>
           <InAppNavProvider>
             <Routes>
               {/* Login page - no shell */}
-              <Route path="/login" element={<LoginPage/>} />
+              <Route path="/login" element={<LoginPage />} />
 
               {/* Main app - with shells and auth protection */}
               <Route
