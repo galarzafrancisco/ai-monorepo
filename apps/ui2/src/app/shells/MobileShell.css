@@ -1,0 +1,72 @@
+.mobile-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg);
+
+  /* iOS safe area support */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-shell__header {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-4);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mobile-shell__main {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.mobile-shell__bottom-nav {
+  background-color: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: var(--space-2) var(--space-3);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.mobile-shell__nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  min-width: 60px;
+  text-decoration: none;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+  border-radius: var(--r-2);
+}
+
+.mobile-shell__nav-item:hover {
+  text-decoration: none;
+  background-color: var(--surface-2);
+}
+
+.mobile-shell__nav-item--active {
+  color: var(--accent);
+}
+
+.mobile-shell__nav-icon {
+  font-size: 20px;
+}
+
+.mobile-shell__nav-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+/* Hide on desktop */
+@media (min-width: 769px) {
+  .mobile-shell {
+    display: none;
+  }
+}

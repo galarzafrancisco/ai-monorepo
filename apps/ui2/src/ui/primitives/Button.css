@@ -1,0 +1,78 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-weight: var(--fw-medium);
+  border-radius: var(--r-2);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Size variants */
+.btn--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--fs-1);
+}
+
+.btn--md {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--fs-2);
+}
+
+.btn--lg {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--fs-3);
+}
+
+/* Variant: Primary */
+.btn--primary {
+  background-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+/* Variant: Secondary */
+.btn--secondary {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background-color: var(--surface-2);
+}
+
+/* Variant: Danger */
+.btn--danger {
+  background-color: var(--danger);
+  color: var(--text-inverse);
+}
+
+.btn--danger:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/* Variant: Ghost */
+.btn--ghost {
+  background-color: transparent;
+  color: var(--text);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background-color: var(--surface);
+}
+
+/* Full width */
+.btn--full-width {
+  width: 100%;
+}

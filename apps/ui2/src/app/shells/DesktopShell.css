@@ -1,0 +1,60 @@
+.desktop-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background-color: var(--bg);
+}
+
+.desktop-shell__sidebar {
+  background-color: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: var(--space-5);
+  overflow-y: auto;
+}
+
+.desktop-shell__brand {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-3);
+}
+
+.desktop-shell__nav {
+  flex: 1;
+}
+
+.desktop-shell__nav-item {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-2);
+  color: var(--text);
+  text-decoration: none;
+  font-size: var(--fs-2);
+  transition: background-color 0.15s ease;
+}
+
+.desktop-shell__nav-item:hover {
+  background-color: var(--surface-2);
+  text-decoration: none;
+}
+
+.desktop-shell__nav-item--active {
+  background-color: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: var(--fw-medium);
+}
+
+.desktop-shell__nav-item--active:hover {
+  background-color: var(--accent-hover);
+}
+
+.desktop-shell__main {
+  overflow-y: auto;
+  padding: var(--space-6);
+}
+
+/* Hide on mobile */
+@media (max-width: 768px) {
+  .desktop-shell {
+    display: none;
+  }
+}

@@ -1,0 +1,25 @@
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 48px; /* Good mobile tap target */
+}
+
+.list-row:last-child {
+  border-bottom: none;
+}
+
+.list-row--interactive {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.list-row--interactive:hover {
+  background-color: var(--surface);
+}
+
+.list-row--interactive:active {
+  background-color: var(--surface-2);
+}

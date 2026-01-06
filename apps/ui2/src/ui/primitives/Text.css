@@ -1,0 +1,59 @@
+.text {
+  margin: 0;
+  line-height: var(--lh-normal);
+}
+
+/* Size variants */
+.text--size-1 {
+  font-size: var(--fs-1);
+}
+
+.text--size-2 {
+  font-size: var(--fs-2);
+}
+
+.text--size-3 {
+  font-size: var(--fs-3);
+}
+
+.text--size-4 {
+  font-size: var(--fs-4);
+}
+
+.text--size-5 {
+  font-size: var(--fs-5);
+}
+
+.text--size-6 {
+  font-size: var(--fs-6);
+}
+
+/* Weight variants */
+.text--weight-normal {
+  font-weight: var(--fw-normal);
+}
+
+.text--weight-medium {
+  font-weight: var(--fw-medium);
+}
+
+.text--weight-semibold {
+  font-weight: var(--fw-semibold);
+}
+
+.text--weight-bold {
+  font-weight: var(--fw-bold);
+}
+
+/* Tone variants */
+.text--tone-default {
+  color: var(--text);
+}
+
+.text--tone-muted {
+  color: var(--text-muted);
+}
+
+.text--tone-inverse {
+  color: var(--text-inverse);
+}
