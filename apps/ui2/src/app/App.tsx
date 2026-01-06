@@ -1,36 +1,26 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, InAppNavProvider } from './providers';
 import { AuthProvider, LoginPage, ProtectedRoute } from '../auth';
-import { DesktopShell, MobileShell } from './shells';
-import { HomePage, SettingsPage, WikirooPage, MCPRegistryPage, AgentsPage, LogoutPage } from './pages';
-import { TaskerooLayout } from '../features/taskeroo/TaskerooLayout';
-import { TaskerooPage } from '../features/taskeroo/TaskerooPage';
-import { TaskStatus } from '../features/taskeroo/types';
+import { HomePage, SettingsPage, TaskerooRoute, WikirooRoute, MCPRegistryRoute, AgentsRoute, LogoutPage } from './routes';
 import { ShellSwitch } from './shells/ShellSwitch';
+
 
 function AppRoutes() {
   return (
     <Routes>
-      {/* Login page - no shell */}
-      <Route path="/login" element={<LoginPage />} />
-
-      {/* Main app routes - wrapped in shells */}
+      {/* Top level pages */}
       <Route path="/" element={<HomePage />} />
-
-      {/* Taskeroo with nested routes */}
-      <Route path="/taskeroo" element={<TaskerooLayout />}>
-        <Route index element={<Navigate to="/taskeroo/not-started" replace />} />
-        <Route path="not-started" element={<TaskerooPage status={TaskStatus.NOT_STARTED} />} />
-        <Route path="in-progress" element={<TaskerooPage status={TaskStatus.IN_PROGRESS} />} />
-        <Route path="in-review" element={<TaskerooPage status={TaskStatus.FOR_REVIEW} />} />
-        <Route path="done" element={<TaskerooPage status={TaskStatus.DONE} />} />
-      </Route>
-
-      <Route path="/wikiroo" element={<WikirooPage />} />
-      <Route path="/mcp-registry" element={<MCPRegistryPage />} />
-      <Route path="/agents" element={<AgentsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/logout" element={<LogoutPage />} />
+
+      {/* Features ⬇️ */}
+
+      {/* Taskeroo with nested routes */}
+      <Route path="/taskeroo/*" element={<TaskerooRoute />}  />
+
+      <Route path="/wikiroo" element={<WikirooRoute />} />
+      <Route path="/mcp-registry" element={<MCPRegistryRoute />} />
+      <Route path="/agents" element={<AgentsRoute />} />
     </Routes>
   );
 }
@@ -43,7 +33,7 @@ export function App() {
           <InAppNavProvider>
             <Routes>
               {/* Login page - no shell */}
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/login" element={<LoginPage/>} />
 
               {/* Main app - with shells and auth protection */}
               <Route

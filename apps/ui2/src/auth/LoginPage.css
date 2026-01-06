@@ -1,7 +1,5 @@
 .login-page {
   min-height: 100vh;
-  /* background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); */
-  /* background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,6 +31,15 @@
   color: #1a202c;
 }
 
+/* Mobile */
+@media (max-width: 768px) {
+  .login-card {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+}
+
+
 .login-card * {
   color: #1a202c;
 }
@@ -46,7 +53,7 @@
   padding: var(--space-3) var(--space-4);
   border: 2px solid #e2e8f0;
   border-radius: var(--r-2);
-  font-size: var(--fs-2);
+  font-size: var(--fs-input-mobile-safe);
   font-family: var(--font-sans);
   color: #1a202c !important;
   background-color: #ffffff !important;
