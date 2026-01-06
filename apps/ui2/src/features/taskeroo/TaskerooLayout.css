@@ -1,11 +1,29 @@
-/* Desktop: show tabs */
-.taskeroo-tabs--desktop {
+/* Desktop layout - show desktop view, hide mobile view */
+.taskeroo-layout--desktop {
   display: block;
 }
 
-/* Mobile: hide tabs (bottom tabs will be used instead) */
+.taskeroo-layout--mobile {
+  display: none;
+}
+
+/* Mobile: hide desktop view, show mobile view */
 @media (max-width: 768px) {
+  .taskeroo-layout--desktop {
+    display: none;
+  }
+
+  .taskeroo-layout--mobile {
+    display: block;
+  }
+
+  /* Within mobile view, hide tabs on mobile (bottom tabs will be used instead) */
   .taskeroo-tabs--desktop {
     display: none;
   }
+}
+
+/* Desktop: show tabs within mobile view (for tablet/small desktop) */
+.taskeroo-tabs--desktop {
+  display: block;
 }

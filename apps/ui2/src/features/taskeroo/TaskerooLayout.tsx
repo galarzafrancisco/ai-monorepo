@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Stack, Text, Tabs } from '../../ui/primitives';
+import { Stack, Text } from '../../ui/primitives';
 import { useInAppNav } from '../../app/providers';
 import { taskerooNavigation } from './navigation';
 import { TaskerooProvider, useTaskerooCtx } from './TaskerooProvider';
+import { TaskerooDesktopView } from './TaskerooDesktopView';
 import './TaskerooLayout.css';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 
@@ -27,21 +28,24 @@ export function TaskerooLayout() {
 
   return (
     <TaskerooProvider>
-      <Stack spacing="5">
-        <Stack spacing="2">
-          <Text size="6" weight="bold">Taskeroo</Text>
-          <TaskerooConnectionHeader />
-          <Text tone="muted">Manage your tasks and track progress</Text>
+      {/* Desktop view - shows board/list toggle */}
+      <div className="taskeroo-layout--desktop">
+        <TaskerooDesktopView />
+      </div>
+
+      {/* Mobile view - shows routed content (tabs are in bottom nav) */}
+      <div className="taskeroo-layout--mobile">
+        <Stack spacing="5">
+          <Stack spacing="2">
+            <Text size="6" weight="bold">Taskeroo</Text>
+            <TaskerooConnectionHeader />
+            <Text tone="muted">Manage your tasks and track progress</Text>
+          </Stack>
+
+          {/* Routed content */}
+          <Outlet />
         </Stack>
-
-        {/* In-app navigation - desktop only */}
-        <div className="taskeroo-tabs--desktop">
-          <Tabs items={taskerooNavigation.items} />
-        </div>
-
-        {/* Routed content */}
-        <Outlet />
-      </Stack>
+      </div>
     </TaskerooProvider>
   );
 }

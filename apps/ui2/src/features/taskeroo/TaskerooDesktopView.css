@@ -1,0 +1,25 @@
+.taskeroo-desktop__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.taskeroo-desktop__view-toggle {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.taskeroo-desktop__content {
+  width: 100%;
+}
+
+.taskeroo-desktop__state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-8);
+  text-align: center;
+  min-height: 400px;
+}
