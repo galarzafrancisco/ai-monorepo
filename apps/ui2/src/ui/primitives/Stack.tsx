@@ -3,7 +3,7 @@ import './Stack.css';
 
 export interface StackProps {
   children: ReactNode;
-  spacing?: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
+  spacing?: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
   align?: 'start' | 'center' | 'end' | 'stretch';
   className?: string;
 }

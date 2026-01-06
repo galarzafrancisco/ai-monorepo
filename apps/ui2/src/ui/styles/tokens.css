@@ -34,6 +34,7 @@
   --focus-ring: #0969da;
 
   /* Spacing Scale */
+  --space-0: 0px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

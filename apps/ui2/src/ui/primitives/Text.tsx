@@ -8,6 +8,7 @@ export interface TextProps {
   tone?: 'default' | 'muted' | 'inverse';
   as?: 'p' | 'span' | 'div' | 'label';
   className?: string;
+  wrap?: boolean;
 }
 
 export function Text({
@@ -16,11 +17,12 @@ export function Text({
   weight = 'normal',
   tone = 'default',
   as: Component = 'p',
-  className = ''
+  className = '',
+  wrap = false,
 }: TextProps) {
   return (
     <Component
-      className={`text text--size-${size} text--weight-${weight} text--tone-${tone} ${className}`}
+      className={`text text--size-${size} text--weight-${weight} text--tone-${tone} ${wrap && 'text--wrap'} ${className}`}
       data-component="text"
     >
       {children}

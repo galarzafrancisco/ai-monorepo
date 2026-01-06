@@ -1,4 +1,4 @@
-## 11) UI Change Review Guide (Mandatory Checklist)
+## 1) UI Change Review Guide (Mandatory Checklist)
 
 This checklist is run **for every UI change** (human or AI-generated).
 If multiple items fail, the change must be revised before merging.
@@ -7,7 +7,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.1 Architectural correctness
+### 1.1 Architectural correctness
 
 - [ ] **No app forking**
   - No separate route trees for mobile vs desktop
@@ -24,7 +24,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.2 Design token usage (critical)
+### 1.2 Design token usage (critical)
 
 - [ ] **No raw colors**
   - ❌ `green`, `#10b981`, `rgb(...)`
@@ -48,7 +48,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.3 Theme compatibility
+### 1.3 Theme compatibility
 
 - [ ] **Works across all themes**
   - No assumptions about light/dark contrast
@@ -62,7 +62,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.4 Component design
+### 1.4 Component design
 
 - [ ] **Primitive-first approach**
   - Layout built using `Stack`, `Row`, `Grid`
@@ -82,7 +82,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.5 Responsiveness & mobile behavior
+### 1.5 Responsiveness & mobile behavior
 
 - [ ] **CSS-first responsiveness**
   - Layout changes done via media queries
@@ -98,7 +98,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.6 Accessibility & interaction
+### 1.6 Accessibility & interaction
 
 - [ ] **Keyboard accessible**
   - All interactive elements are reachable and usable
@@ -118,7 +118,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.7 Data & backend usage
+### 1.7 Data & backend usage
 
 - [ ] **No fetch / no axios**
   - No manual HTTP calls
@@ -134,7 +134,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.8 State & UX states
+### 1.8 State & UX states
 
 - [ ] **Loading state present**
   - Skeletons or spinners are intentional and styled
@@ -148,7 +148,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.9 Code quality & maintainability
+### 1.9 Code quality & maintainability
 
 - [ ] **No copy-paste styling**
   - Styling is shared via primitives or tokens
@@ -164,7 +164,7 @@ The goal is **consistency, predictability, and long-term maintainability**.
 
 ---
 
-### 11.10 Final sanity check (gut test)
+### 1.10 Final sanity check (gut test)
 
 - [ ] Could this component survive a **full theme redesign** without changes?
 - [ ] Would this still work if the accent color was **yellow**?

@@ -1,120 +1,30 @@
-import { Stack, Text, ListRow, Card, Row } from '../../ui/primitives';
+import { Stack, Text, ListRow, Card } from '../../ui/primitives';
+import { useTaskerooCtx } from "./TaskerooProvider";
+import type { Task } from './types';
+import { TaskStatus } from './types';
 
-export type TaskStatus = 'not-started' | 'in_progress' | 'in_review' | 'done';
-
-interface Task {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  assignedTo?: string;
-  createdBy: string;
-  commentCount: number;
-}
-
-// Placeholder data (no backend calls)
-const PLACEHOLDER_TASKS: Task[] = [
-  {
-    id: '1',
-    title: 'Implement user authentication',
-    status: 'in_progress',
-    createdBy: 'Alice',
-    assignedTo: 'Bob',
-    commentCount: 5,
-  },
-  {
-    id: '2',
-    title: 'Design new landing page',
-    status: 'not-started',
-    createdBy: 'Charlie',
-    assignedTo: 'Alice',
-    commentCount: 2,
-  },
-  {
-    id: '3',
-    title: 'Fix mobile responsive issues',
-    status: 'done',
-    createdBy: 'Bob',
-    assignedTo: 'Charlie',
-    commentCount: 8,
-  },
-  {
-    id: '4',
-    title: 'Add dark mode support',
-    status: 'done',
-    createdBy: 'Alice',
-    commentCount: 3,
-  },
-  {
-    id: '5',
-    title: 'Optimize database queries',
-    status: 'not-started',
-    createdBy: 'Charlie',
-    assignedTo: 'Bob',
-    commentCount: 1,
-  },
-  {
-    id: '6',
-    title: 'Write API documentation',
-    status: 'in_review',
-    createdBy: 'Bob',
-    assignedTo: 'Alice',
-    commentCount: 4,
-  },
-  {
-    id: '7',
-    title: 'Set up CI/CD pipeline',
-    status: 'in_review',
-    createdBy: 'Alice',
-    commentCount: 2,
-  },
-];
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  'not-started': 'var(--text-muted)',
-  'in_progress': 'var(--accent)',
-  'in_review': 'var(--warning)',
-  'done': 'var(--success)',
+const STATUS_LABELS: Record<Task.status, string> = {
+  [TaskStatus.NOT_STARTED]: 'Not Started',
+  [TaskStatus.IN_PROGRESS]: 'In Progress',
+  [TaskStatus.FOR_REVIEW]: 'In Review',
+  [TaskStatus.DONE]: 'Done',
 };
 
-const STATUS_LABELS: Record<TaskStatus, string> = {
-  'not-started': 'Not Started',
-  'in_progress': 'In Progress',
-  'in_review': 'In Review',
-  'done': 'Done',
-};
-
-function StatusBadge({ status }: { status: TaskStatus }) {
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        padding: 'var(--space-1) var(--space-2)',
-        borderRadius: 'var(--r-2)',
-        fontSize: 'var(--fs-1)',
-        fontWeight: 'var(--fw-medium)',
-        backgroundColor: 'var(--surface-2)',
-        color: STATUS_COLORS[status],
-        border: `1px solid ${STATUS_COLORS[status]}`,
-      }}
-    >
-      {STATUS_LABELS[status]}
-    </span>
-  );
-}
 
 function TaskRow({ task }: { task: Task }) {
+  const commentCount = task.comments?.length || 0;
+
   return (
     <ListRow>
       <div style={{ flex: 1 }}>
-        <Stack spacing="2">
-          <Row spacing="3" align="center">
-            <Text weight="medium">{task.title}</Text>
-            <StatusBadge status={task.status} />
-          </Row>
+        <Stack spacing='0'>
+          <Text tone='muted' weight='normal'>#{task.id.slice(0,6)}</Text>
+          <Text weight="bold">{task.name}</Text>
+          <Text weight="medium" wrap={true}>{task.description}</Text>
           <Text size="1" tone="muted">
             Created by {task.createdBy}
-            {task.assignedTo && ` • Assigned to ${task.assignedTo}`}
-            {` • ${task.commentCount} ${task.commentCount === 1 ? 'comment' : 'comments'}`}
+            {task.assignee && ` • Assigned to ${task.assignee}`}
+            {commentCount ? ` • 💬 ${commentCount}`: ''}
           </Text>
         </Stack>
       </div>
@@ -122,8 +32,8 @@ function TaskRow({ task }: { task: Task }) {
   );
 }
 
-function EmptyState({ status }: { status?: TaskStatus }) {
-  const statusLabel = status ? STATUS_LABELS[status].toLowerCase() : '';
+function EmptyState({ status }: { status?: Task.status }) {
+  const statusLabel = status ? STATUS_LABELS[status]?.toLowerCase() || status : '';
   return (
     <div
       style={{
@@ -139,16 +49,64 @@ function EmptyState({ status }: { status?: TaskStatus }) {
   );
 }
 
+function LoadingState() {
+  return (
+    <div
+      style={{
+        padding: 'var(--space-8)',
+        textAlign: 'center',
+      }}
+    >
+      <Text tone="muted">Loading tasks...</Text>
+    </div>
+  );
+}
+
+function ErrorState({ error }: { error: string }) {
+  return (
+    <div
+      style={{
+        padding: 'var(--space-8)',
+        textAlign: 'center',
+      }}
+    >
+      <Stack spacing="3" align="center">
+        <Text size="4" tone="muted">Error loading tasks</Text>
+        <Text tone="muted">{error}</Text>
+      </Stack>
+    </div>
+  );
+}
+
 export interface TaskerooPageProps {
-  status?: TaskStatus;
+  status?: Task.status
 }
 
 export function TaskerooPage({ status }: TaskerooPageProps) {
+  
+  const { tasks, isLoading, error } = useTaskerooCtx();
+
   const filteredTasks = status
-    ? PLACEHOLDER_TASKS.filter((task) => task.status === status)
-    : PLACEHOLDER_TASKS;
+    ? tasks.filter((task) => task.status === status)
+    : tasks;
 
   const hasTasks = filteredTasks.length > 0;
+
+  if (isLoading && tasks.length === 0) {
+    return (
+      <Card padding="2">
+        <LoadingState />
+      </Card>
+    );
+  }
+
+  if (error && tasks.length === 0) {
+    return (
+      <Card padding="2">
+        <ErrorState error={error} />
+      </Card>
+    );
+  }
 
   return (
     <Card padding="2">
