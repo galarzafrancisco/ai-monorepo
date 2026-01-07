@@ -1,6 +1,6 @@
 .board-view {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
   width: 100%;
   align-items: start;
@@ -11,6 +11,7 @@
   flex-direction: column;
   gap: var(--space-3);
   min-height: 400px;
+  min-width: 0;
   background-color: var(--surface);
   border-radius: var(--radius-3);
   padding: var(--space-3);

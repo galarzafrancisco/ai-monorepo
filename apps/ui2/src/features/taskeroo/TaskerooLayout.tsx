@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Stack, Text } from '../../ui/primitives';
 import { useInAppNav } from '../../app/providers';
 import { taskerooNavigation } from './navigation';
+import { STATUS_CONFIG } from './const';
 import { TaskerooProvider, useTaskerooCtx } from './TaskerooProvider';
 import { TaskerooDesktopView } from './TaskerooDesktopView';
 import './TaskerooLayout.css';
@@ -15,6 +16,11 @@ function TaskerooConnectionHeader() {
 
 export function TaskerooLayout() {
   const { setInAppNav } = useInAppNav();
+  const location = useLocation();
+
+  const activeSection = useMemo(() => {
+    return STATUS_CONFIG.find((item) => location.pathname.startsWith(item.path));
+  }, [location.pathname]);
 
   useEffect(() => {
     // Register in-app navigation when this layout mounts
@@ -38,6 +44,11 @@ export function TaskerooLayout() {
         <Stack spacing="5">
           <Stack spacing="2">
             <Text size="6" weight="bold">Taskeroo</Text>
+            {activeSection && (
+              <Text size="4" weight="bold">
+                {activeSection.icon} {activeSection.label}
+              </Text>
+            )}
             <TaskerooConnectionHeader />
             <Text tone="muted">Manage your tasks and track progress</Text>
           </Stack>

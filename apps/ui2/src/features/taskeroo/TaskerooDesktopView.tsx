@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack, Text, Button } from '../../ui/primitives';
 import { useTaskerooCtx } from './TaskerooProvider';
 import { BoardView } from './BoardView';
@@ -7,6 +7,17 @@ import { ErrorText } from '../../ui/primitives/ErrorText';
 import './TaskerooDesktopView.css';
 
 type ViewMode = 'board' | 'list';
+
+const viewModeStorageKey = 'taskeroo.viewMode';
+
+const getInitialViewMode = (): ViewMode => {
+  if (typeof window === 'undefined') {
+    return 'board';
+  }
+
+  const stored = window.localStorage.getItem(viewModeStorageKey);
+  return stored === 'list' || stored === 'board' ? stored : 'board';
+};
 
 function LoadingState() {
   return (
@@ -33,8 +44,12 @@ function ConnectionHeader() {
 }
 
 export function TaskerooDesktopView() {
-  const [viewMode, setViewMode] = useState<ViewMode>('board');
+  const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
   const { tasks, isLoading, error } = useTaskerooCtx();
+
+  useEffect(() => {
+    window.localStorage.setItem(viewModeStorageKey, viewMode);
+  }, [viewMode]);
 
   return (
     <Stack spacing="5">
