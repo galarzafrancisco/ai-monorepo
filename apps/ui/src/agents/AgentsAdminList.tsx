@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAgents } from './useAgents';
+import { Task, TaskStatus } from 'src/taskeroo/types';
 
 export function AgentsAdminList() {
   const { agents, isLoading, error, createAgent } = useAgents();
@@ -12,6 +13,7 @@ export function AgentsAdminList() {
     description: '',
     systemPrompt: '',
     allowedTools: '',
+    statusTriggers: '',
     isActive: true,
   });
 
@@ -24,10 +26,11 @@ export function AgentsAdminList() {
         description: formData.description,
         systemPrompt: formData.systemPrompt,
         allowedTools: formData.allowedTools.split(',').map(tool => tool.trim()).filter(Boolean),
+        statusTriggers: formData.statusTriggers.split(',').map(tool => tool.trim() as Task.status).filter(Boolean),
         isActive: formData.isActive,
       });
       setShowCreateForm(false);
-      setFormData({ slug: '', name: '', description: '', systemPrompt: '', allowedTools: '', isActive: true });
+      setFormData({ slug: '', name: '', description: '', systemPrompt: '', allowedTools: '', statusTriggers: '', isActive: true });
       // Navigate to the newly created agent's admin page
       if (createdAgent) {
         navigate(`/agents/${createdAgent.id}/admin`);
@@ -151,6 +154,18 @@ export function AgentsAdminList() {
                   value={formData.allowedTools}
                   onChange={(e) => setFormData({ ...formData, allowedTools: e.target.value })}
                   placeholder="e.g., filesystem, browser, calculator (comma-separated)"
+                />
+                <small>Comma-separated list of tool identifiers</small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="statusTriggers">Status triggers</label>
+                <input
+                  type="text"
+                  id="statusTriggers"
+                  value={formData.statusTriggers}
+                  onChange={(e) => setFormData({ ...formData, statusTriggers: e.target.value })}
+                  placeholder="e.g., NOT_STARTED, IN_PROGRESS, FOR_REVIEW, DONE (comma-separated)"
                 />
                 <small>Comma-separated list of tool identifiers</small>
               </div>

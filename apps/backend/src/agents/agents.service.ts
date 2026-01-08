@@ -223,6 +223,7 @@ export class AgentsService {
       name: agent.name,
       description: agent.description,
       systemPrompt: agent.systemPrompt,
+      statusTriggers: agent.statusTriggers,
       allowedTools: agent.allowedTools,
       isActive: agent.isActive,
       concurrencyLimit: agent.concurrencyLimit,

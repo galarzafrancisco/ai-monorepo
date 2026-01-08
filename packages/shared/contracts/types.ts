@@ -2694,6 +2694,15 @@ export interface components {
              */
             systemPrompt: string;
             /**
+             * @description Task statuses that will trigger this agent to activate
+             * @default []
+             * @example [
+             *       "IN_PROGRESS",
+             *       "FOR_REVIEW"
+             *     ]
+             */
+            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /**
              * @description List of tool identifiers this agent is allowed to use
              * @example [
              *       "taskeroo.createTask",
@@ -2740,6 +2749,14 @@ export interface components {
              * @example You are a helpful assistant that helps users with tasks.
              */
             systemPrompt: string;
+            /**
+             * @description List of status that trigger this agent
+             * @example [
+             *       "NOT_STARTED",
+             *       "IN_PROGRESS"
+             *     ]
+             */
+            statusTriggers: string[];
             /**
              * @description List of tool identifiers this agent is allowed to use
              * @example [
@@ -2825,6 +2842,15 @@ export interface components {
              * @example You are a helpful assistant that helps users with tasks.
              */
             systemPrompt?: string;
+            /**
+             * @description Task statuses that will trigger this agent to activate
+             * @default []
+             * @example [
+             *       "IN_PROGRESS",
+             *       "FOR_REVIEW"
+             *     ]
+             */
+            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
             /**
              * @description List of tool identifiers this agent is allowed to use
              * @example [

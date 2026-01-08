@@ -24,6 +24,10 @@ export type AgentResponseDto = {
      */
     systemPrompt: string;
     /**
+     * List of status that trigger this agent
+     */
+    statusTriggers: Array<string>;
+    /**
      * List of tool identifiers this agent is allowed to use
      */
     allowedTools: Array<string>;

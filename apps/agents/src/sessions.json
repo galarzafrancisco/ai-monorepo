@@ -1,0 +1,12 @@
+[
+  {
+    "agentId": "claude-dev",
+    "taskId": "xx-qwqw-fasasd-123",
+    "sessionId": "7d8199cc-99fa-4034-8747-62d1768498a5"
+  },
+  {
+    "agentId": "claude-dev",
+    "taskId": "the-task-id",
+    "sessionId": "166c61db-0d80-4aac-9564-87f52b268dd1"
+  }
+]

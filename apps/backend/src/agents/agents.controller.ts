@@ -115,6 +115,7 @@ export class AgentsController {
       name: result.name,
       description: result.description,
       systemPrompt: result.systemPrompt,
+      statusTriggers: result.statusTriggers,
       allowedTools: result.allowedTools,
       isActive: result.isActive,
       concurrencyLimit: result.concurrencyLimit,

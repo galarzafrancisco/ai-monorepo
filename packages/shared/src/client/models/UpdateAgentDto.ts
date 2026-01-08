@@ -20,6 +20,10 @@ export type UpdateAgentDto = {
      */
     systemPrompt?: string;
     /**
+     * Task statuses that will trigger this agent to activate
+     */
+    statusTriggers?: Array<'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'>;
+    /**
      * List of tool identifiers this agent is allowed to use
      */
     allowedTools?: Array<string>;
