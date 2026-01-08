@@ -7,7 +7,7 @@ Input:
 - agent id
 */
 
-import { getAgentPrompt } from "./agentApi";
+import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto";
 import { runAgentStream } from "./claude";
 import { printClaudeMessage } from "./messagePrinter";
 import { getSession, setSession } from "./sessionStore";
@@ -28,9 +28,12 @@ Session ID exists?
 
 */
 
-export async function assignHandler(taskId: string, agentId: string, repo: string) {
-  // Fetch agent (mock)
-  const prompt = await getAgentPrompt(agentId);
+export async function assignHandler(taskId: string, agent: AgentResponseDto, repo: string) {
+  
+  console.log(agent)
+  const { systemPrompt: prompt, slug: agentId } = agent;
+  console.log(prompt)
+  console.log(agentId)
 
   // Load session
   const sessionId = getSession(agentId, taskId);

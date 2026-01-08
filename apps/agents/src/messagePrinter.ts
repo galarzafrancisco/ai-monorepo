@@ -5,18 +5,27 @@ export function printClaudeMessage(message: SDKMessage) {
   switch (message.type) {
     case 'assistant':
       printAssistantMessage(message as SDKAssistantMessage);
+      break;
     case 'user':
       printUserMessage(message as SDKUserMessage);
+      break;
     case 'result':
       printResultMessage(message as SDKResultMessage);
+      break;
     case 'system': 
       printSystemMessage(message as SDKSystemMessage);
+      break;
     case 'stream_event':
       printStreamEvent(message as SDKPartialAssistantMessage);
+      break;
     case 'tool_progress':
       printToolProgress(message as SDKToolProgressMessage);
+      break;
     case 'auth_status':
       printAuthStatus(message as SDKAuthStatusMessage);
+      break;
+    default:
+      console.warn('unknown message type', message);
   }
 }
 
@@ -32,7 +41,9 @@ function printUserMessage(message: SDKUserMessage) {
 
 function printResultMessage(message: SDKResultMessage) {
   console.log(`result message`);
-  console.log(message);
+  if(message.is_error) {
+    console.error(`Claude errored: ${message.result}`);
+  }
 }
 
 function printSystemMessage(message: SDKSystemMessage) {

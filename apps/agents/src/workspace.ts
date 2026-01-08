@@ -11,6 +11,7 @@ export async function prepareWorkspace(
   agentId: string,
   repo: string
 ) {
+  console.log(`prepping workspace for agent '${agentId}' to work on task '${taskId}'`);
   const workDir = join(BASE_DIR, taskId, agentId);
   const repoDir = join(workDir, "repo");
 
