@@ -73,7 +73,7 @@ export class TaskerooController {
       assignee: dto.assignee,
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
-      createdBy: dto.createdBy ?? user.email,
+      createdBy: user.email,
       dependsOnIds: dto.dependsOnIds,
     });
     return this.mapResultToResponse(result);
@@ -97,7 +97,6 @@ export class TaskerooController {
       assignee: dto.assignee,
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
-      createdBy: dto.createdBy,
       dependsOnIds: dto.dependsOnIds,
     });
     return this.mapResultToResponse(result);

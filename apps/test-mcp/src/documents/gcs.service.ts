@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Storage } from '@google-cloud/storage';
 import { GCS_BUCKET_NAME } from '../config/self.config';
 
 export interface GcsFile {

@@ -11,10 +11,10 @@ export class DiscoveryController {
   @Get('oauth-protected-resource')
   async getProtectedResource() {
     return {
-      resource: SELF_URL,
-      authorization_servers: [AUTHORIZATION_SERVER_URL],
-      scopes_supported: SELF_SCOPES.split(','),
-      bearer_methods_supported: ["header"],
+      // resource: SELF_URL,
+      // authorization_servers: [AUTHORIZATION_SERVER_URL],
+      // scopes_supported: SELF_SCOPES.split(','),
+      // bearer_methods_supported: ["header"],
       resource_name: SELF_NAME, 
     }
   }
