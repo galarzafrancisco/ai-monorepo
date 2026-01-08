@@ -40,15 +40,28 @@ function printUserMessage(message: SDKUserMessage) {
 }
 
 function printResultMessage(message: SDKResultMessage) {
-  console.log(`result message`);
-  if(message.is_error) {
-    console.error(`Claude errored: ${message.result}`);
+  if (message.subtype === 'success') {
+    console.log(message.result);
+  } else {
+    console.log(`result message`);
+    console.log(message);
   }
 }
 
 function printSystemMessage(message: SDKSystemMessage) {
-  console.log(`system message`);
-  console.log(message);
+  if (message.subtype === 'init') {
+    console.log("Starting Claude")
+    console.log(`- Permissions: ${message.permissionMode}`);
+    console.log(`- Tools: ${message.tools.length}`);
+    console.log(`- MCP Servers: ${message.mcp_servers.length}`);
+    console.log(`- Slash commands: ${message.slash_commands.length}`);
+    console.log(`- Skills: ${message.skills.length}`);
+    console.log(`- Plugins: ${message.plugins.length}`);
+    console.log(`- Agents: ${message.agents?.length || 0}`);
+  } else {
+    console.log(`system message`);
+    console.log(message);
+  }
 }
 
 function printStreamEvent(message: SDKPartialAssistantMessage) {

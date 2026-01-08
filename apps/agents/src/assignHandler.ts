@@ -30,10 +30,7 @@ Session ID exists?
 
 export async function assignHandler(taskId: string, agent: AgentResponseDto, repo: string) {
   
-  console.log(agent)
   const { systemPrompt: prompt, slug: agentId } = agent;
-  console.log(prompt)
-  console.log(agentId)
 
   // Load session
   const sessionId = getSession(agentId, taskId);
@@ -58,8 +55,8 @@ export async function assignHandler(taskId: string, agent: AgentResponseDto, rep
   });
 
   return {
-    prompt,
     sessionId: sessionId ?? null,
     workDir: repoDir,
+    result: result.result,
   };
 }
