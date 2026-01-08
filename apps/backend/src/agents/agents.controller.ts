@@ -31,11 +31,12 @@ import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('agents')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class AgentsController {
   constructor(private readonly agentsService: AgentsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new agent' })
   @ApiCreatedResponse({ type: AgentResponseDto })
   async createAgent(@Body() dto: CreateAgentDto): Promise<AgentResponseDto> {
@@ -52,6 +53,7 @@ export class AgentsController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'List agents with optional filtering and pagination',
   })
@@ -83,6 +85,7 @@ export class AgentsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update an agent' })
   @ApiOkResponse({ type: AgentResponseDto })
   async updateAgent(
@@ -102,6 +105,7 @@ export class AgentsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an agent' })
   async deleteAgent(@Param() params: AgentParamsDto): Promise<void> {
@@ -115,6 +119,7 @@ export class AgentsController {
       name: result.name,
       description: result.description,
       systemPrompt: result.systemPrompt,
+      statusTriggers: result.statusTriggers,
       allowedTools: result.allowedTools,
       isActive: result.isActive,
       concurrencyLimit: result.concurrencyLimit,

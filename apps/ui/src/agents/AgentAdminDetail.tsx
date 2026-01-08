@@ -93,6 +93,8 @@ export function AgentAdminDetail() {
     return <div className="error-message">Agent not found</div>;
   }
 
+  console.log(selectedAgent.statusTriggers)
+
   return (
     <div className="agent-admin-detail">
       <div className="agent-admin-detail-header">
@@ -236,6 +238,21 @@ export function AgentAdminDetail() {
             <h2>System Prompt</h2>
             <div className="detail-content">
               <pre className="system-prompt-display">{selectedAgent.systemPrompt}</pre>
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <h2>Triggers</h2>
+            <div className="detail-content">
+              {selectedAgent.statusTriggers.length > 0 ? (
+                <div className="tools-list">
+                  {selectedAgent.statusTriggers.map((status, index) => (
+                    <span key={index} className="tool-badge">{status}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-text">No triggers configured</p>
+              )}
             </div>
           </div>
 

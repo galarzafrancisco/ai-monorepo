@@ -1,3 +1,5 @@
+import { TaskStatus } from "src/taskeroo/enums";
+
 export type CreateAgentInput = {
   slug: string;
   name: string;
@@ -24,6 +26,7 @@ export type AgentResult = {
   name: string;
   description: string | null;
   systemPrompt: string;
+  statusTriggers: TaskStatus[];
   allowedTools: string[];
   isActive: boolean;
   concurrencyLimit: number | null;

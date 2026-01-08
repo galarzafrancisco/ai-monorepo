@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TaskStatus } from 'src/taskeroo/enums';
 
 export class AgentResponseDto {
   @ApiProperty({
@@ -30,6 +31,15 @@ export class AgentResponseDto {
     example: 'You are a helpful assistant that helps users with tasks.',
   })
   systemPrompt!: string;
+
+  // TODO: refine description and examples and types
+  @ApiProperty({
+    
+    description: 'List of status that trigger this agent',
+    example: ['NOT_STARTED', 'IN_PROGRESS'],
+    type: [String],
+  })
+  statusTriggers!: TaskStatus[];
 
   @ApiProperty({
     description: 'List of tool identifiers this agent is allowed to use',

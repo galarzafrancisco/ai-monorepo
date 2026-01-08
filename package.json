@@ -7,10 +7,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n backend,ui,ui2,agents -c auto \"npm -w backend run dev\" \"npm -w ui run dev\"  \"npm -w ui2 run dev\" \"npm -w agent-api run dev\"",
+    "dev": "concurrently -n backend,ui,ui2 -c auto \"npm -w backend run dev\" \"npm -w ui run dev\"  \"npm -w ui2 run dev\"",
     "dev:mcp-portal": "concurrently -n backend,mcp-portal -c auto \"npm -w backend run dev\" \"npm -w mcp-portal run dev\"",
     "dev:all": "concurrently -n backend,ui,mcp-portal -c auto \"npm -w backend run dev\" \"npm -w ui run dev\" \"npm -w mcp-portal run dev\"",
-    "dev:agents": "npm -w agent-api run dev",
     "build": "npm run build:prod",
     "start": "npm -w backend run start:prod",
     "postinstall": "echo 'Skipping agent-api setup in postinstall'",

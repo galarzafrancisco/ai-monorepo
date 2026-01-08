@@ -6077,6 +6077,24 @@
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
           },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Task statuses that will trigger this agent to activate",
+            "example": [
+              "IN_PROGRESS",
+              "FOR_REVIEW"
+            ],
+            "default": [],
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
+          },
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",
             "example": [
@@ -6136,6 +6154,17 @@
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
           },
+          "statusTriggers": {
+            "description": "List of status that trigger this agent",
+            "example": [
+              "NOT_STARTED",
+              "IN_PROGRESS"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",
             "example": [
@@ -6184,6 +6213,7 @@
           "slug",
           "name",
           "systemPrompt",
+          "statusTriggers",
           "allowedTools",
           "isActive",
           "rowVersion",
@@ -6252,6 +6282,24 @@
             "type": "string",
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Task statuses that will trigger this agent to activate",
+            "example": [
+              "IN_PROGRESS",
+              "FOR_REVIEW"
+            ],
+            "default": [],
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
           },
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",

@@ -6,8 +6,10 @@ import {
   IsBoolean,
   IsInt,
   Min,
+  IsEnum,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TaskStatus } from 'src/taskeroo/enums';
 
 export class CreateAgentDto {
   @ApiProperty({
@@ -41,6 +43,19 @@ export class CreateAgentDto {
   @IsString()
   @IsNotEmpty()
   systemPrompt!: string;
+
+  // TODO: refine description and examples and types
+  @ApiPropertyOptional({
+    description: 'Task statuses that will trigger this agent to activate',
+    example: ['IN_PROGRESS', 'FOR_REVIEW'],
+    type: [String],
+    enum: TaskStatus,
+    default: [],
+  })
+  @IsArray()
+  @IsEnum(TaskStatus, { each: true })
+  @IsOptional()
+  statusTriggers?: TaskStatus[];
 
   @ApiProperty({
     description: 'List of tool identifiers this agent is allowed to use',

@@ -1,3 +1,4 @@
+import { TaskStatus } from 'src/taskeroo/enums';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -25,7 +26,18 @@ export class AgentEntity {
   @Column({ type: 'text', name: 'system_prompt' })
   systemPrompt!: string;
 
-  @Column({ type: 'simple-json', name: 'allowed_tools' })
+  @Column({
+    type: 'simple-array',
+    name: 'status_triggers',
+    default: '[]',
+  })
+  statusTriggers!: TaskStatus[]
+
+  @Column({
+    type: 'simple-array',
+    name: 'allowed_tools',
+    default: '[]',
+  })
   allowedTools!: string[];
 
   @Column({ type: 'boolean', name: 'is_active', default: true })
