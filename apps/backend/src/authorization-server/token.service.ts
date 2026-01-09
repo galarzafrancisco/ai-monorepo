@@ -27,6 +27,9 @@ import {
   RedirectUriMismatchError,
   MissingPkceParametersError,
   InvalidCodeVerifierError,
+  TokenExpiredError,
+  InvalidTokenSignaturedError,
+  TokenValidationError,
 } from './errors/token.errors';
 
 @Injectable()
@@ -205,9 +208,66 @@ export class TokenService {
   }
 
   /**
+   * Decodes a JWT
+   */
+  async decodeToken(token: string): Promise<McpJwtPayload> {
+    this.logger.debug(`Decoding JWT`);
+
+    try {
+      // Get all valid public keys for verification
+      const publicKeys = await this.jwksService.getPublicKeys();
+      
+      if (publicKeys.length === 0) {
+        this.logger.error('No valid public keys available for token verification');
+        throw new UnauthorizedException('Token validation failed');
+      }
+
+      // Create a JWKS object from our keys
+      const jwks = {
+        keys: publicKeys,
+      };
+
+      // Verify the JWT signature and decode payload
+      // We need to create a local JWKS resolver since we don't have a remote JWKS endpoint
+      const getKey = async (header: any) => {
+        const key = publicKeys.find((k) => k.kid === header.kid);
+        if (!key) {
+          throw new Error('Key not found');
+        }
+        return key as any;
+      };
+
+      // Verify JWT with our JWKS
+      const config = getConfig();
+      const { payload } = await jwtVerify(token, getKey as any, {
+        issuer: config.issuerUrl,
+        algorithms: ['RS256'],
+      });
+
+      // Cast payload to our expected type
+      const mcpPayload = payload as unknown as McpJwtPayload;
+      return mcpPayload;
+    } catch (error) {
+      // Token is invalid (expired, bad signature, etc.)
+      if (error instanceof errors.JWTExpired) {
+        this.logger.debug('Token introspection failed: expired');
+        throw new TokenExpiredError();
+      } else if (error instanceof errors.JWSSignatureVerificationFailed) {
+        this.logger.warn('Token introspection failed: bad signature');
+        throw new InvalidTokenSignaturedError();
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.warn(`Token introspection failed: ${errorMessage}`);
+        throw new TokenValidationError(errorMessage);
+      }
+    }
+  }
+
+  /**
    * Introspect a token to validate and return its metadata
    * Implements OAuth 2.0 Token Introspection (RFC 7662)
    */
+  // TODO: this is a service. Should not have DTOs with HTTP concerns as interfaces. Fix!
   async introspectToken(request: IntrospectTokenRequestDto): Promise<IntrospectTokenResponseDto> {
     this.logger.debug(`Introspecting token${request.client_id ? ` for client: ${request.client_id}` : ''}`);
 

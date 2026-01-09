@@ -11,6 +11,9 @@ export const TokenErrorCodes = {
   REDIRECT_URI_MISMATCH: ErrorCodes.REDIRECT_URI_MISMATCH,
   MISSING_PKCE_PARAMETERS: ErrorCodes.MISSING_PKCE_PARAMETERS,
   INVALID_CODE_VERIFIER: ErrorCodes.INVALID_CODE_VERIFIER,
+  TOKEN_EXPIRED: ErrorCodes.TOKEN_EXPIRED,
+  INVALID_TOKEN_SIGNATURE: ErrorCodes.INVALID_TOKEN_SIGNATURE,
+  VALIDATION_FAILED: ErrorCodes.VALIDATION_FAILED,
 } as const;
 
 type TokenErrorCode =
@@ -111,6 +114,33 @@ export class InvalidCodeVerifierError extends TokenDomainError {
     super(
       'Invalid code_verifier.',
       TokenErrorCodes.INVALID_CODE_VERIFIER,
+    );
+  }
+}
+
+export class TokenExpiredError extends TokenDomainError {
+  constructor() {
+    super(
+      'Token has expired.',
+      TokenErrorCodes.TOKEN_EXPIRED,
+    );
+  }
+}
+
+export class InvalidTokenSignaturedError extends TokenDomainError {
+  constructor() {
+    super(
+      'Invalid token signature.',
+      TokenErrorCodes.INVALID_TOKEN_SIGNATURE,
+    );
+  }
+}
+
+export class TokenValidationError extends TokenDomainError {
+  constructor(message: string) {
+    super(
+      message,
+      TokenErrorCodes.VALIDATION_FAILED,
     );
   }
 }
