@@ -83,3 +83,5 @@ For detailed information about the project, refer to the following documents:
 - [Requirements](docs/REQUIREMENTS.md): Explore the functional and technical requirements of the vet booking system.
 - [Artefacts](docs/ARTEFACTS.md): Learn about the artefacts created to ensure quality and consistency.
 
+This project is continuously evolving as a learning platform for modern application development practices.
+
