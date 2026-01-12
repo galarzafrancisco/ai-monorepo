@@ -32,11 +32,11 @@ export async function ensureTestUser(app: INestApplication): Promise<void> {
     await userRepository.save(existingUser);
   } else {
     // Create fresh test user
-    await identityService.createUser(
-      TEST_USER_EMAIL,
-      TEST_USER_DISPLAY_NAME,
-      TEST_USER_PASSWORD,
-    );
+    await identityService.createUser({
+      email: TEST_USER_EMAIL,
+      displayName: TEST_USER_DISPLAY_NAME,
+      password: TEST_USER_PASSWORD,
+    });
   }
 }
 
@@ -55,12 +55,13 @@ export async function getAuthCookies(httpServer: App): Promise<string> {
     throw new Error(`Login failed with status ${response.status}: ${JSON.stringify(response.body)}`);
   }
 
-  const cookies = response.headers['set-cookie'] || [];
+  const setCookieHeader = response.headers['set-cookie'];
+  const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : setCookieHeader ? [setCookieHeader] : [];
 
   // Extract only the cookie name=value pairs (before the first semicolon)
   // set-cookie headers look like: "access_token=xyz; Path=/; HttpOnly"
   // We need to extract just "access_token=xyz"
-  const cookieValues = cookies.map(cookie => cookie.split(';')[0].trim());
+  const cookieValues = cookies.map((cookie: string) => cookie.split(';')[0].trim());
 
   // Join multiple cookies with '; ' as per HTTP spec
   return cookieValues.join('; ');

@@ -125,7 +125,7 @@ describe('Wikiroo E2E Tests', () => {
       .send({
         content: appendText,
       })
-      .expect(200);
+      .expect(201);
 
     expect(response.body.content).toContain(appendText.trim());
   });
@@ -140,6 +140,7 @@ describe('Wikiroo E2E Tests', () => {
   it('should return 404 for unknown page', async () => {
     const response = await request(httpServer)
       .get('/api/v1/wikiroo/pages/00000000-0000-0000-0000-000000000000')
+      .set('Cookie', authCookies)
       .expect(404);
 
     expect(response.body.code).toBe('PAGE_NOT_FOUND');
