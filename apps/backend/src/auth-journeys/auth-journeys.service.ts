@@ -201,4 +201,12 @@ export class AuthJourneysService {
       relations,
     });
   }
+
+  /*
+  Public API: Save/update auth journey
+  Used to update the auth journey entity
+  */
+  async saveAuthJourney(authJourney: AuthJourneyEntity): Promise<AuthJourneyEntity> {
+    return this.authJourneyRepository.save(authJourney);
+  }
 }

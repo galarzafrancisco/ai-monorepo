@@ -2,7 +2,7 @@ import { ErrorCodes } from "../../../../../packages/shared/errors/error-codes";
 
 export const AccessTokenErrorCodes = {
   MISSING_ACCESS_TOKEN: ErrorCodes.MISSING_ACCESS_TOKEN,
-  ACCESS_TOKEN_INVALID: ErrorCodes.ACCESS_TOKEN_INVALID,
+  INVALID_ACCESS_TOKEN: ErrorCodes.INVALID_ACCESS_TOKEN,
 }
 
 type AccessTokenErrorCode =
@@ -40,7 +40,7 @@ export class InvalidAccessTokenError extends AccessTokenDomainError {
   ) {
     super(
       message,
-      AccessTokenErrorCodes.ACCESS_TOKEN_INVALID,
+      AccessTokenErrorCodes.INVALID_ACCESS_TOKEN,
     )
   }
 }

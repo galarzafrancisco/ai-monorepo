@@ -3075,6 +3075,32 @@
         ]
       }
     },
+    "/.well-known/oauth-protected-resource/{path}": {
+      "get": {
+        "operationId": "DiscoveryController_all",
+        "parameters": [
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Discovery"
+        ]
+      }
+    },
     "/api/v1/agents": {
       "post": {
         "operationId": "AgentsController_createAgent",
@@ -3861,11 +3887,6 @@
               "type": "string"
             }
           },
-          "createdBy": {
-            "type": "string",
-            "description": "Name of the person who created the task (auto-populated from authenticated user if not provided)",
-            "example": "Fran"
-          },
           "dependsOnIds": {
             "description": "Array of task IDs that this task depends on",
             "example": [
@@ -4085,11 +4106,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "createdBy": {
-            "type": "string",
-            "description": "Name of the person who created the task (auto-populated from authenticated user if not provided)",
-            "example": "Fran"
           },
           "dependsOnIds": {
             "description": "Array of task IDs that this task depends on",

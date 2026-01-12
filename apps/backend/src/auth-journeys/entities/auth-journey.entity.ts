@@ -23,6 +23,9 @@ export class AuthJourneyEntity {
   })
   status!: AuthJourneyStatus;
 
+  @Column({ type: 'uuid', nullable: true })
+  userId?: string | null;
+
   // Many connection authorization flows can be linked to this one
   @OneToMany(() => ConnectionAuthorizationFlowEntity, (connectionAuthenticationFlow) => connectionAuthenticationFlow.authJourney)
   connectionAuthorizationFlows!: ConnectionAuthorizationFlowEntity[];

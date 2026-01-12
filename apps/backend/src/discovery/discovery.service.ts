@@ -4,11 +4,48 @@ import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import {
   AuthorizationServerMetadataResult,
   GetAuthorizationServerMetadataInput,
+  ProtectedResourceMetadataResult,
+  SystemServer,
 } from './dto/service/discovery.service.types';
+import { createTaskeroo, createTaskerooScopes } from 'src/app-init/mcp/taskeroo.mcp';
+import { getConfig } from 'src/config/env.config';
+import { CreateScopeInput, CreateServerInput } from 'src/mcp-registry/dto';
+import { createWikiroo, createWikirooScopes } from 'src/app-init/mcp/wikiroo.mcp';
 
 @Injectable()
 export class DiscoveryService {
-  constructor(private readonly mcpRegistryService: McpRegistryService) {}
+  private readonly systemServers: SystemServer[] = [];
+  constructor(
+    private readonly mcpRegistryService: McpRegistryService,
+  ) {
+    this.populateSystemServers();
+  }
+
+  private populateSystemServers() {
+    this.populateSystemServer(createTaskeroo, createTaskerooScopes);
+    this.populateSystemServer(createWikiroo, createWikirooScopes);
+  }
+
+  private populateSystemServer(server: CreateServerInput, scopes: CreateScopeInput[]) {
+    const config = getConfig();
+    if (!server.url) {
+      return
+    }
+    const systemServer: SystemServer = {
+      path: new URL(server.url).pathname,
+      metadata: {
+        resource: server.url,
+        // No need to add the .well-known/oauth-authorization-server part, the client will add it automatically
+        authorization_servers: [
+          `${config.issuerUrl}/mcp/${server.providedId}/0.0.0`
+        ],
+        scopes_supported: scopes.map(s => s.scopeId),
+        bearer_methods_supported: ["header"],
+        resource_name: server.name,
+      }
+    }
+    this.systemServers.push(systemServer);
+  }
 
   async getAuthorizationServerMetadata(
     input: GetAuthorizationServerMetadataInput,
@@ -17,8 +54,8 @@ export class DiscoveryService {
       input.lookupBy === 'id'
         ? await this.mcpRegistryService.getServerById(input.serverIdentifier)
         : await this.mcpRegistryService.getServerByProvidedId(
-            input.serverIdentifier,
-          );
+          input.serverIdentifier,
+        );
 
     const serverIdentifier = server.providedId ?? server.id;
     const scopes = (server.scopes ?? [])
@@ -42,5 +79,25 @@ export class DiscoveryService {
       ],
       code_challenge_methods_supported: ['S256'],
     };
+  }
+
+  private findSystemServer(pathParts: string[]): SystemServer | null {
+    const path = `/${pathParts.join('/')}`;
+
+    const server = this.systemServers.find(server => {
+      console.log(server.path);
+      return server.path === path;
+    });
+
+    if (server) {
+      console.log(server.metadata);
+      return server;
+    }
+
+    return null;
+  }
+
+  async getProtectedResourceMetadata(path: string[]): Promise<ProtectedResourceMetadataResult | null> {
+    return this.findSystemServer(path)?.metadata || null;
   }
 }

@@ -3,7 +3,7 @@ import { UserRole } from "src/identity-provider/enums";
 
 export const devUser: CreateUserInput = {
   email: 'dev@test.com',
-  displayName: 'Admin user',
+  displayName: 'Dev user',
   password: 'dev',
 }
 export const devUserRole: UserRole = UserRole.STANDARD;

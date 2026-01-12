@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { All, Controller, Get, NotFoundException, Param, UseGuards } from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiOkResponse,
@@ -11,13 +11,15 @@ import { getConfig } from '../config/env.config';
 import { AuthorizationServerMetadataDto } from './dto/authorization-server-metadata.dto';
 import { GetAuthorizationServerMetadataParamsDto } from './dto/get-authorization-server-metadata-params.dto';
 import { DiscoveryService } from './discovery.service';
+import { GetProtectedResourceMetadataParamsDto } from './dto/get-protected-resource-metadata-params.dto';
+import { ProtectedResourceMetadataResult } from './dto/service/discovery.service.types';
 
 @ApiTags('Discovery')
-@Controller('.well-known/oauth-authorization-server/mcp')
+@Controller('.well-known')
 export class DiscoveryController {
   constructor(private readonly discoveryService: DiscoveryService) {}
 
-  @Get('issuer')
+  @Get('oauth-authorization-server/mcp/issuer')
   @ApiOperation({
     summary: 'Get the authorization server issuer URL',
     description:
@@ -37,7 +39,7 @@ export class DiscoveryController {
     return { issuer: config.issuerUrl };
   }
 
-  @Get(':mcpServerId/:version')
+  @Get('oauth-authorization-server/mcp/:mcpServerId/:version')
   @ApiOperation({
     summary:
       'Expose OAuth 2.0 Authorization Server metadata for a registered MCP server version',
@@ -69,5 +71,39 @@ export class DiscoveryController {
       issuer,
       lookupBy,
     });
+  }
+
+  // @Get('oauth-protected-resource/:resource')
+  // @ApiParam({
+  //   name: 'resource',
+  //   description: 'path of the endpoint'
+  // })
+  // async getProtectedResourceMetadata(
+  //   @Param() param: GetProtectedResourceMetadataParamsDto,
+  // ): Promise<any> {
+  //   return {
+  //     message: 'gday'
+  //   }
+  // }
+
+  @Get('oauth-protected-resource/*path')
+  async all(
+    @Param('path') path: string[]
+  ): Promise<ProtectedResourceMetadataResult> {
+    /*
+    MCP Clients should fetch protected resource metadata form the endpoint present in the WWW-Authenticate header, but they don't.
+    Instead they default to finding it under ./well-known/oauth-protected-resource/{path-of-the-original-resource}.
+    This hack attempts to catch that path and respond with the right metadata.
+    */
+    console.log("path")
+    console.log(path)
+    const meta = await this.discoveryService.getProtectedResourceMetadata(path);
+    if (!meta) {
+      console.log('META MISSING');
+      console.log(meta);
+      throw new NotFoundException();
+    }
+    console.log('FOUND META');
+    return meta;
   }
 }

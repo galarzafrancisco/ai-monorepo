@@ -14,19 +14,35 @@ import { InvalidAccessTokenError, MissingAccessTokenError } from "../errors/acce
 import type { AuthContext, AccessTokenClaims } from "../context/auth-context.types";
 import { extractBearerToken } from "../extractors/access-token.extractor";
 import { InvalidTokenSignaturedError, TokenExpiredError } from "src/authorization-server/errors/token.errors";
+import { extractTokenFromCookie } from "../extractors/cookie.extractor";
+import { Reflector } from "@nestjs/core";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
   private readonly logger = new Logger(AccessTokenGuard.name);
 
-  constructor(private readonly validator: AccessTokenValidationService) {}
+  constructor(
+    private readonly validator: AccessTokenValidationService,
+    private readonly reflector: Reflector,
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const req = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
 
-    // 1) Extract token (placeholder)
-    const token = extractBearerToken(req);
+    // 1) Extract token
+    const token = extractBearerToken(req) || extractTokenFromCookie(req);
     if (!token) {
       throw new MissingAccessTokenError();
     }
@@ -47,12 +63,14 @@ export class AccessTokenGuard implements CanActivate {
     }
 
     // 3) Attach auth context
-    res.locals.auth = {
+    const authContext: AuthContext = {
       token,
       claims,
       scopes: claims.scope,
-      subject: typeof claims.sub === "string" ? claims.sub : undefined,
-    };
+      subject: claims.sub,
+    }
+
+    res.locals.auth = authContext;
 
     return true;
   }

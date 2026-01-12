@@ -42,4 +42,20 @@ export class DiscoveryService {
             },
         });
     }
+    /**
+     * @param path
+     * @returns any
+     * @throws ApiError
+     */
+    public static discoveryControllerAll(
+        path: Array<string>,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/.well-known/oauth-protected-resource/{path}',
+            path: {
+                'path': path,
+            },
+        });
+    }
 }

@@ -42,15 +42,15 @@ import { ReorderPageDto } from './dto/reorder-page.dto';
 import { MovePageDto } from './dto/move-page.dto';
 import { PageResult, PageSummaryResult, TagResult, PageTreeResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
-import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
+import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { Public } from '../authorization-server/decorators/public.decorator';
-import { CurrentUser } from '../authorization-server/decorators/current-user.decorator';
-import type { WebAuthJwtPayload } from '../authorization-server/types';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import type { UserContext } from 'src/auth/context/auth-context.types';
 
 @ApiTags('Wikiroo')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('wikiroo/pages')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AccessTokenGuard)
 export class WikirooController {
   constructor(
     private readonly wikirooService: WikirooService,
@@ -66,7 +66,7 @@ export class WikirooController {
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async createPage(
     @Body() dto: CreatePageDto,
-    @CurrentUser() user: WebAuthJwtPayload,
+    @CurrentUser() user: UserContext,
   ): Promise<PageResponseDto> {
     const result = await this.wikirooService.createPage({
       title: dto.title,
@@ -126,7 +126,7 @@ export class WikirooController {
   async updatePage(
     @Param() params: PageParamsDto,
     @Body() dto: UpdatePageDto,
-    @CurrentUser() user: WebAuthJwtPayload,
+    @CurrentUser() user: UserContext,
   ): Promise<PageResponseDto> {
     if (
       dto.title === undefined &&
@@ -319,7 +319,7 @@ export class WikirooController {
     };
   }
 
-  @Public()
+  // @Public()
   @All('mcp')
   async handleMcp(@Req() req: Request, @Res() res: Response) {
     await this.gateway.handleRequest(req, res);

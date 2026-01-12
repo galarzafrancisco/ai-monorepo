@@ -26,17 +26,18 @@ import { AgentListResponseDto } from './dto/agent-list-response.dto';
 import { ListAgentsQueryDto } from './dto/list-agents-query.dto';
 import { AgentParamsDto } from './dto/agent-params.dto';
 import { AgentResult } from './dto/service/agents.service.types';
-import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
+// import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
+import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('agents')
-// @UseGuards(JwtAuthGuard)
+// @UseGuards(AccessTokenGuard)
 export class AgentsController {
   constructor(private readonly agentsService: AgentsService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AccessTokenGuard)
   @ApiOperation({ summary: 'Create a new agent' })
   @ApiCreatedResponse({ type: AgentResponseDto })
   async createAgent(@Body() dto: CreateAgentDto): Promise<AgentResponseDto> {
@@ -54,7 +55,7 @@ export class AgentsController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AccessTokenGuard)
   @ApiOperation({
     summary: 'List agents with optional filtering and pagination',
   })
@@ -86,7 +87,7 @@ export class AgentsController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AccessTokenGuard)
   @ApiOperation({ summary: 'Update an agent' })
   @ApiOkResponse({ type: AgentResponseDto })
   async updateAgent(
@@ -106,7 +107,7 @@ export class AgentsController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an agent' })
   async deleteAgent(@Param() params: AgentParamsDto): Promise<void> {

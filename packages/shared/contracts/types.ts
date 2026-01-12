@@ -906,6 +906,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/.well-known/oauth-protected-resource/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DiscoveryController_all"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agents": {
         parameters: {
             query?: never;
@@ -1150,11 +1166,6 @@ export interface components {
              */
             tagNames?: string[];
             /**
-             * @description Name of the person who created the task (auto-populated from authenticated user if not provided)
-             * @example Fran
-             */
-            createdBy?: string;
-            /**
              * @description Array of task IDs that this task depends on
              * @example [
              *       "uuid-1",
@@ -1314,11 +1325,6 @@ export interface components {
              *     ]
              */
             tagNames?: string[];
-            /**
-             * @description Name of the person who created the task (auto-populated from authenticated user if not provided)
-             * @example Fran
-             */
-            createdBy?: string;
             /**
              * @description Array of task IDs that this task depends on
              * @example [
@@ -5430,6 +5436,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AuthorizationServerMetadataDto"];
                 };
+            };
+        };
+    };
+    DiscoveryController_all: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string[];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

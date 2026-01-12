@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -22,6 +23,9 @@ import { COOKIE_KEYS } from './constants/cookie-keys.constant';
 @ApiTags('Web Authentication')
 @Controller('auth')
 export class WebAuthController {
+
+  private logger = new Logger(WebAuthController.name);
+
   constructor(
     private readonly tokenService: TokenService,
     private readonly identityProviderService: IdentityProviderService,
@@ -48,10 +52,14 @@ export class WebAuthController {
     const { accessToken, refreshToken, expiresIn } =
       await this.tokenService.login(loginDto.email, loginDto.password);
 
+    this.logger.log('Got access token');
+    
     // Get user info
     const user = await this.identityProviderService.getUserByEmail(
       loginDto.email,
     );
+    
+    this.logger.log(`got user:`, user);
 
     if (!user) {
       throw new UnauthorizedException('User not found');
@@ -119,7 +127,7 @@ export class WebAuthController {
       await this.tokenService.refreshWebToken(refreshTokenFromCookie);
 
     // Extract user info from the new access token
-    const payload = await this.tokenService.validateWebToken(accessToken);
+    const payload = await this.tokenService.decodeToken(accessToken);
 
     // Get full user info
     const user = await this.identityProviderService.getUserById(payload.sub);
@@ -222,9 +230,9 @@ export class WebAuthController {
     if (!accessToken) {
       throw new UnauthorizedException('Not authenticated');
     }
-
+    
     // Validate token and get payload
-    const payload = await this.tokenService.validateWebToken(accessToken);
+    const payload = await this.tokenService.decodeToken(accessToken);
 
     // Get user from database
     const user = await this.identityProviderService.getUserById(payload.sub);

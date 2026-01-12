@@ -6,6 +6,7 @@ import {
   Query,
   Param,
   Res,
+  Req,
   HttpStatus,
   BadRequestException,
   Logger,
@@ -19,7 +20,7 @@ import {
   ApiOkResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { AuthorizationService } from './authorization.service';
 import { TokenService } from './token.service';
 import { TokenExchangeService } from './token-exchange.service';
@@ -118,6 +119,7 @@ export class AuthorizationController {
     @Body() consentDecision: ConsentDecisionDto,
     @Param('serverIdentifier') serverIdentifier: string,
     @Param('version') version: string,
+    @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
     try {
@@ -125,6 +127,7 @@ export class AuthorizationController {
         consentDecision,
         serverIdentifier,
         version,
+        req,
       );
 
       this.logger.debug(`controller redirecting to ${redirectUrl}`);

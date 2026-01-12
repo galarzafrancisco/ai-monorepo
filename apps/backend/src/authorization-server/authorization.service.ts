@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
+import type { Request } from 'express';
 import { RegisteredClientEntity } from './registered-client.entity';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
@@ -12,6 +13,8 @@ import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authoriz
 import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { getConfig } from 'src/config/env.config';
+import { TokenService } from './token.service';
+import { COOKIE_KEYS } from './constants/cookie-keys.constant';
 import {
   McpServerNotFoundError,
   McpClientNotFoundError,
@@ -34,6 +37,7 @@ export class AuthorizationService {
     private readonly clientRepository: Repository<RegisteredClientEntity>,
     private readonly authJourneysService: AuthJourneysService,
     private readonly mcpRegistryService: McpRegistryService,
+    private readonly tokenService: TokenService,
   ) { }
 
   /**
@@ -124,11 +128,12 @@ export class AuthorizationService {
     consentDecision: ConsentDecisionDto,
     serverIdentifier: string,
     version: string,
+    req: Request,
   ): Promise<string> {
     // Fetch the flow using the flow_id as a CSRF protection token
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
       consentDecision.flow_id,
-      ['server', 'client']
+      ['server', 'client', 'authJourney']
     );
 
     if (!mcpAuthFlow) {
@@ -161,6 +166,20 @@ export class AuthorizationService {
       errorUrl.searchParams.set('state', mcpAuthFlow.state);
       return errorUrl.toString();
     }
+
+    // Extract user ID from access token cookie and update the auth journey
+    const accessToken = req.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
+    if (accessToken && mcpAuthFlow.authJourney) {
+      try {
+        const payload = await this.tokenService.decodeToken(accessToken);
+        mcpAuthFlow.authJourney.userId = payload.sub;
+        await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
+      } catch (error) {
+        this.logger.warn(`Failed to extract user ID from access token: ${error}`);
+        // Continue with the flow even if we couldn't extract the user ID
+      }
+    }
+
     // Mark as consent
     mcpAuthFlow.status = McpAuthorizationFlowStatus.USER_CONSENT_OK;
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);

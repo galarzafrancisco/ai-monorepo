@@ -13,6 +13,9 @@ export interface McpJwtPayload {
    */
   sub: string;
 
+  email?: string;
+  displayName?: string;
+
   /**
    * Audience - the resource server(s) that should accept this token
    */

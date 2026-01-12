@@ -20,3 +20,16 @@ export type AuthorizationServerMetadataResult = {
   token_endpoint_auth_methods_supported: string[];
   code_challenge_methods_supported: string[];
 };
+
+export type ProtectedResourceMetadataResult = {
+  resource: string,
+  authorization_servers: string[],
+  scopes_supported: string[],
+  bearer_methods_supported: string[],
+  resource_name: string,
+}
+
+export type SystemServer = {
+  path: string,
+  metadata: ProtectedResourceMetadataResult,
+}

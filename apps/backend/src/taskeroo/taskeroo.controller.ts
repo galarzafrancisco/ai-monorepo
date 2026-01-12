@@ -41,15 +41,15 @@ import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.service.types';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
-import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
+import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { Public } from '../authorization-server/decorators/public.decorator';
-import { CurrentUser } from '../authorization-server/decorators/current-user.decorator';
-import type { WebAuthJwtPayload } from '../authorization-server/types';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import type { UserContext } from 'src/auth/context/auth-context.types';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('taskeroo/tasks')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AccessTokenGuard)
 export class TaskerooController {
   constructor(
     private readonly taskerooService: TaskerooService,
@@ -65,7 +65,7 @@ export class TaskerooController {
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async createTask(
     @Body() dto: CreateTaskDto,
-    @CurrentUser() user: WebAuthJwtPayload,
+    @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.taskerooService.createTask({
       name: dto.name,
@@ -176,7 +176,7 @@ export class TaskerooController {
   async addComment(
     @Param() params: TaskParamsDto,
     @Body() dto: CreateCommentDto,
-    @CurrentUser() user: WebAuthJwtPayload,
+    @CurrentUser() user: UserContext,
   ): Promise<CommentResponseDto> {
     const result = await this.taskerooService.addComment(params.id, {
       commenterName: dto.commenterName ?? user.email,

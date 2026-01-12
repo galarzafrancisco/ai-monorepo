@@ -243,6 +243,24 @@ export const ErrorCatalog: Record<
     type: '/errors/token/invalid-code-verifier',
     retryable: false,
   },
+    [ErrorCodes.MISSING_ACCESS_TOKEN]: {
+    status: 401,
+    title: 'Missing access token',
+    type: '/errors/auth/missing-access-token',
+    retryable: false,
+  },
+  [ErrorCodes.INVALID_ACCESS_TOKEN]: {
+    status: 401,
+    title: 'Invalid access token',
+    type: '/errors/auth/invalid-access-token',
+    retryable: false,
+  },
+  [ErrorCodes.INSUFFICIENT_SCOPE]: {
+    status: 403,
+    title: 'Insufficient scope',
+    type: '/errors/auth/insufficient-scope',
+    retryable: false,
+  },
   [ErrorCodes.VALIDATION_FAILED]: {
     status: 400,
     title: 'Validation failed',

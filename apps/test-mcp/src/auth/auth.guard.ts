@@ -19,7 +19,7 @@ export class AuthGuard implements CanActivate {
 
     // Check if token is present
     if (!authHeader?.startsWith('Bearer ')) {
-      this.logger.error(`Bearer resource_metadata=${SELF_URL}/.well-known/oauth-protected-resource`);
+      this.logger.error(`Bearer resource_metadata=${SELF_URL}/.well-known/oauth-protected-resource/`);
       res.setHeader(
         'WWW-Authenticate',
         `Bearer resource_metadata=${SELF_URL}/.well-known/oauth-protected-resource`
@@ -46,7 +46,7 @@ export class AuthGuard implements CanActivate {
       this.logger.error(`Token validation failed: ${error.message}`);
       res.setHeader(
         'WWW-Authenticate',
-        `Bearer resource_metadata=${SELF_URL}/.well-known/oauth-protected-resource error="invalid_token" error_description="The access token is invalid or has expired"`
+        `Bearer resource_metadata=${SELF_URL}/.well-known/oauth-protected-resource/tu-vieja error="invalid_token" error_description="The access token is invalid or has expired"`
       );
       throw error;
     }

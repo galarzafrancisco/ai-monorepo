@@ -9,6 +9,7 @@ import { Response } from 'express';
 import { mapDomainError } from '../errors/http/domain-to-problem.mapper';
 import { toProblem } from '../errors/http/problem-details';
 import { ErrorCodes } from '../../../../packages/shared/errors/error-codes';
+import { getConfig } from 'src/config/env.config';
 
 /**
  * Global exception filter that maps domain errors to RFC 7807 Problem Details
@@ -17,6 +18,7 @@ import { ErrorCodes } from '../../../../packages/shared/errors/error-codes';
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
   private readonly logger = new Logger(ProblemDetailsFilter.name);
+  private readonly config = getConfig();
 
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -38,6 +40,16 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         requestId,
         url: instance,
       });
+
+      if (exception.code == ErrorCodes.MISSING_ACCESS_TOKEN) {
+        const resourceMetadataUrl = `${this.config.issuerUrl}/.well-known/oauth-protected-resource${instance}`;
+        // TODO: this realm MCP feels wrong to throw system wide
+        response.setHeaders(new Headers({ 'WWW-Authenticate': `Bearer resource_metadata="${resourceMetadataUrl}" realm="mcp"` }));
+      } else if (exception.code == ErrorCodes.INVALID_ACCESS_TOKEN) {
+        response.setHeaders(new Headers({ 'WWW-Authenticate': `Bearer resource_metadata="<RESOURCE_METADATA_URL>", error="invalid_token", error_description="The access token is invalid or has expired"` }));
+      } else if (exception.code == ErrorCodes.INSUFFICIENT_SCOPE) {
+        response.setHeaders(new Headers({ 'WWW-Authenticate': `WWW-Authenticate: Bearer resource_metadata="<RESOURCE_METADATA_URL>", error="insufficient_scope", scope="<REQUIRED_SCOPES>"` }));
+      }
 
       response.status(problem.status).json(problem);
       return;

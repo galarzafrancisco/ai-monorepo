@@ -64,7 +64,7 @@ export class TokenService {
     // Find the authorization flow by authorization code
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByAuthorizationCode(
       tokenRequest.code,
-      ['client', 'server']
+      ['client', 'server', 'authJourney']
     );
 
     if (!mcpAuthFlow) {
@@ -175,7 +175,7 @@ export class TokenService {
     const config = getConfig();
     const payload: McpJwtPayload = {
       iss: config.issuerUrl, // Issuer URL
-      sub: 'user-placeholder', // TODO: Replace with actual user ID when user auth is implemented
+      sub: mcpAuthFlow.authJourney.userId || 'user-not-found???', // TODO: Replace with actual user ID when user auth is implemented
       aud: mcpAuthFlow.server.providedId, // MCP server identifier
       exp: now + 3600, // 1 hour expiration
       iat: now,
@@ -426,60 +426,6 @@ export class TokenService {
   }
 
   /**
-   * Web Authentication: Validate access token
-   * Returns decoded JWT payload
-   */
-  async validateWebToken(accessToken: string): Promise<any> {
-    this.logger.debug('Validating web access token');
-
-    try {
-      // Get all valid public keys for verification
-      const publicKeys = await this.jwksService.getPublicKeys();
-
-      if (publicKeys.length === 0) {
-        this.logger.error('No valid public keys available for token verification');
-        throw new UnauthorizedException('Token validation failed');
-      }
-
-      // Create a local JWKS resolver
-      const getKey = async (header: any) => {
-        const key = publicKeys.find((k) => k.kid === header.kid);
-        if (!key) {
-          throw new Error('Key not found');
-        }
-        return key as any;
-      };
-
-      // Verify JWT with our JWKS
-      const config = getConfig();
-      const { payload } = await jwtVerify(accessToken, getKey as any, {
-        issuer: config.issuerUrl,
-        algorithms: ['RS256'],
-      });
-
-      // Verify token type is 'access'
-      if ((payload as any).type !== 'access') {
-        this.logger.warn('Token type mismatch');
-        throw new UnauthorizedException('Invalid token type');
-      }
-
-      this.logger.debug('Web access token validated successfully');
-      return payload;
-    } catch (error) {
-      if (error instanceof errors.JWTExpired) {
-        this.logger.debug('Access token expired');
-        throw new UnauthorizedException('Token expired');
-      } else if (error instanceof errors.JWSSignatureVerificationFailed) {
-        this.logger.warn('Token signature verification failed');
-        throw new UnauthorizedException('Invalid token signature');
-      } else {
-        this.logger.warn(`Token validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        throw new UnauthorizedException('Token validation failed');
-      }
-    }
-  }
-
-  /**
    * Generate a signed JWT access token for web authentication
    */
   private async generateWebAccessToken(
@@ -501,16 +447,20 @@ export class TokenService {
     // Determine scopes based on role
     const scope = role === 'admin' ? ['monolith:user', 'monolith:admin'] : ['monolith:user'];
 
-    const payload = {
+    const payload: McpJwtPayload = {
       iss: config.issuerUrl,
       sub: userId,
       email,
       displayName,
       scope,
+      aud: config.issuerUrl,
+      client_id: 'self',
+      server_identifier: 'ai-monolith',
+      resource: `${config.issuerUrl}`,
+      version: '0.0.0',
       iat: now,
-      exp: now + 600, // 10 minutes
+      exp: now + 600, // Change this to tune the duration of the web session (10 minutes)
       jti: randomBytes(16).toString('hex'),
-      type: 'access',
     };
 
     // Sign and return JWT
