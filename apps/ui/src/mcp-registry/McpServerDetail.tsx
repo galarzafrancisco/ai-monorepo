@@ -383,11 +383,11 @@ export function McpServerDetail() {
             <div className="info-item inspector-command-item">
               <span className="info-label">Inspector Command</span>
               <div className="inspector-command">
-                <code className="inspector-code">npx @modelcontextprotocol/inspector --transport http {selectedServer.url}</code>
+                <code className="inspector-code">npx @modelcontextprotocol/inspector --transport http --server-url {selectedServer.url}</code>
                 <button
                   className="btn-secondary btn-sm copy-btn"
                   onClick={() => {
-                    navigator.clipboard.writeText(`npx @modelcontextprotocol/inspector --transport http ${selectedServer.url}`);
+                    navigator.clipboard.writeText(`npx @modelcontextprotocol/inspector --transport http --server-url ${selectedServer.url}`);
                   }}
                   title="Copy to clipboard"
                 >

@@ -45,6 +45,7 @@ export class AgentsController {
       name: dto.name,
       description: dto.description,
       systemPrompt: dto.systemPrompt,
+      statusTriggers: dto.statusTriggers || [],
       allowedTools: dto.allowedTools,
       isActive: dto.isActive,
       concurrencyLimit: dto.concurrencyLimit,

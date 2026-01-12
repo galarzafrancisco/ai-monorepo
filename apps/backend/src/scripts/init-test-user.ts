@@ -15,6 +15,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
+import { UserRole } from 'src/identity-provider/enums';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -27,15 +28,15 @@ async function bootstrap() {
 
   try {
     console.log(`Creating test user (${role})...`);
-    const user = await identityService.createUser(
-      testEmail,
-      testDisplayName,
-      testPassword,
-    );
+    const user = await identityService.createUser({
+      email: testEmail,
+      displayName: testDisplayName,
+      password: testPassword,
+    });
 
     // Update role if admin
     if (role === 'admin') {
-      await identityService.updateUserRole(user.id, 'admin');
+      await identityService.updateUserRole(user.id, { role: UserRole.ADMIN });
     }
 
     console.log('✅ Test user created successfully!');

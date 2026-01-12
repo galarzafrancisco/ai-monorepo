@@ -15,6 +15,7 @@ import { IdentityProviderModule } from './identity-provider/identity-provider.mo
 import { AdkModule } from './adk/adk.module';
 import { LlmHelperModule } from './llm-helper/llm-helper.module';
 import { getConfig } from './config/env.config';
+import { AppInitModule } from './app-init/app-init.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { getConfig } from './config/env.config';
     IdentityProviderModule,
     AdkModule,
     LlmHelperModule,
+    AppInitModule,
   ],
   controllers: [AppController],
   providers: [AppService],

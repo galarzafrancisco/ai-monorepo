@@ -13,6 +13,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { IdentityProviderService } from '../identity-provider/identity-provider.service';
 import * as readline from 'readline';
+import { UserRole } from 'src/identity-provider/enums';
 
 async function promptInput(question: string): Promise<string> {
   const rl = readline.createInterface({
@@ -59,14 +60,14 @@ async function bootstrap() {
     console.log('Creating admin user...');
 
     // Create user with standard role first
-    const user = await identityService.createUser(
+    const user = await identityService.createUser({
       email,
       displayName,
       password,
-    );
+    });
 
     // Update role to admin
-    await identityService.updateUserRole(user.id, 'admin');
+    await identityService.updateUserRole(user.id, { role: UserRole.ADMIN });
 
     console.log('✅ Admin user created successfully!');
     console.log('');

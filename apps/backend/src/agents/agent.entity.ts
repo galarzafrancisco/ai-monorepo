@@ -29,14 +29,12 @@ export class AgentEntity {
   @Column({
     type: 'simple-array',
     name: 'status_triggers',
-    default: '[]',
   })
   statusTriggers!: TaskStatus[]
 
   @Column({
     type: 'simple-array',
     name: 'allowed_tools',
-    default: '[]',
   })
   allowedTools!: string[];
 

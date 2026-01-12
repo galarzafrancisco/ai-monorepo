@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import * as bcrypt from 'bcrypt';
+import { CreateUserInput, UpdateUserRoleInput } from './dto/service/identity-provider.service.types';
 
 @Injectable()
 export class IdentityProviderService {
@@ -40,7 +41,8 @@ export class IdentityProviderService {
     });
   }
 
-  async updateUserRole(userId: string, role: 'admin' | 'standard'): Promise<User> {
+  async updateUserRole(userId: string, updateUserRoleInput: UpdateUserRoleInput): Promise<User> {
+    const { role } = updateUserRoleInput;
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error('User not found');
@@ -49,11 +51,8 @@ export class IdentityProviderService {
     return this.userRepository.save(user);
   }
 
-  async createUser(
-    email: string,
-    displayName: string,
-    password: string,
-  ): Promise<User> {
+  async createUser(createUserInput: CreateUserInput): Promise<User> {
+    const { password, email, displayName } = createUserInput;
     const passwordHash = await this.hashPassword(password);
     const user = this.userRepository.create({
       email,

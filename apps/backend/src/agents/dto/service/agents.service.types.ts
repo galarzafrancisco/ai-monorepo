@@ -5,20 +5,22 @@ export type CreateAgentInput = {
   name: string;
   description?: string;
   systemPrompt: string;
+  statusTriggers: TaskStatus[];
   allowedTools: string[];
   isActive?: boolean;
   concurrencyLimit?: number;
 };
 
-export type UpdateAgentInput = {
-  slug?: string;
-  name?: string;
-  description?: string;
-  systemPrompt?: string;
-  allowedTools?: string[];
-  isActive?: boolean;
-  concurrencyLimit?: number;
-};
+export type UpdateAgentInput = Partial<CreateAgentInput>
+// export type UpdateAgentInput = {
+//   slug?: string;
+//   name?: string;
+//   description?: string;
+//   systemPrompt?: string;
+//   allowedTools?: string[];
+//   isActive?: boolean;
+//   concurrencyLimit?: number;
+// };
 
 export type AgentResult = {
   id: string;

@@ -47,6 +47,7 @@ export class AgentsService {
       name: input.name,
       description: input.description ?? null,
       systemPrompt: input.systemPrompt,
+      statusTriggers: input.statusTriggers,
       allowedTools: input.allowedTools,
       isActive: input.isActive ?? true,
       concurrencyLimit: input.concurrencyLimit ?? null,
@@ -184,6 +185,8 @@ export class AgentsService {
     if (input.description !== undefined) agent.description = input.description;
     if (input.systemPrompt !== undefined)
       agent.systemPrompt = input.systemPrompt;
+    if (input.statusTriggers !== undefined)
+      agent.statusTriggers = input.statusTriggers;
     if (input.allowedTools !== undefined)
       agent.allowedTools = input.allowedTools;
     if (input.isActive !== undefined) agent.isActive = input.isActive;
