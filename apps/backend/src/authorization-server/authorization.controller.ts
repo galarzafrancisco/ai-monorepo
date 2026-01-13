@@ -36,7 +36,7 @@ import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { getFrontendPath } from '../config/frontend.config';
-import { AccessTokenGuard, CurrentUser, type UserContext } from 'src/auth';
+import { AccessTokenGuard, CurrentUser, type UserContext } from 'src/auth-guards';
 
 @ApiTags('Authorization Server')
 @Controller('auth')

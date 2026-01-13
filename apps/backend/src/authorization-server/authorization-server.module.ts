@@ -15,7 +15,7 @@ import { WebAuthController } from './web-auth.controller';
 import { AuthJourneysModule } from 'src/auth-journeys/auth-journeys.module';
 import { McpRegistryModule } from 'src/mcp-registry/mcp-registry.module';
 import { IdentityProviderModule } from 'src/identity-provider/identity-provider.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthGuardsModule } from 'src/auth-guards/auth-guards.module';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
@@ -34,7 +34,7 @@ import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/con
     AuthJourneysModule,
     McpRegistryModule,
     IdentityProviderModule,
-    forwardRef(() => AuthModule),
+    forwardRef(() => AuthGuardsModule),
   ],
   providers: [
     ClientRegistrationService,

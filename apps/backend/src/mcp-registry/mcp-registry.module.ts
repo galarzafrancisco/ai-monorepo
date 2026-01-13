@@ -8,9 +8,7 @@ import {
   McpConnectionEntity,
   McpScopeMappingEntity,
 } from './entities';
-import { AuthJourneysModule } from '../auth-journeys/auth-journeys.module';
-import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthGuardsModule } from 'src/auth-guards/auth-guards.module';
 
 @Module({
   imports: [
@@ -20,9 +18,7 @@ import { AuthModule } from 'src/auth/auth.module';
       McpConnectionEntity,
       McpScopeMappingEntity,
     ]),
-    forwardRef(() => AuthJourneysModule),
-    forwardRef(() => AuthorizationServerModule),
-    forwardRef(() => AuthModule),
+    forwardRef(() => AuthGuardsModule),
   ],
   controllers: [McpRegistryController],
   providers: [McpRegistryService],
