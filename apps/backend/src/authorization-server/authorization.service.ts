@@ -14,7 +14,7 @@ import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { getConfig } from 'src/config/env.config';
 import { TokenService } from './token.service';
-import { COOKIE_KEYS } from './constants/cookie-keys.constant';
+import { COOKIE_KEYS } from 'src/auth-core';
 import {
   McpServerNotFoundError,
   McpClientNotFoundError,

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TokenType } from '../enums';
-import type { McpJwtPayload } from '../types';
+import type { McpJwtPayload } from 'src/auth-core';
 
 /**
  * DTO for OAuth 2.0 token introspection responses (RFC 7662).

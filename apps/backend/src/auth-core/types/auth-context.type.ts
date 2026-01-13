@@ -1,5 +1,5 @@
-// src/auth/context/auth-context.types.ts
-import { McpJwtPayload } from "src/authorization-server/types";
+// src/auth-core/types/auth-context.type.ts
+import { McpJwtPayload } from './jwt-payload.type';
 
 export type AccessTokenClaims = McpJwtPayload;
 

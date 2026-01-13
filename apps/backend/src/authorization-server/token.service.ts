@@ -14,7 +14,12 @@ import { IntrospectTokenRequestDto } from './dto/introspect-token-request.dto';
 import { IntrospectTokenResponseDto } from './dto/introspect-token-response.dto';
 import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
-import { McpJwtPayload } from './types/mcp-jwt-payload.type';
+import {
+  McpJwtPayload,
+  TokenExpiredError,
+  InvalidTokenSignaturedError,
+  TokenValidationError,
+} from 'src/auth-core';
 import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
 import { getConfig } from 'src/config/env.config';
 import {
@@ -27,9 +32,6 @@ import {
   RedirectUriMismatchError,
   MissingPkceParametersError,
   InvalidCodeVerifierError,
-  TokenExpiredError,
-  InvalidTokenSignaturedError,
-  TokenValidationError,
 } from './errors/token.errors';
 
 @Injectable()

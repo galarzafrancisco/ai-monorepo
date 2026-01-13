@@ -10,13 +10,18 @@ Authenticate any incoming HTTP request using one canonical JWT access token.
 import { CanActivate, ExecutionContext, Injectable, Logger } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { AccessTokenValidationService } from "../validation/access-token-validation.service";
-import { InvalidAccessTokenError, MissingAccessTokenError } from "../errors/access-token.errors";
-import type { AuthContext, AccessTokenClaims } from "../context/auth-context.types";
+import {
+  InvalidAccessTokenError,
+  MissingAccessTokenError,
+  InvalidTokenSignaturedError,
+  TokenExpiredError,
+  type AuthContext,
+  type AccessTokenClaims,
+  IS_PUBLIC_KEY
+} from "src/auth-core";
 import { extractBearerToken } from "../extractors/access-token.extractor";
-import { InvalidTokenSignaturedError, TokenExpiredError } from "src/authorization-server/errors/token.errors";
 import { extractTokenFromCookie } from "../extractors/cookie.extractor";
 import { Reflector } from "@nestjs/core";
-import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {

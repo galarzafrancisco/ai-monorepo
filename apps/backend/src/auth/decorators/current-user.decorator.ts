@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Response } from 'express';
-import { AuthContext, type UserContext } from '../context/auth-context.types';
+import { type AuthContext, type UserContext } from 'src/auth-core';
 
 /**
  * Parameter decorator that extracts the current authenticated user from the request.

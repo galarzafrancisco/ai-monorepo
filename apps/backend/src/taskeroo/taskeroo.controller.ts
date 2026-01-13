@@ -41,10 +41,7 @@ import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.service.types';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
-import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { Public } from '../authorization-server/decorators/public.decorator';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import type { UserContext } from 'src/auth/context/auth-context.types';
+import { AccessTokenGuard, Public, CurrentUser, type UserContext } from 'src/auth';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')

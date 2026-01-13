@@ -10,6 +10,7 @@ import {
   HttpStatus,
   BadRequestException,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -35,6 +36,7 @@ import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
 import { getFrontendPath } from '../config/frontend.config';
+import { AccessTokenGuard, CurrentUser, type UserContext } from 'src/auth';
 
 @ApiTags('Authorization Server')
 @Controller('auth')
@@ -97,6 +99,7 @@ export class AuthorizationController {
   }
 
   @Post('authorize/mcp/:serverIdentifier/:version')
+  @UseGuards(AccessTokenGuard)
   @ApiOperation({
     summary: 'OAuth 2.0 Authorization Consent Handler',
     description:
@@ -113,7 +116,7 @@ export class AuthorizationController {
     description: 'Authorization flow not found',
   })
   @ApiUnauthorizedResponse({
-    description: 'Authorization flow has already been used',
+    description: 'Not authenticated or authorization flow has already been used',
   })
   async authorizeConsent(
     @Body() consentDecision: ConsentDecisionDto,
@@ -121,6 +124,7 @@ export class AuthorizationController {
     @Param('version') version: string,
     @Req() req: Request,
     @Res() res: Response,
+    @CurrentUser() user: UserContext,
   ): Promise<void> {
     try {
       const redirectUrl = await this.authorizationService.processConsentDecision(
@@ -139,6 +143,7 @@ export class AuthorizationController {
   }
 
   @Get('flow/:flowId')
+  @UseGuards(AccessTokenGuard)
   @ApiOperation({
     summary: 'Get authorization flow details',
     description: 'Retrieves authorization flow details for the consent screen',
@@ -150,8 +155,12 @@ export class AuthorizationController {
   @ApiNotFoundResponse({
     description: 'Authorization flow not found',
   })
+  @ApiUnauthorizedResponse({
+    description: 'Not authenticated',
+  })
   async getFlow(
     @Param('flowId') flowId: string,
+    @CurrentUser() user: UserContext,
   ): Promise<McpAuthorizationFlowEntity> {
     return this.authorizationService.getAuthorizationFlow(flowId);
   }
@@ -174,8 +183,8 @@ export class AuthorizationController {
   })
   async token(
     @Body() tokenRequest: TokenRequestDto,
-    @Param('serverIdentifier') serverIdentifier: string,
-    @Param('version') version: string,
+    @Param('serverIdentifier') _serverIdentifier: string,
+    @Param('version') _version: string,
   ): Promise<TokenResponseDto> {
     return this.tokenService.exchangeAuthorizationCode(tokenRequest);
   }
@@ -195,8 +204,8 @@ export class AuthorizationController {
   })
   async introspect(
     @Body() introspectRequest: IntrospectTokenRequestDto,
-    @Param('serverIdentifier') serverIdentifier: string,
-    @Param('version') version: string,
+    @Param('serverIdentifier') _serverIdentifier: string,
+    @Param('version') _version: string,
   ): Promise<IntrospectTokenResponseDto> {
     return this.tokenService.introspectToken(introspectRequest);
   }
@@ -227,7 +236,7 @@ export class AuthorizationController {
   async tokenExchange(
     @Body() tokenExchangeRequest: TokenExchangeRequestDto,
     @Param('serverIdentifier') serverIdentifier: string,
-    @Param('version') version: string,
+    @Param('version') _version: string,
   ): Promise<TokenExchangeResponseDto> {
     return this.tokenExchangeService.exchangeToken(
       tokenExchangeRequest,

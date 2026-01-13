@@ -9,7 +9,7 @@ import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { JwksService } from './jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
-import { McpJwtPayload } from './types/mcp-jwt-payload.type';
+import { McpJwtPayload } from 'src/auth-core';
 import { getConfig } from 'src/config/env.config';
 
 interface DownstreamTokenInfo {

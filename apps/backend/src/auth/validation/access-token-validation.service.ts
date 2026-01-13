@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { AccessTokenClaims } from "../context/auth-context.types";
+import type { AccessTokenClaims } from "src/auth-core";
 import { TokenService } from "src/authorization-server/token.service";
 
 /**

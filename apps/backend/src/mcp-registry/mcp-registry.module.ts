@@ -22,7 +22,7 @@ import { AuthModule } from 'src/auth/auth.module';
     ]),
     forwardRef(() => AuthJourneysModule),
     forwardRef(() => AuthorizationServerModule),
-    // forwardRef(() => AuthModule),
+    forwardRef(() => AuthModule),
   ],
   controllers: [McpRegistryController],
   providers: [McpRegistryService],

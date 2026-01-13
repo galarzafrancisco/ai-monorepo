@@ -18,7 +18,7 @@ import { LoginRequestDto } from './dto/login-request.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { getConfig } from '../config/env.config';
-import { COOKIE_KEYS } from './constants/cookie-keys.constant';
+import { COOKIE_KEYS } from 'src/auth-core';
 
 @ApiTags('Web Authentication')
 @Controller('auth')

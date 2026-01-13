@@ -38,12 +38,12 @@ import {
 import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
 import { AuthJourneyResponseDto, McpFlowResponseDto, ConnectionFlowResponseDto } from '../auth-journeys/dto';
 import { AuthJourneyEntity } from '../auth-journeys/entities';
-// import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
+import { AccessTokenGuard } from 'src/auth';
 
 @ApiTags('MCP Registry')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('mcp')
-// @UseGuards(AccessTokenGuard)
+@UseGuards(AccessTokenGuard)
 export class McpRegistryController {
   constructor(
     private readonly mcpRegistryService: McpRegistryService,
