@@ -1,13 +1,13 @@
 import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { createHash, randomBytes } from "crypto";
-import { SignJWT, importPKCS8, jwtVerify, createRemoteJWKSet, errors } from 'jose';
+import { SignJWT, importPKCS8 } from 'jose';
 import { RefreshTokenEntity } from "./refresh-token.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { IdentityProviderService } from "../identity-provider/identity-provider.service";
 import { getConfig } from "../config/env.config";
-import { McpJwtPayload } from "./types";
 import { JwksService } from "../auth/crypto/jwks.service";
+import { AccessTokenClaims } from "src/auth/core/types/access-token-claims.type";
 
 
 @Injectable()
@@ -69,7 +69,7 @@ export class WebAuthService {
     // Determine scopes based on role
     const scope = role === 'admin' ? ['monolith:user', 'monolith:admin'] : ['monolith:user'];
 
-    const payload: McpJwtPayload = {
+    const payload: AccessTokenClaims = {
       iss: config.issuerUrl,
       sub: userId,
       email,
@@ -77,7 +77,7 @@ export class WebAuthService {
       scope,
       aud: config.issuerUrl,
       client_id: 'self',
-      server_identifier: 'ai-monolith',
+      // mcp_server_identifier: 'not needed for non-mcp',
       resource: `${config.issuerUrl}`,
       version: '0.0.0',
       iat: now,

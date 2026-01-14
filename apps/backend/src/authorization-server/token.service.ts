@@ -222,7 +222,6 @@ export class TokenService {
       jti: claims.jti,
       exp: claims.exp,
       iat: claims.iat,
-      nbf: (claims as any).nbf, // nbf is optional and not in McpJwtPayload type
       scope: claims.scope?.join(' '),
       mcp_server_identifier: claims.mcp_server_identifier,
       resource: claims.resource,

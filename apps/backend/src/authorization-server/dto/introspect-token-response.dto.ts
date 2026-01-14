@@ -67,12 +67,6 @@ export class IntrospectTokenResponseDto {
   iat!: AccessTokenClaims['iat'];
 
   @ApiPropertyOptional({
-    description: 'Not-before timestamp (seconds since Unix epoch)',
-    example: 1731141019,
-  })
-  nbf?: number;
-
-  @ApiPropertyOptional({
     description: 'Granted scopes (space-delimited) for display purposes',
     example: 'tasks:read tasks:write',
   })

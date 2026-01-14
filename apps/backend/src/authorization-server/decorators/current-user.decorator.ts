@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import type { WebAuthJwtPayload } from '../types/web-auth-jwt-payload.type';
+import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 
 /**
  * Parameter decorator that extracts the current authenticated user from the request.
@@ -9,13 +9,13 @@ import type { WebAuthJwtPayload } from '../types/web-auth-jwt-payload.type';
  * ```typescript
  * @UseGuards(JwtAuthGuard)
  * @Get('profile')
- * async getProfile(@CurrentUser() user: WebAuthJwtPayload) {
+ * async getProfile(@CurrentUser() user: AccessTokenClaims) {
  *   return { userId: user.sub, email: user.email };
  * }
  * ```
  */
 export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): WebAuthJwtPayload => {
+  (data: unknown, ctx: ExecutionContext): AccessTokenClaims => {
     const request = ctx.switchToHttp().getRequest();
     return request.user;
   },

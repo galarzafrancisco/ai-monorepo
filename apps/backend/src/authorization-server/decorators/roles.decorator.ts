@@ -11,7 +11,7 @@ import { ROLES_KEY } from '../guards/roles.guard';
  * @UseGuards(JwtAuthGuard, RolesGuard)
  * @Roles('monolith:admin')
  * @Get('admin-only')
- * async adminRoute(@CurrentUser() user: WebAuthJwtPayload) {
+ * async adminRoute(@CurrentUser() user: AccessTokenClaims) {
  *   // Only users with 'monolith:admin' scope can access this
  * }
  * ```
