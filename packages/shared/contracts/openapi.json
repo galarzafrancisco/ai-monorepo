@@ -4664,11 +4664,6 @@
             "description": "Issued-at timestamp (seconds since Unix epoch)",
             "example": 1731141619
           },
-          "nbf": {
-            "type": "number",
-            "description": "Not-before timestamp (seconds since Unix epoch)",
-            "example": 1731141019
-          },
           "scope": {
             "type": "string",
             "description": "Granted scopes (space-delimited) for display purposes",
@@ -5207,7 +5202,7 @@
       "CreateScopeDto": {
         "type": "object",
         "properties": {
-          "scopeId": {
+          "id": {
             "type": "string",
             "description": "Unique scope identifier (e.g., tool:read, tool:write)",
             "example": "tool:read"
@@ -5219,7 +5214,7 @@
           }
         },
         "required": [
-          "scopeId",
+          "id",
           "description"
         ]
       },

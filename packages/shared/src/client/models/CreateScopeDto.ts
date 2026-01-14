@@ -6,7 +6,7 @@ export type CreateScopeDto = {
     /**
      * Unique scope identifier (e.g., tool:read, tool:write)
      */
-    scopeId: string;
+    id: string;
     /**
      * Description of what this scope grants access to
      */

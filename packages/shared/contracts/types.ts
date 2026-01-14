@@ -1709,11 +1709,6 @@ export interface components {
              */
             iat: Record<string, never>;
             /**
-             * @description Not-before timestamp (seconds since Unix epoch)
-             * @example 1731141019
-             */
-            nbf?: number;
-            /**
              * @description Granted scopes (space-delimited) for display purposes
              * @example tasks:read tasks:write
              */
@@ -2069,7 +2064,7 @@ export interface components {
              * @description Unique scope identifier (e.g., tool:read, tool:write)
              * @example tool:read
              */
-            scopeId: string;
+            id: string;
             /**
              * @description Description of what this scope grants access to
              * @example Read access to MCP tools

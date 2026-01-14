@@ -40,10 +40,6 @@ export type IntrospectTokenResponseDto = {
      */
     iat: Record<string, any>;
     /**
-     * Not-before timestamp (seconds since Unix epoch)
-     */
-    nbf?: number;
-    /**
      * Granted scopes (space-delimited) for display purposes
      */
     scope?: string;

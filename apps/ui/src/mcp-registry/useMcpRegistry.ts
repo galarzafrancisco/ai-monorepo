@@ -153,11 +153,11 @@ export const useMcpRegistry = () => {
   };
 
   // Create scope
-  const createScope = async (serverId: string, scopeId: string, description: string) => {
+  const createScope = async (serverId: string, id: string, description: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerCreateScopes(serverId, [{ scopeId, description }]);
+      await McpRegistryService.mcpRegistryControllerCreateScopes(serverId, [{ id, description }]);
       if (selectedServer?.id === serverId) {
         await loadServerDetails(serverId);
       }
