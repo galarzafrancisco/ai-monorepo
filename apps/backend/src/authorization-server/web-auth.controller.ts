@@ -18,7 +18,9 @@ import { LoginRequestDto } from './dto/login-request.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { getConfig } from '../config/env.config';
-import { COOKIE_KEYS } from './constants/cookie-keys.constant';
+import { COOKIE_KEYS } from '../auth/core/constants/cookie-keys.constant';
+import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
+import { WebAuthService } from './web-auth.service';
 
 @ApiTags('Web Authentication')
 @Controller('auth')
@@ -27,7 +29,9 @@ export class WebAuthController {
   private logger = new Logger(WebAuthController.name);
 
   constructor(
+    private readonly webAuthService: WebAuthService,
     private readonly tokenService: TokenService,
+    private readonly tokenVerifierService: TokenVerifierService,
     private readonly identityProviderService: IdentityProviderService,
   ) {}
 
@@ -50,7 +54,7 @@ export class WebAuthController {
   ): Promise<LoginResponseDto> {
     // Authenticate user and generate tokens
     const { accessToken, refreshToken, expiresIn } =
-      await this.tokenService.login(loginDto.email, loginDto.password);
+      await this.webAuthService.login(loginDto.email, loginDto.password);
 
     this.logger.log('Got access token');
     
@@ -124,10 +128,10 @@ export class WebAuthController {
 
     // Refresh tokens
     const { accessToken, refreshToken, expiresIn } =
-      await this.tokenService.refreshWebToken(refreshTokenFromCookie);
+      await this.webAuthService.refreshWebToken(refreshTokenFromCookie);
 
     // Extract user info from the new access token
-    const payload = await this.tokenService.decodeToken(accessToken);
+    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
 
     // Get full user info
     const user = await this.identityProviderService.getUserById(payload.sub);
@@ -232,7 +236,7 @@ export class WebAuthController {
     }
     
     // Validate token and get payload
-    const payload = await this.tokenService.decodeToken(accessToken);
+    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
 
     // Get user from database
     const user = await this.identityProviderService.getUserById(payload.sub);

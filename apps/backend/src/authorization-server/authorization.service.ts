@@ -6,15 +6,14 @@ import type { Request } from 'express';
 import { RegisteredClientEntity } from './registered-client.entity';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
-import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
-import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
-import { McpAuthorizationFlowEntity, ConnectionAuthorizationFlowEntity } from 'src/auth-journeys/entities';
-import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
-import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
+import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
+import { McpAuthorizationFlowEntity, ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities';
+import { McpAuthorizationFlowStatus } from '../auth-journeys/enums/mcp-authorization-flow-status.enum';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { getConfig } from 'src/config/env.config';
 import { TokenService } from './token.service';
-import { COOKIE_KEYS } from './constants/cookie-keys.constant';
+import { COOKIE_KEYS } from '../auth/core/constants/cookie-keys.constant';
 import {
   McpServerNotFoundError,
   McpClientNotFoundError,
@@ -28,6 +27,7 @@ import {
   ConnectionFlowNotFoundError,
   TokenExchangeFailedError,
 } from './errors/authorization.errors';
+import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 
 @Injectable()
 export class AuthorizationService {
@@ -38,6 +38,7 @@ export class AuthorizationService {
     private readonly authJourneysService: AuthJourneysService,
     private readonly mcpRegistryService: McpRegistryService,
     private readonly tokenService: TokenService,
+    private readonly tokenVerifierService: TokenVerifierService,
   ) { }
 
   /**
@@ -171,7 +172,7 @@ export class AuthorizationService {
     const accessToken = req.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
     if (accessToken && mcpAuthFlow.authJourney) {
       try {
-        const payload = await this.tokenService.decodeToken(accessToken);
+        const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
         mcpAuthFlow.authJourney.userId = payload.sub;
         await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
       } catch (error) {

@@ -1,29 +1,50 @@
-Purpose: thin guards that wire extractor + validator + context + surface behavior.
+# NestJS Auth fundamentals
 
-Guards should be small and intentional—each one has a single contract.
+HTTP request
+↓
+Guard (can we enter the handler at all?) > delegates to extractor > validator.
+↓
+Interceptor (wrap/transform; runs before and after handler)
+↓
+Pipe (validate/transforms params/body)
+↓
+Controller handler
+↓
+Exception filter (if anything throws)
 
-bearer-access-token.guard.ts
+# Guard
+The gatekeeper. Returns true (allowed) or throws.
+Can be applied globally, controller wide, route level.
+Scope: is this request allowed to enter?
+Common patterns:
+- extract token/credentials from request (delegate to extractor)
+- validate token (delegate to validator/service)
+- attach a context to the request for the controller to use (see decorator below)
+- can enforce policy, but it's better to delegate that to other guard
 
-uses bearer extractor + validator
+# Decorator
+Convenience. Should be dumb.
+- reads the auth context from request (was injected by the guard)
+- returns in a typed way
+```typescript
+someRoute(@CurrentUser() user: UserClaims)
+```
 
-sets AuthContext
+# Context
+Where the guard puts the results. Typically `req.user`, `req.auth`, `req.locals.auth`
+Usually includes raw token, claims, scopes, user.
 
-cookie-access-token.guard.ts
+# Extractors
+Pure logic. From an authorization header or a cookie or a query param or anything.
 
-uses cookie extractor + validator (same validator)
+# Policy
+Is this identity allowed to perform this action?
+Check scopes, wether the user is admin, ownership of resources, etc.
+Implemented as decorators too.
+```typescript
+@RequireScopes('task:write')
+```
 
-sets AuthContext
-
-mcp-auth.guard.ts
-
-uses bearer extractor + validator
-
-sets WWW-Authenticate with resource_metadata=...
-
-ensures errors are MCP-friendly (or throws MCP-specific exceptions)
-
-composed/
-
-optional: any-auth.guard.ts (explicitly “bearer OR cookie”) — only if you want endpoints that accept both
-
-Why: keeps “MCP is special” contained to one guard without polluting the core validator.
+# Exception filter
+Normally you'd throw UnauthorizedException. But for special cases like MCP where
+you want a special surface, you'd use a special filter that convers a normal error into an MCP error.

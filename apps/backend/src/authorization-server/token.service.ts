@@ -1,22 +1,15 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { SignJWT, importPKCS8, jwtVerify, createRemoteJWKSet, errors } from 'jose';
+import { Injectable, Logger } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
-import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
-import { IdentityProviderService } from 'src/identity-provider/identity-provider.service';
-import { JwksService } from './jwks.service';
-import { RefreshTokenEntity } from './refresh-token.entity';
+import { McpAuthorizationFlowEntity } from '../auth-journeys/entities';
+import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { IntrospectTokenRequestDto } from './dto/introspect-token-request.dto';
 import { IntrospectTokenResponseDto } from './dto/introspect-token-response.dto';
 import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
-import { McpJwtPayload } from './types/mcp-jwt-payload.type';
-import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
-import { getConfig } from 'src/config/env.config';
+import { McpAuthorizationFlowStatus } from '../auth-journeys/enums/mcp-authorization-flow-status.enum';
+import { getConfig } from '../config/env.config';
 import {
   InvalidGrantTypeError,
   MissingRequiredParametersError,
@@ -27,10 +20,10 @@ import {
   RedirectUriMismatchError,
   MissingPkceParametersError,
   InvalidCodeVerifierError,
-  TokenExpiredError,
-  InvalidTokenSignaturedError,
-  TokenValidationError,
 } from './errors/token.errors';
+import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
+import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
+import { TokenSignerService } from '../auth/crypto/token-signer.service';
 
 @Injectable()
 export class TokenService {
@@ -38,11 +31,9 @@ export class TokenService {
 
   constructor(
     private readonly authJourneysService: AuthJourneysService,
-    private readonly jwksService: JwksService,
-    private readonly identityProviderService: IdentityProviderService,
-    @InjectRepository(RefreshTokenEntity)
-    private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
-  ) {}
+    private readonly tokenVerifierService: TokenVerifierService,
+    private readonly tokenSignerService: TokenSignerService,
+  ) { }
 
   /**
    * Exchange authorization code for access token
@@ -164,16 +155,11 @@ export class TokenService {
    * Generate a signed JWT access token
    */
   private async generateAccessToken(mcpAuthFlow: McpAuthorizationFlowEntity): Promise<string> {
-    // Get active signing key
-    const signingKey = await this.jwksService.getActiveSigningKey();
-
-    // Import private key from PEM
-    const privateKey = await importPKCS8(signingKey.privateKeyPem, signingKey.algorithm);
-
+    
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
     const config = getConfig();
-    const payload: McpJwtPayload = {
+    const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
       sub: mcpAuthFlow.authJourney.userId || 'user-not-found???', // TODO: Replace with actual user ID when user auth is implemented
       aud: mcpAuthFlow.server.providedId, // MCP server identifier
@@ -182,19 +168,13 @@ export class TokenService {
       jti: randomBytes(16).toString('hex'), // Unique token ID
       client_id: mcpAuthFlow.client.clientId,
       scope: mcpAuthFlow.client.scopes || [], // Handle null scopes
-      server_identifier: mcpAuthFlow.server.providedId,
+      mcp_server_identifier: mcpAuthFlow.server.providedId,
       resource: mcpAuthFlow.resource || '',
       version: '1.0.0', // Hardcoded version as requested in task description
     };
 
-    // Sign and return JWT - cast to any to handle index signature requirement
-    const jwt = await new SignJWT(payload as any)
-      .setProtectedHeader({
-        alg: signingKey.algorithm,
-        kid: signingKey.kid,
-        typ: 'JWT',
-      })
-      .sign(privateKey);
+    // Sign the JWT
+    const jwt = await this.tokenSignerService.signToken(payload);
 
     return jwt;
   }
@@ -207,61 +187,6 @@ export class TokenService {
     return randomBytes(32).toString('base64url');
   }
 
-  /**
-   * Decodes a JWT
-   */
-  async decodeToken(token: string): Promise<McpJwtPayload> {
-    this.logger.debug(`Decoding JWT`);
-
-    try {
-      // Get all valid public keys for verification
-      const publicKeys = await this.jwksService.getPublicKeys();
-      
-      if (publicKeys.length === 0) {
-        this.logger.error('No valid public keys available for token verification');
-        throw new UnauthorizedException('Token validation failed');
-      }
-
-      // Create a JWKS object from our keys
-      const jwks = {
-        keys: publicKeys,
-      };
-
-      // Verify the JWT signature and decode payload
-      // We need to create a local JWKS resolver since we don't have a remote JWKS endpoint
-      const getKey = async (header: any) => {
-        const key = publicKeys.find((k) => k.kid === header.kid);
-        if (!key) {
-          throw new Error('Key not found');
-        }
-        return key as any;
-      };
-
-      // Verify JWT with our JWKS
-      const config = getConfig();
-      const { payload } = await jwtVerify(token, getKey as any, {
-        issuer: config.issuerUrl,
-        algorithms: ['RS256'],
-      });
-
-      // Cast payload to our expected type
-      const mcpPayload = payload as unknown as McpJwtPayload;
-      return mcpPayload;
-    } catch (error) {
-      // Token is invalid (expired, bad signature, etc.)
-      if (error instanceof errors.JWTExpired) {
-        this.logger.debug('Token introspection failed: expired');
-        throw new TokenExpiredError();
-      } else if (error instanceof errors.JWSSignatureVerificationFailed) {
-        this.logger.warn('Token introspection failed: bad signature');
-        throw new InvalidTokenSignaturedError();
-      } else {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        this.logger.warn(`Token introspection failed: ${errorMessage}`);
-        throw new TokenValidationError(errorMessage);
-      }
-    }
-  }
 
   /**
    * Introspect a token to validate and return its metadata
@@ -271,236 +196,40 @@ export class TokenService {
   async introspectToken(request: IntrospectTokenRequestDto): Promise<IntrospectTokenResponseDto> {
     this.logger.debug(`Introspecting token${request.client_id ? ` for client: ${request.client_id}` : ''}`);
 
+    let claims: AccessTokenClaims;
     try {
-      // Get all valid public keys for verification
-      const publicKeys = await this.jwksService.getPublicKeys();
-
-      if (publicKeys.length === 0) {
-        this.logger.error('No valid public keys available for token verification');
-        // Return inactive token response instead of throwing
-        return { active: false } as IntrospectTokenResponseDto;
-      }
-
-      // Create a JWKS object from our keys
-      const jwks = {
-        keys: publicKeys,
-      };
-
-      // Verify the JWT signature and decode payload
-      // We need to create a local JWKS resolver since we don't have a remote JWKS endpoint
-      const getKey = async (header: any) => {
-        const key = publicKeys.find((k) => k.kid === header.kid);
-        if (!key) {
-          throw new Error('Key not found');
-        }
-        return key as any;
-      };
-
-      // Verify JWT with our JWKS
-      const config = getConfig();
-      const { payload } = await jwtVerify(request.token, getKey as any, {
-        issuer: config.issuerUrl,
-        algorithms: ['RS256'],
-      });
-
-      // Cast payload to our expected type
-      const mcpPayload = payload as unknown as McpJwtPayload;
-
-      // If client_id was provided in the request, validate it matches the token (optional additional security)
-      // Per RFC 7662, client_id is not required in the request - it's extracted from the token
-      if (request.client_id && mcpPayload.client_id !== request.client_id) {
-        this.logger.warn('Client ID mismatch during introspection');
-        return { active: false } as IntrospectTokenResponseDto;
-      }
-
-      // Token is valid - build the introspection response
-      const response: IntrospectTokenResponseDto = {
-        active: true,
-        token_type: TokenType.BEARER,
-        client_id: mcpPayload.client_id,
-        sub: mcpPayload.sub,
-        aud: mcpPayload.aud,
-        iss: mcpPayload.iss,
-        jti: mcpPayload.jti,
-        exp: mcpPayload.exp,
-        iat: mcpPayload.iat,
-        nbf: (payload as any).nbf, // nbf is optional and not in McpJwtPayload type
-        scope: mcpPayload.scope?.join(' '),
-        server_identifier: mcpPayload.server_identifier,
-        resource: mcpPayload.resource,
-        version: mcpPayload.version,
-      };
-
-      this.logger.log(`Token introspection successful for client: ${mcpPayload.client_id}`);
-      return response;
+      claims = await this.tokenVerifierService.verifyAndDecode(request.token);
     } catch (error) {
-      // Token is invalid (expired, bad signature, etc.)
-      if (error instanceof errors.JWTExpired) {
-        this.logger.debug('Token expired during introspection');
-      } else if (error instanceof errors.JWSSignatureVerificationFailed) {
-        this.logger.warn('Token signature verification failed');
-      } else {
-        this.logger.warn(`Token introspection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-
-      // Return inactive response for any validation failure
-      // Per RFC 7662, we should not reveal why the token is invalid
+      this.logger.warn(`Token introspection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return { active: false } as IntrospectTokenResponseDto;
     }
-  }
 
-  /**
-   * Web Authentication: Login with email and password
-   * Returns access and refresh tokens
-   */
-  async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
-    this.logger.debug(`Login attempt for email: ${email}`);
-
-    // Validate user credentials
-    const user = await this.identityProviderService.validateUser(email, password);
-
-    // Generate access token (10 min expiration)
-    const accessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role);
-
-    // Generate refresh token (1 day expiration)
-    const refreshToken = await this.generateAndStoreRefreshToken(user.id);
-
-    this.logger.log(`User logged in successfully: ${email}`);
-
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn: 600, // 10 minutes
-    };
-  }
-
-  /**
-   * Web Authentication: Refresh access token using refresh token
-   * Returns new access and refresh tokens
-   */
-  async refreshWebToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
-    this.logger.debug('Refresh token request');
-
-    // Hash the provided refresh token to compare with stored hash
-    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
-
-    // Find the refresh token in database
-    const storedToken = await this.refreshTokenRepository.findOne({
-      where: { tokenHash },
-      relations: ['user'],
-    });
-
-    if (!storedToken) {
-      this.logger.warn('Refresh token not found');
-      throw new UnauthorizedException('Invalid refresh token');
+    // If client_id was provided in the request, validate it matches the token (optional additional security)
+    // Per RFC 7662, client_id is not required in the request - it's extracted from the token
+    if (request.client_id && claims.client_id !== request.client_id) {
+      this.logger.warn('Client ID mismatch during introspection');
+      return { active: false } as IntrospectTokenResponseDto;
     }
 
-    // Check if token is revoked
-    if (storedToken.revokedAt) {
-      this.logger.warn('Refresh token has been revoked');
-      throw new UnauthorizedException('Refresh token revoked');
-    }
-
-    // Check if token is expired
-    if (new Date() > storedToken.expiresAt) {
-      this.logger.warn('Refresh token expired');
-      throw new UnauthorizedException('Refresh token expired');
-    }
-
-    // Revoke the old refresh token
-    storedToken.revokedAt = new Date();
-    await this.refreshTokenRepository.save(storedToken);
-
-    // Generate new tokens
-    const user = storedToken.user;
-    const newAccessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role);
-    const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
-
-    this.logger.log(`Refresh token exchanged successfully for user: ${user.email}`);
-
-    return {
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
-      expiresIn: 600, // 10 minutes
-    };
-  }
-
-  /**
-   * Generate a signed JWT access token for web authentication
-   */
-  private async generateWebAccessToken(
-    userId: string,
-    email: string,
-    displayName: string,
-    role: 'admin' | 'standard',
-  ): Promise<string> {
-    // Get active signing key
-    const signingKey = await this.jwksService.getActiveSigningKey();
-
-    // Import private key from PEM
-    const privateKey = await importPKCS8(signingKey.privateKeyPem, signingKey.algorithm);
-
-    // Build JWT payload
-    const now = Math.floor(Date.now() / 1000);
-    const config = getConfig();
-
-    // Determine scopes based on role
-    const scope = role === 'admin' ? ['monolith:user', 'monolith:admin'] : ['monolith:user'];
-
-    const payload: McpJwtPayload = {
-      iss: config.issuerUrl,
-      sub: userId,
-      email,
-      displayName,
-      scope,
-      aud: config.issuerUrl,
-      client_id: 'self',
-      server_identifier: 'ai-monolith',
-      resource: `${config.issuerUrl}`,
-      version: '0.0.0',
-      iat: now,
-      exp: now + 600, // Change this to tune the duration of the web session (10 minutes)
-      jti: randomBytes(16).toString('hex'),
+    // Token is valid - build the introspection response
+    const response: IntrospectTokenResponseDto = {
+      active: true,
+      token_type: TokenType.BEARER,
+      client_id: claims.client_id,
+      sub: claims.sub,
+      aud: claims.aud,
+      iss: claims.iss,
+      jti: claims.jti,
+      exp: claims.exp,
+      iat: claims.iat,
+      nbf: (claims as any).nbf, // nbf is optional and not in McpJwtPayload type
+      scope: claims.scope?.join(' '),
+      mcp_server_identifier: claims.mcp_server_identifier,
+      resource: claims.resource,
+      version: claims.version,
     };
 
-    // Sign and return JWT
-    const jwt = await new SignJWT(payload as any)
-      .setProtectedHeader({
-        alg: signingKey.algorithm,
-        kid: signingKey.kid,
-        typ: 'JWT',
-      })
-      .sign(privateKey);
-
-    return jwt;
-  }
-
-  /**
-   * Generate and store a refresh token in the database
-   * Returns the unhashed token (to be sent to client)
-   */
-  private async generateAndStoreRefreshToken(userId: string): Promise<string> {
-    // Generate a cryptographically secure random token
-    const token = randomBytes(32).toString('base64url');
-
-    // Hash the token before storing
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-
-    // Calculate expiration (1 day)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 1);
-
-    // Store in database
-    const refreshToken = this.refreshTokenRepository.create({
-      userId,
-      tokenHash,
-      expiresAt,
-      revokedAt: null,
-    });
-
-    await this.refreshTokenRepository.save(refreshToken);
-
-    // Return the unhashed token
-    return token;
+    this.logger.log(`Token introspection successful for client: ${claims.client_id}`);
+    return response;
   }
 }

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TokenType } from '../enums';
-import type { McpJwtPayload } from '../types';
+import { AccessTokenClaims } from '../../auth/core/types/access-token-claims.type';
+
 
 /**
  * DTO for OAuth 2.0 token introspection responses (RFC 7662).
@@ -30,7 +31,7 @@ export class IntrospectTokenResponseDto {
     description: 'Subject of the token (resource owner or actor)',
     example: 'journey:1234',
   })
-  sub!: McpJwtPayload['sub'];
+  sub!: AccessTokenClaims['sub'];
 
   @ApiProperty({
     description: 'Audience that should accept this token',
@@ -39,31 +40,31 @@ export class IntrospectTokenResponseDto {
       { type: 'array', items: { type: 'string' }, example: ['taskeroo-api'] },
     ],
   })
-  aud!: McpJwtPayload['aud'];
+  aud!: AccessTokenClaims['aud'];
 
   @ApiProperty({
     description: 'Issuer that minted the token',
     example: 'https://auth.taskeroo.local/auth',
   })
-  iss!: McpJwtPayload['iss'];
+  iss!: AccessTokenClaims['iss'];
 
   @ApiProperty({
     description: 'Unique token identifier for replay detection',
     example: 'b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c',
   })
-  jti!: McpJwtPayload['jti'];
+  jti!: AccessTokenClaims['jti'];
 
   @ApiProperty({
     description: 'Expiration timestamp (seconds since Unix epoch)',
     example: 1731145219,
   })
-  exp!: McpJwtPayload['exp'];
+  exp!: AccessTokenClaims['exp'];
 
   @ApiProperty({
     description: 'Issued-at timestamp (seconds since Unix epoch)',
     example: 1731141619,
   })
-  iat!: McpJwtPayload['iat'];
+  iat!: AccessTokenClaims['iat'];
 
   @ApiPropertyOptional({
     description: 'Not-before timestamp (seconds since Unix epoch)',
@@ -81,17 +82,17 @@ export class IntrospectTokenResponseDto {
     description: 'MCP server identifier the token is scoped to',
     example: 'taskeroo',
   })
-  server_identifier!: McpJwtPayload['server_identifier'];
+  mcp_server_identifier?: AccessTokenClaims['mcp_server_identifier'];
 
   @ApiProperty({
     description: 'Resource URL that was used during authorization',
     example: 'http://localhost:4001/',
   })
-  resource!: McpJwtPayload['resource'];
+  resource!: AccessTokenClaims['resource'];
 
   @ApiProperty({
     description: 'Version of the MCP server contract',
     example: '1.0.0',
   })
-  version!: McpJwtPayload['version'];
+  version!: AccessTokenClaims['version'];
 }

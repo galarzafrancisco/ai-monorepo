@@ -394,26 +394,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/.well-known/jwks.json": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get JSON Web Key Set (JWKS)
-         * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
-         */
-        get: operations["JwksController_getJwks"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -474,6 +454,23 @@ export interface paths {
         };
         /** Get current authenticated user */
         get: operations["WebAuthController_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth-journeys/servers/{serverId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get authorization journeys for an MCP server (debug/monitoring) */
+        get: operations["AuthJourneysController_getAuthJourneys"];
         put?: never;
         post?: never;
         delete?: never;
@@ -643,15 +640,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
+    "/.well-known/jwks.json": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get authorization journeys for an MCP server (debug/monitoring) */
-        get: operations["McpRegistryController_getAuthJourneys"];
+        /**
+         * Get JSON Web Key Set (JWKS)
+         * @description Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.
+         */
+        get: operations["JwksController_getJwks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1722,7 +1722,7 @@ export interface components {
              * @description MCP server identifier the token is scoped to
              * @example taskeroo
              */
-            server_identifier: Record<string, never>;
+            mcp_server_identifier: Record<string, never>;
             /**
              * @description Resource URL that was used during authorization
              * @example http://localhost:4001/
@@ -1790,57 +1790,6 @@ export interface components {
              */
             scope: string;
         };
-        JwkResponseDto: {
-            /**
-             * @description Key type, for example RSA or EC.
-             * @example RSA
-             */
-            kty: string;
-            /**
-             * @description Key usage indicating how the key can be used.
-             * @example sig
-             */
-            use: string;
-            /**
-             * @description Unique identifier for the key used for rotation.
-             * @example 1234567890abcdef
-             */
-            kid: string;
-            /**
-             * @description Algorithm intended for use with this key.
-             * @example RS256
-             */
-            alg: string;
-            /**
-             * @description RSA modulus encoded using base64url.
-             * @example xGOr-H7A...
-             */
-            n?: string;
-            /**
-             * @description RSA public exponent encoded using base64url.
-             * @example AQAB
-             */
-            e?: string;
-            /**
-             * @description Public coordinate X for EC keys encoded using base64url.
-             * @example WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis
-             */
-            x?: string;
-            /**
-             * @description Public coordinate Y for EC keys encoded using base64url.
-             * @example y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE
-             */
-            y?: string;
-            /**
-             * @description Curve name for EC keys.
-             * @example P-256
-             */
-            crv?: string;
-        };
-        JwksResponseDto: {
-            /** @description Collection of JSON Web Keys currently valid for signature verification. */
-            keys: components["schemas"]["JwkResponseDto"][];
-        };
         LoginRequestDto: {
             /**
              * @description User email address
@@ -1884,6 +1833,134 @@ export interface components {
              * @example 600
              */
             expiresIn: number;
+        };
+        McpFlowResponseDto: {
+            /**
+             * @description System-generated UUID for the MCP authorization flow
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the authorization journey this flow belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            authorizationJourneyId: string;
+            /**
+             * @description UUID of the MCP server
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            serverId: string;
+            /**
+             * @description UUID of the registered MCP client
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            clientId: string;
+            /**
+             * @description Client name for display
+             * @example My MCP Client
+             */
+            clientName?: string | null;
+            /**
+             * @description Current status of the MCP authorization flow
+             * @example CLIENT_REGISTERED
+             * @enum {string}
+             */
+            status: "CLIENT_NOT_REGISTERED" | "CLIENT_REGISTERED" | "AUTHORIZATION_REQUEST_STARTED" | "USER_CONSENT_OK" | "USER_CONSENT_REJECTED" | "WAITING_ON_DOWNSTREAM_AUTH" | "AUTHORIZATION_CODE_ISSUED" | "AUTHORIZATION_CODE_EXCHANGED";
+            /**
+             * @description Scopes requested by the client
+             * @example tool:read tool:execute
+             */
+            scope?: string | null;
+            /**
+             * @description When the authorization code expires
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            authorizationCodeExpiresAt?: string | null;
+            /**
+             * @description Whether the authorization code has been used
+             * @example false
+             */
+            authorizationCodeUsed: boolean;
+            /**
+             * @description Timestamp when the flow was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the flow was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        ConnectionFlowResponseDto: {
+            /**
+             * @description System-generated UUID for the connection authorization flow
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the authorization journey this flow belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            authorizationJourneyId: string;
+            /**
+             * @description UUID of the MCP connection this flow uses
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            mcpConnectionId: string;
+            /**
+             * @description Connection friendly name
+             * @example GitHub OAuth Connection
+             */
+            connectionName?: string | null;
+            /**
+             * @description Current status of the connection flow
+             * @example pending
+             * @enum {string}
+             */
+            status: "pending" | "authorized" | "failed";
+            /**
+             * @description When the access token expires
+             * @example 2025-12-15T10:00:00.000Z
+             */
+            tokenExpiresAt?: string | null;
+            /**
+             * @description Timestamp when the flow was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the flow was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        AuthJourneyResponseDto: {
+            /**
+             * @description System-generated UUID for the authorization journey
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Current status of the authorization journey
+             * @example mcp_auth_flow_started
+             * @enum {string}
+             */
+            status: "not_started" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
+            /** @description The MCP authorization flow for this journey */
+            mcpAuthorizationFlow: components["schemas"]["McpFlowResponseDto"];
+            /** @description Connection authorization flows for this journey */
+            connectionAuthorizationFlows: components["schemas"]["ConnectionFlowResponseDto"][];
+            /**
+             * @description Timestamp when the journey was created
+             * @example 2025-12-15T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the journey was last updated
+             * @example 2025-12-15T09:00:00.000Z
+             */
+            updatedAt: string;
         };
         CreateServerDto: {
             /**
@@ -2217,133 +2294,56 @@ export interface components {
              */
             message: string;
         };
-        McpFlowResponseDto: {
+        JwkResponseDto: {
             /**
-             * @description System-generated UUID for the MCP authorization flow
-             * @example 123e4567-e89b-12d3-a456-426614174000
+             * @description Key type, for example RSA or EC.
+             * @example RSA
              */
-            id: string;
+            kty: string;
             /**
-             * @description UUID of the authorization journey this flow belongs to
-             * @example 123e4567-e89b-12d3-a456-426614174000
+             * @description Key usage indicating how the key can be used.
+             * @example sig
              */
-            authorizationJourneyId: string;
+            use: string;
             /**
-             * @description UUID of the MCP server
-             * @example 123e4567-e89b-12d3-a456-426614174000
+             * @description Unique identifier for the key used for rotation.
+             * @example 1234567890abcdef
              */
-            serverId: string;
+            kid: string;
             /**
-             * @description UUID of the registered MCP client
-             * @example 123e4567-e89b-12d3-a456-426614174000
+             * @description Algorithm intended for use with this key.
+             * @example RS256
              */
-            clientId: string;
+            alg: string;
             /**
-             * @description Client name for display
-             * @example My MCP Client
+             * @description RSA modulus encoded using base64url.
+             * @example xGOr-H7A...
              */
-            clientName?: string | null;
+            n?: string;
             /**
-             * @description Current status of the MCP authorization flow
-             * @example CLIENT_REGISTERED
-             * @enum {string}
+             * @description RSA public exponent encoded using base64url.
+             * @example AQAB
              */
-            status: "CLIENT_NOT_REGISTERED" | "CLIENT_REGISTERED" | "AUTHORIZATION_REQUEST_STARTED" | "USER_CONSENT_OK" | "USER_CONSENT_REJECTED" | "WAITING_ON_DOWNSTREAM_AUTH" | "AUTHORIZATION_CODE_ISSUED" | "AUTHORIZATION_CODE_EXCHANGED";
+            e?: string;
             /**
-             * @description Scopes requested by the client
-             * @example tool:read tool:execute
+             * @description Public coordinate X for EC keys encoded using base64url.
+             * @example WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis
              */
-            scope?: string | null;
+            x?: string;
             /**
-             * @description When the authorization code expires
-             * @example 2025-12-15T09:00:00.000Z
+             * @description Public coordinate Y for EC keys encoded using base64url.
+             * @example y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE
              */
-            authorizationCodeExpiresAt?: string | null;
+            y?: string;
             /**
-             * @description Whether the authorization code has been used
-             * @example false
+             * @description Curve name for EC keys.
+             * @example P-256
              */
-            authorizationCodeUsed: boolean;
-            /**
-             * @description Timestamp when the flow was created
-             * @example 2025-12-15T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the flow was last updated
-             * @example 2025-12-15T09:00:00.000Z
-             */
-            updatedAt: string;
+            crv?: string;
         };
-        ConnectionFlowResponseDto: {
-            /**
-             * @description System-generated UUID for the connection authorization flow
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description UUID of the authorization journey this flow belongs to
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            authorizationJourneyId: string;
-            /**
-             * @description UUID of the MCP connection this flow uses
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            mcpConnectionId: string;
-            /**
-             * @description Connection friendly name
-             * @example GitHub OAuth Connection
-             */
-            connectionName?: string | null;
-            /**
-             * @description Current status of the connection flow
-             * @example pending
-             * @enum {string}
-             */
-            status: "pending" | "authorized" | "failed";
-            /**
-             * @description When the access token expires
-             * @example 2025-12-15T10:00:00.000Z
-             */
-            tokenExpiresAt?: string | null;
-            /**
-             * @description Timestamp when the flow was created
-             * @example 2025-12-15T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the flow was last updated
-             * @example 2025-12-15T09:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        AuthJourneyResponseDto: {
-            /**
-             * @description System-generated UUID for the authorization journey
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Current status of the authorization journey
-             * @example mcp_auth_flow_started
-             * @enum {string}
-             */
-            status: "not_started" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
-            /** @description The MCP authorization flow for this journey */
-            mcpAuthorizationFlow: components["schemas"]["McpFlowResponseDto"];
-            /** @description Connection authorization flows for this journey */
-            connectionAuthorizationFlows: components["schemas"]["ConnectionFlowResponseDto"][];
-            /**
-             * @description Timestamp when the journey was created
-             * @example 2025-12-15T08:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Timestamp when the journey was last updated
-             * @example 2025-12-15T09:00:00.000Z
-             */
-            updatedAt: string;
+        JwksResponseDto: {
+            /** @description Collection of JSON Web Keys currently valid for signature verification. */
+            keys: components["schemas"]["JwkResponseDto"][];
         };
         CreatePageDto: {
             /**
@@ -4166,26 +4166,6 @@ export interface operations {
             };
         };
     };
-    JwksController_getJwks: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description JWKS retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JwksResponseDto"];
-                };
-            };
-        };
-    };
     WebAuthController_login: {
         parameters: {
             query?: never;
@@ -4287,6 +4267,36 @@ export interface operations {
             };
             /** @description Not authenticated */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthJourneysController_getAuthJourneys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Server UUID */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of authorization journeys */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthJourneyResponseDto"][];
+                };
+            };
+            /** @description Server not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4874,33 +4884,23 @@ export interface operations {
             };
         };
     };
-    McpRegistryController_getAuthJourneys: {
+    JwksController_getJwks: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description Server UUID */
-                serverId: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description List of authorization journeys */
+            /** @description JWKS retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthJourneyResponseDto"][];
+                    "application/json": components["schemas"]["JwksResponseDto"];
                 };
-            };
-            /** @description Server not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

@@ -1338,29 +1338,6 @@
         ]
       }
     },
-    "/.well-known/jwks.json": {
-      "get": {
-        "description": "Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.",
-        "operationId": "JwksController_getJwks",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "JWKS retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JwksResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get JSON Web Key Set (JWKS)",
-        "tags": [
-          "JWKS"
-        ]
-      }
-    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "WebAuthController_login",
@@ -1471,6 +1448,49 @@
         "summary": "Get current authenticated user",
         "tags": [
           "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth-journeys/servers/{serverId}": {
+      "get": {
+        "operationId": "AuthJourneysController_getAuthJourneys",
+        "parameters": [
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "Server UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of authorization journeys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuthJourneyResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get authorization journeys for an MCP server (debug/monitoring)",
+        "tags": [
+          "Authorization Journeys"
         ]
       }
     },
@@ -2258,46 +2278,26 @@
         ]
       }
     },
-    "/api/v1/mcp/servers/{serverId}/auth-journeys": {
+    "/.well-known/jwks.json": {
       "get": {
-        "operationId": "McpRegistryController_getAuthJourneys",
-        "parameters": [
-          {
-            "name": "serverId",
-            "required": true,
-            "in": "path",
-            "description": "Server UUID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "description": "Returns the public keys used to verify JWT signatures. This endpoint provides all valid (non-expired) keys to support key rotation.",
+        "operationId": "JwksController_getJwks",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "List of authorization journeys",
+            "description": "JWKS retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuthJourneyResponseDto"
-                  }
+                  "$ref": "#/components/schemas/JwksResponseDto"
                 }
               }
             }
-          },
-          "404": {
-            "description": "Server not found"
           }
         },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get authorization journeys for an MCP server (debug/monitoring)",
+        "summary": "Get JSON Web Key Set (JWKS)",
         "tags": [
-          "MCP Registry"
+          "JWKS"
         ]
       }
     },
@@ -4674,7 +4674,7 @@
             "description": "Granted scopes (space-delimited) for display purposes",
             "example": "tasks:read tasks:write"
           },
-          "server_identifier": {
+          "mcp_server_identifier": {
             "type": "object",
             "description": "MCP server identifier the token is scoped to",
             "example": "taskeroo"
@@ -4700,7 +4700,7 @@
           "jti",
           "exp",
           "iat",
-          "server_identifier",
+          "mcp_server_identifier",
           "resource",
           "version"
         ]
@@ -4784,77 +4784,6 @@
           "scope"
         ]
       },
-      "JwkResponseDto": {
-        "type": "object",
-        "properties": {
-          "kty": {
-            "type": "string",
-            "description": "Key type, for example RSA or EC.",
-            "example": "RSA"
-          },
-          "use": {
-            "type": "string",
-            "description": "Key usage indicating how the key can be used.",
-            "example": "sig"
-          },
-          "kid": {
-            "type": "string",
-            "description": "Unique identifier for the key used for rotation.",
-            "example": "1234567890abcdef"
-          },
-          "alg": {
-            "type": "string",
-            "description": "Algorithm intended for use with this key.",
-            "example": "RS256"
-          },
-          "n": {
-            "type": "string",
-            "description": "RSA modulus encoded using base64url.",
-            "example": "xGOr-H7A..."
-          },
-          "e": {
-            "type": "string",
-            "description": "RSA public exponent encoded using base64url.",
-            "example": "AQAB"
-          },
-          "x": {
-            "type": "string",
-            "description": "Public coordinate X for EC keys encoded using base64url.",
-            "example": "WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis"
-          },
-          "y": {
-            "type": "string",
-            "description": "Public coordinate Y for EC keys encoded using base64url.",
-            "example": "y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE"
-          },
-          "crv": {
-            "type": "string",
-            "description": "Curve name for EC keys.",
-            "example": "P-256"
-          }
-        },
-        "required": [
-          "kty",
-          "use",
-          "kid",
-          "alg"
-        ]
-      },
-      "JwksResponseDto": {
-        "type": "object",
-        "properties": {
-          "keys": {
-            "description": "Collection of JSON Web Keys currently valid for signature verification.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/JwkResponseDto"
-            }
-          }
-        },
-        "required": [
-          "keys"
-        ]
-      },
       "LoginRequestDto": {
         "type": "object",
         "properties": {
@@ -4929,6 +4858,206 @@
         "required": [
           "user",
           "expiresIn"
+        ]
+      },
+      "McpFlowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the MCP authorization flow",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "authorizationJourneyId": {
+            "type": "string",
+            "description": "UUID of the authorization journey this flow belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "serverId": {
+            "type": "string",
+            "description": "UUID of the MCP server",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "UUID of the registered MCP client",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "clientName": {
+            "type": "string",
+            "description": "Client name for display",
+            "example": "My MCP Client",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the MCP authorization flow",
+            "example": "CLIENT_REGISTERED",
+            "enum": [
+              "CLIENT_NOT_REGISTERED",
+              "CLIENT_REGISTERED",
+              "AUTHORIZATION_REQUEST_STARTED",
+              "USER_CONSENT_OK",
+              "USER_CONSENT_REJECTED",
+              "WAITING_ON_DOWNSTREAM_AUTH",
+              "AUTHORIZATION_CODE_ISSUED",
+              "AUTHORIZATION_CODE_EXCHANGED"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "description": "Scopes requested by the client",
+            "example": "tool:read tool:execute",
+            "nullable": true
+          },
+          "authorizationCodeExpiresAt": {
+            "type": "string",
+            "description": "When the authorization code expires",
+            "example": "2025-12-15T09:00:00.000Z",
+            "nullable": true
+          },
+          "authorizationCodeUsed": {
+            "type": "boolean",
+            "description": "Whether the authorization code has been used",
+            "example": false
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "authorizationJourneyId",
+          "serverId",
+          "clientId",
+          "status",
+          "authorizationCodeUsed",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ConnectionFlowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the connection authorization flow",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "authorizationJourneyId": {
+            "type": "string",
+            "description": "UUID of the authorization journey this flow belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "mcpConnectionId": {
+            "type": "string",
+            "description": "UUID of the MCP connection this flow uses",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "connectionName": {
+            "type": "string",
+            "description": "Connection friendly name",
+            "example": "GitHub OAuth Connection",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the connection flow",
+            "example": "pending",
+            "enum": [
+              "pending",
+              "authorized",
+              "failed"
+            ]
+          },
+          "tokenExpiresAt": {
+            "type": "string",
+            "description": "When the access token expires",
+            "example": "2025-12-15T10:00:00.000Z",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the flow was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "authorizationJourneyId",
+          "mcpConnectionId",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AuthJourneyResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "System-generated UUID for the authorization journey",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the authorization journey",
+            "example": "mcp_auth_flow_started",
+            "enum": [
+              "not_started",
+              "mcp_auth_flow_started",
+              "mcp_auth_flow_completed",
+              "connections_flow_started",
+              "connections_flow_completed",
+              "authorization_code_issued",
+              "authorization_code_exchanged"
+            ]
+          },
+          "mcpAuthorizationFlow": {
+            "description": "The MCP authorization flow for this journey",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/McpFlowResponseDto"
+              }
+            ]
+          },
+          "connectionAuthorizationFlows": {
+            "description": "Connection authorization flows for this journey",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionFlowResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Timestamp when the journey was created",
+            "example": "2025-12-15T08:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Timestamp when the journey was last updated",
+            "example": "2025-12-15T09:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "mcpAuthorizationFlow",
+          "connectionAuthorizationFlows",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "CreateServerDto": {
@@ -5388,204 +5517,75 @@
           "message"
         ]
       },
-      "McpFlowResponseDto": {
+      "JwkResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "kty": {
             "type": "string",
-            "description": "System-generated UUID for the MCP authorization flow",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+            "description": "Key type, for example RSA or EC.",
+            "example": "RSA"
           },
-          "authorizationJourneyId": {
+          "use": {
             "type": "string",
-            "description": "UUID of the authorization journey this flow belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+            "description": "Key usage indicating how the key can be used.",
+            "example": "sig"
           },
-          "serverId": {
+          "kid": {
             "type": "string",
-            "description": "UUID of the MCP server",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+            "description": "Unique identifier for the key used for rotation.",
+            "example": "1234567890abcdef"
           },
-          "clientId": {
+          "alg": {
             "type": "string",
-            "description": "UUID of the registered MCP client",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+            "description": "Algorithm intended for use with this key.",
+            "example": "RS256"
           },
-          "clientName": {
+          "n": {
             "type": "string",
-            "description": "Client name for display",
-            "example": "My MCP Client",
-            "nullable": true
+            "description": "RSA modulus encoded using base64url.",
+            "example": "xGOr-H7A..."
           },
-          "status": {
+          "e": {
             "type": "string",
-            "description": "Current status of the MCP authorization flow",
-            "example": "CLIENT_REGISTERED",
-            "enum": [
-              "CLIENT_NOT_REGISTERED",
-              "CLIENT_REGISTERED",
-              "AUTHORIZATION_REQUEST_STARTED",
-              "USER_CONSENT_OK",
-              "USER_CONSENT_REJECTED",
-              "WAITING_ON_DOWNSTREAM_AUTH",
-              "AUTHORIZATION_CODE_ISSUED",
-              "AUTHORIZATION_CODE_EXCHANGED"
-            ]
+            "description": "RSA public exponent encoded using base64url.",
+            "example": "AQAB"
           },
-          "scope": {
+          "x": {
             "type": "string",
-            "description": "Scopes requested by the client",
-            "example": "tool:read tool:execute",
-            "nullable": true
+            "description": "Public coordinate X for EC keys encoded using base64url.",
+            "example": "WKn-ZIGevcwGIyyrzFoZNBdaq9_TsqzGl96oc0CWuis"
           },
-          "authorizationCodeExpiresAt": {
+          "y": {
             "type": "string",
-            "description": "When the authorization code expires",
-            "example": "2025-12-15T09:00:00.000Z",
-            "nullable": true
+            "description": "Public coordinate Y for EC keys encoded using base64url.",
+            "example": "y77t-RvAHRKTsSGdIYUfweuOvwrvDD-Q3Hv5J0fSKbE"
           },
-          "authorizationCodeUsed": {
-            "type": "boolean",
-            "description": "Whether the authorization code has been used",
-            "example": false
-          },
-          "createdAt": {
+          "crv": {
             "type": "string",
-            "description": "Timestamp when the flow was created",
-            "example": "2025-12-15T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the flow was last updated",
-            "example": "2025-12-15T09:00:00.000Z"
+            "description": "Curve name for EC keys.",
+            "example": "P-256"
           }
         },
         "required": [
-          "id",
-          "authorizationJourneyId",
-          "serverId",
-          "clientId",
-          "status",
-          "authorizationCodeUsed",
-          "createdAt",
-          "updatedAt"
+          "kty",
+          "use",
+          "kid",
+          "alg"
         ]
       },
-      "ConnectionFlowResponseDto": {
+      "JwksResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the connection authorization flow",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "authorizationJourneyId": {
-            "type": "string",
-            "description": "UUID of the authorization journey this flow belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "mcpConnectionId": {
-            "type": "string",
-            "description": "UUID of the MCP connection this flow uses",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "connectionName": {
-            "type": "string",
-            "description": "Connection friendly name",
-            "example": "GitHub OAuth Connection",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "description": "Current status of the connection flow",
-            "example": "pending",
-            "enum": [
-              "pending",
-              "authorized",
-              "failed"
-            ]
-          },
-          "tokenExpiresAt": {
-            "type": "string",
-            "description": "When the access token expires",
-            "example": "2025-12-15T10:00:00.000Z",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the flow was created",
-            "example": "2025-12-15T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the flow was last updated",
-            "example": "2025-12-15T09:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "authorizationJourneyId",
-          "mcpConnectionId",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "AuthJourneyResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "System-generated UUID for the authorization journey",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "status": {
-            "type": "string",
-            "description": "Current status of the authorization journey",
-            "example": "mcp_auth_flow_started",
-            "enum": [
-              "not_started",
-              "mcp_auth_flow_started",
-              "mcp_auth_flow_completed",
-              "connections_flow_started",
-              "connections_flow_completed",
-              "authorization_code_issued",
-              "authorization_code_exchanged"
-            ]
-          },
-          "mcpAuthorizationFlow": {
-            "description": "The MCP authorization flow for this journey",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/McpFlowResponseDto"
-              }
-            ]
-          },
-          "connectionAuthorizationFlows": {
-            "description": "Connection authorization flows for this journey",
+          "keys": {
+            "description": "Collection of JSON Web Keys currently valid for signature verification.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ConnectionFlowResponseDto"
+              "$ref": "#/components/schemas/JwkResponseDto"
             }
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Timestamp when the journey was created",
-            "example": "2025-12-15T08:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Timestamp when the journey was last updated",
-            "example": "2025-12-15T09:00:00.000Z"
           }
         },
         "required": [
-          "id",
-          "status",
-          "mcpAuthorizationFlow",
-          "connectionAuthorizationFlows",
-          "createdAt",
-          "updatedAt"
+          "keys"
         ]
       },
       "CreatePageDto": {

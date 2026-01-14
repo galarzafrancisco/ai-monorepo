@@ -42,10 +42,9 @@ import { ReorderPageDto } from './dto/reorder-page.dto';
 import { MovePageDto } from './dto/move-page.dto';
 import { PageResult, PageSummaryResult, TagResult, PageTreeResult } from './dto/service/wikiroo.service.types';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
-import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { Public } from '../authorization-server/decorators/public.decorator';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import type { UserContext } from 'src/auth/context/auth-context.types';
+import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
+import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
+import type { UserContext } from '../auth/guards/context/auth-context.types';
 
 @ApiTags('Wikiroo')
 @ApiCookieAuth('JWT-Cookie')
@@ -319,7 +318,6 @@ export class WikirooController {
     };
   }
 
-  // @Public()
   @All('mcp')
   async handleMcp(@Req() req: Request, @Res() res: Response) {
     await this.gateway.handleRequest(req, res);

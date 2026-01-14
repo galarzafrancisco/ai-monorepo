@@ -7,24 +7,22 @@ import { AuthorizationController } from './authorization.controller';
 import { TokenService } from './token.service';
 import { TokenExchangeService } from './token-exchange.service';
 import { RegisteredClientEntity } from './registered-client.entity';
-import { JwksKeyEntity } from './jwks-key.entity';
 import { RefreshTokenEntity } from './refresh-token.entity';
-import { JwksService } from './jwks.service';
-import { JwksController } from './jwks.controller';
 import { WebAuthController } from './web-auth.controller';
-import { AuthJourneysModule } from 'src/auth-journeys/auth-journeys.module';
-import { McpRegistryModule } from 'src/mcp-registry/mcp-registry.module';
-import { IdentityProviderModule } from 'src/identity-provider/identity-provider.module';
+import { AuthJourneysModule } from '../auth-journeys/auth-journeys.module';
+import { McpRegistryModule } from '../mcp-registry/mcp-registry.module';
+import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
+import { AuthCryptoModule } from '../auth/crypto/auth-crypto.module';
+import { WebAuthService } from './web-auth.service';
 
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       RegisteredClientEntity,
-      JwksKeyEntity,
       RefreshTokenEntity,
       McpConnectionEntity,
       McpScopeMappingEntity,
@@ -33,18 +31,18 @@ import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/con
     AuthJourneysModule,
     McpRegistryModule,
     IdentityProviderModule,
+    AuthCryptoModule,
   ],
   providers: [
     ClientRegistrationService,
     AuthorizationService,
     TokenService,
     TokenExchangeService,
-    JwksService,
+    WebAuthService,
   ],
   controllers: [
     ClientRegistrationController,
     AuthorizationController,
-    JwksController,
     WebAuthController,
   ],
   exports: [
@@ -52,7 +50,6 @@ import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/con
     AuthorizationService,
     TokenService,
     TokenExchangeService,
-    JwksService,
   ],
 })
 export class AuthorizationServerModule {}

@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, LessThan } from 'typeorm';
 import { JwksKeyEntity } from './jwks-key.entity';
 import { generateKeyPair, exportJWK, exportPKCS8, exportSPKI, calculateJwkThumbprint, importSPKI, JWK } from 'jose';
-import { createPublicKey, randomBytes } from 'crypto';
 import { getConfig } from 'src/config/env.config';
 
 
@@ -155,4 +154,5 @@ export class JwksService {
 
     return deletedCount;
   }
+
 }

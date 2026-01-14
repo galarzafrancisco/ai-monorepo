@@ -6,7 +6,7 @@ import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.ent
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
-import { JwksService } from './jwks.service';
+import { JwksService } from '../auth/crypto/jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { McpJwtPayload } from './types/mcp-jwt-payload.type';

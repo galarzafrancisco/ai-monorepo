@@ -50,7 +50,7 @@ export type IntrospectTokenResponseDto = {
     /**
      * MCP server identifier the token is scoped to
      */
-    server_identifier: Record<string, any>;
+    mcp_server_identifier: Record<string, any>;
     /**
      * Resource URL that was used during authorization
      */

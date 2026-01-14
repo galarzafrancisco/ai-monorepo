@@ -11,12 +11,13 @@ import { CanActivate, ExecutionContext, Injectable, Logger } from "@nestjs/commo
 import type { Request, Response } from "express";
 import { AccessTokenValidationService } from "../validation/access-token-validation.service";
 import { InvalidAccessTokenError, MissingAccessTokenError } from "../errors/access-token.errors";
-import type { AuthContext, AccessTokenClaims } from "../context/auth-context.types";
+import type { AuthContext } from "../context/auth-context.types";
 import { extractBearerToken } from "../extractors/access-token.extractor";
-import { InvalidTokenSignaturedError, TokenExpiredError } from "src/authorization-server/errors/token.errors";
 import { extractTokenFromCookie } from "../extractors/cookie.extractor";
 import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { InvalidTokenSignaturedError, TokenExpiredError } from "../../core/errors/jwt.errors";
+import { AccessTokenClaims } from "../../core/types/access-token-claims.type";
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {

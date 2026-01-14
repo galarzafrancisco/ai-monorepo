@@ -2,7 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AuthJourneyResponseDto } from '../models/AuthJourneyResponseDto';
 import type { ConnectionResponseDto } from '../models/ConnectionResponseDto';
 import type { CreateConnectionDto } from '../models/CreateConnectionDto';
 import type { CreateMappingDto } from '../models/CreateMappingDto';
@@ -394,26 +393,6 @@ export class McpRegistryService {
             },
             errors: {
                 404: `Mapping not found`,
-            },
-        });
-    }
-    /**
-     * Get authorization journeys for an MCP server (debug/monitoring)
-     * @param serverId Server UUID
-     * @returns AuthJourneyResponseDto List of authorization journeys
-     * @throws ApiError
-     */
-    public static mcpRegistryControllerGetAuthJourneys(
-        serverId: string,
-    ): CancelablePromise<Array<AuthJourneyResponseDto>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/mcp/servers/{serverId}/auth-journeys',
-            path: {
-                'serverId': serverId,
-            },
-            errors: {
-                404: `Server not found`,
             },
         });
     }

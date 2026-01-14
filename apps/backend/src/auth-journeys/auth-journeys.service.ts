@@ -8,7 +8,7 @@ import {
 } from './entities';
 import { AuthJourneyStatus } from './enums/auth-journey-status.enum';
 import { CreateAuthJourneyInput } from './dto/service/auth-journeys.service.types';
-import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { McpAuthorizationFlowStatus } from './enums/mcp-authorization-flow-status.enum';
 
 @Injectable()

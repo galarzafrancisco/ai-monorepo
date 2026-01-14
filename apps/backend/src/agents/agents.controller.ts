@@ -27,7 +27,7 @@ import { ListAgentsQueryDto } from './dto/list-agents-query.dto';
 import { AgentParamsDto } from './dto/agent-params.dto';
 import { AgentResult } from './dto/service/agents.service.types';
 // import { JwtAuthGuard } from '../authorization-server/guards/jwt-auth.guard';
-import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
+import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 
 @ApiTags('Agent')
 @ApiCookieAuth('JWT-Cookie')

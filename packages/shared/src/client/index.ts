@@ -91,6 +91,7 @@ export type { WikiTagResponseDto } from './models/WikiTagResponseDto';
 export { AdkService } from './services/AdkService';
 export { AgentService } from './services/AgentService';
 export { AppService } from './services/AppService';
+export { AuthorizationJourneysService } from './services/AuthorizationJourneysService';
 export { AuthorizationServerService } from './services/AuthorizationServerService';
 export { ChatService } from './services/ChatService';
 export { DiscoveryService } from './services/DiscoveryService';

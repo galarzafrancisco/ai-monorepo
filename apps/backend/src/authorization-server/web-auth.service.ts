@@ -1,0 +1,181 @@
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+import { createHash, randomBytes } from "crypto";
+import { SignJWT, importPKCS8, jwtVerify, createRemoteJWKSet, errors } from 'jose';
+import { RefreshTokenEntity } from "./refresh-token.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { IdentityProviderService } from "../identity-provider/identity-provider.service";
+import { getConfig } from "../config/env.config";
+import { McpJwtPayload } from "./types";
+import { JwksService } from "../auth/crypto/jwks.service";
+
+
+@Injectable()
+export class WebAuthService {
+  private logger = new Logger(WebAuthService.name);
+
+  constructor(
+    private readonly identityProviderService: IdentityProviderService,
+    private readonly jwksService: JwksService,
+    @InjectRepository(RefreshTokenEntity)
+    private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
+  ) { }
+
+  /**
+   * Web Authentication: Login with email and password
+   * Returns access and refresh tokens
+   */
+  async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+    this.logger.debug(`Login attempt for email: ${email}`);
+
+    // Validate user credentials
+    const user = await this.identityProviderService.validateUser(email, password);
+
+    // Generate access token (10 min expiration)
+    const accessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role);
+
+    // Generate refresh token (1 day expiration)
+    const refreshToken = await this.generateAndStoreRefreshToken(user.id);
+
+    this.logger.log(`User logged in successfully: ${email}`);
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: 600, // 10 minutes
+    };
+  }
+
+
+  /**
+   * Generate a signed JWT access token for web authentication
+   */
+  private async generateWebAccessToken(
+    userId: string,
+    email: string,
+    displayName: string,
+    role: 'admin' | 'standard',
+  ): Promise<string> {
+    // Get active signing key
+    const signingKey = await this.jwksService.getActiveSigningKey();
+
+    // Import private key from PEM
+    const privateKey = await importPKCS8(signingKey.privateKeyPem, signingKey.algorithm);
+
+    // Build JWT payload
+    const now = Math.floor(Date.now() / 1000);
+    const config = getConfig();
+
+    // Determine scopes based on role
+    const scope = role === 'admin' ? ['monolith:user', 'monolith:admin'] : ['monolith:user'];
+
+    const payload: McpJwtPayload = {
+      iss: config.issuerUrl,
+      sub: userId,
+      email,
+      displayName,
+      scope,
+      aud: config.issuerUrl,
+      client_id: 'self',
+      server_identifier: 'ai-monolith',
+      resource: `${config.issuerUrl}`,
+      version: '0.0.0',
+      iat: now,
+      exp: now + 600, // Change this to tune the duration of the web session (10 minutes)
+      jti: randomBytes(16).toString('hex'),
+    };
+
+    // Sign and return JWT
+    const jwt = await new SignJWT(payload as any)
+      .setProtectedHeader({
+        alg: signingKey.algorithm,
+        kid: signingKey.kid,
+        typ: 'JWT',
+      })
+      .sign(privateKey);
+
+    return jwt;
+  }
+
+
+  /**
+   * Generate and store a refresh token in the database
+   * Returns the unhashed token (to be sent to client)
+   */
+  private async generateAndStoreRefreshToken(userId: string): Promise<string> {
+    // Generate a cryptographically secure random token
+    const token = randomBytes(32).toString('base64url');
+
+    // Hash the token before storing
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    // Calculate expiration (1 day)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 1);
+
+    // Store in database
+    const refreshToken = this.refreshTokenRepository.create({
+      userId,
+      tokenHash,
+      expiresAt,
+      revokedAt: null,
+    });
+
+    await this.refreshTokenRepository.save(refreshToken);
+
+    // Return the unhashed token
+    return token;
+  }
+
+
+  /**
+   * Web Authentication: Refresh access token using refresh token
+   * Returns new access and refresh tokens
+   */
+  async refreshWebToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+    this.logger.debug('Refresh token request');
+
+    // Hash the provided refresh token to compare with stored hash
+    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+
+    // Find the refresh token in database
+    const storedToken = await this.refreshTokenRepository.findOne({
+      where: { tokenHash },
+      relations: ['user'],
+    });
+
+    if (!storedToken) {
+      this.logger.warn('Refresh token not found');
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Check if token is revoked
+    if (storedToken.revokedAt) {
+      this.logger.warn('Refresh token has been revoked');
+      throw new UnauthorizedException('Refresh token revoked');
+    }
+
+    // Check if token is expired
+    if (new Date() > storedToken.expiresAt) {
+      this.logger.warn('Refresh token expired');
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    // Revoke the old refresh token
+    storedToken.revokedAt = new Date();
+    await this.refreshTokenRepository.save(storedToken);
+
+    // Generate new tokens
+    const user = storedToken.user;
+    const newAccessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role);
+    const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
+
+    this.logger.log(`Refresh token exchanged successfully for user: ${user.email}`);
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      expiresIn: 600, // 10 minutes
+    };
+  }
+}

@@ -7,13 +7,13 @@ import { WikiTagEntity } from './tag.entity';
 import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 import { WikirooGateway } from './wikiroo.gateway';
 import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([WikiPageEntity, WikiTagEntity]),
     AuthorizationServerModule,
-    AuthModule,
+    AuthGuardsModule,
   ],
   controllers: [WikirooController],
   providers: [WikirooService, WikirooMcpGateway, WikirooGateway],

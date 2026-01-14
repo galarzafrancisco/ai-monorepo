@@ -109,7 +109,7 @@ export const useTaskeroo = () => {
           return sortTasks(prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
         });
       } catch (err) {
-        console.error('Failed to refresh task after comment', err);
+        console.error('Failed to refresh task after comment', err); // TODO: This fails, task id is undefined
       }
     });
 

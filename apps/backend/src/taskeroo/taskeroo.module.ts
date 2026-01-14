@@ -8,13 +8,13 @@ import { TaskerooController } from './taskeroo.controller';
 import { TaskerooGateway } from './taskeroo.gateway';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
 import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([TaskEntity, CommentEntity, TagEntity]),
     AuthorizationServerModule,
-    AuthModule,
+    AuthGuardsModule,
   ],
   controllers: [TaskerooController],
   providers: [TaskerooService, TaskerooGateway, TaskerooMcpGateway],

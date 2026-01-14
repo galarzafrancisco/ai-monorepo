@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import type { AccessTokenClaims } from "../context/auth-context.types";
-import { TokenService } from "src/authorization-server/token.service";
+import { AccessTokenClaims } from "../../core/types/access-token-claims.type";
+import { TokenVerifierService } from "../../crypto/token-verifier.service";
 
 /**
  * Placeholder interface/service.
@@ -9,12 +9,12 @@ import { TokenService } from "src/authorization-server/token.service";
 @Injectable()
 export class AccessTokenValidationService {
   constructor(
-      private readonly tokenService: TokenService
+      private readonly tokenVerifierService: TokenVerifierService
   ) {}
   
   async validateAccessToken(token: string): Promise<AccessTokenClaims> {
     // Decode token (verifies signature, expiry and issuer)
-    const jwt = this.tokenService.decodeToken(token);
+    const jwt = this.tokenVerifierService.verifyAndDecode(token);
     // If any additional validation, do it here.
     return jwt;
   }

@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { McpRegistryController } from './mcp-registry.controller';
 import { McpRegistryService } from './mcp-registry.service';
@@ -8,9 +8,7 @@ import {
   McpConnectionEntity,
   McpScopeMappingEntity,
 } from './entities';
-import { AuthJourneysModule } from '../auth-journeys/auth-journeys.module';
-import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 
 @Module({
   imports: [
@@ -20,9 +18,7 @@ import { AuthModule } from 'src/auth/auth.module';
       McpConnectionEntity,
       McpScopeMappingEntity,
     ]),
-    forwardRef(() => AuthJourneysModule),
-    forwardRef(() => AuthorizationServerModule),
-    // forwardRef(() => AuthModule),
+    AuthGuardsModule,
   ],
   controllers: [McpRegistryController],
   providers: [McpRegistryService],

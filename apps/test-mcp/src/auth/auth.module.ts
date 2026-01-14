@@ -6,4 +6,4 @@ import { TokenExchangeService } from './token-exchange.service';
   providers: [JwtValidationService, TokenExchangeService],
   exports: [JwtValidationService, TokenExchangeService],
 })
-export class AuthModule {}
+export class AuthGuardsModule {}

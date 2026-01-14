@@ -1,4 +1,4 @@
-import { ErrorCodes } from "../../../../../packages/shared/errors/error-codes";
+import { ErrorCodes } from "../../../../../../packages/shared/errors/error-codes";
 
 export const AccessTokenErrorCodes = {
   MISSING_ACCESS_TOKEN: ErrorCodes.MISSING_ACCESS_TOKEN,

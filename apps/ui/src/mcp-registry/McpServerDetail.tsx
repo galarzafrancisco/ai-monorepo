@@ -6,7 +6,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
 import { useAuthorizationServer } from './useAuthorizationServer';
-import { McpRegistryService } from './api';
+import { McpRegistryService, AuthorizationJourneysService } from './api';
 import type { AuthJourneyResponseDto } from 'shared';
 import { AuthJourneyResponseDto as AuthJourneyTypes, McpFlowResponseDto as McpFlowTypes } from 'shared';
 
@@ -66,7 +66,7 @@ export function McpServerDetail() {
     if (serverId) {
       loadServerDetails(serverId);
       // Load auth journeys
-      McpRegistryService.mcpRegistryControllerGetAuthJourneys(serverId)
+      AuthorizationJourneysService.authJourneysControllerGetAuthJourneys(serverId)
         .then(setAuthJourneys)
         .catch(() => setAuthJourneys([]));
     }
