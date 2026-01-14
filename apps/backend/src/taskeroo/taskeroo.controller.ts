@@ -42,14 +42,18 @@ import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.service.types';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
-import { Public } from '../authorization-server/decorators/public.decorator';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
 import type { UserContext } from '../auth/guards/context/auth-context.types';
+import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
+import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
+import { TaskerooScopes } from './taskeroo.scopes';
+import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('taskeroo/tasks')
-@UseGuards(AccessTokenGuard)
+@UseGuards(AccessTokenGuard, ScopesGuard)
+@RequireScopes(TaskerooScopes.READ.id)
 export class TaskerooController {
   constructor(
     private readonly taskerooService: TaskerooService,
@@ -57,6 +61,7 @@ export class TaskerooController {
   ) {}
 
   @Post()
+  @RequireScopes(TaskerooScopes.READ.id)
   @ApiOperation({ summary: 'Create a new task' })
   @ApiCreatedResponse({
     type: TaskResponseDto,
@@ -80,6 +85,7 @@ export class TaskerooController {
   }
 
   @Patch(':id')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @ApiOperation({ summary: 'Update task description' })
   @ApiOkResponse({
     type: TaskResponseDto,
@@ -103,6 +109,7 @@ export class TaskerooController {
   }
 
   @Patch(':id/assign')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @ApiOperation({ summary: 'Assign a task to someone' })
   @ApiOkResponse({
     type: TaskResponseDto,
@@ -122,6 +129,7 @@ export class TaskerooController {
   }
 
   @Delete(':id')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a task' })
   @ApiNoContentResponse({ description: 'Task deleted successfully' })
@@ -166,6 +174,7 @@ export class TaskerooController {
   }
 
   @Post(':id/comments')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @ApiOperation({ summary: 'Add a comment to a task' })
   @ApiCreatedResponse({
     type: CommentResponseDto,
@@ -186,6 +195,7 @@ export class TaskerooController {
   }
 
   @Patch(':id/status')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @ApiOperation({ summary: 'Change task status' })
   @ApiOkResponse({
     type: TaskResponseDto,
@@ -207,6 +217,7 @@ export class TaskerooController {
   }
 
   @Post(':id/tags')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @ApiOperation({ summary: 'Add a tag to a task' })
   @ApiCreatedResponse({
     type: TaskResponseDto,
@@ -226,6 +237,7 @@ export class TaskerooController {
   }
 
   @Delete(':id/tags/:tagId')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @ApiOperation({ summary: 'Remove a tag from a task' })
   @ApiOkResponse({
     type: TaskResponseDto,
@@ -241,6 +253,7 @@ export class TaskerooController {
   }
 
   @Post('tags')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @ApiOperation({ summary: 'Create a new tag' })
   @ApiCreatedResponse({
     type: TagResponseDto,
@@ -266,6 +279,7 @@ export class TaskerooController {
   }
 
   @Delete('tags/:tagId')
+  @RequireScopes(TaskerooScopes.WRITE.id)
   @ApiOperation({ summary: 'Delete a tag from the system' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Tag deleted successfully' })
@@ -292,6 +306,7 @@ export class TaskerooController {
   }
 
   @All('mcp')
+  @RequireScopes(McpScopes.USE.id)
   async handleMcp(@Req() req: Request, @Res() res: Response) {
     await this.gateway.handleRequest(req, res);
   }

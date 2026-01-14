@@ -8,6 +8,13 @@ import { IdentityProviderService } from "../identity-provider/identity-provider.
 import { getConfig } from "../config/env.config";
 import { JwksService } from "../auth/crypto/jwks.service";
 import { AccessTokenClaims } from "src/auth/core/types/access-token-claims.type";
+import { Scope } from "src/auth/core/types/scope.type";
+import { ALL_TASKEROO_SCOPES, TaskerooScopes } from "src/taskeroo/taskeroo.scopes";
+import { ALL_WIKIROO_SCOPES } from "src/wikiroo/wikiroo.scopes";
+import { ALL_MCP_SCOPES } from "src/auth/core/scopes/mcp.scopes";
+import { UserScopes } from "src/auth/core/scopes/user.scopes";
+import { ALL_AGENTS_SCOPES } from "src/agents/agents.scopes";
+import { ALL_MCP_REGISTRY_SCOPES } from "src/mcp-registry/mcp-registry.scopes";
 
 
 @Injectable()
@@ -67,14 +74,21 @@ export class WebAuthService {
     const config = getConfig();
 
     // Determine scopes based on role
-    const scope = role === 'admin' ? ['monolith:user', 'monolith:admin'] : ['monolith:user'];
+    const scopes: Scope[] = [
+      ...ALL_TASKEROO_SCOPES,
+      ...ALL_WIKIROO_SCOPES,
+      ...ALL_AGENTS_SCOPES,
+      ...ALL_MCP_REGISTRY_SCOPES,
+      ...ALL_MCP_SCOPES,
+      role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
+    ]
 
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl,
       sub: userId,
       email,
       displayName,
-      scope,
+      scope: scopes.map(s => s.id),
       aud: config.issuerUrl,
       client_id: 'self',
       // mcp_server_identifier: 'not needed for non-mcp',

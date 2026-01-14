@@ -41,6 +41,7 @@ export class TaskerooListener {
 
     this.socket.on("connect_error", (err) => {
       console.error("[taskeroo] connect_error:", err.message);
+      console.error(err);
     });
 
     // ---- events we care about ----

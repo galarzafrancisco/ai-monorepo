@@ -16,11 +16,6 @@ export type UpdateServerInput = {
   url?: string;
 };
 
-export type CreateScopeInput = {
-  scopeId: string;
-  description: string;
-};
-
 export type CreateConnectionInput = {
   friendlyName: string;
   clientId: string;

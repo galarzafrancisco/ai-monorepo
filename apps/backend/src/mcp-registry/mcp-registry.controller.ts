@@ -36,11 +36,15 @@ import {
   MappingRecord,
 } from './dto';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
+import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
+import { McpRegistryScopes } from './mcp-registry.scopes';
+import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 
 @ApiTags('MCP Registry')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('mcp')
-@UseGuards(AccessTokenGuard)
+@UseGuards(AccessTokenGuard, ScopesGuard)
+@RequireScopes(McpRegistryScopes.READ.id)
 export class McpRegistryController {
   constructor(
     private readonly mcpRegistryService: McpRegistryService,
@@ -89,6 +93,7 @@ export class McpRegistryController {
   }
 
   @Patch('servers/:serverId')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Update MCP server details' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiResponse({ status: 200, description: 'Server updated successfully', type: ServerResponseDto })
@@ -102,6 +107,7 @@ export class McpRegistryController {
   }
 
   @Delete('servers/:serverId')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Delete MCP server (must have no dependencies)' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiResponse({ status: 200, description: 'Server deleted successfully', type: DeleteServerResponseDto })
@@ -117,6 +123,7 @@ export class McpRegistryController {
   // Scope endpoints
 
   @Post('servers/:serverId/scopes')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Create MCP scope(s) for a server' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiBody({ type: CreateScopeDto, isArray: true, description: 'Array of scopes to create' })
@@ -157,6 +164,7 @@ export class McpRegistryController {
   }
 
   @Delete('servers/:serverId/scopes/:scopeId')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Delete MCP scope (must have no mappings)' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiParam({ name: 'scopeId', description: 'Scope ID string' })
@@ -174,6 +182,7 @@ export class McpRegistryController {
   // Connection endpoints
 
   @Post('servers/:serverId/connections')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Create OAuth connection for an MCP server' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiResponse({ status: 201, description: 'Connection created successfully', type: ConnectionResponseDto })
@@ -210,6 +219,7 @@ export class McpRegistryController {
   }
 
   @Patch('connections/:connectionId')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Update connection details' })
   @ApiParam({ name: 'connectionId', description: 'Connection UUID' })
   @ApiResponse({ status: 200, description: 'Connection updated successfully', type: ConnectionResponseDto })
@@ -224,6 +234,7 @@ export class McpRegistryController {
   }
 
   @Delete('connections/:connectionId')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Delete connection (must have no mappings)' })
   @ApiParam({ name: 'connectionId', description: 'Connection UUID' })
   @ApiResponse({ status: 200, description: 'Connection deleted successfully', type: DeleteConnectionResponseDto })
@@ -239,6 +250,7 @@ export class McpRegistryController {
   // Mapping endpoints
 
   @Post('servers/:serverId/mappings')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Create scope mapping' })
   @ApiParam({ name: 'serverId', description: 'Server UUID' })
   @ApiResponse({ status: 201, description: 'Mapping created successfully', type: MappingResponseDto })
@@ -267,6 +279,7 @@ export class McpRegistryController {
   }
 
   @Delete('mappings/:mappingId')
+  @RequireScopes(McpRegistryScopes.WRITE.id)
   @ApiOperation({ summary: 'Delete scope mapping' })
   @ApiParam({ name: 'mappingId', description: 'Mapping UUID' })
   @ApiResponse({ status: 200, description: 'Mapping deleted successfully', type: DeleteMappingResponseDto })

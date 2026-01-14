@@ -10,7 +10,6 @@ import {
 import {
   CreateServerInput,
   UpdateServerInput,
-  CreateScopeInput,
   CreateConnectionInput,
   UpdateConnectionInput,
   CreateMappingInput,
@@ -36,6 +35,7 @@ import {
   ConnectionHasMappingsError,
   InvalidMappingError,
 } from './errors/mcp-registry.errors';
+import { Scope } from 'src/auth/core/types/scope.type';
 
 @Injectable()
 export class McpRegistryService {
@@ -195,7 +195,7 @@ export class McpRegistryService {
 
   async createScopes(
     serverId: string,
-    inputs: CreateScopeInput[],
+    inputs: Scope[],
   ): Promise<ScopeRecord[]> {
     if (inputs.length === 0) {
       return [];
@@ -203,7 +203,7 @@ export class McpRegistryService {
 
     await this.assertServerExists(serverId);
 
-    const scopeIds = inputs.map((input) => input.scopeId);
+    const scopeIds = inputs.map((input) => input.id);
     const duplicateScopeId = this.findDuplicate(scopeIds);
 
     if (duplicateScopeId) {

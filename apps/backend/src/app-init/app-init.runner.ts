@@ -3,7 +3,7 @@ import { AgentsService } from "src/agents/agents.service";
 import { createClaudeDev } from "./agent/claude-dev.agent";
 import { McpRegistryService } from "src/mcp-registry/mcp-registry.service";
 import { createTaskeroo, createTaskerooScopes } from "./mcp/taskeroo.mcp";
-import { CreateScopeInput, CreateServerInput, ServerRecord } from "src/mcp-registry/dto";
+import { CreateServerInput, ServerRecord } from "src/mcp-registry/dto";
 import { ScopeAlreadyExistsError, ServerAlreadyExistsError } from "src/mcp-registry/errors/mcp-registry.errors";
 import { AgentResult, CreateAgentInput } from "src/agents/dto/service/agents.service.types";
 import { AgentSlugConflictError } from "src/agents/errors/agents.errors";
@@ -15,6 +15,7 @@ import { CreateUserInput } from "src/identity-provider/dto/service/identity-prov
 import { UserRole } from "src/identity-provider/enums";
 import { User } from "src/identity-provider/user.entity";
 import { IdentityProviderService } from "src/identity-provider/identity-provider.service";
+import { Scope } from "src/auth/core/types/scope.type";
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -89,7 +90,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     return agent;
   }
 
-  async ensureMcpServerExists(serverConfig: CreateServerInput, scopesConfig: CreateScopeInput[]): Promise<ServerRecord | null> {
+  async ensureMcpServerExists(serverConfig: CreateServerInput, scopesConfig: Scope[]): Promise<ServerRecord | null> {
     let server: ServerRecord | null = null;
     try {
       server = await this.mcpRegistryService.createServer(serverConfig);

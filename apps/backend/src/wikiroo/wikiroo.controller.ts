@@ -45,11 +45,16 @@ import { WikirooMcpGateway } from './wikiroo.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
 import type { UserContext } from '../auth/guards/context/auth-context.types';
+import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
+import { WikirooScopes } from './wikiroo.scopes';
+import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
+import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 
 @ApiTags('Wikiroo')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('wikiroo/pages')
-@UseGuards(AccessTokenGuard)
+@UseGuards(AccessTokenGuard, ScopesGuard)
+@RequireScopes(WikirooScopes.READ.id)
 export class WikirooController {
   constructor(
     private readonly wikirooService: WikirooService,
@@ -57,6 +62,7 @@ export class WikirooController {
   ) {}
 
   @Post()
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Create a new wiki page' })
   @ApiCreatedResponse({
     type: PageResponseDto,
@@ -114,6 +120,7 @@ export class WikirooController {
   }
 
   @Patch(':id')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Update an existing wiki page' })
   @ApiOkResponse({
     type: PageResponseDto,
@@ -151,6 +158,7 @@ export class WikirooController {
   }
 
   @Post(':id/append')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Append content to an existing wiki page' })
   @ApiOkResponse({
     type: PageResponseDto,
@@ -168,6 +176,7 @@ export class WikirooController {
   }
 
   @Patch(':id/reorder')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Reorder a page within siblings' })
   @ApiOkResponse({
     type: PageResponseDto,
@@ -182,6 +191,7 @@ export class WikirooController {
   }
 
   @Patch(':id/move')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Move page to different parent' })
   @ApiOkResponse({
     type: PageResponseDto,
@@ -199,6 +209,7 @@ export class WikirooController {
   }
 
   @Delete(':id')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a wiki page' })
   @ApiNoContentResponse({ description: 'Wiki page deleted successfully' })
@@ -207,6 +218,7 @@ export class WikirooController {
   }
 
   @Post(':id/tags')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Add a tag to a wiki page' })
   @ApiCreatedResponse({
     type: PageResponseDto,
@@ -225,6 +237,7 @@ export class WikirooController {
   }
 
   @Delete(':id/tags/:tagId')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Remove a tag from a wiki page' })
   @ApiOkResponse({
     type: PageResponseDto,
@@ -239,6 +252,7 @@ export class WikirooController {
   }
 
   @Post('tags')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Create a new tag' })
   @ApiCreatedResponse({
     type: WikiTagResponseDto,
@@ -264,6 +278,7 @@ export class WikirooController {
   }
 
   @Delete('tags/:tagId')
+  @RequireScopes(WikirooScopes.WRITE.id)
   @ApiOperation({ summary: 'Delete a tag from the system' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Tag deleted successfully' })
@@ -319,6 +334,7 @@ export class WikirooController {
   }
 
   @All('mcp')
+  @RequireScopes(McpScopes .USE.id)
   async handleMcp(@Req() req: Request, @Res() res: Response) {
     await this.gateway.handleRequest(req, res);
   }

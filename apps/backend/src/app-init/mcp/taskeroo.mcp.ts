@@ -1,5 +1,8 @@
+import { McpScopes } from "src/auth/core/scopes/mcp.scopes";
+import { Scope } from "src/auth/core/types/scope.type";
 import { getConfig } from "src/config/env.config";
-import { CreateScopeInput, CreateServerInput } from "src/mcp-registry/dto";
+import { CreateServerInput } from "src/mcp-registry/dto";
+import { TaskerooScopes } from "src/taskeroo/taskeroo.scopes";
 
 const config = getConfig();
 
@@ -10,17 +13,8 @@ export const createTaskeroo: CreateServerInput = {
   url: `${config.issuerUrl}/api/v1/taskeroo/tasks/mcp`,
 }
 
-export const createTaskerooScopes: CreateScopeInput[] = [
-  {
-    scopeId: 'mcp:use',
-    description: 'Allows users to interact with MCP endpoints.'
-  },
-  {
-    scopeId: 'taskeroo:read',
-    description: 'Allows users to read tasks, tags, comments, etc from Taskeroo.'
-  },
-  {
-    scopeId: 'taskeroo:write',
-    description: 'Allows users to create/update/delete tasks, tags, comments from Taskeroo.'
-  }
+export const createTaskerooScopes: Scope[] = [
+  McpScopes.USE,
+  TaskerooScopes.READ,
+  TaskerooScopes.WRITE,
 ];

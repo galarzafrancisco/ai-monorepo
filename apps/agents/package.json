@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "start": "tsx src/index.ts"
+    "start": "tsx src/orchestrator.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.76"

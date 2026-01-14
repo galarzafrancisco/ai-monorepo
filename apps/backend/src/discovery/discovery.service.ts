@@ -9,8 +9,9 @@ import {
 } from './dto/service/discovery.service.types';
 import { createTaskeroo, createTaskerooScopes } from 'src/app-init/mcp/taskeroo.mcp';
 import { getConfig } from 'src/config/env.config';
-import { CreateScopeInput, CreateServerInput } from 'src/mcp-registry/dto';
+import { CreateServerInput } from 'src/mcp-registry/dto';
 import { createWikiroo, createWikirooScopes } from 'src/app-init/mcp/wikiroo.mcp';
+import { Scope } from 'src/auth/core/types/scope.type';
 
 @Injectable()
 export class DiscoveryService {
@@ -26,7 +27,7 @@ export class DiscoveryService {
     this.populateSystemServer(createWikiroo, createWikirooScopes);
   }
 
-  private populateSystemServer(server: CreateServerInput, scopes: CreateScopeInput[]) {
+  private populateSystemServer(server: CreateServerInput, scopes: Scope[]) {
     const config = getConfig();
     if (!server.url) {
       return
@@ -39,7 +40,7 @@ export class DiscoveryService {
         authorization_servers: [
           `${config.issuerUrl}/mcp/${server.providedId}/0.0.0`
         ],
-        scopes_supported: scopes.map(s => s.scopeId),
+        scopes_supported: scopes.map(s => s.id),
         bearer_methods_supported: ["header"],
         resource_name: server.name,
       }

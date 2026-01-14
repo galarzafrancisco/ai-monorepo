@@ -9,7 +9,7 @@ export class CreateScopeDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  scopeId!: string;
+  id!: string;
 
   @ApiProperty({
     description: 'Description of what this scope grants access to',
