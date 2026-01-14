@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { jwtVerify } from 'jose';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
@@ -9,8 +8,8 @@ import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { JwksService } from '../auth/crypto/jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
-import { McpJwtPayload } from './types/mcp-jwt-payload.type';
-import { getConfig } from 'src/config/env.config';
+import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
+import { TokenVerifierService } from 'src/auth/crypto/token-verifier.service';
 
 interface DownstreamTokenInfo {
   accessToken: string;
@@ -29,7 +28,7 @@ export class TokenExchangeService {
     @InjectRepository(ConnectionAuthorizationFlowEntity)
     private readonly connectionAuthorizationFlowRepository: Repository<ConnectionAuthorizationFlowEntity>,
     private readonly mcpRegistryService: McpRegistryService,
-    private readonly jwksService: JwksService,
+    private readonly tokenVerifierService: TokenVerifierService,
   ) {}
 
   /**
@@ -96,39 +95,21 @@ export class TokenExchangeService {
   private async validateMcpJwt(
     token: string,
     expectedAudience: string,
-  ): Promise<McpJwtPayload> {
+  ): Promise<AccessTokenClaims> {
+    let claims: AccessTokenClaims;
     try {
-      // Get all valid public keys for verification
-      const publicKeys = await this.jwksService.getPublicKeys();
-
-      if (publicKeys.length === 0) {
-        this.logger.error('No valid public keys available for token verification');
-        throw new UnauthorizedException('Token validation failed');
-      }
-
-      // Create a JWKS resolver
-      const getKey = async (header: any) => {
-        const key = publicKeys.find((k) => k.kid === header.kid);
-        if (!key) {
-          throw new Error('Key not found');
-        }
-        return key as any;
-      };
-
-      // Verify JWT with our JWKS
-      const config = getConfig();
-      const { payload } = await jwtVerify(token, getKey as any, {
-        issuer: config.issuerUrl,
-        audience: expectedAudience,
-        algorithms: ['RS256'],
-      });
-
-      // Cast payload to our expected type
-      return payload as unknown as McpJwtPayload;
+      claims = await this.tokenVerifierService.verifyAndDecode(token);
     } catch (error) {
-      this.logger.warn(`JWT validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw new UnauthorizedException('Invalid or expired MCP JWT');
+      throw new UnauthorizedException('Token validation failed');
     }
+
+    // Additional checks: audience
+    if (claims.aud !== expectedAudience) {
+      this.logger.warn(`MCP JWT audience mismatch: expected ${expectedAudience}, got ${claims.aud}`);
+      throw new UnauthorizedException('MCP JWT audience mismatch');
+    }
+
+    return claims;
   }
 
   /**
