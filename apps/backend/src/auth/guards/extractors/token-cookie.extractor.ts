@@ -10,3 +10,9 @@ export function extractTokenFromCookie(req: Request): string | null {
 
   return token.length > 0 ? token : null;
 }
+
+export function tokenFromCookies(cookies?: Record<string, string>): string | null {
+  if (!cookies) return null;
+  const token = cookies[COOKIE_KEYS.ACCESS_TOKEN] || '';
+  return token.length > 0 ? token : null;
+}

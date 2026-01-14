@@ -14,6 +14,7 @@ import { TaskEntity } from "../../backend/src/taskeroo/task.entity";
 
 type TaskHandler = (task: TaskEntity) => void;
 
+const accessToken = "xxx"; // TODO: get a real token
 
 export class TaskerooListener {
   private socket: Socket;
@@ -22,9 +23,13 @@ export class TaskerooListener {
     baseUrl: string,
     private onTask: TaskHandler,
   ) {
+    console.log(`[TaskerooListener] connecting to ${baseUrl}/taskeroo`);
     this.socket = io(`${baseUrl}/taskeroo`, {
       transports: ["websocket"],
-      withCredentials: true,
+      // withCredentials: true, // <- this is for front end cookies
+      auth: {
+        token: accessToken,
+      }
     });
 
     this.wire();
@@ -32,6 +37,9 @@ export class TaskerooListener {
 
   private wire() {
     this.socket.on("connect", () => {
+      this.socket.emit('taskeroo.subscribe', {}, (ack: any) => {
+        console.log("[taskeroo] subscribed to room:", ack);
+      });
       console.log("[taskeroo] connected:", this.socket.id);
     });
 

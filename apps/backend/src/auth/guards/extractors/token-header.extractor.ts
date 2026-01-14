@@ -3,10 +3,10 @@
 Dumb helper that extracts the Bearer auth header from a request.
 */
 
-import { Request } from "express";
+import { IncomingHttpHeaders } from "http";
 
-export function extractBearerToken(req: Request): string | null {
-  const raw = req.headers["authorization"];
+export function tokenFromHeaders(headers: IncomingHttpHeaders): string | null {
+  const raw = headers["authorization"];
   if (typeof raw !== "string" || raw.length === 0) return null;
 
   // Accept exactly "Bearer <token>" (case-insensitive on scheme).

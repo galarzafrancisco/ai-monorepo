@@ -12,8 +12,8 @@ import type { Request, Response } from "express";
 import { AccessTokenValidationService } from "../validation/access-token-validation.service";
 import { InvalidAccessTokenError, MissingAccessTokenError } from "../errors/access-token.errors";
 import type { AuthContext } from "../context/auth-context.types";
-import { extractBearerToken } from "../extractors/access-token.extractor";
-import { extractTokenFromCookie } from "../extractors/cookie.extractor";
+import { tokenFromHeaders } from "../extractors/token-header.extractor";
+import { tokenFromCookies } from "../extractors/token-cookie.extractor";
 import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 import { InvalidTokenSignaturedError, TokenExpiredError } from "../../core/errors/jwt.errors";
@@ -43,7 +43,7 @@ export class AccessTokenGuard implements CanActivate {
     const res = context.switchToHttp().getResponse<Response>();
 
     // 1) Extract token
-    const token = extractBearerToken(req) || extractTokenFromCookie(req);
+    const token = tokenFromHeaders(req.headers) || tokenFromCookies(req.cookies);
     if (!token) {
       throw new MissingAccessTokenError();
     }
