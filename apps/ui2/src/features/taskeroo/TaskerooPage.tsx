@@ -109,7 +109,7 @@ export function TaskerooPage({ status }: TaskerooPageProps) {
   }
 
   return (
-    <Card padding="2">
+    <Card padding="0">
       {hasTasks ? (
         filteredTasks.map((task) => (
           <TaskRow key={task.id} task={task} />

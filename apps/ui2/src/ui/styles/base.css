@@ -24,7 +24,7 @@ body {
   font-size: var(--fs-2);
   line-height: var(--lh-normal);
   color: var(--text);
-  background-color: var(--bg);
+  /* Background handled by shells (mobile/desktop) for proper color swapping */
 }
 
 /* ===== Typography ===== */

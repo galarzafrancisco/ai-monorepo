@@ -4,6 +4,21 @@ import type { Task } from './types';
 import { STATUS_CONFIG } from './const';
 import './ListView.css';
 
+function formatRelativeTime(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
+
 interface TaskRowProps {
   task: Task;
 }
@@ -14,14 +29,36 @@ function TaskRow({ task }: TaskRowProps) {
   return (
     <ListRow>
       <div style={{ flex: 1 }}>
-        <Stack spacing="0">
-          <Text tone="muted" weight="normal">#{task.id.slice(0, 6)}</Text>
-          <Text weight="bold">{task.name}</Text>
-          <Text weight="medium" wrap={true}>{task.description}</Text>
+        <Stack spacing="1">
+          {/* Header row: ID and timestamp */}
+          <div className="task-row__header">
+            <Text tone="muted" size="1">#{task.id.slice(0, 6)}</Text>
+            <Text tone="muted" size="1">{formatRelativeTime(task.updatedAt)}</Text>
+          </div>
+
+          {/* Task name */}
+          <Text weight="bold" size="3">{task.name}</Text>
+
+          {/* Description - single line with ellipsis */}
+          <div className="task-row__description">
+            <Text size="2">{task.description}</Text>
+          </div>
+
+          {/* Tags */}
+          {task.tags && task.tags.length > 0 && (
+            <div className="task-row__tags">
+              {task.tags.map((tag) => (
+                <span key={tag.name} className="task-row__tag" style={{ backgroundColor: tag.color || '#e0e0e0' }}>
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Assignee info */}
           <Text size="1" tone="muted">
-            Created by {task.createdBy}
-            {task.assignee && ` • Assigned to ${task.assignee}`}
-            {commentCount ? ` • 💬 ${commentCount}` : ''}
+            {task.assignee ? `ASSIGNED: ${task.assignee.toUpperCase()}` : 'UNASSIGNED'}
+            {commentCount > 0 && ` • 💬 ${commentCount}`}
           </Text>
         </Stack>
       </div>
@@ -62,11 +99,13 @@ function TaskGroup({ status, label, icon, tasks, isExpanded, onToggle }: TaskGro
       {isExpanded && (
         <div className="task-group__content">
           {tasks.length > 0 ? (
-            <Card padding="2">
+            <>
+            {/* <Card padding="2"> */}
               {tasks.map((task) => (
                 <TaskRow key={task.id} task={task} />
               ))}
-            </Card>
+            {/* </Card> */}
+            </>
           ) : (
             <div className="task-group__empty">
               <Text tone="muted">No tasks in this group</Text>

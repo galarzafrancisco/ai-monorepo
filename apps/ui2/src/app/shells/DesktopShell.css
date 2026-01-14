@@ -4,12 +4,15 @@
   min-height: 100vh;
   background-color: var(--bg);
   transition: grid-template-columns 0.2s ease;
+
+  /* Cards use the same color as background in desktop */
+  --card-bg: var(--bg);
 }
 
 .desktop-shell__sidebar {
   display: flex;
   flex-direction: column;
-  background-color: var(--surface);
+  background-color: var(--app-surface);
   border-right: 1px solid var(--border);
   padding: var(--space-5);
   overflow-y: auto;
@@ -70,7 +73,7 @@
 }
 
 .desktop-shell__nav-item:hover {
-  background-color: var(--surface-2);
+  background-color: var(--surface);
   text-decoration: none;
 }
 
@@ -87,7 +90,7 @@
 .desktop-shell__toggle {
   margin-top: auto;
   padding: var(--space-2);
-  background-color: var(--surface-2);
+  background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-2);
   color: var(--text);

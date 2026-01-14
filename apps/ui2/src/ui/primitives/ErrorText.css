@@ -1,6 +1,6 @@
 .error--container {
   padding: var(--space-3) var(--space-4);
-  background-color: var(--surface-2);
+  background-color: var(--surface);
   border: 1px solid var(--danger);
   border-radius: var(--r-2);
   animation: shake 0.4s ease;

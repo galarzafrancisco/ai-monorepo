@@ -3,7 +3,7 @@ import './Card.css';
 
 export interface CardProps {
   children: ReactNode;
-  padding?: '2' | '3' | '4' | '5' | '6';
+  padding?: '0' | '1' | '2' | '3' | '4' | '5' | '6';
   className?: string;
 }
 

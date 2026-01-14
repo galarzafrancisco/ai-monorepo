@@ -6,10 +6,19 @@
 
 /* ===== DEFAULT THEME (Light) ===== */
 :root {
-  /* Colors - Background */
-  --bg: #ffffff;
-  --surface: #f6f8fa;
-  --surface-2: #ffffff;
+  /* Theme color values */
+  --theme-bg: #ffffff;
+  --theme-app-surface: #f6f8fa;
+  --theme-surface: #f6f8fa;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: rgb(255, 255, 255);
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg); /* Cards default to same as bg, shells override as needed */
 
   /* Colors - Text */
   --text: #1f2328;
@@ -82,10 +91,19 @@
 
 /* ===== DARK THEME ===== */
 [data-theme='dark'] {
-  /* Colors - Background */
-  --bg: #0d1117;
-  --surface: #161b22;
-  --surface-2: #21262d;
+  /* Theme color values */
+  --theme-bg: #0d1117;
+  --theme-app-surface: #010409;
+  --theme-surface: #161b22;
+  --theme-nav-bar: #010409;
+  --theme-nav-bar-rgb: rgb(13 17 23);
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
 
   /* Colors - Text */
   --text: #e6edf3;
@@ -117,10 +135,19 @@
 
 /* ===== GITHUB THEME (Light variant with GitHub branding) ===== */
 [data-theme='github'] {
-  /* Colors - Background */
-  --bg: #ffffff;
-  --surface: #f6f8fa;
-  --surface-2: #ffffff;
+  /* Theme color values */
+  --theme-bg: #ffffff;
+  --theme-app-surface: #f6f8fa;
+  --theme-surface: #f6f8fa;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: rgb(255 255 255);
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
 
   /* Colors - Text */
   --text: #24292f;
@@ -152,10 +179,19 @@
 
 /* ===== FOREST THEME (Dark green nature theme) ===== */
 [data-theme='forest'] {
-  /* Colors - Background */
-  --bg: #0f1a0f;
-  --surface: #1a2a1a;
-  --surface-2: #253525;
+  /* Theme color values */
+  --theme-bg: #0f1a0f;
+  --theme-app-surface: #1a2a1a;
+  --theme-surface: #253525;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: rgb(15 26 15);
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
 
   /* Colors - Text */
   --text: #e8f5e8;
@@ -187,11 +223,19 @@
 
 /* ===== TERMINAL THEME (Classic terminal aesthetic) ===== */
 [data-theme='terminal'] {
-  /* Colors - Background */
-  --bg: #000000;
-  --surface: #0a0a0a;
-  --surface-2: #1a1a1a;
-  --surface-3: #2a2a2a;
+  /* Theme color values */
+  --theme-bg: #000000;
+  --theme-app-surface: #0a0a0a;
+  --theme-surface: #1a1a1a;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: rgb(0 0 0);
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
 
   /* Colors - Text */
   --text: #00cc00;

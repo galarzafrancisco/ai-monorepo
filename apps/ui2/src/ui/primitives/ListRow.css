@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: var(--space-1);
   border-bottom: 1px solid var(--border-subtle);
   min-height: 48px; /* Good mobile tap target */
 }
@@ -21,5 +21,5 @@
 }
 
 .list-row--interactive:active {
-  background-color: var(--surface-2);
+  background-color: var(--surface);
 }

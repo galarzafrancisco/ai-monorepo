@@ -43,13 +43,13 @@
 
 /* Variant: Secondary */
 .btn--secondary {
-  background-color: var(--surface);
+  background-color: var(--card-bg);
   color: var(--text);
   border-color: var(--border);
 }
 
 .btn--secondary:hover:not(:disabled) {
-  background-color: var(--surface-2);
+  background-color: var(--surface);
 }
 
 /* Variant: Danger */

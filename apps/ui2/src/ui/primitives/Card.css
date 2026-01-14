@@ -1,10 +1,17 @@
 .card {
-  background-color: var(--surface);
+  background-color: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: var(--r-2);
 }
 
 /* Padding variants */
+.card--padding-0 {
+  padding: var(--space-0);
+}
+
+.card--padding-1 {
+  padding: var(--space-1);
+}
+
 .card--padding-2 {
   padding: var(--space-2);
 }

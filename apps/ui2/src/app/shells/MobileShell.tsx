@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Row, Text } from '../../ui/primitives';
@@ -10,16 +10,62 @@ export interface MobileShellProps {
   children: ReactNode;
 }
 
+
 export function MobileShell({ children }: MobileShellProps) {
   const location = useLocation();
-  const { inAppNav } = useInAppNav();
+  const { inAppNav, scrolledTitle } = useInAppNav();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+
   const pageTitle = getPageTitle(location.pathname);
+  const displayTitle = scrolledTitle
+    ? `${pageTitle} • ${scrolledTitle}`
+    : pageTitle;
 
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
   };
+
+  // Detect when the content scrolls behind the bottom nav (mobile)
+  const bottomNavElRef = useRef<HTMLElement | null>(null);
+  const sentinelElRef = useRef<HTMLDivElement | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const tryAttach = () => {
+    const bottomNav = bottomNavElRef.current;
+    const sentinel = sentinelElRef.current;
+
+    if (!bottomNav || !sentinel) {
+      return;
+    }
+
+    // (re)create observer
+    observerRef.current?.disconnect();
+    observerRef.current = new IntersectionObserver(
+      ([entry]) => {
+        // NOT intersecting = content is behind bottom nav
+        bottomNav.classList.toggle('mobile-shell__bottom-nav--elevated', !entry.isIntersecting);
+        console.log('Bottom nav elevated:', !entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: [0, 1],
+        rootMargin: `0px 0px ${-bottomNav.clientHeight}px 0px`,
+      }
+    );
+    observerRef.current.observe(sentinel);
+  };
+
+  const bottomNavRef = (el: HTMLElement | null) => {
+    bottomNavElRef.current = el;
+    tryAttach();
+  };
+  const sentinelRef = (el: HTMLDivElement | null) => {
+    sentinelElRef.current = el;
+    tryAttach();
+  };
+  useEffect(() => {
+    return () => observerRef.current?.disconnect();
+  }, []);
 
   return (
     <div className="mobile-shell" data-shell="mobile">
@@ -46,7 +92,7 @@ export function MobileShell({ children }: MobileShellProps) {
         <nav className="mobile-shell__drawer-nav">
           {APP_NAV_ITEMS.map((item) => {
             const isActive = location.pathname === item.path ||
-                           location.pathname.startsWith(item.path + '/');
+              location.pathname.startsWith(item.path + '/');
             return (
               <Link
                 key={item.path}
@@ -72,18 +118,19 @@ export function MobileShell({ children }: MobileShellProps) {
           >
             ☰
           </button>
-          <Text size="3" weight="semibold">{pageTitle}</Text>
+          <Text size="3" weight="semibold">{displayTitle}</Text>
         </Row>
       </header>
 
       {/* Main content area with safe area padding */}
       <main className="mobile-shell__main">
         {children}
+        {inAppNav && <div ref={sentinelRef} className="shell__main-sentinel" />}
       </main>
 
       {/* Bottom navigation - only shown for in-app navigation */}
       {inAppNav && (
-        <nav className="mobile-shell__bottom-nav">
+        <nav ref={bottomNavRef} className="mobile-shell__bottom-nav">
           <Row spacing="1" justify="space-between">
             {inAppNav.items.map((item) => {
               const isActive = location.pathname === item.path;

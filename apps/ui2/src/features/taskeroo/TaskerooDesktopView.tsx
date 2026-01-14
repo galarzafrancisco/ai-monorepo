@@ -59,7 +59,6 @@ export function TaskerooDesktopView() {
           <div>
             <Text size="6" weight="bold">Taskeroo</Text>
             <ConnectionHeader />
-            <Text tone="muted">Manage your tasks and track progress</Text>
           </div>
 
           {/* View toggle buttons */}

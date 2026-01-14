@@ -5,6 +5,8 @@ import type { InAppNavigation } from '../../shared/navigation';
 interface InAppNavContextValue {
   inAppNav: InAppNavigation | null;
   setInAppNav: (nav: InAppNavigation | null) => void;
+  scrolledTitle: string | null;
+  setScrolledTitle: (title: string | null) => void;
 }
 
 const InAppNavContext = createContext<InAppNavContextValue | undefined>(undefined);
@@ -15,9 +17,10 @@ export interface InAppNavProviderProps {
 
 export function InAppNavProvider({ children }: InAppNavProviderProps) {
   const [inAppNav, setInAppNav] = useState<InAppNavigation | null>(null);
+  const [scrolledTitle, setScrolledTitle] = useState<string | null>(null);
 
   return (
-    <InAppNavContext.Provider value={{ inAppNav, setInAppNav }}>
+    <InAppNavContext.Provider value={{ inAppNav, setInAppNav, scrolledTitle, setScrolledTitle }}>
       {children}
     </InAppNavContext.Provider>
   );
