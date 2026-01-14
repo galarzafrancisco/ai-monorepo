@@ -27,6 +27,7 @@ export class ScopesGuard implements CanActivate {
     // No scopes required => allow
     if (!meta || meta.scopes.length === 0) return true;
 
+    const req = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
 
     // You currently attach auth context here:
