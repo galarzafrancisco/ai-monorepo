@@ -11,14 +11,15 @@
   --theme-app-surface: #f6f8fa;
   --theme-surface: #f6f8fa;
   --theme-nav-bar: var(--theme-bg);
-  --theme-nav-bar-rgb: rgb(255, 255, 255);
+  --theme-nav-bar-rgb: 255, 255, 255;
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
   --app-surface: var(--theme-app-surface);
   --surface: var(--theme-surface);
   --nav-bar: var(--theme-nav-bar);
-  --card-bg: var(--theme-bg); /* Cards default to same as bg, shells override as needed */
+  --card-bg: var(--theme-bg);
+  /* Cards default to same as bg, shells override as needed */
 
   /* Colors - Text */
   --text: #1f2328;
@@ -70,7 +71,8 @@
   --fs-4: 20px;
   --fs-5: 24px;
   --fs-6: 32px;
-  --fs-input-mobile-safe: 16px; /* important: mobile-safe minimum */
+  --fs-input-mobile-safe: 16px;
+  /* important: mobile-safe minimum */
 
   /* Typography - Line Heights */
   --lh-tight: 1.25;
@@ -96,7 +98,7 @@
   --theme-app-surface: #010409;
   --theme-surface: #161b22;
   --theme-nav-bar: #010409;
-  --theme-nav-bar-rgb: rgb(13 17 23);
+  --theme-nav-bar-rgb: 13, 17, 23;
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
@@ -140,7 +142,7 @@
   --theme-app-surface: #f6f8fa;
   --theme-surface: #f6f8fa;
   --theme-nav-bar: var(--theme-bg);
-  --theme-nav-bar-rgb: rgb(255 255 255);
+  --theme-nav-bar-rgb: 255, 255, 255;
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
@@ -184,7 +186,7 @@
   --theme-app-surface: #1a2a1a;
   --theme-surface: #253525;
   --theme-nav-bar: var(--theme-bg);
-  --theme-nav-bar-rgb: rgb(15 26 15);
+  --theme-nav-bar-rgb: 15, 26, 15;
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
@@ -228,7 +230,7 @@
   --theme-app-surface: #0a0a0a;
   --theme-surface: #1a1a1a;
   --theme-nav-bar: var(--theme-bg);
-  --theme-nav-bar-rgb: rgb(0 0 0);
+  --theme-nav-bar-rgb: 0, 0, 0;
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);

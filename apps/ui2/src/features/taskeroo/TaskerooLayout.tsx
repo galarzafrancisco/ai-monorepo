@@ -15,7 +15,7 @@ function TaskerooConnectionHeader() {
 }
 
 export function TaskerooLayout() {
-  const { setInAppNav, setScrolledTitle } = useInAppNav();
+  const { setInAppNav, setScrolledTitle, scrolledTitle } = useInAppNav();
   const location = useLocation();
   const titleRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +45,7 @@ export function TaskerooLayout() {
       },
       {
         threshold: [0, 1],
-        rootMargin: '-60px 0px 0px 0px', // Account for header height
+        rootMargin: '-100px 0px 0px 0px', // Account for header height
       }
     );
 
@@ -55,7 +55,7 @@ export function TaskerooLayout() {
       observer.disconnect();
     };
   }, [activeSection, setScrolledTitle]);
-  
+
   return (
     <TaskerooProvider>
       {/* Desktop view - shows board/list toggle */}
@@ -67,8 +67,17 @@ export function TaskerooLayout() {
       <div className="taskeroo-layout--mobile">
         <Stack spacing="0">
           {activeSection && (
-            <div ref={titleRef} className="taskeroo-layout__large-title">
-              {activeSection.label}
+            <div
+              ref={titleRef}
+              className={`taskeroo-layout__title-slot ${scrolledTitle ? "is-collapsed" : "is-expanded"
+                }`}
+            >
+              <div
+                className={`taskeroo-layout__large-title ${scrolledTitle ? "is-hidden" : "is-visible"
+                  }`}
+              >
+                {activeSection.label}
+              </div>
             </div>
           )}
           <TaskerooConnectionHeader />

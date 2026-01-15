@@ -3,6 +3,7 @@ import { ThemeProvider, InAppNavProvider } from './providers';
 import { AuthProvider, LoginPage, ProtectedRoute } from '../auth';
 import { HomePage, SettingsPage, TaskerooRoute, WikirooRoute, MCPRegistryRoute, AgentsRoute, LogoutPage } from './routes';
 import { ShellSwitch } from './shells/ShellSwitch';
+import './App.css';
 
 function AppRoutes() {
   return (

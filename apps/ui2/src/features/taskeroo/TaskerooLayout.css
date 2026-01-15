@@ -29,12 +29,27 @@
 }
 
 /* Large title for mobile */
+.taskeroo-layout__title-slot {
+  min-height: 60px; /* keeps layout stable */
+  display: flex;
+  align-items: flex-end; /* or center, whatever you want */
+}
 .taskeroo-layout__large-title {
+
   font-size: calc(var(--fs-5) * 1.4);
   font-weight: var(--fw-bold);
   line-height: var(--lh-tight);
-  /* padding-bottom: var(--space-2);
-  padding-left: var(--space-2); */
   padding: var(--space-2);
-  background: var(--app-surface);
+
+  transition: opacity 180ms ease, transform 180ms ease;
+  will-change: opacity, transform;
+}
+.taskeroo-layout__large-title.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.taskeroo-layout__large-title.is-hidden {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
 }

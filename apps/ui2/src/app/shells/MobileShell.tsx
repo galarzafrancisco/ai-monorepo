@@ -26,21 +26,52 @@ export function MobileShell({ children }: MobileShellProps) {
     setIsDrawerOpen(false);
   };
 
+  const topNavElRef = useRef<HTMLDivElement | null>(null);
+  const topSentinelElRef = useRef<HTMLDivElement | null>(null);
+  const topObserverRef = useRef<IntersectionObserver | null>(null);
+  const tryAttachTopObserver = () => {
+    const topNav = topNavElRef.current;
+    const sentinel = topSentinelElRef.current;
+
+    if (!topNav || !sentinel) {
+      console.log('Top nav or sentinel not found');
+      return;
+    }
+    console.log('Top nav and sentinel found, attaching observer');
+
+    // (re)create observer
+    topObserverRef.current?.disconnect();
+    topObserverRef.current = new IntersectionObserver(
+      ([entry]) => {
+        // Toggle shadow on top nav when content scrolls behind it
+        topNav.classList.toggle('mobile-shell__header--elevated', !entry.isIntersecting);
+        console.log('Top nav elevated:', !entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: [0, 1],
+        rootMargin: `-${topNav.clientHeight}px 0px 0px 0px`,
+      }
+    );
+
+    topObserverRef.current.observe(sentinel);
+  }
+
   // Detect when the content scrolls behind the bottom nav (mobile)
   const bottomNavElRef = useRef<HTMLElement | null>(null);
-  const sentinelElRef = useRef<HTMLDivElement | null>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const tryAttach = () => {
+  const bottomSentinelElRef = useRef<HTMLDivElement | null>(null);
+  const bottomObserverRef = useRef<IntersectionObserver | null>(null);
+  const tryAttachBottomObserver = () => {
     const bottomNav = bottomNavElRef.current;
-    const sentinel = sentinelElRef.current;
+    const sentinel = bottomSentinelElRef.current;
 
     if (!bottomNav || !sentinel) {
       return;
     }
 
     // (re)create observer
-    observerRef.current?.disconnect();
-    observerRef.current = new IntersectionObserver(
+    bottomObserverRef.current?.disconnect();
+    bottomObserverRef.current = new IntersectionObserver(
       ([entry]) => {
         // NOT intersecting = content is behind bottom nav
         bottomNav.classList.toggle('mobile-shell__bottom-nav--elevated', !entry.isIntersecting);
@@ -52,19 +83,30 @@ export function MobileShell({ children }: MobileShellProps) {
         rootMargin: `0px 0px ${-bottomNav.clientHeight}px 0px`,
       }
     );
-    observerRef.current.observe(sentinel);
+    bottomObserverRef.current.observe(sentinel);
   };
 
   const bottomNavRef = (el: HTMLElement | null) => {
     bottomNavElRef.current = el;
-    tryAttach();
+    tryAttachBottomObserver();
   };
-  const sentinelRef = (el: HTMLDivElement | null) => {
-    sentinelElRef.current = el;
-    tryAttach();
+  const bottomSentinelRef = (el: HTMLDivElement | null) => {
+    bottomSentinelElRef.current = el;
+    tryAttachBottomObserver();
+  };
+  const topBarRef = (el: HTMLDivElement | null) => {
+    topNavElRef.current = el;
+    tryAttachTopObserver();
+  };
+  const topSentinelRef = (el: HTMLDivElement | null) => {
+    topSentinelElRef.current = el;
+    tryAttachTopObserver();
   };
   useEffect(() => {
-    return () => observerRef.current?.disconnect();
+    return () => {
+      bottomObserverRef.current?.disconnect();
+      topObserverRef.current?.disconnect();
+    };
   }, []);
 
   return (
@@ -109,7 +151,7 @@ export function MobileShell({ children }: MobileShellProps) {
       </aside>
 
       {/* Top bar */}
-      <header className="mobile-shell__header">
+      <header ref={topBarRef} className="mobile-shell__header">
         <Row spacing="3" align="center">
           <button
             className="mobile-shell__hamburger"
@@ -124,8 +166,10 @@ export function MobileShell({ children }: MobileShellProps) {
 
       {/* Main content area with safe area padding */}
       <main className="mobile-shell__main">
+        <div ref={topSentinelRef} className="shell__main-top-sentinel" />
         {children}
-        {inAppNav && <div ref={sentinelRef} className="shell__main-sentinel" />}
+        {inAppNav && <div ref={bottomSentinelRef} className="shell__main-bottom-sentinel" />}
+        <div className="shell__main-bottom-padding" />
       </main>
 
       {/* Bottom navigation - only shown for in-app navigation */}
