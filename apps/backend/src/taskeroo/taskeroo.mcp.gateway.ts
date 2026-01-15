@@ -5,17 +5,22 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 import { TaskStatus } from "./enums";
+import { AuthContext, UserContext } from "src/auth/guards/context/auth-context.types";
+import { TaskerooScopes } from "./taskeroo.scopes";
+import ca from "zod/v4/locales/ca.js";
 
 @Injectable()
 export class TaskerooMcpGateway {
 
   constructor(private readonly taskerooService: TaskerooService) { }
 
-  private buildServer(): McpServer {
+  private buildServer(user: UserContext, authContext: AuthContext): McpServer {
     const server = new McpServer({
       name: 'taskeroo',
       version: '0.0.0',
     });
+
+    const canWrite = authContext.scopes.find(scope => scope === TaskerooScopes.WRITE.id);
 
     server.registerTool(
       'list_tasks',
@@ -49,35 +54,6 @@ export class TaskerooMcpGateway {
     )
 
     server.registerTool(
-      'add_numbers',
-      {
-        title: 'Adds numbers',
-        description: '', // Title is enough to explain what this does, so no description is required. Save tokens! The models are smart enough.
-        inputSchema: {
-          a: z.number(), // Model will figure out what this input is, so no need to add description. But if the input were more complex, then yeah.
-          b: z.number(), // Model will figure out what this input is, so no need to add description. But if the input were more complex, then yeah.
-        },
-        outputSchema: {
-          result: z.number(),  // This is just an example showing how you'd provide structured output. Don't really need it for something simple like this.
-        },
-      },
-      async ({ a, b }) => {
-        const result = a + b;
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `${a} + ${b} = ${result}`
-            }
-          ],
-          structuredContent: {
-            result
-          }
-        }
-      }
-    )
-
-    server.registerTool(
       'get_task',
       {
         title: 'Get task details',
@@ -97,7 +73,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'create_task',
       {
         title: 'Create a new task',
@@ -107,17 +83,16 @@ export class TaskerooMcpGateway {
           description: z.string(),
           assignee: z.string().optional(),
           sessionId: z.string().optional(),
-          createdBy: z.string(),
           dependsOnIds: z.array(z.string()).optional(),
         },
       },
-      async ({ name, description, assignee, sessionId, createdBy, dependsOnIds }) => {
+      async ({ name, description, assignee, sessionId, dependsOnIds }) => {
         const task = await this.taskerooService.createTask({
           name,
           description,
           assignee,
           sessionId,
-          createdBy,
+          createdBy: user.email,
           dependsOnIds,
         });
         return {
@@ -129,7 +104,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'assign_task',
       {
         title: 'Assign task',
@@ -154,7 +129,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'add_comment',
       {
         title: 'Add comment to task',
@@ -179,7 +154,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'mark_task_in_progress',
       {
         title: 'Start working on task',
@@ -215,7 +190,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'mark_task_for_review',
       {
         title: 'Submit task for review',
@@ -247,7 +222,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'mark_task_done',
       {
         title: 'Mark task as done',
@@ -279,7 +254,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'mark_task_needs_work',
       {
         title: 'Flags the task as needing work',
@@ -311,7 +286,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'change_task_status',
       {
         title: 'Change task status',
@@ -337,7 +312,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'add_tag_to_task',
       {
         title: 'Add tag to task',
@@ -363,7 +338,7 @@ export class TaskerooMcpGateway {
       }
     )
 
-    server.registerTool(
+    canWrite && server.registerTool(
       'remove_tag_from_task',
       {
         title: 'Remove tag from task',
@@ -405,7 +380,7 @@ export class TaskerooMcpGateway {
     return server;
   }
 
-  async handleRequest(req: Request, res: Response) {
+  async handleRequest(req: Request, res: Response, user: UserContext, authContext: AuthContext) {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
@@ -415,7 +390,7 @@ export class TaskerooMcpGateway {
       transport.close();
     });
 
-    const server = this.buildServer()
+    const server = this.buildServer(user, authContext);
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   }

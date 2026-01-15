@@ -43,11 +43,12 @@ import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.ser
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
-import type { UserContext } from '../auth/guards/context/auth-context.types';
+import type { AuthContext, UserContext } from '../auth/guards/context/auth-context.types';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { TaskerooScopes } from './taskeroo.scopes';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
+import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
@@ -58,7 +59,7 @@ export class TaskerooController {
   constructor(
     private readonly taskerooService: TaskerooService,
     private readonly gateway: TaskerooMcpGateway,
-  ) {}
+  ) { }
 
   @Post()
   @RequireScopes(TaskerooScopes.READ.id)
@@ -307,8 +308,13 @@ export class TaskerooController {
 
   @All('mcp')
   @RequireScopes(McpScopes.USE.id)
-  async handleMcp(@Req() req: Request, @Res() res: Response) {
-    await this.gateway.handleRequest(req, res);
+  async handleMcp(
+    @CurrentUser() user: UserContext,
+    @CurrentAuth() authContext: AuthContext,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
+    await this.gateway.handleRequest(req, res, user, authContext);
   }
 
   private mapCommentResultToResponse(

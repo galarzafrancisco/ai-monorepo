@@ -56,7 +56,7 @@ export class TokenService {
     // Find the authorization flow by authorization code
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByAuthorizationCode(
       tokenRequest.code,
-      ['client', 'server', 'authJourney']
+      ['client', 'server', 'authJourney', 'authJourney.user']
     );
 
     if (!mcpAuthFlow) {
@@ -167,6 +167,8 @@ export class TokenService {
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
       sub: mcpAuthFlow.authJourney.userId || 'user-not-found???', // TODO: Replace with actual user ID when user auth is implemented
+      email: mcpAuthFlow.authJourney.user?.email,
+      displayName: mcpAuthFlow.authJourney.user?.displayName,
       aud: mcpAuthFlow.server.providedId, // MCP server identifier
       exp: now + 3600, // 1 hour expiration
       iat: now,

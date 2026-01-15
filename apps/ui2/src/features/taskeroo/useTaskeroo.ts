@@ -58,11 +58,21 @@ export const useTaskeroo = () => {
   const setupWebsocket = () => {
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
+      withCredentials: true,
     });
 
     newSocket.on('connect', () => {
       console.log('Connected to websocket');
-      setIsConnected(true);
+      newSocket.emit('taskeroo.subscribe', {}, (ack: any) => {
+        if (ack.ok) {
+          console.log(ack);
+          console.log('Subscribed to room:', ack.room);
+          setIsConnected(true);
+        } else {
+          console.error('Failed to subscribe to room');
+          setIsConnected(false);
+        }
+      });
       loadTasks();
     });
 

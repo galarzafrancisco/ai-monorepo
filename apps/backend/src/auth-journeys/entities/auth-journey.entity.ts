@@ -7,10 +7,13 @@ import {
   DeleteDateColumn,
   OneToMany,
   OneToOne,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { AuthJourneyStatus } from '../enums/auth-journey-status.enum';
 import { ConnectionAuthorizationFlowEntity } from './connection-authorization-flow.entity';
 import { McpAuthorizationFlowEntity } from './mcp-authorization-flow.entity';
+import { User } from '../../identity-provider/user.entity';
 
 @Entity('authorization_journeys')
 export class AuthJourneyEntity {
@@ -23,8 +26,12 @@ export class AuthJourneyEntity {
   })
   status!: AuthJourneyStatus;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId?: string | null;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'user_id' })
+  user?: User | null;
 
   // Many connection authorization flows can be linked to this one
   @OneToMany(() => ConnectionAuthorizationFlowEntity, (connectionAuthenticationFlow) => connectionAuthenticationFlow.authJourney)
