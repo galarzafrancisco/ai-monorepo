@@ -95,15 +95,10 @@ export class DiscoveryController {
     Instead they default to finding it under ./well-known/oauth-protected-resource/{path-of-the-original-resource}.
     This hack attempts to catch that path and respond with the right metadata.
     */
-    console.log("path")
-    console.log(path)
     const meta = await this.discoveryService.getProtectedResourceMetadata(path);
     if (!meta) {
-      console.log('META MISSING');
-      console.log(meta);
       throw new NotFoundException();
     }
-    console.log('FOUND META');
     return meta;
   }
 }

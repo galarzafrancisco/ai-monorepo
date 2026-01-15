@@ -4,24 +4,8 @@ import { AuthorizationServerService, OpenAPI, type ConsentDecisionDto } from './
 import { HomeLink } from '../components/HomeLink';
 import { usePageTitle } from '../hooks/usePageTitle';
 import './ConsentScreen.css';
+import { GetConsentMetadataResponseDto } from 'shared';
 
-interface AuthFlowDetails {
-  id: string;
-  server: {
-    id: string;
-    name: string;
-    providedId: string;
-  };
-  client: {
-    id: string;
-    clientId: string;
-    clientName: string;
-    scopes?: string[];
-  };
-  resource: string;
-  redirectUri: string;
-  state: string;
-}
 
 export function ConsentScreen() {
   usePageTitle('Authorization Consent - AI Monorepo');
@@ -29,7 +13,7 @@ export function ConsentScreen() {
   const [searchParams] = useSearchParams();
   const flowId = searchParams.get('flow');
 
-  const [flowDetails, setFlowDetails] = useState<AuthFlowDetails | null>(null);
+  const [consentMetadata, setConsentMetadata] = useState<GetConsentMetadataResponseDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState(false);
@@ -41,18 +25,18 @@ export function ConsentScreen() {
       return;
     }
 
-    loadFlowDetails();
+    loadConsentMetadata();
   }, [flowId]);
 
-  const loadFlowDetails = async () => {
+  const loadConsentMetadata = async () => {
     if (!flowId) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await AuthorizationServerService.authorizationControllerGetFlow(flowId);
-      setFlowDetails(data as AuthFlowDetails);
+      const response = await AuthorizationServerService.authorizationControllerGetConsentMetadata(flowId);
+      setConsentMetadata(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load authorization details');
     } finally {
@@ -61,7 +45,7 @@ export function ConsentScreen() {
   };
 
   const submitConsent = async (approved: boolean) => {
-    if (!flowDetails || !flowId) return;
+    if (!consentMetadata || !flowId) return;
 
     setIsApproving(true);
     setError(null);
@@ -88,7 +72,7 @@ export function ConsentScreen() {
       const bffBaseUrl = OpenAPI.BASE ?? '';
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = `${bffBaseUrl}/api/v1/auth/authorize/mcp/${flowDetails.server.providedId}/0.0.0`;
+      form.action = `${bffBaseUrl}/api/v1/auth/authorize/mcp/${consentMetadata.server.providedId}/0.0.0`;
 
       // Create form fields matching ConsentDecisionDto
       Object.entries(consentData).forEach(([key, value]) => {
@@ -108,12 +92,12 @@ export function ConsentScreen() {
   };
 
   const handleApprove = () => {
-    if (!flowDetails) return;
+    if (!consentMetadata) return;
     submitConsent(true);
   };
 
   const handleDeny = () => {
-    if (!flowDetails) return;
+    if (!consentMetadata) return;
     submitConsent(false);
   };
 
@@ -130,7 +114,7 @@ export function ConsentScreen() {
     );
   }
 
-  if (error || !flowDetails) {
+  if (error || !consentMetadata) {
     return (
       <div className="consent-page">
         <div className="consent-container">
@@ -161,21 +145,21 @@ export function ConsentScreen() {
             <div className="client-info">
               <div className="info-row">
                 <span className="label">Client Name:</span>
-                <span className="value">{flowDetails.client.clientName}</span>
+                <span className="value">{consentMetadata.client.clientName}</span>
               </div>
               <div className="info-row">
                 <span className="label">Client ID:</span>
-                <span className="value"><code>{flowDetails.client.clientId}</code></span>
+                <span className="value"><code>{consentMetadata.client.clientId}</code></span>
               </div>
             </div>
           </div>
 
           <div className="detail-section">
             <h2>WHAT access is requested</h2>
-            {flowDetails.client.scopes && flowDetails.client.scopes.length > 0 ? (
+            {consentMetadata.scopes && consentMetadata.scopes.length > 0 ? (
               <>
                 <ul className="scopes-list">
-                  {flowDetails.client.scopes.map((scope) => (
+                  {consentMetadata.scopes.map((scope) => (
                     <li key={scope}>
                       <span className="scope-badge">{scope}</span>
                     </li>
@@ -195,12 +179,12 @@ export function ConsentScreen() {
           <div className="detail-section">
             <h2>WHERE access is granted</h2>
             <div className="server-info">
-              <div className="server-name">{flowDetails.server.name}</div>
-              <div className="server-id">Server ID: {flowDetails.server.providedId}</div>
+              <div className="server-name">{consentMetadata.server.name}</div>
+              <div className="server-id">Server ID: {consentMetadata.server.providedId}</div>
             </div>
             <div className="resource-info" style={{ marginTop: '16px' }}>
               <div style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '8px' }}>Resource:</div>
-              <code>{flowDetails.resource}</code>
+              <code>{consentMetadata.resource}</code>
             </div>
           </div>
 
@@ -209,7 +193,7 @@ export function ConsentScreen() {
             <div className="client-info">
               <div className="info-row">
                 <span className="label">Redirect URI:</span>
-                <span className="value"><code>{flowDetails.redirectUri}</code></span>
+                <span className="value"><code>{consentMetadata.redirectUri}</code></span>
               </div>
             </div>
             <p style={{ marginTop: '12px', fontSize: '13px', color: '#7f8c8d', marginBottom: 0 }}>
@@ -241,7 +225,7 @@ export function ConsentScreen() {
 
         <div className="consent-footer">
           <p>
-            By approving, you authorize <strong>{flowDetails.client.clientName}</strong> to access the
+            By approving, you authorize <strong>{consentMetadata.client.clientName}</strong> to access the
             specified resources with the requested permissions.
           </p>
           <HomeLink />

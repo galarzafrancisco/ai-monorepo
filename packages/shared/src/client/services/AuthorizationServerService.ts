@@ -4,9 +4,9 @@
 /* eslint-disable */
 import type { ClientRegistrationResponseDto } from '../models/ClientRegistrationResponseDto';
 import type { ConsentDecisionDto } from '../models/ConsentDecisionDto';
+import type { GetConsentMetadataResponseDto } from '../models/GetConsentMetadataResponseDto';
 import type { IntrospectTokenRequestDto } from '../models/IntrospectTokenRequestDto';
 import type { IntrospectTokenResponseDto } from '../models/IntrospectTokenResponseDto';
-import type { McpAuthorizationFlowEntity } from '../models/McpAuthorizationFlowEntity';
 import type { RegisterClientDto } from '../models/RegisterClientDto';
 import type { TokenExchangeRequestDto } from '../models/TokenExchangeRequestDto';
 import type { TokenExchangeResponseDto } from '../models/TokenExchangeResponseDto';
@@ -162,18 +162,18 @@ export class AuthorizationServerService {
         });
     }
     /**
-     * Get authorization flow details
+     * Get metadata for the consent screen from flow ID
      * Retrieves authorization flow details for the consent screen
-     * @param flowId
-     * @returns McpAuthorizationFlowEntity Authorization flow details retrieved successfully
+     * @param flowId Unique identifier of the authorization flow
+     * @returns GetConsentMetadataResponseDto Consent metadata retrieved successfully
      * @throws ApiError
      */
-    public static authorizationControllerGetFlow(
+    public static authorizationControllerGetConsentMetadata(
         flowId: string,
-    ): CancelablePromise<McpAuthorizationFlowEntity> {
+    ): CancelablePromise<GetConsentMetadataResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/auth/flow/{flowId}',
+            url: '/api/v1/auth/consent/{flowId}',
             path: {
                 'flowId': flowId,
             },

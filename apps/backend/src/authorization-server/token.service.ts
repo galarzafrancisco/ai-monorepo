@@ -24,6 +24,7 @@ import {
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
 import { TokenSignerService } from '../auth/crypto/token-signer.service';
+import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
 
 @Injectable()
 export class TokenService {
@@ -108,6 +109,10 @@ export class TokenService {
     mcpAuthFlow.authorizationCodeUsed = true;
     mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_CODE_EXCHANGED;
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    await this.authJourneysService.updateAuthJourneyStatus(
+      mcpAuthFlow.authorizationJourneyId,
+      AuthJourneyStatus.AUTHORIZATION_CODE_EXCHANGED,
+    );
 
     // Generate access token (JWT)
     const accessToken = await this.generateAccessToken(mcpAuthFlow);
@@ -155,7 +160,7 @@ export class TokenService {
    * Generate a signed JWT access token
    */
   private async generateAccessToken(mcpAuthFlow: McpAuthorizationFlowEntity): Promise<string> {
-    
+
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
     const config = getConfig();
@@ -167,7 +172,7 @@ export class TokenService {
       iat: now,
       jti: randomBytes(16).toString('hex'), // Unique token ID
       client_id: mcpAuthFlow.client.clientId,
-      scope: mcpAuthFlow.client.scopes || [], // Handle null scopes
+      scope: mcpAuthFlow.scopes || [], // Handle null scopes
       mcp_server_identifier: mcpAuthFlow.server.providedId,
       resource: mcpAuthFlow.resource || '',
       version: '1.0.0', // Hardcoded version as requested in task description

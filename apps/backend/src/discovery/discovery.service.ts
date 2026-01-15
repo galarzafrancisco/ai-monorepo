@@ -86,12 +86,10 @@ export class DiscoveryService {
     const path = `/${pathParts.join('/')}`;
 
     const server = this.systemServers.find(server => {
-      console.log(server.path);
       return server.path === path;
     });
 
     if (server) {
-      console.log(server.metadata);
       return server;
     }
 

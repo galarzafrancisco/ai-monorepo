@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
 import type { Request } from 'express';
-import { RegisteredClientEntity } from './registered-client.entity';
+import { RegisteredClientEntity } from './entities/registered-client.entity';
 import { AuthorizationRequestDto } from './dto/authorization-request.dto';
 import { ConsentDecisionDto } from './dto/consent-decision.dto';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
-import { McpAuthorizationFlowEntity, ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities';
+import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities';
 import { McpAuthorizationFlowStatus } from '../auth-journeys/enums/mcp-authorization-flow-status.enum';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { getConfig } from 'src/config/env.config';
@@ -28,6 +28,9 @@ import {
   TokenExchangeFailedError,
 } from './errors/authorization.errors';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
+import { ConsentMetadata } from './dto/service/authorization.service.types';
+import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
+import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 
 @Injectable()
 export class AuthorizationService {
@@ -70,6 +73,9 @@ export class AuthorizationService {
     }
 
     // Validate the scopes requested
+    // Note: The client can also request scopes during Dynamic Client Registration. They usually don't.
+    // This authorisation server will ignore any scopes requested by the client at registration time
+    // and only grant the scopes that are requested during the authorization request that are valid for the MCP server.
     let scopes: string[] = [];
     if (authRequest.scope) {
       const requestedScopes = authRequest.scope.split(' '); // in GET /authorize, the scopes are space delimited
@@ -97,9 +103,13 @@ export class AuthorizationService {
     mcpAuthFlow.state = authRequest.state;
     mcpAuthFlow.redirectUri = authRequest.redirect_uri;
     mcpAuthFlow.resource = authRequest.resource;
-    mcpAuthFlow.scope = scopes.join(',');
+    mcpAuthFlow.scopes = scopes;
 
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    await this.authJourneysService.updateAuthJourneyStatus(
+      mcpAuthFlow.authorizationJourneyId,
+      AuthJourneyStatus.MCP_AUTH_FLOW_STARTED,
+    );
 
     // Return the flow ID to be used in the consent screen
     return mcpAuthFlow.id;
@@ -107,8 +117,9 @@ export class AuthorizationService {
 
   /**
    * Get authorization flow details for the consent screen
+   * TODO: The return type has to be a pure type (we are in a service)
    */
-  async getAuthorizationFlow(flowId: string): Promise<McpAuthorizationFlowEntity> {
+  async getConsentMetadataFromFlowId(flowId: string): Promise<ConsentMetadata> {
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
       flowId,
       ['server', 'client', 'authJourney']
@@ -118,7 +129,24 @@ export class AuthorizationService {
       throw new AuthFlowNotFoundError(flowId);
     }
 
-    return mcpAuthFlow;
+    const consentMetadata: ConsentMetadata = {
+      id: mcpAuthFlow.id,
+      status: mcpAuthFlow.status,
+      scopes: mcpAuthFlow.scopes,
+      resource: mcpAuthFlow.resource,
+      server: {
+        providedId: mcpAuthFlow.server.providedId,
+        name: mcpAuthFlow.server.name,
+        description: mcpAuthFlow.server.description,
+      },
+      client: {
+        clientId: mcpAuthFlow.client.clientId,
+        clientName: mcpAuthFlow.client.clientName,
+      },
+      redirectUri: mcpAuthFlow.redirectUri!,
+      createdAt: mcpAuthFlow.createdAt,
+    };
+    return consentMetadata;
   }
 
   /**
@@ -161,6 +189,10 @@ export class AuthorizationService {
       // Mark as rejected
       mcpAuthFlow.status = McpAuthorizationFlowStatus.USER_CONSENT_REJECTED;
       await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+      await this.authJourneysService.updateAuthJourneyStatus(
+        mcpAuthFlow.authorizationJourneyId,
+        AuthJourneyStatus.USER_CONSENT_REJECTED,
+      );
       const errorUrl = new URL(mcpAuthFlow.redirectUri);
       errorUrl.searchParams.set('error', 'access_denied');
       errorUrl.searchParams.set('error_description', 'User denied the authorization request');
@@ -184,6 +216,10 @@ export class AuthorizationService {
     // Mark as consent
     mcpAuthFlow.status = McpAuthorizationFlowStatus.USER_CONSENT_OK;
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    await this.authJourneysService.updateAuthJourneyStatus(
+      mcpAuthFlow.authorizationJourneyId,
+      AuthJourneyStatus.MCP_AUTH_FLOW_COMPLETED,
+    );
 
     // Process the next downstream flow (or complete if no connections)
     return this.processNextDownstreamFlow(mcpAuthFlow.authorizationJourneyId);
@@ -208,7 +244,7 @@ export class AuthorizationService {
 
     // Check if any scopes were requested in the MCP auth flow
     const mcpAuthFlow = connectionFlows[0]?.authJourney?.mcpAuthorizationFlow;
-    const hasRequestedScopes = mcpAuthFlow?.scope && mcpAuthFlow.scope.trim().length > 0;
+    const hasRequestedScopes = mcpAuthFlow?.scopes && mcpAuthFlow.scopes.length > 0;
 
     // If no scopes were requested, skip downstream flows and complete MCP auth
     if (!hasRequestedScopes) {
@@ -217,25 +253,34 @@ export class AuthorizationService {
     }
 
     // Find the next pending connection flow
-    const nextPendingFlow = connectionFlows.find(flow => flow.status === 'pending');
+    const nextPendingFlow = connectionFlows.find(flow => flow.status === ConnectionAuthorizationFlowStatus.PENDING);
 
     if (nextPendingFlow) {
+      await this.authJourneysService.updateAuthJourneyStatus(
+        journeyId,
+        AuthJourneyStatus.CONNECTIONS_FLOW_STARTED,
+      );
       // Initiate OAuth for this ONE connection
       return this.initiateConnectionOAuth(nextPendingFlow);
-    } else {
-      // Check if all flows are authorized
-      const allAuthorized = connectionFlows.every(flow => flow.status === 'authorized');
-      const anyFailed = connectionFlows.some(flow => flow.status === 'failed');
-
-      if (allAuthorized) {
-        this.logger.log('All downstream connections authorized, completing MCP auth');
-        return this.completeMcpAuthFlow(journeyId);
-      } else if (anyFailed) {
-        throw new DownstreamAuthFailedError('One or more downstream connections failed to authorize');
-      } else {
-        throw new NoPendingConnectionFlowsError();
-      }
     }
+
+    // Check if all flows are authorized
+    const allAuthorized = connectionFlows.every(flow => flow.status === ConnectionAuthorizationFlowStatus.AUTHORIZED);
+    const anyFailed = connectionFlows.some(flow => flow.status === ConnectionAuthorizationFlowStatus.FAILED);
+
+    if (allAuthorized) {
+      this.logger.log('All downstream connections authorized, completing MCP auth');
+      await this.authJourneysService.updateAuthJourneyStatus(
+        journeyId,
+        AuthJourneyStatus.CONNECTIONS_FLOW_COMPLETED,
+      );
+      return this.completeMcpAuthFlow(journeyId);
+    } else if (anyFailed) {
+      throw new DownstreamAuthFailedError('One or more downstream connections failed to authorize');
+    } else {
+      throw new NoPendingConnectionFlowsError();
+    }
+
   }
 
   /**
@@ -248,7 +293,7 @@ export class AuthorizationService {
     // Generate a unique state for this connection flow
     const state = randomBytes(32).toString('base64url');
     connectionFlow.state = state;
-    connectionFlow.status = 'pending';
+    connectionFlow.status = ConnectionAuthorizationFlowStatus.PENDING;
 
     await this.authJourneysService.saveConnectionFlow(connectionFlow);
 
@@ -268,9 +313,9 @@ export class AuthorizationService {
     // Map MCP scopes to downstream scopes
     const mcpAuthFlow = connectionFlow.authJourney?.mcpAuthorizationFlow;
 
-    if (mcpAuthFlow?.scope && connectionFlow.mcpConnection.mappings) {
+    if (mcpAuthFlow?.scopes && connectionFlow.mcpConnection.mappings) {
       // Get the scopes requested in the MCP flow
-      const requestedScopes = mcpAuthFlow.scope.split(',').map(s => s.trim()).filter(s => s);
+      const requestedScopes = mcpAuthFlow.scopes;
 
       // Filter mappings to only include requested scopes
       const relevantMappings = connectionFlow.mcpConnection.mappings.filter(
@@ -287,7 +332,7 @@ export class AuthorizationService {
         this.logger.warn('No downstream scopes mapped for requested MCP scopes!');
       }
     } else {
-      this.logger.warn(`Scope mapping skipped - mcpAuthFlow.scope: ${!!mcpAuthFlow?.scope}, mappings: ${!!connectionFlow.mcpConnection.mappings}`);
+      this.logger.warn(`Scope mapping skipped - mcpAuthFlow.scope: ${!!mcpAuthFlow?.scopes}, mappings: ${!!connectionFlow.mcpConnection.mappings}`);
     }
 
     this.logger.log(`Initiating downstream OAuth flow for connection ${connectionFlow.mcpConnection.friendlyName}`);
@@ -324,6 +369,10 @@ export class AuthorizationService {
     mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_CODE_ISSUED;
 
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
+    await this.authJourneysService.updateAuthJourneyStatus(
+      mcpAuthFlow.authorizationJourneyId,
+      AuthJourneyStatus.AUTHORIZATION_CODE_ISSUED,
+    );
 
     // Redirect back to the MCP client with the authorization code
     const redirectUrl = new URL(mcpAuthFlow.redirectUri);
@@ -392,7 +441,7 @@ export class AuthorizationService {
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
         this.logger.error(`Token exchange failed: ${errorText}`);
-        connectionFlow.status = 'failed';
+        connectionFlow.status = ConnectionAuthorizationFlowStatus.FAILED;
         await this.authJourneysService.saveConnectionFlow(connectionFlow);
         throw new TokenExchangeFailedError(errorText);
       }
@@ -409,13 +458,13 @@ export class AuthorizationService {
         connectionFlow.tokenExpiresAt = expiresAt;
       }
 
-      connectionFlow.status = 'authorized';
+      connectionFlow.status = ConnectionAuthorizationFlowStatus.AUTHORIZED;
       await this.authJourneysService.saveConnectionFlow(connectionFlow);
 
       this.logger.log(`Successfully exchanged token for connection ${connectionFlow.mcpConnection.friendlyName}`);
     } catch (error) {
       this.logger.error(`Error exchanging token: ${error}`);
-      connectionFlow.status = 'failed';
+      connectionFlow.status = ConnectionAuthorizationFlowStatus.FAILED;
       await this.authJourneysService.saveConnectionFlow(connectionFlow);
       throw error;
     }

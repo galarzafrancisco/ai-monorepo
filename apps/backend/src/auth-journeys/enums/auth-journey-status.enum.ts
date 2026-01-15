@@ -3,6 +3,7 @@ Details the latest state of the journey
 */
 export enum AuthJourneyStatus {
   NOT_STARTED = 'not_started',
+  USER_CONSENT_REJECTED = 'USER_CONSENT_REJECTED', // User rejected during the consent flow
   MCP_AUTH_FLOW_STARTED = 'mcp_auth_flow_started',
   MCP_AUTH_FLOW_COMPLETED = 'mcp_auth_flow_completed',
   CONNECTIONS_FLOW_STARTED = 'connections_flow_started',

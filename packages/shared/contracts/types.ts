@@ -294,7 +294,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/flow/{flowId}": {
+    "/api/v1/auth/consent/{flowId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -302,10 +302,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get authorization flow details
+         * Get metadata for the consent screen from flow ID
          * @description Retrieves authorization flow details for the consent screen
          */
-        get: operations["AuthorizationController_getFlow"];
+        get: operations["AuthorizationController_getConsentMetadata"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1568,7 +1568,76 @@ export interface components {
              */
             approved: boolean;
         };
-        McpAuthorizationFlowEntity: Record<string, never>;
+        FlowServerDto: {
+            /**
+             * @description Server identifier used in API paths
+             * @example taskeroo
+             */
+            providedId: string;
+            /**
+             * @description Human-readable name of the MCP server
+             * @example Taskeroo
+             */
+            name: string;
+            /**
+             * @description Description of what the MCP server does
+             * @example Task management and productivity tool
+             */
+            description: string;
+        };
+        FlowClientDto: {
+            /**
+             * @description OAuth client identifier
+             * @example 0bab273987a2e163c3abb40c631ec0a4
+             */
+            clientId: string;
+            /**
+             * @description Human-readable name of the client application
+             * @example Claude Desktop
+             */
+            clientName: string;
+        };
+        GetConsentMetadataResponseDto: {
+            /**
+             * @description Unique identifier of the authorization flow
+             * @example b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c
+             */
+            id: string;
+            /**
+             * @description Current status of the authorization flow
+             * @example AUTHORIZATION_REQUEST_STARTED
+             * @enum {string}
+             */
+            status: "CLIENT_NOT_REGISTERED" | "CLIENT_REGISTERED" | "AUTHORIZATION_REQUEST_STARTED" | "USER_CONSENT_OK" | "USER_CONSENT_REJECTED" | "WAITING_ON_DOWNSTREAM_AUTH" | "AUTHORIZATION_CODE_ISSUED" | "AUTHORIZATION_CODE_EXCHANGED";
+            /**
+             * @description List of scopes being requested
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes?: string[];
+            /**
+             * @description Resource URL the client wants to access
+             * @example http://localhost:4001/
+             */
+            resource?: string;
+            /** @description MCP server the client is requesting access to */
+            server: components["schemas"]["FlowServerDto"];
+            /** @description Client application requesting authorization */
+            client: components["schemas"]["FlowClientDto"];
+            /**
+             * @description Redirect URI provided in the authorization request
+             * @example http://localhost:4001/callback
+             */
+            redirectUri: string;
+            /**
+             * Format: date-time
+             * @description Timestamp when the flow was created
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            createdAt: string;
+        };
         TokenRequestDto: {
             /**
              * @description Grant type that determines which parameters must be supplied
@@ -3959,24 +4028,25 @@ export interface operations {
             };
         };
     };
-    AuthorizationController_getFlow: {
+    AuthorizationController_getConsentMetadata: {
         parameters: {
             query?: never;
             header?: never;
             path: {
+                /** @description Unique identifier of the authorization flow */
                 flowId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Authorization flow details retrieved successfully */
+            /** @description Consent metadata retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["McpAuthorizationFlowEntity"];
+                    "application/json": components["schemas"]["GetConsentMetadataResponseDto"];
                 };
             };
             /** @description Authorization flow not found */

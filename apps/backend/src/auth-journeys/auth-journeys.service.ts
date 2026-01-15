@@ -209,4 +209,11 @@ export class AuthJourneysService {
   async saveAuthJourney(authJourney: AuthJourneyEntity): Promise<AuthJourneyEntity> {
     return this.authJourneyRepository.save(authJourney);
   }
+
+  async updateAuthJourneyStatus(
+    journeyId: string,
+    status: AuthJourneyStatus
+  ): Promise<void> {
+    await this.authJourneyRepository.update(journeyId, { status });
+  }
 }

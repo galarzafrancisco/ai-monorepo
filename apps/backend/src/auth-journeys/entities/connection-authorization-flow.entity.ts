@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { AuthJourneyEntity } from './auth-journey.entity';
 import { McpConnectionEntity } from '../../mcp-registry/entities/mcp-connection.entity';
+import { ConnectionAuthorizationFlowStatus } from '../enums/connection-authorization-flow-status.enum';
 
 @Entity('connection_authorization_flows')
 export class ConnectionAuthorizationFlowEntity {
@@ -54,7 +55,7 @@ export class ConnectionAuthorizationFlowEntity {
   tokenExpiresAt?: Date;
 
   @Column({ type: 'varchar', length: 50, default: 'pending' })
-  status!: string; // pending, authorized, failed
+  status!: ConnectionAuthorizationFlowStatus;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

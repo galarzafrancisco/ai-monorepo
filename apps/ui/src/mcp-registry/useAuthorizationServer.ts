@@ -27,7 +27,6 @@ export const useAuthorizationServer = () => {
       }
 
       const { issuer } = await issuerResponse.json();
-      console.log('Authorization Server Issuer:', issuer);
 
       // Make authorization server url using the issuer from backend
       const asUrl = new URL(`${issuer}/mcp/${mcpServerId}/${mcpServerVersion}`);

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RegisteredClientEntity } from './registered-client.entity';
+import { RegisteredClientEntity } from './entities/registered-client.entity';
 import { RegisterClientDto } from './dto/register-client.dto';
 import { GrantType, TokenEndpointAuthMethod } from './enums';
 import {

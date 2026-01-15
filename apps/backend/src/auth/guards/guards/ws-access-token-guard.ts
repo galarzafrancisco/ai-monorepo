@@ -27,7 +27,7 @@ export class WsAccessTokenGuard implements CanActivate {
       tokenFromHeaders(handshake.headers) ||
       tokenFromCookies(cookie.parse(handshake.headers.cookie || ''));
 
-    console.log(`Extracted WS token: ${token.replace(/(.{4}).+(.{4})/, '$1...$2')}`);
+    this.logger.log(`Extracted WS token: ${token.replace(/(.{4}).+(.{4})/, '$1...$2')}`);
     if (!token) {
       client.disconnect(true);
       return false;

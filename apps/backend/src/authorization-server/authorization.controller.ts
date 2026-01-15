@@ -33,7 +33,8 @@ import { IntrospectTokenResponseDto } from './dto/introspect-token-response.dto'
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { CallbackRequestDto } from './dto/callback-request.dto';
-import { McpAuthorizationFlowEntity } from 'src/auth-journeys/entities';
+import { GetConsentMetadataParamsDto } from './dto/consent-metadata-params.dto';
+import { GetConsentMetadataResponseDto } from './dto/consent-metadata-response.dto';
 import { getFrontendPath } from '../config/frontend.config';
 
 @ApiTags('Authorization Server')
@@ -138,22 +139,23 @@ export class AuthorizationController {
     }
   }
 
-  @Get('flow/:flowId')
+  @Get('consent/:flowId')
   @ApiOperation({
-    summary: 'Get authorization flow details',
+    summary: 'Get metadata for the consent screen from flow ID',
     description: 'Retrieves authorization flow details for the consent screen',
   })
   @ApiOkResponse({
-    description: 'Authorization flow details retrieved successfully',
-    type: McpAuthorizationFlowEntity,
+    description: 'Consent metadata retrieved successfully',
+    type: GetConsentMetadataResponseDto,
   })
   @ApiNotFoundResponse({
     description: 'Authorization flow not found',
   })
-  async getFlow(
-    @Param('flowId') flowId: string,
-  ): Promise<McpAuthorizationFlowEntity> {
-    return this.authorizationService.getAuthorizationFlow(flowId);
+  async getConsentMetadata(
+    @Param() params: GetConsentMetadataParamsDto,
+  ): Promise<GetConsentMetadataResponseDto> {
+    const consentMetadata = await this.authorizationService.getConsentMetadataFromFlowId(params.flowId);
+    return consentMetadata;
   }
 
   @Post('token/mcp/:serverIdentifier/:version')

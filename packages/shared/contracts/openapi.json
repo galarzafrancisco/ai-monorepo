@@ -1059,27 +1059,29 @@
         ]
       }
     },
-    "/api/v1/auth/flow/{flowId}": {
+    "/api/v1/auth/consent/{flowId}": {
       "get": {
         "description": "Retrieves authorization flow details for the consent screen",
-        "operationId": "AuthorizationController_getFlow",
+        "operationId": "AuthorizationController_getConsentMetadata",
         "parameters": [
           {
             "name": "flowId",
             "required": true,
             "in": "path",
+            "description": "Unique identifier of the authorization flow",
             "schema": {
+              "example": "b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c",
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Authorization flow details retrieved successfully",
+            "description": "Consent metadata retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/McpAuthorizationFlowEntity"
+                  "$ref": "#/components/schemas/GetConsentMetadataResponseDto"
                 }
               }
             }
@@ -1088,7 +1090,7 @@
             "description": "Authorization flow not found"
           }
         },
-        "summary": "Get authorization flow details",
+        "summary": "Get metadata for the consent screen from flow ID",
         "tags": [
           "Authorization Server"
         ]
@@ -4470,9 +4472,125 @@
           "approved"
         ]
       },
-      "McpAuthorizationFlowEntity": {
+      "FlowServerDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "providedId": {
+            "type": "string",
+            "description": "Server identifier used in API paths",
+            "example": "taskeroo"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name of the MCP server",
+            "example": "Taskeroo"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what the MCP server does",
+            "example": "Task management and productivity tool"
+          }
+        },
+        "required": [
+          "providedId",
+          "name",
+          "description"
+        ]
+      },
+      "FlowClientDto": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client identifier",
+            "example": "0bab273987a2e163c3abb40c631ec0a4"
+          },
+          "clientName": {
+            "type": "string",
+            "description": "Human-readable name of the client application",
+            "example": "Claude Desktop"
+          }
+        },
+        "required": [
+          "clientId",
+          "clientName"
+        ]
+      },
+      "GetConsentMetadataResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier of the authorization flow",
+            "example": "b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the authorization flow",
+            "enum": [
+              "CLIENT_NOT_REGISTERED",
+              "CLIENT_REGISTERED",
+              "AUTHORIZATION_REQUEST_STARTED",
+              "USER_CONSENT_OK",
+              "USER_CONSENT_REJECTED",
+              "WAITING_ON_DOWNSTREAM_AUTH",
+              "AUTHORIZATION_CODE_ISSUED",
+              "AUTHORIZATION_CODE_EXCHANGED"
+            ],
+            "example": "AUTHORIZATION_REQUEST_STARTED"
+          },
+          "scopes": {
+            "description": "List of scopes being requested",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resource": {
+            "type": "string",
+            "description": "Resource URL the client wants to access",
+            "example": "http://localhost:4001/"
+          },
+          "server": {
+            "description": "MCP server the client is requesting access to",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlowServerDto"
+              }
+            ]
+          },
+          "client": {
+            "description": "Client application requesting authorization",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlowClientDto"
+              }
+            ]
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "Redirect URI provided in the authorization request",
+            "example": "http://localhost:4001/callback"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Timestamp when the flow was created",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "server",
+          "client",
+          "redirectUri",
+          "createdAt"
+        ]
       },
       "TokenRequestDto": {
         "type": "object",

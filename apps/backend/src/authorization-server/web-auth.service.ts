@@ -1,7 +1,7 @@
 import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { createHash, randomBytes } from "crypto";
 import { SignJWT, importPKCS8 } from 'jose';
-import { RefreshTokenEntity } from "./refresh-token.entity";
+import { RefreshTokenEntity } from "./entities/refresh-token.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { IdentityProviderService } from "../identity-provider/identity-provider.service";

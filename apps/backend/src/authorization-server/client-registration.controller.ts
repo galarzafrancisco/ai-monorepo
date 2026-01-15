@@ -11,7 +11,7 @@ import {
 import { ClientRegistrationService } from './client-registration.service';
 import { RegisterClientDto } from './dto/register-client.dto';
 import { ClientRegistrationResponseDto } from './dto/client-registration-response.dto';
-import { RegisteredClientEntity } from './registered-client.entity';
+import { RegisteredClientEntity } from './entities/registered-client.entity';
 
 @ApiTags('Authorization Server')
 @Controller('auth/clients')

@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   VersionColumn,
 } from 'typeorm';
-import { GrantType, TokenEndpointAuthMethod } from './enums';
+import { GrantType, TokenEndpointAuthMethod } from '../enums';
 
 @Entity({ name: 'registered_clients' })
 export class RegisteredClientEntity {

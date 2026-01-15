@@ -9,7 +9,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { McpServerEntity } from '../../mcp-registry/entities/mcp-server.entity';
-import { RegisteredClientEntity } from '../../authorization-server/registered-client.entity';
+import { RegisteredClientEntity } from '../../authorization-server/entities/registered-client.entity';
 import { AuthJourneyEntity } from './auth-journey.entity';
 import { McpAuthorizationFlowStatus } from '../enums/mcp-authorization-flow-status.enum';
 
@@ -50,8 +50,8 @@ export class McpAuthorizationFlowEntity {
   redirectUri?: string;
 
   // Scopes requested
-  @Column({ type: 'text', name: 'scope', nullable: true })
-  scope?: string;
+  @Column('simple-array', { name: 'scopes', nullable: true })
+  scopes?: string[];
 
   // Resource server URL the client wants to access
   @Column({ type: 'text', name: 'resource', nullable: true })
