@@ -10,6 +10,8 @@ import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { TokenVerifierService } from 'src/auth/crypto/token-verifier.service';
+import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
+import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 
 interface DownstreamTokenInfo {
   accessToken: string;
@@ -199,7 +201,7 @@ export class TokenExchangeService {
     const authFlow = await this.connectionAuthorizationFlowRepository.findOne({
       where: {
         mcpConnectionId: connection.id,
-        status: 'authorized',
+        status: ConnectionAuthorizationFlowStatus.AUTHORIZED,
       },
       relations: ['authJourney', 'authJourney.mcpAuthorizationFlow'],
     });

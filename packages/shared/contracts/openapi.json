@@ -5130,6 +5130,7 @@
             "example": "mcp_auth_flow_started",
             "enum": [
               "not_started",
+              "USER_CONSENT_REJECTED",
               "mcp_auth_flow_started",
               "mcp_auth_flow_completed",
               "connections_flow_started",

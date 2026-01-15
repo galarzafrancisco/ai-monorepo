@@ -8,7 +8,7 @@ import './McpRegistry.css';
 import { useAuthorizationServer } from './useAuthorizationServer';
 import { McpRegistryService, AuthorizationJourneysService } from './api';
 import type { AuthJourneyResponseDto } from 'shared';
-import { AuthJourneyResponseDto as AuthJourneyTypes, McpFlowResponseDto as McpFlowTypes } from 'shared';
+import { AuthJourneyResponseDto as AuthJourneyTypes, ConnectionFlowResponseDto, McpFlowResponseDto as McpFlowTypes } from 'shared';
 
 type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | 'edit-server' | null;
 
@@ -631,10 +631,12 @@ export function McpServerDetail() {
                         backgroundColor: journey.status === AuthJourneyTypes.status.AUTHORIZATION_CODE_EXCHANGED ? '#d4edda' :
                           journey.status === AuthJourneyTypes.status.MCP_AUTH_FLOW_STARTED ? '#cfe2ff' :
                           journey.status === AuthJourneyTypes.status.CONNECTIONS_FLOW_STARTED ? '#fff3cd' :
+                          journey.status === AuthJourneyTypes.status.USER_CONSENT_REJECTED ? '#f8d7da' :
                           '#e2e3e5',
                         color: journey.status === AuthJourneyTypes.status.AUTHORIZATION_CODE_EXCHANGED ? '#155724' :
                           journey.status === AuthJourneyTypes.status.MCP_AUTH_FLOW_STARTED ? '#084298' :
                           journey.status === AuthJourneyTypes.status.CONNECTIONS_FLOW_STARTED ? '#664d03' :
+                          journey.status === AuthJourneyTypes.status.USER_CONSENT_REJECTED ? '#842029' :
                           '#383d41'
                       }}>
                         {journey.status.replace(/_/g, ' ').toUpperCase()}
@@ -656,6 +658,7 @@ export function McpServerDetail() {
                       fontWeight: 500,
                       color: journey.mcpAuthorizationFlow.status === McpFlowTypes.status.AUTHORIZATION_CODE_EXCHANGED ? '#28a745' :
                         journey.mcpAuthorizationFlow.status === McpFlowTypes.status.CLIENT_REGISTERED ? '#007bff' :
+                        journey.mcpAuthorizationFlow.status === McpFlowTypes.status.USER_CONSENT_REJECTED ? '#dc3545' :
                         '#6c757d'
                     }}>{journey.mcpAuthorizationFlow.status.replace(/_/g, ' ')}</span></div>
                     {journey.mcpAuthorizationFlow.scope && <div>Scopes: {journey.mcpAuthorizationFlow.scope}</div>}
@@ -679,11 +682,13 @@ export function McpServerDetail() {
                               fontSize: '11px',
                               padding: '2px 8px',
                               borderRadius: '4px',
-                              backgroundColor: connFlow.status === 'authorized' ? '#d4edda' :
-                                connFlow.status === 'pending' ? '#fff3cd' :
+                              backgroundColor: connFlow.status === ConnectionFlowResponseDto.status.AUTHORIZED ? '#d4edda' :
+                                connFlow.status === ConnectionFlowResponseDto.status.PENDING ? '#fff3cd' :
+                                connFlow.status === ConnectionFlowResponseDto.status.FAILED ? '#f8d7da' :
                                 '#f8d7da',
-                              color: connFlow.status === 'authorized' ? '#155724' :
-                                connFlow.status === 'pending' ? '#664d03' :
+                              color: connFlow.status === ConnectionFlowResponseDto.status.AUTHORIZED ? '#155724' :
+                                connFlow.status === ConnectionFlowResponseDto.status.PENDING ? '#664d03' :
+                                connFlow.status === ConnectionFlowResponseDto.status.FAILED ? '#842029' :
                                 '#721c24'
                             }}>
                               {connFlow.status}

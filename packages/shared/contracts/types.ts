@@ -2010,7 +2010,7 @@ export interface components {
              * @example mcp_auth_flow_started
              * @enum {string}
              */
-            status: "not_started" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
+            status: "not_started" | "USER_CONSENT_REJECTED" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
             /** @description The MCP authorization flow for this journey */
             mcpAuthorizationFlow: components["schemas"]["McpFlowResponseDto"];
             /** @description Connection authorization flows for this journey */

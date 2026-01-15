@@ -8,6 +8,7 @@ import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mappin
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
 import { JwksService } from '../auth/crypto/jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
+import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 
 describe('TokenExchangeService', () => {
   let service: TokenExchangeService;
@@ -32,7 +33,7 @@ describe('TokenExchangeService', () => {
   const mockAuthFlow: ConnectionAuthorizationFlowEntity = {
     id: 'flow-uuid',
     mcpConnectionId: 'connection-uuid',
-    status: 'authorized',
+    status: ConnectionAuthorizationFlowStatus.AUTHORIZED,
     accessToken: 'downstream-access-token',
     refreshToken: 'downstream-refresh-token',
     tokenExpiresAt: new Date(Date.now() + 3600000), // 1 hour from now
