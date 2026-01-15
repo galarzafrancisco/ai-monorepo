@@ -6,7 +6,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
 import { useAuthorizationServer } from './useAuthorizationServer';
-import { McpRegistryService, AuthorizationJourneysService } from './api';
+import { AuthorizationJourneysService } from './api';
 import type { AuthJourneyResponseDto } from 'shared';
 import { AuthJourneyResponseDto as AuthJourneyTypes, ConnectionFlowResponseDto, McpFlowResponseDto as McpFlowTypes } from 'shared';
 
@@ -297,7 +297,7 @@ export function McpServerDetail() {
     } = {};
 
     mappings.forEach((mapping) => {
-      const scope = scopes.find((s) => s.scopeId === mapping.scopeId);
+      const scope = scopes.find((s) => s.id === mapping.scopeId);
       const connection = connections.find((c) => c.id === mapping.connectionId);
 
       if (!scope || !connection) return;
@@ -376,7 +376,7 @@ export function McpServerDetail() {
           {scopes.length > 0 && (
             <div className="info-item">
               <span className="info-label">Scopes</span>
-              <span className="info-value">{scopes.map(s => s.scopeId).join(', ')}</span>
+              <span className="info-value">{scopes.map(s => s.id).join(', ')}</span>
             </div>
           )}
           {selectedServer.url && (
@@ -455,11 +455,11 @@ export function McpServerDetail() {
               </div>
               {scopes.map((scope) => (
                 <div key={scope.id} className="table-body-row">
-                  <div className="table-col-name">{scope.scopeId}</div>
+                  <div className="table-col-name">{scope.id}</div>
                   <div className="table-col-description">{scope.description}</div>
                   <div className="table-col-actions">
                     <button
-                      onClick={() => handleDeleteScope(scope.scopeId)}
+                      onClick={() => handleDeleteScope(scope.id)}
                       className="btn-delete-small"
                     >
                       Delete
@@ -560,7 +560,7 @@ export function McpServerDetail() {
                   {Object.entries(groupedMappings).map(([scopeId, scopeGroup]) => (
                     <div key={scopeId} className="mapping-group">
                       <div className="mapping-group-header">
-                        {scopeGroup.scope.scopeId} → {Object.keys(scopeGroup.connections).length} connection{Object.keys(scopeGroup.connections).length !== 1 ? 's' : ''}
+                        {scopeGroup.scope.id} → {Object.keys(scopeGroup.connections).length} connection{Object.keys(scopeGroup.connections).length !== 1 ? 's' : ''}
                       </div>
                       <div className="mapping-items">
                         {Object.entries(scopeGroup.connections).map(([connectionId, connectionGroup]) =>
@@ -1053,8 +1053,8 @@ export function McpServerDetail() {
                 >
                   <option value="">Select a scope</option>
                   {scopes.map((scope) => (
-                    <option key={scope.id} value={scope.scopeId}>
-                      {scope.scopeId}
+                    <option key={scope.id} value={scope.id}>
+                      {scope.id}
                     </option>
                   ))}
                 </select>

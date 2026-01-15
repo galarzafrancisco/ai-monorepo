@@ -112,11 +112,15 @@ export class AppInitRunner implements OnApplicationBootstrap {
       }
     }
     try {
+      this.logger.log(`Ensuring scopes for MCP Server ${server.name}`);
       await this.mcpRegistryService.createScopes(server.id, scopesConfig);
+      this.logger.log(`Scopes ensured for MCP Server ${server.name}`);
     } catch (error) {
       if (!(error instanceof ScopeAlreadyExistsError)) {
+        this.logger.error(`Error ensuring scopes for MCP Server ${server.name}: ${error}`);
         throw error;
       }
+      this.logger.log(`Scopes already exist for MCP Server ${server.name}`);
     }
     return server;
   }

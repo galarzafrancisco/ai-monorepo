@@ -44,7 +44,6 @@ export type ServerRecord = {
 
 export type ScopeRecord = {
   id: string;
-  scopeId: string;
   serverId: string;
   description: string;
   createdAt: Date;

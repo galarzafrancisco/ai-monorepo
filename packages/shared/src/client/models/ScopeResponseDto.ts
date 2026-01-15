@@ -4,13 +4,9 @@
 /* eslint-disable */
 export type ScopeResponseDto = {
     /**
-     * System-generated UUID for the scope
-     */
-    id: string;
-    /**
      * Unique scope identifier (e.g., tool:read)
      */
-    scopeId: string;
+    id: string;
     /**
      * Description of what this scope allows
      */

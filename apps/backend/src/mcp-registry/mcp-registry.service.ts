@@ -195,15 +195,15 @@ export class McpRegistryService {
 
   async createScopes(
     serverId: string,
-    inputs: Scope[],
+    scopes: Scope[],
   ): Promise<ScopeRecord[]> {
-    if (inputs.length === 0) {
+    if (scopes.length === 0) {
       return [];
     }
 
     await this.assertServerExists(serverId);
 
-    const scopeIds = inputs.map((input) => input.id);
+    const scopeIds = scopes.map((input) => input.id);
     const duplicateScopeId = this.findDuplicate(scopeIds);
 
     if (duplicateScopeId) {
@@ -213,17 +213,17 @@ export class McpRegistryService {
     const existingScopes = await this.scopeRepository.find({
       where: {
         serverId,
-        scopeId: In(scopeIds),
+        id: In(scopeIds),
       },
     });
 
     if (existingScopes.length > 0) {
-      throw new ScopeAlreadyExistsError(existingScopes[0].scopeId, serverId);
+      throw new ScopeAlreadyExistsError(existingScopes[0].id, serverId);
     }
 
-    const scopeEntities = inputs.map((input) =>
+    const scopeEntities = scopes.map((scope) =>
       this.scopeRepository.create({
-        ...input,
+        ...scope,
         serverId,
       }),
     );
@@ -238,23 +238,23 @@ export class McpRegistryService {
 
     const scopes = await this.scopeRepository.find({
       where: { serverId },
-      order: { scopeId: 'ASC' },
+      order: { id: 'ASC' },
     });
 
     return scopes.map((scope) => this.mapScopeEntityToRecord(scope));
   }
 
   async getScope(
-    scopeId: string,
+    id: string,
     serverId: string,
   ): Promise<ScopeWithMappingsRecord> {
     const scope = await this.scopeRepository.findOne({
-      where: { scopeId, serverId },
+      where: { id, serverId },
       relations: ['mappings', 'mappings.connection'],
     });
 
     if (!scope) {
-      throw new ScopeNotFoundError(scopeId, serverId);
+      throw new ScopeNotFoundError(id, serverId);
     }
 
     return {
@@ -265,19 +265,19 @@ export class McpRegistryService {
     };
   }
 
-  async deleteScope(scopeId: string, serverId: string): Promise<void> {
-    await this.assertScopeExists(scopeId, serverId);
+  async deleteScope(id: string, serverId: string): Promise<void> {
+    await this.assertScopeExists(id, serverId);
 
     // Check for mappings
     const mappingCount = await this.mappingRepository.count({
-      where: { scopeId, serverId },
+      where: { id, serverId },
     });
 
     if (mappingCount > 0) {
-      throw new ScopeHasMappingsError(scopeId);
+      throw new ScopeHasMappingsError(id);
     }
 
-    await this.scopeRepository.softDelete({ scopeId, serverId });
+    await this.scopeRepository.softDelete({ id, serverId });
   }
 
   // Connection CRUD operations
@@ -470,13 +470,13 @@ export class McpRegistryService {
     }
   }
 
-  private async assertScopeExists(scopeId: string, serverId: string): Promise<void> {
+  private async assertScopeExists(id: string, serverId: string): Promise<void> {
     const exists = await this.scopeRepository.exist({
-      where: { scopeId, serverId },
+      where: { id, serverId },
     });
 
     if (!exists) {
-      throw new ScopeNotFoundError(scopeId, serverId);
+      throw new ScopeNotFoundError(id, serverId);
     }
   }
 
@@ -505,8 +505,7 @@ export class McpRegistryService {
 
   private mapScopeEntityToRecord(scope: McpScopeEntity): ScopeRecord {
     return {
-      id: (scope as { id?: string }).id ?? `${scope.serverId}:${scope.scopeId}`,
-      scopeId: scope.scopeId,
+      id: scope.id,
       serverId: scope.serverId,
       description: scope.description,
       createdAt: scope.createdAt instanceof Date ? scope.createdAt : new Date(scope.createdAt),

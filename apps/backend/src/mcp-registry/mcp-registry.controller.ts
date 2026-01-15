@@ -313,7 +313,6 @@ export class McpRegistryController {
   private mapScopeToResponse(scope: ScopeRecord): ScopeResponseDto {
     return {
       id: scope.id,
-      scopeId: scope.scopeId,
       serverId: scope.serverId,
       description: scope.description,
       createdAt: this.formatDate(scope.createdAt),

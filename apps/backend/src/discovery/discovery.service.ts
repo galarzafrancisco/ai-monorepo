@@ -60,7 +60,7 @@ export class DiscoveryService {
 
     const serverIdentifier = server.providedId ?? server.id;
     const scopes = (server.scopes ?? [])
-      .map((scope) => scope.scopeId)
+      .map((scope) => scope.id)
       .sort((a, b) => a.localeCompare(b));
 
     return {

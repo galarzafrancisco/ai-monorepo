@@ -15,7 +15,7 @@ import { McpScopeMappingEntity } from './mcp-scope-mapping.entity';
 @Entity('mcp_scopes')
 export class McpScopeEntity {
   @PrimaryColumn({ type: 'varchar', length: 255 })
-  scopeId!: string;
+  id!: string;
 
   @PrimaryColumn({ type: 'uuid' })
   serverId!: string;

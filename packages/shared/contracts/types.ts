@@ -2142,15 +2142,10 @@ export interface components {
         };
         ScopeResponseDto: {
             /**
-             * @description System-generated UUID for the scope
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
              * @description Unique scope identifier (e.g., tool:read)
              * @example tool:read
              */
-            scopeId: string;
+            id: string;
             /**
              * @description Description of what this scope allows
              * @example Read access to tools

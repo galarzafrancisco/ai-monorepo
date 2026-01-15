@@ -34,7 +34,7 @@ export class McpScopeMappingEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn([
-    { name: 'scopeId', referencedColumnName: 'scopeId' },
+    { name: 'scopeId', referencedColumnName: 'id' },
     { name: 'serverId', referencedColumnName: 'serverId' },
   ])
   scope!: McpScopeEntity;

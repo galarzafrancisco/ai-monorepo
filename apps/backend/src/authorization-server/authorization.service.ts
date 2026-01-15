@@ -79,7 +79,7 @@ export class AuthorizationService {
     let scopes: string[] = [];
     if (authRequest.scope) {
       const requestedScopes = authRequest.scope.split(' '); // in GET /authorize, the scopes are space delimited
-      const allowedScopes = mcpServer.scopes.map(s => s.scopeId);
+      const allowedScopes = mcpServer.scopes.map(s => s.id);
       scopes = requestedScopes.filter(s => allowedScopes.includes(s));
     }
 

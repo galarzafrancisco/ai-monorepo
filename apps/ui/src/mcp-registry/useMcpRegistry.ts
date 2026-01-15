@@ -14,7 +14,6 @@ type McpServer = {
 
 type McpScope = {
   id: string;
-  scopeId: string;
   serverId: string;
   description: string;
   createdAt: string;
@@ -96,13 +95,13 @@ export const useMcpRegistry = () => {
           try {
             const scopeMappings = await McpRegistryService.mcpRegistryControllerListMappings(
               serverId,
-              scope.scopeId
+              scope.id
             );
             if (scopeMappings) {
               allMappings.push(...scopeMappings);
             }
           } catch (err) {
-            console.error(`Failed to load mappings for scope ${scope.scopeId}`, err);
+            console.error(`Failed to load mappings for scope ${scope.id}`, err);
           }
         }
         setMappings(allMappings);
