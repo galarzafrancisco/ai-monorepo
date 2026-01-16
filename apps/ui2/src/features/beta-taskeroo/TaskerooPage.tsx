@@ -47,7 +47,7 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
   }, [tasks, statusFilter]);
 
   return (
-    <div style={{ height: '100%' }}>
+    <div className={`${isDesktop ? 'full-height' : ''}`}>
       {!isDesktop ?
         <TasksToRows tasks={filteredTasks} />
         :

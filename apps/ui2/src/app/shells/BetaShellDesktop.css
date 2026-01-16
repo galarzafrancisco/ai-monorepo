@@ -168,3 +168,10 @@
 .beta-shell__desktop__sidebar--toggle:hover {
   background-color: var(--border);
 }
+
+/* --------------------------------------------------------
+ Content
+-------------------------------------------------------- */
+div.full-height {
+  height: 100%;
+}

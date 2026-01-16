@@ -63,6 +63,16 @@ export function IosShell(props: IosShellProps): JSX.Element {
   const [contentBehindHeader, setContentBehindHeader] = useState(true);
   const [contentBehindBottomNav, setContentBehindBottomNav] = useState(true);
 
+  // Main
+  // Reference to the scrollable main container (needed as root for IntersectionObserver)
+  const mainRefEl = useRef<HTMLElement | null>(null);
+  const mainRef = (el: HTMLDivElement | null) => {
+    mainRefEl.current = el;
+    detectContentBehindHeader();
+    detectSectionTitleVisibility();
+    detectContentBehindBottomNav();
+  }
+
   // Top of the section title
   const mainSectionTitleTopSentinelRefEl = useRef<HTMLDivElement | null>(null);
   const mainSectionTitleTopSentinelRef = (el: HTMLDivElement | null) => {
@@ -90,7 +100,8 @@ export function IosShell(props: IosShellProps): JSX.Element {
 
   const detector = (detectorRef: React.RefObject<IntersectionObserver | null>, elementRef: React.RefObject<HTMLDivElement | null>, onIntersecting: (visible: boolean) => void) => {
     const sentinel = elementRef.current;
-    if (!sentinel) return;
+    const root = mainRefEl.current;
+    if (!sentinel || !root) return;
 
     detectorRef.current?.disconnect();
     detectorRef.current = new IntersectionObserver(
@@ -98,6 +109,7 @@ export function IosShell(props: IosShellProps): JSX.Element {
         onIntersecting(entry.isIntersecting);
       },
       {
+        root, // Use the scrollable main container as the root
         threshold: [0, 1],
       }
     );
@@ -108,7 +120,10 @@ export function IosShell(props: IosShellProps): JSX.Element {
     detector(
       sectionTitleVisibilityObserverRef,
       mainSectionTitleBottomSentinelRefEl,
-      (x) => setSectionTitleVisible(x),
+      (x) => {
+        console.log(`title visibility detector: ${x}`);
+        setSectionTitleVisible(x);
+      },
     )
   }
 
@@ -116,7 +131,10 @@ export function IosShell(props: IosShellProps): JSX.Element {
     detector(
       contentBehindHeaderObserverRef,
       mainSectionTitleTopSentinelRefEl,
-      (x) => setContentBehindHeader(!x),
+      (x) => {
+        console.log(`content behind header detector: ${x}`);
+        setContentBehindHeader(!x);
+      },
     )
   }
 
@@ -124,12 +142,20 @@ export function IosShell(props: IosShellProps): JSX.Element {
     detector(
       contentBehindBottomNavObserverRef,
       mainBottomSentinelRefEl,
-      (x) => setContentBehindBottomNav(!x),
+      (x) => {
+        console.log(`bottom detector: ${x}`);
+        setContentBehindBottomNav(!x);
+      },
     )
   }
 
-  // Clean up all the observers
+  // Initialize observers after mount (when mainRef is available)
   useEffect(() => {
+    // detectSectionTitleVisibility();
+    // detectContentBehindHeader();
+    // detectContentBehindBottomNav();
+
+    // Clean up all the observers on unmount
     return () => {
       sectionTitleVisibilityObserverRef.current?.disconnect();
       contentBehindHeaderObserverRef.current?.disconnect();
@@ -193,7 +219,7 @@ export function IosShell(props: IosShellProps): JSX.Element {
       </header>
 
       {/* Main content */}
-      <main className="ios-shell__main">
+      <main ref={mainRef} className="ios-shell__main">
         <div className="ios-shell__main__top-padding" />
         <div ref={mainSectionTitleTopSentinelRef} className="ios-shell__main__section-title-top-sentinel" />
         <div className={`ios-shell__main__section-title ${sectionTitleVisible ? 'is-visible' : 'is-hidden'}`}>
