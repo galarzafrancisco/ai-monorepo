@@ -1,5 +1,5 @@
 import { Stack, Text, Card, Row, Button } from '../../ui/primitives';
-import { useTheme } from '../providers';
+import { useTheme } from '../../app/providers/ThemeProvider';
 import './SettingsPage.css';
 
 const THEMES = [

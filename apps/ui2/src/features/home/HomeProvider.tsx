@@ -15,11 +15,6 @@ export function HomeProvider({ children }: { children: React.ReactNode }) {
   const { message } = useHome();
   const [sectionTitle, setSectionTitle] = useState("");
 
-  useEffect(() => {
-    console.log("HomeProvider MOUNT");
-    return () => console.log("HomeProvider UNMOUNT");
-  }, []);
-
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<HomeContextValue>(() => {
     return {

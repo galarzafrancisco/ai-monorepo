@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 import { useTaskeroo } from "./useTaskeroo"; // your abstraction hook
 import type { Task } from "./types";
 

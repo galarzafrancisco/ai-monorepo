@@ -7,7 +7,7 @@ export const useHome = () => {
   // Boot
   useEffect(() => {
     console.log('useHome setting message');
-    setMessage("Hello!");
+    setMessage("Message coming from useHome");
   }, []);
 
   return {

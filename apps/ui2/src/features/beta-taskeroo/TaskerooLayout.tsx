@@ -7,13 +7,12 @@ import { TASKEROO_STATUS_NAV } from "./const";
 
 export function TaskerooLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
-  const { sectionTitle } = useTaskerooCtx();
-
+  const { sectionTitle } = useTaskerooCtx();;
 
   console.log('Taskeroo layout mounting');
 
   return (
-    <div style={{minHeight:0}}>
+    <div style={{ minHeight: 0 }}>
       {isDesktop ?
         <TaskerooDesktopView>
           <Outlet />

@@ -3,8 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import "./IosShell.css";
 import { Row, Text } from "../../ui/primitives";
 import { useTheme } from "../providers";
-import { APP_NAV_ITEMS } from "./navigation";
 import { InAppNavItem } from "src/shared/navigation";
+import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 
 export interface NavItem {
   label: string;
@@ -47,13 +47,15 @@ function BottomNavContent({ navItems }: { navItems: InAppNavItem[] }): JSX.Eleme
 }
 
 export function IosShell(props: IosShellProps): JSX.Element {
-
+  console.log(props)
   const { theme, setTheme } = useTheme();
   useEffect(() => {
     setTheme('light');
   }, []);
 
   const location = useLocation();
+
+  console.log('Mounting iOS shell')
 
   // Side bar
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -157,7 +159,7 @@ export function IosShell(props: IosShellProps): JSX.Element {
           </button>
         </div>
         <nav className="ios-shell__drawer-nav">
-          {APP_NAV_ITEMS.map((item) => {
+          {MAIN_NAVEGATION_ITEMS.map((item) => {
             const isActive = location.pathname === item.path ||
               location.pathname.startsWith(item.path + '/');
             return (

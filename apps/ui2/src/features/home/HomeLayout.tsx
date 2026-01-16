@@ -9,11 +9,8 @@ export function HomeLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
   const { sectionTitle } = useHomeCtx();
 
-  console.log('Home layout mounting');
-  console.log(sectionTitle);
-
   return (
-    <HomeProvider>
+    <>
       {isDesktop ?
         <HomeDesktopView>
           <Outlet />
@@ -25,7 +22,8 @@ export function HomeLayout(): JSX.Element {
           navItems={HOME_NAVEGATION_ITEMS}
         >
           <Outlet />
-        </IosShell>}
-    </HomeProvider>
+        </IosShell>
+      }
+    </>
   )
 }

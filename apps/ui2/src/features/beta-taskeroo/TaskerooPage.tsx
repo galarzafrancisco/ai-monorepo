@@ -34,7 +34,7 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
   // Set page title
   useEffect(() => {
     if (!statusFilter) {
-      setSectionTitle("All")
+      setSectionTitle("All");
       return;
     }
     setSectionTitle(TASKEROO_STATUS[statusFilter].label);
@@ -47,14 +47,12 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
   }, [tasks, statusFilter]);
 
   return (
-    <div style={{height: '100%'}}>
+    <div style={{ height: '100%' }}>
       {!isDesktop ?
         <TasksToRows tasks={filteredTasks} />
         :
         <div className="taskeroo-page">
-          <div className="taskeroo-page__content">
-            <BoardView tasks={filteredTasks} />
-          </div>
+          <BoardView tasks={filteredTasks} />
         </div>
       }
     </div>

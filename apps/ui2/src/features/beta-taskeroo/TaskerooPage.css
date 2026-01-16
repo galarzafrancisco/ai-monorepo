@@ -19,12 +19,6 @@
 
 }
 
-.taskeroo-page__content {
-  flex: 1;
-  min-height: 0;          /* important */
-  height: 100%;
-}
-
 .taskeroo-board-column {
   display: flex;
   flex-direction: column;

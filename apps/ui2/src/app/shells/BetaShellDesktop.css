@@ -6,6 +6,9 @@
   grid-template-columns: 240px 1fr;
   height: 100vh;
   overflow: hidden;
+
+  min-height: 100vh;
+
   /* chatgpt reckons this is critical: stops page scroll */
   background-color: var(--bg);
   transition: grid-template-columns 0.2s ease;
@@ -23,7 +26,7 @@
   /* Fill the screen */
   height: 100vh;
   overflow-y: auto;
-  display: flex;
+  display: flex; /* added this to enable scrollable columns in taskeroo board view */
   padding: var(--space-6);
   min-height: 0;
   /* critical: allows internal scrolling */
@@ -31,6 +34,11 @@
   /* prevents horizontal overflow weirdness */
 }
 
+/* All pages automatically expand horizontally */
+.beta-shell__desktop__main>* {
+  flex: 1;
+  min-height: 0;
+}
 
 /* --------------------------------------------------------
  Sidebar

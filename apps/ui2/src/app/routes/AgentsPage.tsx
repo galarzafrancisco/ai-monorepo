@@ -1,11 +1,11 @@
 import { Stack, Text, Card } from '../../ui/primitives';
 
-export function MCPRegistryRoute() {
+export function AgentsPage() {
   return (
     <Stack spacing="5">
       <Stack spacing="2">
-        <Text size="6" weight="bold">MCP Registry</Text>
-        <Text tone="muted">Model Context Protocol registry and tools</Text>
+        <Text size="6" weight="bold">Agents</Text>
+        <Text tone="muted">AI agent management and configuration</Text>
       </Stack>
 
       <Card>

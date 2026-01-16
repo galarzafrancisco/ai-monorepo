@@ -19,17 +19,21 @@ function Content(): JSX.Element {
 }
 
 export function HomePage() {
-  console.log('Home Page');
-  const { setSectionTitle } = useHomeCtx();
-  
+  console.log('Home page mounting');
+  const { message, setSectionTitle, sectionTitle } = useHomeCtx();
+
   useEffect(() => {
-    console.log('setting section title')
-    setSectionTitle('Home sweet home')
+    console.log('Home page useEffect hook triggered');
+    console.log('setting section title');
+    setSectionTitle('Home sweet home');
   }, []);
 
   return (
     <div>
-      <Content />
+      <p>hardcoded content</p>
+      <p>{message}</p>
+      <p>section title via hook: {sectionTitle}</p>
+      {/* <Content /> */}
     </div>
   )
 }
