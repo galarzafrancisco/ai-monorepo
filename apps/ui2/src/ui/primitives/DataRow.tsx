@@ -6,6 +6,8 @@ export type DataRowTag = {
   color?: "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple";
 };
 
+export type DataRowAnimation = "entering" | "exiting";
+
 export interface DataRowProps {
   /** Left area: icon / avatar / checkbox etc. */
   leading?: ReactNode;
@@ -22,6 +24,9 @@ export interface DataRowProps {
   /** Optional supporting text on the right (like a chevron) */
   trailing?: ReactNode;
 
+  /** Animation state for enter/exit transitions */
+  animation?: DataRowAnimation;
+
   className?: string;
 }
 
@@ -31,33 +36,38 @@ export function DataRow({
   tags = [],
   topRight,
   trailing,
+  animation,
   className = "",
 }: DataRowProps) {
-  return (
-    <div className={`data-row ${className}`} data-component="data-row">
-      {leading ? <div className="data-row__leading">{leading}</div> : null}
+  const animationClass = animation ? `data-row--${animation}` : "";
 
-      <div className="data-row__content">
-        <div className="data-row__top">
-          <div className="data-row__main">{children}</div>
-          {topRight ? <div className="data-row__meta">{topRight}</div> : null}
+  return (
+    <div className={`data-row__wrapper ${animationClass}`}>
+      <div className={`data-row ${className}`} data-component="data-row">
+        {leading ? <div className="data-row__leading">{leading}</div> : null}
+
+        <div className="data-row__content">
+          <div className="data-row__top">
+            <div className="data-row__main">{children}</div>
+            {topRight ? <div className="data-row__meta">{topRight}</div> : null}
+          </div>
+
+          {tags.length ? (
+            <div className="data-row__tags" aria-label="tags">
+              {tags.map((t) => (
+                <span
+                  key={t.label}
+                  className={`chip chip--${t.color ?? "gray"}`}
+                >
+                  {t.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
 
-        {tags.length ? (
-          <div className="data-row__tags" aria-label="tags">
-            {tags.map((t) => (
-              <span
-                key={t.label}
-                className={`chip chip--${t.color ?? "gray"}`}
-              >
-                {t.label}
-              </span>
-            ))}
-          </div>
-        ) : null}
+        {trailing ? <div className="data-row__trailing">{trailing}</div> : null}
       </div>
-
-      {trailing ? <div className="data-row__trailing">{trailing}</div> : null}
     </div>
   );
 }

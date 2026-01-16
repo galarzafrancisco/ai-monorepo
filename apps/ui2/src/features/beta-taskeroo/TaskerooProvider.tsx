@@ -1,6 +1,21 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTaskeroo } from "./useTaskeroo"; // your abstraction hook
 import type { Task } from "./types";
+import { TaskStatus } from "./const";
+
+// Animation state tracked per status (for column-based animations)
+export type AnimationState = {
+  enteringIds: Set<string>;
+  exitingTasks: Task[];
+};
+
+// Helper to create empty animation state for all statuses
+const createEmptyAnimationByStatus = (): Record<TaskStatus, AnimationState> => ({
+  [TaskStatus.NOT_STARTED]: { enteringIds: new Set(), exitingTasks: [] },
+  [TaskStatus.IN_PROGRESS]: { enteringIds: new Set(), exitingTasks: [] },
+  [TaskStatus.FOR_REVIEW]: { enteringIds: new Set(), exitingTasks: [] },
+  [TaskStatus.DONE]: { enteringIds: new Set(), exitingTasks: [] },
+});
 
 // Shape this to match what pages/layout need.
 export type TaskerooContextValue = {
@@ -10,14 +25,144 @@ export type TaskerooContextValue = {
   isConnected: boolean;
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
+  // Per-status animation state (for board columns)
+  animationByStatus: Record<TaskStatus, AnimationState>;
+  // Global animation state (for mobile "all" view)
+  globalEnteringIds: Set<string>;
+  globalExitingTasks: Task[];
 };
 
 const TaskerooContext = createContext<TaskerooContextValue | null>(null);
+
+const ANIMATION_DURATION_MS = 500;
+
+// Track active animations that haven't expired yet
+type ActiveAnimation = {
+  enteringByStatus: Record<TaskStatus, Set<string>>;
+  exitingByStatus: Record<TaskStatus, Task[]>;
+  globalEntering: Set<string>;
+  globalExiting: Task[];
+  expiresAt: number;
+};
 
 export function TaskerooProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
   const { tasks, isLoading, error, isConnected } = useTaskeroo();
   const [sectionTitle, setSectionTitle] = useState("");
+
+  // Refs for synchronous computation
+  const prevTasksRef = useRef<Map<string, Task>>(new Map());
+  const activeAnimationsRef = useRef<ActiveAnimation[]>([]);
+
+  // State to trigger cleanup re-renders
+  const [cleanupTrigger, setCleanupTrigger] = useState(0);
+
+  // Compute animation state SYNCHRONOUSLY during render (no flicker)
+  const { animationByStatus, globalEnteringIds, globalExitingTasks } = useMemo(() => {
+    const now = Date.now();
+    const currentTasksMap = new Map(tasks.map(t => [t.id, t]));
+    const prevTasks = prevTasksRef.current;
+    const prevIds = new Set(prevTasks.keys());
+    const currentIds = new Set(currentTasksMap.keys());
+
+    // Remove expired animations
+    activeAnimationsRef.current = activeAnimationsRef.current.filter(a => a.expiresAt > now);
+
+    // Detect new changes (only if not initial load)
+    if (prevIds.size > 0) {
+      const newEnteringByStatus: Record<TaskStatus, Set<string>> = {
+        [TaskStatus.NOT_STARTED]: new Set(),
+        [TaskStatus.IN_PROGRESS]: new Set(),
+        [TaskStatus.FOR_REVIEW]: new Set(),
+        [TaskStatus.DONE]: new Set(),
+      };
+      const newExitingByStatus: Record<TaskStatus, Task[]> = {
+        [TaskStatus.NOT_STARTED]: [],
+        [TaskStatus.IN_PROGRESS]: [],
+        [TaskStatus.FOR_REVIEW]: [],
+        [TaskStatus.DONE]: [],
+      };
+      const newGlobalEntering = new Set<string>();
+      const newGlobalExiting: Task[] = [];
+
+      // Check for new/changed tasks
+      for (const [id, task] of currentTasksMap) {
+        const prevTask = prevTasks.get(id);
+        if (!prevTask) {
+          newEnteringByStatus[task.status].add(id);
+          newGlobalEntering.add(id);
+        } else if (prevTask.status !== task.status) {
+          newExitingByStatus[prevTask.status].push(prevTask);
+          newEnteringByStatus[task.status].add(id);
+        }
+      }
+
+      // Check for deleted tasks
+      for (const [id, prevTask] of prevTasks) {
+        if (!currentIds.has(id)) {
+          newExitingByStatus[prevTask.status].push(prevTask);
+          newGlobalExiting.push(prevTask);
+        }
+      }
+
+      // Add new animation if there are changes
+      const hasChanges =
+        Object.values(newEnteringByStatus).some(s => s.size > 0) ||
+        Object.values(newExitingByStatus).some(a => a.length > 0);
+
+      if (hasChanges) {
+        activeAnimationsRef.current.push({
+          enteringByStatus: newEnteringByStatus,
+          exitingByStatus: newExitingByStatus,
+          globalEntering: newGlobalEntering,
+          globalExiting: newGlobalExiting,
+          expiresAt: now + ANIMATION_DURATION_MS,
+        });
+      }
+    }
+
+    // Update prev ref for next render
+    prevTasksRef.current = currentTasksMap;
+
+    // Merge all active animations
+    const mergedByStatus = createEmptyAnimationByStatus();
+    let mergedGlobalEntering = new Set<string>();
+    let mergedGlobalExiting: Task[] = [];
+
+    for (const anim of activeAnimationsRef.current) {
+      for (const status of Object.values(TaskStatus)) {
+        anim.enteringByStatus[status].forEach(id => mergedByStatus[status].enteringIds.add(id));
+        mergedByStatus[status].exitingTasks.push(...anim.exitingByStatus[status]);
+      }
+      anim.globalEntering.forEach(id => mergedGlobalEntering.add(id));
+      mergedGlobalExiting.push(...anim.globalExiting);
+    }
+
+    return {
+      animationByStatus: mergedByStatus,
+      globalEnteringIds: mergedGlobalEntering,
+      globalExitingTasks: mergedGlobalExiting,
+    };
+  }, [tasks, cleanupTrigger]);
+
+  // Schedule cleanup to remove expired animations
+  useEffect(() => {
+    if (activeAnimationsRef.current.length === 0) return;
+
+    const nextExpiry = Math.min(...activeAnimationsRef.current.map(a => a.expiresAt));
+    const delay = nextExpiry - Date.now();
+
+    if (delay <= 0) {
+      setCleanupTrigger(t => t + 1);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCleanupTrigger(t => t + 1);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [animationByStatus, globalEnteringIds, globalExitingTasks]);
 
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<TaskerooContextValue>(() => {
@@ -28,6 +173,9 @@ export function TaskerooProvider({ children }: { children: React.ReactNode }) {
       isConnected,
       sectionTitle,
       setSectionTitle,
+      animationByStatus,
+      globalEnteringIds,
+      globalExitingTasks,
     };
   }, [
     tasks,
@@ -36,6 +184,9 @@ export function TaskerooProvider({ children }: { children: React.ReactNode }) {
     isConnected,
     sectionTitle,
     setSectionTitle,
+    animationByStatus,
+    globalEnteringIds,
+    globalExitingTasks,
   ]);
 
   return <TaskerooContext.Provider value={value}>{children}</TaskerooContext.Provider>;

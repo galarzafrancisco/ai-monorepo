@@ -130,3 +130,61 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Animation wrapper */
+.board-card__wrapper {
+  /* No styles by default - just a wrapper for animations */
+}
+
+/* Enter animation - using grid for smooth height animation */
+.board-card--entering {
+  display: grid;
+  grid-template-rows: 0fr;
+  animation: board-card-enter 500ms ease-out forwards;
+}
+
+.board-card--entering > * {
+  overflow: hidden;
+}
+
+@keyframes board-card-enter {
+  0% {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  50% {
+    grid-template-rows: 1fr;
+    opacity: 0;
+  }
+  100% {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+/* Exit animation */
+.board-card--exiting {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: board-card-exit 500ms ease-in forwards;
+  pointer-events: none;
+}
+
+.board-card--exiting > * {
+  overflow: hidden;
+}
+
+@keyframes board-card-exit {
+  0% {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  50% {
+    grid-template-rows: 1fr;
+    opacity: 0;
+  }
+  100% {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}

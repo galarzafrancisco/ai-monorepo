@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
-import { Avatar, BoardCard, DataRow, Text } from "../../ui/primitives";
-import { useTaskerooCtx } from "./TaskerooProvider"
+import { Avatar, BoardCard, DataRow, Text, DataRowAnimation, BoardCardAnimation } from "../../ui/primitives";
+import { useTaskerooCtx, AnimationState } from "./TaskerooProvider"
 import { TaskStatus } from "./const";
 import { TASKEROO_STATUS } from "./const";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
@@ -29,7 +29,7 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
 
   const isDesktop = useIsDesktop();
   const statusFilter = isDesktop ? undefined : status;
-  const { tasks, isLoading, error, setSectionTitle } = useTaskerooCtx();
+  const { tasks, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks } = useTaskerooCtx();
 
   // Set page title
   useEffect(() => {
@@ -46,78 +46,143 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
     return tasks.filter(t => t.status === statusFilter);
   }, [tasks, statusFilter]);
 
+  // Get animation state for mobile view
+  const mobileAnimationState = useMemo(() => {
+    if (!statusFilter) {
+      // "All" view uses global animation state
+      return { enteringIds: globalEnteringIds, exitingTasks: globalExitingTasks };
+    }
+    // Filtered view uses per-status animation state
+    return {
+      enteringIds: animationByStatus[statusFilter].enteringIds,
+      exitingTasks: animationByStatus[statusFilter].exitingTasks,
+    };
+  }, [statusFilter, animationByStatus, globalEnteringIds, globalExitingTasks]);
+
   return (
     <div className={`${isDesktop ? 'full-height' : ''}`}>
       {!isDesktop ?
-        <TasksToRows tasks={filteredTasks} />
+        <TasksToRows
+          tasks={filteredTasks}
+          enteringIds={mobileAnimationState.enteringIds}
+          exitingTasks={mobileAnimationState.exitingTasks}
+        />
         :
         <div className="taskeroo-page">
-          <BoardView tasks={filteredTasks} />
+          <BoardView tasks={tasks} animationByStatus={animationByStatus} />
         </div>
       }
     </div>
   )
 }
 
-function TasksToRows({ tasks }: { tasks: Task[] }): JSX.Element {
+function TaskRow({ task, animation }: { task: Task, animation?: DataRowAnimation }): JSX.Element {
+  return (
+    <DataRow
+      leading={<Avatar name={task.createdBy} size='lg' />}
+      topRight={elapsedTime(task.updatedAt)}
+      tags={task.tags.map(tag => ({ label: tag.name }))}
+      animation={animation}
+    >
+      <Text className='pre'>
+        #{task.id.slice(0, 6)}
+      </Text>
+      <Text weight="bold" size='3' tone='default'>
+        {task.name}
+      </Text>
+      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {task.description}
+      </div>
+      <div style={{ fontSize: 12 }} className="text--tone-muted">
+        {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by ${task.createdBy}`}
+      </div>
+    </DataRow>
+  );
+}
+
+function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], enteringIds: Set<string>, exitingTasks: Task[] }): JSX.Element {
+  // Merge tasks and exitingTasks, sorted by updatedAt (descending) to maintain original order
+  const exitingIdSet = new Set(exitingTasks.map(t => t.id));
+
+  const allTasks = [...tasks, ...exitingTasks].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
   return (
     <>
-      {
-        tasks.map(task =>
-          <DataRow
-            key={task.id}
-            leading={<Avatar name={task.createdBy} size='lg' />}
-            topRight={elapsedTime(task.updatedAt)}
-            tags={task.tags.map(tag => { return { label: tag.name } })}
-          >
-            {/* Task ID */}
-            <Text className='pre'>
-              #{task.id.slice(0, 6)}
-            </Text>
-            <Text weight="bold" size='3' tone='default'>
-              {task.name}
-            </Text>
-            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {task.description}
-            </div>
+      {allTasks.map(task => {
+        const isExiting = exitingIdSet.has(task.id);
+        const isEntering = enteringIds.has(task.id);
 
-            {/* Assigned */}
-            <div style={{ fontSize: 12 }} className="text--tone-muted">
-              {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by ${task.createdBy}`}
-            </div>
-          </DataRow>
-        )
+        let animation: DataRowAnimation | undefined;
+        if (isExiting) animation = 'exiting';
+        else if (isEntering) animation = 'entering';
+
+        return (
+          <TaskRow
+            key={isExiting ? `exiting-${task.id}` : task.id}
+            task={task}
+            animation={animation}
+          />
+        );
+      })}
+    </>
+  )
+}
+
+function TaskCard({ task, animation }: { task: Task, animation?: BoardCardAnimation }): JSX.Element {
+  return (
+    <BoardCard
+      leading={<Avatar name={task.createdBy} size='md' />}
+      topRight={elapsedTime(task.updatedAt)}
+      tags={task.tags.map(tag => ({ label: tag.name }))}
+      animation={animation}
+      footer={
+        <>
+          <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
+          <span className="row-detail truncate">
+            {task.assignee ? `Assigned: ${task.assignee}` : "unassigned"}
+          </span>
+        </>
       }
-    </>
-  )
+    >
+      <div className="row-title truncate">{task.name}</div>
+      <div className="row-subtitle truncate">{task.description}</div>
+    </BoardCard>
+  );
 }
 
-function TasksToCards({ tasks }: { tasks: Task[] }): JSX.Element {
+function TasksToCards({ tasks, enteringIds, exitingTasks }: { tasks: Task[], enteringIds: Set<string>, exitingTasks: Task[] }): JSX.Element {
+  // Merge tasks and exitingTasks, sorted by updatedAt (descending) to maintain original order
+  const exitingIdSet = new Set(exitingTasks.map(t => t.id));
+
+  const allTasks = [...tasks, ...exitingTasks].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
   return (
     <>
-      {tasks.map(task =>
-        <BoardCard
-          leading={<Avatar name={task.createdBy} size='md' />}
-          topRight={elapsedTime(task.updatedAt)}
-          tags={task.tags.map(tag => ({ label: tag.name }))}
-          footer={
-            <>
-              <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
-              <span className="row-detail truncate">
-                {task.assignee ? `Assigned: ${task.assignee}` : "unassigned"}
-              </span>
-            </>
-          }
-        >
-          <div className="row-title truncate">{task.name}</div>
-          <div className="row-subtitle truncate">{task.description}</div>
-        </BoardCard>
-      )}
+      {allTasks.map(task => {
+        const isExiting = exitingIdSet.has(task.id);
+        const isEntering = enteringIds.has(task.id);
+
+        let animation: BoardCardAnimation | undefined;
+        if (isExiting) animation = 'exiting';
+        else if (isEntering) animation = 'entering';
+
+        return (
+          <TaskCard
+            key={isExiting ? `exiting-${task.id}` : task.id}
+            task={task}
+            animation={animation}
+          />
+        );
+      })}
     </>
   )
 }
 
-function BoardColumn({ tasks, status }: { tasks: Task[], status: TaskStatus }): JSX.Element {
+function BoardColumn({ tasks, status, animationState }: { tasks: Task[], status: TaskStatus, animationState: AnimationState }): JSX.Element {
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => task.status === status);
@@ -133,26 +198,27 @@ function BoardColumn({ tasks, status }: { tasks: Task[], status: TaskStatus }): 
           {label}
         </Text>
         <Text size="1" tone="muted">
-          {tasks.length}
+          {filteredTasks.length}
         </Text>
       </div>
       <div className="taskeroo-board-column__body">
-        <TasksToCards tasks={filteredTasks} />
+        <TasksToCards
+          tasks={filteredTasks}
+          enteringIds={animationState.enteringIds}
+          exitingTasks={animationState.exitingTasks}
+        />
       </div>
     </div>
   )
 }
 
-function BoardView({ tasks }: { tasks: Task[] }): JSX.Element {
-  Object.entries(TASKEROO_STATUS).forEach(([a, b]) => {
-    console.log(a);
-  })
+function BoardView({ tasks, animationByStatus }: { tasks: Task[], animationByStatus: Record<TaskStatus, AnimationState> }): JSX.Element {
   return (
     <div className="taskeroo-board-view">
-      <BoardColumn status={TaskStatus.NOT_STARTED} tasks={tasks} />
-      <BoardColumn status={TaskStatus.IN_PROGRESS} tasks={tasks} />
-      <BoardColumn status={TaskStatus.FOR_REVIEW} tasks={tasks} />
-      <BoardColumn status={TaskStatus.DONE} tasks={tasks} />
+      <BoardColumn status={TaskStatus.NOT_STARTED} tasks={tasks} animationState={animationByStatus[TaskStatus.NOT_STARTED]} />
+      <BoardColumn status={TaskStatus.IN_PROGRESS} tasks={tasks} animationState={animationByStatus[TaskStatus.IN_PROGRESS]} />
+      <BoardColumn status={TaskStatus.FOR_REVIEW} tasks={tasks} animationState={animationByStatus[TaskStatus.FOR_REVIEW]} />
+      <BoardColumn status={TaskStatus.DONE} tasks={tasks} animationState={animationByStatus[TaskStatus.DONE]} />
     </div>
   )
 }

@@ -72,3 +72,106 @@
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--border);
 }
+
+/* New task enter animation */
+.task-row--entering {
+  animation: task-enter 500ms ease-out forwards;
+}
+
+@keyframes task-enter {
+  0% {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-8px);
+  }
+  50% {
+    max-height: 200px;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-4px);
+  }
+  100% {
+    max-height: 200px;
+    opacity: 1;
+    overflow: visible;
+    transform: translateY(0);
+  }
+}
+
+/* Task exit animation */
+.task-row--exiting {
+  animation: task-exit 500ms ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes task-exit {
+  0% {
+    max-height: 200px;
+    opacity: 1;
+    overflow: hidden;
+  }
+  50% {
+    max-height: 200px;
+    opacity: 0;
+    overflow: hidden;
+  }
+  100% {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+}
+
+/* Card enter animation (for board view) - using grid for smooth height animation */
+.task-card--entering {
+  display: grid;
+  grid-template-rows: 0fr;
+  animation: card-enter 500ms ease-out forwards;
+}
+
+.task-card--entering > * {
+  overflow: hidden;
+}
+
+@keyframes card-enter {
+  0% {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  50% {
+    grid-template-rows: 1fr;
+    opacity: 0;
+  }
+  100% {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+/* Card exit animation (for board view) */
+.task-card--exiting {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: card-exit 500ms ease-in forwards;
+  pointer-events: none;
+}
+
+.task-card--exiting > * {
+  overflow: hidden;
+}
+
+@keyframes card-exit {
+  0% {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  50% {
+    grid-template-rows: 1fr;
+    opacity: 0;
+  }
+  100% {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}

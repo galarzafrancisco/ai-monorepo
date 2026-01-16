@@ -1,5 +1,8 @@
 import { Stack, Text, Card, Row, Button } from '../../ui/primitives';
 import { useTheme } from '../../app/providers/ThemeProvider';
+import { useHomeCtx } from './HomeProvider';
+import { useEffect } from 'react';
+import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import './SettingsPage.css';
 
 const THEMES = [
@@ -12,13 +15,21 @@ const THEMES = [
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const { setSectionTitle } = useHomeCtx();
+  const isDesktop = useIsDesktop();
+
+  useEffect(() => {
+    setSectionTitle('Settings');
+  }, []);
 
   return (
     <Stack spacing="6">
-      <Stack spacing="2">
-        <Text size="6" weight="bold">Settings</Text>
-        <Text tone="muted">Customize your experience</Text>
-      </Stack>
+      {isDesktop ?
+        <Stack spacing="2">
+          <Text size="6" weight="bold">Settings</Text>
+          <Text tone="muted">Customize your experience</Text>
+        </Stack>
+        : ''}
 
       <Card padding="5">
         <Stack spacing="4">
