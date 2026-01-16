@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Stack, Text, ListRow, Card } from '../../ui/primitives';
+import { useSetShellConfig } from '../hooks/useSetShellConfig';
 
 const LINKS = [
   { path: '/taskeroo', label: 'Taskeroo', description: 'Task management system' },
@@ -11,6 +12,11 @@ const LINKS = [
 ];
 
 export function HomePage() {
+
+  useSetShellConfig({
+    appTitle: "Home"
+  });
+
   return (
     <Stack spacing="6">
       <Stack spacing="3">

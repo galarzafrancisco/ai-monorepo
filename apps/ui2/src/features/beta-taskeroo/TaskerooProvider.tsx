@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useTaskeroo } from "./useTaskeroo"; // your abstraction hook
 import type { Task } from "./types";
 
@@ -8,6 +8,8 @@ export type TaskerooContextValue = {
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
+  sectionTitle: string;
+  setSectionTitle: (title: string) => void;
 };
 
 const TaskerooContext = createContext<TaskerooContextValue | null>(null);
@@ -15,6 +17,7 @@ const TaskerooContext = createContext<TaskerooContextValue | null>(null);
 export function TaskerooProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
   const { tasks, isLoading, error, isConnected } = useTaskeroo();
+  const [sectionTitle, setSectionTitle] = useState("");
 
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<TaskerooContextValue>(() => {
@@ -23,12 +26,16 @@ export function TaskerooProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       error,
       isConnected,
+      sectionTitle,
+      setSectionTitle,
     };
   }, [
     tasks,
     isLoading,
     error,
     isConnected,
+    sectionTitle,
+    setSectionTitle,
   ]);
 
   return <TaskerooContext.Provider value={value}>{children}</TaskerooContext.Provider>;

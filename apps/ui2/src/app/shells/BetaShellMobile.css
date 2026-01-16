@@ -1,0 +1,5 @@
+.beta-shell__mobile {
+  /* Mobile color swap: bg becomes app-surface, app-surface becomes bg */
+  --bg: var(--theme-app-surface);
+  --app-surface: var(--theme-bg);
+}

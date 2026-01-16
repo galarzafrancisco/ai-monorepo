@@ -76,7 +76,7 @@ interface BoardViewProps {
 }
 
 export function BoardView({ tasks }: BoardViewProps) {
-  const tasksByStatus = STATUS_CONFIG.map(({ status, label, icon }) => {
+  const tasksByStatus = Object.entries(STATUS_CONFIG).map(([status, { label, icon }]) => {
     const filteredTasks = tasks.filter((task) => task.status === status);
     return {
       status,
@@ -91,9 +91,9 @@ export function BoardView({ tasks }: BoardViewProps) {
       {tasksByStatus.map(({ status, label, icon, tasks }) => (
         <BoardColumn
           key={status}
-          status={status}
+          status={status as Task.status}
           label={label}
-          icon={icon}
+          icon={icon || ''}
           tasks={tasks}
         />
       ))}

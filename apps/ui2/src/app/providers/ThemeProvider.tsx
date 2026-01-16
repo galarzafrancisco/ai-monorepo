@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
-type Theme = 'light' | 'dark' | 'github' | 'forest';
+type Theme = 'light' | 'dark' | 'github' | 'forest' | 'terminal';
 
 interface ThemeContextValue {
   theme: Theme;

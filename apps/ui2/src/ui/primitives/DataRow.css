@@ -1,0 +1,181 @@
+.data-row {
+  /* list row */
+  background: var(--card-bg);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+
+  /* iOS-ish separators: only across content, not under leading */
+  position: relative;
+}
+
+.data-row::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--space-4) + 44px + var(--space-3));
+  /* padding + leading width + gap */
+  right: var(--space-0);
+  bottom: 0;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.data-row:first-child:before {
+  content: "";
+  position: absolute;
+  left: var(--space-0);
+  right: var(--space-0);
+  height: 1px;
+  background: var(--border-subtle);
+}
+.data-row:last-child::after {
+  left: var(--space-0);
+}
+
+/* left slot (no separator under it due to ::after left offset) */
+.data-row__leading {
+  width: 44px;
+  /* iOS standard */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* horizontal centering */
+  justify-content: flex-start;
+  /* 🔑 top aligned */
+  gap: var(--space-2);
+  padding-top: 2px;
+  /* optical alignment with first text line */
+}
+
+
+/* optional right slot (chevron, status icon) */
+.data-row__trailing {
+  display: grid;
+  place-items: center;
+  opacity: 0.8;
+}
+
+/* main */
+.data-row__content {
+  min-width: 0;
+  /* allow text truncation */
+  display: grid;
+  gap: var(--space-2);
+}
+
+.data-row__top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.data-row__main {
+  min-width: 0;
+}
+
+.data-row__meta {
+  font-size: 12px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+/* handy text styles you can use inside children */
+.row-title {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.2;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-subtitle {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-detail {
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--text-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* tags */
+.data-row__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  border: 1px solid var(--border);
+  background: var(--chip-bg, transparent);
+  color: var(--chip-fg, var(--text));
+}
+
+/* chip color variants (tweak to your palette) */
+.chip--gray {
+  --chip-bg: rgba(142, 142, 147, 0.14);
+  --chip-fg: var(--text-muted);
+}
+
+.chip--blue {
+  --chip-bg: rgba(0, 122, 255, 0.14);
+  --chip-fg: rgb(0, 122, 255);
+}
+
+.chip--green {
+  --chip-bg: rgba(52, 199, 89, 0.14);
+  --chip-fg: rgb(52, 199, 89);
+}
+
+.chip--yellow {
+  --chip-bg: rgba(255, 204, 0, 0.18);
+  --chip-fg: rgb(163, 128, 0);
+}
+
+.chip--orange {
+  --chip-bg: rgba(255, 149, 0, 0.16);
+  --chip-fg: rgb(255, 149, 0);
+}
+
+.chip--red {
+  --chip-bg: rgba(255, 59, 48, 0.14);
+  --chip-fg: rgb(255, 59, 48);
+}
+
+.chip--purple {
+  --chip-bg: rgba(175, 82, 222, 0.14);
+  --chip-fg: rgb(175, 82, 222);
+}
+
+/* row interactions */
+.data-row {
+  cursor: pointer;
+  user-select: none;
+}
+
+.data-row:hover {
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--surface));
+}
+
+.data-row:active {
+  background: color-mix(in srgb, var(--card-bg) 84%, var(--surface));
+}

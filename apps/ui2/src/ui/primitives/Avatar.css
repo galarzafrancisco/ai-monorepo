@@ -1,0 +1,46 @@
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+  user-select: none;
+}
+
+.avatar--fallback {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+
+  /* subtle iOS-like depth */
+  background-image:
+    radial-gradient(
+      circle at 30% 25%,
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0) 55%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0),
+      rgba(0, 0, 0, 0.18)
+    );
+  background-blend-mode: overlay, multiply;
+}
+
+/* size variants */
+.avatar--xs { width: 20px; height: 20px; font-size: 10px; }
+.avatar--sm { width: 24px; height: 24px; font-size: 11px; }
+.avatar--md { width: 32px; height: 32px; font-size: 13px; }
+.avatar--lg { width: 40px; height: 40px; font-size: 16px; }
+.avatar--xl { width: 52px; height: 52px; font-size: 20px; }
+
+/* deterministic palette (tweak to match your theme) */
+.avatar--a1 { background: #2f6fed; } /* blue */
+.avatar--a2 { background: #2aa775; } /* green */
+.avatar--a3 { background: #7b61ff; } /* purple */
+.avatar--a4 { background: #f08c2b; } /* orange */
+.avatar--a5 { background: #e24b8d; } /* pink */
+.avatar--a6 { background: #17a2b8; } /* teal */

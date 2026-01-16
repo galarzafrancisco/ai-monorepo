@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { TaskerooLayout } from "./TaskerooLayout";
 import { TaskerooPage } from "./TaskerooPage";
-import { TaskStatus } from "./types";
+import { TaskStatus } from "./const";
 
 export function TaskerooRoutes() {
   return (

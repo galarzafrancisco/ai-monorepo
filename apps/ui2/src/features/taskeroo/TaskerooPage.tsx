@@ -1,14 +1,15 @@
+import { useSetShellConfig } from '../../app/hooks/useSetShellConfig';
 import { Stack, Text, ListRow, Card } from '../../ui/primitives';
 import { useTaskerooCtx } from "./TaskerooProvider";
 import type { Task } from './types';
-import { TaskStatus } from './types';
+import { STATUS_CONFIG, TaskStatus } from './const';
 
-const STATUS_LABELS: Record<Task.status, string> = {
-  [TaskStatus.NOT_STARTED]: 'Not Started',
-  [TaskStatus.IN_PROGRESS]: 'In Progress',
-  [TaskStatus.FOR_REVIEW]: 'In Review',
-  [TaskStatus.DONE]: 'Done',
-};
+// const STATUS_LABELS: Record<Task.status, string> = {
+//   [TaskStatus.NOT_STARTED]: 'Not Started',
+//   [TaskStatus.IN_PROGRESS]: 'In Progress',
+//   [TaskStatus.FOR_REVIEW]: 'In Review',
+//   [TaskStatus.DONE]: 'Done',
+// };
 
 
 function TaskRow({ task }: { task: Task }) {
@@ -33,7 +34,7 @@ function TaskRow({ task }: { task: Task }) {
 }
 
 function EmptyState({ status }: { status?: Task.status }) {
-  const statusLabel = status ? STATUS_LABELS[status]?.toLowerCase() || status : '';
+  const statusLabel = status ? STATUS_CONFIG[status]?.label.toLowerCase() || status : '';
   return (
     <div
       style={{
@@ -79,12 +80,16 @@ function ErrorState({ error }: { error: string }) {
 }
 
 export interface TaskerooPageProps {
-  status?: Task.status
+  status: Task.status
 }
 
 export function TaskerooPage({ status }: TaskerooPageProps) {
   
   const { tasks, isLoading, error } = useTaskerooCtx();
+
+  useSetShellConfig({
+    sectionTitle: STATUS_CONFIG[status].label,
+  })
 
   const filteredTasks = status
     ? tasks.filter((task) => task.status === status)

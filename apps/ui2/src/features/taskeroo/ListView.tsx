@@ -158,7 +158,7 @@ export function ListView({ tasks }: ListViewProps) {
             key={status}
             status={status}
             label={label}
-            icon={icon}
+            icon={icon || ''}
             tasks={tasks}
             isExpanded={isExpanded}
             onToggle={() => toggleGroup(status)}

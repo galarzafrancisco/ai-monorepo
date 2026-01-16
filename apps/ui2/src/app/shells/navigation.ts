@@ -1,4 +1,6 @@
-export const APP_NAV_ITEMS = [
+import { InAppNavItem } from "src/shared/navigation";
+
+export const APP_NAV_ITEMS: InAppNavItem[] = [
   { path: '/', label: 'Home', icon: '🏠' },
   { path: '/taskeroo', label: 'Taskeroo', icon: '✓' },
   { path: '/wikiroo', label: 'Wikiroo', icon: '📖' },

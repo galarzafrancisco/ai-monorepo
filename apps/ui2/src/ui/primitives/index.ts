@@ -1,17 +1,23 @@
+export { Avatar } from './Avatar';
 export { Stack } from './Stack';
 export { Row } from './Row';
 export { Text } from './Text';
 export { Button } from './Button';
 export { Card } from './Card';
+export { BoardCard } from './BoardCard';
+export { DataRow } from './DataRow';
 export { Divider } from './Divider';
 export { ListRow } from './ListRow';
 export { Tabs } from './Tabs';
 
+export type { AvatarProps } from './Avatar';
 export type { StackProps } from './Stack';
 export type { RowProps } from './Row';
 export type { TextProps } from './Text';
 export type { ButtonProps } from './Button';
 export type { CardProps } from './Card';
+export type { BoardCardProps } from './BoardCard';
+export type { DataRowProps } from './DataRow';
 export type { DividerProps } from './Divider';
 export type { ListRowProps } from './ListRow';
 export type { TabsProps, TabItem } from './Tabs';

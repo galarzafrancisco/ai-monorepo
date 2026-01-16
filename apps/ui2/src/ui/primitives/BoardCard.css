@@ -1,0 +1,132 @@
+.board-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+
+  padding: var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+
+  /* Trello/Jira-ish depth */
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 6px 18px rgba(0, 0, 0, 0.06);
+
+  cursor: pointer;
+  user-select: none;
+  min-width: 0;
+}
+
+.board-card:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.05),
+    0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.board-card:active {
+  transform: translateY(0px);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 6px 16px rgba(0, 0, 0, 0.07);
+}
+
+/* header */
+.board-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.board-card__headerLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.board-card__leading {
+  display: flex;
+  flex-direction: column; /* stack if you pass multiple items */
+  gap: 6px;
+  padding-top: 2px; /* optical alignment */
+}
+
+.board-card__headerRight {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+.board-card__meta {
+  font-size: 12px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.board-card__trailing {
+  opacity: 0.85;
+  display: grid;
+  place-items: center;
+}
+
+/* main content */
+.board-card__main {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+/* tags */
+.board-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+/* footer */
+.board-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+
+  margin-top: 2px;
+  padding-top: var(--space-2);
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 65%, transparent);
+
+  min-width: 0;
+}
+
+/* reuse your existing chip styles as-is */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  border: 1px solid var(--border);
+  background: var(--chip-bg, transparent);
+  color: var(--chip-fg, var(--text));
+}
+
+/* chip variants (same as your row) */
+.chip--gray   { --chip-bg: rgba(142, 142, 147, 0.14); --chip-fg: var(--text-muted); }
+.chip--blue   { --chip-bg: rgba(0, 122, 255, 0.14);   --chip-fg: rgb(0, 122, 255); }
+.chip--green  { --chip-bg: rgba(52, 199, 89, 0.14);   --chip-fg: rgb(52, 199, 89); }
+.chip--yellow { --chip-bg: rgba(255, 204, 0, 0.18);   --chip-fg: rgb(163, 128, 0); }
+.chip--orange { --chip-bg: rgba(255, 149, 0, 0.16);   --chip-fg: rgb(255, 149, 0); }
+.chip--red    { --chip-bg: rgba(255, 59, 48, 0.14);   --chip-fg: rgb(255, 59, 48); }
+.chip--purple { --chip-bg: rgba(175, 82, 222, 0.14);  --chip-fg: rgb(175, 82, 222); }
+
+/* useful utility */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

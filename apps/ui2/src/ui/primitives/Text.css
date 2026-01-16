@@ -3,6 +3,14 @@
   line-height: var(--lh-normal);
 }
 
+.text.pre {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+               sans-serif;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
 /* Size variants */
 .text--size-1 {
   font-size: var(--fs-1);
@@ -60,9 +68,8 @@
 
 /* Wrap variants */
 /* TODO: This doesn't work, if I do nowrap it extends beyond the width of the parent component  */
-.text--wrap { 
+.text--wrap {
   overflow: hidden;
   text-overflow: ellipsis;
   /* white-space: nowrap; */
 }
-
