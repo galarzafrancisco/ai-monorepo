@@ -47,14 +47,8 @@ function BottomNavContent({ navItems }: { navItems: InAppNavItem[] }): JSX.Eleme
 }
 
 export function IosShell(props: IosShellProps): JSX.Element {
-  console.log(props)
-  const { theme, setTheme } = useTheme();
-  useEffect(() => {
-    setTheme('light');
-  }, []);
 
   const location = useLocation();
-
   console.log('Mounting iOS shell')
 
   // Side bar
