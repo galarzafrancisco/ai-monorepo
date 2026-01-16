@@ -47,6 +47,20 @@
   overscroll-behavior: contain;
 }
 
+.taskeroo-board-column__body {
+  overflow-y: auto;
+
+  /* Firefox */
+  scrollbar-width: none;
+
+  /* IE / Edge */
+  -ms-overflow-style: none;
+}
+
+.taskeroo-board-column__body::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
+}
+
 .taskeroo-board-column>* {
   min-width: 0;
 }
