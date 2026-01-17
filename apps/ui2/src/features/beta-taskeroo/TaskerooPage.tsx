@@ -79,27 +79,26 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
 
 function TaskRow({ task, animation, onClick }: { task: Task, animation?: DataRowAnimation, onClick?: () => void }): JSX.Element {
   return (
-    <div onClick={onClick} style={{ cursor: onClick ? 'pointer' : undefined }}>
-      <DataRow
-        leading={<Avatar name={task.createdBy} size='lg' />}
-        topRight={elapsedTime(task.updatedAt)}
-        tags={task.tags.map(tag => ({ label: tag.name }))}
-        animation={animation}
-      >
-        <Text className='pre'>
-          #{task.id.slice(0, 6)}
-        </Text>
-        <Text weight="bold" size='3' tone='default'>
-          {task.name}
-        </Text>
-        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {task.description}
-        </div>
-        <div style={{ fontSize: 12 }} className="text--tone-muted">
-          {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by ${task.createdBy}`}
-        </div>
-      </DataRow>
-    </div>
+    <DataRow
+      leading={<Avatar name={task.createdBy} size='lg' />}
+      topRight={elapsedTime(task.updatedAt)}
+      tags={task.tags.map(tag => ({ label: tag.name }))}
+      animation={animation}
+      onClick={onClick}
+    >
+      <Text className='pre'>
+        #{task.id.slice(0, 6)}
+      </Text>
+      <Text weight="bold" size='3' tone='default'>
+        {task.name}
+      </Text>
+      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {task.description}
+      </div>
+      <div style={{ fontSize: 12 }} className="text--tone-muted">
+        {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by ${task.createdBy}`}
+      </div>
+    </DataRow>
   );
 }
 

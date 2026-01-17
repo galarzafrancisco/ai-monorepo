@@ -29,6 +29,7 @@ export class AgentEntity {
   @Column({
     type: 'simple-array',
     name: 'status_triggers',
+    default: '',
   })
   statusTriggers!: TaskStatus[]
 
