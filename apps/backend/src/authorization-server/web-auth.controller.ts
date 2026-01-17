@@ -53,7 +53,7 @@ export class WebAuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<LoginResponseDto> {
     // Authenticate user and generate tokens
-    const { accessToken, refreshToken, expiresIn } =
+    const { accessToken, refreshToken, expiresInSeconds } =
       await this.webAuthService.login(loginDto.email, loginDto.password);
 
     this.logger.log('Got access token');
@@ -83,12 +83,12 @@ export class WebAuthController {
 
     response.cookie(COOKIE_KEYS.ACCESS_TOKEN, accessToken, {
       ...cookieOptions,
-      maxAge: expiresIn * 1000, // 10 minutes in milliseconds
+      maxAge: expiresInSeconds * 1000, // 60 minutes in milliseconds
     });
 
     response.cookie(COOKIE_KEYS.REFRESH_TOKEN, refreshToken, {
       ...cookieOptions,
-      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds (triggers re-login)
     });
 
     // Return user info and token expiration
@@ -99,7 +99,7 @@ export class WebAuthController {
         displayName: user.displayName,
         role: user.role,
       },
-      expiresIn,
+      expiresIn:  expiresInSeconds,
     };
   }
 
