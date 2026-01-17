@@ -135,13 +135,14 @@ function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ente
   )
 }
 
-function TaskCard({ task, animation }: { task: Task, animation?: BoardCardAnimation }): JSX.Element {
+function TaskCard({ task, animation, onClick }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void }): JSX.Element {
   return (
     <BoardCard
       leading={<Avatar name={task.createdBy} size='md' />}
       topRight={elapsedTime(task.updatedAt)}
       tags={task.tags.map(tag => ({ label: tag.name }))}
       animation={animation}
+      onClick={onClick}
       footer={
         <>
           <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
@@ -158,6 +159,7 @@ function TaskCard({ task, animation }: { task: Task, animation?: BoardCardAnimat
 }
 
 function TasksToCards({ tasks, enteringIds, exitingTasks }: { tasks: Task[], enteringIds: Set<string>, exitingTasks: Task[] }): JSX.Element {
+  const navigate = useNavigate();
   // Merge tasks and exitingTasks, sorted by updatedAt (descending) to maintain original order
   const exitingIdSet = new Set(exitingTasks.map(t => t.id));
 
@@ -180,6 +182,7 @@ function TasksToCards({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ent
             key={isExiting ? `exiting-${task.id}` : task.id}
             task={task}
             animation={animation}
+            onClick={() => navigate(`/taskeroo/task/${task.id}`)}
           />
         );
       })}

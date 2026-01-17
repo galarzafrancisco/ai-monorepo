@@ -30,6 +30,9 @@ export interface BoardCardProps {
   /** Animation state for enter/exit transitions */
   animation?: BoardCardAnimation;
 
+  /** Click handler for the row */
+  onClick?: () => void;
+
   className?: string;
 }
 
@@ -41,12 +44,13 @@ export function BoardCard({
   footer,
   trailing,
   animation,
+  onClick,
   className = "",
 }: BoardCardProps) {
   const animationClass = animation ? `board-card--${animation}` : "";
 
   return (
-    <div className={`board-card__wrapper ${animationClass}`}>
+    <div className={`board-card__wrapper ${animationClass}`} onClick={onClick}>
       <div className={`board-card ${className}`} data-component="board-card">
         <div className="board-card__header">
           <div className="board-card__headerLeft">
