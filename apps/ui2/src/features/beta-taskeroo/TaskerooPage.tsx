@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, BoardCard, DataRow, Text, DataRowAnimation, BoardCardAnimation } from "../../ui/primitives";
-import { useTaskerooCtx, AnimationState } from "./TaskerooProvider"
+import { useTaskerooCtx, type AnimationState } from "./taskeroo-context"
 import { TaskStatus } from "./const";
 import { TASKEROO_STATUS } from "./const";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
@@ -39,7 +39,7 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
       return;
     }
     setSectionTitle(TASKEROO_STATUS[statusFilter].label);
-  }, [statusFilter]);
+  }, [statusFilter, setSectionTitle]);
 
   // Filter tasks by status
   const filteredTasks = useMemo(() => {

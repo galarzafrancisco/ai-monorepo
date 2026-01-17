@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useCallback, useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 import { TaskerooService } from './api';
 import type { Task, Comment } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
@@ -16,20 +16,7 @@ export const useTaskeroo = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   // Transport
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-
-  // Boot
-  useEffect(() => {
-    loadTasks();
-    setupWebsocket();
-
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-    };
-  }, []);
 
   // Sort tasks by updatedAt (newest first)
   const sortTasks = (tasks: Task[]): Task[] => {
@@ -41,7 +28,7 @@ export const useTaskeroo = () => {
   };
 
   // Load tasks
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -52,20 +39,20 @@ export const useTaskeroo = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Setup websocket
-  const setupWebsocket = () => {
+  const setupWebsocket = useCallback(() => {
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
     });
+    type SubscribeAck = { ok: boolean; room?: string };
 
     newSocket.on('connect', () => {
       console.log('Connected to websocket');
-      newSocket.emit('taskeroo.subscribe', {}, (ack: any) => {
+      newSocket.emit('taskeroo.subscribe', {}, (ack: SubscribeAck) => {
         if (ack.ok) {
-          console.log(ack);
           console.log('Subscribed to room:', ack.room);
           setIsConnected(true);
         } else {
@@ -128,12 +115,20 @@ export const useTaskeroo = () => {
       );
     });
 
-    setSocket(newSocket);
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [loadTasks]);
+
+  // Boot
+  useEffect(() => {
+    loadTasks();
+    const disconnect = setupWebsocket();
 
     return () => {
-      newSocket.close();
+      disconnect?.();
     };
-  };
+  }, [loadTasks, setupWebsocket]);
 
   return {
     // UI feedback

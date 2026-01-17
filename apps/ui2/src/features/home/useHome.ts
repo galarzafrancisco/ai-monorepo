@@ -1,17 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export const useHome = () => {
-  console.log('useHome mounting');
-  const [message, setMessage] = useState<string | null>(null);
-  
-  // Boot
-  useEffect(() => {
-    console.log('useHome setting message');
-    setMessage("Message coming from useHome");
-  }, []);
+  const [message] = useState<string | null>("Message coming from useHome");
 
   return {
     message,
-    setMessage,
   };
 };

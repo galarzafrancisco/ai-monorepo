@@ -9,6 +9,9 @@ export { DataRow } from './DataRow';
 export { Divider } from './Divider';
 export { ListRow } from './ListRow';
 export { Tabs } from './Tabs';
+export { Input } from './Input';
+export { Textarea } from './Textarea';
+export { ModalSheet } from './ModalSheet';
 
 export type { AvatarProps } from './Avatar';
 export type { StackProps } from './Stack';
@@ -21,3 +24,6 @@ export type { DataRowProps, DataRowAnimation } from './DataRow';
 export type { DividerProps } from './Divider';
 export type { ListRowProps } from './ListRow';
 export type { TabsProps, TabItem } from './Tabs';
+export type { InputProps } from './Input';
+export type { TextareaProps } from './Textarea';
+export type { ModalSheetProps, ModalSheetAction } from './ModalSheet';

@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuth } from './auth-context';
 import { Stack, Text, Button } from '../ui/primitives';
 import { ErrorText } from '../ui/primitives/ErrorText';
 import './LoginPage.css';
+
+type LocationState = {
+  from?: { pathname: string };
+} | null;
 
 /**
  * Provides email/password authentication with redirect after successful login
@@ -20,7 +24,8 @@ export function LoginForm() {
   const location = useLocation();
 
   // Get the page user was trying to access (or default to home)
-  const from = (location.state as any)?.from?.pathname || '/';
+  const locationState = location.state as LocationState;
+  const from = locationState?.from?.pathname ?? '/';
   const redirect = from === "/logout" ? "/" : from;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -32,7 +37,7 @@ export function LoginForm() {
       await login(email, password);
       // Redirect to original destination or home
       navigate(redirect, { replace: true });
-    } catch (err) {
+    } catch {
       setError('Invalid email or password');
     } finally {
       setIsLoading(false);

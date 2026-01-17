@@ -1,14 +1,6 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useHome } from "./useHome"; // your abstraction hook
-
-// Shape this to match what pages/layout need.
-export type HomeContextValue = {
-  message: string | null;
-  sectionTitle: string;
-  setSectionTitle: (title: string) => void;
-};
-
-const HomeContext = createContext<HomeContextValue | null>(null);
+import { HomeContext, type HomeContextValue } from "./home-context";
 
 export function HomeProvider({ children }: { children: React.ReactNode }) {
 
@@ -29,10 +21,4 @@ export function HomeProvider({ children }: { children: React.ReactNode }) {
   ]);
 
   return <HomeContext.Provider value={value}>{children}</HomeContext.Provider>;
-}
-
-export function useHomeCtx(): HomeContextValue {
-  const ctx = useContext(HomeContext);
-  if (!ctx) throw new Error("useHomeCtx must be used within <HomeProvider>");
-  return ctx;
 }

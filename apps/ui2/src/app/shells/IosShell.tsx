@@ -2,7 +2,6 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from 'react-router-dom';
 import "./IosShell.css";
 import { Row, Text } from "../../ui/primitives";
-import { useTheme } from "../providers";
 import { InAppNavItem } from "src/shared/navigation";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 
@@ -26,7 +25,7 @@ function BottomNavContent({ navItems }: { navItems: InAppNavItem[] }): JSX.Eleme
   }
   return (
     <Row spacing="1" justify="space-between">
-      {navItems.map((item, idx) => {
+      {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         return (
           <Link
@@ -151,16 +150,15 @@ export function IosShell(props: IosShellProps): JSX.Element {
 
   // Initialize observers after mount (when mainRef is available)
   useEffect(() => {
-    // detectSectionTitleVisibility();
-    // detectContentBehindHeader();
-    // detectContentBehindBottomNav();
-
-    // Clean up all the observers on unmount
     return () => {
-      sectionTitleVisibilityObserverRef.current?.disconnect();
-      contentBehindHeaderObserverRef.current?.disconnect();
-      contentBehindBottomNavObserverRef.current?.disconnect();
-    }
+      const { current: sectionObserver } = sectionTitleVisibilityObserverRef;
+      const { current: headerObserver } = contentBehindHeaderObserverRef;
+      const { current: bottomObserver } = contentBehindBottomNavObserverRef;
+
+      sectionObserver?.disconnect();
+      headerObserver?.disconnect();
+      bottomObserver?.disconnect();
+    };
   }, []);
 
   return (

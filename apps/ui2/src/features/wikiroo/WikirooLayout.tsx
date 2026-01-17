@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { WikirooDesktopView } from "./WikirooDesktopView";
 import { IosShell } from "../../app/shells/IosShell";
-import { useWikirooCtx } from "./WikirooProvider";
+import { useWikirooCtx } from "./wikiroo-context";
 
 export function WikirooLayout(): JSX.Element {
   const isDesktop = useIsDesktop();

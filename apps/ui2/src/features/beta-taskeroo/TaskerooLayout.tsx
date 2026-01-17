@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { TaskerooDesktopView } from "./TaskerooDesktopView";
 import { IosShell } from "../../app/shells/IosShell";
-import { useTaskerooCtx } from "./TaskerooProvider";
+import { useTaskerooCtx } from "./taskeroo-context";
 import { TASKEROO_STATUS_NAV } from "./const";
 
 export function TaskerooLayout(): JSX.Element {

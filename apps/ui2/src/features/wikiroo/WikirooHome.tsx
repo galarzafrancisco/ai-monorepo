@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useWikirooCtx } from "./WikirooProvider";
+import { useWikirooCtx } from "./wikiroo-context";
 
 export function WikirooHome(): JSX.Element {
   const { setSectionTitle } = useWikirooCtx();
@@ -9,7 +9,7 @@ export function WikirooHome(): JSX.Element {
   // Set page title
   useEffect(() => {
     setSectionTitle("Home");
-  }, []);
+  }, [setSectionTitle]);
 
   return (
     <div>

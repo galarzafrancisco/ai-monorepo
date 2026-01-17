@@ -1,6 +1,6 @@
 import { Stack, Text, Card, Row, Button } from '../../ui/primitives';
-import { useTheme } from '../../app/providers/ThemeProvider';
-import { useHomeCtx } from './HomeProvider';
+import { useTheme } from '../../app/providers';
+import { useHomeCtx } from './home-context';
 import { useEffect } from 'react';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import './SettingsPage.css';
@@ -20,7 +20,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     setSectionTitle('Settings');
-  }, []);
+  }, [setSectionTitle]);
 
   return (
     <Stack spacing="6">
@@ -56,7 +56,7 @@ export function SettingsPage() {
                     <Button
                       variant={isActive ? 'primary' : 'secondary'}
                       size="sm"
-                      onClick={() => setTheme(themeOption.value as any)}
+                      onClick={() => setTheme(themeOption.value)}
                     >
                       {isActive ? 'Active' : 'Select'}
                     </Button>

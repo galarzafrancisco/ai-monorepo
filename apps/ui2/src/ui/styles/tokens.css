@@ -12,6 +12,7 @@
   --theme-surface: #f6f8fa;
   --theme-nav-bar: var(--theme-bg);
   --theme-nav-bar-rgb: 255, 255, 255;
+  --scrim: rgba(15, 23, 42, 0.45);
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
@@ -99,6 +100,7 @@
   --theme-surface: #161b22;
   --theme-nav-bar: #010409;
   --theme-nav-bar-rgb: 13, 17, 23;
+  --scrim: rgba(0, 0, 0, 0.65);
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
@@ -143,6 +145,7 @@
   --theme-surface: #f6f8fa;
   --theme-nav-bar: var(--theme-bg);
   --theme-nav-bar-rgb: 255, 255, 255;
+  --scrim: rgba(31, 35, 40, 0.5);
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
@@ -187,6 +190,7 @@
   --theme-surface: #253525;
   --theme-nav-bar: var(--theme-bg);
   --theme-nav-bar-rgb: 15, 26, 15;
+  --scrim: rgba(0, 0, 0, 0.6);
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
@@ -231,6 +235,7 @@
   --theme-surface: #1a1a1a;
   --theme-nav-bar: var(--theme-bg);
   --theme-nav-bar-rgb: 0, 0, 0;
+  --scrim: rgba(0, 0, 0, 0.8);
 
   /* Colors - Background (applied for desktop) */
   --bg: var(--theme-bg);
