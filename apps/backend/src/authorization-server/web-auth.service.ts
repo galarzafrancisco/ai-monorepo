@@ -20,6 +20,7 @@ import { ALL_MCP_REGISTRY_SCOPES } from "src/mcp-registry/mcp-registry.scopes";
 @Injectable()
 export class WebAuthService {
   private logger = new Logger(WebAuthService.name);
+  private WEB_TOKEN_DURATION_MINUTES: number = 60;
 
   constructor(
     private readonly identityProviderService: IdentityProviderService,
@@ -32,14 +33,15 @@ export class WebAuthService {
    * Web Authentication: Login with email and password
    * Returns access and refresh tokens
    */
-  async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+  async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; expiresInSeconds: number }> {
     this.logger.debug(`Login attempt for email: ${email}`);
 
     // Validate user credentials
     const user = await this.identityProviderService.validateUser(email, password);
 
-    // Generate access token (10 min expiration)
-    const accessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role);
+    // Generate access token (60 min expiration)
+    const durationMinutes = this.WEB_TOKEN_DURATION_MINUTES;
+    const accessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role, durationMinutes);
 
     // Generate refresh token (1 day expiration)
     const refreshToken = await this.generateAndStoreRefreshToken(user.id);
@@ -49,7 +51,7 @@ export class WebAuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 600, // 10 minutes
+      expiresInSeconds: durationMinutes * 60,
     };
   }
 
@@ -62,6 +64,7 @@ export class WebAuthService {
     email: string,
     displayName: string,
     role: 'admin' | 'standard',
+    durationMinutes: number,
   ): Promise<string> {
     // Get active signing key
     const signingKey = await this.jwksService.getActiveSigningKey();
@@ -95,7 +98,7 @@ export class WebAuthService {
       resource: `${config.issuerUrl}`,
       version: '0.0.0',
       iat: now,
-      exp: now + 600, // Change this to tune the duration of the web session (10 minutes)
+      exp: now + durationMinutes * 60, // duration passed in as a param
       jti: randomBytes(16).toString('hex'),
     };
 
@@ -181,7 +184,7 @@ export class WebAuthService {
 
     // Generate new tokens
     const user = storedToken.user;
-    const newAccessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role);
+    const newAccessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role, this.WEB_TOKEN_DURATION_MINUTES);
     const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
 
     this.logger.log(`Refresh token exchanged successfully for user: ${user.email}`);
