@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar, BoardCard, DataRow, Text, DataRowAnimation, BoardCardAnimation } from "../../ui/primitives";
 import { useTaskerooCtx, AnimationState } from "./TaskerooProvider"
 import { TaskStatus } from "./const";
@@ -76,31 +77,35 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
   )
 }
 
-function TaskRow({ task, animation }: { task: Task, animation?: DataRowAnimation }): JSX.Element {
+function TaskRow({ task, animation, onClick }: { task: Task, animation?: DataRowAnimation, onClick?: () => void }): JSX.Element {
   return (
-    <DataRow
-      leading={<Avatar name={task.createdBy} size='lg' />}
-      topRight={elapsedTime(task.updatedAt)}
-      tags={task.tags.map(tag => ({ label: tag.name }))}
-      animation={animation}
-    >
-      <Text className='pre'>
-        #{task.id.slice(0, 6)}
-      </Text>
-      <Text weight="bold" size='3' tone='default'>
-        {task.name}
-      </Text>
-      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {task.description}
-      </div>
-      <div style={{ fontSize: 12 }} className="text--tone-muted">
-        {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by ${task.createdBy}`}
-      </div>
-    </DataRow>
+    <div onClick={onClick} style={{ cursor: onClick ? 'pointer' : undefined }}>
+      <DataRow
+        leading={<Avatar name={task.createdBy} size='lg' />}
+        topRight={elapsedTime(task.updatedAt)}
+        tags={task.tags.map(tag => ({ label: tag.name }))}
+        animation={animation}
+      >
+        <Text className='pre'>
+          #{task.id.slice(0, 6)}
+        </Text>
+        <Text weight="bold" size='3' tone='default'>
+          {task.name}
+        </Text>
+        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {task.description}
+        </div>
+        <div style={{ fontSize: 12 }} className="text--tone-muted">
+          {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by ${task.createdBy}`}
+        </div>
+      </DataRow>
+    </div>
   );
 }
 
 function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], enteringIds: Set<string>, exitingTasks: Task[] }): JSX.Element {
+  const navigate = useNavigate();
+
   // Merge tasks and exitingTasks, sorted by updatedAt (descending) to maintain original order
   const exitingIdSet = new Set(exitingTasks.map(t => t.id));
 
@@ -123,6 +128,7 @@ function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ente
             key={isExiting ? `exiting-${task.id}` : task.id}
             task={task}
             animation={animation}
+            onClick={() => navigate(`/taskeroo/task/${task.id}`)}
           />
         );
       })}

@@ -3,6 +3,7 @@ import { TaskerooPage } from "./TaskerooPage";
 import { TaskerooLayout } from "./TaskerooLayout";
 import { TaskerooProvider } from "./TaskerooProvider";
 import { TaskStatus } from "./const";
+import { TaskDetailPage } from "./TaskDetailPage";
 
 export function TaskerooRoutes() {
   return (
@@ -15,11 +16,7 @@ export function TaskerooRoutes() {
           <Route path="/in-progress" element={<TaskerooPage status={TaskStatus.IN_PROGRESS} />} />
           <Route path="/in-review" element={<TaskerooPage status={TaskStatus.FOR_REVIEW} />} />
           <Route path="/done" element={<TaskerooPage status={TaskStatus.DONE} />} />
-          <Route path="/task/:d" element={
-            <div>
-              Task page placeholder
-            </div>
-          } />
+          <Route path="/task/:d" element={<TaskDetailPage />} />
         </Route>
       </Routes>
     </TaskerooProvider>
