@@ -1,1 +1,1 @@
-export const BASE_PATH = "/beta"
+export const BASE_PATH = "/"
