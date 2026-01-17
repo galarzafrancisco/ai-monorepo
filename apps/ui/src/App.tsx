@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BASE_PATH } from '../shared/const/base';
 import { AuthProvider } from './auth/AuthContext';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { LoginPage } from './auth/LoginPage';
@@ -30,8 +31,8 @@ function TaskerooRouter() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter basename={BASE_PATH}>
+      <AuthProvider>
         <Routes>
           {/* Public route - login page */}
           <Route path="/login" element={<LoginPage />} />
@@ -70,7 +71,7 @@ export default function App() {
             </Route>
           </Route>
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

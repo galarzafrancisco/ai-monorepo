@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:prod": "npm run build && cp -r ./dist ../backend/dist/public/beta",
+    "build:prod": "npm run build && cp -r ./dist ../backend/dist/public",
     "lint": "eslint .",
     "preview": "vite preview"
   },

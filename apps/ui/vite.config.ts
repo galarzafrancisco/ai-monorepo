@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 // The plugin adds fast refresh and sensible defaults.
 export default defineConfig({
   plugins: [react()],
+  base: '/beta/',
   server: {
     host: true,
     allowedHosts: [

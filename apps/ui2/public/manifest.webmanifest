@@ -1,24 +1,23 @@
 {
-  "id": "/beta/",
-  "name": "ai (beta)",
-  "short_name": "ai beta",
-  "start_url": "/beta/",
-  "scope": "/beta/",
+  "name": "ai",
+  "short_name": "ai",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/beta/icons/icon-192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/beta/icons/icon-512.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/beta/icons/maskable-512.png",
+      "src": "/icons/maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
