@@ -21,15 +21,19 @@
   background: var(--border-subtle);
 }
 
-.data-row:first-child:before {
+/* First row gets a top border */
+.data-row__wrapper:first-child .data-row:before {
   content: "";
   position: absolute;
   left: var(--space-0);
   right: var(--space-0);
+  top: 0;
   height: 1px;
   background: var(--border-subtle);
 }
-.data-row:last-child::after {
+
+/* Last row gets a full-width bottom border */
+.data-row__wrapper:last-child .data-row::after {
   left: var(--space-0);
 }
 

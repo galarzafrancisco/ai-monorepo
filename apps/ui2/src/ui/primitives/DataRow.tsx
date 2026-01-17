@@ -27,6 +27,9 @@ export interface DataRowProps {
   /** Animation state for enter/exit transitions */
   animation?: DataRowAnimation;
 
+  /** Click handler for the row */
+  onClick?: () => void;
+
   className?: string;
 }
 
@@ -37,12 +40,13 @@ export function DataRow({
   topRight,
   trailing,
   animation,
+  onClick,
   className = "",
 }: DataRowProps) {
   const animationClass = animation ? `data-row--${animation}` : "";
 
   return (
-    <div className={`data-row__wrapper ${animationClass}`}>
+    <div className={`data-row__wrapper ${animationClass}`} onClick={onClick}>
       <div className={`data-row ${className}`} data-component="data-row">
         {leading ? <div className="data-row__leading">{leading}</div> : null}
 
