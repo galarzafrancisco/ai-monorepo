@@ -30,8 +30,9 @@
 }
 
 .pop__space {
-  background-color: aqua;
-  height: 20px;
+  /* empty space used to detect taps (cancel) */
+  max-height: 18vh; /* 100 minus .pop__main-panel */
+  height: 100%;
 }
 
 

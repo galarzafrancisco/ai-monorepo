@@ -14,6 +14,12 @@ export function Pop({ onCancel, onSave }: PopProps) {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
 
+  // Focus on title
+  const titleRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, [titleRef]);
+
   // Animation helper
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -22,8 +28,6 @@ export function Pop({ onCancel, onSave }: PopProps) {
       setOpen(true);
     });
   }, []);
-
-  console.log(`open? ${open}`);
 
   // Helper to select the description field when user hits enter on the title
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
@@ -52,7 +56,7 @@ export function Pop({ onCancel, onSave }: PopProps) {
   }
   return (
     <div className={`pop__overlay ${open ? 'pop__overlay--open' : ''}`}>
-      {/* <div className="pop__space"></div> */}
+      <div className="pop__space" onClick={handleCancel}></div>
       <div className={`pop__main-panel ${open ? 'pop__main-panel--open' : ''}`}>
         <div className="pop__main-title ">
           <div onClick={handleCancel}>
@@ -75,6 +79,7 @@ export function Pop({ onCancel, onSave }: PopProps) {
           <div className="pop__main__input-title">
 
             <input className="pop__main__input-title"
+              ref={titleRef}
               placeholder="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
