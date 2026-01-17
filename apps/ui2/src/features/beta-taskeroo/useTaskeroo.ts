@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { TaskerooService } from './api';
 import type { Task, Comment } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
+import { CreateTaskDto } from 'shared';
 
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/taskeroo');
@@ -39,6 +40,11 @@ export const useTaskeroo = () => {
       return dateB - dateA; // Descending order (newest first)
     });
   };
+
+  // Create task
+  const createTask = async (task: CreateTaskDto) => {
+    return await TaskerooService.taskerooControllerCreateTask(task);
+  }
 
   // Load tasks
   const loadTasks = async () => {
@@ -142,6 +148,7 @@ export const useTaskeroo = () => {
 
     // Data
     tasks,
+    createTask,
 
     // Transport
     isConnected,

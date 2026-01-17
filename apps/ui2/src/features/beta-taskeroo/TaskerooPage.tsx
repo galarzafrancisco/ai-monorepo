@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, BoardCard, DataRow, Text, DataRowAnimation, BoardCardAnimation } from "../../ui/primitives";
 import { useTaskerooCtx, AnimationState } from "./TaskerooProvider"
@@ -6,6 +6,7 @@ import { TaskStatus } from "./const";
 import { TASKEROO_STATUS } from "./const";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Task } from "./types";
+import { Pop } from "./Pop";
 import './TaskerooPage.css';
 
 // Helper that should be extracted somewhere else
@@ -30,7 +31,9 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
 
   const isDesktop = useIsDesktop();
   const statusFilter = isDesktop ? undefined : status;
-  const { tasks, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks } = useTaskerooCtx();
+  const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks } = useTaskerooCtx();
+
+  const navigate = useNavigate();
 
   // Set page title
   useEffect(() => {
@@ -60,17 +63,71 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
     };
   }, [statusFilter, animationByStatus, globalEnteringIds, globalExitingTasks]);
 
+  const [newTask, setNewTask] = useState<Partial<Task> | null>(null);
+  const [showNewTaskPop, setShowNewTaskPop] = useState(false);
+
+  const handleNewTaskCancel = () => {
+    console.log('cancel');
+    setShowNewTaskPop(false);
+  }
+  const handleNewTaskSave = async ({ title, description }: { title: string, description: string }) => {
+    console.log(`save title: ${title} - description: ${description}`);
+    setNewTask({
+      name: title,
+      description: description,
+    });
+    // Save
+    try {
+      const task = await createTask({
+        name: title,
+        description: description,
+      });
+      if (task) {
+        setNewTask(task);
+        navigate(`/taskeroo/task/${task.id}`);
+        return;
+      }
+    } catch (error) {
+      console.error('Error saving task');
+      console.error(error);
+    }
+    setShowNewTaskPop(false);
+  }
+
   return (
     <div className={`${isDesktop ? 'full-height' : ''}`}>
       {!isDesktop ?
-        <TasksToRows
-          tasks={filteredTasks}
-          enteringIds={mobileAnimationState.enteringIds}
-          exitingTasks={mobileAnimationState.exitingTasks}
-        />
+        <>
+          <TasksToRows
+            tasks={filteredTasks}
+            enteringIds={mobileAnimationState.enteringIds}
+            exitingTasks={mobileAnimationState.exitingTasks}
+          />
+          <button
+            className="taskeroo-fab"
+            type="button"
+            onClick={() => setShowNewTaskPop(true)}
+            aria-label="Create new task"
+          >
+            +
+          </button>
+          {showNewTaskPop ? <Pop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null}
+          {/* <CommentButton /> */}
+        </>
         :
         <div className="taskeroo-page">
           <BoardView tasks={tasks} animationByStatus={animationByStatus} />
+
+          <button
+            className="taskeroo-fab taskeroo-fab--desktop"
+            type="button"
+            onClick={() => setShowNewTaskPop(true)}
+          >
+            <span className="taskeroo-fab__plus">+</span>
+            <span className="taskeroo-fab__label">New task</span>
+          </button>
+
+          {showNewTaskPop ? <Pop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null}
         </div>
       }
     </div>

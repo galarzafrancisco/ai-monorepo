@@ -1,0 +1,117 @@
+.pop__overlay {
+  --radius: 16px;
+  --transparency: rgba(0, 0, 0, 0.4);
+}
+
+/* Outer class that covers the entire screen and shows some background */
+.pop__overlay {
+  /* Color */
+  background-color: var(--transparency);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+
+  /* Show on top of everything */
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  /* To pin the content at the bottom */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* 👈 bottom */
+
+  /* Animation */
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.pop__overlay--open {
+  opacity: 1;
+}
+
+.pop__space {
+  background-color: aqua;
+  height: 20px;
+}
+
+
+/* The pop solid part */
+.pop__main-panel {
+  /* Color */
+  background-color: var(--surface);
+
+  /* Limit height */
+  max-height: 82vh;
+  height: 100%;
+
+  /* Radius top corners */
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+
+
+  /* 👇 animation setup */
+  transform: translateY(100%);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.pop__main-panel--open {
+  transform: translateY(0);
+}
+
+/* Header title */
+.pop__main-title {
+  /* Space from the top, do we need it? */
+  padding-top: var(--radius);
+  
+  /* Align buttons and title */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  align-content: center;
+
+  padding: var(--space-3) var(--space-5);
+
+  /* Divider border */
+  border:0;
+  border-bottom: 1px;
+  border-style: solid;
+  border-color: var(--border);
+}
+
+.pop__main-title-button {
+  cursor: pointer;
+  color: var(--accent);
+}
+.pop__main-title-button:hover {
+  color: var(--accent-hover);
+}
+
+.pop__main-content {
+  /* background-color: rgb(128, 128, 144); */
+}
+
+.pop__main__input-title {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  font-size: var(--fs-4);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+}
+.pop__main__input-title:focus {
+  outline: none;
+}
+
+.pop__main__input-description {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  font-size: var(--fs-3);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+}
+.pop__main__input-description:focus {
+  outline: none;
+}
