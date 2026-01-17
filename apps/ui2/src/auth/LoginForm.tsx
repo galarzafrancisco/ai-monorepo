@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
@@ -15,13 +15,20 @@ export function LoginForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, isLoading: authIsLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get the page user was trying to access (or default to home)
   const from = (location.state as any)?.from?.pathname || '/';
   const redirect = from === "/logout" ? "/" : from;
+
+  // If we are already authenticated, redirect
+  useEffect(() => {
+    if (!authIsLoading && isAuthenticated) {
+      navigate(redirect);
+    }
+  }, [authIsLoading, isAuthenticated, redirect]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
