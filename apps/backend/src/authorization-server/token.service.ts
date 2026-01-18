@@ -56,7 +56,7 @@ export class TokenService {
     // Find the authorization flow by authorization code
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByAuthorizationCode(
       tokenRequest.code,
-      ['client', 'server', 'authJourney', 'authJourney.actor', 'authJourney.user']
+      ['client', 'server', 'authJourney', 'authJourney.actor', 'authJourney.actor.user']
     );
 
     if (!mcpAuthFlow) {
