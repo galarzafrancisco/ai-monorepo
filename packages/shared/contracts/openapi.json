@@ -3228,7 +3228,7 @@
         ]
       }
     },
-    "/api/v1/agents/{id}": {
+    "/api/v1/agents/{slug}": {
       "get": {
         "operationId": "AgentsController_getAgentBySlug",
         "parameters": [

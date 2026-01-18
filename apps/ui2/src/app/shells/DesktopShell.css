@@ -1,0 +1,31 @@
+.desktop-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.desktop-shell__header {
+  flex-shrink: 0;
+  padding-bottom: var(--space-4);
+}
+
+.desktop-shell__title {
+  font-size: var(--fs-6);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  margin: 0;
+  color: var(--text);
+}
+
+.desktop-shell__content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-shell__content > * {
+  flex: 1;
+  min-height: 0;
+}
