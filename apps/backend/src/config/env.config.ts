@@ -64,7 +64,7 @@ export function loadConfig(): AppConfig {
     jwksKeyTtlHours: parseInt(process.env.JWKS_KEY_TTL_HOURS || '24', 10),
 
     // Development Configuration
-    vitePort: process.env.VITE_PORT || '5173',
+    vitePort: process.env.VITE_PORT || '1000',
   };
 
   // Log configuration (excluding sensitive data)

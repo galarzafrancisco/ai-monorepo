@@ -36,7 +36,8 @@ async function bootstrap() {
   // Get parameters from CLI args or prompt
   let email = process.argv[2];
   let displayName = process.argv[3];
-  let password = process.argv[4];
+  let slug = process.argv[4];
+  let password = process.argv[5];
 
   if (!email) {
     email = await promptInput('Enter email: ');
@@ -44,6 +45,10 @@ async function bootstrap() {
 
   if (!displayName) {
     displayName = await promptInput('Enter display name: ');
+  }
+
+  if (!slug) {
+    slug = await promptInput('Enter slug: ');
   }
 
   if (!password) {
