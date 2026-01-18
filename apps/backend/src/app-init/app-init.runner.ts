@@ -50,7 +50,6 @@ export class AppInitRunner implements OnApplicationBootstrap {
     
     if (config.nodeEnv === 'development') {
       this.ensureUsers();
-      this.logger.debug('Users OK');
     }
   }
 
