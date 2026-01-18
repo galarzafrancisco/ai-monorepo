@@ -7,18 +7,26 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   VersionColumn,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
+import { ActorEntity } from '../identity-provider/actor.entity';
+import { AgentType } from './enums';
 
 @Entity({ name: 'agents' })
 export class AgentEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'text', unique: true })
-  slug!: string;
+  @Column({ type: 'uuid', nullable: false, unique: true, name: 'actor_id' })
+  actorId!: string | null;
 
-  @Column({ type: 'text' })
-  name!: string;
+  @OneToOne(() => ActorEntity, (actor) => actor.agent)
+  @JoinColumn({ name: 'actor_id' })
+  actor?: ActorEntity;
+
+  @Column({ type: 'text', enum: AgentType, default: AgentType.CLAUDE })
+  type!: AgentType;
 
   @Column({ type: 'text', nullable: true })
   description!: string | null;
@@ -56,4 +64,12 @@ export class AgentEntity {
 
   @DeleteDateColumn({ type: 'datetime', name: 'deleted_at', nullable: true })
   deletedAt?: Date | null;
+
+  /**
+   * Name from the associated actor.
+   * Returns slug as fallback if actor is not loaded.
+   */
+  get name(): string {
+    return this.actor?.displayName ?? this.slug;
+  }
 }

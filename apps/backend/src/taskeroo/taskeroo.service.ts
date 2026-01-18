@@ -6,6 +6,7 @@ import { TaskEntity } from './task.entity';
 import { TagEntity } from './tag.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
+import { ActorEntity } from '../identity-provider/actor.entity';
 import {
   CreateTaskInput,
   UpdateTaskInput,
@@ -46,6 +47,8 @@ export class TaskerooService {
     private readonly commentRepository: Repository<CommentEntity>,
     @InjectRepository(TagEntity)
     private readonly tagRepository: Repository<TagEntity>,
+    @InjectRepository(ActorEntity)
+    private readonly actorRepository: Repository<ActorEntity>,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -57,13 +60,35 @@ export class TaskerooService {
       sessionId: input.sessionId,
     });
 
+    // Look up actor IDs from slugs
+    let assigneeActorId: string | null = null;
+    let createdByActorId: string | null = null;
+
+    if (input.assignee) {
+      const assigneeActor = await this.actorRepository.findOne({
+        where: { slug: input.assignee },
+      });
+      if (assigneeActor) {
+        assigneeActorId = assigneeActor.id;
+      }
+    }
+
+    if (input.createdBy) {
+      const createdByActor = await this.actorRepository.findOne({
+        where: { slug: input.createdBy },
+      });
+      if (createdByActor) {
+        createdByActorId = createdByActor.id;
+      }
+    }
+
     const task = this.taskRepository.create({
       name: input.name,
       description: input.description,
-      assignee: input.assignee ?? null,
+      assigneeActorId,
       sessionId: input.sessionId ?? null,
       status: TaskStatus.NOT_STARTED,
-      createdBy: input.createdBy,
+      createdByActorId,
     });
 
     const savedTask = await this.taskRepository.save(task);
@@ -90,7 +115,7 @@ export class TaskerooService {
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: savedTask.id },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -115,7 +140,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -125,9 +150,30 @@ export class TaskerooService {
     // Apply partial updates
     if (input.name !== undefined) task.name = input.name;
     if (input.description !== undefined) task.description = input.description;
-    if (input.assignee !== undefined) task.assignee = input.assignee ?? null;
     if (input.sessionId !== undefined) task.sessionId = input.sessionId ?? null;
-    if (input.createdBy !== undefined) task.createdBy = input.createdBy;
+
+    // Look up actor IDs from slugs for assignee and createdBy
+    if (input.assignee !== undefined) {
+      if (input.assignee === null) {
+        task.assigneeActorId = null;
+      } else {
+        const assigneeActor = await this.actorRepository.findOne({
+          where: { slug: input.assignee },
+        });
+        if (assigneeActor) {
+          task.assigneeActorId = assigneeActor.id;
+        }
+      }
+    }
+
+    if (input.createdBy !== undefined) {
+      const createdByActor = await this.actorRepository.findOne({
+        where: { slug: input.createdBy },
+      });
+      if (createdByActor) {
+        task.createdByActorId = createdByActor.id;
+      }
+    }
 
     // Handle tags if provided
     if (input.tagNames !== undefined) {
@@ -158,7 +204,7 @@ export class TaskerooService {
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -184,28 +230,43 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
       throw new TaskNotFoundError(taskId);
     }
 
-    task.assignee = input.assignee || null;
+    // Look up actor ID from slug
+    if (input.assignee) {
+      const assigneeActor = await this.actorRepository.findOne({
+        where: { slug: input.assignee },
+      });
+      task.assigneeActorId = assigneeActor?.id ?? null;
+    } else {
+      task.assigneeActorId = null;
+    }
+
     if (input.sessionId !== undefined) {
       task.sessionId = input.sessionId || null;
     }
     const assignedTask = await this.taskRepository.save(task);
 
+    // Reload with relations
+    const taskWithRelations = await this.taskRepository.findOne({
+      where: { id: taskId },
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+    });
+
     this.logger.log({
       message: 'Task assigned',
       taskId: assignedTask.id,
-      assignee: assignedTask.assignee,
+      assignee: taskWithRelations?.assignee,
       sessionId: assignedTask.sessionId,
     });
 
-    this.eventEmitter.emit('task.assigned', new TaskAssignedEvent(assignedTask));
-    return this.mapTaskToResult(assignedTask);
+    this.eventEmitter.emit('task.assigned', new TaskAssignedEvent(taskWithRelations!));
+    return this.mapTaskToResult(taskWithRelations!);
   }
 
   async deleteTask(taskId: string): Promise<void> {
@@ -245,12 +306,15 @@ export class TaskerooService {
       const queryBuilder = this.taskRepository
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.comments', 'comments')
+        .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
         .leftJoinAndSelect('task.tags', 'tags')
+        .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
+        .leftJoinAndSelect('task.createdByActor', 'createdByActor')
         .innerJoin('task.tags', 'filterTag')
         .where('filterTag.name = :tagName', { tagName: input.tag });
 
       if (input.assignee) {
-        queryBuilder.andWhere('task.assignee = :assignee', { assignee: input.assignee });
+        queryBuilder.andWhere('assigneeActor.slug = :assignee', { assignee: input.assignee });
       }
       if (input.sessionId) {
         queryBuilder.andWhere('task.sessionId = :sessionId', { sessionId: input.sessionId });
@@ -278,22 +342,29 @@ export class TaskerooService {
       };
     }
 
-    // Standard filtering without tags
-    const where: any = {};
+    // Standard filtering - need to use query builder for assignee filtering by slug
+    const queryBuilder = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.comments', 'comments')
+      .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
+      .leftJoinAndSelect('task.tags', 'tags')
+      .leftJoinAndSelect('task.dependsOn', 'dependsOn')
+      .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
+      .leftJoinAndSelect('task.createdByActor', 'createdByActor');
+
     if (input.assignee) {
-      where.assignee = input.assignee;
+      queryBuilder.andWhere('assigneeActor.slug = :assignee', { assignee: input.assignee });
     }
     if (input.sessionId) {
-      where.sessionId = input.sessionId;
+      queryBuilder.andWhere('task.sessionId = :sessionId', { sessionId: input.sessionId });
     }
 
-    const [tasks, total] = await this.taskRepository.findAndCount({
-      where,
-      relations: ['comments', 'tags', 'dependsOn'],
-      order: { updatedAt: 'DESC' },
-      skip,
-      take: input.limit,
-    });
+    queryBuilder
+      .orderBy('task.updatedAt', 'DESC')
+      .skip(skip)
+      .take(input.limit);
+
+    const [tasks, total] = await queryBuilder.getManyAndCount();
 
     this.logger.log({
       message: 'Tasks listed',
@@ -313,7 +384,7 @@ export class TaskerooService {
   async getTaskById(taskId: string): Promise<TaskResult> {
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -336,13 +407,24 @@ export class TaskerooService {
       throw new TaskNotFoundError(taskId);
     }
 
+    // Look up actor ID from commenter name (which is the slug)
+    const commenterActor = await this.actorRepository.findOne({
+      where: { slug: input.commenterName },
+    });
+
     const comment = this.commentRepository.create({
       task,
-      commenterName: input.commenterName,
+      commenterActorId: commenterActor?.id ?? null,
       content: input.content,
     });
 
     const savedComment = await this.commentRepository.save(comment);
+
+    // Reload with actor relation
+    const commentWithRelations = await this.commentRepository.findOne({
+      where: { id: savedComment.id },
+      relations: ['commenterActor'],
+    });
 
     this.logger.log({
       message: 'Comment added',
@@ -350,8 +432,8 @@ export class TaskerooService {
       taskId,
     });
 
-    this.eventEmitter.emit('comment.added', new CommentAddedEvent(savedComment));
-    return this.mapCommentToResult(savedComment);
+    this.eventEmitter.emit('comment.added', new CommentAddedEvent(commentWithRelations!));
+    return this.mapCommentToResult(commentWithRelations!);
   }
 
   async changeStatus(taskId: string, input: ChangeStatusInput): Promise<TaskResult> {
@@ -363,7 +445,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -371,7 +453,7 @@ export class TaskerooService {
     }
 
     // Validate status transition rules
-    if (input.status === TaskStatus.IN_PROGRESS && !task.assignee) {
+    if (input.status === TaskStatus.IN_PROGRESS && !task.assigneeActorId) {
       throw new InvalidStatusTransitionError(
         task.status,
         input.status,
@@ -392,7 +474,7 @@ export class TaskerooService {
       await this.commentRepository.save(
         this.commentRepository.create({
           task,
-          commenterName: task.assignee || 'System',
+          commenterActorId: task.assigneeActorId,
           content: input.comment,
         }),
       );
@@ -404,7 +486,7 @@ export class TaskerooService {
     // Reload to get updated comments if any were added
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -463,7 +545,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -500,7 +582,7 @@ export class TaskerooService {
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {
@@ -520,7 +602,7 @@ export class TaskerooService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!task) {
@@ -542,7 +624,7 @@ export class TaskerooService {
     // Reload with relations to get updated task
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'tags', 'dependsOn'],
+      relations: ['comments', 'comments.commenterActor', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
     });
 
     if (!taskWithRelations) {

@@ -6,7 +6,10 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   VersionColumn,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
+import { ActorEntity } from './actor.entity';
 
 @Entity('users')
 export class User {
@@ -17,10 +20,14 @@ export class User {
   email!: string;
 
   @Column()
-  displayName!: string;
-
-  @Column()
   passwordHash!: string;
+
+  @Column({ type: 'uuid', unique: true, name: 'actor_id' })
+  actorId!: string;
+
+  @OneToOne(() => ActorEntity, (actor) => actor.user)
+  @JoinColumn({ name: 'actor_id' })
+  actor?: ActorEntity;
 
   @Column({ default: true })
   isActive!: boolean;
@@ -39,4 +46,12 @@ export class User {
 
   @DeleteDateColumn()
   deletedAt!: Date | null;
+
+  /**
+   * Display name from the associated actor.
+   * Returns email as fallback if actor is not loaded.
+   */
+  get displayName(): string {
+    return this.actor?.displayName ?? this.email;
+  }
 }

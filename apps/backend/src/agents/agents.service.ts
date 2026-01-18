@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import { AgentEntity } from './agent.entity';
+import { ActorEntity } from '../identity-provider/actor.entity';
+import { ActorType } from '../identity-provider/enums';
 import {
   CreateAgentInput,
   UpdateAgentInput,
@@ -27,6 +29,8 @@ export class AgentsService {
   constructor(
     @InjectRepository(AgentEntity)
     private readonly agentRepository: Repository<AgentEntity>,
+    @InjectRepository(ActorEntity)
+    private readonly actorRepository: Repository<ActorEntity>,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -42,9 +46,18 @@ export class AgentsService {
       throw new AgentSlugConflictError(input.slug);
     }
 
+    // Create actor first
+    const actor = this.actorRepository.create({
+      type: ActorType.AGENT,
+      slug: input.slug,
+      displayName: input.name,
+      avatarUrl: null,
+    });
+    const savedActor = await this.actorRepository.save(actor);
+
     const agent = this.agentRepository.create({
       slug: input.slug,
-      name: input.name,
+      actorId: savedActor.id,
       description: input.description ?? null,
       systemPrompt: input.systemPrompt,
       statusTriggers: input.statusTriggers,
@@ -55,9 +68,10 @@ export class AgentsService {
 
     const savedAgent = await this.agentRepository.save(agent);
 
-    // Load with relations (none for now, but following the pattern)
+    // Load with actor relation
     const agentWithRelations = await this.agentRepository.findOne({
       where: { id: savedAgent.id },
+      relations: ['actor'],
     });
 
     if (!agentWithRelations) {
@@ -86,6 +100,7 @@ export class AgentsService {
 
     const [agents, total] = await this.agentRepository.findAndCount({
       where: whereClause,
+      relations: ['actor'],
       order: { createdAt: 'DESC' },
       skip,
       take: input.limit,
@@ -104,6 +119,7 @@ export class AgentsService {
 
     const agent = await this.agentRepository.findOne({
       where: { id: agentId },
+      relations: ['actor'],
     });
 
     if (!agent) {
@@ -118,6 +134,7 @@ export class AgentsService {
 
     const agent = await this.agentRepository.findOne({
       where: { slug },
+      relations: ['actor'],
     });
 
     if (!agent) {
@@ -138,12 +155,14 @@ export class AgentsService {
     // Try slug first (more user-friendly), then fall back to UUID for backward compatibility
     let agent = await this.agentRepository.findOne({
       where: { slug: idOrSlug },
+      relations: ['actor'],
     });
 
     // If not found by slug and input looks like a UUID, try by ID
     if (!agent && isUuid) {
       agent = await this.agentRepository.findOne({
         where: { id: idOrSlug },
+        relations: ['actor'],
       });
     }
 
@@ -162,6 +181,7 @@ export class AgentsService {
 
     const agent = await this.agentRepository.findOne({
       where: { id: agentId },
+      relations: ['actor'],
     });
 
     if (!agent) {
@@ -179,9 +199,8 @@ export class AgentsService {
       }
     }
 
-    // Apply partial updates
+    // Apply partial updates to agent
     if (input.slug !== undefined) agent.slug = input.slug;
-    if (input.name !== undefined) agent.name = input.name;
     if (input.description !== undefined) agent.description = input.description;
     if (input.systemPrompt !== undefined)
       agent.systemPrompt = input.systemPrompt;
@@ -193,14 +212,27 @@ export class AgentsService {
     if (input.concurrencyLimit !== undefined)
       agent.concurrencyLimit = input.concurrencyLimit;
 
+    // Update actor if name or slug changed
+    if (agent.actor && (input.name !== undefined || input.slug !== undefined)) {
+      if (input.name !== undefined) agent.actor.displayName = input.name;
+      if (input.slug !== undefined) agent.actor.slug = input.slug;
+      await this.actorRepository.save(agent.actor);
+    }
+
     const updatedAgent = await this.agentRepository.save(agent);
+
+    // Reload with actor relation
+    const agentWithRelations = await this.agentRepository.findOne({
+      where: { id: updatedAgent.id },
+      relations: ['actor'],
+    });
 
     this.eventEmitter.emit(
       'agent.updated',
-      new AgentUpdatedEvent(updatedAgent),
+      new AgentUpdatedEvent(agentWithRelations!),
     );
 
-    return this.mapAgentToResult(updatedAgent);
+    return this.mapAgentToResult(agentWithRelations!);
   }
 
   async deleteAgent(agentId: string): Promise<void> {

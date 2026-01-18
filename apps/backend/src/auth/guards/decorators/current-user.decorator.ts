@@ -23,6 +23,9 @@ export const CurrentUser = createParamDecorator(
       email: authCtx.claims.email || 'email not found',
       id: authCtx.claims.sub,
       displayName: authCtx.claims.displayName || authCtx.claims.sub,
+      actorId: authCtx.claims.actor_id,
+      actorSlug: authCtx.claims.actor_slug,
+      actorType: authCtx.claims.actor_type,
     };
   },
 );

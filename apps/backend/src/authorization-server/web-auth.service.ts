@@ -41,7 +41,15 @@ export class WebAuthService {
 
     // Generate access token (60 min expiration)
     const durationMinutes = this.WEB_TOKEN_DURATION_MINUTES;
-    const accessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role, durationMinutes);
+    const accessToken = await this.generateWebAccessToken(
+      user.id,
+      user.email,
+      user.displayName,
+      user.role,
+      durationMinutes,
+      user.actor?.id,
+      user.actor?.slug,
+    );
 
     // Generate refresh token (1 day expiration)
     const refreshToken = await this.generateAndStoreRefreshToken(user.id);
@@ -65,6 +73,8 @@ export class WebAuthService {
     displayName: string,
     role: 'admin' | 'standard',
     durationMinutes: number,
+    actorId?: string,
+    actorSlug?: string,
   ): Promise<string> {
     // Get active signing key
     const signingKey = await this.jwksService.getActiveSigningKey();
@@ -91,6 +101,9 @@ export class WebAuthService {
       sub: userId,
       email,
       displayName,
+      actor_id: actorId,
+      actor_slug: actorSlug ?? email,
+      actor_type: 'user',
       scope: scopes.map(s => s.id),
       aud: 'ai-backend',
       client_id: 'web-app',
@@ -155,10 +168,10 @@ export class WebAuthService {
     // Hash the provided refresh token to compare with stored hash
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
 
-    // Find the refresh token in database
+    // Find the refresh token in database with user and actor relations
     const storedToken = await this.refreshTokenRepository.findOne({
       where: { tokenHash },
-      relations: ['user'],
+      relations: ['user', 'user.actor'],
     });
 
     if (!storedToken) {
@@ -184,7 +197,15 @@ export class WebAuthService {
 
     // Generate new tokens
     const user = storedToken.user;
-    const newAccessToken = await this.generateWebAccessToken(user.id, user.email, user.displayName, user.role, this.WEB_TOKEN_DURATION_MINUTES);
+    const newAccessToken = await this.generateWebAccessToken(
+      user.id,
+      user.email,
+      user.displayName,
+      user.role,
+      this.WEB_TOKEN_DURATION_MINUTES,
+      user.actor?.id,
+      user.actor?.slug,
+    );
     const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
 
     this.logger.log(`Refresh token exchanged successfully for user: ${user.email}`);

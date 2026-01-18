@@ -2,6 +2,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
+import { ActorEntity } from './actor.entity';
+import { ActorType } from './enums';
 import * as bcrypt from 'bcrypt';
 import { CreateUserInput, UpdateUserRoleInput } from './dto/service/identity-provider.service.types';
 
@@ -10,11 +12,14 @@ export class IdentityProviderService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(ActorEntity)
+    private readonly actorRepository: Repository<ActorEntity>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { email, isActive: true },
+      relations: ['actor'],
     });
 
     if (!user) {
@@ -54,12 +59,27 @@ export class IdentityProviderService {
   async createUser(createUserInput: CreateUserInput): Promise<User> {
     const { password, email, displayName } = createUserInput;
     const passwordHash = await this.hashPassword(password);
+
+    // Create actor first (use email as slug for users)
+    const actor = this.actorRepository.create({
+      type: ActorType.USER,
+      slug: email,
+      displayName,
+      avatarUrl: null,
+    });
+    const savedActor = await this.actorRepository.save(actor);
+
+    // Create user with actor reference
     const user = this.userRepository.create({
       email,
-      displayName,
       passwordHash,
+      actorId: savedActor.id,
     });
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    // Load actor relation for the returned user
+    savedUser.actor = savedActor;
+    return savedUser;
   }
 
   private async hashPassword(password: string): Promise<string> {

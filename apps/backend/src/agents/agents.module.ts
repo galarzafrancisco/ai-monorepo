@@ -6,6 +6,7 @@ import { AgentsController } from './agents.controller';
 import { AdkModule } from '../adk/adk.module';
 import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
+import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
     AdkModule,
     AuthorizationServerModule,
     AuthGuardsModule,
+    IdentityProviderModule,
   ],
   controllers: [AgentsController],
   providers: [AgentsService],

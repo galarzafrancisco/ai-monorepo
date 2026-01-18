@@ -17,6 +17,21 @@ export interface AccessTokenClaims {
   displayName?: string;
 
   /**
+   * Actor slug - human-friendly identifier for the actor
+   */
+  actor_slug?: string;
+
+  /**
+   * Actor type - 'user' or 'agent'
+   */
+  actor_type?: 'user' | 'agent';
+
+  /**
+   * Actor ID - UUID of the actor entity
+   */
+  actor_id?: string;
+
+  /**
    * Audience - the resource server(s) that should accept this token
    */
   aud: string | string[];

@@ -13,4 +13,7 @@ export type UserContext = {
   id: string;
   email: string;
   displayName: string;
+  actorId?: string;
+  actorSlug?: string;
+  actorType?: 'user' | 'agent';
 }

@@ -8,11 +8,14 @@ import {
   VersionColumn,
   OneToMany,
   ManyToMany,
+  ManyToOne,
   JoinTable,
+  JoinColumn,
 } from 'typeorm';
 import { CommentEntity } from './comment.entity';
 import { TagEntity } from './tag.entity';
 import { TaskStatus } from './enums';
+import { ActorEntity } from '../identity-provider/actor.entity';
 
 @Entity({ name: 'tasks' })
 export class TaskEntity {
@@ -32,14 +35,22 @@ export class TaskEntity {
   })
   status!: TaskStatus;
 
-  @Column({ type: 'text', nullable: true, name: 'assignee' })
-  assignee!: string | null;
+  @Column({ type: 'uuid', nullable: true, name: 'assignee_actor_id' })
+  assigneeActorId!: string | null;
+
+  @ManyToOne(() => ActorEntity)
+  @JoinColumn({ name: 'assignee_actor_id' })
+  assigneeActor?: ActorEntity;
 
   @Column({ type: 'text', nullable: true, name: 'session_id' })
   sessionId!: string | null;
 
-  @Column({ type: 'text', nullable: false, name: 'created_by', default: 'Fran' })
-  createdBy!: string;
+  @Column({ type: 'uuid', nullable: true, name: 'created_by_actor_id' })
+  createdByActorId!: string | null;
+
+  @ManyToOne(() => ActorEntity)
+  @JoinColumn({ name: 'created_by_actor_id' })
+  createdByActor?: ActorEntity;
 
   @ManyToMany(() => TaskEntity, (task) => task.dependents)
   @JoinTable({
@@ -74,4 +85,20 @@ export class TaskEntity {
 
   @DeleteDateColumn({ type: 'datetime', name: 'deleted_at', nullable: true })
   deletedAt?: Date | null;
+
+  /**
+   * Assignee slug from the associated actor.
+   * Returns null if no assignee or actor not loaded.
+   */
+  get assignee(): string | null {
+    return this.assigneeActor?.slug ?? null;
+  }
+
+  /**
+   * Created by slug from the associated actor.
+   * Returns 'Unknown' as fallback if actor is not loaded.
+   */
+  get createdBy(): string {
+    return this.createdByActor?.slug ?? 'Unknown';
+  }
 }
