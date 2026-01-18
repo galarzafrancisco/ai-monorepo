@@ -73,7 +73,6 @@ export function ConsentPage() {
 
   return (
     <div className="consent-page">
-      <div className="spinner"></div>
       <div className="consent-container">
         {isDesktop ?
           <div className="consent-header">
