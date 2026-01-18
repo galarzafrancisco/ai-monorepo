@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { HomeDesktopView } from "./HomeDesktopView";
+import { DesktopShell } from "../../app/shells/DesktopShell";
 import { IosShell } from "../../app/shells/IosShell";
 import { useHomeCtx } from "./HomeProvider";
 import { HOME_NAVEGATION_ITEMS } from "./const";
@@ -12,9 +12,9 @@ export function HomeLayout(): JSX.Element {
   return (
     <>
       {isDesktop ?
-        <HomeDesktopView>
+        <DesktopShell sectionTitle={sectionTitle}>
           <Outlet />
-        </HomeDesktopView>
+        </DesktopShell>
         :
         <IosShell
           appTitle="Home"
