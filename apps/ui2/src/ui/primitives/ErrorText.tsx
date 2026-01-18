@@ -2,7 +2,9 @@ import type { TextProps } from "./Text";
 import { Text } from "./Text";
 import './ErrorText.css';
 
-export function ErrorText(props: TextProps) {
+export type ErrorTextProps = TextProps;
+
+export function ErrorText(props: ErrorTextProps) {
   const { children } = props;
   return (
     <div className="error--container">
