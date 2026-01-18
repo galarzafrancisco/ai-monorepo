@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { ConsentDesktopView } from "./ConsentDesktopView";
-import { useConsentCtx } from "./ConsentProvider";
+import { DesktopShell } from "../../app/shells/DesktopShell";
 import { IosShell } from "../../app/shells/IosShell";
+import { useConsentCtx } from "./ConsentProvider";
 
 export function ConsentLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
@@ -11,9 +11,9 @@ export function ConsentLayout(): JSX.Element {
   return (
     <>
       {isDesktop ?
-        <ConsentDesktopView>
+        <DesktopShell sectionTitle={sectionTitle}>
           <Outlet />
-        </ConsentDesktopView>
+        </DesktopShell>
         :
         <IosShell
           appTitle="Consent"
