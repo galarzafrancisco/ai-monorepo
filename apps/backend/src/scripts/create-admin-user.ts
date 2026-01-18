@@ -56,7 +56,7 @@ async function bootstrap() {
   }
 
   // Validate inputs
-  if (!email || !displayName || !password) {
+  if (!email || !displayName || !slug || !password) {
     console.error('❌ Error: All fields are required (email, displayName, password)');
     process.exit(1);
   }
@@ -67,7 +67,7 @@ async function bootstrap() {
     // Create user with standard role first
     const user = await identityService.createUser({
       email,
-      slug: email,
+      slug,
       displayName,
       password,
     });
