@@ -10,6 +10,7 @@ import { LogoutPage } from './routes/LogoutPage';
 import { WikirooRoutes } from '../features/wikiroo/WikirooRoutes';
 import { MCPRegistryPage } from './routes/MCPRegistryPage';
 import { AgentsPage } from './routes/AgentsPage';
+import { ConsentRoutes } from '../features/consent/ConsentRoutes';
 
 function BetaAppRoutes() {
   return (
@@ -17,7 +18,7 @@ function BetaAppRoutes() {
       {/* Top level pages */}
       <Route path="/logout" element={<LogoutPage />} />
       <Route index element={<Navigate to="home" replace />} />
-
+      <Route path="/consent" element={<ConsentRoutes />} />
       {/* Features ⬇️ */}
       {/* Home, settings, all the app level stuff */}
       <Route path="/*" element={<HomeRoutes />} />
