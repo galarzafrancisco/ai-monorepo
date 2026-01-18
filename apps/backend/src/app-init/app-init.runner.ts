@@ -49,7 +49,8 @@ export class AppInitRunner implements OnApplicationBootstrap {
     await this.ensureMcpServers();
     
     if (config.nodeEnv === 'development') {
-      this.logger.error('Users OK');
+      this.ensureUsers();
+      this.logger.debug('Users OK');
     }
   }
 
@@ -222,7 +223,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     try {
       user = await this.identityProviderService.createUser(userConfig);
     } catch (error) {
-      console
+      console.log(error)
       throw error;
     }
     return user;
