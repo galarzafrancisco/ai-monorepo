@@ -957,7 +957,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/agents/{id}": {
+    "/api/v1/agents/{slug}": {
         parameters: {
             query?: never;
             header?: never;
