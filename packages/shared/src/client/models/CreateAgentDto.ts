@@ -12,6 +12,10 @@ export type CreateAgentDto = {
      */
     name: string;
     /**
+     * Type of agent (provider)
+     */
+    type?: CreateAgentDto.type;
+    /**
      * Short description of what this agent does
      */
     description?: string;
@@ -36,4 +40,15 @@ export type CreateAgentDto = {
      */
     concurrencyLimit?: number;
 };
+export namespace CreateAgentDto {
+    /**
+     * Type of agent (provider)
+     */
+    export enum type {
+        CLAUDE = 'claude',
+        CODEX = 'codex',
+        OPENCODE = 'opencode',
+        OTHER = 'other',
+    }
+}
 

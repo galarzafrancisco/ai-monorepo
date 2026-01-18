@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AgentService } from './api';
-import type { AgentResponseDto, CreateAgentDto, UpdateAgentDto } from 'shared';
+import type { AgentResponseDto, CreateAgentDto } from 'shared';
 
 export const useAgents = () => {
   // UI feedback
@@ -31,11 +31,11 @@ export const useAgents = () => {
   };
 
   // Load agent details
-  const loadAgentDetails = async (agentId: string) => {
+  const loadAgentDetails = async (agentSlug: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const agentData = await AgentService.agentsControllerGetAgent(agentId);
+      const agentData = await AgentService.agentsControllerGetAgentBySlug(agentSlug);
       setSelectedAgent(agentData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load agent details');
@@ -60,39 +60,6 @@ export const useAgents = () => {
     }
   };
 
-  // Update agent
-  const updateAgent = async (agentId: string, data: UpdateAgentDto): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const updatedAgent = await AgentService.agentsControllerUpdateAgent(agentId, data);
-      setSelectedAgent(updatedAgent);
-      await loadAgents(); // Refresh the list
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update agent');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Delete agent
-  const deleteAgent = async (agentId: string): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await AgentService.agentsControllerDeleteAgent(agentId);
-      await loadAgents(); // Refresh the list
-      if (selectedAgent?.id === agentId) {
-        setSelectedAgent(null);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete agent');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return {
     agents,
@@ -102,7 +69,5 @@ export const useAgents = () => {
     loadAgents,
     loadAgentDetails,
     createAgent,
-    updateAgent,
-    deleteAgent,
   };
 };

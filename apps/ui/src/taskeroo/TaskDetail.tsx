@@ -12,7 +12,7 @@ interface TaskDetailProps {
 
 export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   const [description, setDescription] = useState(task.description);
-  const [assignee, setAssignee] = useState(task.assignee || '');
+  const [assigneeId, setAssigneeId] = useState(task.assigneeActor?.id);
   const [sessionId, setSessionId] = useState(task.sessionId || '');
   const [tagNames, setTagNames] = useState<string[]>(task.tags?.map(t => t.name) || []);
   const [comment, setComment] = useState('');
@@ -51,23 +51,24 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   };
 
   const handleAssign = async () => {
-    try {
-      const body: any = {};
-      // Allow empty assignee to unassign
-      body.assignee = assignee.trim() || null;
-      if (sessionId.trim()) body.sessionId = sessionId;
+    console.log("NOT IMPLEMENTED - ASSIGNEE STRUCTURE CHANGED");
+    // try {
+    //   const body: any = {};
+    //   // Allow empty assignee to unassign
+    //   body.assigneeId = assignee.trim() || null;
+    //   if (sessionId.trim()) body.sessionId = sessionId;
 
-      const updated = await TaskerooService.taskerooControllerAssignTask(
-        task.id,
-        body
-      );
-      onUpdate(updated);
-      setErrorMessage('');
-    } catch (err: any) {
-      console.error('Failed to assign task:', err);
-      const errorMessage = err?.body?.detail || err?.message || 'Failed to update assignment';
-      setErrorMessage(errorMessage);
-    }
+    //   const updated = await TaskerooService.taskerooControllerAssignTask(
+    //     task.id,
+    //     body
+    //   );
+    //   onUpdate(updated);
+    //   setErrorMessage('');
+    // } catch (err: any) {
+    //   console.error('Failed to assign task:', err);
+    //   const errorMessage = err?.body?.detail || err?.message || 'Failed to update assignment';
+    //   setErrorMessage(errorMessage);
+    // }
   };
 
   const handleAddComment = async () => {
@@ -202,8 +203,8 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
                 <label>Assignee</label>
                 <input
                   type="text"
-                  value={assignee}
-                  onChange={(e) => setAssignee(e.target.value)}
+                  value={task.assignee ? `@${task.assignee.slug}` : '@'}
+                  onChange={(e) => setAssigneeId(e.target.value)}
                   placeholder="Enter assignee name"
                 />
               </div>
@@ -237,7 +238,7 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
           <div className="task-info-grid">
             <div className="info-item">
               <label>Created By</label>
-              <span>{task.createdBy || 'Unknown'}</span>
+              <span>@{task.createdByActor.slug}</span>
             </div>
             {task.dependsOnIds && task.dependsOnIds.length > 0 && (
               <div className="info-item">

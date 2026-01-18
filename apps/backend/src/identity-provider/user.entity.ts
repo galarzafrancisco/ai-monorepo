@@ -46,12 +46,4 @@ export class User {
 
   @DeleteDateColumn()
   deletedAt!: Date | null;
-
-  /**
-   * Display name from the associated actor.
-   * Returns email as fallback if actor is not loaded.
-   */
-  get displayName(): string {
-    return this.actor?.displayName ?? this.email;
-  }
 }

@@ -56,7 +56,7 @@ export class TokenService {
     // Find the authorization flow by authorization code
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByAuthorizationCode(
       tokenRequest.code,
-      ['client', 'server', 'authJourney', 'authJourney.user']
+      ['client', 'server', 'authJourney', 'authJourney.actor', 'authJourney.user']
     );
 
     if (!mcpAuthFlow) {
@@ -161,14 +161,22 @@ export class TokenService {
    */
   private async generateAccessToken(mcpAuthFlow: McpAuthorizationFlowEntity): Promise<string> {
 
+    if (!mcpAuthFlow.authJourney.actorId || !mcpAuthFlow.authJourney.actor || !mcpAuthFlow.authJourney.actor.user) {
+      // Cannot generate an access token for a flow without a user
+      throw new Error("Cannot generate access token. Actor or user not found.")
+    }
+
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
     const config = getConfig();
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl, // Issuer URL
-      sub: mcpAuthFlow.authJourney.userId || 'user-not-found???', // TODO: Replace with actual user ID when user auth is implemented
-      email: mcpAuthFlow.authJourney.user?.email,
-      displayName: mcpAuthFlow.authJourney.user?.displayName,
+      sub: mcpAuthFlow.authJourney.actorId,
+      actor_id: mcpAuthFlow.authJourney.actor.id,
+      actor_slug: mcpAuthFlow.authJourney.actor.slug,
+      actor_type: mcpAuthFlow.authJourney.actor.type,
+      email: mcpAuthFlow.authJourney.actor.user.email,
+      displayName: mcpAuthFlow.authJourney.actor.displayName,
       aud: mcpAuthFlow.server.providedId, // MCP server identifier
       exp: now + 3600, // 1 hour expiration
       iat: now,

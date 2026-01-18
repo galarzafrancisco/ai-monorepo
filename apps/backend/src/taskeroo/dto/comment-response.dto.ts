@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 
 export class CommentResponseDto {
   @ApiProperty({
@@ -14,10 +15,17 @@ export class CommentResponseDto {
   taskId!: string;
 
   @ApiProperty({
-    description: 'Name of the person/agent who created the comment',
+    description: 'Display name of the commenter (for backward compatibility)',
     example: 'AgentAlpha',
   })
   commenterName!: string;
+
+  @ApiPropertyOptional({
+    description: 'Actor who created this comment',
+    type: () => ActorResponseDto,
+    nullable: true,
+  })
+  commenterActor!: ActorResponseDto | null;
 
   @ApiProperty({
     description: 'Content of the comment',

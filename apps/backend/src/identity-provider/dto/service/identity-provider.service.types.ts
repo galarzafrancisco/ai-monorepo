@@ -9,6 +9,7 @@ import { UserRole } from '../../enums';
 export type CreateUserInput = {
   email: string,
   displayName: string,
+  slug: string,
   password: string,
 };
 

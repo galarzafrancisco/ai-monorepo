@@ -12,10 +12,6 @@ export type CreatePageDto = {
      */
     content: string;
     /**
-     * Author of the page (auto-populated from authenticated user if not provided)
-     */
-    author?: string;
-    /**
      * Array of tag names to associate with the page
      */
     tagNames?: Array<string>;

@@ -1,3 +1,5 @@
+import { ActorType } from "src/identity-provider/enums";
+
 /**
  * Shape of the JWT payload we issue for access tokens.
  * Service layer consumes this pure type instead of HTTP DTO classes (see docs/reviews/dto-service-layer-types.md).
@@ -19,17 +21,17 @@ export interface AccessTokenClaims {
   /**
    * Actor slug - human-friendly identifier for the actor
    */
-  actor_slug?: string;
+  actor_slug: string;
 
   /**
    * Actor type - 'user' or 'agent'
    */
-  actor_type?: 'user' | 'agent';
+  actor_type: ActorType;
 
   /**
    * Actor ID - UUID of the actor entity
    */
-  actor_id?: string;
+  actor_id: string;
 
   /**
    * Audience - the resource server(s) that should accept this token

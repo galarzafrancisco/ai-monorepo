@@ -30,6 +30,7 @@ async function bootstrap() {
     console.log(`Creating test user (${role})...`);
     const user = await identityService.createUser({
       email: testEmail,
+      slug: testEmail,
       displayName: testDisplayName,
       password: testPassword,
     });

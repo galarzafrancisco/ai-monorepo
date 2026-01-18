@@ -5,7 +5,6 @@
 import type { AgentListResponseDto } from '../models/AgentListResponseDto';
 import type { AgentResponseDto } from '../models/AgentResponseDto';
 import type { CreateAgentDto } from '../models/CreateAgentDto';
-import type { UpdateAgentDto } from '../models/UpdateAgentDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -50,57 +49,19 @@ export class AgentService {
         });
     }
     /**
-     * Get an agent by ID or slug
-     * @param id Agent ID or slug
+     * Get an agent by slug
+     * @param slug Agent slug
      * @returns AgentResponseDto
      * @throws ApiError
      */
-    public static agentsControllerGetAgent(
-        id: string,
+    public static agentsControllerGetAgentBySlug(
+        slug: string,
     ): CancelablePromise<AgentResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/agents/{id}',
             path: {
-                'id': id,
-            },
-        });
-    }
-    /**
-     * Update an agent
-     * @param id Agent ID or slug
-     * @param requestBody
-     * @returns AgentResponseDto
-     * @throws ApiError
-     */
-    public static agentsControllerUpdateAgent(
-        id: string,
-        requestBody: UpdateAgentDto,
-    ): CancelablePromise<AgentResponseDto> {
-        return __request(OpenAPI, {
-            method: 'PATCH',
-            url: '/api/v1/agents/{id}',
-            path: {
-                'id': id,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-        });
-    }
-    /**
-     * Delete an agent
-     * @param id Agent ID or slug
-     * @returns void
-     * @throws ApiError
-     */
-    public static agentsControllerDeleteAgent(
-        id: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/v1/agents/{id}',
-            path: {
-                'id': id,
+                'slug': slug,
             },
         });
     }

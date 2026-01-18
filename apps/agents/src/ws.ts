@@ -11,10 +11,9 @@ We'll start easy using the existing websocket endpoints for taskeroo and see wha
 
 import { io, Socket } from "socket.io-client";
 import { TaskEntity } from "../../backend/src/taskeroo/task.entity";
+import { ACCESS_TOKEN } from "./config";
 
 type TaskHandler = (task: TaskEntity) => void;
-
-const accessToken = "xxx"; // TODO: get a real token
 
 export class TaskerooListener {
   private socket: Socket;
@@ -28,7 +27,7 @@ export class TaskerooListener {
       transports: ["websocket"],
       // withCredentials: true, // <- this is for front end cookies
       auth: {
-        token: accessToken,
+        token: ACCESS_TOKEN,
       }
     });
 

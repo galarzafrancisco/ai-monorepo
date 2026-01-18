@@ -76,7 +76,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
           if (!actor) {
             actor = this.actorRepository.create({
-              type: ActorType.USER,
+              type: ActorType.HUMAN,
               slug: user.email,
               displayName: user.email, // Use email as display name for migrated users
               avatarUrl: null,
@@ -172,8 +172,9 @@ export class AppInitRunner implements OnApplicationBootstrap {
       agent = await this.agentsService.createAgent(agentConfig);
     } catch (error) {
       if (error instanceof AgentSlugConflictError) {
-        agent = await this.agentsService.getAgentBySlug(agentConfig.slug);
-        agent = await this.agentsService.updateAgent(agent.id, createClaudeDev);
+        agent = await this.agentsService.getAgentBySlug({ slug: agentConfig.slug });
+        // TODO: rework the update method
+        // agent = await this.agentsService.updateAgent(agent.id, createClaudeDev);
       } else {
         throw error;
       }

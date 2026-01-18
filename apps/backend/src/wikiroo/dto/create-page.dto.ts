@@ -20,15 +20,6 @@ export class CreatePageDto {
   content!: string;
 
   @ApiPropertyOptional({
-    description: 'Author of the page (auto-populated from authenticated user if not provided)',
-    example: 'Agent Roo',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(120)
-  author?: string;
-
-  @ApiPropertyOptional({
     description: 'Array of tag names to associate with the page',
     example: ['documentation', 'onboarding'],
     type: [String],

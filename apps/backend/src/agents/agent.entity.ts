@@ -19,7 +19,7 @@ export class AgentEntity {
   id!: string;
 
   @Column({ type: 'uuid', nullable: false, unique: true, name: 'actor_id' })
-  actorId!: string | null;
+  actorId!: string;
 
   @OneToOne(() => ActorEntity, (actor) => actor.agent)
   @JoinColumn({ name: 'actor_id' })
@@ -66,10 +66,18 @@ export class AgentEntity {
   deletedAt?: Date | null;
 
   /**
-   * Name from the associated actor.
-   * Returns slug as fallback if actor is not loaded.
+   * Agent name from the associated actor.
+   * Returns 'Unknown' as fallback if actor is not loaded.
    */
   get name(): string {
-    return this.actor?.displayName ?? this.slug;
+    return this.actor?.displayName ?? 'Unknown';
+  }
+
+  /**
+   * Agent slug from the associated actor.
+   * Returns 'unknown' as fallback if actor is not loaded.
+   */
+  get slug(): string {
+    return this.actor?.slug ?? 'unknown';
   }
 }

@@ -22,7 +22,6 @@ export function WikirooHomeMobile() {
 
     await createPage({
       title: title.trim(),
-      author: author.trim(),
       content: content.trim(),
       ...(tagNames.length > 0 && { tagNames }),
       ...(parentId && { parentId }),

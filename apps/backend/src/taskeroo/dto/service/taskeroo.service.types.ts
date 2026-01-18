@@ -1,25 +1,34 @@
 import { TaskStatus } from '../../enums';
+import { ActorType } from '../../../identity-provider/enums';
 
 /**
  * Service layer types - transport agnostic
  * No Swagger decorators, no class-validator
  */
 
+export type ActorResult = {
+  id: string;
+  type: ActorType;
+  slug: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
 // Input types (for service methods)
 export type CreateTaskInput = {
   name: string;
   description: string;
-  assignee?: string;
+  assigneeActorId?: string;
   sessionId?: string;
   tagNames?: string[];
-  createdBy: string;
+  createdByActorId: string;
   dependsOnIds?: string[];
 };
 
 export type UpdateTaskInput = Partial<CreateTaskInput>;
 
 export type AssignTaskInput = {
-  assignee?: string | null;
+  assigneeActorId: string;
   sessionId?: string;
 };
 
@@ -29,7 +38,7 @@ export type ChangeStatusInput = {
 };
 
 export type CreateCommentInput = {
-  commenterName: string;
+  commenterActorId: string;
   content: string;
 };
 
@@ -66,10 +75,11 @@ export type TaskResult = {
   description: string;
   status: TaskStatus;
   assignee: string | null;
+  assigneeActor: ActorResult | null;
   sessionId: string | null;
   comments: CommentResult[];
   tags: TagResult[];
-  createdBy: string;
+  createdByActor: ActorResult;
   dependsOnIds: string[];
   rowVersion: number;
   createdAt: Date;
@@ -81,6 +91,7 @@ export type CommentResult = {
   id: string;
   taskId: string;
   commenterName: string;
+  commenterActor: ActorResult | null;
   content: string;
   createdAt: Date;
 };

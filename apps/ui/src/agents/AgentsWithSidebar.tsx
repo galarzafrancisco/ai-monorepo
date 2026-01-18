@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
-import { useChatSessions } from './useChatSessions';
 import { isMobile } from '../hooks/useIsMobile';
 
 const STORAGE_KEY = 'agents-sidebar-collapsed';
@@ -20,7 +19,10 @@ export function AgentsWithSidebar() {
   });
 
   // Use WebSocket hook for real-time session updates
-  const { sessions, loading: sessionsLoading, isConnected } = useChatSessions();
+  // const { sessions, loading: sessionsLoading, isConnected } = useChatSessions();
+  const isConnected = false;
+  const sessionsLoading = true;
+  const sessions: any[] = [];
 
   // Save to localStorage on change
   useEffect(() => {

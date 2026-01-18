@@ -3,6 +3,7 @@ import { UserRole } from "src/identity-provider/enums";
 
 export const adminUser: CreateUserInput = {
   email: 'admin@test.com',
+  slug: 'admin',
   displayName: 'Admin user',
   password: 'admin',
 }

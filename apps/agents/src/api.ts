@@ -1,20 +1,21 @@
 // agentApiClient.ts
 
 import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto";
+import { ACCESS_TOKEN } from "./config";
 
 export class AgentApiClient {
   constructor(private readonly baseUrl: string) {}
 
-  private agentUrl(agentId: string) {
-    return `${this.baseUrl}/api/v1/agents/${encodeURIComponent(agentId)}`;
+  private agentUrl(agentSlug: string) {
+    return `${this.baseUrl}/api/v1/agents/${encodeURIComponent(agentSlug)}`;
   }
 
-  async getAgent(agentId: string): Promise<AgentResponseDto | null> {
-    const url = this.agentUrl(agentId);
+  async getAgent(agentSlug: string): Promise<AgentResponseDto | null> {
+    const url = this.agentUrl(agentSlug);
 
     const res = await fetch(url, {
       method: "GET",
-      headers: { accept: "application/json" },
+      headers: { accept: "application/json", authorization: `Bearer ${ACCESS_TOKEN}` },
     });
 
     
@@ -39,15 +40,15 @@ export class AgentApiClient {
     return agent;
   }
 
-  async getAgentPrompt(agentId: string): Promise<string> {
-    const agent = await this.getAgent(agentId);
+  async getAgentPrompt(agentSlug: string): Promise<string> {
+    const agent = await this.getAgent(agentSlug);
     const prompt = agent?.systemPrompt;
 
     if (typeof prompt !== "string" || prompt.trim() === "") {
       throw new Error(
         [
           `[AgentApiClient] Agent has no systemPrompt.`,
-          `GET ${this.agentUrl(agentId)}`,
+          `GET ${this.agentUrl(agentSlug)}`,
           `Body: ${JSON.stringify(agent)}`,
         ].join("\n")
       );
@@ -56,15 +57,15 @@ export class AgentApiClient {
     return prompt;
   }
 
-  async getAgentStatusTriggers(agentId: string): Promise<string[]> {
-    const agent = await this.getAgent(agentId);
+  async getAgentStatusTriggers(agentSlug: string): Promise<string[]> {
+    const agent = await this.getAgent(agentSlug);
     const triggers = agent?.statusTriggers;
 
     if (!Array.isArray(triggers) || triggers.some((t) => typeof t !== "string")) {
       throw new Error(
         [
           `[AgentApiClient] Agent has invalid statusTriggers (expected string[]).`,
-          `GET ${this.agentUrl(agentId)}`,
+          `GET ${this.agentUrl(agentSlug)}`,
           `Body: ${JSON.stringify(agent)}`,
         ].join("\n")
       );

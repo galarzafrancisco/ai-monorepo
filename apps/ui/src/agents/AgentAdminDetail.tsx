@@ -16,8 +16,6 @@ export function AgentAdminDetail() {
     isLoading,
     error,
     loadAgentDetails,
-    updateAgent,
-    deleteAgent,
   } = useAgents();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -54,14 +52,15 @@ export function AgentAdminDetail() {
     e.preventDefault();
     if (!agentId) return;
     try {
-      await updateAgent(agentId, {
-        slug: formData.slug,
-        name: formData.name,
-        description: formData.description,
-        systemPrompt: formData.systemPrompt,
-        allowedTools: formData.allowedTools.split(',').map(tool => tool.trim()).filter(Boolean),
-        isActive: formData.isActive,
-      });
+      throw new Error("update agent not implemented in the backend");
+      // await updateAgent(agentId, {
+      //   slug: formData.slug,
+      //   name: formData.name,
+      //   description: formData.description,
+      //   systemPrompt: formData.systemPrompt,
+      //   allowedTools: formData.allowedTools.split(',').map(tool => tool.trim()).filter(Boolean),
+      //   isActive: formData.isActive,
+      // });
       setIsEditing(false);
     } catch (err) {
       console.error('Failed to update agent', err);
@@ -74,7 +73,8 @@ export function AgentAdminDetail() {
       message: 'Are you sure you want to delete this agent? This action cannot be undone.',
       onConfirm: async () => {
         try {
-          await deleteAgent(agentId);
+          throw new Error("delete agent not implemented in the backend");
+          // await deleteAgent(agentId);
           setConfirmState(null);
           navigate('/agents/admin');
         } catch (err) {

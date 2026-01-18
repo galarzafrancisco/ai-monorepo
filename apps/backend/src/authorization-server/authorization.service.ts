@@ -205,7 +205,7 @@ export class AuthorizationService {
     if (accessToken && mcpAuthFlow.authJourney) {
       try {
         const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
-        mcpAuthFlow.authJourney.userId = payload.sub;
+        mcpAuthFlow.authJourney.actorId = payload.sub;
         await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
       } catch (error) {
         this.logger.warn(`Failed to extract user ID from access token: ${error}`);

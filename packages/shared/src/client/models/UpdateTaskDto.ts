@@ -12,9 +12,9 @@ export type UpdateTaskDto = {
      */
     description?: string;
     /**
-     * Name of the assignee (for AI agents)
+     * ID of the assignee
      */
-    assignee?: string;
+    assigneeActorId?: string;
     /**
      * Session ID for tracking AI agent work
      */

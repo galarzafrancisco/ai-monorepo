@@ -4,9 +4,9 @@
 /* eslint-disable */
 export type AssignTaskDto = {
     /**
-     * Name of the assignee (can be empty to unassign)
+     * Actor ID of the assignee
      */
-    assignee?: Record<string, any>;
+    assigneeActorId?: string;
     /**
      * Session ID for tracking AI agent work
      */

@@ -62,6 +62,7 @@ async function bootstrap() {
     // Create user with standard role first
     const user = await identityService.createUser({
       email,
+      slug: email,
       displayName,
       password,
     });

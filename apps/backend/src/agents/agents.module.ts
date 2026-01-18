@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AgentEntity } from './agent.entity';
 import { AgentsService } from './agents.service';
 import { AgentsController } from './agents.controller';
-import { AdkModule } from '../adk/adk.module';
 import { AuthorizationServerModule } from '../authorization-server/authorization-server.module';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
@@ -11,7 +10,6 @@ import { IdentityProviderModule } from '../identity-provider/identity-provider.m
 @Module({
   imports: [
     TypeOrmModule.forFeature([AgentEntity]),
-    AdkModule,
     AuthorizationServerModule,
     AuthGuardsModule,
     IdentityProviderModule,

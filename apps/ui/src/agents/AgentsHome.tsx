@@ -23,14 +23,14 @@ export function AgentsHome() {
       <div className="agents-admin-grid">
         {agents.map((agent) => (
           <div
-            key={agent.id}
+            key={agent.actorId}
             className="agent-admin-card"
-            onClick={() => navigate(`/agents/${agent.slug || agent.id}/session/new`)}
+            onClick={() => navigate(`/agents/${agent.slug || agent.actorId}/session/new`)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                navigate(`/agents/${agent.slug || agent.id}/session/new`);
+                navigate(`/agents/${agent.slug || agent.actorId}/session/new`);
               }
             }}
           >

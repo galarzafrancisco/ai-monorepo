@@ -13,7 +13,7 @@ import {
 import { AuthJourneyStatus } from '../enums/auth-journey-status.enum';
 import { ConnectionAuthorizationFlowEntity } from './connection-authorization-flow.entity';
 import { McpAuthorizationFlowEntity } from './mcp-authorization-flow.entity';
-import { User } from '../../identity-provider/user.entity';
+import { ActorEntity } from 'src/identity-provider/actor.entity';
 
 @Entity('authorization_journeys')
 export class AuthJourneyEntity {
@@ -26,12 +26,12 @@ export class AuthJourneyEntity {
   })
   status!: AuthJourneyStatus;
 
-  @Column({ name: 'user_id', type: 'uuid', nullable: true })
-  userId?: string | null;
+  @Column({ name: 'actor_id', type: 'uuid', nullable: true })
+  actorId?: string | null;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'user_id' })
-  user?: User | null;
+  @ManyToOne(() => ActorEntity, { nullable: true })
+  @JoinColumn({ name: 'actor_id' })
+  actor?: ActorEntity | null;
 
   // Many connection authorization flows can be linked to this one
   @OneToMany(() => ConnectionAuthorizationFlowEntity, (connectionAuthenticationFlow) => connectionAuthenticationFlow.authJourney)

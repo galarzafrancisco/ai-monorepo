@@ -4,9 +4,9 @@
 /* eslint-disable */
 export type AgentResponseDto = {
     /**
-     * Unique identifier for the agent
+     * Unique identifier for the actor representing this agent
      */
-    id: string;
+    actorId: string;
     /**
      * Unique, human-readable identifier
      */
@@ -15,6 +15,10 @@ export type AgentResponseDto = {
      * Display name for the agent
      */
     name: string;
+    /**
+     * Type of agent (provider)
+     */
+    type: AgentResponseDto.type;
     /**
      * Short description of what this agent does
      */
@@ -56,4 +60,15 @@ export type AgentResponseDto = {
      */
     deletedAt?: Record<string, any>;
 };
+export namespace AgentResponseDto {
+    /**
+     * Type of agent (provider)
+     */
+    export enum type {
+        CLAUDE = 'claude',
+        CODEX = 'codex',
+        OPENCODE = 'opencode',
+        OTHER = 'other',
+    }
+}
 

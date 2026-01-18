@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ActorResponseDto } from './ActorResponseDto';
 import type { CommentResponseDto } from './CommentResponseDto';
 import type { TagResponseDto } from './TagResponseDto';
 export type TaskResponseDto = {
@@ -22,9 +23,13 @@ export type TaskResponseDto = {
      */
     status: TaskResponseDto.status;
     /**
-     * Name of the assignee (for AI agents)
+     * Slug of the assignee (for backward compatibility)
      */
-    assignee?: string | null;
+    assignee?: Record<string, any> | null;
+    /**
+     * Actor assigned to this task
+     */
+    assigneeActor?: ActorResponseDto | null;
     /**
      * Session ID for tracking AI agent work
      */
@@ -38,9 +43,9 @@ export type TaskResponseDto = {
      */
     tags: Array<TagResponseDto>;
     /**
-     * Name of the person who created the task
+     * Actor who created this task
      */
-    createdBy: string;
+    createdByActor: ActorResponseDto;
     /**
      * Array of task IDs that this task depends on
      */

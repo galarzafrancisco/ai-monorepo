@@ -1,8 +1,10 @@
 import { TaskStatus } from "src/taskeroo/enums";
+import { AgentType } from "../../../agents/enums";
 
 export type CreateAgentInput = {
   slug: string;
   name: string;
+  type?: AgentType;
   description?: string;
   systemPrompt: string;
   statusTriggers: TaskStatus[];
@@ -14,9 +16,10 @@ export type CreateAgentInput = {
 export type UpdateAgentInput = Partial<CreateAgentInput>
 
 export type AgentResult = {
-  id: string;
+  actorId: string;
   slug: string;
   name: string;
+  type: AgentType;
   description: string | null;
   systemPrompt: string;
   statusTriggers: TaskStatus[];

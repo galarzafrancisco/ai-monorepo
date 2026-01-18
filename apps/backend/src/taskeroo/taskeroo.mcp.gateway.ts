@@ -81,18 +81,18 @@ export class TaskerooMcpGateway {
         inputSchema: {
           name: z.string(),
           description: z.string(),
-          assignee: z.string().optional(),
+          assigneeActorId: z.string().optional(),
           sessionId: z.string().optional(),
           dependsOnIds: z.array(z.string()).optional(),
         },
       },
-      async ({ name, description, assignee, sessionId, dependsOnIds }) => {
+      async ({ name, description, assigneeActorId, sessionId, dependsOnIds }) => {
         const task = await this.taskerooService.createTask({
           name,
           description,
-          assignee,
+          assigneeActorId,
           sessionId,
-          createdBy: user.email,
+          createdByActorId: user.actorId,
           dependsOnIds,
         });
         return {
@@ -111,13 +111,13 @@ export class TaskerooMcpGateway {
         description: 'Assign task to someone, optionally with session',
         inputSchema: {
           taskId: z.string(),
-          assignee: z.string(),
+          assigneeActorId: z.string(),
           sessionId: z.string().optional(),
         },
       },
-      async ({ taskId, assignee, sessionId }) => {
+      async ({ taskId, assigneeActorId, sessionId }) => {
         const task = await this.taskerooService.assignTask(taskId, {
-          assignee,
+          assigneeActorId,
           sessionId,
         });
         return {
@@ -133,16 +133,15 @@ export class TaskerooMcpGateway {
       'add_comment',
       {
         title: 'Add comment to task',
-        description: 'Add comment with commenter name',
+        description: 'Add comment',
         inputSchema: {
           taskId: z.string(),
-          commenterName: z.string(),
           content: z.string(),
         },
       },
-      async ({ taskId, commenterName, content }) => {
+      async ({ taskId, content }) => {
         await this.taskerooService.addComment(taskId, {
-          commenterName,
+          commenterActorId: user.actorId,
           content,
         });
         return {
@@ -161,14 +160,13 @@ export class TaskerooMcpGateway {
         description: 'Assign task to yourself, set status to IN_PROGRESS, add comment with branch info',
         inputSchema: {
           taskId: z.string(),
-          assignee: z.string(),
           sessionId: z.string(),
           branchName: z.string(),
         },
       },
-      async ({ taskId, assignee, sessionId, branchName }) => {
+      async ({ taskId, sessionId, branchName }) => {
         // Assign task
-        await this.taskerooService.assignTask(taskId, { assignee, sessionId });
+        await this.taskerooService.assignTask(taskId, { assigneeActorId: user.actorId, sessionId });
 
         // Change status to IN_PROGRESS
         await this.taskerooService.changeStatus(taskId, {
@@ -177,7 +175,7 @@ export class TaskerooMcpGateway {
 
         // Add comment
         await this.taskerooService.addComment(taskId, {
-          commenterName: assignee,
+          commenterActorId: user.actorId,
           content: `Starting to work on this. I've created the branch ${branchName}`,
         });
 
@@ -197,11 +195,10 @@ export class TaskerooMcpGateway {
         description: 'Set status to FOR_REVIEW and add PR link comment',
         inputSchema: {
           taskId: z.string(),
-          assignee: z.string(),
           prLink: z.string(),
         },
       },
-      async ({ taskId, assignee, prLink }) => {
+      async ({ taskId, prLink }) => {
         // Change status to FOR_REVIEW
         await this.taskerooService.changeStatus(taskId, {
           status: TaskStatus.FOR_REVIEW,
@@ -209,7 +206,7 @@ export class TaskerooMcpGateway {
 
         // Add comment with PR link
         await this.taskerooService.addComment(taskId, {
-          commenterName: assignee,
+          commenterActorId: user.actorId,
           content: `Opened PR for review: ${prLink}`,
         });
 
@@ -229,11 +226,10 @@ export class TaskerooMcpGateway {
         description: 'Set status to DONE with completion comment',
         inputSchema: {
           taskId: z.string(),
-          assignee: z.string(),
           comment: z.string(),
         },
       },
-      async ({ taskId, assignee, comment }) => {
+      async ({ taskId, comment }) => {
         // Change status to DONE with comment
         await this.taskerooService.changeStatus(taskId, {
           status: TaskStatus.DONE,
@@ -241,7 +237,7 @@ export class TaskerooMcpGateway {
 
         // Add a comment
         await this.taskerooService.addComment(taskId, {
-          commenterName: assignee,
+          commenterActorId: user.actorId,
           content: comment,
         });
 
@@ -261,11 +257,10 @@ export class TaskerooMcpGateway {
         description: 'Set status to back to IN_PROGRESS with a comment',
         inputSchema: {
           taskId: z.string(),
-          assignee: z.string(),
           comment: z.string(),
         },
       },
-      async ({ taskId, assignee, comment }) => {
+      async ({ taskId, comment }) => {
         // Change status to IN_PROGRESS with comment
         await this.taskerooService.changeStatus(taskId, {
           status: TaskStatus.IN_PROGRESS,
@@ -273,7 +268,7 @@ export class TaskerooMcpGateway {
 
         // Add a comment
         await this.taskerooService.addComment(taskId, {
-          commenterName: assignee,
+          commenterActorId: user.actorId,
           content: comment,
         });
 

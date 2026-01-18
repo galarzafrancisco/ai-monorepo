@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActorEntity } from './actor.entity';
 import { ActorType } from './enums';
+import { CreateActorInput } from './dto/service/actor.service.types';
 
 @Injectable()
 export class ActorService {
@@ -16,11 +17,11 @@ export class ActorService {
   /**
    * Create a new actor for a user
    */
-  async createUserActor(slug: string, displayName: string, avatarUrl?: string): Promise<ActorEntity> {
+  async createUserActor({slug, displayName, avatarUrl}: CreateActorInput): Promise<ActorEntity> {
     this.logger.log(`Creating user actor with slug: ${slug}`);
 
     const actor = this.actorRepository.create({
-      type: ActorType.USER,
+      type: ActorType.HUMAN,
       slug,
       displayName,
       avatarUrl: avatarUrl ?? null,
@@ -32,7 +33,7 @@ export class ActorService {
   /**
    * Create a new actor for an agent
    */
-  async createAgentActor(slug: string, displayName: string, avatarUrl?: string): Promise<ActorEntity> {
+  async createAgentActor({slug, displayName, avatarUrl}: CreateActorInput): Promise<ActorEntity> {
     this.logger.log(`Creating agent actor with slug: ${slug}`);
 
     const actor = this.actorRepository.create({
@@ -57,10 +58,18 @@ export class ActorService {
   /**
    * Get actor by ID
    */
-  async getActorById(id: string): Promise<ActorEntity | null> {
+  async getActorById(id: string, withUser?: boolean): Promise<ActorEntity | null> {
     return this.actorRepository.findOne({
       where: { id },
+      relations: { user: withUser }
     });
+  }
+
+  async getActorByIdOrSlug(idOrSlug: string): Promise<ActorEntity | null> {
+    const actor = await this.getActorById(idOrSlug);
+    if (actor)
+      return actor;
+    return this.getActorBySlug(idOrSlug);
   }
 
   /**
@@ -91,5 +100,14 @@ export class ActorService {
   async isSlugTaken(slug: string): Promise<boolean> {
     const count = await this.actorRepository.count({ where: { slug } });
     return count > 0;
+  }
+
+  /**
+   * List all actors
+   */
+  async listActors(): Promise<ActorEntity[]> {
+    return this.actorRepository.find({
+      order: { displayName: 'ASC' },
+    });
   }
 }

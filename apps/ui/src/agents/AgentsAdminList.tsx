@@ -33,7 +33,7 @@ export function AgentsAdminList() {
       setFormData({ slug: '', name: '', description: '', systemPrompt: '', allowedTools: '', statusTriggers: '', isActive: true });
       // Navigate to the newly created agent's admin page
       if (createdAgent) {
-        navigate(`/agents/${createdAgent.id}/admin`);
+        navigate(`/agents/${createdAgent.actorId}/admin`);
       }
     } catch (err) {
       console.error('Failed to create agent', err);
@@ -74,9 +74,9 @@ export function AgentsAdminList() {
           ) : (
             agents.map((agent) => (
               <div
-                key={agent.id}
+                key={agent.actorId}
                 className="agent-admin-card"
-                onClick={() => navigate(`/agents/${agent.id}/admin`)}
+                onClick={() => navigate(`/agents/${agent.actorId}/admin`)}
               >
                 <div className="agent-admin-card-header">
                   <h3>{agent.name}</h3>

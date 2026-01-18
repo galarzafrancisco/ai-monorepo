@@ -9,6 +9,7 @@ import {
   HttpStatus,
   UnauthorizedException,
   Logger,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -21,6 +22,7 @@ import { getConfig } from '../config/env.config';
 import { COOKIE_KEYS } from '../auth/core/constants/cookie-keys.constant';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { WebAuthService } from './web-auth.service';
+import { ActorService } from 'src/identity-provider/actor.service';
 
 @ApiTags('Web Authentication')
 @Controller('auth')
@@ -30,9 +32,9 @@ export class WebAuthController {
 
   constructor(
     private readonly webAuthService: WebAuthService,
-    private readonly tokenService: TokenService,
     private readonly tokenVerifierService: TokenVerifierService,
     private readonly identityProviderService: IdentityProviderService,
+    private readonly actorService: ActorService,
   ) {}
 
   @Post('login')
@@ -52,23 +54,12 @@ export class WebAuthController {
     @Body() loginDto: LoginRequestDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<LoginResponseDto> {
-    // Authenticate user and generate tokens
-    const { accessToken, refreshToken, expiresInSeconds } =
+    // Authenticate user and generate tokens (throws if anything goes wrong)
+    const { accessToken, refreshToken, expiresInSeconds, user, actor } =
       await this.webAuthService.login(loginDto.email, loginDto.password);
 
     this.logger.log('Got access token');
     
-    // Get user info
-    const user = await this.identityProviderService.getUserByEmail(
-      loginDto.email,
-    );
-    
-    this.logger.log(`got user:`, user);
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
     // Determine if cookies should be secure (HTTPS only)
     const config = getConfig();
     const isProduction = config.nodeEnv === 'production';
@@ -94,9 +85,9 @@ export class WebAuthController {
     // Return user info and token expiration
     return {
       user: {
-        id: user.id,
+        id: actor.id,
         email: user.email,
-        displayName: user.displayName,
+        displayName: actor.displayName,
         role: user.role,
       },
       expiresIn:  expiresInSeconds,
@@ -127,14 +118,8 @@ export class WebAuthController {
     }
 
     // Refresh tokens
-    const { accessToken, refreshToken, expiresIn } =
+    const { accessToken, refreshToken, expiresIn, user, actor } =
       await this.webAuthService.refreshWebToken(refreshTokenFromCookie);
-
-    // Extract user info from the new access token
-    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
-
-    // Get full user info
-    const user = await this.identityProviderService.getUserById(payload.sub);
 
     if (!user) {
       throw new UnauthorizedException('User not found');
@@ -167,7 +152,7 @@ export class WebAuthController {
       user: {
         id: user.id,
         email: user.email,
-        displayName: user.displayName,
+        displayName: actor.displayName,
         role: user.role,
       },
       expiresIn,
@@ -238,19 +223,23 @@ export class WebAuthController {
     // Validate token and get payload
     const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
 
+    payload.actor_id
     // Get user from database
-    const user = await this.identityProviderService.getUserById(payload.sub);
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+    const actor = await this.actorService.getActorById(payload.actor_id, true);
+    if (!actor) {
+      throw new UnauthorizedException('Actor not found');
+    }
+    if (!actor.user) {
+      this.logger.error("Actor returned no user. This should not happen")
+      throw new InternalServerErrorException('Failed to retrieve actor');
     }
 
     // Return user info
     return {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      role: user.role,
+      id: actor.id,
+      email: actor.user.email,
+      displayName: actor.displayName,
+      role: actor.user.role,
     };
   }
 }

@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ActorResponseDto } from './ActorResponseDto';
 export type CommentResponseDto = {
     /**
      * Unique identifier for the comment
@@ -12,9 +13,13 @@ export type CommentResponseDto = {
      */
     taskId: string;
     /**
-     * Name of the person/agent who created the comment
+     * Display name of the commenter (for backward compatibility)
      */
     commenterName: string;
+    /**
+     * Actor who created this comment
+     */
+    commenterActor?: ActorResponseDto | null;
     /**
      * Content of the comment
      */

@@ -3,13 +3,12 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class AssignTaskDto {
   @ApiProperty({
-    description: 'Name of the assignee (can be empty to unassign)',
-    example: 'AgentAlpha',
+    description: 'Actor ID of the assignee',
+    example: '1111-2222-3333',
     required: false,
   })
   @IsString()
-  @IsOptional()
-  assignee?: string | null;
+  assigneeActorId!: string;
 
   @ApiProperty({
     description: 'Session ID for tracking AI agent work',

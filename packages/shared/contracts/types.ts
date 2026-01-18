@@ -660,6 +660,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/actors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all actors (users and agents) */
+        get: operations["ActorController_listActors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wikiroo/pages": {
         parameters: {
             query?: never;
@@ -947,185 +964,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get an agent by ID or slug */
-        get: operations["AgentsController_getAgent"];
+        /** Get an agent by slug */
+        get: operations["AgentsController_getAgentBySlug"];
         put?: never;
         post?: never;
-        /** Delete an agent */
-        delete: operations["AgentsController_deleteAgent"];
-        options?: never;
-        head?: never;
-        /** Update an agent */
-        patch: operations["AgentsController_updateAgent"];
-        trace?: never;
-    };
-    "/api/v1/adk/apps": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all available ADK apps */
-        get: operations["AdkController_listApps"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/adk/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a new ADK session */
-        post: operations["AdkController_createSession"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/adk/apps/{appId}/users/{userId}/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List sessions for an app and user */
-        get: operations["AdkController_listSessions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/adk/apps/{appId}/users/{userId}/sessions/{sessionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a specific session */
-        get: operations["AdkController_getSession"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/adk/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send a message to an ADK agent (non-streaming) */
-        post: operations["AdkController_sendMessage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/adk/messages/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Send a message to an ADK agent with SSE streaming */
-        get: operations["AdkController_sendMessageStream"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/chat/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List chat sessions with optional filtering and pagination */
-        get: operations["ChatController_listSessions"];
-        put?: never;
-        /** Create a new chat session */
-        post: operations["ChatController_createSession"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/chat/sessions/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a chat session by ID */
-        get: operations["ChatController_getSession"];
-        put?: never;
-        post?: never;
-        /** Delete a chat session */
-        delete: operations["ChatController_deleteSession"];
-        options?: never;
-        head?: never;
-        /** Update a chat session */
-        patch: operations["ChatController_updateSession"];
-        trace?: never;
-    };
-    "/api/v1/chat/sessions/{id}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send a message to the ADK agent (non-streaming) */
-        post: operations["ChatController_sendMessage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/chat/sessions/{id}/messages/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send a message to the ADK agent with streaming response */
-        post: operations["ChatController_sendMessageStream"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1148,10 +990,10 @@ export interface components {
              */
             description: string;
             /**
-             * @description Name of the assignee (for AI agents)
-             * @example AgentAlpha
+             * @description ID of the assignee
+             * @example 111-222-333
              */
-            assignee?: string;
+            assigneeActorId?: string;
             /**
              * @description Session ID for tracking AI agent work
              * @example session-123-abc
@@ -1174,6 +1016,34 @@ export interface components {
              */
             dependsOnIds?: string[];
         };
+        ActorResponseDto: {
+            /**
+             * @description Unique identifier for the actor
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Type of the actor
+             * @example human
+             * @enum {string}
+             */
+            type: "human" | "agent";
+            /**
+             * @description Unique slug identifier for the actor
+             * @example john@example.com
+             */
+            slug: string;
+            /**
+             * @description Display name of the actor
+             * @example John Doe
+             */
+            displayName: string;
+            /**
+             * @description URL to the actor avatar image
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: Record<string, never> | null;
+        };
         CommentResponseDto: {
             /**
              * @description Unique identifier for the comment
@@ -1186,10 +1056,12 @@ export interface components {
              */
             taskId: string;
             /**
-             * @description Name of the person/agent who created the comment
+             * @description Display name of the commenter (for backward compatibility)
              * @example AgentAlpha
              */
             commenterName: string;
+            /** @description Actor who created this comment */
+            commenterActor?: components["schemas"]["ActorResponseDto"] | null;
             /**
              * @description Content of the comment
              * @example Started working on this task
@@ -1236,47 +1108,23 @@ export interface components {
              */
             status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
             /**
-             * @description Name of the assignee (for AI agents)
-             * @example AgentAlpha
+             * @description Slug of the assignee (for backward compatibility)
+             * @example agent-alpha
              */
-            assignee?: string | null;
+            assignee?: Record<string, never> | null;
+            /** @description Actor assigned to this task */
+            assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
             /**
              * @description Session ID for tracking AI agent work
              * @example session-123-abc
              */
             sessionId?: string | null;
-            /**
-             * @description Comments associated with the task
-             * @example [
-             *       {
-             *         "id": "cmt-001",
-             *         "taskId": "123e4567-e89b-12d3-a456-426614174000",
-             *         "commenterName": "John Doe",
-             *         "content": "Please prioritize this task.",
-             *         "createdAt": "2025-11-03T11:00:00.000Z"
-             *       }
-             *     ]
-             */
+            /** @description Comments associated with the task */
             comments: components["schemas"]["CommentResponseDto"][];
-            /**
-             * @description Tags associated with the task
-             * @example [
-             *       {
-             *         "id": "tag-001",
-             *         "name": "bug",
-             *         "color": "#FF5733",
-             *         "description": "Issues that need to be fixed",
-             *         "createdAt": "2025-11-03T10:00:00.000Z",
-             *         "updatedAt": "2025-11-03T10:00:00.000Z"
-             *       }
-             *     ]
-             */
+            /** @description Tags associated with the task */
             tags: components["schemas"]["TagResponseDto"][];
-            /**
-             * @description Name of the person who created the task
-             * @example Fran
-             */
-            createdBy: string;
+            /** @description Actor who created this task */
+            createdByActor: components["schemas"]["ActorResponseDto"];
             /**
              * @description Array of task IDs that this task depends on
              * @example [
@@ -1308,10 +1156,10 @@ export interface components {
              */
             description?: string;
             /**
-             * @description Name of the assignee (for AI agents)
-             * @example AgentAlpha
+             * @description ID of the assignee
+             * @example 111-222-333
              */
-            assignee?: string;
+            assigneeActorId?: string;
             /**
              * @description Session ID for tracking AI agent work
              * @example session-123-abc
@@ -1336,10 +1184,10 @@ export interface components {
         };
         AssignTaskDto: {
             /**
-             * @description Name of the assignee (can be empty to unassign)
-             * @example AgentAlpha
+             * @description Actor ID of the assignee
+             * @example 1111-2222-3333
              */
-            assignee?: Record<string, never>;
+            assigneeActorId?: string;
             /**
              * @description Session ID for tracking AI agent work
              * @example session-123-abc
@@ -1371,11 +1219,6 @@ export interface components {
             totalPages: number;
         };
         CreateCommentDto: {
-            /**
-             * @description Name of the person or agent commenting (auto-populated from authenticated user if not provided)
-             * @example AgentBeta
-             */
-            commenterName?: string;
             /**
              * @description Content of the comment
              * @example Task completed successfully. All tests passing.
@@ -2417,11 +2260,6 @@ export interface components {
              */
             content: string;
             /**
-             * @description Author of the page (auto-populated from authenticated user if not provided)
-             * @example Agent Roo
-             */
-            author?: string;
-            /**
              * @description Array of tag names to associate with the page
              * @example [
              *       "documentation",
@@ -2749,6 +2587,13 @@ export interface components {
              */
             name: string;
             /**
+             * @description Type of agent (provider)
+             * @default claude
+             * @example claude
+             * @enum {string}
+             */
+            type: "claude" | "codex" | "opencode" | "other";
+            /**
              * @description Short description of what this agent does
              * @example A helpful assistant agent
              */
@@ -2790,10 +2635,10 @@ export interface components {
         };
         AgentResponseDto: {
             /**
-             * @description Unique identifier for the agent
+             * @description Unique identifier for the actor representing this agent
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            id: string;
+            actorId: string;
             /**
              * @description Unique, human-readable identifier
              * @example buddy
@@ -2804,6 +2649,12 @@ export interface components {
              * @example Buddy
              */
             name: string;
+            /**
+             * @description Type of agent (provider)
+             * @example claude
+             * @enum {string}
+             */
+            type: "claude" | "codex" | "opencode" | "other";
             /**
              * @description Short description of what this agent does
              * @example A helpful assistant agent
@@ -2885,374 +2736,6 @@ export interface components {
              * @example 3
              */
             totalPages: number;
-        };
-        UpdateAgentDto: {
-            /**
-             * @description Unique, human-readable identifier for the agent
-             * @example buddy
-             */
-            slug?: string;
-            /**
-             * @description Display name for the agent
-             * @example Buddy
-             */
-            name?: string;
-            /**
-             * @description Short description of what this agent does
-             * @example A helpful assistant agent
-             */
-            description?: string;
-            /**
-             * @description Core instructions/persona for this agent
-             * @example You are a helpful assistant that helps users with tasks.
-             */
-            systemPrompt?: string;
-            /**
-             * @description Task statuses that will trigger this agent to activate
-             * @default []
-             * @example [
-             *       "IN_PROGRESS",
-             *       "FOR_REVIEW"
-             *     ]
-             */
-            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
-            /**
-             * @description List of tool identifiers this agent is allowed to use
-             * @example [
-             *       "taskeroo.createTask",
-             *       "taskeroo.readTask",
-             *       "wikiroo.search"
-             *     ]
-             */
-            allowedTools?: string[];
-            /**
-             * @description Whether this agent is available for assignment
-             * @default true
-             * @example true
-             */
-            isActive: boolean;
-            /**
-             * @description Max number of tasks this agent can process in parallel
-             * @example 5
-             */
-            concurrencyLimit?: number;
-        };
-        ListAppsResponseDto: {
-            /**
-             * @description List of available ADK app names
-             * @example [
-             *       "buddy",
-             *       "taskeroo-agent"
-             *     ]
-             */
-            apps: string[];
-        };
-        CreateAdkSessionDto: {
-            /** @description App ID */
-            appId: string;
-            /** @description User ID */
-            userId: string;
-            /** @description Optional session ID */
-            sessionId?: string;
-        };
-        FunctionCallDto: {
-            /**
-             * @description Unique identifier for the function call
-             * @example call_123
-             */
-            id?: string;
-            /**
-             * @description Name of the function being called
-             * @example taskeroo.createTask
-             */
-            name?: string;
-            /**
-             * @description Arguments passed to the function
-             * @example {
-             *       "name": "My Task",
-             *       "description": "Task description"
-             *     }
-             */
-            args?: Record<string, never>;
-        };
-        FunctionResponseDto: {
-            /**
-             * @description Unique identifier for the function response
-             * @example call_123
-             */
-            id?: string;
-            /**
-             * @description Name of the function that was called
-             * @example taskeroo.createTask
-             */
-            name?: string;
-            /**
-             * @description Response from the function execution
-             * @example {
-             *       "result": "Task created successfully"
-             *     }
-             */
-            response?: Record<string, never>;
-        };
-        ChatMessagePartDto: {
-            /**
-             * @description Text content of the message part
-             * @example Hello, how can I help you?
-             */
-            text?: string;
-            /** @description Function call data if this part is a function call */
-            functionCall?: components["schemas"]["FunctionCallDto"];
-            /** @description Function response data if this part is a function response */
-            functionResponse?: components["schemas"]["FunctionResponseDto"];
-        };
-        ChatMessageContentDto: {
-            /**
-             * @description Role of the message author (user, agent, system)
-             * @example agent
-             */
-            role: string;
-            /** @description Parts of the message content */
-            parts: components["schemas"]["ChatMessagePartDto"][];
-        };
-        UsageMetadataDto: {
-            /**
-             * @description Number of tokens in the prompt
-             * @example 150
-             */
-            promptTokenCount: number;
-            /**
-             * @description Number of tokens in the candidates
-             * @example 200
-             */
-            candidatesTokenCount: number;
-            /**
-             * @description Total token count
-             * @example 350
-             */
-            totalTokenCount: number;
-        };
-        ChatEventDto: {
-            /**
-             * @description Unique identifier for the chat event
-             * @example evt_123e4567
-             */
-            id: string;
-            /**
-             * @description Unix timestamp when the event occurred
-             * @example 1701234567890
-             */
-            timestamp: number;
-            /**
-             * @description Author of the event (user ID or agent ID)
-             * @example user-123
-             */
-            author: string;
-            /** @description Content of the chat message */
-            content: components["schemas"]["ChatMessageContentDto"];
-            /**
-             * @description Whether this is a partial event (streaming)
-             * @example false
-             */
-            partial?: boolean;
-            /**
-             * @description Invocation identifier for the chat turn
-             * @example inv_123e4567
-             */
-            invocationId?: string;
-            /** @description Token usage metadata for the event */
-            usageMetadata?: components["schemas"]["UsageMetadataDto"];
-        };
-        AdkSessionResponseDto: {
-            /**
-             * @description Unique identifier for the session
-             * @example session-123e4567
-             */
-            id: string;
-            /**
-             * @description Name of the ADK app
-             * @example buddy
-             */
-            appName: string;
-            /**
-             * @description User ID associated with the session
-             * @example user-123
-             */
-            userId: string;
-            /**
-             * @description Session state data
-             * @example {
-             *       "conversationContext": "greeting"
-             *     }
-             */
-            state: Record<string, never>;
-            /** @description List of chat events in the session */
-            events: components["schemas"]["ChatEventDto"][];
-            /**
-             * @description Unix timestamp of the last update to the session
-             * @example 1701234567890
-             */
-            lastUpdateTime: number;
-        };
-        AdkListSessionsResponseDto: {
-            /** @description List of ADK sessions */
-            sessions: components["schemas"]["AdkSessionResponseDto"][];
-        };
-        SendMessageDto: {
-            /** @description App ID (agent name) */
-            appId: string;
-            /** @description User ID */
-            userId: string;
-            /** @description Session ID */
-            sessionId: string;
-            /** @description Message content */
-            message: string;
-        };
-        AdkSendMessageResponseDto: {
-            /** @description List of chat events generated from sending the message */
-            events: components["schemas"]["ChatEventDto"][];
-        };
-        CreateSessionDto: {
-            /**
-             * @description ID of the agent for this chat session
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            agentId: string;
-            /**
-             * @description Human-readable title for this session
-             * @example Banana MCP - design with Architect
-             */
-            title?: string;
-            /**
-             * @description Optional project label for this session
-             * @example project:banana-mcp
-             */
-            project?: string;
-        };
-        ChatSessionResponseDto: {
-            /**
-             * @description Unique identifier for the session
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description ADK session identifier
-             * @example adk-session-123e4567-e89b-12d3-a456-426614174000
-             */
-            adkSessionId: string;
-            /**
-             * @description ID of the agent for this chat session
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            agentId: string;
-            /**
-             * @description Human-readable title for this session
-             * @example Chat with Buddy - 2025-11-28
-             */
-            title: string;
-            /**
-             * @description Optional project label for this session
-             * @example project:banana-mcp
-             */
-            project?: Record<string, never>;
-            /**
-             * @description Whether the session is archived
-             * @example false
-             */
-            isArchived: boolean;
-            /**
-             * @description Whether the session is pinned
-             * @example false
-             */
-            isPinned: boolean;
-            /**
-             * @description Timestamp of the last message in this chat
-             * @example 2025-11-28T10:30:00.000Z
-             */
-            lastMessageAt: string;
-            /** @description Tasks referenced in this session */
-            referencedTasks?: components["schemas"]["TaskResponseDto"][];
-            /** @description Tasks subscribed to in this session */
-            subscribedTasks?: components["schemas"]["TaskResponseDto"][];
-            /**
-             * @description Row version for optimistic locking
-             * @example 1
-             */
-            rowVersion: number;
-            /**
-             * @description Session creation timestamp
-             * @example 2025-11-28T10:30:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Session last update timestamp
-             * @example 2025-11-28T10:30:00.000Z
-             */
-            updatedAt: string;
-            /**
-             * @description Session deletion timestamp (soft delete)
-             * @example null
-             */
-            deletedAt?: Record<string, never>;
-        };
-        SessionListResponseDto: {
-            /** @description List of sessions */
-            items: components["schemas"]["ChatSessionResponseDto"][];
-            /**
-             * @description Total number of sessions matching the filters
-             * @example 42
-             */
-            total: number;
-            /**
-             * @description Current page number
-             * @example 1
-             */
-            page: number;
-            /**
-             * @description Number of items per page
-             * @example 20
-             */
-            limit: number;
-        };
-        UpdateSessionDto: {
-            /**
-             * @description Human-readable title for this session
-             * @example Updated Chat Title
-             */
-            title?: string;
-            /**
-             * @description Optional project label for this session
-             * @example project:banana-mcp
-             */
-            project?: string;
-            /**
-             * @description Whether the session should be archived
-             * @example false
-             */
-            isArchived?: boolean;
-            /**
-             * @description Whether the session should be pinned
-             * @example true
-             */
-            isPinned?: boolean;
-        };
-        ChatSendMessageDto: {
-            /**
-             * @description The message content to send
-             * @example Hello, how can you help me today?
-             */
-            message: string;
-        };
-        ChatMessageEventDto: {
-            id: string;
-            timestamp: number;
-            author: string;
-            content: components["schemas"]["ChatMessageContentDto"];
-            partial?: boolean;
-            invocationId?: string;
-            usageMetadata?: components["schemas"]["UsageMetadataDto"];
-        };
-        SendMessageResponseDto: {
-            events: components["schemas"]["ChatMessageEventDto"][];
         };
     };
     responses: never;
@@ -4964,6 +4447,26 @@ export interface operations {
             };
         };
     };
+    ActorController_listActors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all actors */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActorResponseDto"][];
+                };
+            };
+        };
+    };
     WikirooController_listPages: {
         parameters: {
             query?: {
@@ -5567,13 +5070,13 @@ export interface operations {
             };
         };
     };
-    AgentsController_getAgent: {
+    AgentsController_getAgentBySlug: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Agent ID or slug */
-                id: string;
+                /** @description Agent slug */
+                slug: string;
             };
             cookie?: never;
         };
@@ -5586,359 +5089,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AgentResponseDto"];
                 };
-            };
-        };
-    };
-    AgentsController_deleteAgent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Agent ID or slug */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AgentsController_updateAgent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Agent ID or slug */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateAgentDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AgentResponseDto"];
-                };
-            };
-        };
-    };
-    AdkController_listApps: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListAppsResponseDto"];
-                };
-            };
-        };
-    };
-    AdkController_createSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAdkSessionDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdkSessionResponseDto"];
-                };
-            };
-        };
-    };
-    AdkController_listSessions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                appId: string;
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdkListSessionsResponseDto"];
-                };
-            };
-        };
-    };
-    AdkController_getSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description App ID */
-                appId: string;
-                /** @description User ID */
-                userId: string;
-                /** @description Session ID */
-                sessionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdkSessionResponseDto"];
-                };
-            };
-        };
-    };
-    AdkController_sendMessage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SendMessageDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdkSendMessageResponseDto"];
-                };
-            };
-        };
-    };
-    AdkController_sendMessageStream: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SendMessageDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ChatController_listSessions: {
-        parameters: {
-            query?: {
-                /** @description Filter by agent ID */
-                agentId?: string;
-                /** @description Filter by project label */
-                project?: string;
-                /** @description Filter by archived status */
-                isArchived?: boolean;
-                /** @description Filter by pinned status */
-                isPinned?: boolean;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Number of items per page */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionListResponseDto"];
-                };
-            };
-        };
-    };
-    ChatController_createSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateSessionDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatSessionResponseDto"];
-                };
-            };
-        };
-    };
-    ChatController_getSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Session ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatSessionResponseDto"];
-                };
-            };
-        };
-    };
-    ChatController_deleteSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Session ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ChatController_updateSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Session ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateSessionDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatSessionResponseDto"];
-                };
-            };
-        };
-    };
-    ChatController_sendMessage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Session ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatSendMessageDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SendMessageResponseDto"];
-                };
-            };
-        };
-    };
-    ChatController_sendMessageStream: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Session ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatSendMessageDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

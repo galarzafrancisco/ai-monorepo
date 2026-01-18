@@ -1,9 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { ValidateNested } from 'class-validator';
 import { TaskStatus } from '../enums';
 import { CommentResponseDto } from './comment-response.dto';
 import { TagResponseDto } from './tag-response.dto';
+import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 
 export class TaskResponseDto {
   @ApiProperty({
@@ -32,11 +31,18 @@ export class TaskResponseDto {
   status!: TaskStatus;
 
   @ApiPropertyOptional({
-    description: 'Name of the assignee (for AI agents)',
-    example: 'AgentAlpha',
+    description: 'Slug of the assignee (for backward compatibility)',
+    example: 'agent-alpha',
     nullable: true,
   })
-  assignee!: string;
+  assignee!: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Actor assigned to this task',
+    type: () => ActorResponseDto,
+    nullable: true,
+  })
+  assigneeActor!: ActorResponseDto | null;
 
   @ApiPropertyOptional({
     description: 'Session ID for tracking AI agent work',
@@ -48,43 +54,20 @@ export class TaskResponseDto {
   @ApiProperty({
     description: 'Comments associated with the task',
     type: () => [CommentResponseDto],
-    example: [
-      {
-        id: 'cmt-001',
-        taskId: '123e4567-e89b-12d3-a456-426614174000',
-        commenterName: 'John Doe',
-        content: 'Please prioritize this task.',
-        createdAt: '2025-11-03T11:00:00.000Z',
-      },
-    ],
   })
-  @ValidateNested({ each: true })
-  @Type(() => CommentResponseDto)
   comments!: CommentResponseDto[];
 
   @ApiProperty({
     description: 'Tags associated with the task',
     type: () => [TagResponseDto],
-    example: [
-      {
-        id: 'tag-001',
-        name: 'bug',
-        color: '#FF5733',
-        description: 'Issues that need to be fixed',
-        createdAt: '2025-11-03T10:00:00.000Z',
-        updatedAt: '2025-11-03T10:00:00.000Z',
-      },
-    ],
   })
-  @ValidateNested({ each: true })
-  @Type(() => TagResponseDto)
   tags!: TagResponseDto[];
 
   @ApiProperty({
-    description: 'Name of the person who created the task',
-    example: 'Fran',
+    description: 'Actor who created this task',
+    type: () => ActorResponseDto,
   })
-  createdBy!: string;
+  createdByActor!: ActorResponseDto;
 
   @ApiProperty({
     description: 'Array of task IDs that this task depends on',

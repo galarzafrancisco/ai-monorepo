@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { AgentEntity } from './agent.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { ActorType } from '../identity-provider/enums';
+import { AgentType } from './enums';
 import {
   CreateAgentInput,
   UpdateAgentInput,
@@ -32,17 +33,18 @@ export class AgentsService {
     @InjectRepository(ActorEntity)
     private readonly actorRepository: Repository<ActorEntity>,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   async createAgent(input: CreateAgentInput): Promise<AgentResult> {
     this.logger.log(`Creating agent with slug: ${input.slug}`);
 
-    // Check for slug conflict
-    const existingAgent = await this.agentRepository.findOne({
+    // Check for slug conflict using actor repository
+    const existingActor = await this.actorRepository.findOne({
       where: { slug: input.slug },
     });
 
-    if (existingAgent) {
+    // TODO: not really needed hey. DB should throw on write because slug is unique.
+    if (existingActor) {
       throw new AgentSlugConflictError(input.slug);
     }
 
@@ -56,8 +58,8 @@ export class AgentsService {
     const savedActor = await this.actorRepository.save(actor);
 
     const agent = this.agentRepository.create({
-      slug: input.slug,
       actorId: savedActor.id,
+      type: input.type ?? AgentType.OTHER,
       description: input.description ?? null,
       systemPrompt: input.systemPrompt,
       statusTriggers: input.statusTriggers,
@@ -77,13 +79,16 @@ export class AgentsService {
     if (!agentWithRelations) {
       throw new AgentNotFoundError(savedAgent.id);
     }
+    if (!agentWithRelations.actor) {
+      throw new AgentNotFoundError(savedAgent.id);
+    }
 
     this.eventEmitter.emit(
       'agent.created',
       new AgentCreatedEvent(agentWithRelations),
     );
 
-    return this.mapAgentToResult(agentWithRelations);
+    return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
   }
 
   async listAgents(input: ListAgentsInput): Promise<ListAgentsResult> {
@@ -106,15 +111,19 @@ export class AgentsService {
       take: input.limit,
     });
 
+
     return {
-      items: agents.map((agent) => this.mapAgentToResult(agent)),
+      items: agents.map((agent) => {
+        const actor = agent.actor as ActorEntity;
+        return this.mapAgentToResult(agent, actor);
+      }),
       total,
       page: input.page,
       limit: input.limit,
     };
   }
 
-  async getAgentById(agentId: string): Promise<AgentResult> {
+  async getAgentById({ agentId }: { agentId: string }): Promise<AgentResult> {
     this.logger.log(`Getting agent by ID: ${agentId}`);
 
     const agent = await this.agentRepository.findOne({
@@ -125,137 +134,119 @@ export class AgentsService {
     if (!agent) {
       throw new AgentNotFoundError(agentId);
     }
+    if (!agent.actor) {
+      throw new AgentNotFoundError(agentId);
+    }
 
-    return this.mapAgentToResult(agent);
+    return this.mapAgentToResult(agent, agent.actor);
   }
 
-  async getAgentBySlug(slug: string): Promise<AgentResult> {
+  async getAgentBySlug({ slug }: { slug: string }): Promise<AgentResult> {
     this.logger.log(`Getting agent by slug: ${slug}`);
 
-    const agent = await this.agentRepository.findOne({
-      where: { slug },
-      relations: ['actor'],
-    });
+    const agent = await this.agentRepository
+      .createQueryBuilder('agent')
+      .innerJoinAndSelect('agent.actor', 'actor')
+      .where('actor.slug = :slug', { slug })
+      .getOne();
 
     if (!agent) {
       throw new AgentNotFoundError(slug);
     }
+    if (!agent.actor) {
+      throw new AgentNotFoundError(slug);
+    }
 
-    return this.mapAgentToResult(agent);
+    return this.mapAgentToResult(agent, agent.actor);
   }
 
-  async getAgentByIdOrSlug(idOrSlug: string): Promise<AgentResult> {
-    this.logger.log(`Getting agent by ID or slug: ${idOrSlug}`);
+  // async updateAgent(
+  //   actorId: string,
+  //   input: UpdateAgentInput,
+  // ): Promise<AgentResult> {
+  //   this.logger.log(`Updating agent: ${agentId}`);
 
-    // UUID regex pattern
-    const uuidPattern =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const isUuid = uuidPattern.test(idOrSlug);
+  //   const agent = await this.agentRepository.findOne({
+  //     where: { id: agentId },
+  //     relations: ['actor'],
+  //   });
 
-    // Try slug first (more user-friendly), then fall back to UUID for backward compatibility
-    let agent = await this.agentRepository.findOne({
-      where: { slug: idOrSlug },
-      relations: ['actor'],
-    });
+  //   if (!agent) {
+  //     throw new AgentNotFoundError(agentId);
+  //   }
 
-    // If not found by slug and input looks like a UUID, try by ID
-    if (!agent && isUuid) {
-      agent = await this.agentRepository.findOne({
-        where: { id: idOrSlug },
-        relations: ['actor'],
-      });
-    }
+  //   // Check for slug conflict if slug is being updated
+  //   if (input.slug !== undefined && input.slug !== agent.actor?.slug) {
+  //     const existingActor = await this.actorRepository.findOne({
+  //       where: { slug: input.slug },
+  //     });
 
-    if (!agent) {
-      throw new AgentNotFoundError(idOrSlug);
-    }
+  //     if (existingActor && existingActor.id !== agent.actorId) {
+  //       throw new AgentSlugConflictError(input.slug);
+  //     }
+  //   }
 
-    return this.mapAgentToResult(agent);
-  }
+  //   // Apply partial updates to agent
+  //   if (input.type !== undefined) agent.type = input.type;
+  //   if (input.description !== undefined) agent.description = input.description;
+  //   if (input.systemPrompt !== undefined)
+  //     agent.systemPrompt = input.systemPrompt;
+  //   if (input.statusTriggers !== undefined)
+  //     agent.statusTriggers = input.statusTriggers;
+  //   if (input.allowedTools !== undefined)
+  //     agent.allowedTools = input.allowedTools;
+  //   if (input.isActive !== undefined) agent.isActive = input.isActive;
+  //   if (input.concurrencyLimit !== undefined)
+  //     agent.concurrencyLimit = input.concurrencyLimit;
 
-  async updateAgent(
-    agentId: string,
-    input: UpdateAgentInput,
-  ): Promise<AgentResult> {
-    this.logger.log(`Updating agent: ${agentId}`);
+  //   // Update actor if name or slug changed
+  //   if (agent.actor && (input.name !== undefined || input.slug !== undefined)) {
+  //     if (input.name !== undefined) agent.actor.displayName = input.name;
+  //     if (input.slug !== undefined) agent.actor.slug = input.slug;
+  //     await this.actorRepository.save(agent.actor);
+  //   }
 
-    const agent = await this.agentRepository.findOne({
-      where: { id: agentId },
-      relations: ['actor'],
-    });
+  //   const updatedAgent = await this.agentRepository.save(agent);
 
-    if (!agent) {
-      throw new AgentNotFoundError(agentId);
-    }
+  //   // Reload with actor relation
+  //   const agentWithRelations = await this.agentRepository.findOne({
+  //     where: { id: updatedAgent.id },
+  //     relations: ['actor'],
+  //   });
+  //   if (!agentWithRelations || !agentWithRelations.actor) {
+  //     throw new AgentNotFoundError(updatedAgent.id);
+  //   }
 
-    // Check for slug conflict if slug is being updated
-    if (input.slug !== undefined && input.slug !== agent.slug) {
-      const existingAgent = await this.agentRepository.findOne({
-        where: { slug: input.slug },
-      });
+  //   this.eventEmitter.emit(
+  //     'agent.updated',
+  //     new AgentUpdatedEvent(agentWithRelations!),
+  //   );
 
-      if (existingAgent) {
-        throw new AgentSlugConflictError(input.slug);
-      }
-    }
+  //   return this.mapAgentToResult(agentWithRelations);
+  // }
 
-    // Apply partial updates to agent
-    if (input.slug !== undefined) agent.slug = input.slug;
-    if (input.description !== undefined) agent.description = input.description;
-    if (input.systemPrompt !== undefined)
-      agent.systemPrompt = input.systemPrompt;
-    if (input.statusTriggers !== undefined)
-      agent.statusTriggers = input.statusTriggers;
-    if (input.allowedTools !== undefined)
-      agent.allowedTools = input.allowedTools;
-    if (input.isActive !== undefined) agent.isActive = input.isActive;
-    if (input.concurrencyLimit !== undefined)
-      agent.concurrencyLimit = input.concurrencyLimit;
+  // async deleteAgent(agentId: string): Promise<void> {
+  //   this.logger.log(`Deleting agent: ${agentId}`);
 
-    // Update actor if name or slug changed
-    if (agent.actor && (input.name !== undefined || input.slug !== undefined)) {
-      if (input.name !== undefined) agent.actor.displayName = input.name;
-      if (input.slug !== undefined) agent.actor.slug = input.slug;
-      await this.actorRepository.save(agent.actor);
-    }
+  //   const agent = await this.agentRepository.findOne({
+  //     where: { id: agentId },
+  //   });
 
-    const updatedAgent = await this.agentRepository.save(agent);
+  //   if (!agent) {
+  //     throw new AgentNotFoundError(agentId);
+  //   }
 
-    // Reload with actor relation
-    const agentWithRelations = await this.agentRepository.findOne({
-      where: { id: updatedAgent.id },
-      relations: ['actor'],
-    });
+  //   await this.agentRepository.softRemove(agent);
 
-    this.eventEmitter.emit(
-      'agent.updated',
-      new AgentUpdatedEvent(agentWithRelations!),
-    );
+  //   this.eventEmitter.emit('agent.deleted', new AgentDeletedEvent(agentId));
+  // }
 
-    return this.mapAgentToResult(agentWithRelations!);
-  }
-
-  async deleteAgent(agentId: string): Promise<void> {
-    this.logger.log(`Deleting agent: ${agentId}`);
-
-    const agent = await this.agentRepository.findOne({
-      where: { id: agentId },
-    });
-
-    if (!agent) {
-      throw new AgentNotFoundError(agentId);
-    }
-
-    await this.agentRepository.softRemove(agent);
-
-    this.eventEmitter.emit('agent.deleted', new AgentDeletedEvent(agentId));
-  }
-
-  private mapAgentToResult(agent: AgentEntity): AgentResult {
+  private mapAgentToResult(agent: AgentEntity, actor: ActorEntity): AgentResult {
     return {
-      id: agent.id,
-      slug: agent.slug,
-      name: agent.name,
+      actorId: actor.id,
+      slug: actor.slug,
+      name: actor.displayName,
+      type: agent.type,
       description: agent.description,
       systemPrompt: agent.systemPrompt,
       statusTriggers: agent.statusTriggers,

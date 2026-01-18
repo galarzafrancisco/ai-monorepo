@@ -1,12 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from 'src/taskeroo/enums';
+import { AgentType } from '../enums';
 
 export class AgentResponseDto {
   @ApiProperty({
-    description: 'Unique identifier for the agent',
+    description: 'Unique identifier for the actor representing this agent',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  id!: string;
+  actorId!: string;
 
   @ApiProperty({
     description: 'Unique, human-readable identifier',
@@ -19,6 +20,13 @@ export class AgentResponseDto {
     example: 'Buddy',
   })
   name!: string;
+
+  @ApiProperty({
+    description: 'Type of agent (provider)',
+    example: 'claude',
+    enum: AgentType,
+  })
+  type!: AgentType;
 
   @ApiPropertyOptional({
     description: 'Short description of what this agent does',

@@ -47,6 +47,7 @@ export class AgentsController {
     const result = await this.agentsService.createAgent({
       slug: dto.slug,
       name: dto.name,
+      type: dto.type,
       description: dto.description,
       systemPrompt: dto.systemPrompt,
       statusTriggers: dto.statusTriggers || [],
@@ -80,49 +81,52 @@ export class AgentsController {
     };
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get an agent by ID or slug' })
+  @Get(':slug')
+  @ApiOperation({ summary: 'Get an agent by slug' })
   @ApiOkResponse({ type: AgentResponseDto })
-  async getAgent(@Param() params: AgentParamsDto): Promise<AgentResponseDto> {
-    const result = await this.agentsService.getAgentByIdOrSlug(params.id);
+  async getAgentBySlug(@Param() params: AgentParamsDto): Promise<AgentResponseDto> {
+    console.log(params)
+    const result = await this.agentsService.getAgentBySlug({slug: params.slug});
     return this.mapResultToResponse(result);
   }
 
-  @Patch(':id')
-  @RequireScopes(AgentsScopes.WRITE.id)
-  @UseGuards(AccessTokenGuard)
-  @ApiOperation({ summary: 'Update an agent' })
-  @ApiOkResponse({ type: AgentResponseDto })
-  async updateAgent(
-    @Param() params: AgentParamsDto,
-    @Body() dto: UpdateAgentDto,
-  ): Promise<AgentResponseDto> {
-    const result = await this.agentsService.updateAgent(params.id, {
-      slug: dto.slug,
-      name: dto.name,
-      description: dto.description,
-      systemPrompt: dto.systemPrompt,
-      allowedTools: dto.allowedTools,
-      isActive: dto.isActive,
-      concurrencyLimit: dto.concurrencyLimit,
-    });
-    return this.mapResultToResponse(result);
-  }
+  // @Patch(':id')
+  // @RequireScopes(AgentsScopes.WRITE.id)
+  // @UseGuards(AccessTokenGuard)
+  // @ApiOperation({ summary: 'Update an agent' })
+  // @ApiOkResponse({ type: AgentResponseDto })
+  // async updateAgent(
+  //   @Param() params: AgentParamsDto,
+  //   @Body() dto: UpdateAgentDto,
+  // ): Promise<AgentResponseDto> {
+  //   const result = await this.agentsService.updateAgent(params.id, {
+  //     slug: dto.slug,
+  //     name: dto.name,
+  //     type: dto.type,
+  //     description: dto.description,
+  //     systemPrompt: dto.systemPrompt,
+  //     allowedTools: dto.allowedTools,
+  //     isActive: dto.isActive,
+  //     concurrencyLimit: dto.concurrencyLimit,
+  //   });
+  //   return this.mapResultToResponse(result);
+  // }
 
-  @Delete(':id')
-  @RequireScopes(AgentsScopes.WRITE.id)
-  @UseGuards(AccessTokenGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete an agent' })
-  async deleteAgent(@Param() params: AgentParamsDto): Promise<void> {
-    await this.agentsService.deleteAgent(params.id);
-  }
+  // @Delete(':id')
+  // @RequireScopes(AgentsScopes.WRITE.id)
+  // @UseGuards(AccessTokenGuard)
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // @ApiOperation({ summary: 'Delete an agent' })
+  // async deleteAgent(@Param() params: AgentParamsDto): Promise<void> {
+  //   await this.agentsService.deleteAgent(params.id);
+  // }
 
   private mapResultToResponse(result: AgentResult): AgentResponseDto {
     return {
-      id: result.id,
+      actorId: result.actorId,
       slug: result.slug,
       name: result.name,
+      type: result.type,
       description: result.description,
       systemPrompt: result.systemPrompt,
       statusTriggers: result.statusTriggers,

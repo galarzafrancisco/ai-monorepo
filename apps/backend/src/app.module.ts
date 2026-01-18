@@ -10,9 +10,7 @@ import { AuthorizationServerModule } from './authorization-server/authorization-
 import { DiscoveryModule } from './discovery/discovery.module';
 import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
 import { AgentsModule } from './agents/agents.module';
-import { ChatModule } from './chat/chat.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
-import { AdkModule } from './adk/adk.module';
 import { LlmHelperModule } from './llm-helper/llm-helper.module';
 import { getConfig } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
@@ -33,9 +31,7 @@ import { AppInitModule } from './app-init/app-init.module';
     AuthorizationServerModule,
     DiscoveryModule,
     AgentsModule,
-    ChatModule,
     IdentityProviderModule,
-    AdkModule,
     LlmHelperModule,
     AppInitModule,
   ],

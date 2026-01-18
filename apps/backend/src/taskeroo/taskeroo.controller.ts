@@ -39,7 +39,8 @@ import { CreateTagDto } from './dto/create-tag.dto';
 import { TaskParamsDto } from './dto/task-params.dto';
 import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
-import { TaskResult, CommentResult, TagResult } from './dto/service/taskeroo.service.types';
+import { TaskResult, CommentResult, TagResult, ActorResult } from './dto/service/taskeroo.service.types';
+import { ActorResponseDto } from '../identity-provider/dto/actor-response.dto';
 import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
@@ -76,10 +77,10 @@ export class TaskerooController {
     const result = await this.taskerooService.createTask({
       name: dto.name,
       description: dto.description,
-      assignee: dto.assignee,
+      assigneeActorId: dto.assigneeActorId,
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
-      createdBy: user.email,
+      createdByActorId: user.actorId,
       dependsOnIds: dto.dependsOnIds,
     });
     return this.mapResultToResponse(result);
@@ -101,7 +102,7 @@ export class TaskerooController {
     const result = await this.taskerooService.updateTask(params.id, {
       name: dto.name,
       description: dto.description,
-      assignee: dto.assignee,
+      assigneeActorId: dto.assigneeActorId,
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
       dependsOnIds: dto.dependsOnIds,
@@ -123,7 +124,7 @@ export class TaskerooController {
     @Body() dto: AssignTaskDto,
   ): Promise<TaskResponseDto> {
     const result = await this.taskerooService.assignTask(params.id, {
-      assignee: dto.assignee,
+      assigneeActorId: dto.assigneeActorId,
       sessionId: dto.sessionId,
     });
     return this.mapResultToResponse(result);
@@ -189,7 +190,7 @@ export class TaskerooController {
     @CurrentUser() user: UserContext,
   ): Promise<CommentResponseDto> {
     const result = await this.taskerooService.addComment(params.id, {
-      commenterName: dto.commenterName ?? user.email,
+      commenterActorId: user.actorId,
       content: dto.content,
     });
     return this.mapCommentResultToResponse(result);
@@ -295,11 +296,12 @@ export class TaskerooController {
       name: result.name,
       description: result.description,
       status: result.status,
-      assignee: result.assignee ?? '',
+      assignee: result.assignee,
+      assigneeActor: result.assigneeActor ? this.mapActorResultToResponse(result.assigneeActor) : null,
       sessionId: result.sessionId ?? '',
       comments: result.comments.map((c) => this.mapCommentResultToResponse(c)),
       tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
-      createdBy: result.createdBy,
+      createdByActor: this.mapActorResultToResponse(result.createdByActor),
       dependsOnIds: result.dependsOnIds,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
@@ -324,8 +326,19 @@ export class TaskerooController {
       id: result.id,
       taskId: result.taskId,
       commenterName: result.commenterName,
+      commenterActor: result.commenterActor ? this.mapActorResultToResponse(result.commenterActor) : null,
       content: result.content,
       createdAt: result.createdAt.toISOString(),
+    };
+  }
+
+  private mapActorResultToResponse(result: ActorResult): ActorResponseDto {
+    return {
+      id: result.id,
+      type: result.type,
+      slug: result.slug,
+      displayName: result.displayName,
+      avatarUrl: result.avatarUrl,
     };
   }
 

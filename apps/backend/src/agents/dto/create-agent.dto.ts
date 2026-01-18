@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from 'src/taskeroo/enums';
+import { AgentType } from '../enums';
 
 export class CreateAgentDto {
   @ApiProperty({
@@ -27,6 +28,16 @@ export class CreateAgentDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
+
+  @ApiPropertyOptional({
+    description: 'Type of agent (provider)',
+    example: 'claude',
+    enum: AgentType,
+    default: AgentType.CLAUDE,
+  })
+  @IsEnum(AgentType)
+  @IsOptional()
+  type?: AgentType;
 
   @ApiPropertyOptional({
     description: 'Short description of what this agent does',

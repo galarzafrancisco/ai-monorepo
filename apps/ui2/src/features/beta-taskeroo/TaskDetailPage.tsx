@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTaskerooCtx } from './TaskerooProvider';
-import { TaskerooService } from './api';
+import { ActorsService, TaskerooService } from './api';
 import { TaskStatus, TASKEROO_STATUS } from './const';
 import type { Comment } from './types';
 import { Text, Stack, Row, Button, Divider, Avatar } from '../../ui/primitives';
 import './TaskDetailPage.css';
+import { ActorResponseDto } from 'shared';
 
 type EditingField = 'title' | 'description' | 'assignee' | null;
 
@@ -29,6 +30,34 @@ export function TaskDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [actors, setActors] = useState<ActorResponseDto[]>([]);
+  const [filteredActors, setFilteredActors] = useState<ActorResponseDto[]>([]);
+  const [editAssignee, setEditAssignee] = useState('');
+  const [selectedActor, setSelectedActor] = useState<ActorResponseDto | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const fetchActors = async () => {
+    const fetchedActors = await ActorsService.actorControllerListActors();
+    setActors(fetchedActors);
+    return fetchedActors;
+  };
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+        setHighlightedIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // If task not found in context, could be loading or invalid
   if (!task) {
     return (
@@ -43,13 +72,92 @@ export function TaskDetailPage() {
     );
   }
 
+  const filterActors = (text: string, actorList: ActorResponseDto[]) => {
+    const lowerText = text.toLowerCase().trim();
+    if (!lowerText) return actorList;
+
+    return actorList.filter(actor => {
+      if (actor.slug.toLowerCase().includes(lowerText)) return true;
+      if (actor.displayName.toLowerCase().includes(lowerText)) return true;
+      return false;
+    });
+  };
+
+  const handleTypingAssignee = (text: string) => {
+    setEditAssignee(text);
+    setSelectedActor(null);
+    const filtered = filterActors(text, actors);
+    setFilteredActors(filtered);
+    setShowDropdown(true);
+    setHighlightedIndex(-1);
+  };
+
+  const handleSelectActor = (actor: ActorResponseDto) => {
+    setSelectedActor(actor);
+    setEditAssignee('');
+    setShowDropdown(false);
+    setHighlightedIndex(-1);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedActor(null);
+    setEditAssignee('');
+    setFilteredActors(actors);
+    setShowDropdown(true);
+    setHighlightedIndex(-1);
+    // Focus the input after clearing
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showDropdown || filteredActors.length === 0) {
+      if (e.key === 'Escape') {
+        setShowDropdown(false);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev =>
+          prev < filteredActors.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => prev > 0 ? prev - 1 : 0);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < filteredActors.length) {
+          handleSelectActor(filteredActors[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowDropdown(false);
+        setHighlightedIndex(-1);
+        break;
+    }
+  };
+
   const handleStartEdit = (field: EditingField) => {
     if (field === 'title') {
       setEditValue(task.name);
     } else if (field === 'description') {
       setEditValue(task.description || '');
     } else if (field === 'assignee') {
-      setEditValue(task.assignee || '');
+      // Fetch actors and show all in dropdown
+      fetchActors().then((fetchedActors) => {
+        setFilteredActors(fetchedActors);
+        if (!task.assigneeActor) {
+          setShowDropdown(true);
+        }
+      });
+      setEditAssignee('');
+      setSelectedActor(task.assigneeActor || null);
+      setHighlightedIndex(-1);
     }
     setEditingField(field);
     setError(null);
@@ -98,14 +206,21 @@ export function TaskDetailPage() {
   };
 
   const handleSaveAssignee = async () => {
+    if (!selectedActor) {
+      setError('Please select an assignee from the list');
+      return;
+    }
     setIsLoading(true);
     try {
-      // Note: Using 'as any' to work around type mismatch in generated API client
-      const body: { assignee: string | null; sessionId?: string } = {
-        assignee: editValue.trim() || null
-      };
-      await TaskerooService.taskerooControllerAssignTask(task.id, body as any);
+      console.log(`selectedActor`, selectedActor);
+      console.log(`selectedActor.id`, selectedActor.id);
+      await TaskerooService.taskerooControllerAssignTask(task.id, {
+        assigneeActorId: selectedActor.id
+      });
       setEditingField(null);
+      setEditAssignee('');
+      setSelectedActor(null);
+      setFilteredActors([]);
       setError(null);
     } catch (err: unknown) {
       const errorMessage = (err as { body?: { detail?: string }; message?: string })?.body?.detail
@@ -223,17 +338,53 @@ export function TaskDetailPage() {
         </Text>
         {editingField === 'assignee' ? (
           <Stack spacing="3">
-            <input
-              type="text"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              className="task-detail-page__input"
-              placeholder="Enter assignee name"
-              autoFocus
-              disabled={isLoading}
-            />
+            <div className="task-detail-page__autocomplete" ref={autocompleteRef}>
+              {selectedActor ? (
+                <div
+                  className="task-detail-page__input task-detail-page__input--with-actor"
+                  onClick={handleClearSelection}
+                >
+                  <Avatar name={selectedActor.displayName} size="sm" />
+                  <Text size="3">@{selectedActor.slug}</Text>
+                </div>
+              ) : (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={editAssignee}
+                  onChange={(e) => handleTypingAssignee(e.target.value)}
+                  onFocus={() => {
+                    setFilteredActors(actors);
+                    setShowDropdown(true);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  className="task-detail-page__input"
+                  placeholder="Search for an assignee..."
+                  autoFocus
+                  disabled={isLoading}
+                />
+              )}
+              {showDropdown && filteredActors.length > 0 && !selectedActor && (
+                <div className="task-detail-page__autocomplete-dropdown">
+                  {filteredActors.map((actor, index) => (
+                    <div
+                      key={actor.id}
+                      className={`task-detail-page__autocomplete-item ${index === highlightedIndex ? 'task-detail-page__autocomplete-item--highlighted' : ''}`}
+                      onClick={() => handleSelectActor(actor)}
+                      onMouseEnter={() => setHighlightedIndex(index)}
+                    >
+                      <Avatar name={actor.displayName} size="sm" />
+                      <Stack spacing="0">
+                        <Text size="2" weight="medium">{actor.displayName}</Text>
+                        <Text size="1" tone="muted">@{actor.slug}</Text>
+                      </Stack>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <Row spacing="2">
-              <Button size="sm" onClick={handleSaveAssignee} disabled={isLoading}>
+              <Button size="sm" onClick={handleSaveAssignee} disabled={isLoading || !selectedActor}>
                 Save
               </Button>
               <Button size="sm" variant="secondary" onClick={handleCancelEdit} disabled={isLoading}>
@@ -243,10 +394,10 @@ export function TaskDetailPage() {
           </Stack>
         ) : (
           <div className="task-detail-page__editable" onClick={() => handleStartEdit('assignee')}>
-            {task.assignee ? (
+            {task.assigneeActor ? (
               <Row spacing="2">
-                <Avatar name={task.assignee} size="sm" />
-                <Text size="3">{task.assignee}</Text>
+                <Avatar name={task.assigneeActor.displayName} size="sm" />
+                <Text size="3">@{task.assigneeActor.slug}</Text>
               </Row>
             ) : (
               <Text size="3" tone="muted">Unassigned</Text>
@@ -331,7 +482,7 @@ export function TaskDetailPage() {
         <Stack spacing="2">
           <Row spacing="2">
             <Text size="2" tone="muted">Created by:</Text>
-            <Text size="2">{task.createdBy || 'Unknown'}</Text>
+            <Text size="2">@{task.createdByActor.slug}</Text>
           </Row>
           {task.sessionId && (
             <Row spacing="2">

@@ -37,7 +37,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           {task.assignee ? (
             <>
               <span className="assignee-emoji">👤</span>
-              <span className="assignee-name">{task.assignee}</span>
+              <span className="assignee-name">{task.assigneeActor?.displayName || 'unassigned'}</span>
             </>
           ) : (
             <span className="unassigned-text">Unassigned</span>

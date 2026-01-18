@@ -19,12 +19,12 @@ export class CreateTaskDto {
   description!: string;
 
   @ApiPropertyOptional({
-    description: 'Name of the assignee (for AI agents)',
-    example: 'AgentAlpha',
+    description: 'ID of the assignee',
+    example: '111-222-333',
   })
   @IsString()
   @IsOptional()
-  assignee?: string;
+  assigneeActorId?: string;
 
   @ApiPropertyOptional({
     description: 'Session ID for tracking AI agent work',

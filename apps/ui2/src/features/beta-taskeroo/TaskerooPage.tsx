@@ -137,7 +137,7 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
 function TaskRow({ task, animation, onClick }: { task: Task, animation?: DataRowAnimation, onClick?: () => void }): JSX.Element {
   return (
     <DataRow
-      leading={<Avatar name={task.createdBy} size='lg' />}
+      leading={<Avatar name={task.createdByActor.displayName} size='lg' />}
       topRight={elapsedTime(task.updatedAt)}
       tags={task.tags.map(tag => ({ label: tag.name }))}
       animation={animation}
@@ -153,7 +153,7 @@ function TaskRow({ task, animation, onClick }: { task: Task, animation?: DataRow
         {task.description}
       </div>
       <div style={{ fontSize: 12 }} className="text--tone-muted">
-        {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by ${task.createdBy}`}
+        {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by @${task.createdByActor.slug}`}
       </div>
     </DataRow>
   );
@@ -195,7 +195,7 @@ function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ente
 function TaskCard({ task, animation, onClick }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void }): JSX.Element {
   return (
     <BoardCard
-      leading={<Avatar name={task.createdBy} size='md' />}
+      leading={<Avatar name={task.createdByActor.displayName} size='md' />}
       topRight={elapsedTime(task.updatedAt)}
       tags={task.tags.map(tag => ({ label: tag.name }))}
       animation={animation}

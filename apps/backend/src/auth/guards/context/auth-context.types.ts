@@ -1,4 +1,5 @@
 import { AccessTokenClaims } from "../../../auth/core/types/access-token-claims.type";
+import { ActorType } from "src/identity-provider/enums";
 
 export type AuthContext = {
   token: string;
@@ -10,10 +11,7 @@ export type AuthContext = {
 
 // Quick and dirty type to expose via the user @CurrentUser
 export type UserContext = {
-  id: string;
-  email: string;
-  displayName: string;
-  actorId?: string;
-  actorSlug?: string;
-  actorType?: 'user' | 'agent';
+  actorId: string;
+  actorSlug: string;
+  actorType: ActorType;
 }

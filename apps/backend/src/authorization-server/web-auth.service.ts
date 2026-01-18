@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger, UnauthorizedException } from "@nestjs/common";
 import { createHash, randomBytes } from "crypto";
 import { SignJWT, importPKCS8 } from 'jose';
 import { RefreshTokenEntity } from "./entities/refresh-token.entity";
@@ -15,6 +15,9 @@ import { ALL_MCP_SCOPES } from "src/auth/core/scopes/mcp.scopes";
 import { UserScopes } from "src/auth/core/scopes/user.scopes";
 import { ALL_AGENTS_SCOPES } from "src/agents/agents.scopes";
 import { ALL_MCP_REGISTRY_SCOPES } from "src/mcp-registry/mcp-registry.scopes";
+import { ActorEntity } from "src/identity-provider/actor.entity";
+import { User } from "src/identity-provider/user.entity";
+import { ActorService } from "src/identity-provider/actor.service";
 
 
 @Injectable()
@@ -24,6 +27,7 @@ export class WebAuthService {
 
   constructor(
     private readonly identityProviderService: IdentityProviderService,
+    private readonly actorService: ActorService,
     private readonly jwksService: JwksService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
@@ -33,22 +37,18 @@ export class WebAuthService {
    * Web Authentication: Login with email and password
    * Returns access and refresh tokens
    */
-  async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; expiresInSeconds: number }> {
+  async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; expiresInSeconds: number, actor: ActorEntity, user: User }> {
     this.logger.debug(`Login attempt for email: ${email}`);
 
-    // Validate user credentials
-    const user = await this.identityProviderService.validateUser(email, password);
+    // Validate user credentials (throws if user not found or credentials invalid)
+    const { user, actor } = await this.identityProviderService.validateUser(email, password);
 
     // Generate access token (60 min expiration)
     const durationMinutes = this.WEB_TOKEN_DURATION_MINUTES;
     const accessToken = await this.generateWebAccessToken(
-      user.id,
-      user.email,
-      user.displayName,
-      user.role,
       durationMinutes,
-      user.actor?.id,
-      user.actor?.slug,
+      actor,
+      user,
     );
 
     // Generate refresh token (1 day expiration)
@@ -57,6 +57,8 @@ export class WebAuthService {
     this.logger.log(`User logged in successfully: ${email}`);
 
     return {
+      user,
+      actor,
       accessToken,
       refreshToken,
       expiresInSeconds: durationMinutes * 60,
@@ -68,13 +70,9 @@ export class WebAuthService {
    * Generate a signed JWT access token for web authentication
    */
   private async generateWebAccessToken(
-    userId: string,
-    email: string,
-    displayName: string,
-    role: 'admin' | 'standard',
     durationMinutes: number,
-    actorId?: string,
-    actorSlug?: string,
+    actor: ActorEntity,
+    user: User,
   ): Promise<string> {
     // Get active signing key
     const signingKey = await this.jwksService.getActiveSigningKey();
@@ -93,17 +91,17 @@ export class WebAuthService {
       ...ALL_AGENTS_SCOPES,
       ...ALL_MCP_REGISTRY_SCOPES,
       ...ALL_MCP_SCOPES,
-      role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
+      user.role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
     ]
 
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl,
-      sub: userId,
-      email,
-      displayName,
-      actor_id: actorId,
-      actor_slug: actorSlug ?? email,
-      actor_type: 'user',
+      sub: actor.id,
+      actor_id: actor.id,
+      actor_slug: actor.slug,
+      actor_type: actor.type,
+      displayName: actor.displayName,
+      email: user.email,
       scope: scopes.map(s => s.id),
       aud: 'ai-backend',
       client_id: 'web-app',
@@ -162,13 +160,14 @@ export class WebAuthService {
    * Web Authentication: Refresh access token using refresh token
    * Returns new access and refresh tokens
    */
-  async refreshWebToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+  async refreshWebToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number, user: User, actor: ActorEntity }> {
     this.logger.debug('Refresh token request');
 
     // Hash the provided refresh token to compare with stored hash
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
 
     // Find the refresh token in database with user and actor relations
+    // TODO: should throw if user is gone?
     const storedToken = await this.refreshTokenRepository.findOne({
       where: { tokenHash },
       relations: ['user', 'user.actor'],
@@ -197,14 +196,22 @@ export class WebAuthService {
 
     // Generate new tokens
     const user = storedToken.user;
+    if (!user) {
+      this.logger.error("User not found for refresh token. This should not happen");
+      // TODO: this is an HTTP exception. Should be service error.
+      throw new InternalServerErrorException('Failed to retrieve user');
+    }
+    const actor = storedToken.user.actor;
+    if (!actor) {
+      this.logger.error("Actor not found for refresh token. This should not happen");
+      // TODO: this is an HTTP exception. Should be service error.
+      throw new InternalServerErrorException('Failed to retrieve actor');
+    }
+
     const newAccessToken = await this.generateWebAccessToken(
-      user.id,
-      user.email,
-      user.displayName,
-      user.role,
       this.WEB_TOKEN_DURATION_MINUTES,
-      user.actor?.id,
-      user.actor?.slug,
+      actor,
+      user,
     );
     const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
 
@@ -214,6 +221,8 @@ export class WebAuthService {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       expiresIn: 600, // 10 minutes
+      actor,
+      user,
     };
   }
 }

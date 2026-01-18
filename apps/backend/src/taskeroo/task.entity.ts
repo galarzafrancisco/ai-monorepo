@@ -45,8 +45,8 @@ export class TaskEntity {
   @Column({ type: 'text', nullable: true, name: 'session_id' })
   sessionId!: string | null;
 
-  @Column({ type: 'uuid', nullable: true, name: 'created_by_actor_id' })
-  createdByActorId!: string | null;
+  @Column({ type: 'uuid', nullable: false, name: 'created_by_actor_id' })
+  createdByActorId!: string;
 
   @ManyToOne(() => ActorEntity)
   @JoinColumn({ name: 'created_by_actor_id' })
@@ -92,13 +92,5 @@ export class TaskEntity {
    */
   get assignee(): string | null {
     return this.assigneeActor?.slug ?? null;
-  }
-
-  /**
-   * Created by slug from the associated actor.
-   * Returns 'Unknown' as fallback if actor is not loaded.
-   */
-  get createdBy(): string {
-    return this.createdByActor?.slug ?? 'Unknown';
   }
 }
