@@ -6,6 +6,14 @@ import { Stack, Text, Button } from '../ui/primitives';
 import { ErrorText } from '../ui/primitives/ErrorText';
 import './LoginPage.css';
 
+export type NavForm = {
+  hash: string,
+  key: string,
+  pathname: string,
+  search: string,
+  state?: string,
+}
+
 /**
  * Provides email/password authentication with redirect after successful login
  */
@@ -20,12 +28,15 @@ export function LoginForm() {
   const location = useLocation();
 
   // Get the page user was trying to access (or default to home)
-  const from = (location.state as any)?.from?.pathname || '/';
-  const redirect = from === "/logout" ? "/" : from;
+  const from = (location.state as { from?: NavForm })?.from;
+  const pathname = from?.pathname || '/';
+  const search = from?.search || '';
+  const redirect = pathname === "/logout" ? "/" : `${pathname}${search}`;
 
   // If we are already authenticated, redirect
   useEffect(() => {
     if (!authIsLoading && isAuthenticated) {
+      console.log("you're in mate");
       navigate(redirect);
     }
   }, [authIsLoading, isAuthenticated, redirect]);

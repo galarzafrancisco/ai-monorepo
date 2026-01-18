@@ -14,7 +14,6 @@ export function ConsentPage() {
 
   const [searchParams] = useSearchParams();
   const flowId = searchParams.get('flow');
-  console.log(`flowId: ${flowId}`)
 
   if (!flowId) {
     return (
