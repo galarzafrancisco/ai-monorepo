@@ -4,17 +4,29 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { ProblemDetailsFilter } from './../src/http/problem-details.filter';
-import { ensureTestUser, getAuthCookies, authenticatedRequest } from './helpers/auth.helper';
+import {
+  ensureTestUser,
+  getAuthCookies,
+  ensureAgentActor,
+  TEST_USER_SLUG,
+  TEST_USER_DISPLAY_NAME,
+} from './helpers/auth.helper';
 import cookieParser from 'cookie-parser';
 
 describe('Taskeroo E2E Tests', () => {
   let app: INestApplication<App>;
   let httpServer: App;
   let authCookies: string;
+  let actorId: string;
+  let agentAlphaActorId: string;
+  let agentBetaActorId: string;
 
   // Store task IDs created during tests
   let taskWithoutAssigneeId: string;
   let taskWithAssigneeId: string;
+
+  const agentAlpha = { slug: 'agent-alpha', displayName: 'Agent Alpha' };
+  const agentBeta = { slug: 'agent-beta', displayName: 'Agent Beta' };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -39,8 +51,10 @@ describe('Taskeroo E2E Tests', () => {
     httpServer = app.getHttpServer();
 
     // Setup authentication
-    await ensureTestUser(app);
+    actorId = await ensureTestUser(app);
     authCookies = await getAuthCookies(httpServer);
+    agentAlphaActorId = await ensureAgentActor(app, agentAlpha.slug, agentAlpha.displayName);
+    agentBetaActorId = await ensureAgentActor(app, agentBeta.slug, agentBeta.displayName);
   });
 
   afterAll(async () => {
@@ -61,7 +75,7 @@ describe('Taskeroo E2E Tests', () => {
       expect(response.body).toHaveProperty('id');
       expect(response.body.name).toBe('Test Task Without Assignee');
       expect(response.body.description).toBe('This is a test task without an assignee');
-      expect(response.body.createdBy).toBe('test@example.com');
+      expect(response.body.createdByActor.slug).toBe(TEST_USER_SLUG);
       // API returns empty string for null assignee
       expect(response.body.assignee).toBeFalsy();
       expect(response.body.status).toBe('NOT_STARTED');
@@ -76,15 +90,18 @@ describe('Taskeroo E2E Tests', () => {
         .send({
           name: 'Test Task With Assignee',
           description: 'This is a test task with an assignee',
-          assignee: 'john.doe@example.com',
+          assigneeActorId: actorId,
         })
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
       expect(response.body.name).toBe('Test Task With Assignee');
       expect(response.body.description).toBe('This is a test task with an assignee');
-      expect(response.body.createdBy).toBe('test@example.com');
-      expect(response.body.assignee).toBe('john.doe@example.com');
+      expect(response.body.createdByActor.slug).toBe(TEST_USER_SLUG);
+      expect(response.body.assignee).toBe(TEST_USER_SLUG);
+      expect(response.body.assigneeActor).toBeDefined();
+      expect(response.body.assigneeActor.id).toBe(actorId);
+      expect(response.body.assigneeActor.slug).toBe(TEST_USER_SLUG);
       expect(response.body.status).toBe('NOT_STARTED');
 
       taskWithAssigneeId = response.body.id;
@@ -112,12 +129,14 @@ describe('Taskeroo E2E Tests', () => {
         .patch(`/api/v1/taskeroo/tasks/${assignableTaskId}/assign`)
         .set('Cookie', authCookies)
         .send({
-          assignee: 'AgentAlpha',
+          assigneeActorId: agentAlphaActorId,
           sessionId: 'session-123-abc',
         })
         .expect(200);
 
-      expect(response.body.assignee).toBe('AgentAlpha');
+      expect(response.body.assignee).toBe(agentAlpha.slug);
+      expect(response.body.assigneeActor.id).toBe(agentAlphaActorId);
+      expect(response.body.assigneeActor.slug).toBe(agentAlpha.slug);
       expect(response.body.sessionId).toBe('session-123-abc');
     });
 
@@ -126,11 +145,13 @@ describe('Taskeroo E2E Tests', () => {
         .patch(`/api/v1/taskeroo/tasks/${assignableTaskId}/assign`)
         .set('Cookie', authCookies)
         .send({
-          assignee: 'AgentBeta',
+          assigneeActorId: agentBetaActorId,
         })
         .expect(200);
 
-      expect(response.body.assignee).toBe('AgentBeta');
+      expect(response.body.assignee).toBe(agentBeta.slug);
+      expect(response.body.assigneeActor.id).toBe(agentBetaActorId);
+      expect(response.body.assigneeActor.slug).toBe(agentBeta.slug);
       expect(response.body.sessionId).toBe('session-123-abc');
     });
   });
@@ -159,7 +180,8 @@ describe('Taskeroo E2E Tests', () => {
 
       expect(response.body.id).toBe(taskWithAssigneeId);
       expect(response.body.name).toBe('Test Task With Assignee');
-      expect(response.body.assignee).toBe('john.doe@example.com');
+      expect(response.body.assignee).toBe(TEST_USER_SLUG);
+      expect(response.body.assigneeActor.id).toBe(actorId);
     });
   });
 
@@ -192,7 +214,7 @@ describe('Taskeroo E2E Tests', () => {
 
       expect(response.body.id).toBe(taskWithAssigneeId);
       expect(response.body.status).toBe('IN_PROGRESS');
-      expect(response.body.assignee).toBe('john.doe@example.com');
+      expect(response.body.assignee).toBe(TEST_USER_SLUG);
     });
 
     it('should fail to move task to Done without comment when no comments exist', async () => {
@@ -220,7 +242,10 @@ describe('Taskeroo E2E Tests', () => {
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
-      expect(response.body.commenterName).toBe('test@example.com');
+      expect(response.body.commenterName).toBe(TEST_USER_DISPLAY_NAME);
+      expect(response.body.commenterActor).toBeDefined();
+      expect(response.body.commenterActor.id).toBe(actorId);
+      expect(response.body.commenterActor.slug).toBe(TEST_USER_SLUG);
       expect(response.body.content).toBe('This is a test comment on the task');
       expect(response.body.taskId).toBe(taskWithAssigneeId);
     });
@@ -284,4 +309,5 @@ describe('Taskeroo E2E Tests', () => {
       expect(taskWithCommentResponse.body.name).toBe('Test Task With Assignee');
     });
   });
+
 });

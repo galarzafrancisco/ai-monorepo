@@ -153,7 +153,7 @@ function TaskRow({ task, animation, onClick }: { task: Task, animation?: DataRow
         {task.description}
       </div>
       <div style={{ fontSize: 12 }} className="text--tone-muted">
-        {task.assignee ? `Assigned: ${task.assignee}` : 'unassigned'} {`- Created by @${task.createdByActor.slug}`}
+        {task.assignee ? `Assigned: @${task.assignee}` : 'unassigned'} {`- Created by @${task.createdByActor.slug}`}
       </div>
     </DataRow>
   );
@@ -204,7 +204,7 @@ function TaskCard({ task, animation, onClick }: { task: Task, animation?: BoardC
         <>
           <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
           <span className="row-detail truncate">
-            {task.assignee ? `Assigned: ${task.assignee}` : "unassigned"}
+            {task.assignee ? `Assigned: @${task.assignee}` : "unassigned"}
           </span>
         </>
       }

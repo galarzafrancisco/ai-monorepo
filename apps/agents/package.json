@@ -7,12 +7,13 @@
     "start": "tsx src/orchestrator.ts"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.1.76"
+    "@anthropic-ai/claude-agent-sdk": "^0.1.76",
+    "@opencode-ai/sdk": "^1.1.25"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
-    "typescript": "^5.7.3",
+    "shared": "^0.0.1",
     "tsx": "4.21.0",
-    "shared": "^0.0.1"
+    "typescript": "^5.7.3"
   }
 }

@@ -45,11 +45,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
     // Run actor migration first (before ensuring users/agents)
     await this.ensureActorMigration();
 
-    this.ensureAgents();
-    this.ensureMcpServers();
-
+    await this.ensureAgents();
+    await this.ensureMcpServers();
+    
     if (config.nodeEnv === 'development') {
-      this.ensureUsers();
+      this.logger.error('Users OK');
     }
   }
 

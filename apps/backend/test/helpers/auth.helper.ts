@@ -6,38 +6,82 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../../src/identity-provider/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { ActorEntity } from '../../src/identity-provider/actor.entity';
+import { ActorService } from '../../src/identity-provider/actor.service';
 
 export const TEST_USER_EMAIL = 'test@example.com';
+export const TEST_USER_SLUG = 'test';
 export const TEST_USER_PASSWORD = 'testpassword';
 export const TEST_USER_DISPLAY_NAME = 'Test User';
 
 /**
  * Creates a test user if it doesn't exist, or updates password if it exists
  */
-export async function ensureTestUser(app: INestApplication): Promise<void> {
+export async function ensureTestUser(app: INestApplication): Promise<string> {
   const identityService = app.get(IdentityProviderService);
   const userRepository = app.get<Repository<User>>(getRepositoryToken(User));
+  const actorRepository = app.get<Repository<ActorEntity>>(getRepositoryToken(ActorEntity));
 
   // Check if test user exists
   const existingUser = await userRepository.findOne({
     where: { email: TEST_USER_EMAIL },
+    relations: ['actor'],
   });
 
   if (existingUser) {
+    if (!existingUser.actor) {
+      throw new Error("Test user doesn't have an actor. Should not happen");
+    }
     // Update password hash to ensure it matches TEST_USER_PASSWORD
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(TEST_USER_PASSWORD, saltRounds);
     existingUser.passwordHash = passwordHash;
-    existingUser.displayName = TEST_USER_DISPLAY_NAME;
     await userRepository.save(existingUser);
+    const actor = existingUser.actor;
+    actor.displayName = TEST_USER_DISPLAY_NAME;
+    actor.slug = TEST_USER_SLUG;
+    await actorRepository.save(actor);
+    return actor.id
   } else {
     // Create fresh test user
-    await identityService.createUser({
+    const user = await identityService.createUser({
       email: TEST_USER_EMAIL,
       displayName: TEST_USER_DISPLAY_NAME,
       password: TEST_USER_PASSWORD,
+      slug: TEST_USER_SLUG,
     });
+    return user.actorId;
   }
+
+}
+
+/**
+ * Ensures an agent actor exists for the provided slug.
+ * Returns the actor ID that can be used as assigneeActorId.
+ */
+export async function ensureAgentActor(
+  app: INestApplication,
+  slug: string,
+  displayName: string,
+): Promise<string> {
+  const actorRepository = app.get<Repository<ActorEntity>>(getRepositoryToken(ActorEntity));
+  const actorService = app.get(ActorService);
+
+  const existingActor = await actorRepository.findOne({ where: { slug } });
+  if (existingActor) {
+    if (existingActor.displayName !== displayName) {
+      existingActor.displayName = displayName;
+      await actorRepository.save(existingActor);
+    }
+    return existingActor.id;
+  }
+
+  const actor = await actorService.createAgentActor({
+    slug,
+    displayName,
+  });
+
+  return actor.id;
 }
 
 /**

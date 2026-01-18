@@ -407,7 +407,7 @@ export class TaskerooService {
     // Reload with actor relation
     const commentWithRelations = await this.commentRepository.findOne({
       where: { id: savedComment.id },
-      relations: ['commenterActor'],
+      relations: ['commenterActor', 'task'],
     });
 
     this.logger.log({
