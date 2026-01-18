@@ -59,7 +59,7 @@ export class AgentService {
     ): CancelablePromise<AgentResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/agents/{id}',
+            url: '/api/v1/agents/{slug}',
             path: {
                 'slug': slug,
             },
