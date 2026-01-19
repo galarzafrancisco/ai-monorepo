@@ -36,15 +36,15 @@ export class IntrospectTokenResponseDto {
   @ApiProperty({
     description: 'Audience that should accept this token',
     oneOf: [
-      { type: 'string', example: 'taskeroo-api' },
-      { type: 'array', items: { type: 'string' }, example: ['taskeroo-api'] },
+      { type: 'string', example: 'tasks-api' },
+      { type: 'array', items: { type: 'string' }, example: ['tasks-api'] },
     ],
   })
   aud!: AccessTokenClaims['aud'];
 
   @ApiProperty({
     description: 'Issuer that minted the token',
-    example: 'https://auth.taskeroo.local/auth',
+    example: 'https://auth.tasks.local/auth',
   })
   iss!: AccessTokenClaims['iss'];
 
@@ -74,7 +74,7 @@ export class IntrospectTokenResponseDto {
 
   @ApiProperty({
     description: 'MCP server identifier the token is scoped to',
-    example: 'taskeroo',
+    example: 'tasks',
   })
   mcp_server_identifier?: AccessTokenClaims['mcp_server_identifier'];
 

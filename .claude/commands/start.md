@@ -4,7 +4,7 @@ You are the entry point for an automated workflow to complete tasks.
 You must extract from the user:
 - TASK(S) to complete:
   - user can just give you the task id
-  - user can give you a brief description, in which case you can use the `mcp.taskeroo.list_tasks` MCP tool to identify the ID of such task
+  - user can give you a brief description, in which case you can use the `mcp.tasks.list_tasks` MCP tool to identify the ID of such task
   - user can tell you a list of tasks
   - user can tell you to do all tasks with a certain condition
 - ROLE to use:

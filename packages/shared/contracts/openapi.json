@@ -24,9 +24,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks": {
+    "/api/v1/tasks/tasks": {
       "post": {
-        "operationId": "TaskerooController_createTask",
+        "operationId": "TasksController_createTask",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -64,7 +64,7 @@
         ]
       },
       "get": {
-        "operationId": "TaskerooController_listTasks",
+        "operationId": "TasksController_listTasks",
         "parameters": [
           {
             "name": "assignee",
@@ -142,9 +142,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}": {
+    "/api/v1/tasks/tasks/{id}": {
       "patch": {
-        "operationId": "TaskerooController_updateTask",
+        "operationId": "TasksController_updateTask",
         "parameters": [
           {
             "name": "id",
@@ -196,7 +196,7 @@
         ]
       },
       "delete": {
-        "operationId": "TaskerooController_deleteTask",
+        "operationId": "TasksController_deleteTask",
         "parameters": [
           {
             "name": "id",
@@ -228,7 +228,7 @@
         ]
       },
       "get": {
-        "operationId": "TaskerooController_getTask",
+        "operationId": "TasksController_getTask",
         "parameters": [
           {
             "name": "id",
@@ -267,9 +267,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/assign": {
+    "/api/v1/tasks/tasks/{id}/assign": {
       "patch": {
-        "operationId": "TaskerooController_assignTask",
+        "operationId": "TasksController_assignTask",
         "parameters": [
           {
             "name": "id",
@@ -321,9 +321,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/comments": {
+    "/api/v1/tasks/tasks/{id}/comments": {
       "post": {
-        "operationId": "TaskerooController_addComment",
+        "operationId": "TasksController_addComment",
         "parameters": [
           {
             "name": "id",
@@ -375,9 +375,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/status": {
+    "/api/v1/tasks/tasks/{id}/status": {
       "patch": {
-        "operationId": "TaskerooController_changeStatus",
+        "operationId": "TasksController_changeStatus",
         "parameters": [
           {
             "name": "id",
@@ -429,9 +429,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/tags": {
+    "/api/v1/tasks/tasks/{id}/tags": {
       "post": {
-        "operationId": "TaskerooController_addTagToTask",
+        "operationId": "TasksController_addTagToTask",
         "parameters": [
           {
             "name": "id",
@@ -483,9 +483,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/tags/{tagId}": {
+    "/api/v1/tasks/tasks/{id}/tags/{tagId}": {
       "delete": {
-        "operationId": "TaskerooController_removeTagFromTask",
+        "operationId": "TasksController_removeTagFromTask",
         "parameters": [
           {
             "name": "id",
@@ -530,9 +530,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/tags": {
+    "/api/v1/tasks/tasks/tags": {
       "post": {
-        "operationId": "TaskerooController_createTag",
+        "operationId": "TasksController_createTag",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -570,9 +570,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/tags/all": {
+    "/api/v1/tasks/tasks/tags/all": {
       "get": {
-        "operationId": "TaskerooController_getAllTags",
+        "operationId": "TasksController_getAllTags",
         "parameters": [],
         "responses": {
           "200": {
@@ -600,9 +600,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/tags/{tagId}": {
+    "/api/v1/tasks/tasks/tags/{tagId}": {
       "delete": {
-        "operationId": "TaskerooController_deleteTag",
+        "operationId": "TasksController_deleteTag",
         "parameters": [
           {
             "name": "tagId",
@@ -632,9 +632,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/mcp": {
+    "/api/v1/tasks/tasks/mcp": {
       "get": {
-        "operationId": "TaskerooController_handleMcp_get",
+        "operationId": "TasksController_handleMcp_get",
         "parameters": [],
         "responses": {
           "200": {
@@ -651,7 +651,7 @@
         ]
       },
       "post": {
-        "operationId": "TaskerooController_handleMcp_post",
+        "operationId": "TasksController_handleMcp_post",
         "parameters": [],
         "responses": {
           "200": {
@@ -668,7 +668,7 @@
         ]
       },
       "put": {
-        "operationId": "TaskerooController_handleMcp_put",
+        "operationId": "TasksController_handleMcp_put",
         "parameters": [],
         "responses": {
           "200": {
@@ -685,7 +685,7 @@
         ]
       },
       "delete": {
-        "operationId": "TaskerooController_handleMcp_delete",
+        "operationId": "TasksController_handleMcp_delete",
         "parameters": [],
         "responses": {
           "200": {
@@ -702,7 +702,7 @@
         ]
       },
       "patch": {
-        "operationId": "TaskerooController_handleMcp_patch",
+        "operationId": "TasksController_handleMcp_patch",
         "parameters": [],
         "responses": {
           "200": {
@@ -719,7 +719,7 @@
         ]
       },
       "options": {
-        "operationId": "TaskerooController_handleMcp_options",
+        "operationId": "TasksController_handleMcp_options",
         "parameters": [],
         "responses": {
           "200": {
@@ -736,7 +736,7 @@
         ]
       },
       "head": {
-        "operationId": "TaskerooController_handleMcp_head",
+        "operationId": "TasksController_handleMcp_head",
         "parameters": [],
         "responses": {
           "200": {
@@ -753,7 +753,7 @@
         ]
       },
       "search": {
-        "operationId": "TaskerooController_handleMcp_search",
+        "operationId": "TasksController_handleMcp_search",
         "parameters": [],
         "responses": {
           "200": {
@@ -1532,7 +1532,7 @@
         ],
         "summary": "Register a new MCP server",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       },
       "get": {
@@ -1576,7 +1576,7 @@
         ],
         "summary": "List all MCP servers with pagination",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -1616,7 +1616,7 @@
         ],
         "summary": "Get MCP server by UUID or provided ID",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       },
       "patch": {
@@ -1664,7 +1664,7 @@
         ],
         "summary": "Update MCP server details",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       },
       "delete": {
@@ -1705,7 +1705,7 @@
         ],
         "summary": "Delete MCP server (must have no dependencies)",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -1765,7 +1765,7 @@
         ],
         "summary": "Create MCP scope(s) for a server",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       },
       "get": {
@@ -1806,7 +1806,7 @@
         ],
         "summary": "List all scopes for an MCP server",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -1855,7 +1855,7 @@
         ],
         "summary": "Get a specific MCP scope",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       },
       "delete": {
@@ -1905,7 +1905,7 @@
         ],
         "summary": "Delete MCP scope (must have no mappings)",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -1958,7 +1958,7 @@
         ],
         "summary": "Create OAuth connection for an MCP server",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       },
       "get": {
@@ -1999,7 +1999,7 @@
         ],
         "summary": "List all connections for an MCP server",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -2039,7 +2039,7 @@
         ],
         "summary": "Get a specific connection",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       },
       "patch": {
@@ -2090,7 +2090,7 @@
         ],
         "summary": "Update connection details",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       },
       "delete": {
@@ -2131,7 +2131,7 @@
         ],
         "summary": "Delete connection (must have no mappings)",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -2184,7 +2184,7 @@
         ],
         "summary": "Create scope mapping",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -2236,7 +2236,7 @@
         ],
         "summary": "List downstream scopes for an MCP scope",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -2276,7 +2276,7 @@
         ],
         "summary": "Delete scope mapping",
         "tags": [
-          "MCP Registry"
+          "Tools"
         ]
       }
     },
@@ -2333,9 +2333,9 @@
         ]
       }
     },
-    "/api/v1/wikiroo/pages": {
+    "/api/v1/context/blocks": {
       "post": {
-        "operationId": "WikirooController_createPage",
+        "operationId": "ContextController_createPage",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2349,7 +2349,7 @@
         },
         "responses": {
           "201": {
-            "description": "Wiki page created successfully",
+            "description": "Context page created successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -2369,11 +2369,11 @@
         ],
         "summary": "Create a new wiki page",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "get": {
-        "operationId": "WikirooController_listPages",
+        "operationId": "ContextController_listPages",
         "parameters": [
           {
             "name": "tag",
@@ -2405,13 +2405,13 @@
         ],
         "summary": "List wiki pages without content",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/tree": {
+    "/api/v1/context/blocks/tree": {
       "get": {
-        "operationId": "WikirooController_getPageTree",
+        "operationId": "ContextController_getPageTree",
         "parameters": [],
         "responses": {
           "200": {
@@ -2435,19 +2435,19 @@
         ],
         "summary": "Get page hierarchy tree",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/{id}": {
+    "/api/v1/context/blocks/{id}": {
       "get": {
-        "operationId": "WikirooController_getPage",
+        "operationId": "ContextController_getPage",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Wiki page identifier",
+            "description": "Context page identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -2456,7 +2456,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Wiki page retrieved successfully",
+            "description": "Context page retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -2473,17 +2473,17 @@
         ],
         "summary": "Fetch a wiki page by ID",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "patch": {
-        "operationId": "WikirooController_updatePage",
+        "operationId": "ContextController_updatePage",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Wiki page identifier",
+            "description": "Context page identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -2502,7 +2502,7 @@
         },
         "responses": {
           "200": {
-            "description": "Wiki page updated successfully",
+            "description": "Context page updated successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -2522,17 +2522,17 @@
         ],
         "summary": "Update an existing wiki page",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "delete": {
-        "operationId": "WikirooController_deletePage",
+        "operationId": "ContextController_deletePage",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Wiki page identifier",
+            "description": "Context page identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -2541,7 +2541,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Wiki page deleted successfully"
+            "description": "Context page deleted successfully"
           }
         },
         "security": [
@@ -2551,19 +2551,19 @@
         ],
         "summary": "Delete a wiki page",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/{id}/append": {
+    "/api/v1/context/blocks/{id}/append": {
       "post": {
-        "operationId": "WikirooController_appendToPage",
+        "operationId": "ContextController_appendToPage",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Wiki page identifier",
+            "description": "Context page identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -2582,7 +2582,7 @@
         },
         "responses": {
           "200": {
-            "description": "Wiki page content appended successfully",
+            "description": "Context page content appended successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -2599,19 +2599,19 @@
         ],
         "summary": "Append content to an existing wiki page",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/{id}/reorder": {
+    "/api/v1/context/blocks/{id}/reorder": {
       "patch": {
-        "operationId": "WikirooController_reorderPage",
+        "operationId": "ContextController_reorderPage",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Wiki page identifier",
+            "description": "Context page identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -2647,19 +2647,19 @@
         ],
         "summary": "Reorder a page within siblings",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/{id}/move": {
+    "/api/v1/context/blocks/{id}/move": {
       "patch": {
-        "operationId": "WikirooController_movePage",
+        "operationId": "ContextController_movePage",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Wiki page identifier",
+            "description": "Context page identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -2698,19 +2698,19 @@
         ],
         "summary": "Move page to different parent",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/{id}/tags": {
+    "/api/v1/context/blocks/{id}/tags": {
       "post": {
-        "operationId": "WikirooController_addTagToPage",
+        "operationId": "ContextController_addTagToPage",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Wiki page identifier",
+            "description": "Context page identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -2722,7 +2722,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddWikiTagDto"
+                "$ref": "#/components/schemas/AddContextTagDto"
               }
             }
           }
@@ -2749,13 +2749,13 @@
         ],
         "summary": "Add a tag to a wiki page",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+    "/api/v1/context/blocks/{id}/tags/{tagId}": {
       "delete": {
-        "operationId": "WikirooController_removeTagFromPage",
+        "operationId": "ContextController_removeTagFromPage",
         "parameters": [
           {
             "name": "id",
@@ -2793,20 +2793,20 @@
         ],
         "summary": "Remove a tag from a wiki page",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/tags": {
+    "/api/v1/context/blocks/tags": {
       "post": {
-        "operationId": "WikirooController_createTag",
+        "operationId": "ContextController_createTag",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateWikiTagDto"
+                "$ref": "#/components/schemas/CreateContextTagDto"
               }
             }
           }
@@ -2817,7 +2817,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WikiTagResponseDto"
+                  "$ref": "#/components/schemas/ContextTagResponseDto"
                 }
               }
             }
@@ -2833,13 +2833,13 @@
         ],
         "summary": "Create a new tag",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/tags/all": {
+    "/api/v1/context/blocks/tags/all": {
       "get": {
-        "operationId": "WikirooController_getAllTags",
+        "operationId": "ContextController_getAllTags",
         "parameters": [],
         "responses": {
           "200": {
@@ -2849,7 +2849,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/WikiTagResponseDto"
+                    "$ref": "#/components/schemas/ContextTagResponseDto"
                   }
                 }
               }
@@ -2863,13 +2863,13 @@
         ],
         "summary": "Get all tags",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/tags/{tagId}": {
+    "/api/v1/context/blocks/tags/{tagId}": {
       "delete": {
-        "operationId": "WikirooController_deleteTag",
+        "operationId": "ContextController_deleteTag",
         "parameters": [
           {
             "name": "tagId",
@@ -2892,13 +2892,13 @@
         ],
         "summary": "Delete a tag from the system",
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
-    "/api/v1/wikiroo/pages/mcp": {
+    "/api/v1/context/blocks/mcp": {
       "get": {
-        "operationId": "WikirooController_handleMcp_get",
+        "operationId": "ContextController_handleMcp_get",
         "parameters": [],
         "responses": {
           "200": {
@@ -2911,11 +2911,11 @@
           }
         ],
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "post": {
-        "operationId": "WikirooController_handleMcp_post",
+        "operationId": "ContextController_handleMcp_post",
         "parameters": [],
         "responses": {
           "200": {
@@ -2928,11 +2928,11 @@
           }
         ],
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "put": {
-        "operationId": "WikirooController_handleMcp_put",
+        "operationId": "ContextController_handleMcp_put",
         "parameters": [],
         "responses": {
           "200": {
@@ -2945,11 +2945,11 @@
           }
         ],
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "delete": {
-        "operationId": "WikirooController_handleMcp_delete",
+        "operationId": "ContextController_handleMcp_delete",
         "parameters": [],
         "responses": {
           "200": {
@@ -2962,11 +2962,11 @@
           }
         ],
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "patch": {
-        "operationId": "WikirooController_handleMcp_patch",
+        "operationId": "ContextController_handleMcp_patch",
         "parameters": [],
         "responses": {
           "200": {
@@ -2979,11 +2979,11 @@
           }
         ],
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "options": {
-        "operationId": "WikirooController_handleMcp_options",
+        "operationId": "ContextController_handleMcp_options",
         "parameters": [],
         "responses": {
           "200": {
@@ -2996,11 +2996,11 @@
           }
         ],
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "head": {
-        "operationId": "WikirooController_handleMcp_head",
+        "operationId": "ContextController_handleMcp_head",
         "parameters": [],
         "responses": {
           "200": {
@@ -3013,11 +3013,11 @@
           }
         ],
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       },
       "search": {
-        "operationId": "WikirooController_handleMcp_search",
+        "operationId": "ContextController_handleMcp_search",
         "parameters": [],
         "responses": {
           "200": {
@@ -3030,7 +3030,7 @@
           }
         ],
         "tags": [
-          "Wikiroo"
+          "Context"
         ]
       }
     },
@@ -3957,12 +3957,12 @@
           "providedId": {
             "type": "string",
             "description": "Server identifier used in API paths",
-            "example": "taskeroo"
+            "example": "tasks"
           },
           "name": {
             "type": "string",
             "description": "Human-readable name of the MCP server",
-            "example": "Taskeroo"
+            "example": "Tasks"
           },
           "description": {
             "type": "string",
@@ -4228,7 +4228,7 @@
             "oneOf": [
               {
                 "type": "string",
-                "example": "taskeroo-api"
+                "example": "tasks-api"
               },
               {
                 "type": "array",
@@ -4236,7 +4236,7 @@
                   "type": "string"
                 },
                 "example": [
-                  "taskeroo-api"
+                  "tasks-api"
                 ]
               }
             ]
@@ -4244,7 +4244,7 @@
           "iss": {
             "type": "object",
             "description": "Issuer that minted the token",
-            "example": "https://auth.taskeroo.local/auth"
+            "example": "https://auth.tasks.local/auth"
           },
           "jti": {
             "type": "object",
@@ -4269,7 +4269,7 @@
           "mcp_server_identifier": {
             "type": "object",
             "description": "MCP server identifier the token is scoped to",
-            "example": "taskeroo"
+            "example": "tasks"
           },
           "resource": {
             "type": "object",
@@ -4674,7 +4674,7 @@
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+            "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
           }
         },
         "required": [
@@ -4709,7 +4709,7 @@
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+            "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
           },
           "createdAt": {
             "type": "string",
@@ -4780,7 +4780,7 @@
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+            "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
           }
         }
       },
@@ -5186,7 +5186,7 @@
           "content": {
             "type": "string",
             "description": "Markdown content of the page",
-            "example": "# Welcome to Wikiroo\nThis is the onboarding guide."
+            "example": "# Welcome to Context\nThis is the onboarding guide."
           },
           "tagNames": {
             "description": "Array of tag names to associate with the page",
@@ -5210,7 +5210,7 @@
           "content"
         ]
       },
-      "WikiTagResponseDto": {
+      "ContextTagResponseDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -5244,7 +5244,7 @@
           "content": {
             "type": "string",
             "description": "Markdown content of the wiki page",
-            "example": "# Welcome to Wikiroo"
+            "example": "# Welcome to Context"
           },
           "author": {
             "type": "string",
@@ -5265,7 +5265,7 @@
             ],
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/WikiTagResponseDto"
+              "$ref": "#/components/schemas/ContextTagResponseDto"
             }
           },
           "parentId": {
@@ -5334,7 +5334,7 @@
             ],
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/WikiTagResponseDto"
+              "$ref": "#/components/schemas/ContextTagResponseDto"
             }
           },
           "parentId": {
@@ -5526,7 +5526,7 @@
           "newParentId"
         ]
       },
-      "AddWikiTagDto": {
+      "AddContextTagDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -5544,7 +5544,7 @@
           "name"
         ]
       },
-      "CreateWikiTagDto": {
+      "CreateContextTagDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -5708,9 +5708,9 @@
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",
             "example": [
-              "taskeroo.createTask",
-              "taskeroo.readTask",
-              "wikiroo.search"
+              "tasks.createTask",
+              "tasks.readTask",
+              "context.search"
             ],
             "type": "array",
             "items": {
@@ -5789,9 +5789,9 @@
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",
             "example": [
-              "taskeroo.createTask",
-              "taskeroo.readTask",
-              "wikiroo.search"
+              "tasks.createTask",
+              "tasks.readTask",
+              "context.search"
             ],
             "type": "array",
             "items": {

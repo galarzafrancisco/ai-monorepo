@@ -16,7 +16,7 @@ if [ -z "$TASK_ID" ] || [ -z "$ASSIGNEE" ] || [ -z "$COMMENTS" ]; then
 fi
 
 # Mark as DONE
-"$SCRIPT_DIR/../taskeroo/change_task_status.sh" "$TASK_ID" "DONE"
+"$SCRIPT_DIR/../tasks/change_task_status.sh" "$TASK_ID" "DONE"
 
 # Add comment
-"$SCRIPT_DIR/../taskeroo/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENTS"
+"$SCRIPT_DIR/../tasks/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENTS"

@@ -40,7 +40,7 @@ import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { McpRegistryScopes } from './mcp-registry.scopes';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 
-@ApiTags('MCP Registry')
+@ApiTags('Tools')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('mcp')
 @UseGuards(AccessTokenGuard, ScopesGuard)

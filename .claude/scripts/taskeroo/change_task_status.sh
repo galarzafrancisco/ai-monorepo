@@ -14,6 +14,6 @@ body="{
 }"
 
 # PATCH
-curl -s -X PATCH "http://localhost:9999/api/v1/taskeroo/tasks/$TASK_ID/status" \
+curl -s -X PATCH "http://localhost:9999/api/v1/tasks/tasks/$TASK_ID/status" \
      -H "Content-Type: application/json" \
      -d "$body" | jq .

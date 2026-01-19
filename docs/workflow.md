@@ -29,7 +29,7 @@
 
 # Tasks
 - A small unit of work.
-- Is tracked in `taskeroo`.
+- Is tracked in `tasks`.
 - Status:
   - not started
   - in progress: an agent picked it up and is working on it
@@ -49,7 +49,7 @@
 
 ### flow
 #### prep
-- Fetch the task description from `taskeroo`.
+- Fetch the task description from `tasks`.
 - Must start from a clean `agents/main` branch locally. No uncommited changes. Pull latest changes.
 - Cut a `{agent-name}/s/{session-id}/task/{task-name}` local branch from `agents/main` and push it.
 - Update the task:

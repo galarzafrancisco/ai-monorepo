@@ -1,6 +1,6 @@
 import { ErrorCodes } from '../../../../../packages/shared/errors/error-codes';
 
-// Module-scoped re-export of error codes used by MCP Registry
+// Module-scoped re-export of error codes used by Tools
 export const McpRegistryErrorCodes = {
   SERVER_NOT_FOUND: ErrorCodes.SERVER_NOT_FOUND,
   SERVER_ALREADY_EXISTS: ErrorCodes.SERVER_ALREADY_EXISTS,
@@ -19,7 +19,7 @@ type McpRegistryErrorCode =
   typeof McpRegistryErrorCodes[keyof typeof McpRegistryErrorCodes];
 
 /**
- * Base class for all MCP Registry domain errors
+ * Base class for all Tools domain errors
  * Keeps HTTP concerns out of the domain layer
  */
 export abstract class McpRegistryDomainError extends Error {

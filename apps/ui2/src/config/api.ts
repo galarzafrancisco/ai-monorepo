@@ -27,7 +27,7 @@ export const getBFFBaseUrl = (): string => {
  * With Vite proxy configured for Socket.IO WebSockets (ws: true on /socket.io),
  * the frontend can use relative paths for WebSocket connections in all environments.
  *
- * @param path - The WebSocket path (e.g., "/taskeroo")
+ * @param path - The WebSocket path (e.g., "/tasks")
  * @returns WebSocket-compatible URL (relative path)
  */
 export const getUIWebSocketUrl = (path: string): string => {

@@ -1,4 +1,4 @@
-import { TaskStatus } from "src/taskeroo/enums";
+import { TaskStatus } from "src/tasks/enums";
 import { AgentType } from "../../../agents/enums";
 
 export type CreateAgentInput = {

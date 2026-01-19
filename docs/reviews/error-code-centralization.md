@@ -34,7 +34,7 @@ export const ErrorCodes = {
   INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
   COMMENT_REQUIRED: 'COMMENT_REQUIRED',
 
-  // Wiki errors
+  // Context errors
   PAGE_NOT_FOUND: 'PAGE_NOT_FOUND',
 
   // Generic errors
@@ -48,7 +48,7 @@ export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
 **Analysis**:
 - All error codes originate from a single shared package
 - Uses TypeScript's `as const` for type safety
-- Organized by domain (Task, Wiki, Generic)
+- Organized by domain (Task, Context, Generic)
 - Type-safe export prevents typos
 
 ### 2. Error Catalog for Transport Mapping
@@ -87,9 +87,9 @@ export const ErrorCatalog: Record<
 
 Modules re-export their relevant error codes for convenience without duplicating the source:
 
-**Taskeroo Module** (`/apps/backend/src/taskeroo/errors/taskeroo.errors.ts`):
+**Tasks Module** (`/apps/backend/src/tasks/errors/tasks.errors.ts`):
 ```typescript
-export const TaskerooErrorCodes = {
+export const TasksErrorCodes = {
   TASK_NOT_FOUND: ErrorCodes.TASK_NOT_FOUND,
   TASK_NOT_ASSIGNED: ErrorCodes.TASK_NOT_ASSIGNED,
   INVALID_STATUS_TRANSITION: ErrorCodes.INVALID_STATUS_TRANSITION,
@@ -97,9 +97,9 @@ export const TaskerooErrorCodes = {
 } as const;
 ```
 
-**Wikiroo Module** (`/apps/backend/src/wikiroo/errors/wikiroo.errors.ts`):
+**Context Module** (`/apps/backend/src/context/errors/context.errors.ts`):
 ```typescript
-export const WikirooErrorCodes = {
+export const ContextErrorCodes = {
   PAGE_NOT_FOUND: ErrorCodes.PAGE_NOT_FOUND,
 } as const;
 ```
@@ -170,7 +170,7 @@ export abstract class [Module]DomainError extends Error {
     │         Domain Modules                │
     │                                       │
     │  ┌──────────────┐  ┌──────────────┐  │
-    │  │  Taskeroo    │  │  Wikiroo     │  │
+    │  │  Tasks    │  │  Context     │  │
     │  │              │  │              │  │
     │  │ Re-exports:  │  │ Re-exports:  │  │
     │  │ ├─ TASK_...  │  │ ├─ PAGE_...  │  │
@@ -226,8 +226,8 @@ ErrorCodes (central)
 **Error Code References**:
 - Central definition: 1 file (`packages/shared/errors/error-codes.ts`)
 - Catalog mapping: 1 file (`apps/backend/src/errors/http/error-catalog.ts`)
-- Module re-exports: 2 files (Taskeroo, Wikiroo)
-- Domain error classes: 2 files (Taskeroo, Wikiroo)
+- Module re-exports: 2 files (Tasks, Context)
+- Domain error classes: 2 files (Tasks, Context)
 - Service usage: 2 files (proper error throwing)
 
 **Statistics**:
@@ -336,8 +336,8 @@ export const ErrorCodes = {
     COMMENT_REQUIRED: 'COMMENT_REQUIRED',
   },
 
-  // Wiki Domain (2000-2999)
-  Wiki: {
+  // Context Domain (2000-2999)
+  Context: {
     PAGE_NOT_FOUND: 'PAGE_NOT_FOUND',
   },
 
@@ -404,7 +404,7 @@ test('all error codes have catalog entries', () => {
 2. **Module Re-export Consistency**
 ```typescript
 test('module error codes are subset of central codes', () => {
-  Object.values(TaskerooErrorCodes).forEach(code => {
+  Object.values(TasksErrorCodes).forEach(code => {
     expect(Object.values(ErrorCodes)).toContain(code);
   });
 });

@@ -9,7 +9,7 @@ import {
   IsEnum,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TaskStatus } from 'src/taskeroo/enums';
+import { TaskStatus } from 'src/tasks/enums';
 import { AgentType } from '../enums';
 
 export class CreateAgentDto {
@@ -70,7 +70,7 @@ export class CreateAgentDto {
 
   @ApiProperty({
     description: 'List of tool identifiers this agent is allowed to use',
-    example: ['taskeroo.createTask', 'taskeroo.readTask', 'wikiroo.search'],
+    example: ['tasks.createTask', 'tasks.readTask', 'context.search'],
     type: [String],
   })
   @IsArray()

@@ -7,13 +7,13 @@ import { McpAuthorizationFlowStatus } from '../../auth-journeys/enums/mcp-author
 export class FlowServerDto {
   @ApiProperty({
     description: 'Server identifier used in API paths',
-    example: 'taskeroo',
+    example: 'tasks',
   })
   providedId!: string;
 
   @ApiProperty({
     description: 'Human-readable name of the MCP server',
-    example: 'Taskeroo',
+    example: 'Tasks',
   })
   name!: string;
 

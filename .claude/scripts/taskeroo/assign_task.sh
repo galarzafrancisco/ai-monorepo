@@ -15,6 +15,6 @@ else
     body=$(jq -n --arg assignee "$ASSIGNEE" '{assignee: $assignee}')
 fi
 
-curl -s -X PATCH "http://localhost:9999/api/v1/taskeroo/tasks/$TASK_ID/assign" \
+curl -s -X PATCH "http://localhost:9999/api/v1/tasks/tasks/$TASK_ID/assign" \
     -H "Content-Type: application/json" \
     -d "$body" | jq .

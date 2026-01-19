@@ -44,21 +44,21 @@ MCP (Model Context Protocol) allows Claude and other AI assistants to interact w
 ### 1. Create the MCP Gateway
 
 ```ts
-// apps/backend/src/taskeroo/taskeroo.mcp.gateway.ts
+// apps/backend/src/tasks/tasks.mcp.gateway.ts
 import { Injectable } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { TaskerooService } from "./taskeroo.service";
+import { TasksService } from "./tasks.service";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 
 @Injectable()
-export class TaskerooMcpGateway {
-  constructor(private readonly taskerooService: TaskerooService) {}
+export class TasksMcpGateway {
+  constructor(private readonly tasksService: TasksService) {}
 
   private buildServer(): McpServer {
     const server = new McpServer({
-      name: 'taskeroo',
+      name: 'tasks',
       version: '0.0.0',
     });
 
@@ -70,7 +70,7 @@ export class TaskerooMcpGateway {
         description: 'Use to get a summary of tasks available',
       },
       async ({}) => {
-        const tasks = await this.taskerooService.listTasks({
+        const tasks = await this.tasksService.listTasks({
           page: 0,
           limit: 20,
         });
@@ -127,14 +127,14 @@ server.registerTool(
   },
   async ({ taskId, assignee, sessionId, branchName }) => {
     // Journey: Multiple operations in one tool
-    await this.taskerooService.assignTask(taskId, { assignee, sessionId });
-    await this.taskerooService.changeStatus(taskId, { status: 'IN_PROGRESS' });
-    await this.taskerooService.addComment(taskId, {
+    await this.tasksService.assignTask(taskId, { assignee, sessionId });
+    await this.tasksService.changeStatus(taskId, { status: 'IN_PROGRESS' });
+    await this.tasksService.addComment(taskId, {
       commenterName: assignee,
       content: `Starting to work on this. I've created the branch ${branchName}`,
     });
 
-    const task = await this.taskerooService.getTaskById(taskId);
+    const task = await this.tasksService.getTaskById(taskId);
     return {
       content: [{
         type: "text",
@@ -150,16 +150,16 @@ server.registerTool(
 Add the gateway as a provider:
 
 ```ts
-// apps/backend/src/taskeroo/taskeroo.module.ts
-import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
+// apps/backend/src/tasks/tasks.module.ts
+import { TasksMcpGateway } from './tasks.mcp.gateway';
 
 @Module({
   imports: [TypeOrmModule.forFeature([TaskEntity, CommentEntity])],
-  controllers: [TaskerooController],
-  providers: [TaskerooService, TaskerooGateway, TaskerooMcpGateway],
-  exports: [TaskerooService],
+  controllers: [TasksController],
+  providers: [TasksService, TasksGateway, TasksMcpGateway],
+  exports: [TasksService],
 })
-export class TaskerooModule {}
+export class TasksModule {}
 ```
 
 ### 4. Add Controller Endpoint
@@ -167,14 +167,14 @@ export class TaskerooModule {}
 Create an endpoint to handle MCP requests:
 
 ```ts
-// apps/backend/src/taskeroo/taskeroo.controller.ts
-import { TaskerooMcpGateway } from './taskeroo.mcp.gateway';
+// apps/backend/src/tasks/tasks.controller.ts
+import { TasksMcpGateway } from './tasks.mcp.gateway';
 
-@Controller('taskeroo/tasks')
-export class TaskerooController {
+@Controller('tasks/tasks')
+export class TasksController {
   constructor(
-    private readonly taskerooService: TaskerooService,
-    private readonly gateway: TaskerooMcpGateway,
+    private readonly tasksService: TasksService,
+    private readonly gateway: TasksMcpGateway,
   ) {}
 
   // ... other endpoints ...

@@ -115,7 +115,7 @@ The authorization server enables MCP clients to access resources from downstream
   "aud": "mcp-server-id",
   "client_id": "mcp-client-id",
   "scope": "read:tasks write:tasks",
-  "server_identifier": "taskeroo",
+  "server_identifier": "tasks",
   "resource": "downstream-resource-url",
   "version": "1.0",
   "exp": 1234567890,
@@ -338,7 +338,7 @@ The authorization server enables MCP clients to access resources from downstream
 - Old keys kept for verification of existing JWTs
 - Private key never exposed via JWKS endpoint
 
-### MCP Registry Tables
+### Tools Tables
 
 #### 6. mcp_servers (McpServerEntity)
 **Purpose**: Defines available MCP servers in the system
@@ -347,7 +347,7 @@ The authorization server enables MCP clients to access resources from downstream
 ```typescript
 {
   id: uuid (PK),
-  provided_id: string (unique),     // External identifier (e.g., 'taskeroo')
+  provided_id: string (unique),     // External identifier (e.g., 'tasks')
   name: string,
   description: string,
   created_at: timestamp,
@@ -378,8 +378,8 @@ The authorization server enables MCP clients to access resources from downstream
 **Composite Key**: `(scope_id, server_id)`
 
 **Examples**:
-- `('read:tasks', 'taskeroo-server-id', 'Read task data')`
-- `('write:tasks', 'taskeroo-server-id', 'Create and update tasks')`
+- `('read:tasks', 'tasks-server-id', 'Read task data')`
+- `('write:tasks', 'tasks-server-id', 'Create and update tasks')`
 
 #### 8. mcp_connections (McpConnectionEntity)
 **Purpose**: Downstream providers that MCP servers connect to
@@ -429,13 +429,13 @@ The authorization server enables MCP clients to access resources from downstream
 ```typescript
 {
   scope_id: 'read:tasks',
-  server_id: 'taskeroo-server-id',
+  server_id: 'tasks-server-id',
   connection_id: 'google-connection-id',
   downstream_scope: 'https://www.googleapis.com/auth/tasks.readonly'
 }
 {
   scope_id: 'write:tasks',
-  server_id: 'taskeroo-server-id',
+  server_id: 'tasks-server-id',
   connection_id: 'google-connection-id',
   downstream_scope: 'https://www.googleapis.com/auth/tasks'
 }
@@ -453,7 +453,7 @@ The authorization server enables MCP clients to access resources from downstream
 ```
 MCP Client
     |
-    | POST /register/mcp/taskeroo/1.0
+    | POST /register/mcp/tasks/1.0
     | { client_name, redirect_uris, grant_types, scopes }
     v
 ClientRegistrationController
@@ -485,7 +485,7 @@ MCP Client
     | Generate code_challenge = base64url(SHA256(code_verifier))
     |
     | Redirect user to:
-    | GET /auth/authorize/mcp/taskeroo/1.0
+    | GET /auth/authorize/mcp/tasks/1.0
     | ?client_id=...
     | &redirect_uri=...
     | &scope=read:tasks write:tasks
@@ -498,7 +498,7 @@ AuthorizationController.authorize()
     v
 AuthorizationService.processAuthorizationRequest()
     |
-    |-- Validate server_id (taskeroo exists)
+    |-- Validate server_id (tasks exists)
     |-- Validate client_id (registered)
     |-- Validate redirect_uri (in registered list)
     |-- Filter scopes (remove unauthorized scopes)
@@ -529,7 +529,7 @@ AuthJourneysService.findJourneyByFlowId()
     |
     v
 Response: {
-    server_name: 'Taskeroo',
+    server_name: 'Tasks',
     client_name: 'My MCP Client',
     requested_scopes: ['read:tasks', 'write:tasks'],
     connections: [
@@ -540,7 +540,7 @@ Response: {
     v
 User clicks Approve/Deny
     |
-    | POST /auth/authorize/mcp/taskeroo/1.0
+    | POST /auth/authorize/mcp/tasks/1.0
     | { flow_id, approved: true }
     v
 AuthorizationService.processConsentDecision()
@@ -652,7 +652,7 @@ Redirect to MCP client:
 ```
 MCP Client
     |
-    | POST /auth/token/mcp/taskeroo/1.0
+    | POST /auth/token/mcp/tasks/1.0
     | Content-Type: application/x-www-form-urlencoded
     | {
     |   grant_type: 'authorization_code',
@@ -696,7 +696,7 @@ TokenService.generateAccessToken()
     |         aud: 'mcp-server-id',
     |         client_id: 'mcp-client-id',
     |         scope: 'read:tasks write:tasks',
-    |         server_identifier: 'taskeroo',
+    |         server_identifier: 'tasks',
     |         resource: 'https://api.example.com',
     |         version: '1.0',
     |         exp: now + 3600,
@@ -868,7 +868,7 @@ AuthJourneyEntity (1)
 SELECT downstream_scope
 FROM mcp_scope_mappings
 WHERE scope_id IN ('read:tasks', 'write:tasks')
-  AND server_id = 'taskeroo-server-id'
+  AND server_id = 'tasks-server-id'
   AND connection_id = 'google-connection-id'
 ```
 

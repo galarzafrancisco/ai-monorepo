@@ -16,9 +16,9 @@ All controllers **PASS** compliance review with best practices. Controllers prop
 ## Review Scope
 
 Reviewed all backend controllers:
-- **Taskeroo** (`apps/backend/src/taskeroo/taskeroo.controller.ts`) - 219 lines
-- **Wikiroo** (`apps/backend/src/wikiroo/wikiroo.controller.ts`) - 94 lines
-- **MCP Registry** (`apps/backend/src/mcp-registry/mcp-registry.controller.ts`) - 320 lines
+- **Tasks** (`apps/backend/src/tasks/tasks.controller.ts`) - 219 lines
+- **Context** (`apps/backend/src/context/context.controller.ts`) - 94 lines
+- **Tools** (`apps/backend/src/mcp-registry/mcp-registry.controller.ts`) - 320 lines
 - **Authorization Server** (`apps/backend/src/authorization-server/client-registration.controller.ts`) - 100+ lines
 
 ---
@@ -31,33 +31,33 @@ Reference: `docs/review-guides/controller.md`
 
 | Controller | Status | Notes |
 |------------|--------|-------|
-| Taskeroo | ✅ PASS | All business logic delegated to service |
-| Wikiroo | ✅ PASS | All business logic delegated to service |
-| MCP Registry | ⚠️ MINOR | UUID regex validation should be extracted (see recommendations) |
+| Tasks | ✅ PASS | All business logic delegated to service |
+| Context | ✅ PASS | All business logic delegated to service |
+| Tools | ⚠️ MINOR | UUID regex validation should be extracted (see recommendations) |
 | Client Registration | ✅ PASS | All business logic delegated to service |
 
 ### ✅ DTOs for All Inputs/Outputs
 
 | Controller | Status | Evidence |
 |------------|--------|----------|
-| Taskeroo | ✅ PASS | All endpoints use proper DTOs: `CreateTaskDto`, `UpdateTaskDto`, `TaskResponseDto`, etc. |
-| Wikiroo | ✅ PASS | All endpoints use proper DTOs: `CreatePageDto`, `PageResponseDto`, `PageSummaryDto` |
-| MCP Registry | ✅ PASS | Comprehensive DTO coverage: `CreateServerDto`, `ServerResponseDto`, `CreateScopeDto`, etc. |
+| Tasks | ✅ PASS | All endpoints use proper DTOs: `CreateTaskDto`, `UpdateTaskDto`, `TaskResponseDto`, etc. |
+| Context | ✅ PASS | All endpoints use proper DTOs: `CreatePageDto`, `PageResponseDto`, `PageSummaryDto` |
+| Tools | ✅ PASS | Comprehensive DTO coverage: `CreateServerDto`, `ServerResponseDto`, `CreateScopeDto`, etc. |
 | Client Registration | ✅ PASS | RFC 7591 compliant DTOs: `RegisterClientDto`, `ClientRegistrationResponseDto` |
 
 ### ✅ Services Called with Pure Types
 
 | Controller | Status | Evidence |
 |------------|--------|----------|
-| Taskeroo | ✅ PASS | Service methods receive plain objects extracted from DTOs (`taskeroo.controller.ts:56-61`) |
-| Wikiroo | ✅ PASS | Service methods receive plain objects (`wikiroo.controller.ts:35-39`) |
-| MCP Registry | ✅ PASS | DTOs passed directly to service methods |
+| Tasks | ✅ PASS | Service methods receive plain objects extracted from DTOs (`tasks.controller.ts:56-61`) |
+| Context | ✅ PASS | Service methods receive plain objects (`context.controller.ts:35-39`) |
+| Tools | ✅ PASS | DTOs passed directly to service methods |
 | Client Registration | ✅ PASS | DTOs passed to service with additional params |
 
-**Example - Taskeroo (`taskeroo.controller.ts:56-61`):**
+**Example - Tasks (`tasks.controller.ts:56-61`):**
 ```typescript
 async createTask(@Body() dto: CreateTaskDto): Promise<TaskResponseDto> {
-  const result = await this.taskerooService.createTask({
+  const result = await this.tasksService.createTask({
     name: dto.name,
     description: dto.description,
     assignee: dto.assignee,
@@ -71,9 +71,9 @@ async createTask(@Body() dto: CreateTaskDto): Promise<TaskResponseDto> {
 
 | Controller | Status | Evidence |
 |------------|--------|----------|
-| Taskeroo | ✅ PASS | No try-catch blocks, errors bubble to global filter |
-| Wikiroo | ✅ PASS | No try-catch blocks, errors bubble to global filter |
-| MCP Registry | ✅ PASS | No try-catch blocks, errors bubble to global filter |
+| Tasks | ✅ PASS | No try-catch blocks, errors bubble to global filter |
+| Context | ✅ PASS | No try-catch blocks, errors bubble to global filter |
+| Tools | ✅ PASS | No try-catch blocks, errors bubble to global filter |
 | Client Registration | ✅ PASS | No try-catch blocks, errors bubble to global filter |
 
 All controllers delegate error handling to the global `ProblemDetailsFilter`.
@@ -82,25 +82,25 @@ All controllers delegate error handling to the global `ProblemDetailsFilter`.
 
 | Controller | Status | Evidence |
 |------------|--------|----------|
-| Taskeroo | ✅ PASS | `@HttpCode(HttpStatus.NO_CONTENT)` for DELETE (`line 106`) |
-| Wikiroo | ✅ PASS | Implicit 200/201 from decorators, acceptable |
-| MCP Registry | ✅ PASS | Implicit status codes via OpenAPI decorators |
+| Tasks | ✅ PASS | `@HttpCode(HttpStatus.NO_CONTENT)` for DELETE (`line 106`) |
+| Context | ✅ PASS | Implicit 200/201 from decorators, acceptable |
+| Tools | ✅ PASS | Implicit status codes via OpenAPI decorators |
 | Client Registration | ✅ PASS | `@HttpCode(201)` explicitly set (`line 39`) |
 
 ### ✅ OpenAPI Documentation
 
 | Controller | Status | Coverage |
 |------------|--------|----------|
-| Taskeroo | ✅ EXCELLENT | All endpoints have `@ApiOperation`, response decorators, and error responses documented |
-| Wikiroo | ✅ EXCELLENT | Complete OpenAPI annotations |
-| MCP Registry | ✅ EXCELLENT | Comprehensive documentation with `@ApiParam`, `@ApiQuery`, `@ApiBody` |
+| Tasks | ✅ EXCELLENT | All endpoints have `@ApiOperation`, response decorators, and error responses documented |
+| Context | ✅ EXCELLENT | Complete OpenAPI annotations |
+| Tools | ✅ EXCELLENT | Comprehensive documentation with `@ApiParam`, `@ApiQuery`, `@ApiBody` |
 | Client Registration | ✅ EXCELLENT | RFC 7591 spec documented in operation descriptions |
 
 ---
 
 ## Controller-Specific Analysis
 
-### 1. Taskeroo Controller
+### 1. Tasks Controller
 
 **Lines Reviewed:** 219
 **Endpoints:** 9 (including MCP gateway)
@@ -118,7 +118,7 @@ All controllers delegate error handling to the global `ProblemDetailsFilter`.
 - `Math.ceil(result.total / result.limit)` for total pages calculation (response formatting)
 - Date to ISO string conversions in mapping methods
 
-### 2. Wikiroo Controller
+### 2. Context Controller
 
 **Lines Reviewed:** 94
 **Endpoints:** 4 (including MCP gateway)
@@ -130,15 +130,15 @@ All controllers delegate error handling to the global `ProblemDetailsFilter`.
 - Private mapping methods for transformations
 - MCP gateway integration
 
-**Example of Clean Delegation (`wikiroo.controller.ts:63-66`):**
+**Example of Clean Delegation (`context.controller.ts:63-66`):**
 ```typescript
 async getPage(@Param() params: PageParamsDto): Promise<PageResponseDto> {
-  const result = await this.wikirooService.getPageById(params.id);
+  const result = await this.contextService.getPageById(params.id);
   return this.mapToResponse(result);
 }
 ```
 
-### 3. MCP Registry Controller
+### 3. Tools Controller
 
 **Lines Reviewed:** 320
 **Endpoints:** 15
@@ -213,9 +213,9 @@ All controllers properly use NestJS pipes for validation and transformation:
 
 | Pipe | Usage | Purpose |
 |------|-------|---------|
-| `ParseUUIDPipe` | MCP Registry, Client Registration | Ensures valid UUID format |
-| `ParseIntPipe` | MCP Registry | Converts query params to integers |
-| `ParseArrayPipe` | MCP Registry | Validates and transforms DTO arrays |
+| `ParseUUIDPipe` | Tools, Client Registration | Ensures valid UUID format |
+| `ParseIntPipe` | Tools | Converts query params to integers |
+| `ParseArrayPipe` | Tools | Validates and transforms DTO arrays |
 | Implicit DTO validation | All controllers | class-validator decorators on DTOs |
 
 **Example:** `mcp-registry.controller.ts:91`
@@ -231,7 +231,7 @@ async deleteServer(
 
 ### ✅ Secret Handling
 
-**MCP Registry (`mcp-registry.controller.ts:296`):**
+**Tools (`mcp-registry.controller.ts:296`):**
 ```typescript
 private mapConnectionToResponse(connection: ConnectionRecord): ConnectionResponseDto {
   return {
@@ -285,13 +285,13 @@ private mapXToResponse(result: ServiceType): ResponseDto {
 - ✅ No try-catch blocks for domain errors
 - ✅ No HTTP status code logic mixed with business logic
 
-The only exception is the UUID regex validation in MCP Registry (see recommendations).
+The only exception is the UUID regex validation in Tools (see recommendations).
 
 ---
 
 ## Recommendations
 
-### 1. Extract UUID Validation (MCP Registry)
+### 1. Extract UUID Validation (Tools)
 
 **Current Code:** `mcp-registry.controller.ts:262-266`
 
@@ -353,7 +353,7 @@ All controllers demonstrate:
 - ✅ Security-conscious secret handling
 
 **Action Items:**
-1. **Optional:** Extract UUID validation from MCP Registry controller to shared utility (LOW priority)
+1. **Optional:** Extract UUID validation from Tools controller to shared utility (LOW priority)
 
 **Strengths:**
 - Consistent patterns across all controllers

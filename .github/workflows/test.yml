@@ -31,7 +31,7 @@ jobs:
 
       - name: Run E2E tests
         id: tests
-        run: cd apps/backend && npx jest --config ./test/jest-e2e.json taskeroo.e2e-spec.ts
+        run: cd apps/backend && npx jest --config ./test/jest-e2e.json tasks.e2e-spec.ts
 
       - name: Upload test results
         if: always()

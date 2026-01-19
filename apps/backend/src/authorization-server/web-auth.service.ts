@@ -9,8 +9,8 @@ import { getConfig } from "../config/env.config";
 import { JwksService } from "../auth/crypto/jwks.service";
 import { AccessTokenClaims } from "src/auth/core/types/access-token-claims.type";
 import { Scope } from "src/auth/core/types/scope.type";
-import { ALL_TASKEROO_SCOPES, TaskerooScopes } from "src/taskeroo/taskeroo.scopes";
-import { ALL_WIKIROO_SCOPES } from "src/wikiroo/wikiroo.scopes";
+import { ALL_TASKS_SCOPES, TasksScopes } from "src/tasks/tasks.scopes";
+import { ALL_CONTEXT_SCOPES } from "src/context/context.scopes";
 import { ALL_MCP_SCOPES } from "src/auth/core/scopes/mcp.scopes";
 import { UserScopes } from "src/auth/core/scopes/user.scopes";
 import { ALL_AGENTS_SCOPES } from "src/agents/agents.scopes";
@@ -86,8 +86,8 @@ export class WebAuthService {
 
     // Determine scopes based on role
     const scopes: Scope[] = [
-      ...ALL_TASKEROO_SCOPES,
-      ...ALL_WIKIROO_SCOPES,
+      ...ALL_TASKS_SCOPES,
+      ...ALL_CONTEXT_SCOPES,
       ...ALL_AGENTS_SCOPES,
       ...ALL_MCP_REGISTRY_SCOPES,
       ...ALL_MCP_SCOPES,

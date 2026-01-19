@@ -19,7 +19,7 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   [TaskResponseDto.status.DONE]: "Done",
 };
 
-export default function TaskerooPage() {
+export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export default function TaskerooPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await TaskService.taskerooControllerListTasks();
+      const response = await TaskService.tasksControllerListTasks();
       setTasks(response.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load tasks");
@@ -56,7 +56,7 @@ export default function TaskerooPage() {
     setCreating(true);
     setError(null);
     try {
-      await TaskService.taskerooControllerCreateTask(data);
+      await TaskService.tasksControllerCreateTask(data);
       await loadTasks();
       setShowCreateForm(false);
     } catch (err) {
@@ -83,7 +83,7 @@ export default function TaskerooPage() {
     <div className="p-8">
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Taskeroo</h1>
+          <h1 className="text-4xl font-bold mb-2">Tasks</h1>
           <p className="text-white/60">Manage and track your tasks</p>
         </div>
         <button
