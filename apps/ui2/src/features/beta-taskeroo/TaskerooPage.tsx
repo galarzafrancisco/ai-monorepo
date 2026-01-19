@@ -1,31 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Avatar, BoardCard, DataRow, Text, DataRowAnimation, BoardCardAnimation } from "../../ui/primitives";
+import { Avatar, BoardCard, DataRow, Text, DataRowAnimation, BoardCardAnimation, DataRowContainer } from "../../ui/primitives";
 import { useTaskerooCtx, AnimationState } from "./TaskerooProvider"
 import { TaskStatus } from "./const";
 import { TASKEROO_STATUS } from "./const";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Task } from "./types";
-import { Pop } from "./Pop";
 import './TaskerooPage.css';
-
-// Helper that should be extracted somewhere else
-const elapsedTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInMinutes = Math.round((now.getTime() - date.getTime()) / (1000 * 60));
-
-  if (diffInMinutes < 60) {
-    return `${Math.max(diffInMinutes, 1)}m ago`;
-  }
-
-  const diffInHours = Math.round(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours}h ago`;
-  }
-
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-};
+import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { NewTaskPop } from "./NewTaskPop";
 
 export function TaskerooPage({ status }: { status?: TaskStatus }) {
 
@@ -42,7 +25,7 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
       return;
     }
     setSectionTitle(TASKEROO_STATUS[statusFilter].label);
-  }, [statusFilter]);
+  }, [statusFilter, setSectionTitle]);
 
   // Filter tasks by status
   const filteredTasks = useMemo(() => {
@@ -70,7 +53,7 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
     console.log('cancel');
     setShowNewTaskPop(false);
   }
-  const handleNewTaskSave = async ({ title, description }: { title: string, description: string }) => {
+  const handleNewTaskSave = async ({ title, description }: { title: string, description: string }): Promise<boolean> => {
     console.log(`save title: ${title} - description: ${description}`);
     setNewTask({
       name: title,
@@ -85,13 +68,15 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
       if (task) {
         setNewTask(task);
         navigate(`/taskeroo/task/${task.id}`);
-        return;
+        return true;
+      } else {
+        return false;
       }
     } catch (error) {
       console.error('Error saving task');
       console.error(error);
+      return false;
     }
-    setShowNewTaskPop(false);
   }
 
   return (
@@ -111,8 +96,8 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
           >
             +
           </button>
-          {showNewTaskPop ? <Pop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null}
-          {/* <CommentButton /> */}
+          {/* {showNewTaskPop ? <Pop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null} */}
+          {showNewTaskPop ? <NewTaskPop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null}
         </>
         :
         <div className="taskeroo-page">
@@ -127,7 +112,7 @@ export function TaskerooPage({ status }: { status?: TaskStatus }) {
             <span className="taskeroo-fab__label">New task</span>
           </button>
 
-          {showNewTaskPop ? <Pop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null}
+          {showNewTaskPop ? <NewTaskPop onCancel={handleNewTaskCancel} onSave={handleNewTaskSave} /> : null}
         </div>
       }
     </div>
@@ -153,9 +138,25 @@ function TaskRow({ task, animation, onClick }: { task: Task, animation?: DataRow
         {task.description}
       </div>
       <div style={{ fontSize: 12 }} className="text--tone-muted">
-        {task.assignee ? `Assigned: @${task.assignee}` : 'unassigned'} {`- Created by @${task.createdByActor.slug}`}
+        {task.assignee ? `Assigned: @${task.assignee}` : "unassigned"}
+        {" · "}
+        {`Created by @${task.createdByActor.slug}`}
+        {task.comments.length > 0 && (
+          <span
+            style={{
+              marginLeft: 8,
+              padding: "1px 6px",
+              borderRadius: 999,
+              fontSize: 11,
+              background: "var(--surface-2)",
+              color: "var(--text-muted)",
+            }}
+          >
+            [ 💬 {task.comments.length} ]
+          </span>
+        )}
       </div>
-    </DataRow>
+    </DataRow >
   );
 }
 
@@ -170,7 +171,7 @@ function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ente
   );
 
   return (
-    <>
+    <DataRowContainer>
       {allTasks.map(task => {
         const isExiting = exitingIdSet.has(task.id);
         const isEntering = enteringIds.has(task.id);
@@ -188,7 +189,7 @@ function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ente
           />
         );
       })}
-    </>
+    </DataRowContainer>
   )
 }
 
@@ -204,7 +205,7 @@ function TaskCard({ task, animation, onClick }: { task: Task, animation?: BoardC
         <>
           <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
           <span className="row-detail truncate">
-            {task.assignee ? `Assigned: @${task.assignee}` : "unassigned"}
+            {task.assigneeActor ? `Assigned: @${task.assigneeActor.slug}` : "unassigned"}
           </span>
         </>
       }

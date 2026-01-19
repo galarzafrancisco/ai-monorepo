@@ -1,0 +1,49 @@
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  border: 1px solid var(--border);
+  background: var(--chip-bg, transparent);
+  color: var(--chip-fg, var(--text));
+}
+
+/* chip color variants (tweak to your palette) */
+.chip--gray {
+  --chip-bg: rgba(142, 142, 147, 0.14);
+  --chip-fg: var(--text-muted);
+}
+
+.chip--blue {
+  --chip-bg: rgba(0, 122, 255, 0.14);
+  --chip-fg: rgb(0, 122, 255);
+}
+
+.chip--green {
+  --chip-bg: rgba(52, 199, 89, 0.14);
+  --chip-fg: rgb(52, 199, 89);
+}
+
+.chip--yellow {
+  --chip-bg: rgba(255, 204, 0, 0.18);
+  --chip-fg: rgb(163, 128, 0);
+}
+
+.chip--orange {
+  --chip-bg: rgba(255, 149, 0, 0.16);
+  --chip-fg: rgb(255, 149, 0);
+}
+
+.chip--red {
+  --chip-bg: rgba(255, 59, 48, 0.14);
+  --chip-fg: rgb(255, 59, 48);
+}
+
+.chip--purple {
+  --chip-bg: rgba(175, 82, 222, 0.14);
+  --chip-fg: rgb(175, 82, 222);
+}

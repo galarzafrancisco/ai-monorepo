@@ -1,4 +1,5 @@
 export { Avatar } from './Avatar';
+export { Chip } from './Chip';
 export { Stack } from './Stack';
 export { Row } from './Row';
 export { Text } from './Text';
@@ -7,11 +8,13 @@ export { Button } from './Button';
 export { Card } from './Card';
 export { BoardCard } from './BoardCard';
 export { DataRow } from './DataRow';
+export { DataRowContainer } from './DataRowContainer';
 export { Divider } from './Divider';
 export { ListRow } from './ListRow';
 export { Tabs } from './Tabs';
 
 export type { AvatarProps } from './Avatar';
+export type { ChipProps } from './Chip';
 export type { StackProps } from './Stack';
 export type { RowProps } from './Row';
 export type { TextProps } from './Text';
@@ -19,7 +22,7 @@ export type { ErrorTextProps } from './ErrorText';
 export type { ButtonProps } from './Button';
 export type { CardProps } from './Card';
 export type { BoardCardProps, BoardCardAnimation } from './BoardCard';
-export type { DataRowProps, DataRowAnimation } from './DataRow';
+export type { DataRowProps, DataRowAnimation, DataRowTag } from './DataRow';
 export type { DividerProps } from './Divider';
 export type { ListRowProps } from './ListRow';
 export type { TabsProps, TabItem } from './Tabs';

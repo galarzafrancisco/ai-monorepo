@@ -14,12 +14,14 @@ export function TaskerooLayout(): JSX.Element {
   return (
     <div style={{ minHeight: 0 }}>
       {isDesktop ?
-        <DesktopShell sectionTitle={sectionTitle}>
+        <DesktopShell
+          sectionTitle="Tasks"
+        >
           <Outlet />
         </DesktopShell>
         :
         <IosShell
-          appTitle="Taskeroo"
+          appTitle="Tasks"
           sectionTitle={sectionTitle}
           navItems={TASKEROO_STATUS_NAV}
         >

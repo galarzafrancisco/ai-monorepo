@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { useTaskeroo } from "./useTaskeroo"; // your abstraction hook
 import type { Task } from "./types";
 import { TaskStatus } from "./const";
-import { CreateTaskDto } from "shared";
+import { CommentResponseDto, CreateTaskDto } from "shared";
 
 // Animation state tracked per status (for column-based animations)
 export type AnimationState = {
@@ -21,7 +21,12 @@ const createEmptyAnimationByStatus = (): Record<TaskStatus, AnimationState> => (
 // Shape this to match what pages/layout need.
 export type TaskerooContextValue = {
   tasks: Task[];
-  createTask: (task: CreateTaskDto) => Promise<Task>
+  createTask: (task: CreateTaskDto) => Promise<Task>;
+  deleteTask: ({ taskId }: { taskId: string }) => Promise<void>;
+  addComment: ({ taskId, comment }: {
+    taskId: string;
+    comment: string;
+  }) => Promise<CommentResponseDto>
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
@@ -49,7 +54,7 @@ type ActiveAnimation = {
 
 export function TaskerooProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
-  const { tasks, isLoading, error, isConnected, createTask } = useTaskeroo();
+  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment } = useTaskeroo();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Refs for synchronous computation
@@ -171,6 +176,8 @@ export function TaskerooProvider({ children }: { children: React.ReactNode }) {
     return {
       tasks,
       createTask,
+      deleteTask,
+      addComment,
       isLoading,
       error,
       isConnected,
@@ -183,6 +190,8 @@ export function TaskerooProvider({ children }: { children: React.ReactNode }) {
   }, [
     tasks,
     createTask,
+    deleteTask,
+    addComment,
     isLoading,
     error,
     isConnected,
