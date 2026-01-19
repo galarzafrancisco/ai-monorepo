@@ -7,5 +7,5 @@ export const MAIN_NAVEGATION_ITEMS: NavegationItem[] = [
   { path: '/mcp-registry', label: 'Tools', icon: '🧰' },
   { path: '/agents', label: 'Agents', icon: '✨' },
   { path: '/settings', label: 'Settings', icon: '⚙️' },
-  { path: '/logout', label: 'Logout', icon: '🚪' },
+  { path: '/logout', label: 'Logout', icon: '🔓' },
 ];

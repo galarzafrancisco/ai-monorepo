@@ -30,10 +30,7 @@ export function SettingsPage() {
   return (
     <Stack spacing="6">
       {isDesktop ?
-        <Stack spacing="2">
-          <Text size="6" weight="bold">Settings</Text>
-          <Text tone="muted">Customize your experience</Text>
-        </Stack>
+        <Text tone="muted">Customize your experience</Text>
         : ''}
 
       <Card padding="5">

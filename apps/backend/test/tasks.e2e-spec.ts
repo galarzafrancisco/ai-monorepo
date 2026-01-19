@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
-import { ProblemDetailsFilter } from './../src/http/problem-details.filter';
+import { AppModule } from '../src/app.module';
+import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import {
   ensureTestUser,
   getAuthCookies,
