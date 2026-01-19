@@ -116,7 +116,12 @@ ul, ol {
 [data-theme='terminal'] button,
 [data-theme='terminal'] input,
 [data-theme='terminal'] textarea,
-[data-theme='terminal'] select {
+[data-theme='terminal'] select,
+[data-theme='terminal-amber'] body,
+[data-theme='terminal-amber'] button,
+[data-theme='terminal-amber'] input,
+[data-theme='terminal-amber'] textarea,
+[data-theme='terminal-amber'] select {
   font-family: var(--font-mono);
   letter-spacing: 0.02em;
 }
