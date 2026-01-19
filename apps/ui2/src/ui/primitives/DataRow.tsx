@@ -52,7 +52,7 @@ export function DataRow({
 
         <div className="data-row__content">
           <div className="data-row__top">
-            <div className="data-row__main">{children}</div>
+            <div className={`data-row__main ${className}`}>{children}</div>
             {topRight ? <div className="data-row__meta">{topRight}</div> : null}
           </div>
 

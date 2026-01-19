@@ -1,11 +1,15 @@
 .text {
   margin: 0;
   line-height: var(--lh-normal);
+
+  /* Sensible defaults: treat new line as actual new line */
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .text.pre {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
-               sans-serif;
+  sans-serif;
   letter-spacing: 0.2em;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -64,6 +68,15 @@
 
 .text--tone-inverse {
   color: var(--text-inverse);
+}
+
+/* Style variants */
+.text--style-sans {
+  font-family: var(--font-sans);
+}
+
+.text--style-mono {
+  font-family: var(--font-mono);
 }
 
 /* Wrap variants */

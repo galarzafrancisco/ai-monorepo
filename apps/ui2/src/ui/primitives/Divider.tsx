@@ -9,6 +9,7 @@ export function Divider({
   spacing = '4',
   className = ''
 }: DividerProps) {
+  return (<></>)
   return (
     <hr
       className={`divider divider--spacing-${spacing} ${className}`}

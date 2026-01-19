@@ -1,186 +1,27 @@
 .task-detail-page {
-  padding: 0 16px 32px;
-}
-
-/* Error banner */
-.task-detail-page__error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  color: #dc2626;
-}
-
-.task-detail-page__error-close {
-  background: none;
-  border: none;
-  color: #dc2626;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
+  background-color: var(--bg);
 }
 
 /* Sections */
 .task-detail-page__section {
-  padding: 8px 0;
+  margin: var(--space-5) 0;
 }
-
-.task-detail-page__section-label {
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-size: 11px !important;
-}
-
-/* Editable areas */
-.task-detail-page__editable {
-  position: relative;
-  padding: 12px;
-  margin: -12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.task-detail-page__editable:hover,
-.task-detail-page__editable:active {
-  background-color: var(--color-surface-hover, rgba(0, 0, 0, 0.04));
-}
-
-.task-detail-page__edit-hint {
-  display: none;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 11px;
-  color: var(--color-text-muted, #6b7280);
-  padding: 2px 6px;
-  background: var(--color-surface-elevated, #f9fafb);
-  border-radius: 4px;
-}
-
-.task-detail-page__editable:hover .task-detail-page__edit-hint,
-.task-detail-page__editable:active .task-detail-page__edit-hint {
-  display: block;
-}
-
-/* Inputs */
-.task-detail-page__input {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 16px;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  background: var(--color-surface, #fff);
-  color: var(--color-text, #111);
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.task-detail-page__input:focus {
-  border-color: var(--color-primary, #3b82f6);
-  box-shadow: 0 0 0 3px var(--color-primary-light, rgba(59, 130, 246, 0.15));
-}
-
-.task-detail-page__input--title {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.task-detail-page__textarea {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  font-family: inherit;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  background: var(--color-surface, #fff);
-  color: var(--color-text, #111);
-  outline: none;
-  resize: vertical;
-  min-height: 80px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.task-detail-page__textarea:focus {
-  border-color: var(--color-primary, #3b82f6);
-  box-shadow: 0 0 0 3px var(--color-primary-light, rgba(59, 130, 246, 0.15));
-}
-
-.task-detail-page__textarea--comment {
-  min-height: 60px;
-}
-
 /* Status buttons */
 .task-detail-page__status-buttons {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-}
-
-.task-detail-page__status-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 8px;
-  font-size: 14px;
-  font-weight: 500;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  background: var(--color-surface, #fff);
-  color: var(--color-text, #111);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.task-detail-page__status-btn:hover {
-  background: var(--color-surface-hover, #f9fafb);
-}
-
-.task-detail-page__status-btn--active {
-  background: var(--color-primary, #3b82f6);
-  border-color: var(--color-primary, #3b82f6);
-  color: #fff;
-}
-
-.task-detail-page__status-btn--active:hover {
-  background: var(--color-primary-dark, #2563eb);
-}
-
-.task-detail-page__status-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Tags */
-.task-detail-page__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.task-detail-page__tag {
-  display: inline-block;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #fff;
-  border-radius: 12px;
-}
-
-/* Description text */
-.task-detail-page__description-text {
-  white-space: pre-wrap;
-  word-break: break-word;
+  margin: var(--space-3);
 }
 
 /* Comments */
+.task-detail-page__comment-buttons {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 8px;
+  margin: var(--space-3);
+}
+
 .task-detail-page__add-comment {
   margin-bottom: 16px;
 }

@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { TaskerooService } from './api';
-import type { Task, Comment } from './types';
+import type { Task } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
 import { CreateTaskDto } from 'shared';
+
+// TODO
+// the websocket gateway sends full entities, not DTOs wich might vary in shape.
+// Tasks seem to be fine but Comments are different.
+// We need to type the websocket events.
 
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/taskeroo');
@@ -44,6 +49,16 @@ export const useTaskeroo = () => {
   // Create task
   const createTask = async (task: CreateTaskDto) => {
     return await TaskerooService.taskerooControllerCreateTask(task);
+  }
+
+  // Delete tasl
+  const deleteTask = async({taskId}: {taskId: string}) => {
+    return await TaskerooService.taskerooControllerDeleteTask(taskId);
+  }
+
+  // Add comment
+  const addComment = async ({ taskId, comment }: { taskId: string, comment: string }) => {
+    return await TaskerooService.taskerooControllerAddComment(taskId, { content: comment });
   }
 
   // Load tasks
@@ -98,6 +113,8 @@ export const useTaskeroo = () => {
     });
 
     newSocket.on('task.updated', (task: Task) => {
+      console.log('task.updated');
+      console.log(task);
       setTasks((prev) =>
         sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
       );
@@ -113,9 +130,14 @@ export const useTaskeroo = () => {
       );
     });
 
-    newSocket.on('task.commented', async (comment: Comment) => {
+    newSocket.on('task.commented', async (comment: { task: { id: string } }) => {
+      console.log('task.commented');
+      console.log(comment);
+      console.log(comment.task.id);
       try {
-        const updatedTask = await TaskerooService.taskerooControllerGetTask(comment.taskId);
+        const updatedTask = await TaskerooService.taskerooControllerGetTask(comment.task.id);
+        console.log(`updatedTask`);
+        console.log(updatedTask);
         setTasks((prev) => {
           const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
           if (existingTaskIndex === -1) {
@@ -129,6 +151,9 @@ export const useTaskeroo = () => {
     });
 
     newSocket.on('task.status_changed', (task: Task) => {
+      console.log('task.status_changed');
+      console.log(task);
+
       setTasks((prev) =>
         sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
       );
@@ -149,6 +174,8 @@ export const useTaskeroo = () => {
     // Data
     tasks,
     createTask,
+    deleteTask,
+    addComment,
 
     // Transport
     isConnected,

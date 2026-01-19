@@ -1,0 +1,78 @@
+.pop-shell__overlay {
+  --radius: 16px;
+  --transparency: rgba(0, 0, 0, 0.4);
+}
+
+/* Outer class that covers the entire screen and shows some background */
+.pop-shell__overlay {
+  background-color: var(--transparency);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.pop-shell__overlay--open {
+  opacity: 1;
+}
+
+.pop-shell__space {
+  max-height: 18vh;
+  height: 100%;
+}
+
+.pop-shell__main-panel {
+  background-color: var(--surface);
+
+  max-height: 82vh;
+  height: 100%;
+
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+
+  transform: translateY(100%);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.pop-shell__main-panel--open {
+  transform: translateY(0);
+}
+
+/* Header title */
+.pop-shell__main-title {
+  padding-top: var(--radius);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  align-content: center;
+
+  padding: var(--space-3) var(--space-5);
+
+  border: 0;
+  border-bottom: 1px;
+  border-style: solid;
+  border-color: var(--border);
+}
+
+.pop-shell__main-title-button {
+  cursor: pointer;
+  color: var(--accent);
+}
+.pop-shell__main-title-button:hover {
+  color: var(--accent-hover);
+}
+
+.pop-shell__main-content {
+  /* intentionally empty: content controls its own layout */
+}
