@@ -11,6 +11,11 @@ const THEMES = [
   { value: 'github', label: 'GitHub', description: 'GitHub-inspired green accent' },
   { value: 'forest', label: 'Forest', description: 'Nature-inspired dark green' },
   { value: 'terminal', label: 'Terminal', description: 'Classic terminal green on black' },
+  { value: 'ai-vibes', label: 'AI Vibes', description: 'Deep purples with neon accents' },
+  { value: 'halo', label: 'Halo', description: 'Light background with deeper surfaces' },
+  { value: 'mono', label: 'Mono', description: 'Black and white minimalism' },
+  { value: 'terminal-amber', label: 'Terminal Amber', description: 'Terminal tones without the green' },
+  { value: 'oceanic', label: 'Oceanic', description: 'Cool blues and teals' },
 ] as const;
 
 export function SettingsPage() {

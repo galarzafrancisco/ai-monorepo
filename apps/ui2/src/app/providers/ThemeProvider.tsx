@@ -1,7 +1,17 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
-type Theme = 'light' | 'dark' | 'github' | 'forest' | 'terminal';
+type Theme =
+  | 'light'
+  | 'dark'
+  | 'github'
+  | 'forest'
+  | 'terminal'
+  | 'ai-vibes'
+  | 'halo'
+  | 'mono'
+  | 'terminal-amber'
+  | 'oceanic';
 
 interface ThemeContextValue {
   theme: Theme;

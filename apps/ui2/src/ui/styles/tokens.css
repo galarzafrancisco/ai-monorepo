@@ -266,3 +266,223 @@
   --shadow-2: 0 4px 8px rgba(0, 204, 0, 0.2);
   --shadow-3: 0 8px 24px rgba(0, 204, 0, 0.3);
 }
+
+/* ===== AI VIBES THEME (Dark purples + neon accents) ===== */
+[data-theme='ai-vibes'] {
+  /* Theme color values */
+  --theme-bg: #0c0716;
+  --theme-app-surface: #130a24;
+  --theme-surface: #1d1033;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 12, 7, 22;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #f3e8ff;
+  --text-muted: #b7a6d9;
+  --text-inverse: #0c0716;
+
+  /* Colors - Borders */
+  --border: #2a1a46;
+  --border-subtle: #1f1435;
+
+  /* Colors - Interactive */
+  --accent: #a855f7;
+  --accent-contrast: #0c0716;
+  --accent-hover: #c084fc;
+
+  /* Colors - Semantic */
+  --success: #4ade80;
+  --warning: #facc15;
+  --danger: #fb7185;
+
+  /* Colors - Focus */
+  --focus-ring: #a855f7;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(168, 85, 247, 0.2);
+  --shadow-2: 0 4px 8px rgba(168, 85, 247, 0.22);
+  --shadow-3: 0 8px 24px rgba(168, 85, 247, 0.3);
+}
+
+/* ===== HALO THEME (Light backgrounds, deeper app surfaces) ===== */
+[data-theme='halo'] {
+  /* Theme color values */
+  --theme-bg: #f9f9fc;
+  --theme-app-surface: #d7dde8;
+  --theme-surface: #c5cddb;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 249, 249, 252;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #1e2433;
+  --text-muted: #4b5565;
+  --text-inverse: #f9f9fc;
+
+  /* Colors - Borders */
+  --border: #aeb6c7;
+  --border-subtle: #c0c8d8;
+
+  /* Colors - Interactive */
+  --accent: #3b5bcc;
+  --accent-contrast: #ffffff;
+  --accent-hover: #2e49aa;
+
+  /* Colors - Semantic */
+  --success: #1f9d5e;
+  --warning: #c18b19;
+  --danger: #d14343;
+
+  /* Colors - Focus */
+  --focus-ring: #3b5bcc;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(30, 36, 51, 0.15);
+  --shadow-2: 0 4px 8px rgba(30, 36, 51, 0.16);
+  --shadow-3: 0 8px 24px rgba(30, 36, 51, 0.18);
+}
+
+/* ===== MONO THEME (Black & white) ===== */
+[data-theme='mono'] {
+  /* Theme color values */
+  --theme-bg: #ffffff;
+  --theme-app-surface: #f0f0f0;
+  --theme-surface: #e2e2e2;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 255, 255, 255;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #111111;
+  --text-muted: #4d4d4d;
+  --text-inverse: #ffffff;
+
+  /* Colors - Borders */
+  --border: #b3b3b3;
+  --border-subtle: #d1d1d1;
+
+  /* Colors - Interactive */
+  --accent: #111111;
+  --accent-contrast: #ffffff;
+  --accent-hover: #2b2b2b;
+
+  /* Colors - Semantic */
+  --success: #1f1f1f;
+  --warning: #666666;
+  --danger: #8a8a8a;
+
+  /* Colors - Focus */
+  --focus-ring: #111111;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.16);
+  --shadow-2: 0 4px 8px rgba(0, 0, 0, 0.16);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== TERMINAL AMBER THEME (Terminal without green) ===== */
+[data-theme='terminal-amber'] {
+  /* Theme color values */
+  --theme-bg: #0b0a09;
+  --theme-app-surface: #151311;
+  --theme-surface: #1f1c19;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 11, 10, 9;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #f0c674;
+  --text-muted: #c8a55a;
+  --text-inverse: #0b0a09;
+
+  /* Colors - Borders */
+  --border: #3a2f1a;
+  --border-subtle: #2a2214;
+
+  /* Colors - Interactive */
+  --accent: #8ab4f8;
+  --accent-contrast: #0b0a09;
+  --accent-hover: #a5c8fb;
+
+  /* Colors - Semantic */
+  --success: #f0c674;
+  --warning: #f29f05;
+  --danger: #e06c75;
+
+  /* Colors - Focus */
+  --focus-ring: #8ab4f8;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(240, 198, 116, 0.2);
+  --shadow-2: 0 4px 8px rgba(240, 198, 116, 0.2);
+  --shadow-3: 0 8px 24px rgba(240, 198, 116, 0.3);
+}
+
+/* ===== OCEANIC THEME (Cool blues and teals) ===== */
+[data-theme='oceanic'] {
+  /* Theme color values */
+  --theme-bg: #0c1b2a;
+  --theme-app-surface: #112337;
+  --theme-surface: #18314a;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 12, 27, 42;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #d7f0ff;
+  --text-muted: #9db7cc;
+  --text-inverse: #0c1b2a;
+
+  /* Colors - Borders */
+  --border: #28445e;
+  --border-subtle: #1e3247;
+
+  /* Colors - Interactive */
+  --accent: #4fd1c5;
+  --accent-contrast: #0c1b2a;
+  --accent-hover: #6ee7dc;
+
+  /* Colors - Semantic */
+  --success: #5eead4;
+  --warning: #f7b267;
+  --danger: #f87171;
+
+  /* Colors - Focus */
+  --focus-ring: #4fd1c5;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(79, 209, 197, 0.2);
+  --shadow-2: 0 4px 8px rgba(79, 209, 197, 0.22);
+  --shadow-3: 0 8px 24px rgba(79, 209, 197, 0.3);
+}
