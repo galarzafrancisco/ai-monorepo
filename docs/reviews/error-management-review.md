@@ -17,8 +17,8 @@ All services **PASS** error management review. The codebase correctly implements
 
 Reviewed all backend services for compliance with error handling best practices:
 - Tasks (`apps/backend/src/tasks`)
-- Wikiroo (`apps/backend/src/wikiroo`)
-- MCP Registry (`apps/backend/src/mcp-registry`)
+- Context (`apps/backend/src/context`)
+- Tools (`apps/backend/src/mcp-registry`)
 - Authorization Server - Client Registration (`apps/backend/src/authorization-server`)
 
 ---
@@ -29,7 +29,7 @@ Reviewed all backend services for compliance with error handling best practices:
 
 | Requirement | Status | Evidence |
 |------------|--------|----------|
-| Domain errors extend base `DomainError` class | ✅ PASS | All modules define module-scoped base classes: `TasksDomainError`, `WikirooDomainError`, `McpRegistryDomainError`, `ClientRegistrationDomainError` |
+| Domain errors extend base `DomainError` class | ✅ PASS | All modules define module-scoped base classes: `TasksDomainError`, `ContextDomainError`, `McpRegistryDomainError`, `ClientRegistrationDomainError` |
 | Errors contain `message`, `code`, `context` | ✅ PASS | All domain error classes follow the pattern with required fields |
 | No HTTP references in domain errors | ✅ PASS | Zero HTTP status codes or transport details in any domain error classes |
 | Errors reference centralized error codes | ✅ PASS | All errors reference codes from `packages/shared/errors/error-codes.ts` |
@@ -67,14 +67,14 @@ if (!taskWithRelations) {
 }
 ```
 
-**Example - MCP Registry Service (`mcp-registry.service.ts:94`):**
+**Example - Tools Service (`mcp-registry.service.ts:94`):**
 ```typescript
 if (!server) {
   throw new ServerNotFoundError(id);
 }
 ```
 
-**Example - Wikiroo Service (`wikiroo.service.ts:67`):**
+**Example - Context Service (`context.service.ts:67`):**
 ```typescript
 if (!page) {
   throw new PageNotFoundError(pageId);
@@ -124,8 +124,8 @@ async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
 | Module | Error Codes | Catalog Status |
 |--------|-------------|----------------|
 | **Tasks** | TASK_NOT_FOUND, TASK_NOT_ASSIGNED, INVALID_STATUS_TRANSITION, COMMENT_REQUIRED | ✅ All mapped |
-| **Wikiroo** | PAGE_NOT_FOUND | ✅ Mapped |
-| **MCP Registry** | SERVER_NOT_FOUND, SERVER_ALREADY_EXISTS, SCOPE_NOT_FOUND, SCOPE_ALREADY_EXISTS, CONNECTION_NOT_FOUND, CONNECTION_NAME_CONFLICT, MAPPING_NOT_FOUND, SERVER_HAS_DEPENDENCIES, SCOPE_HAS_MAPPINGS, CONNECTION_HAS_MAPPINGS, INVALID_MAPPING | ✅ All mapped |
+| **Context** | PAGE_NOT_FOUND | ✅ Mapped |
+| **Tools** | SERVER_NOT_FOUND, SERVER_ALREADY_EXISTS, SCOPE_NOT_FOUND, SCOPE_ALREADY_EXISTS, CONNECTION_NOT_FOUND, CONNECTION_NAME_CONFLICT, MAPPING_NOT_FOUND, SERVER_HAS_DEPENDENCIES, SCOPE_HAS_MAPPINGS, CONNECTION_HAS_MAPPINGS, INVALID_MAPPING | ✅ All mapped |
 | **Authorization Server** | CLIENT_ALREADY_REGISTERED, CLIENT_NOT_FOUND, INVALID_REDIRECT_URI, INVALID_GRANT_TYPE, INVALID_TOKEN_ENDPOINT_AUTH_METHOD, MISSING_REQUIRED_FIELD | ✅ All mapped |
 | **Generic** | VALIDATION_FAILED, INTERNAL_ERROR | ✅ All mapped |
 
@@ -161,19 +161,19 @@ async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
 
 ### Domain Errors
 - `apps/backend/src/tasks/errors/tasks.errors.ts`
-- `apps/backend/src/wikiroo/errors/wikiroo.errors.ts`
+- `apps/backend/src/context/errors/context.errors.ts`
 - `apps/backend/src/mcp-registry/errors/mcp-registry.errors.ts`
 - `apps/backend/src/authorization-server/errors/client-registration.errors.ts`
 
 ### Services
 - `apps/backend/src/tasks/tasks.service.ts` (348 lines)
-- `apps/backend/src/wikiroo/wikiroo.service.ts` (97 lines)
+- `apps/backend/src/context/context.service.ts` (97 lines)
 - `apps/backend/src/mcp-registry/mcp-registry.service.ts` (495 lines)
 - `apps/backend/src/authorization-server/client-registration.service.ts`
 
 ### Controllers
 - `apps/backend/src/tasks/tasks.controller.ts` (219 lines)
-- `apps/backend/src/wikiroo/wikiroo.controller.ts`
+- `apps/backend/src/context/context.controller.ts`
 - `apps/backend/src/mcp-registry/mcp-registry.controller.ts`
 - `apps/backend/src/authorization-server/client-registration.controller.ts`
 

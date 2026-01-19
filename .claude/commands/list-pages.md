@@ -1,4 +1,4 @@
-# List wikiroo pages
+# List context pages
 Returns a list of wiki pages with summary information.
 
-Run `.claude/scripts/wikiroo/list_pages.sh`
+Run `.claude/scripts/context/list_pages.sh`

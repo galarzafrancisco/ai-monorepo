@@ -21,7 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/Tasks/tasks": {
+    "/api/v1/tasks/tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -39,7 +39,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/{id}": {
+    "/api/v1/tasks/tasks/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -58,7 +58,7 @@ export interface paths {
         patch: operations["TasksController_updateTask"];
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/{id}/assign": {
+    "/api/v1/tasks/tasks/{id}/assign": {
         parameters: {
             query?: never;
             header?: never;
@@ -75,7 +75,7 @@ export interface paths {
         patch: operations["TasksController_assignTask"];
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/{id}/comments": {
+    "/api/v1/tasks/tasks/{id}/comments": {
         parameters: {
             query?: never;
             header?: never;
@@ -92,7 +92,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/{id}/status": {
+    "/api/v1/tasks/tasks/{id}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -109,7 +109,7 @@ export interface paths {
         patch: operations["TasksController_changeStatus"];
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/{id}/tags": {
+    "/api/v1/tasks/tasks/{id}/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -126,7 +126,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/{id}/tags/{tagId}": {
+    "/api/v1/tasks/tasks/{id}/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -143,7 +143,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/tags": {
+    "/api/v1/tasks/tasks/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -160,7 +160,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/tags/all": {
+    "/api/v1/tasks/tasks/tags/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -177,7 +177,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/tags/{tagId}": {
+    "/api/v1/tasks/tasks/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -194,7 +194,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/Tasks/tasks/mcp": {
+    "/api/v1/tasks/tasks/mcp": {
         parameters: {
             query?: never;
             header?: never;
@@ -677,7 +677,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages": {
+    "/api/v1/context/blocks": {
         parameters: {
             query?: never;
             header?: never;
@@ -685,17 +685,17 @@ export interface paths {
             cookie?: never;
         };
         /** List wiki pages without content */
-        get: operations["WikirooController_listPages"];
+        get: operations["ContextController_listPages"];
         put?: never;
         /** Create a new wiki page */
-        post: operations["WikirooController_createPage"];
+        post: operations["ContextController_createPage"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tree": {
+    "/api/v1/context/blocks/tree": {
         parameters: {
             query?: never;
             header?: never;
@@ -703,7 +703,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get page hierarchy tree */
-        get: operations["WikirooController_getPageTree"];
+        get: operations["ContextController_getPageTree"];
         put?: never;
         post?: never;
         delete?: never;
@@ -712,7 +712,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}": {
+    "/api/v1/context/blocks/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -720,18 +720,18 @@ export interface paths {
             cookie?: never;
         };
         /** Fetch a wiki page by ID */
-        get: operations["WikirooController_getPage"];
+        get: operations["ContextController_getPage"];
         put?: never;
         post?: never;
         /** Delete a wiki page */
-        delete: operations["WikirooController_deletePage"];
+        delete: operations["ContextController_deletePage"];
         options?: never;
         head?: never;
         /** Update an existing wiki page */
-        patch: operations["WikirooController_updatePage"];
+        patch: operations["ContextController_updatePage"];
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/append": {
+    "/api/v1/context/blocks/{id}/append": {
         parameters: {
             query?: never;
             header?: never;
@@ -741,14 +741,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Append content to an existing wiki page */
-        post: operations["WikirooController_appendToPage"];
+        post: operations["ContextController_appendToPage"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/reorder": {
+    "/api/v1/context/blocks/{id}/reorder": {
         parameters: {
             query?: never;
             header?: never;
@@ -762,10 +762,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Reorder a page within siblings */
-        patch: operations["WikirooController_reorderPage"];
+        patch: operations["ContextController_reorderPage"];
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/move": {
+    "/api/v1/context/blocks/{id}/move": {
         parameters: {
             query?: never;
             header?: never;
@@ -779,10 +779,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Move page to different parent */
-        patch: operations["WikirooController_movePage"];
+        patch: operations["ContextController_movePage"];
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/tags": {
+    "/api/v1/context/blocks/{id}/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -792,14 +792,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add a tag to a wiki page */
-        post: operations["WikirooController_addTagToPage"];
+        post: operations["ContextController_addTagToPage"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+    "/api/v1/context/blocks/{id}/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -810,13 +810,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** Remove a tag from a wiki page */
-        delete: operations["WikirooController_removeTagFromPage"];
+        delete: operations["ContextController_removeTagFromPage"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tags": {
+    "/api/v1/context/blocks/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -826,14 +826,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create a new tag */
-        post: operations["WikirooController_createTag"];
+        post: operations["ContextController_createTag"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tags/all": {
+    "/api/v1/context/blocks/tags/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -841,7 +841,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get all tags */
-        get: operations["WikirooController_getAllTags"];
+        get: operations["ContextController_getAllTags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -850,7 +850,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tags/{tagId}": {
+    "/api/v1/context/blocks/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -861,26 +861,26 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete a tag from the system */
-        delete: operations["WikirooController_deleteTag"];
+        delete: operations["ContextController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/mcp": {
+    "/api/v1/context/blocks/mcp": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["WikirooController_handleMcp_get"];
-        put: operations["WikirooController_handleMcp_put"];
-        post: operations["WikirooController_handleMcp_post"];
-        delete: operations["WikirooController_handleMcp_delete"];
-        options: operations["WikirooController_handleMcp_options"];
-        head: operations["WikirooController_handleMcp_head"];
-        patch: operations["WikirooController_handleMcp_patch"];
+        get: operations["ContextController_handleMcp_get"];
+        put: operations["ContextController_handleMcp_put"];
+        post: operations["ContextController_handleMcp_post"];
+        delete: operations["ContextController_handleMcp_delete"];
+        options: operations["ContextController_handleMcp_options"];
+        head: operations["ContextController_handleMcp_head"];
+        patch: operations["ContextController_handleMcp_patch"];
         trace?: never;
     };
     "/.well-known/oauth-authorization-server/mcp/issuer": {
@@ -2255,7 +2255,7 @@ export interface components {
             title: string;
             /**
              * @description Markdown content of the page
-             * @example # Welcome to Wikiroo
+             * @example # Welcome to Context
              *     This is the onboarding guide.
              */
             content: string;
@@ -2273,7 +2273,7 @@ export interface components {
              */
             parentId?: string;
         };
-        WikiTagResponseDto: {
+        ContextTagResponseDto: {
             /**
              * @description Name of the tag
              * @example project-alpha
@@ -2298,7 +2298,7 @@ export interface components {
             title: string;
             /**
              * @description Markdown content of the wiki page
-             * @example # Welcome to Wikiroo
+             * @example # Welcome to Context
              */
             content: string;
             /**
@@ -2319,7 +2319,7 @@ export interface components {
              *       }
              *     ]
              */
-            tags: components["schemas"]["WikiTagResponseDto"][];
+            tags: components["schemas"]["ContextTagResponseDto"][];
             /**
              * @description Parent page ID (null if root page)
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -2370,7 +2370,7 @@ export interface components {
              *       }
              *     ]
              */
-            tags: components["schemas"]["WikiTagResponseDto"][];
+            tags: components["schemas"]["ContextTagResponseDto"][];
             /**
              * @description Parent page ID (null if root page)
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -2494,7 +2494,7 @@ export interface components {
              */
             newParentId: Record<string, never> | null;
         };
-        AddWikiTagDto: {
+        AddContextTagDto: {
             /**
              * @description Name of the tag
              * @example project-alpha
@@ -2506,7 +2506,7 @@ export interface components {
              */
             color?: string;
         };
-        CreateWikiTagDto: {
+        CreateContextTagDto: {
             /**
              * @description Name of the tag
              * @example project-alpha
@@ -2617,7 +2617,7 @@ export interface components {
              * @example [
              *       "tasks.createTask",
              *       "tasks.readTask",
-             *       "wikiroo.search"
+             *       "context.search"
              *     ]
              */
             allowedTools: string[];
@@ -2678,7 +2678,7 @@ export interface components {
              * @example [
              *       "tasks.createTask",
              *       "tasks.readTask",
-             *       "wikiroo.search"
+             *       "context.search"
              *     ]
              */
             allowedTools: string[];
@@ -4467,7 +4467,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_listPages: {
+    ContextController_listPages: {
         parameters: {
             query?: {
                 /** @description Filter pages by tag name */
@@ -4490,7 +4490,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_createPage: {
+    ContextController_createPage: {
         parameters: {
             query?: never;
             header?: never;
@@ -4503,7 +4503,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Wiki page created successfully */
+            /** @description Context page created successfully */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -4521,7 +4521,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_getPageTree: {
+    ContextController_getPageTree: {
         parameters: {
             query?: never;
             header?: never;
@@ -4541,19 +4541,19 @@ export interface operations {
             };
         };
     };
-    WikirooController_getPage: {
+    ContextController_getPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Wiki page retrieved successfully */
+            /** @description Context page retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4564,19 +4564,19 @@ export interface operations {
             };
         };
     };
-    WikirooController_deletePage: {
+    ContextController_deletePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Wiki page deleted successfully */
+            /** @description Context page deleted successfully */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -4585,12 +4585,12 @@ export interface operations {
             };
         };
     };
-    WikirooController_updatePage: {
+    ContextController_updatePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
@@ -4601,7 +4601,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Wiki page updated successfully */
+            /** @description Context page updated successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4619,12 +4619,12 @@ export interface operations {
             };
         };
     };
-    WikirooController_appendToPage: {
+    ContextController_appendToPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
@@ -4635,7 +4635,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Wiki page content appended successfully */
+            /** @description Context page content appended successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4646,12 +4646,12 @@ export interface operations {
             };
         };
     };
-    WikirooController_reorderPage: {
+    ContextController_reorderPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
@@ -4673,12 +4673,12 @@ export interface operations {
             };
         };
     };
-    WikirooController_movePage: {
+    ContextController_movePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
@@ -4707,19 +4707,19 @@ export interface operations {
             };
         };
     };
-    WikirooController_addTagToPage: {
+    ContextController_addTagToPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AddWikiTagDto"];
+                "application/json": components["schemas"]["AddContextTagDto"];
             };
         };
         responses: {
@@ -4741,7 +4741,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_removeTagFromPage: {
+    ContextController_removeTagFromPage: {
         parameters: {
             query?: never;
             header?: never;
@@ -4764,7 +4764,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_createTag: {
+    ContextController_createTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -4773,7 +4773,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateWikiTagDto"];
+                "application/json": components["schemas"]["CreateContextTagDto"];
             };
         };
         responses: {
@@ -4783,7 +4783,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"];
+                    "application/json": components["schemas"]["ContextTagResponseDto"];
                 };
             };
             /** @description Invalid input data */
@@ -4795,7 +4795,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_getAllTags: {
+    ContextController_getAllTags: {
         parameters: {
             query?: never;
             header?: never;
@@ -4810,12 +4810,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"][];
+                    "application/json": components["schemas"]["ContextTagResponseDto"][];
                 };
             };
         };
     };
-    WikirooController_deleteTag: {
+    ContextController_deleteTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -4835,7 +4835,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_get: {
+    ContextController_handleMcp_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4852,7 +4852,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_put: {
+    ContextController_handleMcp_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -4869,7 +4869,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_post: {
+    ContextController_handleMcp_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4886,7 +4886,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_delete: {
+    ContextController_handleMcp_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -4903,7 +4903,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_options: {
+    ContextController_handleMcp_options: {
         parameters: {
             query?: never;
             header?: never;
@@ -4920,7 +4920,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_head: {
+    ContextController_handleMcp_head: {
         parameters: {
             query?: never;
             header?: never;
@@ -4937,7 +4937,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_patch: {
+    ContextController_handleMcp_patch: {
         parameters: {
             query?: never;
             header?: never;

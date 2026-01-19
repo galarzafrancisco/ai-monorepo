@@ -324,7 +324,7 @@ When reviewing enum management:
 ### ✅ Compliant Modules
 - `tasks` - TaskStatus enum properly centralized
 
-### 📝 Future Enhancements
+### 🧱 Future Enhancements
 - Add more enums as domain needs them
 - Consider shared package export when frontend needs direct access
 - Evaluate enum validation at API boundary

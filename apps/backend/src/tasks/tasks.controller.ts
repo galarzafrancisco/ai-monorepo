@@ -53,7 +53,7 @@ import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
-@Controller('Tasks/tasks')
+@Controller('tasks/tasks')
 @UseGuards(AccessTokenGuard, ScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
 export class TasksController {

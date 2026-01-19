@@ -28,7 +28,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/Tasks/tasks',
+            url: '/api/v1/tasks/tasks',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -55,7 +55,7 @@ export class TaskService {
     ): CancelablePromise<TaskListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/Tasks/tasks',
+            url: '/api/v1/tasks/tasks',
             query: {
                 'assignee': assignee,
                 'sessionId': sessionId,
@@ -78,7 +78,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/Tasks/tasks/{id}',
+            url: '/api/v1/tasks/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -101,7 +101,7 @@ export class TaskService {
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/Tasks/tasks/{id}',
+            url: '/api/v1/tasks/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -121,7 +121,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/Tasks/tasks/{id}',
+            url: '/api/v1/tasks/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -143,7 +143,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/Tasks/tasks/{id}/assign',
+            url: '/api/v1/tasks/tasks/{id}/assign',
             path: {
                 'id': id,
             },
@@ -168,7 +168,7 @@ export class TaskService {
     ): CancelablePromise<CommentResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/Tasks/tasks/{id}/comments',
+            url: '/api/v1/tasks/tasks/{id}/comments',
             path: {
                 'id': id,
             },
@@ -193,7 +193,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/Tasks/tasks/{id}/status',
+            url: '/api/v1/tasks/tasks/{id}/status',
             path: {
                 'id': id,
             },
@@ -218,7 +218,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/Tasks/tasks/{id}/tags',
+            url: '/api/v1/tasks/tasks/{id}/tags',
             path: {
                 'id': id,
             },
@@ -243,7 +243,7 @@ export class TaskService {
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/Tasks/tasks/{id}/tags/{tagId}',
+            url: '/api/v1/tasks/tasks/{id}/tags/{tagId}',
             path: {
                 'id': id,
                 'tagId': tagId,
@@ -264,7 +264,7 @@ export class TaskService {
     ): CancelablePromise<TagResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/Tasks/tasks/tags',
+            url: '/api/v1/tasks/tasks/tags',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -280,7 +280,7 @@ export class TaskService {
     public static tasksControllerGetAllTags(): CancelablePromise<Array<TagResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/Tasks/tasks/tags/all',
+            url: '/api/v1/tasks/tasks/tags/all',
         });
     }
     /**
@@ -294,7 +294,7 @@ export class TaskService {
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/Tasks/tasks/tags/{tagId}',
+            url: '/api/v1/tasks/tasks/tags/{tagId}',
             path: {
                 'tagId': tagId,
             },
@@ -310,7 +310,7 @@ export class TaskService {
     public static tasksControllerHandleMcpGet(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/Tasks/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
@@ -320,7 +320,7 @@ export class TaskService {
     public static tasksControllerHandleMcpPost(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/Tasks/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
@@ -330,7 +330,7 @@ export class TaskService {
     public static tasksControllerHandleMcpPut(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/api/v1/Tasks/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
@@ -340,7 +340,7 @@ export class TaskService {
     public static tasksControllerHandleMcpDelete(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/Tasks/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
@@ -350,7 +350,7 @@ export class TaskService {
     public static tasksControllerHandleMcpPatch(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/Tasks/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
@@ -360,7 +360,7 @@ export class TaskService {
     public static tasksControllerHandleMcpOptions(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'OPTIONS',
-            url: '/api/v1/Tasks/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
@@ -370,7 +370,7 @@ export class TaskService {
     public static tasksControllerHandleMcpHead(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'HEAD',
-            url: '/api/v1/Tasks/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
 }

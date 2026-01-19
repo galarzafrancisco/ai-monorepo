@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { WikiTagResponseDto } from './WikiTagResponseDto';
+import type { ContextTagResponseDto } from './ContextTagResponseDto';
 export type PageResponseDto = {
     /**
      * Unique identifier for the page
@@ -23,7 +23,7 @@ export type PageResponseDto = {
     /**
      * Tags associated with the page
      */
-    tags: Array<WikiTagResponseDto>;
+    tags: Array<ContextTagResponseDto>;
     /**
      * Parent page ID (null if root page)
      */

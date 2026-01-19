@@ -60,7 +60,7 @@ export function McpServerDetail() {
     mappings: [{ connectionId: '', downstreamScope: '' }],
   });
 
-  usePageTitle(selectedServer ? `${selectedServer.name} - MCP Registry` : 'MCP Registry');
+  usePageTitle(selectedServer ? `${selectedServer.name} - Tools` : 'Tools');
 
   useEffect(() => {
     if (serverId) {

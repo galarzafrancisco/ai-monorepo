@@ -11,7 +11,7 @@ This review evaluates the controller layer to ensure proper separation of concer
 ## Scope
 
 - `apps/backend/src/tasks/tasks.controller.ts`
-- `apps/backend/src/wikiroo/wikiroo.controller.ts`
+- `apps/backend/src/context/context.controller.ts`
 
 ## Review Criteria
 
@@ -83,14 +83,14 @@ This review evaluates the controller layer to ensure proper separation of concer
 
 ---
 
-### WikirooController (`wikiroo.controller.ts`)
+### ContextController (`context.controller.ts`)
 
 **Status:** ✅ COMPLIANT
 
 #### HTTP Layer Concerns
 - **NestJS Decorators** (line 1): Properly uses `@Body`, `@Controller`, `@Get`, `@Param`, `@Post`
 - **Swagger Documentation** (lines 2-8): Complete API documentation
-- **Routing** (line 18): RESTful route structure `wikiroo/pages`
+- **Routing** (line 18): RESTful route structure `context/pages`
 
 #### DTO Usage
 **Request DTOs** (lines 10, 14):
@@ -158,7 +158,7 @@ Both controllers demonstrate excellent separation of concerns with only one mino
    - Alternative: Add `totalPages` to `ListTasksResult` service type
    - **Decision**: This is acceptable as presentation-layer pagination metadata. No action required unless you want perfect purity.
 
-#### For WikirooController
+#### For ContextController
 - **No changes required** - perfect implementation
 
 ### Code Quality Observations

@@ -70,7 +70,7 @@ export class CreateAgentDto {
 
   @ApiProperty({
     description: 'List of tool identifiers this agent is allowed to use',
-    example: ['tasks.createTask', 'tasks.readTask', 'wikiroo.search'],
+    example: ['tasks.createTask', 'tasks.readTask', 'context.search'],
     type: [String],
   })
   @IsArray()

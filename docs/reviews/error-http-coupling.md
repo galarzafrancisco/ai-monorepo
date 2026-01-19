@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This review validates that domain errors in the Tasks and Wikiroo modules are properly decoupled from HTTP concerns. The architecture successfully implements transport-agnostic errors with HTTP mapping at the appropriate boundary layer.
+This review validates that domain errors in the Tasks and Context modules are properly decoupled from HTTP concerns. The architecture successfully implements transport-agnostic errors with HTTP mapping at the appropriate boundary layer.
 
 **Key Finding:** The application demonstrates excellent separation of concerns with NO HTTP coupling in domain error classes.
 
@@ -14,7 +14,7 @@ This review validates that domain errors in the Tasks and Wikiroo modules are pr
 
 ### Modules Reviewed
 1. **Tasks** (`apps/backend/src/tasks`)
-2. **Wikiroo** (`apps/backend/src/wikiroo`)
+2. **Context** (`apps/backend/src/context`)
 
 ### Files Examined
 - Domain error classes
@@ -59,10 +59,10 @@ export abstract class TasksDomainError extends Error {
 }
 ```
 
-#### Wikiroo Domain Errors
-**File:** `/apps/backend/src/wikiroo/errors/wikiroo.errors.ts`
+#### Context Domain Errors
+**File:** `/apps/backend/src/context/errors/context.errors.ts`
 
-All Wikiroo domain errors extend `WikirooDomainError` base class with:
+All Context domain errors extend `ContextDomainError` base class with:
 - ✅ NO HTTP status codes
 - ✅ NO HTTP headers
 - ✅ Transport-agnostic error codes (strings)
@@ -71,16 +71,16 @@ All Wikiroo domain errors extend `WikirooDomainError` base class with:
 
 **Error Classes:**
 ```typescript
-- WikirooDomainError (abstract base)
+- ContextDomainError (abstract base)
 - PageNotFoundError
 ```
 
 **Structure:**
 ```typescript
-export abstract class WikirooDomainError extends Error {
+export abstract class ContextDomainError extends Error {
   constructor(
     message: string,
-    readonly code: WikirooErrorCode,
+    readonly code: ContextErrorCode,
     readonly context?: Record<string, unknown>,
   ) {
     super(message);
@@ -102,7 +102,7 @@ export const ErrorCodes = {
   INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
   COMMENT_REQUIRED: 'COMMENT_REQUIRED',
 
-  // Wiki errors
+  // Context errors
   PAGE_NOT_FOUND: 'PAGE_NOT_FOUND',
 
   // Generic errors
@@ -195,8 +195,8 @@ Controllers do NOT catch or transform errors:
 - Controllers focus on request/response mapping
 - NO error handling logic in controllers
 
-#### Wikiroo Controller
-**File:** `/apps/backend/src/wikiroo/wikiroo.controller.ts`
+#### Context Controller
+**File:** `/apps/backend/src/context/context.controller.ts`
 
 Same pattern as Tasks:
 - Domain errors propagate naturally
@@ -204,9 +204,9 @@ Same pattern as Tasks:
 
 ### 5. Service Layer (✅ CLEAN)
 
-Both `TasksService` and `WikirooService` throw domain errors directly:
+Both `TasksService` and `ContextService` throw domain errors directly:
 
-**Example from Wikiroo:**
+**Example from Context:**
 ```typescript
 async getPageById(pageId: string): Promise<PageResult> {
   const page = await this.pageRepository.findOne({ where: { id: pageId } });
@@ -225,7 +225,7 @@ The application follows a clean layered architecture for error handling:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Domain Layer (Tasks/Wikiroo)                        │
+│  Domain Layer (Tasks/Context)                        │
 │  - Pure domain errors (TaskNotFoundError, etc.)         │
 │  - String error codes (TASK_NOT_FOUND, etc.)            │
 │  - NO HTTP coupling                                     │
@@ -291,7 +291,7 @@ If the application grows, consider:
 
 **Status:** ✅ PASSED
 
-The Tasks and Wikiroo modules demonstrate best-in-class separation of domain errors from HTTP concerns. No remediation required.
+The Tasks and Context modules demonstrate best-in-class separation of domain errors from HTTP concerns. No remediation required.
 
 **Key Strengths:**
 - Zero HTTP coupling in domain errors

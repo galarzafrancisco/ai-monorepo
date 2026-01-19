@@ -14,17 +14,17 @@ export function HomePage() {
       color: '#3b82f6',
     },
     {
-      name: 'Wikiroo',
+      name: 'Context',
       description: 'Create, edit, and organize your knowledge base with our wiki platform.',
-      path: '/wikiroo',
+      path: '/context',
       icon: '📚',
       color: '#10b981',
     },
     {
-      name: 'MCP Registry',
+      name: 'Tools',
       description: 'Manage Model Context Protocol servers, scopes, and OAuth connections.',
       path: '/mcp-registry',
-      icon: '🔌',
+      icon: '🔧',
       color: '#8b5cf6',
     },
   ];

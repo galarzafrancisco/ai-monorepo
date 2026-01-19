@@ -7,7 +7,7 @@ import { ProblemDetailsFilter } from './../src/http/problem-details.filter';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 import cookieParser from 'cookie-parser';
 
-describe('Wikiroo E2E Tests', () => {
+describe('Context E2E Tests', () => {
   let app: INestApplication<App>;
   let httpServer: App;
   let authCookies: string;
@@ -45,18 +45,18 @@ describe('Wikiroo E2E Tests', () => {
 
   it('should create a wiki page', async () => {
     const response = await request(httpServer)
-      .post('/api/v1/wikiroo/pages')
+      .post('/api/v1/context/pages')
       .set('Cookie', authCookies)
       .send({
         title: 'Test Page',
-        content: 'This is a wikiroo page created during tests.',
+        content: 'This is a context page created during tests.',
         author: 'Agent Tester',
       })
       .expect(201);
 
     expect(response.body).toMatchObject({
       title: 'Test Page',
-      content: 'This is a wikiroo page created during tests.',
+      content: 'This is a context page created during tests.',
       author: 'Agent Tester',
     });
 
@@ -66,7 +66,7 @@ describe('Wikiroo E2E Tests', () => {
 
   it('should list wiki pages without content field', async () => {
     const response = await request(httpServer)
-      .get('/api/v1/wikiroo/pages')
+      .get('/api/v1/context/pages')
       .set('Cookie', authCookies)
       .expect(200);
 
@@ -82,21 +82,21 @@ describe('Wikiroo E2E Tests', () => {
 
   it('should fetch the wiki page by id including content', async () => {
     const response = await request(httpServer)
-      .get(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .get(`/api/v1/context/pages/${createdPageId}`)
       .set('Cookie', authCookies)
       .expect(200);
 
     expect(response.body.id).toBe(createdPageId);
     expect(response.body.title).toBe('Test Page');
     expect(response.body.content).toBe(
-      'This is a wikiroo page created during tests.',
+      'This is a context page created during tests.',
     );
     expect(response.body.author).toBe('Agent Tester');
   });
 
   it('should reject updates without any fields', async () => {
     await request(httpServer)
-      .patch(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .patch(`/api/v1/context/pages/${createdPageId}`)
       .set('Cookie', authCookies)
       .send({})
       .expect(400);
@@ -104,7 +104,7 @@ describe('Wikiroo E2E Tests', () => {
 
   it('should update the wiki page title', async () => {
     const response = await request(httpServer)
-      .patch(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .patch(`/api/v1/context/pages/${createdPageId}`)
       .set('Cookie', authCookies)
       .send({
         title: 'Updated Test Page',
@@ -113,14 +113,14 @@ describe('Wikiroo E2E Tests', () => {
 
     expect(response.body.title).toBe('Updated Test Page');
     expect(response.body.content).toBe(
-      'This is a wikiroo page created during tests.',
+      'This is a context page created during tests.',
     );
   });
 
   it('should append content to the wiki page', async () => {
-    const appendText = '\nAdditional wikiroo details.';
+    const appendText = '\nAdditional context details.';
     const response = await request(httpServer)
-      .post(`/api/v1/wikiroo/pages/${createdPageId}/append`)
+      .post(`/api/v1/context/pages/${createdPageId}/append`)
       .set('Cookie', authCookies)
       .send({
         content: appendText,
@@ -132,14 +132,14 @@ describe('Wikiroo E2E Tests', () => {
 
   it('should delete the wiki page', async () => {
     await request(httpServer)
-      .delete(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .delete(`/api/v1/context/pages/${createdPageId}`)
       .set('Cookie', authCookies)
       .expect(204);
   });
 
   it('should return 404 for unknown page', async () => {
     const response = await request(httpServer)
-      .get('/api/v1/wikiroo/pages/00000000-0000-0000-0000-000000000000')
+      .get('/api/v1/context/pages/00000000-0000-0000-0000-000000000000')
       .set('Cookie', authCookies)
       .expect(404);
 
@@ -148,7 +148,7 @@ describe('Wikiroo E2E Tests', () => {
 
   it('should return 404 when fetching a deleted page', async () => {
     await request(httpServer)
-      .get(`/api/v1/wikiroo/pages/${createdPageId}`)
+      .get(`/api/v1/context/pages/${createdPageId}`)
       .set('Cookie', authCookies)
       .expect(404);
   });

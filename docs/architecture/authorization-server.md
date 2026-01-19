@@ -338,7 +338,7 @@ The authorization server enables MCP clients to access resources from downstream
 - Old keys kept for verification of existing JWTs
 - Private key never exposed via JWKS endpoint
 
-### MCP Registry Tables
+### Tools Tables
 
 #### 6. mcp_servers (McpServerEntity)
 **Purpose**: Defines available MCP servers in the system

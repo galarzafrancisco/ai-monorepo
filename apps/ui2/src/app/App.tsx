@@ -7,7 +7,7 @@ import { BASE_PATH } from '../shared/const/base';
 import './App.css';
 import { TasksRoutes } from '../features/tasks/TasksRoutes';
 import { LogoutPage } from './routes/LogoutPage';
-import { WikirooRoutes } from '../features/wikiroo/WikirooRoutes';
+import { ContextRoutes } from '../features/context/ContextRoutes';
 import { MCPRegistryPage } from './routes/MCPRegistryPage';
 import { AgentsPage } from './routes/AgentsPage';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
@@ -26,7 +26,7 @@ function BetaAppRoutes() {
       {/* Tasks with nested routes */}
       <Route path="/tasks/*" element={<TasksRoutes />} />
 
-      <Route path="/wikiroo/*" element={<WikirooRoutes />} />
+      <Route path="/context/*" element={<ContextRoutes />} />
       <Route path="/mcp-registry" element={<MCPRegistryPage />} />
       <Route path="/agents" element={<AgentsPage />} />
 

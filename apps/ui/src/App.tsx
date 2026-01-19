@@ -7,11 +7,11 @@ import { RootLayout } from './layouts/RootLayout';
 import { HomePage } from './home/HomePage';
 import { TaskBoard } from './tasks/TaskBoard';
 import { TaskBoardMobile } from './tasks/TaskBoardMobile';
-import { WikirooWithSidebar } from './wikiroo/WikirooWithSidebar';
-import { WikirooHome } from './wikiroo/WikirooHome';
-import { WikirooCreate } from './wikiroo/WikirooCreate';
-import { WikirooPageView } from './wikiroo/WikirooPageView';
-import { WikirooPageEdit } from './wikiroo/WikirooPageEdit';
+import { ContextWithSidebar } from './context/ContextWithSidebar';
+import { ContextHome } from './context/ContextHome';
+import { ContextCreate } from './context/ContextCreate';
+import { ContextPageView } from './context/ContextPageView';
+import { ContextPageEdit } from './context/ContextPageEdit';
 import { McpRegistryDashboard } from './mcp-registry/McpRegistryDashboard';
 import { McpServerDetail } from './mcp-registry/McpServerDetail';
 import { ConsentScreen } from './consent/ConsentScreen';
@@ -50,13 +50,13 @@ export default function App() {
             <Route path="mcp-registry/:serverId" element={<McpServerDetail />} />
             <Route path="consent" element={<ConsentScreen />} />
 
-            {/* Wikiroo nested routes with WikirooWithSidebar layout */}
-            <Route path="wikiroo" element={<WikirooWithSidebar />}>
-              <Route index element={<WikirooHome />} />
-              <Route path="new" element={<WikirooCreate />} />
-              <Route path="page/:pageId" element={<WikirooPageView />} />
-              <Route path="page/:pageId/edit" element={<WikirooPageEdit />} />
-              <Route path="page/:pageId/new" element={<WikirooCreate />} />
+            {/* Context nested routes with ContextWithSidebar layout */}
+            <Route path="context" element={<ContextWithSidebar />}>
+              <Route index element={<ContextHome />} />
+              <Route path="new" element={<ContextCreate />} />
+              <Route path="page/:pageId" element={<ContextPageView />} />
+              <Route path="page/:pageId/edit" element={<ContextPageEdit />} />
+              <Route path="page/:pageId/new" element={<ContextCreate />} />
             </Route>
 
             {/* Agents nested routes with AgentsWithSidebar layout */}

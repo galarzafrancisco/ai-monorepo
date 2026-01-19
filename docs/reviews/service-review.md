@@ -21,8 +21,8 @@
 
 Reviewed all backend services:
 - ✅ **Tasks Service** (`tasks.service.ts`) - 348 lines
-- ✅ **Wikiroo Service** (`wikiroo.service.ts`) - 97 lines
-- ✅ **MCP Registry Service** (`mcp-registry.service.ts`) - 495 lines
+- ✅ **Context Service** (`context.service.ts`) - 97 lines
+- ✅ **Tools Service** (`mcp-registry.service.ts`) - 495 lines
 - ✅ **Client Registration Service** (`client-registration.service.ts`)
 - ❌ **Authorization Service** (`authorization.service.ts`) - VIOLATIONS
 - ❌ **Token Service** (`token.service.ts`) - VIOLATIONS
@@ -39,8 +39,8 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 | Service | Status | HTTP Exceptions Found |
 |---------|--------|----------------------|
 | Tasks | ✅ PASS | None |
-| Wikiroo | ✅ PASS | None |
-| MCP Registry | ✅ PASS | None |
+| Context | ✅ PASS | None |
+| Tools | ✅ PASS | None |
 | Client Registration | ✅ PASS | None |
 | Auth Journeys | ✅ PASS | None |
 | **Authorization** | ❌ FAIL | `NotFoundException` (5), `BadRequestException` (6), `UnauthorizedException` (1) |
@@ -51,8 +51,8 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 | Service | Status | Evidence |
 |---------|--------|----------|
 | Tasks | ✅ PASS | Uses `TaskNotFoundError`, `InvalidStatusTransitionError`, `CommentRequiredError` |
-| Wikiroo | ✅ PASS | Uses `PageNotFoundError` |
-| MCP Registry | ✅ PASS | Uses `ServerNotFoundError`, `ScopeNotFoundError`, etc. (11 domain errors) |
+| Context | ✅ PASS | Uses `PageNotFoundError` |
+| Tools | ✅ PASS | Uses `ServerNotFoundError`, `ScopeNotFoundError`, etc. (11 domain errors) |
 | Client Registration | ✅ PASS | Uses `ClientNotFoundError`, `InvalidRedirectUriError`, etc. |
 | Auth Journeys | ✅ PASS | No error throwing (delegates to other services) |
 | **Authorization** | ❌ FAIL | Throws HTTP exceptions directly |
@@ -63,8 +63,8 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 | Service | Status | Service Types Location |
 |---------|--------|------------------------|
 | Tasks | ✅ PASS | `dto/service/tasks.service.types.ts` - Pure TS types |
-| Wikiroo | ✅ PASS | `dto/service/wikiroo.service.types.ts` - Pure TS types |
-| MCP Registry | ✅ PASS | `dto/service/mcp-registry.service.types.ts` - Pure TS types |
+| Context | ✅ PASS | `dto/service/context.service.types.ts` - Pure TS types |
+| Tools | ✅ PASS | `dto/service/mcp-registry.service.types.ts` - Pure TS types |
 | Client Registration | ✅ PASS | Uses entity directly (acceptable pattern) |
 | Auth Journeys | ✅ PASS | Pure TS types |
 | Authorization | ⚠️ N/A | Uses entities and DTOs |
@@ -77,8 +77,8 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 | Service | Status | Notes |
 |---------|--------|-------|
 | Tasks | ✅ PASS | Injects TaskEntity and CommentEntity repositories |
-| Wikiroo | ✅ PASS | Injects WikiPageEntity repository |
-| MCP Registry | ✅ PASS | Injects 4 repositories (Server, Scope, Connection, Mapping) |
+| Context | ✅ PASS | Injects ContextPageEntity repository |
+| Tools | ✅ PASS | Injects 4 repositories (Server, Scope, Connection, Mapping) |
 | Client Registration | ✅ PASS | Injects RegisteredClientEntity repository |
 | Auth Journeys | ✅ PASS | Injects multiple journey-related repositories |
 | Authorization | ✅ PASS | Injects repositories (though error handling is wrong) |
@@ -89,8 +89,8 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 | Service | Status | Evidence |
 |---------|--------|----------|
 | Tasks | ✅ PASS | No cross-domain calls |
-| Wikiroo | ✅ PASS | No cross-domain calls |
-| MCP Registry | ✅ PASS | No cross-domain calls |
+| Context | ✅ PASS | No cross-domain calls |
+| Tools | ✅ PASS | No cross-domain calls |
 | Client Registration | ✅ PASS | Calls `AuthJourneysService` and `McpRegistryService` via public interfaces |
 | Auth Journeys | ✅ PASS | No cross-domain calls |
 | Authorization | ✅ PASS | Calls `McpRegistryService` and `AuthJourneysService` |
@@ -103,8 +103,8 @@ All services correctly interact with other domains via public service interfaces
 | Service | Status | Evidence |
 |---------|--------|----------|
 | Tasks | ✅ EXCELLENT | Structured logging with Logger: `{ message, taskId, name, assignee }` |
-| Wikiroo | ✅ EXCELLENT | Structured logging: `{ message, pageId, title, author }` |
-| MCP Registry | ✅ PASS | No logging (acceptable for CRUD operations) |
+| Context | ✅ EXCELLENT | Structured logging: `{ message, pageId, title, author }` |
+| Tools | ✅ PASS | No logging (acceptable for CRUD operations) |
 | Client Registration | ✅ PASS | Uses Logger for debug output |
 | Auth Journeys | ✅ PASS | Logging present |
 | Authorization | ✅ PASS | Uses Logger with domain-level messages |
@@ -346,7 +346,7 @@ export type TaskResult = {
 };
 ```
 
-### MCP Registry Service ✅
+### Tools Service ✅
 
 **Error Handling (`mcp-registry.service.ts:94`):**
 ```typescript
@@ -379,8 +379,8 @@ All services correctly encapsulate business logic:
 | Service | Responsibilities |
 |---------|------------------|
 | Tasks | Task lifecycle, status transitions, comment management, validation rules |
-| Wikiroo | Wiki page CRUD, content management |
-| MCP Registry | Server/scope/connection/mapping CRUD, dependency validation |
+| Context | Context page CRUD, content management |
+| Tools | Server/scope/connection/mapping CRUD, dependency validation |
 | Client Registration | OAuth client validation, credential generation, secret hashing |
 | Auth Journeys | Journey orchestration, flow state management |
 | Authorization | Authorization flow creation, consent processing, callback handling |
@@ -392,7 +392,7 @@ All business logic properly lives in services, not controllers ✅
 
 Services that need transactions handle them correctly:
 
-**Example - MCP Registry (implicit transactions via TypeORM):**
+**Example - Tools (implicit transactions via TypeORM):**
 ```typescript
 const savedServer = await this.serverRepository.save(server);
 ```
@@ -464,7 +464,7 @@ this.logger.debug(JSON.stringify(full, null, 2));
 
 | Pattern | Services |
 |---------|----------|
-| Domain Errors | Tasks, Wikiroo, MCP Registry, Client Registration, Auth Journeys (5) |
+| Domain Errors | Tasks, Context, Tools, Client Registration, Auth Journeys (5) |
 | HTTP Exceptions | Authorization, Token (2) |
 
 ### Lines of Code Reviewed
@@ -511,7 +511,7 @@ this.logger.debug(JSON.stringify(full, null, 2));
 
 **Strong Points:**
 - ✅ 5 out of 7 services fully compliant with best practices
-- ✅ Excellent examples of transport-independent design (Tasks, Wikiroo, MCP Registry)
+- ✅ Excellent examples of transport-independent design (Tasks, Context, Tools)
 - ✅ Proper business logic encapsulation across all services
 - ✅ Strong structured logging patterns
 - ✅ Clean cross-service interaction via public interfaces

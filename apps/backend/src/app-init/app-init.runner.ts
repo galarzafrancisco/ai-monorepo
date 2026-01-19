@@ -9,7 +9,7 @@ import { CreateServerInput, ServerRecord } from "src/mcp-registry/dto";
 import { ScopeAlreadyExistsError, ServerAlreadyExistsError } from "src/mcp-registry/errors/mcp-registry.errors";
 import { AgentResult, CreateAgentInput } from "src/agents/dto/service/agents.service.types";
 import { AgentSlugConflictError } from "src/agents/errors/agents.errors";
-import { createWikiroo, createWikirooScopes } from "./mcp/wikiroo.mcp";
+import { createContext, createContextScopes } from "./mcp/context.mcp";
 import { getConfig } from "src/config/env.config";
 import { devUser, devUserRole } from "./user/dev.user";
 import { adminUser, adminUserRole } from "./user/admin.user";
@@ -147,9 +147,9 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring Tasks MCP Server exists');
     }
     try {
-      await this.ensureMcpServerExists(createWikiroo, createWikirooScopes);
+      await this.ensureMcpServerExists(createContext, createContextScopes);
     } catch (error) {
-      this.logger.error('Error ensuring Wikiroo MCP Server exists');
+      this.logger.error('Error ensuring Context MCP Server exists');
     }
   }
 

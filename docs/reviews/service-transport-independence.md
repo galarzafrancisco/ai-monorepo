@@ -11,7 +11,7 @@ This review evaluates the service layer for transport independence, ensuring ser
 ## Scope
 
 - `apps/backend/src/tasks/tasks.service.ts`
-- `apps/backend/src/wikiroo/wikiroo.service.ts`
+- `apps/backend/src/context/context.service.ts`
 
 ## Review Criteria
 
@@ -70,12 +70,12 @@ This review evaluates the service layer for transport independence, ensuring ser
 
 ---
 
-### WikirooService (`wikiroo.service.ts`)
+### ContextService (`context.service.ts`)
 
 **Status:** ✅ COMPLIANT
 
 #### Type System
-- **Input Types** (lines 6-7): Uses pure service types from `dto/service/wikiroo.service.types`
+- **Input Types** (lines 6-7): Uses pure service types from `dto/service/context.service.types`
   - `CreatePageInput`
 - **Output Types** (lines 7-9): Returns pure domain types
   - `PageResult`, `PageSummaryResult`
@@ -100,8 +100,8 @@ This review evaluates the service layer for transport independence, ensuring ser
 | `getPageById` (61) | `string` | `Promise<PageResult>` | `PageNotFoundError` | ✅ |
 
 #### Private Mappers
-- `mapToResult` (73): Maps `WikiPageEntity` → `PageResult`
-- `mapToSummary` (84): Maps partial `WikiPageEntity` → `PageSummaryResult`
+- `mapToResult` (73): Maps `ContextPageEntity` → `PageResult`
+- `mapToSummary` (84): Maps partial `ContextPageEntity` → `PageSummaryResult`
 - Both mappers work with pure domain types
 - Good use of TypeScript's `Pick` utility type for type safety in `mapToSummary`
 
@@ -134,4 +134,4 @@ Both services demonstrate excellent transport independence:
 
 ✅ **REVIEW PASSED**
 
-Both `tasks.service.ts` and `wikiroo.service.ts` are fully transport-independent and follow all architectural best practices. They can be easily reused with different transport layers (HTTP, GraphQL, gRPC, CLI) without modification.
+Both `tasks.service.ts` and `context.service.ts` are fully transport-independent and follow all architectural best practices. They can be easily reused with different transport layers (HTTP, GraphQL, gRPC, CLI) without modification.

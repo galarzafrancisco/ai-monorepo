@@ -37,15 +37,15 @@ export function HamburgerMenu() {
       color: '#3b82f6',
     },
     {
-      name: 'Wikiroo',
-      path: '/wikiroo',
+      name: 'Context',
+      path: '/context',
       icon: '📚',
       color: '#10b981',
     },
     {
-      name: 'MCP Registry',
+      name: 'Tools',
       path: '/mcp-registry',
-      icon: '🔌',
+      icon: '🔧',
       color: '#8b5cf6',
     },
     {

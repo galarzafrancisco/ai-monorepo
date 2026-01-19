@@ -32,15 +32,15 @@ Located in: `/apps/backend/src/tasks/errors/tasks.errors.ts`
 
 **Base Class**: `TasksDomainError`
 
-### Wikiroo Domain Errors
+### Context Domain Errors
 
-Located in: `/apps/backend/src/wikiroo/errors/wikiroo.errors.ts`
+Located in: `/apps/backend/src/context/errors/context.errors.ts`
 
 | Error Class | Error Code | Catalog Entry | Status |
 |------------|------------|---------------|---------|
 | PageNotFoundError | PAGE_NOT_FOUND | Yes | ✓ Complete |
 
-**Base Class**: `WikirooDomainError`
+**Base Class**: `ContextDomainError`
 
 ## Error Catalog Inventory
 
@@ -52,7 +52,7 @@ Located in: `/apps/backend/src/errors/http/error-catalog.ts`
 | TASK_NOT_ASSIGNED | 400 | Task not assigned | /errors/tasks/not-assigned | TaskNotAssignedError | ✓ |
 | INVALID_STATUS_TRANSITION | 400 | Invalid status transition | /errors/tasks/invalid-status-transition | InvalidStatusTransitionError | ✓ |
 | COMMENT_REQUIRED | 400 | Comment required | /errors/tasks/comment-required | CommentRequiredError | ✓ |
-| PAGE_NOT_FOUND | 404 | Wiki page not found | /errors/wiki/page-not-found | PageNotFoundError | ✓ |
+| PAGE_NOT_FOUND | 404 | Context page not found | /errors/wiki/page-not-found | PageNotFoundError | ✓ |
 | VALIDATION_FAILED | 400 | Validation failed | /errors/validation/failed | (Generic) | Framework |
 | INTERNAL_ERROR | 500 | Internal server error | /errors/internal | (Generic) | Framework |
 
@@ -108,7 +108,7 @@ export const ErrorCodes = {
   INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
   COMMENT_REQUIRED: 'COMMENT_REQUIRED',
 
-  // Wiki errors
+  // Context errors
   PAGE_NOT_FOUND: 'PAGE_NOT_FOUND',
 
   // Generic errors
@@ -122,7 +122,7 @@ export const ErrorCodes = {
 The error system follows the established architecture patterns:
 
 ### Domain Layer
-- Domain errors extend module-specific base classes (TasksDomainError, WikirooDomainError)
+- Domain errors extend module-specific base classes (TasksDomainError, ContextDomainError)
 - Domain errors are HTTP-agnostic
 - Each domain error references an error code from the centralized ErrorCodes
 
@@ -139,8 +139,8 @@ packages/shared/errors/
 apps/backend/src/
   ├── tasks/errors/
   │   └── tasks.errors.ts  # Tasks domain errors
-  ├── wikiroo/errors/
-  │   └── wikiroo.errors.ts   # Wikiroo domain errors
+  ├── context/errors/
+  │   └── context.errors.ts   # Context domain errors
   └── errors/http/
       └── error-catalog.ts    # HTTP metadata catalog
 ```

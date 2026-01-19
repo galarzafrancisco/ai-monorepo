@@ -250,18 +250,18 @@ export class UpdateBlogPostDto extends PartialType(CreateBlogPostDto) {}
 - ❌ Side effects (WebSocket events, notifications)
 - ❌ Sub-resources (assign, status, comments)
 
-## Wikiroo Module Analysis
+## Context Module Analysis
 
-Let's verify Wikiroo doesn't have PATCH operations that should be reviewed:
+Let's verify Context doesn't have PATCH operations that should be reviewed:
 
-**Wikiroo Endpoints (wikiroo.controller.ts):**
+**Context Endpoints (context.controller.ts):**
 - `POST /pages` - Create page
 - `GET /pages` - List pages
 - `GET /pages/:id` - Get page
 
-**Observation:** Wikiroo has **NO update operations** at all.
+**Observation:** Context has **NO update operations** at all.
 
-**Conclusion:** No PATCH DTO pattern to review in Wikiroo.
+**Conclusion:** No PATCH DTO pattern to review in Context.
 
 ## Additional Evidence: OpenAPI Documentation
 

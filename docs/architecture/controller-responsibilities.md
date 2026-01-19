@@ -11,7 +11,7 @@ November 5, 2025
 ## Controllers Reviewed
 
 - `/apps/backend/src/tasks/tasks.controller.ts`
-- `/apps/backend/src/wikiroo/wikiroo.controller.ts`
+- `/apps/backend/src/context/context.controller.ts`
 - `/apps/backend/src/app.controller.ts`
 
 ## Review Findings
@@ -42,8 +42,8 @@ All controllers demonstrate excellent separation of concerns with proper delegat
 - Pagination calculation (`Math.ceil(result.total / result.limit)`) - minor calculation for response formatting
 - Data transformation via private mapping methods (`mapResultToResponse`, `mapCommentResultToResponse`)
 
-#### 2. WikirooController
-**Location**: `/apps/backend/src/wikiroo/wikiroo.controller.ts`
+#### 2. ContextController
+**Location**: `/apps/backend/src/context/context.controller.ts`
 
 **HTTP Concerns (Properly Handled)**:
 - RESTful route definitions
@@ -52,7 +52,7 @@ All controllers demonstrate excellent separation of concerns with proper delegat
 - Clear endpoint descriptions
 
 **Business Logic (Properly Delegated)**:
-- Page creation delegated to `WikirooService`
+- Page creation delegated to `ContextService`
 - Page retrieval delegated to service
 - List operations delegated to service
 

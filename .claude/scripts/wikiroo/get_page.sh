@@ -7,4 +7,4 @@ if [ -z "$PAGE_ID" ]; then
   exit 1
 fi
 
-curl -s "http://localhost:9999/api/v1/wikiroo/pages/$PAGE_ID" | jq .
+curl -s "http://localhost:9999/api/v1/context/pages/$PAGE_ID" | jq .

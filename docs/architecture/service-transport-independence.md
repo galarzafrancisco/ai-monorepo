@@ -146,8 +146,8 @@ export class TasksService {
 ```
 
 ```typescript
-// ✅ GOOD - Wikiroo Service
-export class WikirooService {
+// ✅ GOOD - Context Service
+export class ContextService {
   async createPage(input: CreatePageInput): Promise<PageResult> {
     // Business logic only
   }
@@ -233,9 +233,9 @@ export class WikirooService {
 - No HTTP status codes or exceptions
 - Comment explicitly states: "Keeps HTTP concerns out of the domain layer"
 
-### Wikiroo Service
+### Context Service
 
-**File**: `/apps/backend/src/wikiroo/wikiroo.service.ts`
+**File**: `/apps/backend/src/context/context.service.ts`
 
 ✅ **Compliant**:
 - No HTTP exception imports
@@ -244,13 +244,13 @@ export class WikirooService {
 - Method signatures use plain TypeScript types
 - Only allowed dependencies: `@Injectable`, `Logger`, TypeORM
 
-**Service Type Definitions**: `/apps/backend/src/wikiroo/dto/service/wikiroo.service.types.ts`
+**Service Type Definitions**: `/apps/backend/src/context/dto/service/context.service.types.ts`
 - Pure TypeScript interfaces
 - No decorators
 - Clean separation of concerns
 
-**Error Definitions**: `/apps/backend/src/wikiroo/errors/wikiroo.errors.ts`
-- Domain errors extend base `WikirooDomainError`
+**Error Definitions**: `/apps/backend/src/context/errors/context.errors.ts`
+- Domain errors extend base `ContextDomainError`
 - No HTTP status codes or exceptions
 
 ## Benefits of Transport Independence
@@ -320,7 +320,7 @@ When reviewing services for transport independence:
   - Domain errors only (no HTTP exceptions)
   - Clean separation of concerns
 
-- **wikiroo**: Fully transport-agnostic
+- **context**: Fully transport-agnostic
   - All service methods use transport-agnostic types
   - Domain errors only (no HTTP exceptions)
   - Clean separation of concerns

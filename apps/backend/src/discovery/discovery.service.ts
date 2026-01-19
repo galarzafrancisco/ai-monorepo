@@ -10,7 +10,7 @@ import {
 import { createTasks, createTasksScopes } from 'src/app-init/mcp/tasks.mcp';
 import { getConfig } from 'src/config/env.config';
 import { CreateServerInput } from 'src/mcp-registry/dto';
-import { createWikiroo, createWikirooScopes } from 'src/app-init/mcp/wikiroo.mcp';
+import { createContext, createContextScopes } from 'src/app-init/mcp/context.mcp';
 import { Scope } from 'src/auth/core/types/scope.type';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class DiscoveryService {
 
   private populateSystemServers() {
     this.populateSystemServer(createTasks, createTasksScopes);
-    this.populateSystemServer(createWikiroo, createWikirooScopes);
+    this.populateSystemServer(createContext, createContextScopes);
   }
 
   private populateSystemServer(server: CreateServerInput, scopes: Scope[]) {

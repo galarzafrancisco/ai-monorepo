@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document analyzes the domain error implementation patterns across the Tasks and Wikiroo modules. The codebase demonstrates **exemplary consistency** with clean architecture principles, proper inheritance patterns, and excellent separation of concerns.
+This document analyzes the domain error implementation patterns across the Tasks and Context modules. The codebase demonstrates **exemplary consistency** with clean architecture principles, proper inheritance patterns, and excellent separation of concerns.
 
 **Key Findings:**
 - Consistent base class pattern across all modules
@@ -47,12 +47,12 @@ The application uses a three-tiered error architecture:
     ┌─────────────┴──────────────┐
     │                            │
 ┌───▼────────────────┐   ┌──────▼─────────────┐
-│   Tasks Module  │   │   Wikiroo Module   │
+│   Tasks Module  │   │   Context Module   │
 │                    │   │                    │
-│ TasksErrorCodes │   │ WikirooErrorCodes  │
+│ TasksErrorCodes │   │ ContextErrorCodes  │
 │   (re-export)      │   │   (re-export)      │
 │                    │   │                    │
-│ TasksDomainError│   │ WikirooDomainError │
+│ TasksDomainError│   │ ContextDomainError │
 │   (base class)     │   │   (base class)     │
 │                    │   │                    │
 │ Concrete Errors:   │   │ Concrete Errors:   │
@@ -200,16 +200,16 @@ export class CommentRequiredError extends TasksDomainError {
 
 ---
 
-### 2. Wikiroo Module
+### 2. Context Module
 
-**Location**: `/apps/backend/src/wikiroo/errors/wikiroo.errors.ts`
+**Location**: `/apps/backend/src/context/errors/context.errors.ts`
 
 #### Base Class
 ```typescript
-export abstract class WikirooDomainError extends Error {
+export abstract class ContextDomainError extends Error {
   constructor(
     message: string,
-    readonly code: WikirooErrorCode,
+    readonly code: ContextErrorCode,
     readonly context?: Record<string, unknown>,
   ) {
     super(message);
@@ -220,12 +220,12 @@ export abstract class WikirooDomainError extends Error {
 
 #### Error Code Management
 ```typescript
-export const WikirooErrorCodes = {
+export const ContextErrorCodes = {
   PAGE_NOT_FOUND: ErrorCodes.PAGE_NOT_FOUND,
 } as const;
 
-type WikirooErrorCode =
-  typeof WikirooErrorCodes[keyof typeof WikirooErrorCodes];
+type ContextErrorCode =
+  typeof ContextErrorCodes[keyof typeof ContextErrorCodes];
 ```
 
 **Analysis:**
@@ -237,15 +237,15 @@ type WikirooErrorCode =
 
 **1. PageNotFoundError**
 ```typescript
-export class PageNotFoundError extends WikirooDomainError {
+export class PageNotFoundError extends ContextDomainError {
   constructor(pageId: string) {
-    super('Wiki page not found.', WikirooErrorCodes.PAGE_NOT_FOUND, {
+    super('Context page not found.', ContextErrorCodes.PAGE_NOT_FOUND, {
       pageId,
     });
   }
 }
 ```
-- **Purpose**: Wiki page entity not found
+- **Purpose**: Context page entity not found
 - **Context**: Captures page ID for debugging
 - **Pattern**: Identical to TaskNotFoundError pattern
 
@@ -255,12 +255,12 @@ export class PageNotFoundError extends WikirooDomainError {
 
 ### Strengths: High Consistency
 
-| Aspect | Tasks | Wikiroo | Consistent? |
+| Aspect | Tasks | Context | Consistent? |
 |--------|----------|---------|-------------|
 | Base class structure | 3 properties | 3 properties | ✅ Yes |
 | Property names | message, code, context | message, code, context | ✅ Yes |
 | Property modifiers | readonly | readonly | ✅ Yes |
-| Type safety | TasksErrorCode | WikirooErrorCode | ✅ Yes |
+| Type safety | TasksErrorCode | ContextErrorCode | ✅ Yes |
 | Re-export pattern | Uses ErrorCodes | Uses ErrorCodes | ✅ Yes |
 | Const assertion | Yes | Yes | ✅ Yes |
 | Constructor signatures | Consistent | Consistent | ✅ Yes |
@@ -272,7 +272,7 @@ export class PageNotFoundError extends WikirooDomainError {
 **Difference Found:**
 
 - **Tasks**: `this.name = this.constructor.name;`
-- **Wikiroo**: `this.name = new.target.name;`
+- **Context**: `this.name = new.target.name;`
 
 **Analysis:**
 
@@ -292,7 +292,7 @@ Both approaches work correctly, but have subtle differences:
 **Recommendation:**
 - **Not Critical**: Both work fine in current codebase
 - **Best Practice**: Use `new.target.name` for consistency
-- **Action**: Update Tasks to match Wikiroo pattern (optional)
+- **Action**: Update Tasks to match Context pattern (optional)
 
 ```typescript
 // Recommended standardization
@@ -361,7 +361,7 @@ new TaskNotFoundError(taskId);
 // ❌ Invalid - compile error if you try to use wrong code
 class TaskNotFoundError extends TasksDomainError {
   constructor(taskId: string) {
-    super('...', WikirooErrorCodes.PAGE_NOT_FOUND, { taskId });
+    super('...', ContextErrorCodes.PAGE_NOT_FOUND, { taskId });
     //            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     //            Type error: not assignable to TasksErrorCode
   }
@@ -547,7 +547,7 @@ this.logger.warn({
 **Simple Messages:**
 ```typescript
 'Task not found.'
-'Wiki page not found.'
+'Context page not found.'
 'Task is not assigned to anyone.'
 ```
 - Clear and concise
@@ -767,7 +767,7 @@ describe('Error Code Type Safety', () => {
   it('should match central error codes', () => {
     expect(TasksErrorCodes.TASK_NOT_FOUND)
       .toBe(ErrorCodes.TASK_NOT_FOUND);
-    expect(WikirooErrorCodes.PAGE_NOT_FOUND)
+    expect(ContextErrorCodes.PAGE_NOT_FOUND)
       .toBe(ErrorCodes.PAGE_NOT_FOUND);
   });
 });
@@ -817,7 +817,7 @@ describe('ProblemDetailsFilter with Domain Errors', () => {
 
 ---
 
-## Comparison: Tasks vs Wikiroo
+## Comparison: Tasks vs Context
 
 ### Similarities ✅
 
@@ -835,7 +835,7 @@ describe('ProblemDetailsFilter with Domain Errors', () => {
 
 ### Differences
 
-| Aspect | Tasks | Wikiroo | Impact |
+| Aspect | Tasks | Context | Impact |
 |--------|----------|---------|--------|
 | Name assignment | `this.constructor.name` | `new.target.name` | Minor (both work) |
 | Number of errors | 4 classes | 1 class | Expected (domain size) |
@@ -894,7 +894,7 @@ No critical issues found.
 
 **1. Standardize Name Assignment**
 ```typescript
-// Update Tasks base class to match Wikiroo
+// Update Tasks base class to match Context
 export abstract class TasksDomainError extends Error {
   constructor(...) {
     super(message);
@@ -915,13 +915,13 @@ export abstract class TasksDomainError extends Error {
 
 ### Medium Priority
 
-**3. Add JSDoc to Wikiroo Base Class**
+**3. Add JSDoc to Context Base Class**
 ```typescript
 /**
- * Base class for all Wikiroo domain errors
+ * Base class for all Context domain errors
  * Keeps HTTP concerns out of the domain layer
  */
-export abstract class WikirooDomainError extends Error {
+export abstract class ContextDomainError extends Error {
   // ...
 }
 ```
@@ -1014,7 +1014,7 @@ The domain error implementation demonstrates **best-in-class architecture** with
 - [ ] Add unit tests for domain error classes
 
 **Should Do:**
-- [ ] Add JSDoc to Wikiroo base class
+- [ ] Add JSDoc to Context base class
 - [ ] Document error catalog completeness test pattern
 
 **Nice to Have:**

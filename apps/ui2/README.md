@@ -134,8 +134,8 @@ The app supports being pinned as a home-screen shortcut on iOS:
 
 - `/` - Home page with navigation links and theme switcher
 - `/tasks` - Task management page (with placeholder data)
-- `/wikiroo` - Wiki page (placeholder)
-- `/mcp-registry` - MCP Registry page (placeholder)
+- `/context` - Context page (placeholder)
+- `/mcp-registry` - Tools page (placeholder)
 - `/agents` - Agents page (placeholder)
 - `/logout` - Logout page (placeholder)
 

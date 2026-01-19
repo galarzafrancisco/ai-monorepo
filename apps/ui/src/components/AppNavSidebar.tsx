@@ -37,14 +37,14 @@ export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
       icon: '📋',
     },
     {
-      name: 'Wikiroo',
-      path: '/wikiroo',
+      name: 'Context',
+      path: '/context',
       icon: '📚',
     },
     {
-      name: 'MCP Registry',
+      name: 'Tools',
       path: '/mcp-registry',
-      icon: '🔌',
+      icon: '🔧',
     },
   ];
 

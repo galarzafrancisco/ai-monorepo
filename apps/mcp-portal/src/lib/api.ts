@@ -16,6 +16,6 @@ export {
   McpRegistryService,
   AgentService,
   TaskService,
-  WikirooService,
+  ContextService,
   ChatService,
 } from 'shared';

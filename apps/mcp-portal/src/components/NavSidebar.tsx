@@ -50,9 +50,9 @@ export default function NavSidebar({ collapsed }: Props) {
           <CheckSquare size={16} />
           {!collapsed && <span>Tasks</span>}
         </NavLink>
-        <NavLink to="/wikiroo" className={linkCls}>
+        <NavLink to="/context" className={linkCls}>
           <BookOpen size={16} />
-          {!collapsed && <span>Wikiroo</span>}
+          {!collapsed && <span>Context</span>}
         </NavLink>
       </div>
 

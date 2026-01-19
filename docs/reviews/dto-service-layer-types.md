@@ -11,8 +11,8 @@ This review verifies that services use pure TypeScript types instead of class-ba
 ## Scope
 
 - `apps/backend/src/tasks/dto/service/tasks.service.types.ts`
-- `apps/backend/src/wikiroo/dto/service/wikiroo.service.types.ts`
-- Service layer usage in `tasks.service.ts` and `wikiroo.service.ts`
+- `apps/backend/src/context/dto/service/context.service.types.ts`
+- Service layer usage in `tasks.service.ts` and `context.service.ts`
 
 ## Review Criteria
 
@@ -93,9 +93,9 @@ export type ListTasksResult = { ... };      // ✅ Pure type
 
 ---
 
-### Wikiroo Service Types
+### Context Service Types
 
-**File:** `apps/backend/src/wikiroo/dto/service/wikiroo.service.types.ts`
+**File:** `apps/backend/src/context/dto/service/context.service.types.ts`
 
 **Status:** ✅ EXCELLENT
 
@@ -131,7 +131,7 @@ export interface PageSummaryResult { ... }   // ✅ Pure interface
 **Key Observations:**
 - Date fields use native `Date` type (lines 12-13, 20-21) - ✅ CORRECT
 - `PageSummaryResult` excludes `content` field for performance - ✅ GOOD DESIGN
-- No nullable fields needed in Wikiroo domain
+- No nullable fields needed in Context domain
 
 #### No Transport Coupling
 - ❌ NO decorators of any kind
@@ -174,9 +174,9 @@ import {
 
 ✅ **ALL methods use pure service types, NOT HTTP DTOs**
 
-#### Wikiroo Service
+#### Context Service
 
-From previous review of `wikiroo.service.ts`:
+From previous review of `context.service.ts`:
 
 **Imports (lines 5-9):**
 ```typescript
@@ -184,7 +184,7 @@ import {
   CreatePageInput,
   PageResult,
   PageSummaryResult,
-} from './dto/service/wikiroo.service.types';
+} from './dto/service/context.service.types';
 ```
 ✅ Only imports from service types file
 
@@ -296,7 +296,7 @@ export type CreateTaskInput = {
 
 ### Type vs Interface Usage
 - **Tasks:** Uses `type` keyword (lines 9, 16, 20, 25, 30, 35, 43, 57, 65)
-- **Wikiroo:** Uses `interface` keyword (lines 1, 7, 16)
+- **Context:** Uses `interface` keyword (lines 1, 7, 16)
 - **Analysis:** Both approaches are equivalent and acceptable for this use case
 
 **Recommendation:** For consistency, consider standardizing on one approach. However, this is a minor stylistic preference, not a functional issue.
@@ -356,7 +356,7 @@ export type TaskResult = {
 
 **Status:** ✅ PASSED
 
-The service layer type implementation in both Tasks and Wikiroo modules is **exemplary** and follows **best-in-class** practices.
+The service layer type implementation in both Tasks and Context modules is **exemplary** and follows **best-in-class** practices.
 
 **Key Achievements:**
 1. 100% pure TypeScript types (no classes)

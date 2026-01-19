@@ -10,7 +10,7 @@ import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 import cookieParser from 'cookie-parser';
 
-describe('MCP Registry (e2e)', () => {
+describe('Tools (e2e)', () => {
   let app: INestApplication;
   let authCookies: string;
 

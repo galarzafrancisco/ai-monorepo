@@ -35,7 +35,7 @@ export const ErrorCatalog: Record<
   },
   [ErrorCodes.PAGE_NOT_FOUND]: {
     status: 404,
-    title: 'Wiki page not found',
+    title: 'Context page not found',
     type: '/errors/wiki/page-not-found',
     retryable: false,
   },

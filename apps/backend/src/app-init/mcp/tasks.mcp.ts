@@ -10,7 +10,7 @@ export const createTasks: CreateServerInput = {
   providedId: 'Tasks',
   name: "Tasks",
   description: "Tasks",
-  url: `${config.issuerUrl}/api/v1/Tasks/tasks/mcp`,
+  url: `${config.issuerUrl}/api/v1/tasks/tasks/mcp`,
 }
 
 export const createTasksScopes: Scope[] = [

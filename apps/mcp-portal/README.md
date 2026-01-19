@@ -8,7 +8,7 @@ A modern web interface for managing Model Context Protocol (MCP) servers, agents
 - **MCP Catalog**: Browse and manage MCP servers with their capabilities
 - **Agents**: Create and manage AI agents with custom models and system prompts
 - **Tasks**: Kanban-style task board with status tracking, tags, and comments
-- **Wikiroo**: Knowledge base with markdown support for documentation pages
+- **Context**: Knowledge base with markdown support for documentation pages
 
 ## Getting Started
 
@@ -61,7 +61,7 @@ apps/mcp-portal/
 │   │   ├── Catalog.tsx  # MCP server catalog
 │   │   ├── Agents.tsx   # Agent management
 │   │   ├── Tasks.tsx # Task board
-│   │   └── Wikiroo.tsx  # Wiki pages
+│   │   └── Context.tsx  # Context pages
 │   └── Layouts/         # Page layouts
 ```
 
@@ -104,7 +104,7 @@ This builds the app and copies the production build to `apps/backend/dist/public
 - View task details with comments and tags
 - Visual tag indicators with custom colors
 
-### Wikiroo
+### Context
 - Create and edit wiki pages
 - Markdown support with GitHub Flavored Markdown
 - Tag organization

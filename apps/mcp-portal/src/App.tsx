@@ -10,7 +10,7 @@ import CatalogPage from "./pages/Catalog";
 import ServerDetailPage from "./pages/ServerDetail";
 import AgentsPage from "./pages/Agents";
 import TasksPage from "./pages/Tasks";
-import WikirooPage from "./pages/Wikiroo";
+import ContextPage from "./pages/Context";
 import "./App.css";
 
 export default function App() {
@@ -30,7 +30,7 @@ export default function App() {
               <Route path="/catalog/:id" element={<ServerDetailPage />} />
               <Route path="/agents" element={<AgentsPage />} />
               <Route path="/tasks" element={<TasksPage />} />
-              <Route path="/wikiroo" element={<WikirooPage />} />
+              <Route path="/context" element={<ContextPage />} />
             </Route>
           </Route>
 
