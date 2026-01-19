@@ -23,7 +23,6 @@ import { ActorService } from "src/identity-provider/actor.service";
 @Injectable()
 export class WebAuthService {
   private logger = new Logger(WebAuthService.name);
-  private WEB_TOKEN_DURATION_MINUTES: number = 60;
 
   constructor(
     private readonly identityProviderService: IdentityProviderService,
@@ -43,8 +42,9 @@ export class WebAuthService {
     // Validate user credentials (throws if user not found or credentials invalid)
     const { user, actor } = await this.identityProviderService.validateUser(email, password);
 
-    // Generate access token (60 min expiration)
-    const durationMinutes = this.WEB_TOKEN_DURATION_MINUTES;
+    // Generate access token using centralized config
+    const config = getConfig();
+    const durationMinutes = config.webAccessTokenDurationMinutes;
     const accessToken = await this.generateWebAccessToken(
       durationMinutes,
       actor,
@@ -137,9 +137,10 @@ export class WebAuthService {
     // Hash the token before storing
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
-    // Calculate expiration (1 day)
+    // Calculate expiration based on centralized config
+    const config = getConfig();
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 1);
+    expiresAt.setDate(expiresAt.getDate() + config.webRefreshTokenDurationDays);
 
     // Store in database
     const refreshToken = this.refreshTokenRepository.create({
@@ -208,8 +209,9 @@ export class WebAuthService {
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
 
+    const refreshConfig = getConfig();
     const newAccessToken = await this.generateWebAccessToken(
-      this.WEB_TOKEN_DURATION_MINUTES,
+      refreshConfig.webAccessTokenDurationMinutes,
       actor,
       user,
     );
@@ -220,7 +222,7 @@ export class WebAuthService {
     return {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
-      expiresIn: 600, // 10 minutes
+      expiresIn: refreshConfig.webAccessTokenDurationMinutes * 60, // Convert minutes to seconds
       actor,
       user,
     };

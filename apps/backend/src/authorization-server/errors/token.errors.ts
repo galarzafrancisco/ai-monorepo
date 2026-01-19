@@ -11,6 +11,9 @@ export const TokenErrorCodes = {
   REDIRECT_URI_MISMATCH: ErrorCodes.REDIRECT_URI_MISMATCH,
   MISSING_PKCE_PARAMETERS: ErrorCodes.MISSING_PKCE_PARAMETERS,
   INVALID_CODE_VERIFIER: ErrorCodes.INVALID_CODE_VERIFIER,
+  INVALID_REFRESH_TOKEN: ErrorCodes.INVALID_REFRESH_TOKEN,
+  REFRESH_TOKEN_EXPIRED: ErrorCodes.REFRESH_TOKEN_EXPIRED,
+  REFRESH_TOKEN_REVOKED: ErrorCodes.REFRESH_TOKEN_REVOKED,
 } as const;
 
 type TokenErrorCode =
@@ -111,6 +114,33 @@ export class InvalidCodeVerifierError extends TokenDomainError {
     super(
       'Invalid code_verifier.',
       TokenErrorCodes.INVALID_CODE_VERIFIER,
+    );
+  }
+}
+
+export class InvalidRefreshTokenError extends TokenDomainError {
+  constructor() {
+    super(
+      'Invalid refresh token.',
+      TokenErrorCodes.INVALID_REFRESH_TOKEN,
+    );
+  }
+}
+
+export class RefreshTokenExpiredError extends TokenDomainError {
+  constructor() {
+    super(
+      'Refresh token has expired.',
+      TokenErrorCodes.REFRESH_TOKEN_EXPIRED,
+    );
+  }
+}
+
+export class RefreshTokenRevokedError extends TokenDomainError {
+  constructor() {
+    super(
+      'Refresh token has been revoked.',
+      TokenErrorCodes.REFRESH_TOKEN_REVOKED,
     );
   }
 }
