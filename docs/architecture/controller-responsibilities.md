@@ -10,8 +10,8 @@ November 5, 2025
 
 ## Controllers Reviewed
 
-- `/apps/backend/src/taskeroo/taskeroo.controller.ts`
-- `/apps/backend/src/wikiroo/wikiroo.controller.ts`
+- `/apps/backend/src/tasks/tasks.controller.ts`
+- `/apps/backend/src/context/context.controller.ts`
 - `/apps/backend/src/app.controller.ts`
 
 ## Review Findings
@@ -20,8 +20,8 @@ November 5, 2025
 
 All controllers demonstrate excellent separation of concerns with proper delegation to service layers:
 
-#### 1. TaskerooController
-**Location**: `/apps/backend/src/taskeroo/taskeroo.controller.ts`
+#### 1. TasksController
+**Location**: `/apps/backend/src/tasks/tasks.controller.ts`
 
 **HTTP Concerns (Properly Handled)**:
 - Route definitions with proper HTTP methods (GET, POST, PATCH, DELETE)
@@ -31,7 +31,7 @@ All controllers demonstrate excellent separation of concerns with proper delegat
 - Parameter extraction from route, query, and body
 
 **Business Logic (Properly Delegated)**:
-- Task creation, updates, and deletion delegated to `TaskerooService`
+- Task creation, updates, and deletion delegated to `TasksService`
 - Status change validation delegated to service
 - Comment management delegated to service
 - Task assignment logic delegated to service
@@ -42,8 +42,8 @@ All controllers demonstrate excellent separation of concerns with proper delegat
 - Pagination calculation (`Math.ceil(result.total / result.limit)`) - minor calculation for response formatting
 - Data transformation via private mapping methods (`mapResultToResponse`, `mapCommentResultToResponse`)
 
-#### 2. WikirooController
-**Location**: `/apps/backend/src/wikiroo/wikiroo.controller.ts`
+#### 2. ContextController
+**Location**: `/apps/backend/src/context/context.controller.ts`
 
 **HTTP Concerns (Properly Handled)**:
 - RESTful route definitions
@@ -52,7 +52,7 @@ All controllers demonstrate excellent separation of concerns with proper delegat
 - Clear endpoint descriptions
 
 **Business Logic (Properly Delegated)**:
-- Page creation delegated to `WikirooService`
+- Page creation delegated to `ContextService`
 - Page retrieval delegated to service
 - List operations delegated to service
 
@@ -177,7 +177,7 @@ return {
 
 **Current Implementation**:
 ```typescript
-const result = await this.taskerooService.listTasks({
+const result = await this.tasksService.listTasks({
   assignee: query.assignee,
   sessionId: query.sessionId,
   page: query.page ?? 1,        // Default in controller

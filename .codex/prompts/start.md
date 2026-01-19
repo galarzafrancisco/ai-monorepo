@@ -7,7 +7,7 @@ argument-hint: [TASKS=<tasks>] [ROLE=<role>]
 You must extract from the user:
 - TASK(S) to complete:
   - user can just give you the task id
-  - user can give you a brief description, in which case you can use the `mcp.taskeroo.list_tasks` MCP tool to identify the ID of such task -- NEW! Now you can use the taskeroo MCP server for this! Try it out!
+  - user can give you a brief description, in which case you can use the `mcp.tasks.list_tasks` MCP tool to identify the ID of such task -- NEW! Now you can use the tasks MCP server for this! Try it out!
   - user can tell you a list of tasks
   - user can tell you to do all tasks with a certain condition
 - ROLE to use: if $ROLE is not supplied:

@@ -6,7 +6,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import './McpRegistry.css';
 
 export function McpRegistryDashboard() {
-  usePageTitle('MCP Registry');
+  usePageTitle('Tools');
 
   const { servers, isLoading, error, createServer } = useMcpRegistry();
   const navigate = useNavigate();
@@ -42,7 +42,7 @@ export function McpRegistryDashboard() {
     <div className="mcp-registry">
       <div className="mcp-registry-header">
         <div>
-          <h1>MCP Registry</h1>
+          <h1>Tools</h1>
           <p className="subtitle">Manage Model Context Protocol servers and their configurations</p>
         </div>
         <div className="header-actions">
@@ -135,7 +135,7 @@ export function McpRegistryDashboard() {
                   id="url"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  placeholder="e.g., http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+                  placeholder="e.g., http://localhost:3000/api/v1/tasks/tasks/mcp"
                 />
                 <small>URL that MCP clients will use to connect to this server</small>
               </div>

@@ -18,7 +18,7 @@ Entity (Database) → Service Result Type → Response DTO (HTTP)
 
 ### Mapping Flow
 
-#### Taskeroo Module Example
+#### Tasks Module Example
 
 ```typescript
 // 1. Service maps Entity → Service Result Type
@@ -54,11 +54,11 @@ private mapResultToResponse(result: TaskResult): TaskResponseDto {
 }
 ```
 
-#### Wikiroo Module Example
+#### Context Module Example
 
 ```typescript
 // 1. Service maps Entity → Service Result Type
-private mapToResult(page: WikiPageEntity): PageResult {
+private mapToResult(page: ContextPageEntity): PageResult {
   return {
     id: page.id,
     title: page.title,
@@ -200,10 +200,10 @@ If you find a controller that violates these patterns:
 ## Current Status
 
 ### ✅ Compliant Modules
-- `taskeroo` - Full three-layer separation with explicit mapping
-- `wikiroo` - Full three-layer separation with explicit mapping
+- `tasks` - Full three-layer separation with explicit mapping
+- `context` - Full three-layer separation with explicit mapping
 
-### 📝 Notes
+### 🧱 Notes
 - Both modules follow best practices consistently
 - No entity-to-DTO leakage detected
 - Intentional data hiding is properly implemented

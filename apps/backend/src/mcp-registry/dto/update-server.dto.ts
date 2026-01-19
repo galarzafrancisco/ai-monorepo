@@ -23,7 +23,7 @@ export class UpdateServerDto {
 
   @ApiProperty({
     description: 'URL that MCP Clients will use to connect to the server',
-    example: 'http://localhost:3000/api/v1/taskeroo/tasks/mcp',
+    example: 'http://localhost:3000/api/v1/tasks/tasks/mcp',
     required: false,
   })
   @IsOptional()

@@ -1,11 +1,11 @@
-# Wikiroo API Documentation
+# Context API Documentation
 
-This document describes the Wikiroo API endpoints, including recent additions for nested pages functionality.
+This document describes the Context API endpoints, including recent additions for nested pages functionality.
 
 ## Base URL
 
 ```
-http://localhost:3000/wikiroo
+http://localhost:3000/context
 ```
 
 ## Endpoints

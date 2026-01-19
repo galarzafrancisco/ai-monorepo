@@ -14,6 +14,6 @@ body="{
 }"
 
 # POST
-curl -s -X POST "http://localhost:9999/api/v1/taskeroo/tasks" \
+curl -s -X POST "http://localhost:9999/api/v1/tasks/tasks" \
      -H "Content-Type: application/json" \
      -d "$body" | jq .

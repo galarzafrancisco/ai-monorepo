@@ -1,6 +1,6 @@
 # Nested Pages User Guide
 
-Wikiroo supports organizing pages in a hierarchical structure using nested pages. This allows you to create parent-child relationships between pages for better organization.
+Context supports organizing pages in a hierarchical structure using nested pages. This allows you to create parent-child relationships between pages for better organization.
 
 ## Creating Nested Pages
 

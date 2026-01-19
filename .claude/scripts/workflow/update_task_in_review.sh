@@ -16,8 +16,8 @@ if [ -z "$TASK_ID" ] || [ -z "$ASSIGNEE" ] || [ -z "$PR_LINK" ]; then
 fi
 
 # Mark as FOR_REVIEW
-"$SCRIPT_DIR/../taskeroo/change_task_status.sh" "$TASK_ID" "FOR_REVIEW"
+"$SCRIPT_DIR/../tasks/change_task_status.sh" "$TASK_ID" "FOR_REVIEW"
 
 # Add comment
 COMMENT="Opened PR for review: $PR_LINK"
-"$SCRIPT_DIR/../taskeroo/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENT"
+"$SCRIPT_DIR/../tasks/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENT"

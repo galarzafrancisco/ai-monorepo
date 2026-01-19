@@ -291,10 +291,10 @@ Before merging UI work:
 
 ### 12.1 Two navigation layers, never mixed
 - The UI has two distinct navigation layers:
-  1) **App-level navigation**: switching between top-level apps (Taskeroo, Wikiroo, MCP Registry, Agents, Settings, Logout)
-  2) **In-app navigation**: navigation within a specific app (e.g., Task states in Taskeroo)
+  1) **App-level navigation**: switching between top-level apps (Tasks, Context, Tools, Agents, Settings, Logout)
+  2) **In-app navigation**: navigation within a specific app (e.g., Task states in Tasks)
 
-**Rule:** Never combine app-level and in-app destinations in the same navigation control (e.g., don’t put “Taskeroo” and “In Progress” in the same bottom tab bar).
+**Rule:** Never combine app-level and in-app destinations in the same navigation control (e.g., don’t put “Tasks” and “In Progress” in the same bottom tab bar).
 
 ### 12.2 Shell owns app-level navigation
 - App-level navigation belongs to the **shell** (global layout chrome):
@@ -304,8 +304,8 @@ Before merging UI work:
 
 ### 12.3 Features own in-app navigation
 - In-app navigation belongs to the **feature** (domain app):
-  - Taskeroo defines its own sections (Not started / In progress / Review / Done).
-  - Wikiroo defines its own structure (spaces/pages/search/etc.).
+  - Tasks defines its own sections (Not started / In progress / Review / Done).
+  - Context defines its own structure (spaces/pages/search/etc.).
 - The shell must not contain domain-specific in-app destinations.
 
 ### 12.4 Mobile: bottom tabs are reserved for in-app navigation

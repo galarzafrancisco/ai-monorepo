@@ -1,0 +1,11 @@
+.new-comment-pop__input-content {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  font-size: var(--fs-3);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+}
+.new-comment-pop__input-content:focus {
+  outline: none;
+}

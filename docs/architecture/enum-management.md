@@ -12,14 +12,14 @@ Enums are defined in dedicated `enums/` directories within each module, separate
 
 ```
 src/
-└── taskeroo/
+└── tasks/
     ├── enums/
     │   ├── task-status.enum.ts   # Enum definition
     │   └── index.ts               # Barrel export
     ├── task.entity.ts             # Imports from enums/
     ├── dto/
     │   └── *.dto.ts               # Imports from enums/
-    └── taskeroo.service.ts        # Imports from enums/
+    └── tasks.service.ts        # Imports from enums/
 ```
 
 ### Why Not in Entity Files?
@@ -102,10 +102,10 @@ export class TaskResponseDto {
 
 ## Current Enums
 
-### Taskeroo Module
+### Tasks Module
 
 #### TaskStatus
-**File**: [`apps/backend/src/taskeroo/enums/task-status.enum.ts`](../../apps/backend/src/taskeroo/enums/task-status.enum.ts)
+**File**: [`apps/backend/src/tasks/enums/task-status.enum.ts`](../../apps/backend/src/tasks/enums/task-status.enum.ts)
 
 Represents the lifecycle states of a task.
 
@@ -122,7 +122,7 @@ export enum TaskStatus {
 - `TaskEntity` - Database column type
 - `TaskResponseDto` - API response documentation
 - `TaskChangeStatusDto` - Input validation
-- `TaskerooService` - Business logic
+- `TasksService` - Business logic
 
 ## Best Practices
 
@@ -211,14 +211,14 @@ export enum TaskStatus {
 When enums need to be shared with the frontend, they can be exported through the shared package:
 
 ```typescript
-// apps/backend/src/taskeroo/enums/index.ts
+// apps/backend/src/tasks/enums/index.ts
 export { TaskStatus } from './task-status.enum';
 
-// packages/shared/src/enums/taskeroo.ts
-export { TaskStatus } from '../../../apps/backend/src/taskeroo/enums';
+// packages/shared/src/enums/tasks.ts
+export { TaskStatus } from '../../../apps/backend/src/tasks/enums';
 
 // Frontend can then import:
-import { TaskStatus } from 'shared/enums/taskeroo';
+import { TaskStatus } from 'shared/enums/tasks';
 ```
 
 **Note**: Currently, enums are available via OpenAPI-generated types in the shared package. Direct enum sharing can be implemented when needed.
@@ -322,9 +322,9 @@ When reviewing enum management:
 ## Status
 
 ### ✅ Compliant Modules
-- `taskeroo` - TaskStatus enum properly centralized
+- `tasks` - TaskStatus enum properly centralized
 
-### 📝 Future Enhancements
+### 🧱 Future Enhancements
 - Add more enums as domain needs them
 - Consider shared package export when frontend needs direct access
 - Evaluate enum validation at API boundary

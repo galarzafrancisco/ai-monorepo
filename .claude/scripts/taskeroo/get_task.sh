@@ -8,4 +8,4 @@ if [ -z "$TASK_ID" ]; then
 fi
 
 # List tasks and show name, id and status
-curl -s "http://localhost:9999/api/v1/taskeroo/tasks/$TASK_ID" | jq '.'
+curl -s "http://localhost:9999/api/v1/tasks/tasks/$TASK_ID" | jq '.'

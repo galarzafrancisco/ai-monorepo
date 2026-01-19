@@ -1,6 +1,6 @@
 # Slash Commands User Guide
 
-Wikiroo's rich text editor supports slash commands for quick markdown formatting. Simply type `/` to bring up the command menu and select a formatting option.
+Context's rich text editor supports slash commands for quick markdown formatting. Simply type `/` to bring up the command menu and select a formatting option.
 
 ## How to Use Slash Commands
 

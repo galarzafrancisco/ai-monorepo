@@ -1,5 +1,5 @@
 /**
- * Service-layer types for MCP Registry domain logic.
+ * Service-layer types for Tools domain logic.
  * These are transport-agnostic and avoid framework-specific decorators.
  */
 

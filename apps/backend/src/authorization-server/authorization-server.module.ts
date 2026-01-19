@@ -8,6 +8,7 @@ import { TokenService } from './token.service';
 import { TokenExchangeService } from './token-exchange.service';
 import { RegisteredClientEntity } from './entities/registered-client.entity';
 import { RefreshTokenEntity } from './entities/refresh-token.entity';
+import { McpRefreshTokenEntity } from './entities/mcp-refresh-token.entity';
 import { WebAuthController } from './web-auth.controller';
 import { AuthJourneysModule } from '../auth-journeys/auth-journeys.module';
 import { McpRegistryModule } from '../mcp-registry/mcp-registry.module';
@@ -24,6 +25,7 @@ import { WebAuthService } from './web-auth.service';
     TypeOrmModule.forFeature([
       RegisteredClientEntity,
       RefreshTokenEntity,
+      McpRefreshTokenEntity,
       McpConnectionEntity,
       McpScopeMappingEntity,
       ConnectionAuthorizationFlowEntity,

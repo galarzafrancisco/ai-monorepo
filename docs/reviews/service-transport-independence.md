@@ -10,8 +10,8 @@ This review evaluates the service layer for transport independence, ensuring ser
 
 ## Scope
 
-- `apps/backend/src/taskeroo/taskeroo.service.ts`
-- `apps/backend/src/wikiroo/wikiroo.service.ts`
+- `apps/backend/src/tasks/tasks.service.ts`
+- `apps/backend/src/context/context.service.ts`
 
 ## Review Criteria
 
@@ -22,12 +22,12 @@ This review evaluates the service layer for transport independence, ensuring ser
 
 ## Findings
 
-### TaskerooService (`taskeroo.service.ts`)
+### TasksService (`tasks.service.ts`)
 
 **Status:** ✅ COMPLIANT
 
 #### Type System
-- **Input Types** (lines 8-16): Uses pure service types from `dto/service/taskeroo.service.types`
+- **Input Types** (lines 8-16): Uses pure service types from `dto/service/tasks.service.types`
   - `CreateTaskInput`, `UpdateTaskInput`, `AssignTaskInput`, `ChangeStatusInput`, `CreateCommentInput`, `ListTasksInput`
 - **Output Types** (lines 14-17): Returns pure domain types
   - `TaskResult`, `CommentResult`, `ListTasksResult`
@@ -64,18 +64,18 @@ This review evaluates the service layer for transport independence, ensuring ser
 - Both mappers work with pure domain types
 
 #### Gateway Integration
-- Uses `TaskerooGateway` for WebSocket events (line 34)
+- Uses `TasksGateway` for WebSocket events (line 34)
 - Gateway usage is appropriate for service layer
 - Events: `emitTaskCreated`, `emitTaskUpdated`, `emitTaskAssigned`, `emitTaskDeleted`, `emitCommentAdded`, `emitStatusChanged`
 
 ---
 
-### WikirooService (`wikiroo.service.ts`)
+### ContextService (`context.service.ts`)
 
 **Status:** ✅ COMPLIANT
 
 #### Type System
-- **Input Types** (lines 6-7): Uses pure service types from `dto/service/wikiroo.service.types`
+- **Input Types** (lines 6-7): Uses pure service types from `dto/service/context.service.types`
   - `CreatePageInput`
 - **Output Types** (lines 7-9): Returns pure domain types
   - `PageResult`, `PageSummaryResult`
@@ -100,8 +100,8 @@ This review evaluates the service layer for transport independence, ensuring ser
 | `getPageById` (61) | `string` | `Promise<PageResult>` | `PageNotFoundError` | ✅ |
 
 #### Private Mappers
-- `mapToResult` (73): Maps `WikiPageEntity` → `PageResult`
-- `mapToSummary` (84): Maps partial `WikiPageEntity` → `PageSummaryResult`
+- `mapToResult` (73): Maps `ContextPageEntity` → `PageResult`
+- `mapToSummary` (84): Maps partial `ContextPageEntity` → `PageSummaryResult`
 - Both mappers work with pure domain types
 - Good use of TypeScript's `Pick` utility type for type safety in `mapToSummary`
 
@@ -134,4 +134,4 @@ Both services demonstrate excellent transport independence:
 
 ✅ **REVIEW PASSED**
 
-Both `taskeroo.service.ts` and `wikiroo.service.ts` are fully transport-independent and follow all architectural best practices. They can be easily reused with different transport layers (HTTP, GraphQL, gRPC, CLI) without modification.
+Both `tasks.service.ts` and `context.service.ts` are fully transport-independent and follow all architectural best practices. They can be easily reused with different transport layers (HTTP, GraphQL, gRPC, CLI) without modification.

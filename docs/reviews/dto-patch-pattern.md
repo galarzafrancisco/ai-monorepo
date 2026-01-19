@@ -10,8 +10,8 @@ This review analyzes the PATCH DTO implementation pattern, specifically examinin
 
 ## Scope
 
-- `apps/backend/src/taskeroo/dto/update-task.dto.ts`
-- `apps/backend/src/taskeroo/dto/create-task.dto.ts`
+- `apps/backend/src/tasks/dto/update-task.dto.ts`
+- `apps/backend/src/tasks/dto/create-task.dto.ts`
 - Related PATCH endpoints and business logic
 
 ## Review Question
@@ -68,7 +68,7 @@ This would have allowed updating all fields: `name`, `description`, `assignee`, 
 
 #### 1. Separation of Concerns
 
-The Taskeroo module has **specialized endpoints** for different update operations:
+The Tasks module has **specialized endpoints** for different update operations:
 
 | Endpoint | DTO | Purpose | Fields Updated |
 |----------|-----|---------|----------------|
@@ -145,7 +145,7 @@ This pattern is common in well-designed REST APIs:
 
 ### 5. Code Review Evidence
 
-**Service Layer (taskeroo.service.ts):**
+**Service Layer (tasks.service.ts):**
 
 ```typescript
 // Line 75-100: updateTask() only updates description
@@ -176,7 +176,7 @@ async changeStatus(taskId: string, input: ChangeStatusInput): Promise<TaskResult
 }
 ```
 
-**Controller Layer (taskeroo.controller.ts):**
+**Controller Layer (tasks.controller.ts):**
 
 Each endpoint has:
 - Different HTTP paths (lines 57, 75, 156)
@@ -244,43 +244,43 @@ Use `PartialType(CreateDto)` pattern when:
 export class UpdateBlogPostDto extends PartialType(CreateBlogPostDto) {}
 ```
 
-**Current Taskeroo does NOT fit these criteria** - it has:
+**Current Tasks does NOT fit these criteria** - it has:
 - ❌ Complex business rules (status transitions)
 - ❌ Different authorization per field
 - ❌ Side effects (WebSocket events, notifications)
 - ❌ Sub-resources (assign, status, comments)
 
-## Wikiroo Module Analysis
+## Context Module Analysis
 
-Let's verify Wikiroo doesn't have PATCH operations that should be reviewed:
+Let's verify Context doesn't have PATCH operations that should be reviewed:
 
-**Wikiroo Endpoints (wikiroo.controller.ts):**
+**Context Endpoints (context.controller.ts):**
 - `POST /pages` - Create page
 - `GET /pages` - List pages
 - `GET /pages/:id` - Get page
 
-**Observation:** Wikiroo has **NO update operations** at all.
+**Observation:** Context has **NO update operations** at all.
 
-**Conclusion:** No PATCH DTO pattern to review in Wikiroo.
+**Conclusion:** No PATCH DTO pattern to review in Context.
 
 ## Additional Evidence: OpenAPI Documentation
 
 The specialized endpoints result in **clear OpenAPI documentation**:
 
 ```yaml
-/taskeroo/tasks/{id}:
+/tasks/tasks/{id}:
   patch:
     summary: "Update task description"  # Clear purpose
     requestBody:
       description  # Only this field documented
 
-/taskeroo/tasks/{id}/assign:
+/tasks/tasks/{id}/assign:
   patch:
     summary: "Assign a task to someone"  # Clear purpose
     requestBody:
       assignee, sessionId  # Only these fields documented
 
-/taskeroo/tasks/{id}/status:
+/tasks/tasks/{id}/status:
   patch:
     summary: "Change task status"  # Clear purpose
     requestBody:
@@ -291,7 +291,7 @@ With `PartialType`, documentation would show all fields but only some would work
 
 ```yaml
 # ❌ BAD: Unclear documentation
-/taskeroo/tasks/{id}:
+/tasks/tasks/{id}:
   patch:
     summary: "Update task"  # Vague
     requestBody:

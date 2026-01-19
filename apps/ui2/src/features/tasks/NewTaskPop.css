@@ -1,0 +1,23 @@
+.new-task-pop__input-title {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  font-size: var(--fs-4);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+}
+.new-task-pop__input-title:focus {
+  outline: none;
+}
+
+.new-task-pop__input-description {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  font-size: var(--fs-3);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+}
+.new-task-pop__input-description:focus {
+  outline: none;
+}

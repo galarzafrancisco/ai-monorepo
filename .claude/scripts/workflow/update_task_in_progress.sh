@@ -16,12 +16,12 @@ if [ -z "$TASK_ID" ] || [ -z "$ASSIGNEE" ] || [ -z "$SESSION_ID" ]; then
 fi
 
 # Assign task to self
-"$SCRIPT_DIR/../taskeroo/assign_task.sh" "$TASK_ID" "$ASSIGNEE" "$SESSION_ID"
+"$SCRIPT_DIR/../tasks/assign_task.sh" "$TASK_ID" "$ASSIGNEE" "$SESSION_ID"
 
 # Mark as IN_PROGRESS
-"$SCRIPT_DIR/../taskeroo/change_task_status.sh" "$TASK_ID" "IN_PROGRESS"
+"$SCRIPT_DIR/../tasks/change_task_status.sh" "$TASK_ID" "IN_PROGRESS"
 
 # Add comment
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 COMMENT="Starting to work on this. I've created the branch $BRANCH"
-"$SCRIPT_DIR/../taskeroo/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENT"
+"$SCRIPT_DIR/../tasks/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENT"

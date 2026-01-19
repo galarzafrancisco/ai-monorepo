@@ -21,7 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks": {
+    "/api/v1/tasks/tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -29,17 +29,17 @@ export interface paths {
             cookie?: never;
         };
         /** List tasks with optional filtering and pagination */
-        get: operations["TaskerooController_listTasks"];
+        get: operations["TasksController_listTasks"];
         put?: never;
         /** Create a new task */
-        post: operations["TaskerooController_createTask"];
+        post: operations["TasksController_createTask"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}": {
+    "/api/v1/tasks/tasks/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -47,18 +47,18 @@ export interface paths {
             cookie?: never;
         };
         /** Get a task by ID */
-        get: operations["TaskerooController_getTask"];
+        get: operations["TasksController_getTask"];
         put?: never;
         post?: never;
         /** Delete a task */
-        delete: operations["TaskerooController_deleteTask"];
+        delete: operations["TasksController_deleteTask"];
         options?: never;
         head?: never;
         /** Update task description */
-        patch: operations["TaskerooController_updateTask"];
+        patch: operations["TasksController_updateTask"];
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/assign": {
+    "/api/v1/tasks/tasks/{id}/assign": {
         parameters: {
             query?: never;
             header?: never;
@@ -72,10 +72,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Assign a task to someone */
-        patch: operations["TaskerooController_assignTask"];
+        patch: operations["TasksController_assignTask"];
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/comments": {
+    "/api/v1/tasks/tasks/{id}/comments": {
         parameters: {
             query?: never;
             header?: never;
@@ -85,14 +85,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add a comment to a task */
-        post: operations["TaskerooController_addComment"];
+        post: operations["TasksController_addComment"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/status": {
+    "/api/v1/tasks/tasks/{id}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -106,10 +106,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Change task status */
-        patch: operations["TaskerooController_changeStatus"];
+        patch: operations["TasksController_changeStatus"];
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/tags": {
+    "/api/v1/tasks/tasks/{id}/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -119,14 +119,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add a tag to a task */
-        post: operations["TaskerooController_addTagToTask"];
+        post: operations["TasksController_addTagToTask"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/tags/{tagId}": {
+    "/api/v1/tasks/tasks/{id}/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -137,13 +137,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** Remove a tag from a task */
-        delete: operations["TaskerooController_removeTagFromTask"];
+        delete: operations["TasksController_removeTagFromTask"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/tags": {
+    "/api/v1/tasks/tasks/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -153,14 +153,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create a new tag */
-        post: operations["TaskerooController_createTag"];
+        post: operations["TasksController_createTag"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/tags/all": {
+    "/api/v1/tasks/tasks/tags/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -168,7 +168,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get all tags */
-        get: operations["TaskerooController_getAllTags"];
+        get: operations["TasksController_getAllTags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -177,7 +177,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/tags/{tagId}": {
+    "/api/v1/tasks/tasks/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -188,26 +188,26 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete a tag from the system */
-        delete: operations["TaskerooController_deleteTag"];
+        delete: operations["TasksController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/mcp": {
+    "/api/v1/tasks/tasks/mcp": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["TaskerooController_handleMcp_get"];
-        put: operations["TaskerooController_handleMcp_put"];
-        post: operations["TaskerooController_handleMcp_post"];
-        delete: operations["TaskerooController_handleMcp_delete"];
-        options: operations["TaskerooController_handleMcp_options"];
-        head: operations["TaskerooController_handleMcp_head"];
-        patch: operations["TaskerooController_handleMcp_patch"];
+        get: operations["TasksController_handleMcp_get"];
+        put: operations["TasksController_handleMcp_put"];
+        post: operations["TasksController_handleMcp_post"];
+        delete: operations["TasksController_handleMcp_delete"];
+        options: operations["TasksController_handleMcp_options"];
+        head: operations["TasksController_handleMcp_head"];
+        patch: operations["TasksController_handleMcp_patch"];
         trace?: never;
     };
     "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
@@ -677,7 +677,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages": {
+    "/api/v1/context/blocks": {
         parameters: {
             query?: never;
             header?: never;
@@ -685,17 +685,17 @@ export interface paths {
             cookie?: never;
         };
         /** List wiki pages without content */
-        get: operations["WikirooController_listPages"];
+        get: operations["ContextController_listPages"];
         put?: never;
         /** Create a new wiki page */
-        post: operations["WikirooController_createPage"];
+        post: operations["ContextController_createPage"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tree": {
+    "/api/v1/context/blocks/tree": {
         parameters: {
             query?: never;
             header?: never;
@@ -703,7 +703,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get page hierarchy tree */
-        get: operations["WikirooController_getPageTree"];
+        get: operations["ContextController_getPageTree"];
         put?: never;
         post?: never;
         delete?: never;
@@ -712,7 +712,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}": {
+    "/api/v1/context/blocks/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -720,18 +720,18 @@ export interface paths {
             cookie?: never;
         };
         /** Fetch a wiki page by ID */
-        get: operations["WikirooController_getPage"];
+        get: operations["ContextController_getPage"];
         put?: never;
         post?: never;
         /** Delete a wiki page */
-        delete: operations["WikirooController_deletePage"];
+        delete: operations["ContextController_deletePage"];
         options?: never;
         head?: never;
         /** Update an existing wiki page */
-        patch: operations["WikirooController_updatePage"];
+        patch: operations["ContextController_updatePage"];
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/append": {
+    "/api/v1/context/blocks/{id}/append": {
         parameters: {
             query?: never;
             header?: never;
@@ -741,14 +741,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Append content to an existing wiki page */
-        post: operations["WikirooController_appendToPage"];
+        post: operations["ContextController_appendToPage"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/reorder": {
+    "/api/v1/context/blocks/{id}/reorder": {
         parameters: {
             query?: never;
             header?: never;
@@ -762,10 +762,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Reorder a page within siblings */
-        patch: operations["WikirooController_reorderPage"];
+        patch: operations["ContextController_reorderPage"];
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/move": {
+    "/api/v1/context/blocks/{id}/move": {
         parameters: {
             query?: never;
             header?: never;
@@ -779,10 +779,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Move page to different parent */
-        patch: operations["WikirooController_movePage"];
+        patch: operations["ContextController_movePage"];
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/tags": {
+    "/api/v1/context/blocks/{id}/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -792,14 +792,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add a tag to a wiki page */
-        post: operations["WikirooController_addTagToPage"];
+        post: operations["ContextController_addTagToPage"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/{id}/tags/{tagId}": {
+    "/api/v1/context/blocks/{id}/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -810,13 +810,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** Remove a tag from a wiki page */
-        delete: operations["WikirooController_removeTagFromPage"];
+        delete: operations["ContextController_removeTagFromPage"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tags": {
+    "/api/v1/context/blocks/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -826,14 +826,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create a new tag */
-        post: operations["WikirooController_createTag"];
+        post: operations["ContextController_createTag"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tags/all": {
+    "/api/v1/context/blocks/tags/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -841,7 +841,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get all tags */
-        get: operations["WikirooController_getAllTags"];
+        get: operations["ContextController_getAllTags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -850,7 +850,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/tags/{tagId}": {
+    "/api/v1/context/blocks/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -861,26 +861,26 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete a tag from the system */
-        delete: operations["WikirooController_deleteTag"];
+        delete: operations["ContextController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/wikiroo/pages/mcp": {
+    "/api/v1/context/blocks/mcp": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["WikirooController_handleMcp_get"];
-        put: operations["WikirooController_handleMcp_put"];
-        post: operations["WikirooController_handleMcp_post"];
-        delete: operations["WikirooController_handleMcp_delete"];
-        options: operations["WikirooController_handleMcp_options"];
-        head: operations["WikirooController_handleMcp_head"];
-        patch: operations["WikirooController_handleMcp_patch"];
+        get: operations["ContextController_handleMcp_get"];
+        put: operations["ContextController_handleMcp_put"];
+        post: operations["ContextController_handleMcp_post"];
+        delete: operations["ContextController_handleMcp_delete"];
+        options: operations["ContextController_handleMcp_options"];
+        head: operations["ContextController_handleMcp_head"];
+        patch: operations["ContextController_handleMcp_patch"];
         trace?: never;
     };
     "/.well-known/oauth-authorization-server/mcp/issuer": {
@@ -1414,12 +1414,12 @@ export interface components {
         FlowServerDto: {
             /**
              * @description Server identifier used in API paths
-             * @example taskeroo
+             * @example tasks
              */
             providedId: string;
             /**
              * @description Human-readable name of the MCP server
-             * @example Taskeroo
+             * @example Tasks
              */
             name: string;
             /**
@@ -1602,7 +1602,7 @@ export interface components {
             aud: string | string[];
             /**
              * @description Issuer that minted the token
-             * @example https://auth.taskeroo.local/auth
+             * @example https://auth.tasks.local/auth
              */
             iss: Record<string, never>;
             /**
@@ -1627,7 +1627,7 @@ export interface components {
             scope?: string;
             /**
              * @description MCP server identifier the token is scoped to
-             * @example taskeroo
+             * @example tasks
              */
             mcp_server_identifier: Record<string, never>;
             /**
@@ -1887,7 +1887,7 @@ export interface components {
             description: string;
             /**
              * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
         };
@@ -1914,7 +1914,7 @@ export interface components {
             description: string;
             /**
              * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
             /**
@@ -1960,7 +1960,7 @@ export interface components {
             description?: string;
             /**
              * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
         };
@@ -2255,7 +2255,7 @@ export interface components {
             title: string;
             /**
              * @description Markdown content of the page
-             * @example # Welcome to Wikiroo
+             * @example # Welcome to Context
              *     This is the onboarding guide.
              */
             content: string;
@@ -2273,7 +2273,7 @@ export interface components {
              */
             parentId?: string;
         };
-        WikiTagResponseDto: {
+        ContextTagResponseDto: {
             /**
              * @description Name of the tag
              * @example project-alpha
@@ -2298,7 +2298,7 @@ export interface components {
             title: string;
             /**
              * @description Markdown content of the wiki page
-             * @example # Welcome to Wikiroo
+             * @example # Welcome to Context
              */
             content: string;
             /**
@@ -2319,7 +2319,7 @@ export interface components {
              *       }
              *     ]
              */
-            tags: components["schemas"]["WikiTagResponseDto"][];
+            tags: components["schemas"]["ContextTagResponseDto"][];
             /**
              * @description Parent page ID (null if root page)
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -2370,7 +2370,7 @@ export interface components {
              *       }
              *     ]
              */
-            tags: components["schemas"]["WikiTagResponseDto"][];
+            tags: components["schemas"]["ContextTagResponseDto"][];
             /**
              * @description Parent page ID (null if root page)
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -2494,7 +2494,7 @@ export interface components {
              */
             newParentId: Record<string, never> | null;
         };
-        AddWikiTagDto: {
+        AddContextTagDto: {
             /**
              * @description Name of the tag
              * @example project-alpha
@@ -2506,7 +2506,7 @@ export interface components {
              */
             color?: string;
         };
-        CreateWikiTagDto: {
+        CreateContextTagDto: {
             /**
              * @description Name of the tag
              * @example project-alpha
@@ -2615,9 +2615,9 @@ export interface components {
             /**
              * @description List of tool identifiers this agent is allowed to use
              * @example [
-             *       "taskeroo.createTask",
-             *       "taskeroo.readTask",
-             *       "wikiroo.search"
+             *       "tasks.createTask",
+             *       "tasks.readTask",
+             *       "context.search"
              *     ]
              */
             allowedTools: string[];
@@ -2676,9 +2676,9 @@ export interface components {
             /**
              * @description List of tool identifiers this agent is allowed to use
              * @example [
-             *       "taskeroo.createTask",
-             *       "taskeroo.readTask",
-             *       "wikiroo.search"
+             *       "tasks.createTask",
+             *       "tasks.readTask",
+             *       "context.search"
              *     ]
              */
             allowedTools: string[];
@@ -2766,7 +2766,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_listTasks: {
+    TasksController_listTasks: {
         parameters: {
             query?: {
                 /** @description Filter tasks by assignee name */
@@ -2797,7 +2797,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_createTask: {
+    TasksController_createTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2828,7 +2828,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_getTask: {
+    TasksController_getTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2858,7 +2858,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_deleteTask: {
+    TasksController_deleteTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2886,7 +2886,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_updateTask: {
+    TasksController_updateTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2927,7 +2927,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_assignTask: {
+    TasksController_assignTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2968,7 +2968,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_addComment: {
+    TasksController_addComment: {
         parameters: {
             query?: never;
             header?: never;
@@ -3009,7 +3009,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_changeStatus: {
+    TasksController_changeStatus: {
         parameters: {
             query?: never;
             header?: never;
@@ -3050,7 +3050,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_addTagToTask: {
+    TasksController_addTagToTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -3091,7 +3091,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_removeTagFromTask: {
+    TasksController_removeTagFromTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -3121,7 +3121,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_createTag: {
+    TasksController_createTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -3152,7 +3152,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_getAllTags: {
+    TasksController_getAllTags: {
         parameters: {
             query?: never;
             header?: never;
@@ -3172,7 +3172,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_deleteTag: {
+    TasksController_deleteTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -3199,7 +3199,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_get: {
+    TasksController_handleMcp_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3216,7 +3216,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_put: {
+    TasksController_handleMcp_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -3233,7 +3233,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_post: {
+    TasksController_handleMcp_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3250,7 +3250,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_delete: {
+    TasksController_handleMcp_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -3267,7 +3267,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_options: {
+    TasksController_handleMcp_options: {
         parameters: {
             query?: never;
             header?: never;
@@ -3284,7 +3284,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_head: {
+    TasksController_handleMcp_head: {
         parameters: {
             query?: never;
             header?: never;
@@ -3301,7 +3301,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_patch: {
+    TasksController_handleMcp_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -4467,7 +4467,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_listPages: {
+    ContextController_listPages: {
         parameters: {
             query?: {
                 /** @description Filter pages by tag name */
@@ -4490,7 +4490,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_createPage: {
+    ContextController_createPage: {
         parameters: {
             query?: never;
             header?: never;
@@ -4503,7 +4503,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Wiki page created successfully */
+            /** @description Context page created successfully */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -4521,7 +4521,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_getPageTree: {
+    ContextController_getPageTree: {
         parameters: {
             query?: never;
             header?: never;
@@ -4541,19 +4541,19 @@ export interface operations {
             };
         };
     };
-    WikirooController_getPage: {
+    ContextController_getPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Wiki page retrieved successfully */
+            /** @description Context page retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4564,19 +4564,19 @@ export interface operations {
             };
         };
     };
-    WikirooController_deletePage: {
+    ContextController_deletePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Wiki page deleted successfully */
+            /** @description Context page deleted successfully */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -4585,12 +4585,12 @@ export interface operations {
             };
         };
     };
-    WikirooController_updatePage: {
+    ContextController_updatePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
@@ -4601,7 +4601,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Wiki page updated successfully */
+            /** @description Context page updated successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4619,12 +4619,12 @@ export interface operations {
             };
         };
     };
-    WikirooController_appendToPage: {
+    ContextController_appendToPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
@@ -4635,7 +4635,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Wiki page content appended successfully */
+            /** @description Context page content appended successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4646,12 +4646,12 @@ export interface operations {
             };
         };
     };
-    WikirooController_reorderPage: {
+    ContextController_reorderPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
@@ -4673,12 +4673,12 @@ export interface operations {
             };
         };
     };
-    WikirooController_movePage: {
+    ContextController_movePage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
@@ -4707,19 +4707,19 @@ export interface operations {
             };
         };
     };
-    WikirooController_addTagToPage: {
+    ContextController_addTagToPage: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Wiki page identifier */
+                /** @description Context page identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AddWikiTagDto"];
+                "application/json": components["schemas"]["AddContextTagDto"];
             };
         };
         responses: {
@@ -4741,7 +4741,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_removeTagFromPage: {
+    ContextController_removeTagFromPage: {
         parameters: {
             query?: never;
             header?: never;
@@ -4764,7 +4764,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_createTag: {
+    ContextController_createTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -4773,7 +4773,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateWikiTagDto"];
+                "application/json": components["schemas"]["CreateContextTagDto"];
             };
         };
         responses: {
@@ -4783,7 +4783,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"];
+                    "application/json": components["schemas"]["ContextTagResponseDto"];
                 };
             };
             /** @description Invalid input data */
@@ -4795,7 +4795,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_getAllTags: {
+    ContextController_getAllTags: {
         parameters: {
             query?: never;
             header?: never;
@@ -4810,12 +4810,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WikiTagResponseDto"][];
+                    "application/json": components["schemas"]["ContextTagResponseDto"][];
                 };
             };
         };
     };
-    WikirooController_deleteTag: {
+    ContextController_deleteTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -4835,7 +4835,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_get: {
+    ContextController_handleMcp_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4852,7 +4852,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_put: {
+    ContextController_handleMcp_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -4869,7 +4869,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_post: {
+    ContextController_handleMcp_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4886,7 +4886,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_delete: {
+    ContextController_handleMcp_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -4903,7 +4903,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_options: {
+    ContextController_handleMcp_options: {
         parameters: {
             query?: never;
             header?: never;
@@ -4920,7 +4920,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_head: {
+    ContextController_handleMcp_head: {
         parameters: {
             query?: never;
             header?: never;
@@ -4937,7 +4937,7 @@ export interface operations {
             };
         };
     };
-    WikirooController_handleMcp_patch: {
+    ContextController_handleMcp_patch: {
         parameters: {
             query?: never;
             header?: never;

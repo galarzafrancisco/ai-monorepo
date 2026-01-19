@@ -1,6 +1,6 @@
 import { CreateAgentInput } from "src/agents/dto/service/agents.service.types";
 import { AgentType } from "src/agents/enums";
-import { TaskStatus } from "src/taskeroo/enums";
+import { TaskStatus } from "src/tasks/enums";
 
 export const createClaudeDev: CreateAgentInput = {
   slug: 'claude-dev',

@@ -2,8 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from 'react-router-dom';
 import "./IosShell.css";
 import { Row, Text } from "../../ui/primitives";
-import { useTheme } from "../providers";
-import { InAppNavItem } from "src/shared/navigation";
+import { NavegationItem } from "../../shared/types/NavegationItem";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 
 export interface NavItem {
@@ -16,10 +15,10 @@ export interface IosShellProps {
   appTitle: string;
   sectionTitle: string;
   children: ReactNode;
-  navItems: InAppNavItem[];
+  navItems: NavegationItem[];
 }
 
-function BottomNavContent({ navItems }: { navItems: InAppNavItem[] }): JSX.Element {
+function BottomNavContent({ navItems }: { navItems: NavegationItem[] }): JSX.Element {
   console.log('Rendering BottomNavContent with navItems:', navItems);
   if (navItems.length === 0) {
     return <></>;

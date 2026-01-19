@@ -23,12 +23,12 @@ export class TaskService {
      * @returns TaskResponseDto Task created successfully
      * @throws ApiError
      */
-    public static taskerooControllerCreateTask(
+    public static tasksControllerCreateTask(
         requestBody: CreateTaskDto,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/taskeroo/tasks',
+            url: '/api/v1/tasks/tasks',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -46,7 +46,7 @@ export class TaskService {
      * @returns TaskListResponseDto Paginated list of tasks
      * @throws ApiError
      */
-    public static taskerooControllerListTasks(
+    public static tasksControllerListTasks(
         assignee?: string,
         sessionId?: string,
         tag?: string,
@@ -55,7 +55,7 @@ export class TaskService {
     ): CancelablePromise<TaskListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/taskeroo/tasks',
+            url: '/api/v1/tasks/tasks',
             query: {
                 'assignee': assignee,
                 'sessionId': sessionId,
@@ -72,13 +72,13 @@ export class TaskService {
      * @returns TaskResponseDto Task updated successfully
      * @throws ApiError
      */
-    public static taskerooControllerUpdateTask(
+    public static tasksControllerUpdateTask(
         id: string,
         requestBody: UpdateTaskDto,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/taskeroo/tasks/{id}',
+            url: '/api/v1/tasks/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -96,12 +96,12 @@ export class TaskService {
      * @returns void
      * @throws ApiError
      */
-    public static taskerooControllerDeleteTask(
+    public static tasksControllerDeleteTask(
         id: string,
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/taskeroo/tasks/{id}',
+            url: '/api/v1/tasks/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -116,12 +116,12 @@ export class TaskService {
      * @returns TaskResponseDto Task found
      * @throws ApiError
      */
-    public static taskerooControllerGetTask(
+    public static tasksControllerGetTask(
         id: string,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/taskeroo/tasks/{id}',
+            url: '/api/v1/tasks/tasks/{id}',
             path: {
                 'id': id,
             },
@@ -137,13 +137,13 @@ export class TaskService {
      * @returns TaskResponseDto Task assigned successfully
      * @throws ApiError
      */
-    public static taskerooControllerAssignTask(
+    public static tasksControllerAssignTask(
         id: string,
         requestBody: AssignTaskDto,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/taskeroo/tasks/{id}/assign',
+            url: '/api/v1/tasks/tasks/{id}/assign',
             path: {
                 'id': id,
             },
@@ -162,13 +162,13 @@ export class TaskService {
      * @returns CommentResponseDto Comment added successfully
      * @throws ApiError
      */
-    public static taskerooControllerAddComment(
+    public static tasksControllerAddComment(
         id: string,
         requestBody: CreateCommentDto,
     ): CancelablePromise<CommentResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/taskeroo/tasks/{id}/comments',
+            url: '/api/v1/tasks/tasks/{id}/comments',
             path: {
                 'id': id,
             },
@@ -187,13 +187,13 @@ export class TaskService {
      * @returns TaskResponseDto Status changed successfully
      * @throws ApiError
      */
-    public static taskerooControllerChangeStatus(
+    public static tasksControllerChangeStatus(
         id: string,
         requestBody: ChangeTaskStatusDto,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/taskeroo/tasks/{id}/status',
+            url: '/api/v1/tasks/tasks/{id}/status',
             path: {
                 'id': id,
             },
@@ -212,13 +212,13 @@ export class TaskService {
      * @returns TaskResponseDto Tag added to task successfully
      * @throws ApiError
      */
-    public static taskerooControllerAddTagToTask(
+    public static tasksControllerAddTagToTask(
         id: string,
         requestBody: AddTagDto,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/taskeroo/tasks/{id}/tags',
+            url: '/api/v1/tasks/tasks/{id}/tags',
             path: {
                 'id': id,
             },
@@ -237,13 +237,13 @@ export class TaskService {
      * @returns TaskResponseDto Tag removed from task successfully
      * @throws ApiError
      */
-    public static taskerooControllerRemoveTagFromTask(
+    public static tasksControllerRemoveTagFromTask(
         id: string,
         tagId: string,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/taskeroo/tasks/{id}/tags/{tagId}',
+            url: '/api/v1/tasks/tasks/{id}/tags/{tagId}',
             path: {
                 'id': id,
                 'tagId': tagId,
@@ -259,12 +259,12 @@ export class TaskService {
      * @returns TagResponseDto Tag created successfully
      * @throws ApiError
      */
-    public static taskerooControllerCreateTag(
+    public static tasksControllerCreateTag(
         requestBody: CreateTagDto,
     ): CancelablePromise<TagResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/taskeroo/tasks/tags',
+            url: '/api/v1/tasks/tasks/tags',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -277,10 +277,10 @@ export class TaskService {
      * @returns TagResponseDto List of all tags
      * @throws ApiError
      */
-    public static taskerooControllerGetAllTags(): CancelablePromise<Array<TagResponseDto>> {
+    public static tasksControllerGetAllTags(): CancelablePromise<Array<TagResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/taskeroo/tasks/tags/all',
+            url: '/api/v1/tasks/tasks/tags/all',
         });
     }
     /**
@@ -289,12 +289,12 @@ export class TaskService {
      * @returns void
      * @throws ApiError
      */
-    public static taskerooControllerDeleteTag(
+    public static tasksControllerDeleteTag(
         tagId: string,
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/taskeroo/tasks/tags/{tagId}',
+            url: '/api/v1/tasks/tasks/tags/{tagId}',
             path: {
                 'tagId': tagId,
             },
@@ -307,70 +307,70 @@ export class TaskService {
      * @returns any
      * @throws ApiError
      */
-    public static taskerooControllerHandleMcpGet(): CancelablePromise<any> {
+    public static tasksControllerHandleMcpGet(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/taskeroo/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
      * @returns any
      * @throws ApiError
      */
-    public static taskerooControllerHandleMcpPost(): CancelablePromise<any> {
+    public static tasksControllerHandleMcpPost(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/taskeroo/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
      * @returns any
      * @throws ApiError
      */
-    public static taskerooControllerHandleMcpPut(): CancelablePromise<any> {
+    public static tasksControllerHandleMcpPut(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/api/v1/taskeroo/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
      * @returns any
      * @throws ApiError
      */
-    public static taskerooControllerHandleMcpDelete(): CancelablePromise<any> {
+    public static tasksControllerHandleMcpDelete(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/taskeroo/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
      * @returns any
      * @throws ApiError
      */
-    public static taskerooControllerHandleMcpPatch(): CancelablePromise<any> {
+    public static tasksControllerHandleMcpPatch(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/taskeroo/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
      * @returns any
      * @throws ApiError
      */
-    public static taskerooControllerHandleMcpOptions(): CancelablePromise<any> {
+    public static tasksControllerHandleMcpOptions(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'OPTIONS',
-            url: '/api/v1/taskeroo/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
     /**
      * @returns any
      * @throws ApiError
      */
-    public static taskerooControllerHandleMcpHead(): CancelablePromise<any> {
+    public static tasksControllerHandleMcpHead(): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'HEAD',
-            url: '/api/v1/taskeroo/tasks/mcp',
+            url: '/api/v1/tasks/tasks/mcp',
         });
     }
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAgents } from './useAgents';
-import { Task, TaskStatus } from 'src/taskeroo/types';
+import { Task, TaskStatus } from 'src/tasks/types';
 
 export function AgentsAdminList() {
   const { agents, isLoading, error, createAgent } = useAgents();

@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${YELLOW}=====================================${NC}"
-echo -e "${YELLOW}  Taskeroo E2E Test Suite Runner   ${NC}"
+echo -e "${YELLOW}  Tasks E2E Test Suite Runner   ${NC}"
 echo -e "${YELLOW}=====================================${NC}"
 echo
 
@@ -23,9 +23,9 @@ if [ ! -d "apps/backend/dist" ]; then
     echo
 fi
 
-# Run the e2e tests (only Taskeroo tests)
-echo -e "${YELLOW}Running Taskeroo E2E tests...${NC}"
-cd apps/backend && npx jest --config ./test/jest-e2e.json taskeroo.e2e-spec.ts
+# Run the e2e tests (only Tasks tests)
+echo -e "${YELLOW}Running Tasks E2E tests...${NC}"
+cd apps/backend && npx jest --config ./test/jest-e2e.json tasks.e2e-spec.ts
 
 # Capture exit code
 TEST_EXIT_CODE=$?

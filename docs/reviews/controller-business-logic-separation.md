@@ -10,8 +10,8 @@ This review evaluates the controller layer to ensure proper separation of concer
 
 ## Scope
 
-- `apps/backend/src/taskeroo/taskeroo.controller.ts`
-- `apps/backend/src/wikiroo/wikiroo.controller.ts`
+- `apps/backend/src/tasks/tasks.controller.ts`
+- `apps/backend/src/context/context.controller.ts`
 
 ## Review Criteria
 
@@ -23,14 +23,14 @@ This review evaluates the controller layer to ensure proper separation of concer
 
 ## Findings
 
-### TaskerooController (`taskeroo.controller.ts`)
+### TasksController (`tasks.controller.ts`)
 
 **Status:** ✅ COMPLIANT
 
 #### HTTP Layer Concerns
 - **NestJS Decorators** (lines 1-12): Properly uses `@Controller`, `@Get`, `@Post`, `@Patch`, `@Delete`, `@Body`, `@Param`, `@Query`, `@HttpCode`, `@HttpStatus`
 - **Swagger Documentation** (lines 14-21): Complete API documentation with `@ApiTags`, `@ApiOperation`, response decorators
-- **Routing** (line 36): RESTful route structure `taskeroo/tasks`
+- **Routing** (line 36): RESTful route structure `tasks/tasks`
 
 #### DTO Usage
 **Request DTOs** (lines 23-32):
@@ -83,14 +83,14 @@ This review evaluates the controller layer to ensure proper separation of concer
 
 ---
 
-### WikirooController (`wikiroo.controller.ts`)
+### ContextController (`context.controller.ts`)
 
 **Status:** ✅ COMPLIANT
 
 #### HTTP Layer Concerns
 - **NestJS Decorators** (line 1): Properly uses `@Body`, `@Controller`, `@Get`, `@Param`, `@Post`
 - **Swagger Documentation** (lines 2-8): Complete API documentation
-- **Routing** (line 18): RESTful route structure `wikiroo/pages`
+- **Routing** (line 18): RESTful route structure `context/pages`
 
 #### DTO Usage
 **Request DTOs** (lines 10, 14):
@@ -141,7 +141,7 @@ Both controllers demonstrate excellent separation of concerns with only one mino
 
 | Severity | Location | Issue | Recommendation |
 |----------|----------|-------|----------------|
-| ⚠️ LOW | taskeroo.controller.ts:124 | Pagination calculation in controller | Consider moving to service OR accept as presentation logic |
+| ⚠️ LOW | tasks.controller.ts:124 | Pagination calculation in controller | Consider moving to service OR accept as presentation logic |
 
 ### Statistics
 - **Total Controllers Reviewed:** 2
@@ -152,13 +152,13 @@ Both controllers demonstrate excellent separation of concerns with only one mino
 
 ### Recommendations
 
-#### For TaskerooController
+#### For TasksController
 1. **Optional**: Move `totalPages` calculation to service layer
    - Current: `Math.ceil(result.total / result.limit)` in controller (line 124)
    - Alternative: Add `totalPages` to `ListTasksResult` service type
    - **Decision**: This is acceptable as presentation-layer pagination metadata. No action required unless you want perfect purity.
 
-#### For WikirooController
+#### For ContextController
 - **No changes required** - perfect implementation
 
 ### Code Quality Observations

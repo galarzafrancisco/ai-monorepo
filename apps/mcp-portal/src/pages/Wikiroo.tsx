@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { WikirooService } from "../lib/api";
+import { ContextService } from "../lib/api";
 import type { PageResponseDto, PageSummaryDto, CreatePageDto, UpdatePageDto } from "shared";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 
-export default function WikirooPage() {
+export default function ContextPage() {
   const [pages, setPages] = useState<PageSummaryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export default function WikirooPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await WikirooService.wikirooControllerListPages();
+      const response = await ContextService.contextControllerListPages();
       setPages(response.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load pages");
@@ -44,7 +44,7 @@ export default function WikirooPage() {
     setCreating(true);
     setError(null);
     try {
-      const newPage = await WikirooService.wikirooControllerCreatePage(data);
+      const newPage = await ContextService.contextControllerCreatePage(data);
       await loadPages();
       setShowCreateForm(false);
       setSelectedPage(newPage);
@@ -68,7 +68,7 @@ export default function WikirooPage() {
     setUpdating(true);
     setError(null);
     try {
-      const updated = await WikirooService.wikirooControllerUpdatePage(selectedPage.id, data);
+      const updated = await ContextService.contextControllerUpdatePage(selectedPage.id, data);
       await loadPages();
       setSelectedPage(updated);
       setShowEditForm(false);
@@ -83,7 +83,7 @@ export default function WikirooPage() {
     if (!confirm("Are you sure you want to delete this page?")) return;
 
     try {
-      await WikirooService.wikirooControllerDeletePage(pageId);
+      await ContextService.contextControllerDeletePage(pageId);
       await loadPages();
       setSelectedPage(null);
     } catch (err) {
@@ -103,7 +103,7 @@ export default function WikirooPage() {
     <div className="p-8">
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Wikiroo</h1>
+          <h1 className="text-4xl font-bold mb-2">Context</h1>
           <p className="text-white/60">Knowledge base and documentation</p>
         </div>
         <button
@@ -250,7 +250,7 @@ export default function WikirooPage() {
               key={page.id}
               onClick={async () => {
                 try {
-                  const fullPage = await WikirooService.wikirooControllerGetPage(page.id);
+                  const fullPage = await ContextService.contextControllerGetPage(page.id);
                   setSelectedPage(fullPage);
                 } catch (err) {
                   setError(err instanceof Error ? err.message : "Failed to load page");

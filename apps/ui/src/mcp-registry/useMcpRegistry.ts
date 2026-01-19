@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { McpRegistryService } from './api';
+import { ToolsService } from './api';
 
 // Types will be generated from backend response DTOs
 type McpServer = {
@@ -64,7 +64,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await McpRegistryService.mcpRegistryControllerListServers();
+      const response = await ToolsService.mcpRegistryControllerListServers();
       setServers(response.items || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load servers');
@@ -79,9 +79,9 @@ export const useMcpRegistry = () => {
     setError(null);
     try {
       const [serverData, scopesData, connectionsData] = await Promise.all([
-        McpRegistryService.mcpRegistryControllerGetServer(serverId),
-        McpRegistryService.mcpRegistryControllerListScopes(serverId),
-        McpRegistryService.mcpRegistryControllerListConnections(serverId),
+        ToolsService.mcpRegistryControllerGetServer(serverId),
+        ToolsService.mcpRegistryControllerListScopes(serverId),
+        ToolsService.mcpRegistryControllerListConnections(serverId),
       ]);
 
       setSelectedServer(serverData);
@@ -93,7 +93,7 @@ export const useMcpRegistry = () => {
         const allMappings: McpScopeMapping[] = [];
         for (const scope of scopesData) {
           try {
-            const scopeMappings = await McpRegistryService.mcpRegistryControllerListMappings(
+            const scopeMappings = await ToolsService.mcpRegistryControllerListMappings(
               serverId,
               scope.id
             );
@@ -118,7 +118,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const createdServer = await McpRegistryService.mcpRegistryControllerCreateServer(data);
+      const createdServer = await ToolsService.mcpRegistryControllerCreateServer(data);
       await loadServers();
       return createdServer;
     } catch (err) {
@@ -137,7 +137,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const updatedServer = await McpRegistryService.mcpRegistryControllerUpdateServer(serverId, data);
+      const updatedServer = await ToolsService.mcpRegistryControllerUpdateServer(serverId, data);
       if (selectedServer?.id === serverId) {
         setSelectedServer(updatedServer);
       }
@@ -156,7 +156,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerCreateScopes(serverId, [{ id, description }]);
+      await ToolsService.mcpRegistryControllerCreateScopes(serverId, [{ id, description }]);
       if (selectedServer?.id === serverId) {
         await loadServerDetails(serverId);
       }
@@ -182,7 +182,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerCreateConnection(serverId, data);
+      await ToolsService.mcpRegistryControllerCreateConnection(serverId, data);
       if (selectedServer?.id === serverId) {
         await loadServerDetails(serverId);
       }
@@ -208,7 +208,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerUpdateConnection(connectionId, data);
+      await ToolsService.mcpRegistryControllerUpdateConnection(connectionId, data);
       if (selectedServer) {
         await loadServerDetails(selectedServer.id);
       }
@@ -232,7 +232,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerCreateMapping(serverId, data);
+      await ToolsService.mcpRegistryControllerCreateMapping(serverId, data);
       if (selectedServer?.id === serverId) {
         await loadServerDetails(serverId);
       }
@@ -249,7 +249,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerDeleteScope(serverId, scopeId);
+      await ToolsService.mcpRegistryControllerDeleteScope(serverId, scopeId);
       if (selectedServer?.id === serverId) {
         await loadServerDetails(serverId);
       }
@@ -266,7 +266,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerDeleteConnection(connectionId);
+      await ToolsService.mcpRegistryControllerDeleteConnection(connectionId);
       if (selectedServer) {
         await loadServerDetails(selectedServer.id);
       }
@@ -283,7 +283,7 @@ export const useMcpRegistry = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await McpRegistryService.mcpRegistryControllerDeleteMapping(mappingId);
+      await ToolsService.mcpRegistryControllerDeleteMapping(mappingId);
       if (selectedServer) {
         await loadServerDetails(selectedServer.id);
       }

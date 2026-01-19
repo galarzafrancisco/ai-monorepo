@@ -5,7 +5,7 @@ export class GetProtectedResourceMetadataParamsDto {
   @ApiProperty({
     name: 'resource',
     description: 'Path of the endpoint this resource exposes',
-    example: '/api/v1/taskeroo/tasks',
+    example: '/api/v1/tasks/tasks',
   })
   @IsString()
   @IsNotEmpty()

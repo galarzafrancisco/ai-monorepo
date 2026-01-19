@@ -15,6 +15,6 @@ jq -n \
   --arg author "$AUTHOR" \
   --arg content "$CONTENT" \
   '{title: $title, author: $author, content: $content}' \
-  | curl -s -X POST "http://localhost:9999/api/v1/wikiroo/pages" \
+  | curl -s -X POST "http://localhost:9999/api/v1/context/pages" \
       -H "Content-Type: application/json" \
       -d @- | jq .

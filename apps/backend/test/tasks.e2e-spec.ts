@@ -1,0 +1,313 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import request from 'supertest';
+import { App } from 'supertest/types';
+import { AppModule } from '../src/app.module';
+import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
+import {
+  ensureTestUser,
+  getAuthCookies,
+  ensureAgentActor,
+  TEST_USER_SLUG,
+  TEST_USER_DISPLAY_NAME,
+} from './helpers/auth.helper';
+import cookieParser from 'cookie-parser';
+
+describe('Tasks E2E Tests', () => {
+  let app: INestApplication<App>;
+  let httpServer: App;
+  let authCookies: string;
+  let actorId: string;
+  let agentAlphaActorId: string;
+  let agentBetaActorId: string;
+
+  // Store task IDs created during tests
+  let taskWithoutAssigneeId: string;
+  let taskWithAssigneeId: string;
+
+  const agentAlpha = { slug: 'agent-alpha', displayName: 'Agent Alpha' };
+  const agentBeta = { slug: 'agent-beta', displayName: 'Agent Beta' };
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+
+    // Apply the same configuration as the main application
+    app.use(cookieParser());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    app.useGlobalFilters(new ProblemDetailsFilter());
+    app.setGlobalPrefix('api/v1');
+
+    await app.init();
+    httpServer = app.getHttpServer();
+
+    // Setup authentication
+    actorId = await ensureTestUser(app);
+    authCookies = await getAuthCookies(httpServer);
+    agentAlphaActorId = await ensureAgentActor(app, agentAlpha.slug, agentAlpha.displayName);
+    agentBetaActorId = await ensureAgentActor(app, agentBeta.slug, agentBeta.displayName);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('Task Creation', () => {
+    it('should create a task without assignee', async () => {
+      const response = await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .send({
+          name: 'Test Task Without Assignee',
+          description: 'This is a test task without an assignee',
+        })
+        .expect(201);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body.name).toBe('Test Task Without Assignee');
+      expect(response.body.description).toBe('This is a test task without an assignee');
+      expect(response.body.createdByActor.slug).toBe(TEST_USER_SLUG);
+      // API returns empty string for null assignee
+      expect(response.body.assignee).toBeFalsy();
+      expect(response.body.status).toBe('NOT_STARTED');
+
+      taskWithoutAssigneeId = response.body.id;
+    });
+
+    it('should create a task with assignee', async () => {
+      const response = await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .send({
+          name: 'Test Task With Assignee',
+          description: 'This is a test task with an assignee',
+          assigneeActorId: actorId,
+        })
+        .expect(201);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body.name).toBe('Test Task With Assignee');
+      expect(response.body.description).toBe('This is a test task with an assignee');
+      expect(response.body.createdByActor.slug).toBe(TEST_USER_SLUG);
+      expect(response.body.assignee).toBe(TEST_USER_SLUG);
+      expect(response.body.assigneeActor).toBeDefined();
+      expect(response.body.assigneeActor.id).toBe(actorId);
+      expect(response.body.assigneeActor.slug).toBe(TEST_USER_SLUG);
+      expect(response.body.status).toBe('NOT_STARTED');
+
+      taskWithAssigneeId = response.body.id;
+    });
+  });
+
+  describe('Task Assignment', () => {
+    let assignableTaskId: string;
+
+    beforeAll(async () => {
+      const response = await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .send({
+          name: 'Task Assignment Target',
+          description: 'This task will be assigned during tests',
+        })
+        .expect(201);
+
+      assignableTaskId = response.body.id;
+    });
+
+    it('should assign a task with session id', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/tasks/tasks/${assignableTaskId}/assign`)
+        .set('Cookie', authCookies)
+        .send({
+          assigneeActorId: agentAlphaActorId,
+          sessionId: 'session-123-abc',
+        })
+        .expect(200);
+
+      expect(response.body.assignee).toBe(agentAlpha.slug);
+      expect(response.body.assigneeActor.id).toBe(agentAlphaActorId);
+      expect(response.body.assigneeActor.slug).toBe(agentAlpha.slug);
+      expect(response.body.sessionId).toBe('session-123-abc');
+    });
+
+    it('should keep the existing session id when not provided', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/tasks/tasks/${assignableTaskId}/assign`)
+        .set('Cookie', authCookies)
+        .send({
+          assigneeActorId: agentBetaActorId,
+        })
+        .expect(200);
+
+      expect(response.body.assignee).toBe(agentBeta.slug);
+      expect(response.body.assigneeActor.id).toBe(agentBetaActorId);
+      expect(response.body.assigneeActor.slug).toBe(agentBeta.slug);
+      expect(response.body.sessionId).toBe('session-123-abc');
+    });
+  });
+
+  describe('Task Fetching', () => {
+    it('should fetch all tasks and see both created tasks', async () => {
+      const response = await request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('items');
+      expect(Array.isArray(response.body.items)).toBe(true);
+      expect(response.body.items.length).toBeGreaterThanOrEqual(2);
+
+      const taskIds = response.body.items.map((task: any) => task.id);
+      expect(taskIds).toContain(taskWithoutAssigneeId);
+      expect(taskIds).toContain(taskWithAssigneeId);
+    });
+
+    it('should fetch task by ID and see one task', async () => {
+      const response = await request(httpServer)
+        .get(`/api/v1/tasks/tasks/${taskWithAssigneeId}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(response.body.id).toBe(taskWithAssigneeId);
+      expect(response.body.name).toBe('Test Task With Assignee');
+      expect(response.body.assignee).toBe(TEST_USER_SLUG);
+      expect(response.body.assigneeActor.id).toBe(actorId);
+    });
+  });
+
+  describe('Task Status Changes', () => {
+    it('should fail to move task without assignee to In Progress', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/tasks/tasks/${taskWithoutAssigneeId}/status`)
+        .set('Cookie', authCookies)
+        .send({
+          status: 'IN_PROGRESS',
+        })
+        .expect(400);
+
+      // Verify the error response has proper structure (Problem Details format)
+      expect(response.body).toHaveProperty('status');
+      expect(response.body.status).toBe(400);
+      expect(response.body).toHaveProperty('detail');
+      // The error indicates the business rule violation
+      expect(response.body.detail.toLowerCase()).toContain('assign');
+    });
+
+    it('should successfully move task with assignee to In Progress', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/tasks/tasks/${taskWithAssigneeId}/status`)
+        .set('Cookie', authCookies)
+        .send({
+          status: 'IN_PROGRESS',
+        })
+        .expect(200);
+
+      expect(response.body.id).toBe(taskWithAssigneeId);
+      expect(response.body.status).toBe('IN_PROGRESS');
+      expect(response.body.assignee).toBe(TEST_USER_SLUG);
+    });
+
+    it('should fail to move task to Done without comment when no comments exist', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/tasks/tasks/${taskWithAssigneeId}/status`)
+        .set('Cookie', authCookies)
+        .send({
+          status: 'DONE',
+        })
+        .expect(400);
+
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body.detail.toLowerCase()).toContain('comment');
+    });
+  });
+
+  describe('Task Comments', () => {
+    it('should add a comment to a task', async () => {
+      const response = await request(httpServer)
+        .post(`/api/v1/tasks/tasks/${taskWithAssigneeId}/comments`)
+        .set('Cookie', authCookies)
+        .send({
+          content: 'This is a test comment on the task',
+        })
+        .expect(201);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body.commenterName).toBe(TEST_USER_DISPLAY_NAME);
+      expect(response.body.commenterActor).toBeDefined();
+      expect(response.body.commenterActor.id).toBe(actorId);
+      expect(response.body.commenterActor.slug).toBe(TEST_USER_SLUG);
+      expect(response.body.content).toBe('This is a test comment on the task');
+      expect(response.body.taskId).toBe(taskWithAssigneeId);
+    });
+
+    it('should allow moving task to Done without new comment when comments exist', async () => {
+      const response = await request(httpServer)
+        .patch(`/api/v1/tasks/tasks/${taskWithAssigneeId}/status`)
+        .set('Cookie', authCookies)
+        .send({
+          status: 'DONE',
+        })
+        .expect(200);
+
+      expect(response.body.status).toBe('DONE');
+      expect(response.body.comments.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Task Deletion', () => {
+    it('should delete the task without comment', async () => {
+      // Ensure we have a valid task ID before attempting deletion
+      expect(taskWithoutAssigneeId).toBeDefined();
+
+      await request(httpServer)
+        .delete(`/api/v1/tasks/tasks/${taskWithoutAssigneeId}`)
+        .set('Cookie', authCookies)
+        .expect(204);
+    });
+
+    it('should verify deleted task is gone and commented task exists', async () => {
+      // Ensure we have a valid task ID
+      expect(taskWithoutAssigneeId).toBeDefined();
+
+      // Verify the deleted task returns 404
+      await request(httpServer)
+        .get(`/api/v1/tasks/tasks/${taskWithoutAssigneeId}`)
+        .set('Cookie', authCookies)
+        .expect(404);
+
+      // Fetch all tasks
+      const allTasksResponse = await request(httpServer)
+        .get('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      const taskIds = allTasksResponse.body.items.map((task: any) => task.id);
+
+      // Verify deleted task is not in the list
+      expect(taskIds).not.toContain(taskWithoutAssigneeId);
+
+      // Verify task with comment still exists
+      expect(taskIds).toContain(taskWithAssigneeId);
+
+      // Verify the task with comment can still be fetched
+      const taskWithCommentResponse = await request(httpServer)
+        .get(`/api/v1/tasks/tasks/${taskWithAssigneeId}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(taskWithCommentResponse.body.id).toBe(taskWithAssigneeId);
+      expect(taskWithCommentResponse.body.name).toBe('Test Task With Assignee');
+    });
+  });
+
+});

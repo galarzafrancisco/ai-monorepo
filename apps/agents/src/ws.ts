@@ -6,24 +6,24 @@ Each agent / task / session will have a sandboxed environment that will not be w
 This sandbox environment needs communication with the backend to know when tasks change.
 This module does that.
 
-We'll start easy using the existing websocket endpoints for taskeroo and see what we can do.
+We'll start easy using the existing websocket endpoints for tasks and see what we can do.
 */
 
 import { io, Socket } from "socket.io-client";
-import { TaskEntity } from "../../backend/src/taskeroo/task.entity";
+import { TaskEntity } from "../../backend/src/tasks/task.entity";
 import { ACCESS_TOKEN } from "./config";
 
 type TaskHandler = (task: TaskEntity) => void;
 
-export class TaskerooListener {
+export class TasksListener {
   private socket: Socket;
 
   constructor(
     baseUrl: string,
     private onTask: TaskHandler,
   ) {
-    console.log(`[TaskerooListener] connecting to ${baseUrl}/taskeroo`);
-    this.socket = io(`${baseUrl}/taskeroo`, {
+    console.log(`[TasksListener] connecting to ${baseUrl}/tasks`);
+    this.socket = io(`${baseUrl}/tasks`, {
       transports: ["websocket"],
       // withCredentials: true, // <- this is for front end cookies
       auth: {
@@ -36,18 +36,18 @@ export class TaskerooListener {
 
   private wire() {
     this.socket.on("connect", () => {
-      this.socket.emit('taskeroo.subscribe', {}, (ack: any) => {
-        console.log("[taskeroo] subscribed to room:", ack);
+      this.socket.emit('tasks.subscribe', {}, (ack: any) => {
+        console.log("[tasks] subscribed to room:", ack);
       });
-      console.log("[taskeroo] connected:", this.socket.id);
+      console.log("[tasks] connected:", this.socket.id);
     });
 
     this.socket.on("disconnect", (reason) => {
-      console.log("[taskeroo] disconnected:", reason);
+      console.log("[tasks] disconnected:", reason);
     });
 
     this.socket.on("connect_error", (err) => {
-      console.error("[taskeroo] connect_error:", err.message);
+      console.error("[tasks] connect_error:", err.message);
       console.error(err);
     });
 

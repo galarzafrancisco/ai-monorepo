@@ -49,4 +49,4 @@ COMMENT+=" - task id: $TASK_ID\n"
 COMMENT+=" - task name: $TASK_NAME"
   
 # Add comment to the task
-$ROOT_DIR/.claude/scripts/taskeroo/comment_task.sh "$TASK_ID" "🤖 Stop hook automation" "$COMMENT"
+$ROOT_DIR/.claude/scripts/tasks/comment_task.sh "$TASK_ID" "🤖 Stop hook automation" "$COMMENT"
