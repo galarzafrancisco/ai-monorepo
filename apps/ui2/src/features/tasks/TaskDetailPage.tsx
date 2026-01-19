@@ -155,7 +155,7 @@ export function TaskDetailPage() {
               task.description
             ) : (
               'no description'
-            )}s
+            )}
           </Text>
         </DataRow>
       </DataRowContainer >
