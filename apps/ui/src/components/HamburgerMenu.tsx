@@ -31,8 +31,8 @@ export function HamburgerMenu() {
       color: '#8e8e93',
     },
     {
-      name: 'Taskeroo',
-      path: '/taskeroo',
+      name: 'Tasks',
+      path: '/tasks',
       icon: '📋',
       color: '#3b82f6',
     },

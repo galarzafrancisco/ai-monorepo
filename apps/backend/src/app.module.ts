@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { TaskerooModule } from './taskeroo/taskeroo.module';
+import { TasksModule } from './tasks/tasks.module';
 import { WikirooModule } from './wikiroo/wikiroo.module';
 import { McpRegistryModule } from './mcp-registry/mcp-registry.module';
 import { AuthorizationServerModule } from './authorization-server/authorization-server.module';
@@ -24,7 +24,7 @@ import { AppInitModule } from './app-init/app-init.module';
       synchronize: true,
     }),
     EventEmitterModule.forRoot(),
-    TaskerooModule,
+    TasksModule,
     WikirooModule,
     McpRegistryModule,
     AuthJourneysModule,

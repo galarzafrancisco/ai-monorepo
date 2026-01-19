@@ -16,7 +16,7 @@ All controllers **PASS** compliance review with best practices. Controllers prop
 ## Review Scope
 
 Reviewed all backend controllers:
-- **Taskeroo** (`apps/backend/src/taskeroo/taskeroo.controller.ts`) - 219 lines
+- **Tasks** (`apps/backend/src/tasks/tasks.controller.ts`) - 219 lines
 - **Wikiroo** (`apps/backend/src/wikiroo/wikiroo.controller.ts`) - 94 lines
 - **MCP Registry** (`apps/backend/src/mcp-registry/mcp-registry.controller.ts`) - 320 lines
 - **Authorization Server** (`apps/backend/src/authorization-server/client-registration.controller.ts`) - 100+ lines
@@ -31,7 +31,7 @@ Reference: `docs/review-guides/controller.md`
 
 | Controller | Status | Notes |
 |------------|--------|-------|
-| Taskeroo | ✅ PASS | All business logic delegated to service |
+| Tasks | ✅ PASS | All business logic delegated to service |
 | Wikiroo | ✅ PASS | All business logic delegated to service |
 | MCP Registry | ⚠️ MINOR | UUID regex validation should be extracted (see recommendations) |
 | Client Registration | ✅ PASS | All business logic delegated to service |
@@ -40,7 +40,7 @@ Reference: `docs/review-guides/controller.md`
 
 | Controller | Status | Evidence |
 |------------|--------|----------|
-| Taskeroo | ✅ PASS | All endpoints use proper DTOs: `CreateTaskDto`, `UpdateTaskDto`, `TaskResponseDto`, etc. |
+| Tasks | ✅ PASS | All endpoints use proper DTOs: `CreateTaskDto`, `UpdateTaskDto`, `TaskResponseDto`, etc. |
 | Wikiroo | ✅ PASS | All endpoints use proper DTOs: `CreatePageDto`, `PageResponseDto`, `PageSummaryDto` |
 | MCP Registry | ✅ PASS | Comprehensive DTO coverage: `CreateServerDto`, `ServerResponseDto`, `CreateScopeDto`, etc. |
 | Client Registration | ✅ PASS | RFC 7591 compliant DTOs: `RegisterClientDto`, `ClientRegistrationResponseDto` |
@@ -49,15 +49,15 @@ Reference: `docs/review-guides/controller.md`
 
 | Controller | Status | Evidence |
 |------------|--------|----------|
-| Taskeroo | ✅ PASS | Service methods receive plain objects extracted from DTOs (`taskeroo.controller.ts:56-61`) |
+| Tasks | ✅ PASS | Service methods receive plain objects extracted from DTOs (`tasks.controller.ts:56-61`) |
 | Wikiroo | ✅ PASS | Service methods receive plain objects (`wikiroo.controller.ts:35-39`) |
 | MCP Registry | ✅ PASS | DTOs passed directly to service methods |
 | Client Registration | ✅ PASS | DTOs passed to service with additional params |
 
-**Example - Taskeroo (`taskeroo.controller.ts:56-61`):**
+**Example - Tasks (`tasks.controller.ts:56-61`):**
 ```typescript
 async createTask(@Body() dto: CreateTaskDto): Promise<TaskResponseDto> {
-  const result = await this.taskerooService.createTask({
+  const result = await this.tasksService.createTask({
     name: dto.name,
     description: dto.description,
     assignee: dto.assignee,
@@ -71,7 +71,7 @@ async createTask(@Body() dto: CreateTaskDto): Promise<TaskResponseDto> {
 
 | Controller | Status | Evidence |
 |------------|--------|----------|
-| Taskeroo | ✅ PASS | No try-catch blocks, errors bubble to global filter |
+| Tasks | ✅ PASS | No try-catch blocks, errors bubble to global filter |
 | Wikiroo | ✅ PASS | No try-catch blocks, errors bubble to global filter |
 | MCP Registry | ✅ PASS | No try-catch blocks, errors bubble to global filter |
 | Client Registration | ✅ PASS | No try-catch blocks, errors bubble to global filter |
@@ -82,7 +82,7 @@ All controllers delegate error handling to the global `ProblemDetailsFilter`.
 
 | Controller | Status | Evidence |
 |------------|--------|----------|
-| Taskeroo | ✅ PASS | `@HttpCode(HttpStatus.NO_CONTENT)` for DELETE (`line 106`) |
+| Tasks | ✅ PASS | `@HttpCode(HttpStatus.NO_CONTENT)` for DELETE (`line 106`) |
 | Wikiroo | ✅ PASS | Implicit 200/201 from decorators, acceptable |
 | MCP Registry | ✅ PASS | Implicit status codes via OpenAPI decorators |
 | Client Registration | ✅ PASS | `@HttpCode(201)` explicitly set (`line 39`) |
@@ -91,7 +91,7 @@ All controllers delegate error handling to the global `ProblemDetailsFilter`.
 
 | Controller | Status | Coverage |
 |------------|--------|----------|
-| Taskeroo | ✅ EXCELLENT | All endpoints have `@ApiOperation`, response decorators, and error responses documented |
+| Tasks | ✅ EXCELLENT | All endpoints have `@ApiOperation`, response decorators, and error responses documented |
 | Wikiroo | ✅ EXCELLENT | Complete OpenAPI annotations |
 | MCP Registry | ✅ EXCELLENT | Comprehensive documentation with `@ApiParam`, `@ApiQuery`, `@ApiBody` |
 | Client Registration | ✅ EXCELLENT | RFC 7591 spec documented in operation descriptions |
@@ -100,7 +100,7 @@ All controllers delegate error handling to the global `ProblemDetailsFilter`.
 
 ## Controller-Specific Analysis
 
-### 1. Taskeroo Controller
+### 1. Tasks Controller
 
 **Lines Reviewed:** 219
 **Endpoints:** 9 (including MCP gateway)

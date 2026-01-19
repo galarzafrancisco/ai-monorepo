@@ -16,7 +16,7 @@ All services **PASS** error management review. The codebase correctly implements
 ## Review Scope
 
 Reviewed all backend services for compliance with error handling best practices:
-- Taskeroo (`apps/backend/src/taskeroo`)
+- Tasks (`apps/backend/src/tasks`)
 - Wikiroo (`apps/backend/src/wikiroo`)
 - MCP Registry (`apps/backend/src/mcp-registry`)
 - Authorization Server - Client Registration (`apps/backend/src/authorization-server`)
@@ -29,7 +29,7 @@ Reviewed all backend services for compliance with error handling best practices:
 
 | Requirement | Status | Evidence |
 |------------|--------|----------|
-| Domain errors extend base `DomainError` class | ✅ PASS | All modules define module-scoped base classes: `TaskerooDomainError`, `WikirooDomainError`, `McpRegistryDomainError`, `ClientRegistrationDomainError` |
+| Domain errors extend base `DomainError` class | ✅ PASS | All modules define module-scoped base classes: `TasksDomainError`, `WikirooDomainError`, `McpRegistryDomainError`, `ClientRegistrationDomainError` |
 | Errors contain `message`, `code`, `context` | ✅ PASS | All domain error classes follow the pattern with required fields |
 | No HTTP references in domain errors | ✅ PASS | Zero HTTP status codes or transport details in any domain error classes |
 | Errors reference centralized error codes | ✅ PASS | All errors reference codes from `packages/shared/errors/error-codes.ts` |
@@ -60,7 +60,7 @@ Reviewed all backend services for compliance with error handling best practices:
 | No HTTP coupling in services | ✅ PASS | Zero references to HTTP status codes or NestJS HttpException in services |
 | Proper error context included | ✅ PASS | All errors pass relevant IDs and metadata via `context` parameter |
 
-**Example - Taskeroo Service (`taskeroo.service.ts:70`):**
+**Example - Tasks Service (`tasks.service.ts:70`):**
 ```typescript
 if (!taskWithRelations) {
   throw new TaskNotFoundError(savedTask.id);
@@ -89,10 +89,10 @@ if (!page) {
 | No error catching/re-throwing | ✅ PASS | Controllers rely on global filter, no try-catch blocks for domain errors |
 | Transport-agnostic responses | ✅ PASS | Controllers return DTOs, not Problem Details |
 
-**Example - Taskeroo Controller (`taskeroo.controller.ts:144`):**
+**Example - Tasks Controller (`tasks.controller.ts:144`):**
 ```typescript
 async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
-  const result = await this.taskerooService.getTaskById(params.id);
+  const result = await this.tasksService.getTaskById(params.id);
   return this.mapResultToResponse(result);
 }
 ```
@@ -123,7 +123,7 @@ async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
 
 | Module | Error Codes | Catalog Status |
 |--------|-------------|----------------|
-| **Taskeroo** | TASK_NOT_FOUND, TASK_NOT_ASSIGNED, INVALID_STATUS_TRANSITION, COMMENT_REQUIRED | ✅ All mapped |
+| **Tasks** | TASK_NOT_FOUND, TASK_NOT_ASSIGNED, INVALID_STATUS_TRANSITION, COMMENT_REQUIRED | ✅ All mapped |
 | **Wikiroo** | PAGE_NOT_FOUND | ✅ Mapped |
 | **MCP Registry** | SERVER_NOT_FOUND, SERVER_ALREADY_EXISTS, SCOPE_NOT_FOUND, SCOPE_ALREADY_EXISTS, CONNECTION_NOT_FOUND, CONNECTION_NAME_CONFLICT, MAPPING_NOT_FOUND, SERVER_HAS_DEPENDENCIES, SCOPE_HAS_MAPPINGS, CONNECTION_HAS_MAPPINGS, INVALID_MAPPING | ✅ All mapped |
 | **Authorization Server** | CLIENT_ALREADY_REGISTERED, CLIENT_NOT_FOUND, INVALID_REDIRECT_URI, INVALID_GRANT_TYPE, INVALID_TOKEN_ENDPOINT_AUTH_METHOD, MISSING_REQUIRED_FIELD | ✅ All mapped |
@@ -160,19 +160,19 @@ async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
 ## Files Reviewed
 
 ### Domain Errors
-- `apps/backend/src/taskeroo/errors/taskeroo.errors.ts`
+- `apps/backend/src/tasks/errors/tasks.errors.ts`
 - `apps/backend/src/wikiroo/errors/wikiroo.errors.ts`
 - `apps/backend/src/mcp-registry/errors/mcp-registry.errors.ts`
 - `apps/backend/src/authorization-server/errors/client-registration.errors.ts`
 
 ### Services
-- `apps/backend/src/taskeroo/taskeroo.service.ts` (348 lines)
+- `apps/backend/src/tasks/tasks.service.ts` (348 lines)
 - `apps/backend/src/wikiroo/wikiroo.service.ts` (97 lines)
 - `apps/backend/src/mcp-registry/mcp-registry.service.ts` (495 lines)
 - `apps/backend/src/authorization-server/client-registration.service.ts`
 
 ### Controllers
-- `apps/backend/src/taskeroo/taskeroo.controller.ts` (219 lines)
+- `apps/backend/src/tasks/tasks.controller.ts` (219 lines)
 - `apps/backend/src/wikiroo/wikiroo.controller.ts`
 - `apps/backend/src/mcp-registry/mcp-registry.controller.ts`
 - `apps/backend/src/authorization-server/client-registration.controller.ts`

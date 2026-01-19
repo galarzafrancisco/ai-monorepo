@@ -20,7 +20,7 @@
 ## Review Scope
 
 Reviewed all backend services:
-- ✅ **Taskeroo Service** (`taskeroo.service.ts`) - 348 lines
+- ✅ **Tasks Service** (`tasks.service.ts`) - 348 lines
 - ✅ **Wikiroo Service** (`wikiroo.service.ts`) - 97 lines
 - ✅ **MCP Registry Service** (`mcp-registry.service.ts`) - 495 lines
 - ✅ **Client Registration Service** (`client-registration.service.ts`)
@@ -38,7 +38,7 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 
 | Service | Status | HTTP Exceptions Found |
 |---------|--------|----------------------|
-| Taskeroo | ✅ PASS | None |
+| Tasks | ✅ PASS | None |
 | Wikiroo | ✅ PASS | None |
 | MCP Registry | ✅ PASS | None |
 | Client Registration | ✅ PASS | None |
@@ -50,7 +50,7 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 
 | Service | Status | Evidence |
 |---------|--------|----------|
-| Taskeroo | ✅ PASS | Uses `TaskNotFoundError`, `InvalidStatusTransitionError`, `CommentRequiredError` |
+| Tasks | ✅ PASS | Uses `TaskNotFoundError`, `InvalidStatusTransitionError`, `CommentRequiredError` |
 | Wikiroo | ✅ PASS | Uses `PageNotFoundError` |
 | MCP Registry | ✅ PASS | Uses `ServerNotFoundError`, `ScopeNotFoundError`, etc. (11 domain errors) |
 | Client Registration | ✅ PASS | Uses `ClientNotFoundError`, `InvalidRedirectUriError`, etc. |
@@ -62,7 +62,7 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 
 | Service | Status | Service Types Location |
 |---------|--------|------------------------|
-| Taskeroo | ✅ PASS | `dto/service/taskeroo.service.types.ts` - Pure TS types |
+| Tasks | ✅ PASS | `dto/service/tasks.service.types.ts` - Pure TS types |
 | Wikiroo | ✅ PASS | `dto/service/wikiroo.service.types.ts` - Pure TS types |
 | MCP Registry | ✅ PASS | `dto/service/mcp-registry.service.types.ts` - Pure TS types |
 | Client Registration | ✅ PASS | Uses entity directly (acceptable pattern) |
@@ -76,7 +76,7 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 
 | Service | Status | Notes |
 |---------|--------|-------|
-| Taskeroo | ✅ PASS | Injects TaskEntity and CommentEntity repositories |
+| Tasks | ✅ PASS | Injects TaskEntity and CommentEntity repositories |
 | Wikiroo | ✅ PASS | Injects WikiPageEntity repository |
 | MCP Registry | ✅ PASS | Injects 4 repositories (Server, Scope, Connection, Mapping) |
 | Client Registration | ✅ PASS | Injects RegisteredClientEntity repository |
@@ -88,7 +88,7 @@ Reference: `docs/review-guides/service.md` and `docs/architecture/service-transp
 
 | Service | Status | Evidence |
 |---------|--------|----------|
-| Taskeroo | ✅ PASS | No cross-domain calls |
+| Tasks | ✅ PASS | No cross-domain calls |
 | Wikiroo | ✅ PASS | No cross-domain calls |
 | MCP Registry | ✅ PASS | No cross-domain calls |
 | Client Registration | ✅ PASS | Calls `AuthJourneysService` and `McpRegistryService` via public interfaces |
@@ -102,7 +102,7 @@ All services correctly interact with other domains via public service interfaces
 
 | Service | Status | Evidence |
 |---------|--------|----------|
-| Taskeroo | ✅ EXCELLENT | Structured logging with Logger: `{ message, taskId, name, assignee }` |
+| Tasks | ✅ EXCELLENT | Structured logging with Logger: `{ message, taskId, name, assignee }` |
 | Wikiroo | ✅ EXCELLENT | Structured logging: `{ message, pageId, title, author }` |
 | MCP Registry | ✅ PASS | No logging (acceptable for CRUD operations) |
 | Client Registration | ✅ PASS | Uses Logger for debug output |
@@ -320,16 +320,16 @@ if (!mcpAuthFlow) {
 
 ## Compliant Services - Examples
 
-### Taskeroo Service ✅
+### Tasks Service ✅
 
-**Error Handling (`taskeroo.service.ts:70`):**
+**Error Handling (`tasks.service.ts:70`):**
 ```typescript
 if (!taskWithRelations) {
   throw new TaskNotFoundError(savedTask.id);
 }
 ```
 
-**Service Types (`dto/service/taskeroo.service.types.ts`):**
+**Service Types (`dto/service/tasks.service.types.ts`):**
 ```typescript
 // Service layer types - transport agnostic
 export type CreateTaskInput = {
@@ -378,7 +378,7 @@ All services correctly encapsulate business logic:
 
 | Service | Responsibilities |
 |---------|------------------|
-| Taskeroo | Task lifecycle, status transitions, comment management, validation rules |
+| Tasks | Task lifecycle, status transitions, comment management, validation rules |
 | Wikiroo | Wiki page CRUD, content management |
 | MCP Registry | Server/scope/connection/mapping CRUD, dependency validation |
 | Client Registration | OAuth client validation, credential generation, secret hashing |
@@ -412,7 +412,7 @@ const authJourney = await this.authJourneyService.createJourneyForMcpRegistratio
 
 ### ✅ Excellent Structured Logging
 
-**Taskeroo Service:**
+**Tasks Service:**
 ```typescript
 this.logger.log({
   message: 'Creating task',
@@ -464,7 +464,7 @@ this.logger.debug(JSON.stringify(full, null, 2));
 
 | Pattern | Services |
 |---------|----------|
-| Domain Errors | Taskeroo, Wikiroo, MCP Registry, Client Registration, Auth Journeys (5) |
+| Domain Errors | Tasks, Wikiroo, MCP Registry, Client Registration, Auth Journeys (5) |
 | HTTP Exceptions | Authorization, Token (2) |
 
 ### Lines of Code Reviewed
@@ -511,7 +511,7 @@ this.logger.debug(JSON.stringify(full, null, 2));
 
 **Strong Points:**
 - ✅ 5 out of 7 services fully compliant with best practices
-- ✅ Excellent examples of transport-independent design (Taskeroo, Wikiroo, MCP Registry)
+- ✅ Excellent examples of transport-independent design (Tasks, Wikiroo, MCP Registry)
 - ✅ Proper business logic encapsulation across all services
 - ✅ Strong structured logging patterns
 - ✅ Clean cross-service interaction via public interfaces

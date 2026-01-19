@@ -1,0 +1,270 @@
+.tasks-page {
+  /* Fill the screen */
+  height: 100%;
+  /* or 100% if your app shell already handles it */
+  min-height: 0;
+  /* important when inside flex/grid parents */
+  display: flex;
+}
+
+.tasks-board-view {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  width: 100%;
+  align-items: start;
+
+  height: 100%;
+  /* fill parent */
+  min-height: 0;
+  /* 🔑 allow children to size/scroll */
+  align-items: stretch;
+  /* 🔑 columns become equal height */
+
+}
+
+.tasks-board-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+
+  height: 100%;
+  /* fill grid row height */
+  min-height: 0;
+  /* 🔑 allow the scroll child to shrink */
+
+  gap: var(--space-3);
+  min-height: 400px;
+  background-color: var(--surface);
+  border-radius: var(--radius-3);
+  padding: var(--space-3);
+}
+
+.tasks-board-column__body {
+  flex: 1 1 auto;
+  /* take remaining space */
+  min-height: 0;
+  /* 🔑 required for overflow to work in flex */
+  overflow: auto;
+  /* column scroll */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  /* optional: nicer scrolling */
+  overscroll-behavior: contain;
+}
+
+.tasks-board-column__body {
+  overflow-y: auto;
+
+  /* Firefox */
+  scrollbar-width: none;
+
+  /* IE / Edge */
+  -ms-overflow-style: none;
+}
+
+.tasks-board-column__body::-webkit-scrollbar {
+  display: none;
+  /* Chrome / Safari */
+}
+
+.tasks-board-column>* {
+  min-width: 0;
+}
+
+.tasks-board-column__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+/* New task enter animation */
+.task-row--entering {
+  animation: task-enter 500ms ease-out forwards;
+}
+
+@keyframes task-enter {
+  0% {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-8px);
+  }
+
+  50% {
+    max-height: 200px;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-4px);
+  }
+
+  100% {
+    max-height: 200px;
+    opacity: 1;
+    overflow: visible;
+    transform: translateY(0);
+  }
+}
+
+/* Task exit animation */
+.task-row--exiting {
+  animation: task-exit 500ms ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes task-exit {
+  0% {
+    max-height: 200px;
+    opacity: 1;
+    overflow: hidden;
+  }
+
+  50% {
+    max-height: 200px;
+    opacity: 0;
+    overflow: hidden;
+  }
+
+  100% {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+}
+
+/* Card enter animation (for board view) - using grid for smooth height animation */
+.task-card--entering {
+  display: grid;
+  grid-template-rows: 0fr;
+  animation: card-enter 500ms ease-out forwards;
+}
+
+.task-card--entering>* {
+  overflow: hidden;
+}
+
+@keyframes card-enter {
+  0% {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+
+  50% {
+    grid-template-rows: 1fr;
+    opacity: 0;
+  }
+
+  100% {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+/* Card exit animation (for board view) */
+.task-card--exiting {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: card-exit 500ms ease-in forwards;
+  pointer-events: none;
+}
+
+.task-card--exiting>* {
+  overflow: hidden;
+}
+
+@keyframes card-exit {
+  0% {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  50% {
+    grid-template-rows: 1fr;
+    opacity: 0;
+  }
+
+  100% {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.tasks-fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+  z-index: 999;
+  /* below your pop (9999), above content */
+
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+
+  border: 0;
+  background: var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  color: var(--accent-contrast);
+
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.tasks-fab:hover {
+  background-color: var(--accent-hover);
+}
+
+.tasks-fab:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+/* Optional: if your bottom nav overlaps, give yourself more clearance */
+@media (max-width: 900px) {
+  .tasks-fab {
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
+    /* tweak 56px to your bottom nav height */
+  }
+}
+
+.tasks-fab--desktop {
+  width: auto;
+  height: 44px;
+  padding: 0 14px;
+  gap: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  color: var(--accent-contrast);
+}
+
+.tasks-fab--desktop:hover {
+  background-color: var(--accent-hover);
+}
+
+.tasks-fab__plus {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.tasks-fab__label {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}

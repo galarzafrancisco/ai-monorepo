@@ -26,7 +26,7 @@
   /* Fill the screen */
   height: 100vh;
   overflow-y: auto;
-  display: flex; /* added this to enable scrollable columns in taskeroo board view */
+  display: flex; /* added this to enable scrollable columns in tasks board view */
   padding: var(--space-6);
   min-height: 0;
   /* critical: allows internal scrolling */

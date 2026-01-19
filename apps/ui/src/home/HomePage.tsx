@@ -7,9 +7,9 @@ export function HomePage() {
 
   const apps = [
     {
-      name: 'Taskeroo',
+      name: 'Tasks',
       description: 'Manage and track your tasks across different stages with our Kanban board.',
-      path: '/taskeroo',
+      path: '/tasks',
       icon: '📋',
       color: '#3b82f6',
     },

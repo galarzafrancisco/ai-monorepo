@@ -24,9 +24,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks": {
+    "/api/v1/Tasks/tasks": {
       "post": {
-        "operationId": "TaskerooController_createTask",
+        "operationId": "TasksController_createTask",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -64,7 +64,7 @@
         ]
       },
       "get": {
-        "operationId": "TaskerooController_listTasks",
+        "operationId": "TasksController_listTasks",
         "parameters": [
           {
             "name": "assignee",
@@ -142,9 +142,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}": {
+    "/api/v1/Tasks/tasks/{id}": {
       "patch": {
-        "operationId": "TaskerooController_updateTask",
+        "operationId": "TasksController_updateTask",
         "parameters": [
           {
             "name": "id",
@@ -196,7 +196,7 @@
         ]
       },
       "delete": {
-        "operationId": "TaskerooController_deleteTask",
+        "operationId": "TasksController_deleteTask",
         "parameters": [
           {
             "name": "id",
@@ -228,7 +228,7 @@
         ]
       },
       "get": {
-        "operationId": "TaskerooController_getTask",
+        "operationId": "TasksController_getTask",
         "parameters": [
           {
             "name": "id",
@@ -267,9 +267,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/assign": {
+    "/api/v1/Tasks/tasks/{id}/assign": {
       "patch": {
-        "operationId": "TaskerooController_assignTask",
+        "operationId": "TasksController_assignTask",
         "parameters": [
           {
             "name": "id",
@@ -321,9 +321,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/comments": {
+    "/api/v1/Tasks/tasks/{id}/comments": {
       "post": {
-        "operationId": "TaskerooController_addComment",
+        "operationId": "TasksController_addComment",
         "parameters": [
           {
             "name": "id",
@@ -375,9 +375,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/status": {
+    "/api/v1/Tasks/tasks/{id}/status": {
       "patch": {
-        "operationId": "TaskerooController_changeStatus",
+        "operationId": "TasksController_changeStatus",
         "parameters": [
           {
             "name": "id",
@@ -429,9 +429,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/tags": {
+    "/api/v1/Tasks/tasks/{id}/tags": {
       "post": {
-        "operationId": "TaskerooController_addTagToTask",
+        "operationId": "TasksController_addTagToTask",
         "parameters": [
           {
             "name": "id",
@@ -483,9 +483,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/{id}/tags/{tagId}": {
+    "/api/v1/Tasks/tasks/{id}/tags/{tagId}": {
       "delete": {
-        "operationId": "TaskerooController_removeTagFromTask",
+        "operationId": "TasksController_removeTagFromTask",
         "parameters": [
           {
             "name": "id",
@@ -530,9 +530,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/tags": {
+    "/api/v1/Tasks/tasks/tags": {
       "post": {
-        "operationId": "TaskerooController_createTag",
+        "operationId": "TasksController_createTag",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -570,9 +570,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/tags/all": {
+    "/api/v1/Tasks/tasks/tags/all": {
       "get": {
-        "operationId": "TaskerooController_getAllTags",
+        "operationId": "TasksController_getAllTags",
         "parameters": [],
         "responses": {
           "200": {
@@ -600,9 +600,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/tags/{tagId}": {
+    "/api/v1/Tasks/tasks/tags/{tagId}": {
       "delete": {
-        "operationId": "TaskerooController_deleteTag",
+        "operationId": "TasksController_deleteTag",
         "parameters": [
           {
             "name": "tagId",
@@ -632,9 +632,9 @@
         ]
       }
     },
-    "/api/v1/taskeroo/tasks/mcp": {
+    "/api/v1/Tasks/tasks/mcp": {
       "get": {
-        "operationId": "TaskerooController_handleMcp_get",
+        "operationId": "TasksController_handleMcp_get",
         "parameters": [],
         "responses": {
           "200": {
@@ -651,7 +651,7 @@
         ]
       },
       "post": {
-        "operationId": "TaskerooController_handleMcp_post",
+        "operationId": "TasksController_handleMcp_post",
         "parameters": [],
         "responses": {
           "200": {
@@ -668,7 +668,7 @@
         ]
       },
       "put": {
-        "operationId": "TaskerooController_handleMcp_put",
+        "operationId": "TasksController_handleMcp_put",
         "parameters": [],
         "responses": {
           "200": {
@@ -685,7 +685,7 @@
         ]
       },
       "delete": {
-        "operationId": "TaskerooController_handleMcp_delete",
+        "operationId": "TasksController_handleMcp_delete",
         "parameters": [],
         "responses": {
           "200": {
@@ -702,7 +702,7 @@
         ]
       },
       "patch": {
-        "operationId": "TaskerooController_handleMcp_patch",
+        "operationId": "TasksController_handleMcp_patch",
         "parameters": [],
         "responses": {
           "200": {
@@ -719,7 +719,7 @@
         ]
       },
       "options": {
-        "operationId": "TaskerooController_handleMcp_options",
+        "operationId": "TasksController_handleMcp_options",
         "parameters": [],
         "responses": {
           "200": {
@@ -736,7 +736,7 @@
         ]
       },
       "head": {
-        "operationId": "TaskerooController_handleMcp_head",
+        "operationId": "TasksController_handleMcp_head",
         "parameters": [],
         "responses": {
           "200": {
@@ -753,7 +753,7 @@
         ]
       },
       "search": {
-        "operationId": "TaskerooController_handleMcp_search",
+        "operationId": "TasksController_handleMcp_search",
         "parameters": [],
         "responses": {
           "200": {
@@ -3957,12 +3957,12 @@
           "providedId": {
             "type": "string",
             "description": "Server identifier used in API paths",
-            "example": "taskeroo"
+            "example": "tasks"
           },
           "name": {
             "type": "string",
             "description": "Human-readable name of the MCP server",
-            "example": "Taskeroo"
+            "example": "Tasks"
           },
           "description": {
             "type": "string",
@@ -4228,7 +4228,7 @@
             "oneOf": [
               {
                 "type": "string",
-                "example": "taskeroo-api"
+                "example": "tasks-api"
               },
               {
                 "type": "array",
@@ -4236,7 +4236,7 @@
                   "type": "string"
                 },
                 "example": [
-                  "taskeroo-api"
+                  "tasks-api"
                 ]
               }
             ]
@@ -4244,7 +4244,7 @@
           "iss": {
             "type": "object",
             "description": "Issuer that minted the token",
-            "example": "https://auth.taskeroo.local/auth"
+            "example": "https://auth.tasks.local/auth"
           },
           "jti": {
             "type": "object",
@@ -4269,7 +4269,7 @@
           "mcp_server_identifier": {
             "type": "object",
             "description": "MCP server identifier the token is scoped to",
-            "example": "taskeroo"
+            "example": "tasks"
           },
           "resource": {
             "type": "object",
@@ -4674,7 +4674,7 @@
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+            "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
           }
         },
         "required": [
@@ -4709,7 +4709,7 @@
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+            "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
           },
           "createdAt": {
             "type": "string",
@@ -4780,7 +4780,7 @@
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
-            "example": "http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+            "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
           }
         }
       },
@@ -5708,8 +5708,8 @@
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",
             "example": [
-              "taskeroo.createTask",
-              "taskeroo.readTask",
+              "tasks.createTask",
+              "tasks.readTask",
               "wikiroo.search"
             ],
             "type": "array",
@@ -5789,8 +5789,8 @@
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",
             "example": [
-              "taskeroo.createTask",
-              "taskeroo.readTask",
+              "tasks.createTask",
+              "tasks.readTask",
               "wikiroo.search"
             ],
             "type": "array",

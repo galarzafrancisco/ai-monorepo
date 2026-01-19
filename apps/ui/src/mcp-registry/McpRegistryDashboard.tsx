@@ -135,7 +135,7 @@ export function McpRegistryDashboard() {
                   id="url"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  placeholder="e.g., http://localhost:3000/api/v1/taskeroo/tasks/mcp"
+                  placeholder="e.g., http://localhost:3000/api/v1/tasks/tasks/mcp"
                 />
                 <small>URL that MCP clients will use to connect to this server</small>
               </div>

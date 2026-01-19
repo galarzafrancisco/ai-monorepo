@@ -21,7 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks": {
+    "/api/v1/Tasks/tasks": {
         parameters: {
             query?: never;
             header?: never;
@@ -29,17 +29,17 @@ export interface paths {
             cookie?: never;
         };
         /** List tasks with optional filtering and pagination */
-        get: operations["TaskerooController_listTasks"];
+        get: operations["TasksController_listTasks"];
         put?: never;
         /** Create a new task */
-        post: operations["TaskerooController_createTask"];
+        post: operations["TasksController_createTask"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}": {
+    "/api/v1/Tasks/tasks/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -47,18 +47,18 @@ export interface paths {
             cookie?: never;
         };
         /** Get a task by ID */
-        get: operations["TaskerooController_getTask"];
+        get: operations["TasksController_getTask"];
         put?: never;
         post?: never;
         /** Delete a task */
-        delete: operations["TaskerooController_deleteTask"];
+        delete: operations["TasksController_deleteTask"];
         options?: never;
         head?: never;
         /** Update task description */
-        patch: operations["TaskerooController_updateTask"];
+        patch: operations["TasksController_updateTask"];
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/assign": {
+    "/api/v1/Tasks/tasks/{id}/assign": {
         parameters: {
             query?: never;
             header?: never;
@@ -72,10 +72,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Assign a task to someone */
-        patch: operations["TaskerooController_assignTask"];
+        patch: operations["TasksController_assignTask"];
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/comments": {
+    "/api/v1/Tasks/tasks/{id}/comments": {
         parameters: {
             query?: never;
             header?: never;
@@ -85,14 +85,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add a comment to a task */
-        post: operations["TaskerooController_addComment"];
+        post: operations["TasksController_addComment"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/status": {
+    "/api/v1/Tasks/tasks/{id}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -106,10 +106,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Change task status */
-        patch: operations["TaskerooController_changeStatus"];
+        patch: operations["TasksController_changeStatus"];
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/tags": {
+    "/api/v1/Tasks/tasks/{id}/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -119,14 +119,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add a tag to a task */
-        post: operations["TaskerooController_addTagToTask"];
+        post: operations["TasksController_addTagToTask"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/{id}/tags/{tagId}": {
+    "/api/v1/Tasks/tasks/{id}/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -137,13 +137,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** Remove a tag from a task */
-        delete: operations["TaskerooController_removeTagFromTask"];
+        delete: operations["TasksController_removeTagFromTask"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/tags": {
+    "/api/v1/Tasks/tasks/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -153,14 +153,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create a new tag */
-        post: operations["TaskerooController_createTag"];
+        post: operations["TasksController_createTag"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/tags/all": {
+    "/api/v1/Tasks/tasks/tags/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -168,7 +168,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get all tags */
-        get: operations["TaskerooController_getAllTags"];
+        get: operations["TasksController_getAllTags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -177,7 +177,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/tags/{tagId}": {
+    "/api/v1/Tasks/tasks/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -188,26 +188,26 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete a tag from the system */
-        delete: operations["TaskerooController_deleteTag"];
+        delete: operations["TasksController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taskeroo/tasks/mcp": {
+    "/api/v1/Tasks/tasks/mcp": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["TaskerooController_handleMcp_get"];
-        put: operations["TaskerooController_handleMcp_put"];
-        post: operations["TaskerooController_handleMcp_post"];
-        delete: operations["TaskerooController_handleMcp_delete"];
-        options: operations["TaskerooController_handleMcp_options"];
-        head: operations["TaskerooController_handleMcp_head"];
-        patch: operations["TaskerooController_handleMcp_patch"];
+        get: operations["TasksController_handleMcp_get"];
+        put: operations["TasksController_handleMcp_put"];
+        post: operations["TasksController_handleMcp_post"];
+        delete: operations["TasksController_handleMcp_delete"];
+        options: operations["TasksController_handleMcp_options"];
+        head: operations["TasksController_handleMcp_head"];
+        patch: operations["TasksController_handleMcp_patch"];
         trace?: never;
     };
     "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
@@ -1414,12 +1414,12 @@ export interface components {
         FlowServerDto: {
             /**
              * @description Server identifier used in API paths
-             * @example taskeroo
+             * @example tasks
              */
             providedId: string;
             /**
              * @description Human-readable name of the MCP server
-             * @example Taskeroo
+             * @example Tasks
              */
             name: string;
             /**
@@ -1602,7 +1602,7 @@ export interface components {
             aud: string | string[];
             /**
              * @description Issuer that minted the token
-             * @example https://auth.taskeroo.local/auth
+             * @example https://auth.tasks.local/auth
              */
             iss: Record<string, never>;
             /**
@@ -1627,7 +1627,7 @@ export interface components {
             scope?: string;
             /**
              * @description MCP server identifier the token is scoped to
-             * @example taskeroo
+             * @example tasks
              */
             mcp_server_identifier: Record<string, never>;
             /**
@@ -1887,7 +1887,7 @@ export interface components {
             description: string;
             /**
              * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
         };
@@ -1914,7 +1914,7 @@ export interface components {
             description: string;
             /**
              * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
             /**
@@ -1960,7 +1960,7 @@ export interface components {
             description?: string;
             /**
              * @description URL that MCP Clients will use to connect to the server
-             * @example http://localhost:3000/api/v1/taskeroo/tasks/mcp
+             * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
         };
@@ -2615,8 +2615,8 @@ export interface components {
             /**
              * @description List of tool identifiers this agent is allowed to use
              * @example [
-             *       "taskeroo.createTask",
-             *       "taskeroo.readTask",
+             *       "tasks.createTask",
+             *       "tasks.readTask",
              *       "wikiroo.search"
              *     ]
              */
@@ -2676,8 +2676,8 @@ export interface components {
             /**
              * @description List of tool identifiers this agent is allowed to use
              * @example [
-             *       "taskeroo.createTask",
-             *       "taskeroo.readTask",
+             *       "tasks.createTask",
+             *       "tasks.readTask",
              *       "wikiroo.search"
              *     ]
              */
@@ -2766,7 +2766,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_listTasks: {
+    TasksController_listTasks: {
         parameters: {
             query?: {
                 /** @description Filter tasks by assignee name */
@@ -2797,7 +2797,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_createTask: {
+    TasksController_createTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2828,7 +2828,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_getTask: {
+    TasksController_getTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2858,7 +2858,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_deleteTask: {
+    TasksController_deleteTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2886,7 +2886,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_updateTask: {
+    TasksController_updateTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2927,7 +2927,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_assignTask: {
+    TasksController_assignTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -2968,7 +2968,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_addComment: {
+    TasksController_addComment: {
         parameters: {
             query?: never;
             header?: never;
@@ -3009,7 +3009,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_changeStatus: {
+    TasksController_changeStatus: {
         parameters: {
             query?: never;
             header?: never;
@@ -3050,7 +3050,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_addTagToTask: {
+    TasksController_addTagToTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -3091,7 +3091,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_removeTagFromTask: {
+    TasksController_removeTagFromTask: {
         parameters: {
             query?: never;
             header?: never;
@@ -3121,7 +3121,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_createTag: {
+    TasksController_createTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -3152,7 +3152,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_getAllTags: {
+    TasksController_getAllTags: {
         parameters: {
             query?: never;
             header?: never;
@@ -3172,7 +3172,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_deleteTag: {
+    TasksController_deleteTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -3199,7 +3199,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_get: {
+    TasksController_handleMcp_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3216,7 +3216,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_put: {
+    TasksController_handleMcp_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -3233,7 +3233,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_post: {
+    TasksController_handleMcp_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3250,7 +3250,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_delete: {
+    TasksController_handleMcp_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -3267,7 +3267,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_options: {
+    TasksController_handleMcp_options: {
         parameters: {
             query?: never;
             header?: never;
@@ -3284,7 +3284,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_head: {
+    TasksController_handleMcp_head: {
         parameters: {
             query?: never;
             header?: never;
@@ -3301,7 +3301,7 @@ export interface operations {
             };
         };
     };
-    TaskerooController_handleMcp_patch: {
+    TasksController_handleMcp_patch: {
         parameters: {
             query?: never;
             header?: never;

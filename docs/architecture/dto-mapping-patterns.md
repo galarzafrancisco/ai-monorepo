@@ -18,7 +18,7 @@ Entity (Database) → Service Result Type → Response DTO (HTTP)
 
 ### Mapping Flow
 
-#### Taskeroo Module Example
+#### Tasks Module Example
 
 ```typescript
 // 1. Service maps Entity → Service Result Type
@@ -200,7 +200,7 @@ If you find a controller that violates these patterns:
 ## Current Status
 
 ### ✅ Compliant Modules
-- `taskeroo` - Full three-layer separation with explicit mapping
+- `tasks` - Full three-layer separation with explicit mapping
 - `wikiroo` - Full three-layer separation with explicit mapping
 
 ### 📝 Notes

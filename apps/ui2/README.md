@@ -17,7 +17,7 @@ src/
 │   ├── primitives/ # Reusable building blocks
 │   └── styles/   # Design tokens & base styles
 ├── features/     # Domain-specific features
-│   └── taskeroo/ # Task management feature
+│   └── tasks/ # Task management feature
 └── shared/       # Shared utilities (future: generated clients)
 ```
 
@@ -133,7 +133,7 @@ The app supports being pinned as a home-screen shortcut on iOS:
 ## Routes
 
 - `/` - Home page with navigation links and theme switcher
-- `/taskeroo` - Task management page (with placeholder data)
+- `/tasks` - Task management page (with placeholder data)
 - `/wikiroo` - Wiki page (placeholder)
 - `/mcp-registry` - MCP Registry page (placeholder)
 - `/agents` - Agents page (placeholder)

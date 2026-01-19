@@ -16,7 +16,7 @@ if [ -z "$TASK_ID" ] || [ -z "$ASSIGNEE" ] || [ -z "$COMMENTS" ]; then
 fi
 
 # Mark as FAILED
-"$SCRIPT_DIR/../taskeroo/change_task_status.sh" "$TASK_ID" "FAILED"
+"$SCRIPT_DIR/../tasks/change_task_status.sh" "$TASK_ID" "FAILED"
 
 # Add comment
-"$SCRIPT_DIR/../taskeroo/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENTS"
+"$SCRIPT_DIR/../tasks/comment_task.sh" "$TASK_ID" "$ASSIGNEE" "$COMMENTS"

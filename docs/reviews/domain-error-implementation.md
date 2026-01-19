@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document analyzes the domain error implementation patterns across the Taskeroo and Wikiroo modules. The codebase demonstrates **exemplary consistency** with clean architecture principles, proper inheritance patterns, and excellent separation of concerns.
+This document analyzes the domain error implementation patterns across the Tasks and Wikiroo modules. The codebase demonstrates **exemplary consistency** with clean architecture principles, proper inheritance patterns, and excellent separation of concerns.
 
 **Key Findings:**
 - Consistent base class pattern across all modules
@@ -47,12 +47,12 @@ The application uses a three-tiered error architecture:
     ┌─────────────┴──────────────┐
     │                            │
 ┌───▼────────────────┐   ┌──────▼─────────────┐
-│   Taskeroo Module  │   │   Wikiroo Module   │
+│   Tasks Module  │   │   Wikiroo Module   │
 │                    │   │                    │
-│ TaskerooErrorCodes │   │ WikirooErrorCodes  │
+│ TasksErrorCodes │   │ WikirooErrorCodes  │
 │   (re-export)      │   │   (re-export)      │
 │                    │   │                    │
-│ TaskerooDomainError│   │ WikirooDomainError │
+│ TasksDomainError│   │ WikirooDomainError │
 │   (base class)     │   │   (base class)     │
 │                    │   │                    │
 │ Concrete Errors:   │   │ Concrete Errors:   │
@@ -100,16 +100,16 @@ export abstract class [Module]DomainError extends Error {
 
 ## Module-by-Module Analysis
 
-### 1. Taskeroo Module
+### 1. Tasks Module
 
-**Location**: `/apps/backend/src/taskeroo/errors/taskeroo.errors.ts`
+**Location**: `/apps/backend/src/tasks/errors/tasks.errors.ts`
 
 #### Base Class
 ```typescript
-export abstract class TaskerooDomainError extends Error {
+export abstract class TasksDomainError extends Error {
   constructor(
     message: string,
-    readonly code: TaskerooErrorCode,
+    readonly code: TasksErrorCode,
     readonly context?: Record<string, unknown>,
   ) {
     super(message);
@@ -120,15 +120,15 @@ export abstract class TaskerooDomainError extends Error {
 
 #### Error Code Management
 ```typescript
-export const TaskerooErrorCodes = {
+export const TasksErrorCodes = {
   TASK_NOT_FOUND: ErrorCodes.TASK_NOT_FOUND,
   TASK_NOT_ASSIGNED: ErrorCodes.TASK_NOT_ASSIGNED,
   INVALID_STATUS_TRANSITION: ErrorCodes.INVALID_STATUS_TRANSITION,
   COMMENT_REQUIRED: ErrorCodes.COMMENT_REQUIRED,
 } as const;
 
-type TaskerooErrorCode =
-  typeof TaskerooErrorCodes[keyof typeof TaskerooErrorCodes];
+type TasksErrorCode =
+  typeof TasksErrorCodes[keyof typeof TasksErrorCodes];
 ```
 
 **Analysis:**
@@ -140,9 +140,9 @@ type TaskerooErrorCode =
 
 **1. TaskNotFoundError**
 ```typescript
-export class TaskNotFoundError extends TaskerooDomainError {
+export class TaskNotFoundError extends TasksDomainError {
   constructor(taskId: string) {
-    super('Task not found.', TaskerooErrorCodes.TASK_NOT_FOUND, { taskId });
+    super('Task not found.', TasksErrorCodes.TASK_NOT_FOUND, { taskId });
   }
 }
 ```
@@ -152,11 +152,11 @@ export class TaskNotFoundError extends TaskerooDomainError {
 
 **2. TaskNotAssignedError**
 ```typescript
-export class TaskNotAssignedError extends TaskerooDomainError {
+export class TaskNotAssignedError extends TasksDomainError {
   constructor(taskId: string) {
     super(
       'Task is not assigned to anyone.',
-      TaskerooErrorCodes.TASK_NOT_ASSIGNED,
+      TasksErrorCodes.TASK_NOT_ASSIGNED,
       { taskId },
     );
   }
@@ -168,11 +168,11 @@ export class TaskNotAssignedError extends TaskerooDomainError {
 
 **3. InvalidStatusTransitionError**
 ```typescript
-export class InvalidStatusTransitionError extends TaskerooDomainError {
+export class InvalidStatusTransitionError extends TasksDomainError {
   constructor(currentStatus: string, newStatus: string, reason: string) {
     super(
       `Cannot transition from ${currentStatus} to ${newStatus}: ${reason}`,
-      TaskerooErrorCodes.INVALID_STATUS_TRANSITION,
+      TasksErrorCodes.INVALID_STATUS_TRANSITION,
       { currentStatus, newStatus, reason },
     );
   }
@@ -185,11 +185,11 @@ export class InvalidStatusTransitionError extends TaskerooDomainError {
 
 **4. CommentRequiredError**
 ```typescript
-export class CommentRequiredError extends TaskerooDomainError {
+export class CommentRequiredError extends TasksDomainError {
   constructor() {
     super(
       'A comment is required when marking a task as done.',
-      TaskerooErrorCodes.COMMENT_REQUIRED,
+      TasksErrorCodes.COMMENT_REQUIRED,
     );
   }
 }
@@ -230,7 +230,7 @@ type WikirooErrorCode =
 
 **Analysis:**
 - Re-exports 1 error code from central registry
-- Same pattern as Taskeroo for consistency
+- Same pattern as Tasks for consistency
 - Ready for additional errors as module grows
 
 #### Concrete Error Classes
@@ -255,12 +255,12 @@ export class PageNotFoundError extends WikirooDomainError {
 
 ### Strengths: High Consistency
 
-| Aspect | Taskeroo | Wikiroo | Consistent? |
+| Aspect | Tasks | Wikiroo | Consistent? |
 |--------|----------|---------|-------------|
 | Base class structure | 3 properties | 3 properties | ✅ Yes |
 | Property names | message, code, context | message, code, context | ✅ Yes |
 | Property modifiers | readonly | readonly | ✅ Yes |
-| Type safety | TaskerooErrorCode | WikirooErrorCode | ✅ Yes |
+| Type safety | TasksErrorCode | WikirooErrorCode | ✅ Yes |
 | Re-export pattern | Uses ErrorCodes | Uses ErrorCodes | ✅ Yes |
 | Const assertion | Yes | Yes | ✅ Yes |
 | Constructor signatures | Consistent | Consistent | ✅ Yes |
@@ -271,7 +271,7 @@ export class PageNotFoundError extends WikirooDomainError {
 
 **Difference Found:**
 
-- **Taskeroo**: `this.name = this.constructor.name;`
+- **Tasks**: `this.name = this.constructor.name;`
 - **Wikiroo**: `this.name = new.target.name;`
 
 **Analysis:**
@@ -292,14 +292,14 @@ Both approaches work correctly, but have subtle differences:
 **Recommendation:**
 - **Not Critical**: Both work fine in current codebase
 - **Best Practice**: Use `new.target.name` for consistency
-- **Action**: Update Taskeroo to match Wikiroo pattern (optional)
+- **Action**: Update Tasks to match Wikiroo pattern (optional)
 
 ```typescript
 // Recommended standardization
-export abstract class TaskerooDomainError extends Error {
+export abstract class TasksDomainError extends Error {
   constructor(
     message: string,
-    readonly code: TaskerooErrorCode,
+    readonly code: TasksErrorCode,
     readonly context?: Record<string, unknown>,
   ) {
     super(message);
@@ -324,20 +324,20 @@ export const ErrorCodes = {
 } as const;
 
 // Step 2: Module re-export with const assertion
-export const TaskerooErrorCodes = {
+export const TasksErrorCodes = {
   TASK_NOT_FOUND: ErrorCodes.TASK_NOT_FOUND,
   // ...
 } as const;
 
 // Step 3: Type extraction
-type TaskerooErrorCode =
-  typeof TaskerooErrorCodes[keyof typeof TaskerooErrorCodes];
+type TasksErrorCode =
+  typeof TasksErrorCodes[keyof typeof TasksErrorCodes];
 
 // Step 4: Type-constrained base class
-export abstract class TaskerooDomainError extends Error {
+export abstract class TasksDomainError extends Error {
   constructor(
     message: string,
-    readonly code: TaskerooErrorCode,  // ← Enforces module codes only
+    readonly code: TasksErrorCode,  // ← Enforces module codes only
     readonly context?: Record<string, unknown>,
   ) {
     super(message);
@@ -359,11 +359,11 @@ export abstract class TaskerooDomainError extends Error {
 new TaskNotFoundError(taskId);
 
 // ❌ Invalid - compile error if you try to use wrong code
-class TaskNotFoundError extends TaskerooDomainError {
+class TaskNotFoundError extends TasksDomainError {
   constructor(taskId: string) {
     super('...', WikirooErrorCodes.PAGE_NOT_FOUND, { taskId });
     //            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    //            Type error: not assignable to TaskerooErrorCode
+    //            Type error: not assignable to TasksErrorCode
   }
 }
 ```
@@ -500,7 +500,7 @@ if (exception?.code && typeof exception.code === 'string') {
 
 **A. Stack Traces**
 ```typescript
-export abstract class TaskerooDomainError extends Error {
+export abstract class TasksDomainError extends Error {
   constructor(message: string, ...) {
     super(message);  // ← Ensures proper stack trace
     this.name = new.target.name;  // ← Clear error name in stack
@@ -652,8 +652,8 @@ Service Layer           Controller             Filter                  Client
 #### 1. Base Class Tests
 
 ```typescript
-// taskeroo-domain-error.spec.ts
-describe('TaskerooDomainError', () => {
+// tasks-domain-error.spec.ts
+describe('TasksDomainError', () => {
   it('should set message, code, and context', () => {
     const error = new ConcreteTestError('message', 'CODE', { key: 'value' });
     expect(error.message).toBe('message');
@@ -671,9 +671,9 @@ describe('TaskerooDomainError', () => {
     expect(error instanceof Error).toBe(true);
   });
 
-  it('should be instanceof TaskerooDomainError', () => {
+  it('should be instanceof TasksDomainError', () => {
     const error = new TaskNotFoundError('123');
-    expect(error instanceof TaskerooDomainError).toBe(true);
+    expect(error instanceof TasksDomainError).toBe(true);
   });
 
   it('should capture stack trace', () => {
@@ -696,7 +696,7 @@ describe('TaskerooDomainError', () => {
 describe('TaskNotFoundError', () => {
   it('should create error with task ID in context', () => {
     const error = new TaskNotFoundError('task-123');
-    expect(error.code).toBe(TaskerooErrorCodes.TASK_NOT_FOUND);
+    expect(error.code).toBe(TasksErrorCodes.TASK_NOT_FOUND);
     expect(error.message).toBe('Task not found.');
     expect(error.context).toEqual({ taskId: 'task-123' });
   });
@@ -722,7 +722,7 @@ describe('InvalidStatusTransitionError', () => {
       'Task not assigned'
     );
 
-    expect(error.code).toBe(TaskerooErrorCodes.INVALID_STATUS_TRANSITION);
+    expect(error.code).toBe(TasksErrorCodes.INVALID_STATUS_TRANSITION);
     expect(error.message).toContain('pending');
     expect(error.message).toContain('done');
     expect(error.message).toContain('Task not assigned');
@@ -738,7 +738,7 @@ describe('InvalidStatusTransitionError', () => {
 describe('CommentRequiredError', () => {
   it('should create error without context', () => {
     const error = new CommentRequiredError();
-    expect(error.code).toBe(TaskerooErrorCodes.COMMENT_REQUIRED);
+    expect(error.code).toBe(TasksErrorCodes.COMMENT_REQUIRED);
     expect(error.message).toBe('A comment is required when marking a task as done.');
     expect(error.context).toBeUndefined();
   });
@@ -752,11 +752,11 @@ describe('CommentRequiredError', () => {
 describe('Error Code Type Safety', () => {
   it('should only accept module error codes', () => {
     // This would fail compilation if type safety is broken
-    const validCodes: TaskerooErrorCode[] = [
-      TaskerooErrorCodes.TASK_NOT_FOUND,
-      TaskerooErrorCodes.TASK_NOT_ASSIGNED,
-      TaskerooErrorCodes.INVALID_STATUS_TRANSITION,
-      TaskerooErrorCodes.COMMENT_REQUIRED,
+    const validCodes: TasksErrorCode[] = [
+      TasksErrorCodes.TASK_NOT_FOUND,
+      TasksErrorCodes.TASK_NOT_ASSIGNED,
+      TasksErrorCodes.INVALID_STATUS_TRANSITION,
+      TasksErrorCodes.COMMENT_REQUIRED,
     ];
 
     validCodes.forEach(code => {
@@ -765,7 +765,7 @@ describe('Error Code Type Safety', () => {
   });
 
   it('should match central error codes', () => {
-    expect(TaskerooErrorCodes.TASK_NOT_FOUND)
+    expect(TasksErrorCodes.TASK_NOT_FOUND)
       .toBe(ErrorCodes.TASK_NOT_FOUND);
     expect(WikirooErrorCodes.PAGE_NOT_FOUND)
       .toBe(ErrorCodes.PAGE_NOT_FOUND);
@@ -817,7 +817,7 @@ describe('ProblemDetailsFilter with Domain Errors', () => {
 
 ---
 
-## Comparison: Taskeroo vs Wikiroo
+## Comparison: Tasks vs Wikiroo
 
 ### Similarities ✅
 
@@ -835,7 +835,7 @@ describe('ProblemDetailsFilter with Domain Errors', () => {
 
 ### Differences
 
-| Aspect | Taskeroo | Wikiroo | Impact |
+| Aspect | Tasks | Wikiroo | Impact |
 |--------|----------|---------|--------|
 | Name assignment | `this.constructor.name` | `new.target.name` | Minor (both work) |
 | Number of errors | 4 classes | 1 class | Expected (domain size) |
@@ -894,8 +894,8 @@ No critical issues found.
 
 **1. Standardize Name Assignment**
 ```typescript
-// Update Taskeroo base class to match Wikiroo
-export abstract class TaskerooDomainError extends Error {
+// Update Tasks base class to match Wikiroo
+export abstract class TasksDomainError extends Error {
   constructor(...) {
     super(message);
     this.name = new.target.name;  // ← Change this
@@ -942,7 +942,7 @@ export function isValidErrorCode(code: string): code is ErrorCode {
 **5. Error Code Documentation**
 Could add inline documentation for each error code:
 ```typescript
-export const TaskerooErrorCodes = {
+export const TasksErrorCodes = {
   /** Thrown when a task ID does not exist in the database */
   TASK_NOT_FOUND: ErrorCodes.TASK_NOT_FOUND,
 
@@ -956,7 +956,7 @@ export const TaskerooErrorCodes = {
 **6. Custom Error Formatting**
 Could add custom `toString()` method for better console output:
 ```typescript
-export abstract class TaskerooDomainError extends Error {
+export abstract class TasksDomainError extends Error {
   // ...
 
   toString(): string {

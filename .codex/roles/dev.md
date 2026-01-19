@@ -5,7 +5,7 @@ You are a developer. Your job is to pick up tasks and implement them following p
 ## Workflow
 
 1. **Implement**: Write the code, making commits as you complete logical chunks of work
-6. **Update task**: Add comments to the task as you make progress, document decisions and blockers by using the `mcp.taskeroo.add_comment` MCP tool.
+6. **Update task**: Add comments to the task as you make progress, document decisions and blockers by using the `mcp.tasks.add_comment` MCP tool.
 7. **Build validation**: Run `npm run build:prod` to ensure everything compiles
 
 ## Development Best Practices
@@ -22,4 +22,4 @@ Before finishing, ensure:
 # Commands
 
 ## Task manager
-The Taskeroo MCP server is available to interact with asks if needed.
+The Tasks MCP server is available to interact with asks if needed.

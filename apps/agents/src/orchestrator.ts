@@ -1,7 +1,7 @@
-import { TaskEntity } from "../../backend/src/taskeroo/task.entity";
+import { TaskEntity } from "../../backend/src/tasks/task.entity";
 import { AgentApiClient } from "./api";
 import { assignHandler } from "./assignHandler";
-import { TaskerooListener } from "./ws";
+import { TasksListener } from "./ws";
 import { BASE_URL } from "./config";
 
 /*
@@ -49,7 +49,7 @@ async function processTask(task: TaskEntity) {
 }
 
 // Connects to the backend
-const listener = new TaskerooListener(
+const listener = new TasksListener(
   BASE_URL,
   (task: TaskEntity) => {
     console.log("🔔 task trigger received");

@@ -31,11 +31,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 @Injectable()
-export class TaskerooService {
+export class TasksService {
   constructor(
     @InjectRepository(TaskEntity)
     private readonly taskRepository: Repository<TaskEntity>,
-    private readonly gateway: TaskerooGateway,
+    private readonly gateway: TasksGateway,
   ) {}
 }
 ```
@@ -46,7 +46,7 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 @Injectable()
-export class TaskerooService {
+export class TasksService {
   async getTask(id: string) {
     const task = await this.repository.findOne({ where: { id } });
     if (!task) {
@@ -63,10 +63,10 @@ Instead of HTTP exceptions, services throw domain-specific errors:
 
 ```typescript
 // ✅ GOOD - Domain error
-export abstract class TaskerooDomainError extends Error {
+export abstract class TasksDomainError extends Error {
   constructor(
     message: string,
-    readonly code: TaskerooErrorCode,
+    readonly code: TasksErrorCode,
     readonly context?: Record<string, unknown>,
   ) {
     super(message);
@@ -74,9 +74,9 @@ export abstract class TaskerooDomainError extends Error {
   }
 }
 
-export class TaskNotFoundError extends TaskerooDomainError {
+export class TaskNotFoundError extends TasksDomainError {
   constructor(taskId: string) {
-    super('Task not found.', TaskerooErrorCodes.TASK_NOT_FOUND, { taskId });
+    super('Task not found.', TasksErrorCodes.TASK_NOT_FOUND, { taskId });
   }
 }
 ```
@@ -129,8 +129,8 @@ export class CreateTaskInput {
 Service methods use transport-agnostic input and output types:
 
 ```typescript
-// ✅ GOOD - Taskeroo Service
-export class TaskerooService {
+// ✅ GOOD - Tasks Service
+export class TasksService {
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
     // Business logic only
   }
@@ -212,9 +212,9 @@ export class WikirooService {
 
 ## Current Implementation Review
 
-### Taskeroo Service
+### Tasks Service
 
-**File**: `/apps/backend/src/taskeroo/taskeroo.service.ts`
+**File**: `/apps/backend/src/tasks/tasks.service.ts`
 
 ✅ **Compliant**:
 - No HTTP exception imports
@@ -223,13 +223,13 @@ export class WikirooService {
 - Method signatures use plain TypeScript types
 - Only allowed dependencies: `@Injectable`, `Logger`, TypeORM
 
-**Service Type Definitions**: `/apps/backend/src/taskeroo/dto/service/taskeroo.service.types.ts`
+**Service Type Definitions**: `/apps/backend/src/tasks/dto/service/tasks.service.types.ts`
 - Pure TypeScript types and interfaces
 - No decorators
 - Comment explicitly states: "Service layer types - transport agnostic"
 
-**Error Definitions**: `/apps/backend/src/taskeroo/errors/taskeroo.errors.ts`
-- Domain errors extend base `TaskerooDomainError`
+**Error Definitions**: `/apps/backend/src/tasks/errors/tasks.errors.ts`
+- Domain errors extend base `TasksDomainError`
 - No HTTP status codes or exceptions
 - Comment explicitly states: "Keeps HTTP concerns out of the domain layer"
 
@@ -315,7 +315,7 @@ When reviewing services for transport independence:
 
 ### ✅ Compliant Modules
 
-- **taskeroo**: Fully transport-agnostic
+- **tasks**: Fully transport-agnostic
   - All service methods use transport-agnostic types
   - Domain errors only (no HTTP exceptions)
   - Clean separation of concerns

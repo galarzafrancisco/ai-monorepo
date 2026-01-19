@@ -7,7 +7,7 @@ import {
   ProtectedResourceMetadataResult,
   SystemServer,
 } from './dto/service/discovery.service.types';
-import { createTaskeroo, createTaskerooScopes } from 'src/app-init/mcp/taskeroo.mcp';
+import { createTasks, createTasksScopes } from 'src/app-init/mcp/tasks.mcp';
 import { getConfig } from 'src/config/env.config';
 import { CreateServerInput } from 'src/mcp-registry/dto';
 import { createWikiroo, createWikirooScopes } from 'src/app-init/mcp/wikiroo.mcp';
@@ -23,7 +23,7 @@ export class DiscoveryService {
   }
 
   private populateSystemServers() {
-    this.populateSystemServer(createTaskeroo, createTaskerooScopes);
+    this.populateSystemServer(createTasks, createTasksScopes);
     this.populateSystemServer(createWikiroo, createWikirooScopes);
   }
 

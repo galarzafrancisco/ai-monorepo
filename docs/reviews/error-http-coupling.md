@@ -6,14 +6,14 @@
 
 ## Executive Summary
 
-This review validates that domain errors in the Taskeroo and Wikiroo modules are properly decoupled from HTTP concerns. The architecture successfully implements transport-agnostic errors with HTTP mapping at the appropriate boundary layer.
+This review validates that domain errors in the Tasks and Wikiroo modules are properly decoupled from HTTP concerns. The architecture successfully implements transport-agnostic errors with HTTP mapping at the appropriate boundary layer.
 
 **Key Finding:** The application demonstrates excellent separation of concerns with NO HTTP coupling in domain error classes.
 
 ## Review Scope
 
 ### Modules Reviewed
-1. **Taskeroo** (`apps/backend/src/taskeroo`)
+1. **Tasks** (`apps/backend/src/tasks`)
 2. **Wikiroo** (`apps/backend/src/wikiroo`)
 
 ### Files Examined
@@ -26,10 +26,10 @@ This review validates that domain errors in the Taskeroo and Wikiroo modules are
 
 ### 1. Domain Error Classes (✅ CLEAN)
 
-#### Taskeroo Domain Errors
-**File:** `/apps/backend/src/taskeroo/errors/taskeroo.errors.ts`
+#### Tasks Domain Errors
+**File:** `/apps/backend/src/tasks/errors/tasks.errors.ts`
 
-All Taskeroo domain errors extend `TaskerooDomainError` base class with:
+All Tasks domain errors extend `TasksDomainError` base class with:
 - ✅ NO HTTP status codes
 - ✅ NO HTTP headers
 - ✅ Transport-agnostic error codes (strings)
@@ -38,7 +38,7 @@ All Taskeroo domain errors extend `TaskerooDomainError` base class with:
 
 **Error Classes:**
 ```typescript
-- TaskerooDomainError (abstract base)
+- TasksDomainError (abstract base)
 - TaskNotFoundError
 - TaskNotAssignedError
 - InvalidStatusTransitionError
@@ -47,10 +47,10 @@ All Taskeroo domain errors extend `TaskerooDomainError` base class with:
 
 **Structure:**
 ```typescript
-export abstract class TaskerooDomainError extends Error {
+export abstract class TasksDomainError extends Error {
   constructor(
     message: string,
-    readonly code: TaskerooErrorCode,
+    readonly code: TasksErrorCode,
     readonly context?: Record<string, unknown>,
   ) {
     super(message);
@@ -187,8 +187,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 
 ### 4. Controller Layer (✅ CLEAN)
 
-#### Taskeroo Controller
-**File:** `/apps/backend/src/taskeroo/taskeroo.controller.ts`
+#### Tasks Controller
+**File:** `/apps/backend/src/tasks/tasks.controller.ts`
 
 Controllers do NOT catch or transform errors:
 - Domain errors propagate naturally to the global filter
@@ -198,13 +198,13 @@ Controllers do NOT catch or transform errors:
 #### Wikiroo Controller
 **File:** `/apps/backend/src/wikiroo/wikiroo.controller.ts`
 
-Same pattern as Taskeroo:
+Same pattern as Tasks:
 - Domain errors propagate naturally
 - NO error handling in controllers
 
 ### 5. Service Layer (✅ CLEAN)
 
-Both `TaskerooService` and `WikirooService` throw domain errors directly:
+Both `TasksService` and `WikirooService` throw domain errors directly:
 
 **Example from Wikiroo:**
 ```typescript
@@ -225,7 +225,7 @@ The application follows a clean layered architecture for error handling:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Domain Layer (Taskeroo/Wikiroo)                        │
+│  Domain Layer (Tasks/Wikiroo)                        │
 │  - Pure domain errors (TaskNotFoundError, etc.)         │
 │  - String error codes (TASK_NOT_FOUND, etc.)            │
 │  - NO HTTP coupling                                     │
@@ -291,7 +291,7 @@ If the application grows, consider:
 
 **Status:** ✅ PASSED
 
-The Taskeroo and Wikiroo modules demonstrate best-in-class separation of domain errors from HTTP concerns. No remediation required.
+The Tasks and Wikiroo modules demonstrate best-in-class separation of domain errors from HTTP concerns. No remediation required.
 
 **Key Strengths:**
 - Zero HTTP coupling in domain errors

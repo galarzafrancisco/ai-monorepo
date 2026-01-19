@@ -9,7 +9,7 @@ import PublicLayout from "./Layouts/Public";
 import CatalogPage from "./pages/Catalog";
 import ServerDetailPage from "./pages/ServerDetail";
 import AgentsPage from "./pages/Agents";
-import TaskerooPage from "./pages/Taskeroo";
+import TasksPage from "./pages/Tasks";
 import WikirooPage from "./pages/Wikiroo";
 import "./App.css";
 
@@ -29,7 +29,7 @@ export default function App() {
               <Route path="/catalog" element={<CatalogPage />} />
               <Route path="/catalog/:id" element={<ServerDetailPage />} />
               <Route path="/agents" element={<AgentsPage />} />
-              <Route path="/taskeroo" element={<TaskerooPage />} />
+              <Route path="/tasks" element={<TasksPage />} />
               <Route path="/wikiroo" element={<WikirooPage />} />
             </Route>
           </Route>

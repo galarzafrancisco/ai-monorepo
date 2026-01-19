@@ -7,7 +7,7 @@ A modern web interface for managing Model Context Protocol (MCP) servers, agents
 - **Authentication**: Secure cookie-based authentication with identity provider
 - **MCP Catalog**: Browse and manage MCP servers with their capabilities
 - **Agents**: Create and manage AI agents with custom models and system prompts
-- **Taskeroo**: Kanban-style task board with status tracking, tags, and comments
+- **Tasks**: Kanban-style task board with status tracking, tags, and comments
 - **Wikiroo**: Knowledge base with markdown support for documentation pages
 
 ## Getting Started
@@ -60,7 +60,7 @@ apps/mcp-portal/
 │   ├── pages/           # Main application pages
 │   │   ├── Catalog.tsx  # MCP server catalog
 │   │   ├── Agents.tsx   # Agent management
-│   │   ├── Taskeroo.tsx # Task board
+│   │   ├── Tasks.tsx # Task board
 │   │   └── Wikiroo.tsx  # Wiki pages
 │   └── Layouts/         # Page layouts
 ```
@@ -98,7 +98,7 @@ This builds the app and copies the production build to `apps/backend/dist/public
 - Configure model and system prompts
 - View all agents in a grid layout
 
-### Taskeroo
+### Tasks
 - Kanban board with 4 status columns (Not Started, In Progress, For Review, Done)
 - Create new tasks
 - View task details with comments and tags

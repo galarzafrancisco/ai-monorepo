@@ -5,7 +5,7 @@ import { BetaShell } from './shells/BetaShell';
 import { HomeRoutes } from '../features/home/HomeRoutes';
 import { BASE_PATH } from '../shared/const/base';
 import './App.css';
-import { TaskerooRoutes } from '../features/beta-taskeroo/TaskerooRoutes';
+import { TasksRoutes } from '../features/tasks/TasksRoutes';
 import { LogoutPage } from './routes/LogoutPage';
 import { WikirooRoutes } from '../features/wikiroo/WikirooRoutes';
 import { MCPRegistryPage } from './routes/MCPRegistryPage';
@@ -23,8 +23,8 @@ function BetaAppRoutes() {
       {/* Home, settings, all the app level stuff */}
       <Route path="/*" element={<HomeRoutes />} />
 
-      {/* Taskeroo with nested routes */}
-      <Route path="/taskeroo/*" element={<TaskerooRoutes />} />
+      {/* Tasks with nested routes */}
+      <Route path="/tasks/*" element={<TasksRoutes />} />
 
       <Route path="/wikiroo/*" element={<WikirooRoutes />} />
       <Route path="/mcp-registry" element={<MCPRegistryPage />} />

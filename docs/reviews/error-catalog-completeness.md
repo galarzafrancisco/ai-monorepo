@@ -19,9 +19,9 @@ All domain-specific errors are properly cataloged. The system is complete and we
 
 ## Domain Error Inventory
 
-### Taskeroo Domain Errors
+### Tasks Domain Errors
 
-Located in: `/apps/backend/src/taskeroo/errors/taskeroo.errors.ts`
+Located in: `/apps/backend/src/tasks/errors/tasks.errors.ts`
 
 | Error Class | Error Code | Catalog Entry | Status |
 |------------|------------|---------------|---------|
@@ -30,7 +30,7 @@ Located in: `/apps/backend/src/taskeroo/errors/taskeroo.errors.ts`
 | InvalidStatusTransitionError | INVALID_STATUS_TRANSITION | Yes | ✓ Complete |
 | CommentRequiredError | COMMENT_REQUIRED | Yes | ✓ Complete |
 
-**Base Class**: `TaskerooDomainError`
+**Base Class**: `TasksDomainError`
 
 ### Wikiroo Domain Errors
 
@@ -122,7 +122,7 @@ export const ErrorCodes = {
 The error system follows the established architecture patterns:
 
 ### Domain Layer
-- Domain errors extend module-specific base classes (TaskerooDomainError, WikirooDomainError)
+- Domain errors extend module-specific base classes (TasksDomainError, WikirooDomainError)
 - Domain errors are HTTP-agnostic
 - Each domain error references an error code from the centralized ErrorCodes
 
@@ -137,8 +137,8 @@ packages/shared/errors/
   └── error-codes.ts          # Central error code definitions
 
 apps/backend/src/
-  ├── taskeroo/errors/
-  │   └── taskeroo.errors.ts  # Taskeroo domain errors
+  ├── tasks/errors/
+  │   └── tasks.errors.ts  # Tasks domain errors
   ├── wikiroo/errors/
   │   └── wikiroo.errors.ts   # Wikiroo domain errors
   └── errors/http/

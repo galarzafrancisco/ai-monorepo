@@ -46,9 +46,9 @@ export default function NavSidebar({ collapsed }: Props) {
           <Bot size={16} />
           {!collapsed && <span>Agents</span>}
         </NavLink>
-        <NavLink to="/taskeroo" className={linkCls}>
+        <NavLink to="/tasks" className={linkCls}>
           <CheckSquare size={16} />
-          {!collapsed && <span>Taskeroo</span>}
+          {!collapsed && <span>Tasks</span>}
         </NavLink>
         <NavLink to="/wikiroo" className={linkCls}>
           <BookOpen size={16} />

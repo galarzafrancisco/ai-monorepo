@@ -1,7 +1,7 @@
 {
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "taskeroo"
+    "tasks"
   ],
   "permissions": {
     "allow": [
@@ -10,16 +10,16 @@
       "Read",
       "Write",
       "Edit",
-      "mcp__taskeroo__list_tasks",
-      "mcp__taskeroo__add_numbers",
-      "mcp__taskeroo__get_task",
-      "mcp__taskeroo__create_task",
-      "mcp__taskeroo__assign_task",
-      "mcp__taskeroo__add_comment",
-      "mcp__taskeroo__mark_task_in_progress",
-      "mcp__taskeroo__mark_task_for_review",
-      "mcp__taskeroo__mark_task_done",
-      "mcp__taskeroo__change_task_status"
+      "mcp__tasks__list_tasks",
+      "mcp__tasks__add_numbers",
+      "mcp__tasks__get_task",
+      "mcp__tasks__create_task",
+      "mcp__tasks__assign_task",
+      "mcp__tasks__add_comment",
+      "mcp__tasks__mark_task_in_progress",
+      "mcp__tasks__mark_task_for_review",
+      "mcp__tasks__mark_task_done",
+      "mcp__tasks__change_task_status"
     ],
     "deny": [],
     "ask": []

@@ -10,9 +10,9 @@ This review verifies that services use pure TypeScript types instead of class-ba
 
 ## Scope
 
-- `apps/backend/src/taskeroo/dto/service/taskeroo.service.types.ts`
+- `apps/backend/src/tasks/dto/service/tasks.service.types.ts`
 - `apps/backend/src/wikiroo/dto/service/wikiroo.service.types.ts`
-- Service layer usage in `taskeroo.service.ts` and `wikiroo.service.ts`
+- Service layer usage in `tasks.service.ts` and `wikiroo.service.ts`
 
 ## Review Criteria
 
@@ -24,9 +24,9 @@ This review verifies that services use pure TypeScript types instead of class-ba
 
 ## Findings
 
-### Taskeroo Service Types
+### Tasks Service Types
 
-**File:** `apps/backend/src/taskeroo/dto/service/taskeroo.service.types.ts`
+**File:** `apps/backend/src/tasks/dto/service/tasks.service.types.ts`
 
 **Status:** ✅ EXCELLENT
 
@@ -143,9 +143,9 @@ export interface PageSummaryResult { ... }   // ✅ Pure interface
 
 ### Service Layer Usage Verification
 
-#### Taskeroo Service
+#### Tasks Service
 
-From previous review of `taskeroo.service.ts`:
+From previous review of `tasks.service.ts`:
 
 **Imports (lines 7-17):**
 ```typescript
@@ -159,7 +159,7 @@ import {
   TaskResult,
   CommentResult,
   ListTasksResult,
-} from './dto/service/taskeroo.service.types';
+} from './dto/service/tasks.service.types';
 ```
 ✅ Only imports from service types file
 
@@ -251,7 +251,7 @@ The codebase follows the proper layered architecture for type separation:
 
 ## Comparison: Service Types vs HTTP DTOs
 
-### Taskeroo Example
+### Tasks Example
 
 **HTTP DTO (CreateTaskDto.ts):**
 ```typescript
@@ -264,7 +264,7 @@ export class CreateTaskDto {
 }
 ```
 
-**Service Type (taskeroo.service.types.ts):**
+**Service Type (tasks.service.types.ts):**
 ```typescript
 export type CreateTaskInput = {
   name: string;           // Pure type, no decorators
@@ -295,7 +295,7 @@ export type CreateTaskInput = {
 - **Transport Coupling:** 0 (100% transport-agnostic)
 
 ### Type vs Interface Usage
-- **Taskeroo:** Uses `type` keyword (lines 9, 16, 20, 25, 30, 35, 43, 57, 65)
+- **Tasks:** Uses `type` keyword (lines 9, 16, 20, 25, 30, 35, 43, 57, 65)
 - **Wikiroo:** Uses `interface` keyword (lines 1, 7, 16)
 - **Analysis:** Both approaches are equivalent and acceptable for this use case
 
@@ -356,7 +356,7 @@ export type TaskResult = {
 
 **Status:** ✅ PASSED
 
-The service layer type implementation in both Taskeroo and Wikiroo modules is **exemplary** and follows **best-in-class** practices.
+The service layer type implementation in both Tasks and Wikiroo modules is **exemplary** and follows **best-in-class** practices.
 
 **Key Achievements:**
 1. 100% pure TypeScript types (no classes)

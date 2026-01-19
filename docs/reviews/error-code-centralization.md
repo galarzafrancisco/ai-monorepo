@@ -87,9 +87,9 @@ export const ErrorCatalog: Record<
 
 Modules re-export their relevant error codes for convenience without duplicating the source:
 
-**Taskeroo Module** (`/apps/backend/src/taskeroo/errors/taskeroo.errors.ts`):
+**Tasks Module** (`/apps/backend/src/tasks/errors/tasks.errors.ts`):
 ```typescript
-export const TaskerooErrorCodes = {
+export const TasksErrorCodes = {
   TASK_NOT_FOUND: ErrorCodes.TASK_NOT_FOUND,
   TASK_NOT_ASSIGNED: ErrorCodes.TASK_NOT_ASSIGNED,
   INVALID_STATUS_TRANSITION: ErrorCodes.INVALID_STATUS_TRANSITION,
@@ -170,7 +170,7 @@ export abstract class [Module]DomainError extends Error {
     │         Domain Modules                │
     │                                       │
     │  ┌──────────────┐  ┌──────────────┐  │
-    │  │  Taskeroo    │  │  Wikiroo     │  │
+    │  │  Tasks    │  │  Wikiroo     │  │
     │  │              │  │              │  │
     │  │ Re-exports:  │  │ Re-exports:  │  │
     │  │ ├─ TASK_...  │  │ ├─ PAGE_...  │  │
@@ -226,8 +226,8 @@ ErrorCodes (central)
 **Error Code References**:
 - Central definition: 1 file (`packages/shared/errors/error-codes.ts`)
 - Catalog mapping: 1 file (`apps/backend/src/errors/http/error-catalog.ts`)
-- Module re-exports: 2 files (Taskeroo, Wikiroo)
-- Domain error classes: 2 files (Taskeroo, Wikiroo)
+- Module re-exports: 2 files (Tasks, Wikiroo)
+- Domain error classes: 2 files (Tasks, Wikiroo)
 - Service usage: 2 files (proper error throwing)
 
 **Statistics**:
@@ -404,7 +404,7 @@ test('all error codes have catalog entries', () => {
 2. **Module Re-export Consistency**
 ```typescript
 test('module error codes are subset of central codes', () => {
-  Object.values(TaskerooErrorCodes).forEach(code => {
+  Object.values(TasksErrorCodes).forEach(code => {
     expect(Object.values(ErrorCodes)).toContain(code);
   });
 });

@@ -32,8 +32,8 @@ export function AppNavSidebar({ collapsed }: AppNavSidebarProps) {
       icon: '🤖',
     },
     {
-      name: 'Taskeroo',
-      path: '/taskeroo',
+      name: 'Tasks',
+      path: '/tasks',
       icon: '📋',
     },
     {

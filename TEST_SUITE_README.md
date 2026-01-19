@@ -1,10 +1,10 @@
-# Taskeroo End-to-End Test Suite
+# Tasks End-to-End Test Suite
 
-This document describes the E2E test suite for the Taskeroo application and how to run it.
+This document describes the E2E test suite for the Tasks application and how to run it.
 
 ## Overview
 
-The test suite is built in TypeScript using Jest and Supertest to perform end-to-end testing of the Taskeroo API. It validates all the core functionality of the task management system.
+The test suite is built in TypeScript using Jest and Supertest to perform end-to-end testing of the Tasks API. It validates all the core functionality of the task management system.
 
 ## Test Coverage
 
@@ -59,12 +59,12 @@ From the root of the monorepo:
 
 This script provides colored output and better error messaging.
 
-### Option 3: Run only Taskeroo tests
+### Option 3: Run only Tasks tests
 
 From the `apps/backend` directory:
 
 ```bash
-npx jest --config ./test/jest-e2e.json taskeroo.e2e-spec.ts
+npx jest --config ./test/jest-e2e.json tasks.e2e-spec.ts
 ```
 
 ### Option 4: Run all E2E tests
@@ -77,7 +77,7 @@ npm run test:e2e
 
 ## Test Files
 
-- **Test Suite**: `apps/backend/test/taskeroo.e2e-spec.ts`
+- **Test Suite**: `apps/backend/test/tasks.e2e-spec.ts`
 - **Jest Config**: `apps/backend/test/jest-e2e.json`
 - **TypeScript Config**: `apps/backend/test/tsconfig.e2e.json`
 
@@ -106,7 +106,7 @@ The CI pipeline:
 2. Select the workflow run for your PR
 3. View the test results in the "Build and Test" job
 4. Download artifacts:
-   - **Docker image**: `taskeroo-docker-image` (ready to deploy)
+   - **Docker image**: `tasks-docker-image` (ready to deploy)
    - **Test results**: `test-results` (if tests fail)
 
 ## Test Structure
@@ -192,9 +192,9 @@ npm install
 
 ## Contributing
 
-When adding new features to Taskeroo:
+When adding new features to Tasks:
 
-1. Add corresponding E2E tests to `apps/backend/test/taskeroo.e2e-spec.ts`
+1. Add corresponding E2E tests to `apps/backend/test/tasks.e2e-spec.ts`
 2. Run the full test suite locally to ensure nothing breaks
 3. Ensure CI passes before merging PRs
 

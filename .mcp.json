@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "taskeroo": {
+    "tasks": {
       "type": "http",
-      "url": "http://localhost:1000/api/v1/taskeroo/tasks/mcp"
+      "url": "http://localhost:1000/api/v1/tasks/tasks/mcp"
     }
   }
 }
