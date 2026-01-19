@@ -164,6 +164,7 @@ export class TokenService {
    * Implements OAuth 2.0 refresh token grant with token rotation
    */
   private async handleRefreshTokenGrant(tokenRequest: TokenRequestDto): Promise<TokenResponseDto> {
+    this.logger.debug('refresh token request');
     // Validate required parameters
     if (!tokenRequest.refresh_token) {
       throw new MissingRequiredParametersError(tokenRequest.grant_type);

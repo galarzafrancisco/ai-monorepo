@@ -191,6 +191,7 @@ export function TaskDetailPage() {
       <DataRowContainer className='task-detail-page__status-buttons'>
         {Object.entries(TASKS_STATUS).map(([status, info]) => (
           <Button
+            key={status}
             size='sm'
             variant={status === task.status ? 'primary' : 'secondary'}
             onClick={() => handleChangeStatus(status as TaskStatus)}

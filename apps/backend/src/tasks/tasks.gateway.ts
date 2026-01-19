@@ -38,7 +38,7 @@ const Tasks_ROOM = 'Tasks';
   cors: {
     origin: '*',
   },
-  namespace: '/Tasks',
+  namespace: '/tasks',
 })
 export class TasksGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -61,13 +61,13 @@ export class TasksGateway
    * Room implementation
    */
 
-  @SubscribeMessage('Tasks.subscribe')
+  @SubscribeMessage('tasks.subscribe')
   subscribe(@ConnectedSocket() client: Socket) {
     client.join(Tasks_ROOM);
     return { ok: true, room: Tasks_ROOM };
   }
 
-  @SubscribeMessage('Tasks.unsubscribe')
+  @SubscribeMessage('tasks.unsubscribe')
   unsubscribe(@ConnectedSocket() client: Socket) {
     client.leave(Tasks_ROOM);
     return { ok: true };
