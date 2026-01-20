@@ -1,3 +1,14 @@
 .data-row__container {
   margin-bottom: 0px;
 }
+
+.data-row__container-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+}
+
+.data-row__container-action {
+  flex-shrink: 0;
+}

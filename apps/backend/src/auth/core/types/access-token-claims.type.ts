@@ -77,4 +77,10 @@ export interface AccessTokenClaims {
    * Version of the MCP server contract that this token was minted for
    */
   version: string;
+
+  /**
+   * Actor ID of who issued this token (for manually issued tokens).
+   * Used for audit trail when a human issues a token for an agent.
+   */
+  issued_by?: string;
 }

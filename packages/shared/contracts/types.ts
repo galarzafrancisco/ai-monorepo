@@ -1026,6 +1026,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents/{slug}/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all tokens for an agent */
+        get: operations["AgentTokensController_listTokens"];
+        put?: never;
+        /** Issue a new access token for an agent */
+        post: operations["AgentTokensController_issueToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agents/{slug}/tokens/{tokenId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke an agent token */
+        delete: operations["AgentTokensController_revokeToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2815,6 +2850,132 @@ export interface components {
              * @example 3
              */
             totalPages: number;
+        };
+        IssueAccessTokenRequestDto: {
+            /**
+             * @description Human-readable name for this token (e.g., "CI/CD Pipeline Token")
+             * @example Production API Token
+             */
+            name: string;
+            /**
+             * @description Scopes to grant to this token
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes: string[];
+            /**
+             * @description Number of days until token expires (default: 30, max: 365)
+             * @default 30
+             * @example 30
+             */
+            expirationDays: number;
+        };
+        IssueAccessTokenResponseDto: {
+            /**
+             * @description Unique identifier for this token (can be used for revocation)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Human-readable name for this token
+             * @example Production API Token
+             */
+            name: string;
+            /**
+             * @description The raw JWT token - only shown once, store securely!
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            token: string;
+            /**
+             * @description Scopes granted to this token
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes: string[];
+            /**
+             * @description When this token expires (ISO 8601)
+             * @example 2025-02-20T12:00:00.000Z
+             */
+            expiresAt: string;
+            /**
+             * @description When this token was created (ISO 8601)
+             * @example 2025-01-20T12:00:00.000Z
+             */
+            createdAt: string;
+        };
+        IssuedAccessTokenResponseDto: {
+            /**
+             * @description Unique identifier for this token
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Human-readable name for this token
+             * @example Production API Token
+             */
+            name: string;
+            /**
+             * @description Scopes granted to this token
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes: string[];
+            /**
+             * @description Subject actor ID this token is issued for (JWT sub claim)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            sub: string;
+            /**
+             * @description Subject actor slug
+             * @example my-agent
+             */
+            subjectSlug: string;
+            /**
+             * @description Subject actor display name
+             * @example My Agent
+             */
+            subjectDisplayName: string;
+            /**
+             * @description Actor ID of the issuer (human who created this token)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            issuedBy: string;
+            /**
+             * @description Display name of the issuer
+             * @example John Doe
+             */
+            issuedByDisplayName: string;
+            /**
+             * @description When this token expires (ISO 8601)
+             * @example 2025-02-20T12:00:00.000Z
+             */
+            expiresAt: string;
+            /**
+             * @description When this token was created (ISO 8601)
+             * @example 2025-01-20T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description When this token was revoked (ISO 8601), null if active
+             * @example null
+             */
+            revokedAt?: string | null;
+            /**
+             * @description When this token was last used (ISO 8601), null if never used
+             * @example 2025-01-21T08:30:00.000Z
+             */
+            lastUsedAt?: string | null;
+            /**
+             * @description Whether the token is still valid (not expired and not revoked)
+             * @example true
+             */
+            isValid: boolean;
         };
     };
     responses: never;
@@ -5265,6 +5426,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AgentTokensController_listTokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent slug */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedAccessTokenResponseDto"][];
+                };
+            };
+        };
+    };
+    AgentTokensController_issueToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent slug */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueAccessTokenRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueAccessTokenResponseDto"];
+                };
+            };
+        };
+    };
+    AgentTokensController_revokeToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent slug */
+                slug: string;
+                /** @description Token ID to revoke */
+                tokenId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedAccessTokenResponseDto"];
                 };
             };
         };
