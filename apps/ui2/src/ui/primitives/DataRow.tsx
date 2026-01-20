@@ -48,8 +48,11 @@ export function DataRow({
   return (
     <div className={`data-row__wrapper ${animationClass}`} onClick={onClick}>
       <div className={`data-row ${className}`} data-component="data-row">
+
+        {/* Leading */}
         {leading ? <div className="data-row__leading">{leading}</div> : null}
 
+        {/* Content */}
         <div className="data-row__content">
           <div className="data-row__top">
             <div className={`data-row__main ${className}`}>{children}</div>
@@ -70,6 +73,7 @@ export function DataRow({
           ) : null}
         </div>
 
+        {/* Trailing */}
         {trailing ? <div className="data-row__trailing">{trailing}</div> : null}
       </div>
     </div>

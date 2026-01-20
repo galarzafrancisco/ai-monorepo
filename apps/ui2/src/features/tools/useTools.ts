@@ -66,8 +66,10 @@ export const useTools = () => {
 
   // Load clients (connections) for a tool
   const loadToolClients = useCallback(async (serverId: string): Promise<ToolClient[]> => {
+    console.log(`loading clients for server ${serverId}`)
     try {
       const clients = await ToolsService.mcpRegistryControllerListConnections(serverId);
+      console.log(`clients: ${clients}`)
       return clients;
     } catch (err) {
       console.error('Failed to load clients:', err);

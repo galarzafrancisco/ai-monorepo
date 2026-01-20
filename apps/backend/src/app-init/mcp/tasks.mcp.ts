@@ -7,9 +7,9 @@ import { TasksScopes } from "src/tasks/tasks.scopes";
 const config = getConfig();
 
 export const createTasks: CreateServerInput = {
-  providedId: 'Tasks',
+  providedId: 'tasks',
   name: "Tasks",
-  description: "Tasks",
+  description: "This MCP server allows you to interact with tasks!",
   url: `${config.issuerUrl}/api/v1/tasks/tasks/mcp`,
 }
 

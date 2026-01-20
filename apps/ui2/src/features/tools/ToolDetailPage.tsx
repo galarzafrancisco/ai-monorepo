@@ -18,6 +18,7 @@ export function ToolDetailPage() {
   const [clients, setClients] = useState<ToolClient[]>([]);
   const [isLoading, setIsLoading] = useState(!toolFromList);
   const [expandedMetadata, setExpandedMetadata] = useState(false);
+  const [authorizationServerMetadata, setAuthorizationServerMetadata] = useState<any | null>(null);
 
   // Load tool details if not in list
   useEffect(() => {
@@ -73,6 +74,13 @@ export function ToolDetailPage() {
       </div>
     );
   }
+  const tags: DataRowTag[] = [
+    { label: 'MCP Server', color: 'blue' },
+  ];
+
+  if (tool.url) {
+    tags.push({ label: 'remote', color: 'green' });
+  }
 
   return (
     <div className="tool-detail-page">
@@ -80,56 +88,69 @@ export function ToolDetailPage() {
       {/* Meta */}
       <DataRowContainer className="tool-detail-page__section">
         <DataRow
-          leading={<Avatar size="sm" name={tool.name} />}
-          tags={[
-            { label: 'MCP Server', color: 'blue' },
-            tool.url ? { label: 'URL', color: 'green' } : { label: 'No URL', color: 'gray' },
-          ]}
+          leading={<Avatar name={tool.name} />}
+          tags={tags}
           topRight={<Text size="1" tone="muted">{elapsedTime(tool.updatedAt)}</Text>}
         >
-          <Text as="span" weight="medium" size="3">
-            {tool.name}
-          </Text>
+          {/* No need to display name as it already is the title of the page */}
           <Text as="span" weight="normal" tone="muted" size="3">
-            {` ${tool.providedId} `}
+            {`${tool.providedId} `}
           </Text>
           <Text as="span" tone="muted" style="mono">
             #{tool.id.slice(0, 6)}
           </Text>
+
+          {/* Description */}
+          <Text>
+            {tool.description}
+          </Text>
+
+          {/* Auth Server Metadata (collapsible) */}
+          {authorizationServerMetadata ? (
+            <DataRow
+              onClick={() => setExpandedMetadata(!expandedMetadata)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Text as="span" weight="medium" size="3">
+                  Auth Server Metadata
+                </Text>
+                <Text size="2" tone="muted">
+                  {expandedMetadata ? '(tap to collapse)' : '(tap to expand)'}
+                </Text>
+              </div>
+              {expandedMetadata && (
+                <div className="tool-detail-page__metadata">
+                  <pre>
+                    {JSON.stringify(authorizationServerMetadata, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </DataRow>
+          ) : (
+            <Text tone="muted" size="2">
+              Authorization Server metadata not found
+            </Text>
+          )}
         </DataRow>
       </DataRowContainer>
 
-      {/* Description */}
-      <DataRowContainer className="tool-detail-page__section">
-        <DataRow
-          topRight={<Text size="1" tone="muted">{elapsedTime(tool.createdAt)}</Text>}
-        >
-          <Text as="span" weight="medium" size="3">
-            Description
-          </Text>
-          <Text>
-            {tool.description || 'No description'}
-          </Text>
-        </DataRow>
-      </DataRowContainer>
 
       {/* URL */}
       {tool.url && (
-        <DataRowContainer className="tool-detail-page__section">
-          <DataRow>
-            <Text as="span" weight="medium" size="3">
-              Server URL
-            </Text>
-            <Text size="2" style="mono" className="tool-detail-page__url">
-              {tool.url}
-            </Text>
-          </DataRow>
-        </DataRowContainer>
+        <>
+          <DataRowContainer title="Server URL" className="tool-detail-page__section">
+            <DataRow>
+              <Text size="2" style="mono" className="tool-detail-page__url">
+                {tool.url}
+              </Text>
+            </DataRow>
+          </DataRowContainer>
+        </>
       )}
 
       {/* Inspector Command */}
       {tool.url && (
-        <DataRowContainer className="tool-detail-page__section">
+        <DataRowContainer title="Configure" className="tool-detail-page__section">
           <DataRow>
             <Text as="span" weight="medium" size="3">
               Inspector Command
@@ -137,81 +158,38 @@ export function ToolDetailPage() {
             <Text size="2" tone="muted">
               Run this command to start the MCP inspector:
             </Text>
-            <div className="tool-detail-page__command">
-              <code>npx @modelcontextprotocol/inspector {tool.url}</code>
-            </div>
+            <Text as='span' style='mono'>
+              <div onClick={() => navigator.clipboard.writeText(`npx @modelcontextprotocol/inspector ${tool.url}`)}>
+                {`npx @modelcontextprotocol/inspector ${tool.url}`}
+              </div>
+            </Text>
           </DataRow>
         </DataRowContainer>
       )}
 
       {/* Scopes (Permissions) */}
-      <DataRowContainer className="tool-detail-page__section">
-        <DataRow>
-          <Text as="span" weight="medium" size="3">
-            Scopes ({scopes.length})
-          </Text>
-          {scopes.length === 0 ? (
-            <Text tone="muted" size="2">No scopes defined</Text>
-          ) : (
-            <div className="tool-detail-page__scopes">
-              {scopes.map(scope => (
-                <div key={scope.id} className="tool-detail-page__scope-item">
-                  <Text size="2" style="mono" weight="medium">{scope.id}</Text>
-                  <Text size="2" tone="muted">{scope.description}</Text>
-                </div>
-              ))}
-            </div>
-          )}
-        </DataRow>
-      </DataRowContainer>
+      {scopes.length ? (
+        <DataRowContainer title="Scopes">
+          {scopes.map(scope => (
+            <DataRow key={scope.id}>
+              <Text size="2" style="mono" weight="medium">{scope.id}</Text>
+              <Text size="2" tone="muted">{scope.description}</Text>
+            </DataRow>
+          ))}
+        </DataRowContainer>
+      ) : (
+        <Text tone="muted" size="2">
+          This server doesn't have any permissions configured
+        </Text>
+      )}
 
-      {/* Auth Server Metadata (collapsible) */}
-      <DataRowContainer className="tool-detail-page__section">
-        <DataRow
-          onClick={() => setExpandedMetadata(!expandedMetadata)}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Text as="span" weight="medium" size="3">
-              Auth Server Metadata
-            </Text>
-            <Text size="2" tone="muted">
-              {expandedMetadata ? '(tap to collapse)' : '(tap to expand)'}
-            </Text>
-          </div>
-          {expandedMetadata && (
-            <div className="tool-detail-page__metadata">
-              <pre>
-                {JSON.stringify({
-                  id: tool.id,
-                  providedId: tool.providedId,
-                  name: tool.name,
-                  description: tool.description,
-                  url: tool.url,
-                  createdAt: tool.createdAt,
-                  updatedAt: tool.updatedAt,
-                  scopes: scopes.map(s => ({ id: s.id, description: s.description })),
-                  clients: clients.map(c => ({
-                    id: c.id,
-                    friendlyName: c.friendlyName,
-                    clientId: c.clientId,
-                    authorizeUrl: c.authorizeUrl,
-                    tokenUrl: c.tokenUrl,
-                  })),
-                }, null, 2)}
-              </pre>
-            </div>
-          )}
-        </DataRow>
-      </DataRowContainer>
+
 
       {/* Clients */}
-      <DataRowContainer className="tool-detail-page__section">
+      <DataRowContainer title="Clients" className="tool-detail-page__section">
         <DataRow
           onClick={() => navigate(`/tools/tool/${tool.id}/clients`)}
         >
-          <Text as="span" weight="medium" size="3">
-            Clients ({clients.length})
-          </Text>
           <Text tone="muted" size="2">
             {clients.length === 0
               ? 'No OAuth clients configured'

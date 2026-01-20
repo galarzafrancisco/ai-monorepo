@@ -77,27 +77,14 @@ export function AgentDetailPage() {
           ]}
           topRight={<Text size="1" tone="muted">{elapsedTime(agent.updatedAt)}</Text>}
         >
-          <Text as="span" weight="medium" size="3">
-            {agent.name}
-          </Text>
           <Text as="span" weight="normal" tone="muted" size="3">
             {` @${agent.slug} `}
           </Text>
           <Text as="span" tone="muted" style="mono">
             #{agent.actorId.slice(0, 6)}
           </Text>
-        </DataRow>
-      </DataRowContainer>
 
-      {/* Description */}
-      <DataRowContainer className="agent-detail-page__section">
-        <DataRow
-          leading={<Avatar size="sm" name={agent.name} />}
-          topRight={<Text size="1" tone="muted">{elapsedTime(agent.createdAt)}</Text>}
-        >
-          <Text as="span" weight="medium" size="3">
-            Description
-          </Text>
+          {/* Description */}
           <Text>
             {agent.description ? String(agent.description) : 'No description'}
           </Text>
@@ -105,12 +92,9 @@ export function AgentDetailPage() {
       </DataRowContainer>
 
       {/* System Prompt */}
-      <DataRowContainer className="agent-detail-page__section">
+      <DataRowContainer title="System Prompt" className="agent-detail-page__section">
         <DataRow>
-          <Text as="span" weight="medium" size="3">
-            System Prompt
-          </Text>
-          <Text size="2" className="agent-detail-page__system-prompt">
+          <Text size="2" className="agent-detail-page__system-prompst">
             {agent.systemPrompt || 'No system prompt configured'}
           </Text>
         </DataRow>
@@ -118,15 +102,14 @@ export function AgentDetailPage() {
 
       {/* Status Triggers */}
       {agent.statusTriggers.length > 0 && (
-        <DataRowContainer className="agent-detail-page__section">
-          <DataRow>
-            <Text as="span" weight="medium" size="3">
-              Status Triggers
-            </Text>
-            <Text tone="muted">
-              {agent.statusTriggers.join(', ')}
-            </Text>
-          </DataRow>
+        <DataRowContainer title="Status Triggers" className="agent-detail-page__section">
+          {agent.statusTriggers.map(statusTrigger => 
+            <DataRow key={statusTrigger}>
+              <Text tone="muted">
+                {statusTrigger}
+              </Text>
+            </DataRow>
+          )}
         </DataRowContainer>
       )}
 
@@ -139,20 +122,6 @@ export function AgentDetailPage() {
             </Text>
             <Text tone="muted" size="2">
               {agent.allowedTools.join(', ')}
-            </Text>
-          </DataRow>
-        </DataRowContainer>
-      )}
-
-      {/* Concurrency */}
-      {agent.concurrencyLimit && (
-        <DataRowContainer className="agent-detail-page__section">
-          <DataRow>
-            <Text as="span" weight="medium" size="3">
-              Concurrency Limit
-            </Text>
-            <Text tone="muted">
-              {String(agent.concurrencyLimit)}
             </Text>
           </DataRow>
         </DataRowContainer>
@@ -174,7 +143,7 @@ export function AgentDetailPage() {
 
 function getTypeTag(type: AgentResponseDto.type): DataRowTag {
   const typeColors: Record<AgentResponseDto.type, DataRowTag['color']> = {
-    [AgentResponseDto.type.CLAUDE]: 'purple',
+    [AgentResponseDto.type.CLAUDE]: 'orange',
     [AgentResponseDto.type.CODEX]: 'green',
     [AgentResponseDto.type.OPENCODE]: 'blue',
     [AgentResponseDto.type.OTHER]: 'gray',

@@ -115,7 +115,7 @@ function getIssuerUrl(): string {
   }
   // Default for development
   logger.warn('Using default ISSUER_URL for development');
-  return 'http://localhost:3000';
+  return 'http://localhost:1000'; // UI runs on 1000 and proxies to the backend
 }
 
 function getCallbackUrl(): string {

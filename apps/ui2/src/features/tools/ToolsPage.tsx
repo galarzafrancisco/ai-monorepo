@@ -63,7 +63,7 @@ function ToolRow({ tool, onClick }: { tool: Tool; onClick?: () => void }): JSX.E
   ];
 
   if (tool.url) {
-    tags.push({ label: 'URL', color: 'green' });
+    tags.push({ label: 'remote', color: 'green' });
   }
 
   return (
