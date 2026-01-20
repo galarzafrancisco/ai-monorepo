@@ -3400,6 +3400,137 @@
           "Agent"
         ]
       }
+    },
+    "/api/v1/agents/{slug}/tokens": {
+      "post": {
+        "operationId": "AgentTokensController_issueToken",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Agent slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueAccessTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueAccessTokenResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Issue a new access token for an agent",
+        "tags": [
+          "Agent Tokens"
+        ]
+      },
+      "get": {
+        "operationId": "AgentTokensController_listTokens",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Agent slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssuedAccessTokenResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all tokens for an agent",
+        "tags": [
+          "Agent Tokens"
+        ]
+      }
+    },
+    "/api/v1/agents/{slug}/tokens/{tokenId}": {
+      "delete": {
+        "operationId": "AgentTokensController_revokeToken",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Agent slug",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenId",
+            "required": true,
+            "in": "path",
+            "description": "Token ID to revoke",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedAccessTokenResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Revoke an agent token",
+        "tags": [
+          "Agent Tokens"
+        ]
+      }
     }
   },
   "info": {
@@ -6046,6 +6177,181 @@
           "page",
           "limit",
           "totalPages"
+        ]
+      },
+      "IssueAccessTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for this token (e.g., \"CI/CD Pipeline Token\")",
+            "example": "Production API Token",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "scopes": {
+            "description": "Scopes to grant to this token",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expirationDays": {
+            "type": "number",
+            "description": "Number of days until token expires (default: 30, max: 365)",
+            "example": 30,
+            "default": 30,
+            "minimum": 1,
+            "maximum": 365
+          }
+        },
+        "required": [
+          "name",
+          "scopes"
+        ]
+      },
+      "IssueAccessTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this token (can be used for revocation)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for this token",
+            "example": "Production API Token"
+          },
+          "token": {
+            "type": "string",
+            "description": "The raw JWT token - only shown once, store securely!",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "scopes": {
+            "description": "Scopes granted to this token",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When this token expires (ISO 8601)",
+            "example": "2025-02-20T12:00:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When this token was created (ISO 8601)",
+            "example": "2025-01-20T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "token",
+          "scopes",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "IssuedAccessTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this token",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for this token",
+            "example": "Production API Token"
+          },
+          "scopes": {
+            "description": "Scopes granted to this token",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sub": {
+            "type": "string",
+            "description": "Subject actor ID this token is issued for (JWT sub claim)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "subjectSlug": {
+            "type": "string",
+            "description": "Subject actor slug",
+            "example": "my-agent"
+          },
+          "subjectDisplayName": {
+            "type": "string",
+            "description": "Subject actor display name",
+            "example": "My Agent"
+          },
+          "issuedBy": {
+            "type": "string",
+            "description": "Actor ID of the issuer (human who created this token)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "issuedByDisplayName": {
+            "type": "string",
+            "description": "Display name of the issuer",
+            "example": "John Doe"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When this token expires (ISO 8601)",
+            "example": "2025-02-20T12:00:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When this token was created (ISO 8601)",
+            "example": "2025-01-20T12:00:00.000Z"
+          },
+          "revokedAt": {
+            "type": "string",
+            "description": "When this token was revoked (ISO 8601), null if active",
+            "example": null,
+            "nullable": true
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "description": "When this token was last used (ISO 8601), null if never used",
+            "example": "2025-01-21T08:30:00.000Z",
+            "nullable": true
+          },
+          "isValid": {
+            "type": "boolean",
+            "description": "Whether the token is still valid (not expired and not revoked)",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "scopes",
+          "sub",
+          "subjectSlug",
+          "subjectDisplayName",
+          "issuedBy",
+          "issuedByDisplayName",
+          "expiresAt",
+          "createdAt",
+          "isValid"
         ]
       }
     }

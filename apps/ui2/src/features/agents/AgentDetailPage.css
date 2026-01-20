@@ -27,9 +27,79 @@
   margin: var(--space-3);
 }
 
+/* Token form fields */
+.agent-detail-page__form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.agent-detail-page__input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  font-size: var(--font-size-2);
+  background: var(--surface-1);
+  color: var(--text);
+  width: 100%;
+}
+
+.agent-detail-page__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Token display */
+.agent-detail-page__token-display {
+  background: var(--surface-2);
+  border-radius: var(--radius-2);
+  padding: var(--space-3);
+  overflow-x: auto;
+}
+
+.agent-detail-page__token-code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-1);
+  word-break: break-all;
+  display: block;
+}
+
+/* New token alert styling */
+.agent-detail-page__new-token {
+  border: 2px solid var(--color-danger, #ef4444);
+  border-radius: var(--radius-3);
+}
+
+/* Button row (horizontal layout) */
+.agent-detail-page__button-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* Warning text */
+.agent-detail-page__warning-text {
+  color: var(--color-danger, #ef4444);
+}
+
+/* Revoked text */
+.agent-detail-page__revoked-text {
+  color: var(--color-danger, #ef4444);
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .agent-detail-page__system-prompt {
+    background: var(--color-surface-elevated, #374151);
+  }
+
+  .agent-detail-page__input {
+    background: var(--color-surface-elevated, #374151);
+    border-color: var(--color-border, #4b5563);
+  }
+
+  .agent-detail-page__token-display {
     background: var(--color-surface-elevated, #374151);
   }
 }

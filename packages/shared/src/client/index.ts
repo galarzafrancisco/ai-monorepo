@@ -42,6 +42,9 @@ export type { FlowServerDto } from './models/FlowServerDto';
 export { GetConsentMetadataResponseDto } from './models/GetConsentMetadataResponseDto';
 export { IntrospectTokenRequestDto } from './models/IntrospectTokenRequestDto';
 export { IntrospectTokenResponseDto } from './models/IntrospectTokenResponseDto';
+export type { IssueAccessTokenRequestDto } from './models/IssueAccessTokenRequestDto';
+export type { IssueAccessTokenResponseDto } from './models/IssueAccessTokenResponseDto';
+export type { IssuedAccessTokenResponseDto } from './models/IssuedAccessTokenResponseDto';
 export type { JwkResponseDto } from './models/JwkResponseDto';
 export type { JwksResponseDto } from './models/JwksResponseDto';
 export type { LoginRequestDto } from './models/LoginRequestDto';
@@ -74,6 +77,7 @@ export { UserResponseDto } from './models/UserResponseDto';
 
 export { ActorsService } from './services/ActorsService';
 export { AgentService } from './services/AgentService';
+export { AgentTokensService } from './services/AgentTokensService';
 export { AppService } from './services/AppService';
 export { AuthorizationJourneysService } from './services/AuthorizationJourneysService';
 export { AuthorizationServerService } from './services/AuthorizationServerService';
