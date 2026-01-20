@@ -6,12 +6,13 @@ import { TaskStatus, TASKS_STATUS } from './const';
 import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer } from '../../ui/primitives';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
+import { ActorSearchPop, Actor } from '../actors';
 import './TaskDetailPage.css';
 
 export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const navigate = useNavigate();
-  const { tasks, setSectionTitle, addComment, deleteTask } = useTasksCtx();
+  const { tasks, setSectionTitle, addComment, deleteTask, assignTask } = useTasksCtx();
 
   // Find task from context (real-time updates)
   const task = tasks.find(t => t.id === taskId);
@@ -32,6 +33,7 @@ export function TaskDetailPage() {
 
   // Handlers for buttons
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
+  const [showAssignPop, setShowAssignPop] = useState(false);
 
   const saveNewComment = async({content}: {content: string}): Promise<boolean> => {
     if (!task) {
@@ -49,6 +51,24 @@ export function TaskDetailPage() {
   }
   const cancelNewComment = () => {
     setShowNewCommentPop(false);
+  }
+
+  const saveAssignment = async (actor: Actor): Promise<boolean> => {
+    if (!task) {
+      return false;
+    }
+    try {
+      await assignTask({
+        taskId: task.id,
+        assigneeActorId: actor.id,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  const cancelAssignment = () => {
+    setShowAssignPop(false);
   }
 
   // If task not found in context, could be loading or invalid
@@ -216,15 +236,14 @@ export function TaskDetailPage() {
       </DataRowContainer>
 
       {/* Assign */}
-      {!task.assigneeActor && (
-        <DataRowContainer className='task-detail-page__comment-buttons'>
-          <Button
-            size='lg'
-          >
-            Assign
-          </Button>
-        </DataRowContainer>
-      )}
+      <DataRowContainer className='task-detail-page__comment-buttons'>
+        <Button
+          size='lg'
+          onClick={() => setShowAssignPop(true)}
+        >
+          {task.assigneeActor ? 'Reassign' : 'Assign'}
+        </Button>
+      </DataRowContainer>
 
       {/* Delete */}
       <DataRowContainer className='task-detail-page__comment-buttons'>
@@ -242,6 +261,7 @@ export function TaskDetailPage() {
 
       {/* Pops */}
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} /> : null}
+      {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
     </div >
   );
 }
