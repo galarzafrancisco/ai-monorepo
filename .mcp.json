@@ -2,7 +2,7 @@
   "mcpServers": {
     "tasks": {
       "type": "http",
-      "url": "http://localhost:1000/api/v1/tasks/tasks/mcp"
+      "url": "https://ai.american-broomstick.com/api/v1/tasks/tasks/mcp"
     }
   }
 }
