@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { TasksService } from './api';
 import type { Task } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
-import { CreateTaskDto } from 'shared';
+import { CreateTaskDto, AssignTaskDto } from 'shared';
 
 // TODO
 // the websocket gateway sends full entities, not DTOs wich might vary in shape.
@@ -59,6 +59,12 @@ export const useTasks = () => {
   // Add comment
   const addComment = async ({ taskId, comment }: { taskId: string, comment: string }) => {
     return await TasksService.tasksControllerAddComment(taskId, { content: comment });
+  }
+
+  // Assign task
+  const assignTask = async ({ taskId, assigneeActorId }: { taskId: string, assigneeActorId: string }) => {
+    const dto: AssignTaskDto = { assigneeActorId };
+    return await TasksService.tasksControllerAssignTask(taskId, dto);
   }
 
   // Load tasks
@@ -176,6 +182,7 @@ export const useTasks = () => {
     createTask,
     deleteTask,
     addComment,
+    assignTask,
 
     // Transport
     isConnected,

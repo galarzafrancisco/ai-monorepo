@@ -11,6 +11,7 @@ import { ContextRoutes } from '../features/context/ContextRoutes';
 import { MCPRegistryPage } from './routes/MCPRegistryPage';
 import { AgentsRoutes } from '../features/agents/AgentsRoutes';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
+import { ActorsProvider } from '../features/actors';
 
 function BetaAppRoutes() {
   return (
@@ -39,19 +40,21 @@ export function App() {
     <BrowserRouter basename={BASE_PATH}>
       <ThemeProvider>
         <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path='*'
-              element={
-                <ProtectedRoute>
-                  <BetaShell>
-                    <BetaAppRoutes />
-                  </BetaShell>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          <ActorsProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path='*'
+                element={
+                  <ProtectedRoute>
+                    <BetaShell>
+                      <BetaAppRoutes />
+                    </BetaShell>
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </ActorsProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

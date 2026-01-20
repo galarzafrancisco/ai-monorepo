@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { useTasks } from "./useTasks"; // your abstraction hook
 import type { Task } from "./types";
 import { TaskStatus } from "./const";
-import { CommentResponseDto, CreateTaskDto } from "shared";
+import { CommentResponseDto, CreateTaskDto, TaskResponseDto } from "shared";
 
 // Animation state tracked per status (for column-based animations)
 export type AnimationState = {
@@ -26,7 +26,11 @@ export type TasksContextValue = {
   addComment: ({ taskId, comment }: {
     taskId: string;
     comment: string;
-  }) => Promise<CommentResponseDto>
+  }) => Promise<CommentResponseDto>;
+  assignTask: ({ taskId, assigneeActorId }: {
+    taskId: string;
+    assigneeActorId: string;
+  }) => Promise<TaskResponseDto>;
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
@@ -54,7 +58,7 @@ type ActiveAnimation = {
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
-  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment } = useTasks();
+  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask } = useTasks();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Refs for synchronous computation
@@ -178,6 +182,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       createTask,
       deleteTask,
       addComment,
+      assignTask,
       isLoading,
       error,
       isConnected,
@@ -192,6 +197,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     createTask,
     deleteTask,
     addComment,
+    assignTask,
     isLoading,
     error,
     isConnected,
