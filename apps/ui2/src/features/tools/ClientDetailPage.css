@@ -1,0 +1,21 @@
+.client-detail-page {
+  background-color: var(--bg);
+}
+
+/* Sections */
+.client-detail-page__section {
+  margin: var(--space-5) 0;
+}
+
+/* Value display */
+.client-detail-page__value {
+  word-break: break-all;
+}
+
+/* Actions */
+.client-detail-page__actions {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 8px;
+  margin: var(--space-3);
+}
