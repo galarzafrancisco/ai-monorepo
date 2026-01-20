@@ -4,7 +4,7 @@ export const MAIN_NAVEGATION_ITEMS: NavegationItem[] = [
   { path: '/home', label: 'Home', icon: '🏠' },
   { path: '/tasks', label: 'Tasks', icon: '☑️' },
   { path: '/context', label: 'Context', icon: '🧱' },
-  { path: '/mcp-registry', label: 'Tools', icon: '🧰' },
+  { path: '/tools', label: 'Tools', icon: '🧰' },
   { path: '/agents', label: 'Agents', icon: '✨' },
   { path: '/settings', label: 'Settings', icon: '⚙️' },
   { path: '/logout', label: 'Logout', icon: '🔓' },
