@@ -263,6 +263,17 @@ export function TaskDetailPage() {
         </Button>
       </DataRowContainer>
 
+      {/* Back button */}
+      <DataRowContainer className='task-detail-page__actions'>
+        <Button
+          size='lg'
+          variant='secondary'
+          onClick={() => navigate('/tasks')}
+        >
+          Back to Tasks
+        </Button>
+      </DataRowContainer>
+
       {/* Pops */}
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
