@@ -9,7 +9,7 @@ import { TasksRoutes } from '../features/tasks/TasksRoutes';
 import { LogoutPage } from './routes/LogoutPage';
 import { ContextRoutes } from '../features/context/ContextRoutes';
 import { MCPRegistryPage } from './routes/MCPRegistryPage';
-import { AgentsPage } from './routes/AgentsPage';
+import { AgentsRoutes } from '../features/agents/AgentsRoutes';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
 
 function BetaAppRoutes() {
@@ -28,7 +28,7 @@ function BetaAppRoutes() {
 
       <Route path="/context/*" element={<ContextRoutes />} />
       <Route path="/mcp-registry" element={<MCPRegistryPage />} />
-      <Route path="/agents" element={<AgentsPage />} />
+      <Route path="/agents/*" element={<AgentsRoutes />} />
 
     </Routes>
   );
