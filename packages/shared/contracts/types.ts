@@ -21,146 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tasks/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List tasks with optional filtering and pagination */
-        get: operations["TasksController_listTasks"];
-        put?: never;
-        /** Create a new task */
-        post: operations["TasksController_createTask"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a task by ID */
-        get: operations["TasksController_getTask"];
-        put?: never;
-        post?: never;
-        /** Delete a task */
-        delete: operations["TasksController_deleteTask"];
-        options?: never;
-        head?: never;
-        /** Update task description */
-        patch: operations["TasksController_updateTask"];
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/{id}/assign": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Assign a task to someone */
-        patch: operations["TasksController_assignTask"];
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/{id}/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a comment to a task */
-        post: operations["TasksController_addComment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/{id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Change task status */
-        patch: operations["TasksController_changeStatus"];
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/{id}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a tag to a task */
-        post: operations["TasksController_addTagToTask"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/{id}/tags/{tagId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove a tag from a task */
-        delete: operations["TasksController_removeTagFromTask"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a new tag */
-        post: operations["TasksController_createTag"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/tags/all": {
+    "/api/v1/meta/tags": {
         parameters: {
             query?: never;
             header?: never;
@@ -168,7 +29,25 @@ export interface paths {
             cookie?: never;
         };
         /** Get all tags */
-        get: operations["TasksController_getAllTags"];
+        get: operations["MetaController_getAllTags"];
+        put?: never;
+        /** Create a new tag */
+        post: operations["MetaController_createTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meta/tags/colors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get available tag colors */
+        get: operations["MetaController_getTagColors"];
         put?: never;
         post?: never;
         delete?: never;
@@ -177,7 +56,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tasks/tasks/tags/{tagId}": {
+    "/api/v1/meta/tags/{tagId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -188,26 +67,10 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete a tag from the system */
-        delete: operations["TasksController_deleteTag"];
+        delete: operations["MetaController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/mcp": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["TasksController_handleMcp_get"];
-        put: operations["TasksController_handleMcp_put"];
-        post: operations["TasksController_handleMcp_post"];
-        delete: operations["TasksController_handleMcp_delete"];
-        options: operations["TasksController_handleMcp_options"];
-        head: operations["TasksController_handleMcp_head"];
-        patch: operations["TasksController_handleMcp_patch"];
         trace?: never;
     };
     "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
@@ -677,6 +540,195 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tasks/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tasks with optional filtering and pagination */
+        get: operations["TasksController_listTasks"];
+        put?: never;
+        /** Create a new task */
+        post: operations["TasksController_createTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a task by ID */
+        get: operations["TasksController_getTask"];
+        put?: never;
+        post?: never;
+        /** Delete a task */
+        delete: operations["TasksController_deleteTask"];
+        options?: never;
+        head?: never;
+        /** Update task description */
+        patch: operations["TasksController_updateTask"];
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/{id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Assign a task to someone */
+        patch: operations["TasksController_assignTask"];
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a comment to a task */
+        post: operations["TasksController_addComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change task status */
+        patch: operations["TasksController_changeStatus"];
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a tag to a task */
+        post: operations["TasksController_addTagToTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/{id}/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a tag from a task */
+        delete: operations["TasksController_removeTagFromTask"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a new tag */
+        post: operations["TasksController_createTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/tags/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all tags */
+        get: operations["TasksController_getAllTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a tag from the system */
+        delete: operations["TasksController_deleteTag"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tasks/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TasksController_handleMcp_get"];
+        put: operations["TasksController_handleMcp_put"];
+        post: operations["TasksController_handleMcp_post"];
+        delete: operations["TasksController_handleMcp_delete"];
+        options: operations["TasksController_handleMcp_options"];
+        head: operations["TasksController_handleMcp_head"];
+        patch: operations["TasksController_handleMcp_patch"];
+        trace?: never;
+    };
     "/api/v1/context/blocks": {
         parameters: {
             query?: never;
@@ -978,102 +1030,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        CreateTaskDto: {
+        CreateTagDto: {
             /**
-             * @description Name of the task
-             * @example Implement user authentication
+             * @description Name of the tag
+             * @example bug
              */
             name: string;
-            /**
-             * @description Detailed description of the task
-             * @example Add JWT-based authentication to the API
-             */
-            description: string;
-            /**
-             * @description ID of the assignee
-             * @example 111-222-333
-             */
-            assigneeActorId?: string;
-            /**
-             * @description Session ID for tracking AI agent work
-             * @example session-123-abc
-             */
-            sessionId?: string;
-            /**
-             * @description Array of tag names to associate with the task
-             * @example [
-             *       "bug",
-             *       "urgent"
-             *     ]
-             */
-            tagNames?: string[];
-            /**
-             * @description Array of task IDs that this task depends on
-             * @example [
-             *       "uuid-1",
-             *       "uuid-2"
-             *     ]
-             */
-            dependsOnIds?: string[];
         };
-        ActorResponseDto: {
+        MetaTagResponseDto: {
             /**
-             * @description Unique identifier for the actor
+             * @description Unique identifier of the tag
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             id: string;
-            /**
-             * @description Type of the actor
-             * @example human
-             * @enum {string}
-             */
-            type: "human" | "agent";
-            /**
-             * @description Unique slug identifier for the actor
-             * @example john@example.com
-             */
-            slug: string;
-            /**
-             * @description Display name of the actor
-             * @example John Doe
-             */
-            displayName: string;
-            /**
-             * @description URL to the actor avatar image
-             * @example https://example.com/avatar.png
-             */
-            avatarUrl?: Record<string, never> | null;
-        };
-        CommentResponseDto: {
-            /**
-             * @description Unique identifier for the comment
-             * @example 123e4567-e89b-12d3-a456-426614174001
-             */
-            id: string;
-            /**
-             * @description ID of the task this comment belongs to
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            taskId: string;
-            /**
-             * @description Display name of the commenter (for backward compatibility)
-             * @example AgentAlpha
-             */
-            commenterName: string;
-            /** @description Actor who created this comment */
-            commenterActor?: components["schemas"]["ActorResponseDto"] | null;
-            /**
-             * @description Content of the comment
-             * @example Started working on this task
-             */
-            content: string;
-            /**
-             * @description Comment creation timestamp
-             * @example 2025-11-03T10:30:00.000Z
-             */
-            createdAt: string;
-        };
-        TagResponseDto: {
             /**
              * @description Name of the tag
              * @example bug
@@ -1084,178 +1053,16 @@ export interface components {
              * @example #FF5733
              */
             color?: string;
-        };
-        TaskResponseDto: {
             /**
-             * @description Unique identifier for the task
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Name of the task
-             * @example Implement user authentication
-             */
-            name: string;
-            /**
-             * @description Detailed description of the task
-             * @example Add JWT-based authentication to the API
-             */
-            description: string;
-            /**
-             * @description Current status of the task
-             * @example NOT_STARTED
-             * @enum {string}
-             */
-            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
-            /**
-             * @description Slug of the assignee (for backward compatibility)
-             * @example agent-alpha
-             */
-            assignee?: Record<string, never> | null;
-            /** @description Actor assigned to this task */
-            assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
-            /**
-             * @description Session ID for tracking AI agent work
-             * @example session-123-abc
-             */
-            sessionId?: string | null;
-            /** @description Comments associated with the task */
-            comments: components["schemas"]["CommentResponseDto"][];
-            /** @description Tags associated with the task */
-            tags: components["schemas"]["TagResponseDto"][];
-            /** @description Actor who created this task */
-            createdByActor: components["schemas"]["ActorResponseDto"];
-            /**
-             * @description Array of task IDs that this task depends on
-             * @example [
-             *       "uuid-1",
-             *       "uuid-2"
-             *     ]
-             */
-            dependsOnIds: string[];
-            /**
-             * @description Task creation timestamp
-             * @example 2025-11-03T10:30:00.000Z
+             * @description When the tag was created
+             * @example 2024-01-15T10:30:00.000Z
              */
             createdAt: string;
             /**
-             * @description Task last update timestamp
-             * @example 2025-11-03T12:45:00.000Z
+             * @description When the tag was last updated
+             * @example 2024-01-15T10:30:00.000Z
              */
             updatedAt: string;
-        };
-        UpdateTaskDto: {
-            /**
-             * @description Name of the task
-             * @example Implement user authentication
-             */
-            name?: string;
-            /**
-             * @description Detailed description of the task
-             * @example Add JWT-based authentication to the API
-             */
-            description?: string;
-            /**
-             * @description ID of the assignee
-             * @example 111-222-333
-             */
-            assigneeActorId?: string;
-            /**
-             * @description Session ID for tracking AI agent work
-             * @example session-123-abc
-             */
-            sessionId?: string;
-            /**
-             * @description Array of tag names to associate with the task
-             * @example [
-             *       "bug",
-             *       "urgent"
-             *     ]
-             */
-            tagNames?: string[];
-            /**
-             * @description Array of task IDs that this task depends on
-             * @example [
-             *       "uuid-1",
-             *       "uuid-2"
-             *     ]
-             */
-            dependsOnIds?: string[];
-        };
-        AssignTaskDto: {
-            /**
-             * @description Actor ID of the assignee
-             * @example 1111-2222-3333
-             */
-            assigneeActorId?: string;
-            /**
-             * @description Session ID for tracking AI agent work
-             * @example session-123-abc
-             */
-            sessionId?: string;
-        };
-        TaskListResponseDto: {
-            /** @description List of tasks */
-            items: components["schemas"]["TaskResponseDto"][];
-            /**
-             * @description Total number of tasks matching the filters
-             * @example 42
-             */
-            total: number;
-            /**
-             * @description Current page number
-             * @example 1
-             */
-            page: number;
-            /**
-             * @description Number of items per page
-             * @example 20
-             */
-            limit: number;
-            /**
-             * @description Total number of pages
-             * @example 3
-             */
-            totalPages: number;
-        };
-        CreateCommentDto: {
-            /**
-             * @description Content of the comment
-             * @example Task completed successfully. All tests passing.
-             */
-            content: string;
-        };
-        ChangeTaskStatusDto: {
-            /**
-             * @description New status for the task
-             * @example IN_PROGRESS
-             * @enum {string}
-             */
-            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
-            /**
-             * @description Comment required when marking task as done
-             * @example All requirements met and tests passing
-             */
-            comment?: string;
-        };
-        AddTagDto: {
-            /**
-             * @description Name of the tag
-             * @example bug
-             */
-            name: string;
-            /**
-             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
-             * @example #FF5733
-             */
-            color?: string;
-        };
-        CreateTagDto: {
-            /**
-             * @description Name of the tag
-             * @example bug
-             */
-            name: string;
         };
         RegisterClientDto: {
             /**
@@ -2247,6 +2054,278 @@ export interface components {
             /** @description Collection of JSON Web Keys currently valid for signature verification. */
             keys: components["schemas"]["JwkResponseDto"][];
         };
+        ActorResponseDto: {
+            /**
+             * @description Unique identifier for the actor
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Type of the actor
+             * @example human
+             * @enum {string}
+             */
+            type: "human" | "agent";
+            /**
+             * @description Unique slug identifier for the actor
+             * @example john@example.com
+             */
+            slug: string;
+            /**
+             * @description Display name of the actor
+             * @example John Doe
+             */
+            displayName: string;
+            /**
+             * @description URL to the actor avatar image
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: Record<string, never> | null;
+        };
+        CreateTaskDto: {
+            /**
+             * @description Name of the task
+             * @example Implement user authentication
+             */
+            name: string;
+            /**
+             * @description Detailed description of the task
+             * @example Add JWT-based authentication to the API
+             */
+            description: string;
+            /**
+             * @description ID of the assignee
+             * @example 111-222-333
+             */
+            assigneeActorId?: string;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string;
+            /**
+             * @description Array of tag names to associate with the task
+             * @example [
+             *       "bug",
+             *       "urgent"
+             *     ]
+             */
+            tagNames?: string[];
+            /**
+             * @description Array of task IDs that this task depends on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds?: string[];
+        };
+        CommentResponseDto: {
+            /**
+             * @description Unique identifier for the comment
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            id: string;
+            /**
+             * @description ID of the task this comment belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            taskId: string;
+            /**
+             * @description Display name of the commenter (for backward compatibility)
+             * @example AgentAlpha
+             */
+            commenterName: string;
+            /** @description Actor who created this comment */
+            commenterActor?: components["schemas"]["ActorResponseDto"] | null;
+            /**
+             * @description Content of the comment
+             * @example Started working on this task
+             */
+            content: string;
+            /**
+             * @description Comment creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+        };
+        TagResponseDto: {
+            /**
+             * @description Name of the tag
+             * @example bug
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format)
+             * @example #FF5733
+             */
+            color?: string;
+        };
+        TaskResponseDto: {
+            /**
+             * @description Unique identifier for the task
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the task
+             * @example Implement user authentication
+             */
+            name: string;
+            /**
+             * @description Detailed description of the task
+             * @example Add JWT-based authentication to the API
+             */
+            description: string;
+            /**
+             * @description Current status of the task
+             * @example NOT_STARTED
+             * @enum {string}
+             */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
+            /**
+             * @description Slug of the assignee (for backward compatibility)
+             * @example agent-alpha
+             */
+            assignee?: Record<string, never> | null;
+            /** @description Actor assigned to this task */
+            assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string | null;
+            /** @description Comments associated with the task */
+            comments: components["schemas"]["CommentResponseDto"][];
+            /** @description Tags associated with the task */
+            tags: components["schemas"]["TagResponseDto"][];
+            /** @description Actor who created this task */
+            createdByActor: components["schemas"]["ActorResponseDto"];
+            /**
+             * @description Array of task IDs that this task depends on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds: string[];
+            /**
+             * @description Task creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Task last update timestamp
+             * @example 2025-11-03T12:45:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdateTaskDto: {
+            /**
+             * @description Name of the task
+             * @example Implement user authentication
+             */
+            name?: string;
+            /**
+             * @description Detailed description of the task
+             * @example Add JWT-based authentication to the API
+             */
+            description?: string;
+            /**
+             * @description ID of the assignee
+             * @example 111-222-333
+             */
+            assigneeActorId?: string;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string;
+            /**
+             * @description Array of tag names to associate with the task
+             * @example [
+             *       "bug",
+             *       "urgent"
+             *     ]
+             */
+            tagNames?: string[];
+            /**
+             * @description Array of task IDs that this task depends on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds?: string[];
+        };
+        AssignTaskDto: {
+            /**
+             * @description Actor ID of the assignee
+             * @example 1111-2222-3333
+             */
+            assigneeActorId?: string;
+            /**
+             * @description Session ID for tracking AI agent work
+             * @example session-123-abc
+             */
+            sessionId?: string;
+        };
+        TaskListResponseDto: {
+            /** @description List of tasks */
+            items: components["schemas"]["TaskResponseDto"][];
+            /**
+             * @description Total number of tasks matching the filters
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 3
+             */
+            totalPages: number;
+        };
+        CreateCommentDto: {
+            /**
+             * @description Content of the comment
+             * @example Task completed successfully. All tests passing.
+             */
+            content: string;
+        };
+        ChangeTaskStatusDto: {
+            /**
+             * @description New status for the task
+             * @example IN_PROGRESS
+             * @enum {string}
+             */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
+            /**
+             * @description Comment required when marking task as done
+             * @example All requirements met and tests passing
+             */
+            comment?: string;
+        };
+        AddTagDto: {
+            /**
+             * @description Name of the tag
+             * @example bug
+             */
+            name: string;
+            /**
+             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
+             * @example #FF5733
+             */
+            color?: string;
+        };
         CreatePageDto: {
             /**
              * @description Title of the wiki page
@@ -2766,362 +2845,27 @@ export interface operations {
             };
         };
     };
-    TasksController_listTasks: {
-        parameters: {
-            query?: {
-                /** @description Filter tasks by assignee name */
-                assignee?: string;
-                /** @description Filter tasks by session ID */
-                sessionId?: string;
-                /** @description Filter tasks by tag name */
-                tag?: string;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (1-100) */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Paginated list of tasks */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskListResponseDto"];
-                };
-            };
-        };
-    };
-    TasksController_createTask: {
+    MetaController_getAllTags: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTaskDto"];
-            };
-        };
-        responses: {
-            /** @description Task created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_getTask: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Task UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
         requestBody?: never;
         responses: {
-            /** @description Task found */
+            /** @description List of all tags */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
+                    "application/json": components["schemas"]["MetaTagResponseDto"][];
                 };
-            };
-            /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
-    TasksController_deleteTask: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Task UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Task deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_updateTask: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Task UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTaskDto"];
-            };
-        };
-        responses: {
-            /** @description Task updated successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_assignTask: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Task UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssignTaskDto"];
-            };
-        };
-        responses: {
-            /** @description Task assigned successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_addComment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Task UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCommentDto"];
-            };
-        };
-        responses: {
-            /** @description Comment added successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CommentResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_changeStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Task UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangeTaskStatusDto"];
-            };
-        };
-        responses: {
-            /** @description Status changed successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-            /** @description Invalid status transition or comment required */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_addTagToTask: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Task UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddTagDto"];
-            };
-        };
-        responses: {
-            /** @description Tag added to task successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_removeTagFromTask: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                tagId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Tag removed from task successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-            /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_createTag: {
+    MetaController_createTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -3140,7 +2884,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TagResponseDto"];
+                    "application/json": components["schemas"]["MetaTagResponseDto"];
                 };
             };
             /** @description Invalid input data */
@@ -3152,7 +2896,7 @@ export interface operations {
             };
         };
     };
-    TasksController_getAllTags: {
+    MetaController_getTagColors: {
         parameters: {
             query?: never;
             header?: never;
@@ -3161,18 +2905,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of all tags */
+            /** @description List of available tag colors in hex format */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TagResponseDto"][];
+                    "application/json": string[];
                 };
             };
         };
     };
-    TasksController_deleteTag: {
+    MetaController_deleteTag: {
         parameters: {
             query?: never;
             header?: never;
@@ -3192,125 +2936,6 @@ export interface operations {
             };
             /** @description Tag not found */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_handleMcp_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_handleMcp_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_handleMcp_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_handleMcp_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_handleMcp_options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_handleMcp_head: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_handleMcp_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4464,6 +4089,558 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ActorResponseDto"][];
                 };
+            };
+        };
+    };
+    TasksController_listTasks: {
+        parameters: {
+            query?: {
+                /** @description Filter tasks by assignee name */
+                assignee?: string;
+                /** @description Filter tasks by session ID */
+                sessionId?: string;
+                /** @description Filter tasks by tag name */
+                tag?: string;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (1-100) */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated list of tasks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_createTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskDto"];
+            };
+        };
+        responses: {
+            /** @description Task created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_getTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_deleteTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_updateTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskDto"];
+            };
+        };
+        responses: {
+            /** @description Task updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_assignTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignTaskDto"];
+            };
+        };
+        responses: {
+            /** @description Task assigned successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_addComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommentDto"];
+            };
+        };
+        responses: {
+            /** @description Comment added successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_changeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeTaskStatusDto"];
+            };
+        };
+        responses: {
+            /** @description Status changed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid status transition or comment required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_addTagToTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag added to task successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_removeTagFromTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed from task successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_createTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_getAllTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponseDto"][];
+                };
+            };
+        };
+    };
+    TasksController_deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_handleMcp_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_handleMcp_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_handleMcp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_handleMcp_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_handleMcp_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_handleMcp_head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_handleMcp_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

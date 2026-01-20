@@ -8,7 +8,7 @@ import {
   VersionColumn,
   ManyToMany,
 } from 'typeorm';
-import { TaskEntity } from './task.entity';
+import { TaskEntity } from '../tasks/task.entity';
 
 @Entity({ name: 'tags' })
 export class TagEntity {

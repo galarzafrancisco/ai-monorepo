@@ -24,515 +24,9 @@
         ]
       }
     },
-    "/api/v1/tasks/tasks": {
+    "/api/v1/meta/tags": {
       "post": {
-        "operationId": "TasksController_createTask",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTaskDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Task created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new task",
-        "tags": [
-          "Task"
-        ]
-      },
-      "get": {
-        "operationId": "TasksController_listTasks",
-        "parameters": [
-          {
-            "name": "assignee",
-            "required": false,
-            "in": "query",
-            "description": "Filter tasks by assignee name",
-            "schema": {
-              "example": "AgentAlpha",
-              "type": "string"
-            }
-          },
-          {
-            "name": "sessionId",
-            "required": false,
-            "in": "query",
-            "description": "Filter tasks by session ID",
-            "schema": {
-              "example": "session-123-abc",
-              "type": "string"
-            }
-          },
-          {
-            "name": "tag",
-            "required": false,
-            "in": "query",
-            "description": "Filter tasks by tag name",
-            "schema": {
-              "example": "bug",
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number (1-indexed)",
-            "schema": {
-              "default": 1,
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Items per page (1-100)",
-            "schema": {
-              "default": 20,
-              "example": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Paginated list of tasks",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskListResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List tasks with optional filtering and pagination",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/{id}": {
-      "patch": {
-        "operationId": "TasksController_updateTask",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Task UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTaskDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Task updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Update task description",
-        "tags": [
-          "Task"
-        ]
-      },
-      "delete": {
-        "operationId": "TasksController_deleteTask",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Task UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Task deleted successfully"
-          },
-          "404": {
-            "description": "Task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete a task",
-        "tags": [
-          "Task"
-        ]
-      },
-      "get": {
-        "operationId": "TasksController_getTask",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Task UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Task found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get a task by ID",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/{id}/assign": {
-      "patch": {
-        "operationId": "TasksController_assignTask",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Task UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssignTaskDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Task assigned successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Assign a task to someone",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/{id}/comments": {
-      "post": {
-        "operationId": "TasksController_addComment",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Task UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCommentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Comment added successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommentResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Add a comment to a task",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/{id}/status": {
-      "patch": {
-        "operationId": "TasksController_changeStatus",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Task UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChangeTaskStatusDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Status changed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid status transition or comment required"
-          },
-          "404": {
-            "description": "Task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Change task status",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/{id}/tags": {
-      "post": {
-        "operationId": "TasksController_addTagToTask",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Task UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddTagDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tag added to task successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Add a tag to a task",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/{id}/tags/{tagId}": {
-      "delete": {
-        "operationId": "TasksController_removeTagFromTask",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tagId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Tag removed from task successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Remove a tag from a task",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/tags": {
-      "post": {
-        "operationId": "TasksController_createTag",
+        "operationId": "MetaController_createTag",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -550,7 +44,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TagResponseDto"
+                  "$ref": "#/components/schemas/MetaTagResponseDto"
                 }
               }
             }
@@ -566,13 +60,11 @@
         ],
         "summary": "Create a new tag",
         "tags": [
-          "Task"
+          "Meta"
         ]
-      }
-    },
-    "/api/v1/tasks/tasks/tags/all": {
+      },
       "get": {
-        "operationId": "TasksController_getAllTags",
+        "operationId": "MetaController_getAllTags",
         "parameters": [],
         "responses": {
           "200": {
@@ -582,7 +74,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TagResponseDto"
+                    "$ref": "#/components/schemas/MetaTagResponseDto"
                   }
                 }
               }
@@ -596,13 +88,43 @@
         ],
         "summary": "Get all tags",
         "tags": [
-          "Task"
+          "Meta"
         ]
       }
     },
-    "/api/v1/tasks/tasks/tags/{tagId}": {
+    "/api/v1/meta/tags/colors": {
+      "get": {
+        "operationId": "MetaController_getTagColors",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of available tag colors in hex format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get available tag colors",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/meta/tags/{tagId}": {
       "delete": {
-        "operationId": "TasksController_deleteTag",
+        "operationId": "MetaController_deleteTag",
         "parameters": [
           {
             "name": "tagId",
@@ -628,145 +150,7 @@
         ],
         "summary": "Delete a tag from the system",
         "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/mcp": {
-      "get": {
-        "operationId": "TasksController_handleMcp_get",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "tags": [
-          "Task"
-        ]
-      },
-      "post": {
-        "operationId": "TasksController_handleMcp_post",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "tags": [
-          "Task"
-        ]
-      },
-      "put": {
-        "operationId": "TasksController_handleMcp_put",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "tags": [
-          "Task"
-        ]
-      },
-      "delete": {
-        "operationId": "TasksController_handleMcp_delete",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "tags": [
-          "Task"
-        ]
-      },
-      "patch": {
-        "operationId": "TasksController_handleMcp_patch",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "tags": [
-          "Task"
-        ]
-      },
-      "options": {
-        "operationId": "TasksController_handleMcp_options",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "tags": [
-          "Task"
-        ]
-      },
-      "head": {
-        "operationId": "TasksController_handleMcp_head",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "tags": [
-          "Task"
-        ]
-      },
-      "search": {
-        "operationId": "TasksController_handleMcp_search",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "tags": [
-          "Task"
+          "Meta"
         ]
       }
     },
@@ -2333,6 +1717,752 @@
         ]
       }
     },
+    "/api/v1/tasks/tasks": {
+      "post": {
+        "operationId": "TasksController_createTask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new task",
+        "tags": [
+          "Task"
+        ]
+      },
+      "get": {
+        "operationId": "TasksController_listTasks",
+        "parameters": [
+          {
+            "name": "assignee",
+            "required": false,
+            "in": "query",
+            "description": "Filter tasks by assignee name",
+            "schema": {
+              "example": "AgentAlpha",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": false,
+            "in": "query",
+            "description": "Filter tasks by session ID",
+            "schema": {
+              "example": "session-123-abc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Filter tasks by tag name",
+            "schema": {
+              "example": "bug",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (1-100)",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List tasks with optional filtering and pagination",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/{id}": {
+      "patch": {
+        "operationId": "TasksController_updateTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update task description",
+        "tags": [
+          "Task"
+        ]
+      },
+      "delete": {
+        "operationId": "TasksController_deleteTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Task deleted successfully"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a task",
+        "tags": [
+          "Task"
+        ]
+      },
+      "get": {
+        "operationId": "TasksController_getTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a task by ID",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/{id}/assign": {
+      "patch": {
+        "operationId": "TasksController_assignTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Assign a task to someone",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/{id}/comments": {
+      "post": {
+        "operationId": "TasksController_addComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comment added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Add a comment to a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/{id}/status": {
+      "patch": {
+        "operationId": "TasksController_changeStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeTaskStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status transition or comment required"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Change task status",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/{id}/tags": {
+      "post": {
+        "operationId": "TasksController_addTagToTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag added to task successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Add a tag to a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "TasksController_removeTagFromTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag removed from task successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Remove a tag from a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/tags": {
+      "post": {
+        "operationId": "TasksController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new tag",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/tags/all": {
+      "get": {
+        "operationId": "TasksController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TagResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get all tags",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/tags/{tagId}": {
+      "delete": {
+        "operationId": "TasksController_deleteTag",
+        "parameters": [
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tag deleted successfully"
+          },
+          "404": {
+            "description": "Tag not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a tag from the system",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
+    "/api/v1/tasks/tasks/mcp": {
+      "get": {
+        "operationId": "TasksController_handleMcp_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Task"
+        ]
+      },
+      "post": {
+        "operationId": "TasksController_handleMcp_post",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Task"
+        ]
+      },
+      "put": {
+        "operationId": "TasksController_handleMcp_put",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Task"
+        ]
+      },
+      "delete": {
+        "operationId": "TasksController_handleMcp_delete",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Task"
+        ]
+      },
+      "patch": {
+        "operationId": "TasksController_handleMcp_patch",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Task"
+        ]
+      },
+      "options": {
+        "operationId": "TasksController_handleMcp_options",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Task"
+        ]
+      },
+      "head": {
+        "operationId": "TasksController_handleMcp_head",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Task"
+        ]
+      },
+      "search": {
+        "operationId": "TasksController_handleMcp_search",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/context/blocks": {
       "post": {
         "operationId": "ContextController_createPage",
@@ -3296,425 +3426,6 @@
       }
     },
     "schemas": {
-      "CreateTaskDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the task",
-            "example": "Implement user authentication"
-          },
-          "description": {
-            "type": "string",
-            "description": "Detailed description of the task",
-            "example": "Add JWT-based authentication to the API"
-          },
-          "assigneeActorId": {
-            "type": "string",
-            "description": "ID of the assignee",
-            "example": "111-222-333"
-          },
-          "sessionId": {
-            "type": "string",
-            "description": "Session ID for tracking AI agent work",
-            "example": "session-123-abc"
-          },
-          "tagNames": {
-            "description": "Array of tag names to associate with the task",
-            "example": [
-              "bug",
-              "urgent"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "dependsOnIds": {
-            "description": "Array of task IDs that this task depends on",
-            "example": [
-              "uuid-1",
-              "uuid-2"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "name",
-          "description"
-        ]
-      },
-      "ActorResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the actor",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of the actor",
-            "enum": [
-              "human",
-              "agent"
-            ],
-            "example": "human"
-          },
-          "slug": {
-            "type": "string",
-            "description": "Unique slug identifier for the actor",
-            "example": "john@example.com"
-          },
-          "displayName": {
-            "type": "string",
-            "description": "Display name of the actor",
-            "example": "John Doe"
-          },
-          "avatarUrl": {
-            "type": "object",
-            "description": "URL to the actor avatar image",
-            "example": "https://example.com/avatar.png",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "slug",
-          "displayName"
-        ]
-      },
-      "CommentResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the comment",
-            "example": "123e4567-e89b-12d3-a456-426614174001"
-          },
-          "taskId": {
-            "type": "string",
-            "description": "ID of the task this comment belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "commenterName": {
-            "type": "string",
-            "description": "Display name of the commenter (for backward compatibility)",
-            "example": "AgentAlpha"
-          },
-          "commenterActor": {
-            "description": "Actor who created this comment",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
-          "content": {
-            "type": "string",
-            "description": "Content of the comment",
-            "example": "Started working on this task"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Comment creation timestamp",
-            "example": "2025-11-03T10:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "taskId",
-          "commenterName",
-          "content",
-          "createdAt"
-        ]
-      },
-      "TagResponseDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "bug"
-          },
-          "color": {
-            "type": "string",
-            "description": "Color for the tag (hex format)",
-            "example": "#FF5733"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "TaskResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the task",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the task",
-            "example": "Implement user authentication"
-          },
-          "description": {
-            "type": "string",
-            "description": "Detailed description of the task",
-            "example": "Add JWT-based authentication to the API"
-          },
-          "status": {
-            "type": "string",
-            "description": "Current status of the task",
-            "enum": [
-              "NOT_STARTED",
-              "IN_PROGRESS",
-              "FOR_REVIEW",
-              "DONE"
-            ],
-            "example": "NOT_STARTED"
-          },
-          "assignee": {
-            "type": "object",
-            "description": "Slug of the assignee (for backward compatibility)",
-            "example": "agent-alpha",
-            "nullable": true
-          },
-          "assigneeActor": {
-            "description": "Actor assigned to this task",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
-          "sessionId": {
-            "type": "string",
-            "description": "Session ID for tracking AI agent work",
-            "example": "session-123-abc",
-            "nullable": true
-          },
-          "comments": {
-            "description": "Comments associated with the task",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CommentResponseDto"
-            }
-          },
-          "tags": {
-            "description": "Tags associated with the task",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TagResponseDto"
-            }
-          },
-          "createdByActor": {
-            "description": "Actor who created this task",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
-          "dependsOnIds": {
-            "description": "Array of task IDs that this task depends on",
-            "example": [
-              "uuid-1",
-              "uuid-2"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Task creation timestamp",
-            "example": "2025-11-03T10:30:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Task last update timestamp",
-            "example": "2025-11-03T12:45:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "description",
-          "status",
-          "comments",
-          "tags",
-          "createdByActor",
-          "dependsOnIds",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateTaskDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the task",
-            "example": "Implement user authentication"
-          },
-          "description": {
-            "type": "string",
-            "description": "Detailed description of the task",
-            "example": "Add JWT-based authentication to the API"
-          },
-          "assigneeActorId": {
-            "type": "string",
-            "description": "ID of the assignee",
-            "example": "111-222-333"
-          },
-          "sessionId": {
-            "type": "string",
-            "description": "Session ID for tracking AI agent work",
-            "example": "session-123-abc"
-          },
-          "tagNames": {
-            "description": "Array of tag names to associate with the task",
-            "example": [
-              "bug",
-              "urgent"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "dependsOnIds": {
-            "description": "Array of task IDs that this task depends on",
-            "example": [
-              "uuid-1",
-              "uuid-2"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "AssignTaskDto": {
-        "type": "object",
-        "properties": {
-          "assigneeActorId": {
-            "type": "string",
-            "description": "Actor ID of the assignee",
-            "example": "1111-2222-3333"
-          },
-          "sessionId": {
-            "type": "string",
-            "description": "Session ID for tracking AI agent work",
-            "example": "session-123-abc"
-          }
-        }
-      },
-      "TaskListResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "List of tasks",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TaskResponseDto"
-            }
-          },
-          "total": {
-            "type": "number",
-            "description": "Total number of tasks matching the filters",
-            "example": 42
-          },
-          "page": {
-            "type": "number",
-            "description": "Current page number",
-            "example": 1
-          },
-          "limit": {
-            "type": "number",
-            "description": "Number of items per page",
-            "example": 20
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "Total number of pages",
-            "example": 3
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "limit",
-          "totalPages"
-        ]
-      },
-      "CreateCommentDto": {
-        "type": "object",
-        "properties": {
-          "content": {
-            "type": "string",
-            "description": "Content of the comment",
-            "example": "Task completed successfully. All tests passing."
-          }
-        },
-        "required": [
-          "content"
-        ]
-      },
-      "ChangeTaskStatusDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "description": "New status for the task",
-            "enum": [
-              "NOT_STARTED",
-              "IN_PROGRESS",
-              "FOR_REVIEW",
-              "DONE"
-            ],
-            "example": "IN_PROGRESS"
-          },
-          "comment": {
-            "type": "string",
-            "description": "Comment required when marking task as done",
-            "example": "All requirements met and tests passing"
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "AddTagDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "bug"
-          },
-          "color": {
-            "type": "string",
-            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
-            "example": "#FF5733"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
       "CreateTagDto": {
         "type": "object",
         "properties": {
@@ -3726,6 +3437,42 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "MetaTagResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier of the tag",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the tag was created",
+            "example": "2024-01-15T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When the tag was last updated",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "RegisterClientDto": {
@@ -5173,6 +4920,425 @@
         },
         "required": [
           "keys"
+        ]
+      },
+      "ActorResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the actor",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the actor",
+            "enum": [
+              "human",
+              "agent"
+            ],
+            "example": "human"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Unique slug identifier for the actor",
+            "example": "john@example.com"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name of the actor",
+            "example": "John Doe"
+          },
+          "avatarUrl": {
+            "type": "object",
+            "description": "URL to the actor avatar image",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "slug",
+          "displayName"
+        ]
+      },
+      "CreateTaskDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the task",
+            "example": "Implement user authentication"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the task",
+            "example": "Add JWT-based authentication to the API"
+          },
+          "assigneeActorId": {
+            "type": "string",
+            "description": "ID of the assignee",
+            "example": "111-222-333"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the task",
+            "example": [
+              "bug",
+              "urgent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ]
+      },
+      "CommentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the comment",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "ID of the task this comment belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "commenterName": {
+            "type": "string",
+            "description": "Display name of the commenter (for backward compatibility)",
+            "example": "AgentAlpha"
+          },
+          "commenterActor": {
+            "description": "Actor who created this comment",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the comment",
+            "example": "Started working on this task"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Comment creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "commenterName",
+          "content",
+          "createdAt"
+        ]
+      },
+      "TagResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format)",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "TaskResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the task",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the task",
+            "example": "Implement user authentication"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the task",
+            "example": "Add JWT-based authentication to the API"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the task",
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "FOR_REVIEW",
+              "DONE"
+            ],
+            "example": "NOT_STARTED"
+          },
+          "assignee": {
+            "type": "object",
+            "description": "Slug of the assignee (for backward compatibility)",
+            "example": "agent-alpha",
+            "nullable": true
+          },
+          "assigneeActor": {
+            "description": "Actor assigned to this task",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc",
+            "nullable": true
+          },
+          "comments": {
+            "description": "Comments associated with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommentResponseDto"
+            }
+          },
+          "tags": {
+            "description": "Tags associated with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagResponseDto"
+            }
+          },
+          "createdByActor": {
+            "description": "Actor who created this task",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Task creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Task last update timestamp",
+            "example": "2025-11-03T12:45:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "comments",
+          "tags",
+          "createdByActor",
+          "dependsOnIds",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateTaskDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the task",
+            "example": "Implement user authentication"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the task",
+            "example": "Add JWT-based authentication to the API"
+          },
+          "assigneeActorId": {
+            "type": "string",
+            "description": "ID of the assignee",
+            "example": "111-222-333"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the task",
+            "example": [
+              "bug",
+              "urgent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that this task depends on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AssignTaskDto": {
+        "type": "object",
+        "properties": {
+          "assigneeActorId": {
+            "type": "string",
+            "description": "Actor ID of the assignee",
+            "example": "1111-2222-3333"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Session ID for tracking AI agent work",
+            "example": "session-123-abc"
+          }
+        }
+      },
+      "TaskListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of tasks",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of tasks matching the filters",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "CreateCommentDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Content of the comment",
+            "example": "Task completed successfully. All tests passing."
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "ChangeTaskStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "New status for the task",
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "FOR_REVIEW",
+              "DONE"
+            ],
+            "example": "IN_PROGRESS"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Comment required when marking task as done",
+            "example": "All requirements met and tests passing"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AddTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tag",
+            "example": "bug"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
+            "example": "#FF5733"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "CreatePageDto": {
