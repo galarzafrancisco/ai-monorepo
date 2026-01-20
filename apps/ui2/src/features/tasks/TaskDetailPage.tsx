@@ -144,6 +144,7 @@ export function TaskDetailPage() {
         {task.assigneeActor ? (
           <DataRow
             leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} />}
+            onClick={() => setShowAssignPop(true)}
           >
             <Text as='span' weight='medium' size='3'>
               {task.assigneeActor.displayName}
@@ -151,6 +152,7 @@ export function TaskDetailPage() {
             <Text as='span' weight='normal' tone='muted' size='3'>
               {` @${task.assigneeActor.slug} assigned`}
             </Text>
+            <Text size='1' tone='muted'>tap to reassign</Text>
           </DataRow>
         ) : (
           null
@@ -236,14 +238,16 @@ export function TaskDetailPage() {
       </DataRowContainer>
 
       {/* Assign */}
-      <DataRowContainer className='task-detail-page__comment-buttons'>
-        <Button
-          size='lg'
-          onClick={() => setShowAssignPop(true)}
-        >
-          {task.assigneeActor ? 'Reassign' : 'Assign'}
-        </Button>
-      </DataRowContainer>
+      {!task.assigneeActor && (
+        <DataRowContainer className='task-detail-page__comment-buttons'>
+          <Button
+            size='lg'
+            onClick={() => setShowAssignPop(true)}
+          >
+            Assign
+          </Button>
+        </DataRowContainer>
+      )}
 
       {/* Delete */}
       <DataRowContainer className='task-detail-page__comment-buttons'>
