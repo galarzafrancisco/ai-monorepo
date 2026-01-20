@@ -1,4 +1,4 @@
-# AI Monorepo
+# Traff
 
 Monorepo to learn and experiment with application development.
 

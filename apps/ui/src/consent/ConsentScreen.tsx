@@ -8,7 +8,7 @@ import { GetConsentMetadataResponseDto } from 'shared';
 
 
 export function ConsentScreen() {
-  usePageTitle('Authorization Consent - AI Monorepo');
+  usePageTitle('Authorization Consent - Traff');
 
   const [searchParams] = useSearchParams();
   const flowId = searchParams.get('flow');

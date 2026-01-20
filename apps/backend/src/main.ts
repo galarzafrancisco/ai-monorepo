@@ -43,10 +43,10 @@ async function bootstrap() {
   });
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('AI Monorepo API')
-    .setDescription('The AI Monorepo API description')
+    .setTitle('Traff API')
+    .setDescription('The Traff API description')
     .setVersion('1.0')
-    .addTag('ai-monorepo')
+    .addTag('traff')
     .addCookieAuth(
       'access_token',
       {

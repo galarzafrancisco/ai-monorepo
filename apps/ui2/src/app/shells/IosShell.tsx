@@ -168,7 +168,7 @@ export function IosShell(props: IosShellProps): JSX.Element {
       {/* Drawer */}
       <aside className={`ios-shell__drawer ${isDrawerOpen ? 'ios-shell__drawer--open' : ''}`}>
         <div className="ios-shell__drawer-header">
-          <Text size="4" weight="bold">AI Monorepo</Text>
+          <Text size="4" weight="bold">Traff</Text>
           <button
             className="ios-shell__drawer-close"
             onClick={handleDrawerClose}

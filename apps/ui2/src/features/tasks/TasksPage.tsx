@@ -21,7 +21,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
   // Set page title
   useEffect(() => {
     if (!statusFilter) {
-      setSectionTitle("All");
+      setSectionTitle("All Tasks");
       return;
     }
     setSectionTitle(TASKS_STATUS[statusFilter].label);
@@ -194,11 +194,17 @@ function TasksToRows({ tasks, enteringIds, exitingTasks }: { tasks: Task[], ente
 }
 
 function TaskCard({ task, animation, onClick }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void }): JSX.Element {
+  const tags = task.tags.map(tag => ({ label: tag.name }));
+  if (task.comments.length) {
+    tags.push({
+      label: `💬 ${task.comments.length}`
+    })
+  }
   return (
     <BoardCard
       leading={<Avatar name={task.createdByActor.displayName} size='md' />}
       topRight={elapsedTime(task.updatedAt)}
-      tags={task.tags.map(tag => ({ label: tag.name }))}
+      tags={tags}
       animation={animation}
       onClick={onClick}
       footer={

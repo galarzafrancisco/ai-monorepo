@@ -3273,14 +3273,14 @@
     }
   },
   "info": {
-    "title": "AI Monorepo API",
-    "description": "The AI Monorepo API description",
+    "title": "Traff API",
+    "description": "The Traff API description",
     "version": "1.0",
     "contact": {}
   },
   "tags": [
     {
-      "name": "ai-monorepo",
+      "name": "traff",
       "description": ""
     }
   ],

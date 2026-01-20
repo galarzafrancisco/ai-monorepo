@@ -25,15 +25,12 @@ export function HomePage() {
   useEffect(() => {
     console.log('Home page useEffect hook triggered');
     console.log('setting section title');
-    setSectionTitle('Home sweet home');
+    setSectionTitle('Traff');
   }, []);
 
   return (
     <div>
-      <p>hardcoded content</p>
-      <p>{message}</p>
-      <p>section title via hook: {sectionTitle}</p>
-      {/* <Content /> */}
+      <p>Tasks. Context. Agents.</p>
     </div>
   )
 }

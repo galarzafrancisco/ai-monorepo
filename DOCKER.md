@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-This guide explains how to package and run the AI Monorepo as a single Docker container.
+This guide explains how to package and run the Traff as a single Docker container.
 
 ## Overview
 

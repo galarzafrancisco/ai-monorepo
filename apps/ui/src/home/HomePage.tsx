@@ -3,7 +3,7 @@ import { usePageTitle } from '../hooks/usePageTitle';
 import './HomePage.css';
 
 export function HomePage() {
-  usePageTitle('AI Monorepo — Home');
+  usePageTitle('Traff — Home');
 
   const apps = [
     {
@@ -33,7 +33,7 @@ export function HomePage() {
     <div className="home-page">
       <div className="home-container">
         <header className="home-header">
-          <h1 className="home-title">AI Monorepo</h1>
+          <h1 className="home-title">Traff</h1>
           <p className="home-subtitle">
             Your all-in-one platform for task management, knowledge organization, and protocol
             integration

@@ -81,7 +81,7 @@ export function AgentDetailPage() {
             {agent.name}
           </Text>
           <Text as="span" weight="normal" tone="muted" size="3">
-            {` @${agent.slug}`}
+            {` @${agent.slug} `}
           </Text>
           <Text as="span" tone="muted" style="mono">
             #{agent.actorId.slice(0, 6)}

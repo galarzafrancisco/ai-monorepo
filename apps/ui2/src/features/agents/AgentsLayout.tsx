@@ -15,7 +15,7 @@ export function AgentsLayout(): JSX.Element {
     <div style={{ minHeight: 0 }}>
       {isDesktop ?
         <DesktopShell
-          sectionTitle="Agents"
+          sectionTitle={sectionTitle}
         >
           <Outlet />
         </DesktopShell>

@@ -1,5 +1,5 @@
 {
-  "name": "ai-monorepo",
+  "name": "traff",
   "private": true,
   "version": "0.0.0",
   "workspaces": [

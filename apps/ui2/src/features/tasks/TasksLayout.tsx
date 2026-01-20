@@ -15,7 +15,7 @@ export function TasksLayout(): JSX.Element {
     <div style={{ minHeight: 0 }}>
       {isDesktop ?
         <DesktopShell
-          sectionTitle="Tasks"
+          sectionTitle={sectionTitle}
         >
           <Outlet />
         </DesktopShell>
