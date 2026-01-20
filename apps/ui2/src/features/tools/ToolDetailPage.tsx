@@ -127,6 +127,23 @@ export function ToolDetailPage() {
         </DataRowContainer>
       )}
 
+      {/* Inspector Command */}
+      {tool.url && (
+        <DataRowContainer className="tool-detail-page__section">
+          <DataRow>
+            <Text as="span" weight="medium" size="3">
+              Inspector Command
+            </Text>
+            <Text size="2" tone="muted">
+              Run this command to start the MCP inspector:
+            </Text>
+            <div className="tool-detail-page__command">
+              <code>npx @modelcontextprotocol/inspector {tool.url}</code>
+            </div>
+          </DataRow>
+        </DataRowContainer>
+      )}
+
       {/* Scopes (Permissions) */}
       <DataRowContainer className="tool-detail-page__section">
         <DataRow>
