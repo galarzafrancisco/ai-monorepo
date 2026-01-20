@@ -22,6 +22,14 @@
   margin: var(--space-3);
 }
 
+/* Actions */
+.task-detail-page__actions {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 8px;
+  margin: var(--space-3);
+}
+
 .task-detail-page__add-comment {
   margin-bottom: 16px;
 }
