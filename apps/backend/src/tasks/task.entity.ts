@@ -13,7 +13,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { CommentEntity } from './comment.entity';
-import { TagEntity } from './tag.entity';
+import { TagEntity } from '../meta/tag.entity';
 import { TaskStatus } from './enums';
 import { ActorEntity } from '../identity-provider/actor.entity';
 

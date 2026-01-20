@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository, In } from 'typeorm';
 import { TaskEntity } from './task.entity';
-import { TagEntity } from './tag.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -35,7 +34,8 @@ import {
   CommentAddedEvent,
   TaskStatusChangedEvent,
 } from './events/tasks.events';
-import { getRandomTagColor } from '../common/utils/color-palette.util';
+import { MetaService } from '../meta/meta.service';
+import { TagEntity } from '../meta/tag.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
 
 @Injectable()
@@ -47,11 +47,10 @@ export class TasksService {
     private readonly taskRepository: Repository<TaskEntity>,
     @InjectRepository(CommentEntity)
     private readonly commentRepository: Repository<CommentEntity>,
-    @InjectRepository(TagEntity)
-    private readonly tagRepository: Repository<TagEntity>,
     @InjectRepository(ActorEntity)
     private readonly actorRepository: Repository<ActorEntity>,
     private readonly actorService: ActorService,
+    private readonly metaService: MetaService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -94,7 +93,7 @@ export class TasksService {
 
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
-      const tags = await this.findOrCreateTags(input.tagNames);
+      const tags = await this.metaService.findOrCreateTagEntities(input.tagNames);
       savedTask.tags = tags;
       await this.taskRepository.save(savedTask);
     }
@@ -170,7 +169,7 @@ export class TasksService {
       if (input.tagNames.length === 0) {
         task.tags = [];
       } else {
-        task.tags = await this.findOrCreateTags(input.tagNames);
+        task.tags = await this.metaService.findOrCreateTagEntities(input.tagNames);
       }
     }
 
@@ -488,36 +487,8 @@ export class TasksService {
   }
 
   async createTag(input: CreateTagInput): Promise<TagResult> {
-    this.logger.log({
-      message: 'Creating tag',
-      tagName: input.name,
-    });
-
-    // Check if tag already exists (case-insensitive)
-    let tag = await this.tagRepository.findOne({ where: { name: input.name } });
-
-    if (!tag) {
-      // Create new tag with random color
-      tag = this.tagRepository.create({
-        name: input.name,
-        color: getRandomTagColor(),
-      });
-      tag = await this.tagRepository.save(tag);
-      this.logger.log({
-        message: 'Tag created',
-        tagId: tag.id,
-        tagName: tag.name,
-        color: tag.color,
-      });
-    } else {
-      this.logger.log({
-        message: 'Tag already exists',
-        tagId: tag.id,
-        tagName: tag.name,
-      });
-    }
-
-    return this.mapTagToResult(tag);
+    // Delegate to MetaService
+    return this.metaService.createTag(input);
   }
 
   async addTagToTask(taskId: string, input: AddTagInput): Promise<TaskResult> {
@@ -536,21 +507,8 @@ export class TasksService {
       throw new TaskNotFoundError(taskId);
     }
 
-    // Find or create the tag (case-insensitive)
-    let tag = await this.tagRepository.findOne({ where: { name: input.name } });
-
-    if (!tag) {
-      tag = this.tagRepository.create({
-        name: input.name,
-        color: input.color ?? getRandomTagColor(),
-      });
-      tag = await this.tagRepository.save(tag);
-      this.logger.log({
-        message: 'Tag created',
-        tagId: tag.id,
-        tagName: tag.name,
-      });
-    }
+    // Find or create the tag using MetaService
+    const tag = await this.metaService.findOrCreateTagEntity(input.name, input.color);
 
     // Add tag to task if not already present
     if (!task.tags.some((t) => t.id === tag.id)) {
@@ -602,8 +560,8 @@ export class TasksService {
       tagId,
     });
 
-    // Check if tag is now orphaned and clean it up
-    await this.cleanupOrphanedTag(tagId);
+    // Check if tag is now orphaned and clean it up using MetaService
+    await this.metaService.cleanupOrphanedTag(tagId);
 
     // Reload with relations to get updated task
     const taskWithRelations = await this.taskRepository.findOne({
@@ -620,80 +578,13 @@ export class TasksService {
   }
 
   async getAllTags(): Promise<TagResult[]> {
-    this.logger.log({ message: 'Getting all tags' });
-
-    const tags = await this.tagRepository.find({
-      order: { name: 'ASC' },
-    });
-
-    this.logger.log({
-      message: 'Tags retrieved',
-      count: tags.length,
-    });
-
-    return tags.map((tag) => this.mapTagToResult(tag));
+    // Delegate to MetaService
+    return this.metaService.getAllTags();
   }
 
   async deleteTag(tagId: string): Promise<void> {
-    this.logger.log({
-      message: 'Deleting tag',
-      tagId,
-    });
-
-    const result = await this.tagRepository.softDelete(tagId);
-
-    if (result.affected === 0) {
-      this.logger.warn({
-        message: 'Tag not found for deletion',
-        tagId,
-      });
-    } else {
-      this.logger.log({
-        message: 'Tag deleted',
-        tagId,
-      });
-    }
-  }
-
-  private async cleanupOrphanedTag(tagId: string): Promise<void> {
-    this.logger.log({
-      message: 'Checking if tag is orphaned',
-      tagId,
-    });
-
-    const tagWithTasks = await this.tagRepository.findOne({
-      where: { id: tagId },
-      relations: ['tasks'],
-    });
-
-    if (!tagWithTasks) {
-      this.logger.warn({
-        message: 'Tag not found for cleanup check',
-        tagId,
-      });
-      return;
-    }
-
-    if (tagWithTasks.tasks.length === 0) {
-      this.logger.log({
-        message: 'Tag is orphaned, cleaning up',
-        tagId,
-        tagName: tagWithTasks.name,
-      });
-
-      await this.tagRepository.softDelete(tagId);
-
-      this.logger.log({
-        message: 'Orphaned tag cleaned up',
-        tagId,
-      });
-    } else {
-      this.logger.log({
-        message: 'Tag still has tasks, keeping it',
-        tagId,
-        taskCount: tagWithTasks.tasks.length,
-      });
-    }
+    // Delegate to MetaService
+    return this.metaService.deleteTag(tagId);
   }
 
   private mapTaskToResult(task: TaskEntity): TaskResult {
@@ -749,41 +640,5 @@ export class TasksService {
       createdAt: tag.createdAt,
       updatedAt: tag.updatedAt,
     };
-  }
-
-  /**
-   * Helper method to find or create tags by name (case-insensitive)
-   */
-  private async findOrCreateTags(tagNames: string[]): Promise<TagEntity[]> {
-    const tags: TagEntity[] = [];
-
-    for (const tagName of tagNames) {
-      const normalizedName = tagName.trim();
-      if (!normalizedName) continue;
-
-      // Try to find existing tag (case-insensitive due to NOCASE collation)
-      let tag = await this.tagRepository.findOne({
-        where: { name: normalizedName }
-      });
-
-      if (!tag) {
-        // Create new tag with normalized name and random color
-        tag = this.tagRepository.create({
-          name: normalizedName,
-          color: getRandomTagColor(),
-        });
-        tag = await this.tagRepository.save(tag);
-        this.logger.log({
-          message: 'Tag created',
-          tagId: tag.id,
-          tagName: tag.name,
-          color: tag.color,
-        });
-      }
-
-      tags.push(tag);
-    }
-
-    return tags;
   }
 }

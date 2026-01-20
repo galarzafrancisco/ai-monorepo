@@ -48,6 +48,7 @@ export type { LoginRequestDto } from './models/LoginRequestDto';
 export type { LoginResponseDto } from './models/LoginResponseDto';
 export type { MappingResponseDto } from './models/MappingResponseDto';
 export { McpFlowResponseDto } from './models/McpFlowResponseDto';
+export type { MetaTagResponseDto } from './models/MetaTagResponseDto';
 export type { MovePageDto } from './models/MovePageDto';
 export type { PageListResponseDto } from './models/PageListResponseDto';
 export type { PageResponseDto } from './models/PageResponseDto';
@@ -79,6 +80,7 @@ export { AuthorizationServerService } from './services/AuthorizationServerServic
 export { ContextService } from './services/ContextService';
 export { DiscoveryService } from './services/DiscoveryService';
 export { JwksService } from './services/JwksService';
+export { MetaService } from './services/MetaService';
 export { TaskService } from './services/TaskService';
 export { ToolsService } from './services/ToolsService';
 export { WebAuthenticationService } from './services/WebAuthenticationService';

@@ -12,6 +12,7 @@ import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
 import { AgentsModule } from './agents/agents.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
 import { LlmHelperModule } from './llm-helper/llm-helper.module';
+import { MetaModule } from './meta/meta.module';
 import { getConfig } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
 
@@ -24,6 +25,7 @@ import { AppInitModule } from './app-init/app-init.module';
       synchronize: true,
     }),
     EventEmitterModule.forRoot(),
+    MetaModule,
     TasksModule,
     ContextModule,
     McpRegistryModule,
