@@ -1,0 +1,35 @@
+.agent-detail-page {
+  background-color: var(--bg);
+}
+
+/* Sections */
+.agent-detail-page__section {
+  margin: var(--space-5) 0;
+}
+
+/* System prompt display */
+.agent-detail-page__system-prompt {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+  background: var(--surface-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-2);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Actions */
+.agent-detail-page__actions {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 8px;
+  margin: var(--space-3);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .agent-detail-page__system-prompt {
+    background: var(--color-surface-elevated, #374151);
+  }
+}
