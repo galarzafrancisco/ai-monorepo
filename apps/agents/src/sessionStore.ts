@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { join } from "node:path";
 
 type DBEntry = {
   agentId: string;
@@ -9,7 +9,12 @@ type DBEntry = {
 
 type DB = DBEntry[];
 
-const DB_PATH = join(__dirname, "sessions.json");
+const DB_PATH = join(
+  new URL(".", import.meta.url).pathname,
+  "sessions.json"
+);
+
+// const DB_PATH = "sessions.json";
 
 function loadDB(): DB {
   if (!existsSync(DB_PATH)) return [];

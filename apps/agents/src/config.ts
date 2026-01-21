@@ -1,2 +1,11 @@
-export const ACCESS_TOKEN = ""; // TODO: get a real token
-export const BASE_URL = process.env.TASKS_URL ?? "http://localhost:1000";
+export const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+export const BASE_URL = process.env.BASE_URL;
+
+if (!ACCESS_TOKEN) {
+  console.error('env ACCESS_TOKEN not available');
+  process.exit(1);
+}
+if (!BASE_URL) {
+  console.error('env BASE_URL not available');
+  process.exit(1);
+}

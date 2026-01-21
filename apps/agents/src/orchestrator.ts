@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { TaskEntity } from "../../backend/src/tasks/task.entity";
 import { AgentApiClient } from "./api";
 import { assignHandler } from "./assignHandler";

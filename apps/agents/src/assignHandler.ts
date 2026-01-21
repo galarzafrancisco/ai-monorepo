@@ -7,11 +7,12 @@ Input:
 - agent id
 */
 
-import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto";
-import { runAgentStream } from "./claude";
-import { printClaudeMessage } from "./messagePrinter";
-import { getSession, setSession } from "./sessionStore";
-import { prepareWorkspace } from "./workspace";
+import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
+import { AgentRunArgs, AgentRunResult, runAgentStream as claudeRun } from "./claude.js";
+import { runAgentStream as opencodeRun } from "./opencode.js";
+import { printClaudeMessage } from "./messagePrinter.js";
+import { getSession, setSession } from "./sessionStore.js";
+import { prepareWorkspace } from "./workspace.js";
 
 /*
 Workflow:
@@ -29,15 +30,28 @@ Session ID exists?
 */
 
 export async function assignHandler(taskId: string, agent: AgentResponseDto, repo: string) {
-  
+
   const { systemPrompt: prompt, slug: agentId } = agent;
 
   // Load session
   const sessionId = getSession(agentId, taskId);
 
   const { repoDir } = await prepareWorkspace(taskId, agentId, repo);
+  let runner: (AgentRunArgs) => Promise<AgentRunResult>
+  if (agent.type === 'claude') {
+    runner = claudeRun;
+  } else if (agent.type === 'opencode') {
+    runner = opencodeRun;
+  } else {
+    return {
+      sessionId: sessionId ?? null,
+      workDir: repoDir,
+      result: `Agent of type ${agent.type} does not have a runner. Skipping.`,
+    }
+  }
 
-  const result = await runAgentStream({
+  const result = await runner({
+    taskId,
     prompt,
     cwd: repoDir,
     resume: sessionId ?? undefined,
