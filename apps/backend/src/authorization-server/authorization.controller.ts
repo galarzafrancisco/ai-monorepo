@@ -35,7 +35,9 @@ import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { CallbackRequestDto } from './dto/callback-request.dto';
 import { GetConsentMetadataParamsDto } from './dto/consent-metadata-params.dto';
 import { GetConsentMetadataResponseDto } from './dto/consent-metadata-response.dto';
+import { ScopesResponseDto } from './dto/scope-response.dto';
 import { getFrontendPath } from '../config/frontend.config';
+import { ALL_API_SCOPES } from '../auth/core/scopes/all-api.scopes';
 
 @ApiTags('Authorization Server')
 @Controller('auth')
@@ -264,5 +266,20 @@ export class AuthorizationController {
       // If there's an error, show an error page
       throw new BadRequestException(error instanceof Error ? error.message : 'Callback processing failed');
     }
+  }
+
+  @Get('scopes')
+  @ApiOperation({
+    summary: 'List All Available Scopes',
+    description:
+      'Returns a list of all scopes available in the system. Each scope includes its identifier string and a human-readable description.',
+  })
+  @ApiOkResponse({
+    description: 'List of all available scopes',
+    type: ScopesResponseDto,
+  })
+  async getScopes(): Promise<ScopesResponseDto> {
+    const scopes = await this.authorizationService.getAllAPIScopes();
+    return { scopes };
   }
 }

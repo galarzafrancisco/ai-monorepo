@@ -8,6 +8,7 @@ import type { GetConsentMetadataResponseDto } from '../models/GetConsentMetadata
 import type { IntrospectTokenRequestDto } from '../models/IntrospectTokenRequestDto';
 import type { IntrospectTokenResponseDto } from '../models/IntrospectTokenResponseDto';
 import type { RegisterClientDto } from '../models/RegisterClientDto';
+import type { ScopesResponseDto } from '../models/ScopesResponseDto';
 import type { TokenExchangeRequestDto } from '../models/TokenExchangeRequestDto';
 import type { TokenExchangeResponseDto } from '../models/TokenExchangeResponseDto';
 import type { TokenRequestDto } from '../models/TokenRequestDto';
@@ -303,6 +304,18 @@ export class AuthorizationServerService {
                 400: `Invalid callback parameters or state`,
                 404: `Connection flow not found for provided state`,
             },
+        });
+    }
+    /**
+     * List All Available Scopes
+     * Returns a list of all scopes available in the system. Each scope includes its identifier string and a human-readable description.
+     * @returns ScopesResponseDto List of all available scopes
+     * @throws ApiError
+     */
+    public static authorizationControllerGetScopes(): CancelablePromise<ScopesResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/auth/scopes',
         });
     }
 }

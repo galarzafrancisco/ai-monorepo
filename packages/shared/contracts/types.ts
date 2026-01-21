@@ -257,6 +257,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List All Available Scopes
+         * @description Returns a list of all scopes available in the system. Each scope includes its identifier string and a human-readable description.
+         */
+        get: operations["AuthorizationController_getScopes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -1538,6 +1558,22 @@ export interface components {
              * @example tasks:read tasks:write
              */
             scope: string;
+        };
+        ScopeDto: {
+            /**
+             * @description The scope identifier string (e.g., "tasks:read")
+             * @example tasks:read
+             */
+            id: string;
+            /**
+             * @description Human-readable description of what this scope grants
+             * @example Allows users to read tasks, tags, comments, etc from Tasks.
+             */
+            description: string;
+        };
+        ScopesResponseDto: {
+            /** @description List of all available scopes in the system */
+            scopes: components["schemas"]["ScopeDto"][];
         };
         LoginRequestDto: {
             /**
@@ -3492,6 +3528,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    AuthorizationController_getScopes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all available scopes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopesResponseDto"];
+                };
             };
         };
     };
