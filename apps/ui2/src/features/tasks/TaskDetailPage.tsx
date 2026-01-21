@@ -185,7 +185,7 @@ export function TaskDetailPage() {
       {/* Comments */}
       <DataRowContainer className='task-detail-page__section' >
         {
-          task.comments.map(comment => {
+          [...task.comments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map(comment => {
             const name = comment.commenterActor?.displayName || 'unknown';
             const slug = comment.commenterActor?.slug || 'unknown';
             return (
