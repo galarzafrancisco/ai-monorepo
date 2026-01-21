@@ -62,6 +62,10 @@ export class AgentTokensController {
     @Body() dto: IssueAccessTokenRequestDto,
     @CurrentUser() user: UserContext,
   ): Promise<IssueAccessTokenResponseDto> {
+
+    // TODO: This is a controller. There's a bunch of logic here that belongs in a service.
+    // TODO: Fine for now, but we need tighter controls of who can issue what tokens
+
     // Only humans can issue tokens
     if (user.actorType !== ActorType.HUMAN) {
       throw new ForbiddenException('Only humans can issue tokens for agents');
