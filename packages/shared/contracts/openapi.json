@@ -724,6 +724,29 @@
         ]
       }
     },
+    "/api/v1/auth/scopes": {
+      "get": {
+        "description": "Returns a list of all scopes available in the system. Each scope includes its identifier string and a human-readable description.",
+        "operationId": "AuthorizationController_getScopes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all available scopes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScopesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List All Available Scopes",
+        "tags": [
+          "Authorization Server"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "WebAuthController_login",
@@ -4252,6 +4275,40 @@
           "token_type",
           "expires_in",
           "scope"
+        ]
+      },
+      "ScopeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The scope identifier string (e.g., \"tasks:read\")",
+            "example": "tasks:read"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of what this scope grants",
+            "example": "Allows users to read tasks, tags, comments, etc from Tasks."
+          }
+        },
+        "required": [
+          "id",
+          "description"
+        ]
+      },
+      "ScopesResponseDto": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "description": "List of all available scopes in the system",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeDto"
+            }
+          }
+        },
+        "required": [
+          "scopes"
         ]
       },
       "LoginRequestDto": {

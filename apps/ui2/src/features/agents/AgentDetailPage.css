@@ -88,6 +88,43 @@
   color: var(--color-danger, #ef4444);
 }
 
+/* Scopes list */
+.agent-detail-page__scopes-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 300px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  background: var(--surface-2);
+  border-radius: var(--radius-2);
+}
+
+.agent-detail-page__scope-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-2);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.agent-detail-page__scope-item:hover {
+  background: var(--surface-3);
+}
+
+.agent-detail-page__scope-item input[type="checkbox"] {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.agent-detail-page__scope-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .agent-detail-page__system-prompt {

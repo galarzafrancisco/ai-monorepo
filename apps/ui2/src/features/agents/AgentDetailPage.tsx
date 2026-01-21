@@ -4,9 +4,11 @@ import { useAgentsCtx } from './AgentsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } from '../../ui/primitives';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
-import { AgentResponseDto } from 'shared';
+import { AgentResponseDto, AuthorizationServerService, ScopeDto } from 'shared';
 import { AgentTokensService } from './api';
 import './AgentDetailPage.css';
+
+const DEFAULT_SCOPES = ['meta:read'];
 
 export function AgentDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -25,8 +27,12 @@ export function AgentDetailPage() {
   const [isCreatingToken, setIsCreatingToken] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tokenName, setTokenName] = useState('');
-  const [tokenScopes, setTokenScopes] = useState('tasks:read,tasks:write');
+  const [selectedScopes, setSelectedScopes] = useState<Set<string>>(new Set(DEFAULT_SCOPES));
   const [tokenExpDays, setTokenExpDays] = useState(30);
+
+  // Available scopes from the API
+  const [availableScopes, setAvailableScopes] = useState<ScopeDto[]>([]);
+  const [scopesLoading, setScopesLoading] = useState(false);
 
   // Load tokens for this agent
   const loadTokens = useCallback(async () => {
@@ -41,6 +47,19 @@ export function AgentDetailPage() {
       setTokensLoading(false);
     }
   }, [slug]);
+
+  // Load available scopes from the API
+  const loadScopes = useCallback(async () => {
+    setScopesLoading(true);
+    try {
+      const response = await AuthorizationServerService.authorizationControllerGetScopes();
+      setAvailableScopes(response.scopes);
+    } catch (err) {
+      console.error('Failed to load scopes:', err);
+    } finally {
+      setScopesLoading(false);
+    }
+  }, []);
 
   // Load agent details if not in list
   useEffect(() => {
@@ -62,6 +81,16 @@ export function AgentDetailPage() {
     }
   }, [agent, loadTokens]);
 
+  // Load available scopes when create form is shown
+  useEffect(() => {
+    if (showCreateForm && availableScopes.length === 0) {
+      loadScopes();
+    }
+    if (!showCreateForm) {
+      setSelectedScopes(new Set(DEFAULT_SCOPES)); // Reset to defaults
+    }
+  }, [showCreateForm, availableScopes.length, loadScopes]);
+
   // Set section title for IosShell
   useEffect(() => {
     if (!agent) {
@@ -73,10 +102,10 @@ export function AgentDetailPage() {
 
   // Handle creating a new token
   const handleCreateToken = async () => {
-    if (!slug || !tokenName.trim()) return;
+    if (!slug || !tokenName.trim() || selectedScopes.size === 0) return;
     setIsCreatingToken(true);
     try {
-      const scopes = tokenScopes.split(',').map(s => s.trim()).filter(Boolean);
+      const scopes = Array.from(selectedScopes);
       const result = await AgentTokensService.agentTokensControllerIssueToken(slug, {
         name: tokenName.trim(),
         scopes,
@@ -85,6 +114,7 @@ export function AgentDetailPage() {
       setNewlyCreatedToken(result.token);
       setShowCreateForm(false);
       setTokenName('');
+      setSelectedScopes(new Set(DEFAULT_SCOPES)); // Reset to defaults
       await loadTokens();
     } catch (err) {
       console.error('Failed to create token:', err);
@@ -92,6 +122,19 @@ export function AgentDetailPage() {
     } finally {
       setIsCreatingToken(false);
     }
+  };
+
+  // Toggle a scope selection
+  const toggleScope = (scopeId: string) => {
+    setSelectedScopes((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(scopeId)) {
+        newSet.delete(scopeId);
+      } else {
+        newSet.add(scopeId);
+      }
+      return newSet;
+    });
   };
 
   // Handle revoking a token
@@ -178,7 +221,7 @@ export function AgentDetailPage() {
       {/* Status Triggers */}
       {agent.statusTriggers.length > 0 && (
         <DataRowContainer title="Status Triggers" className="agent-detail-page__section">
-          {agent.statusTriggers.map(statusTrigger => 
+          {agent.statusTriggers.map(statusTrigger =>
             <DataRow key={statusTrigger}>
               <Text tone="muted">
                 {statusTrigger}
@@ -241,6 +284,10 @@ export function AgentDetailPage() {
         }
       >
         {/* Create Token Form */}
+        {/*
+        This looks like shit but it's functional, so I'm shipping it now. 
+        TODO: Make it more consistent with the iOS theme.
+        */}
         {showCreateForm && (
           <DataRow>
             <Stack spacing="3">
@@ -259,15 +306,27 @@ export function AgentDetailPage() {
               </div>
               <div className="agent-detail-page__form-field">
                 <label>
-                  <Text size="1" tone="muted">Scopes (comma-separated)</Text>
+                  <Text size="1" tone="muted">Scopes</Text>
                 </label>
-                <input
-                  type="text"
-                  value={tokenScopes}
-                  onChange={(e) => setTokenScopes(e.target.value)}
-                  placeholder="tasks:read,tasks:write"
-                  className="agent-detail-page__input"
-                />
+                {scopesLoading ? (
+                  <Text size="2" tone="muted">Loading available scopes...</Text>
+                ) : (
+                  <div className="agent-detail-page__scopes-list">
+                    {availableScopes.map((scope) => (
+                      <label key={scope.id} className="agent-detail-page__scope-item">
+                        <input
+                          type="checkbox"
+                          checked={selectedScopes.has(scope.id)}
+                          onChange={() => toggleScope(scope.id)}
+                        />
+                        <div className="agent-detail-page__scope-info">
+                          <Text size="2" weight="medium">{scope.id}</Text>
+                          <Text size="1" tone="muted">{scope.description}</Text>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="agent-detail-page__form-field">
                 <label>
@@ -286,7 +345,7 @@ export function AgentDetailPage() {
                 <Button
                   size="sm"
                   onClick={handleCreateToken}
-                  disabled={isCreatingToken || !tokenName.trim()}
+                  disabled={isCreatingToken || !tokenName.trim() || selectedScopes.size === 0}
                 >
                   {isCreatingToken ? 'Creating...' : 'Create Token'}
                 </Button>

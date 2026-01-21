@@ -31,6 +31,8 @@ import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { ConsentMetadata } from './dto/service/authorization.service.types';
 import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
+import { Scope } from 'src/auth/core/types/scope.type';
+import { ALL_API_SCOPES } from 'src/auth/core/scopes/all-api.scopes';
 
 @Injectable()
 export class AuthorizationService {
@@ -43,6 +45,10 @@ export class AuthorizationService {
     private readonly tokenService: TokenService,
     private readonly tokenVerifierService: TokenVerifierService,
   ) { }
+
+  async getAllAPIScopes(): Promise<Scope[]> {
+    return ALL_API_SCOPES;
+  }
 
   /**
    * Process an authorization request and store PKCE parameters
