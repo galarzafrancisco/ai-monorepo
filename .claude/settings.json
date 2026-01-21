@@ -1,7 +1,8 @@
 {
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "tasks"
+    "tasks",
+    "claude-tasks"
   ],
   "permissions": {
     "allow": [
@@ -19,7 +20,17 @@
       "mcp__tasks__mark_task_in_progress",
       "mcp__tasks__mark_task_for_review",
       "mcp__tasks__mark_task_done",
-      "mcp__tasks__change_task_status"
+      "mcp__tasks__change_task_status",
+      "mcp__claude-tasks__list_tasks",
+      "mcp__claude-tasks__add_numbers",
+      "mcp__claude-tasks__get_task",
+      "mcp__claude-tasks__create_task",
+      "mcp__claude-tasks__assign_task",
+      "mcp__claude-tasks__add_comment",
+      "mcp__claude-tasks__mark_task_in_progress",
+      "mcp__claude-tasks__mark_task_for_review",
+      "mcp__claude-tasks__mark_task_done",
+      "mcp__claude-tasks__change_task_status"
     ],
     "deny": [],
     "ask": []
