@@ -50,6 +50,7 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { TasksScopes } from './tasks.scopes';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
+import { TaskEntity } from './task.entity';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
@@ -168,9 +169,9 @@ export class TasksController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a task by ID' })
-  @ApiOkResponse({ type: TaskResponseDto, description: 'Task found' })
+  @ApiOkResponse({ type: TaskEntity, description: 'Task found' })
   @ApiNotFoundResponse({ description: 'Task not found' })
-  async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
+  async getTask(@Param() params: TaskParamsDto): Promise<TaskEntity> {
     const result = await this.TasksService.getTaskById(params.id);
     return this.mapResultToResponse(result);
   }
