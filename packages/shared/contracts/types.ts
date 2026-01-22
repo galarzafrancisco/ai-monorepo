@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/color-fact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a fun fact about your favorite color */
+        get: operations["AppController_getColorFact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meta/tags": {
         parameters: {
             query?: never;
@@ -3218,6 +3235,29 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Returns a greeting message */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    AppController_getColorFact: {
+        parameters: {
+            query: {
+                /** @description Your favorite color */
+                color: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Returns a fun fact about the specified color */
             200: {
                 headers: {
                     [name: string]: unknown;

@@ -17,4 +17,21 @@ export class AppService {
             url: '/api/v1',
         });
     }
+    /**
+     * Get a fun fact about your favorite color
+     * @param color Your favorite color
+     * @returns string Returns a fun fact about the specified color
+     * @throws ApiError
+     */
+    public static appControllerGetColorFact(
+        color: string,
+    ): CancelablePromise<string> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/color-fact',
+            query: {
+                'color': color,
+            },
+        });
+    }
 }

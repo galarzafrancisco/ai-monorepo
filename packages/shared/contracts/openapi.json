@@ -24,6 +24,40 @@
         ]
       }
     },
+    "/api/v1/color-fact": {
+      "get": {
+        "operationId": "AppController_getColorFact",
+        "parameters": [
+          {
+            "name": "color",
+            "required": true,
+            "in": "query",
+            "description": "Your favorite color",
+            "schema": {
+              "example": "blue",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a fun fact about the specified color",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "Fun fact about blue: Blue is the most popular favorite color worldwide, with about 40% of people choosing it!"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a fun fact about your favorite color",
+        "tags": [
+          "App"
+        ]
+      }
+    },
     "/api/v1/meta/tags": {
       "post": {
         "operationId": "MetaController_createTag",
