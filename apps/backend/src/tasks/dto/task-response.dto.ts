@@ -3,6 +3,7 @@ import { TaskStatus } from '../enums';
 import { CommentResponseDto } from './comment-response.dto';
 import { InputRequestResponseDto } from './input-request-response.dto';
 import { TagResponseDto } from './tag-response.dto';
+import { AssigneeHistoryResponseDto } from './assignee-history-response.dto';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 
 export class TaskResponseDto {
@@ -44,6 +45,12 @@ export class TaskResponseDto {
     nullable: true,
   })
   assigneeActor!: ActorResponseDto | null;
+
+  @ApiProperty({
+    description: 'History of previous assignees',
+    type: () => [AssigneeHistoryResponseDto],
+  })
+  assigneeHistory!: AssigneeHistoryResponseDto[];
 
   @ApiPropertyOptional({
     description: 'Session ID for tracking AI agent work',

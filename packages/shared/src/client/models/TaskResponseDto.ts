@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ActorResponseDto } from './ActorResponseDto';
+import type { AssigneeHistoryResponseDto } from './AssigneeHistoryResponseDto';
 import type { CommentResponseDto } from './CommentResponseDto';
 import type { InputRequestResponseDto } from './InputRequestResponseDto';
 import type { TagResponseDto } from './TagResponseDto';
@@ -31,6 +32,10 @@ export type TaskResponseDto = {
      * Actor assigned to this task
      */
     assigneeActor?: ActorResponseDto | null;
+    /**
+     * History of previous assignees
+     */
+    assigneeHistory: Array<AssigneeHistoryResponseDto>;
     /**
      * Session ID for tracking AI agent work
      */

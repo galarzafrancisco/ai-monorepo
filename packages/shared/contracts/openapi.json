@@ -2078,6 +2078,47 @@
         ]
       }
     },
+    "/api/v1/tasks/tasks/{id}/return-to-previous-assignee": {
+      "patch": {
+        "operationId": "TasksController_returnToPreviousAssignee",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task returned to previous assignee successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found or no previous assignee in history"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Return task to previous assignee from history",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/tasks/tasks/search/query": {
       "get": {
         "operationId": "TasksController_searchTasks",
@@ -5472,6 +5513,46 @@
           "description"
         ]
       },
+      "AssigneeHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the history entry",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "Task ID this history entry belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "assigneeActorId": {
+            "type": "string",
+            "description": "Actor ID of the assignee",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "assigneeActor": {
+            "description": "Actor who was assigned",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "assignedAt": {
+            "type": "string",
+            "description": "Timestamp when this assignment occurred",
+            "example": "2025-11-03T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "assigneeActorId",
+          "assigneeActor",
+          "assignedAt"
+        ]
+      },
       "CommentResponseDto": {
         "type": "object",
         "properties": {
@@ -5641,6 +5722,13 @@
               }
             ]
           },
+          "assigneeHistory": {
+            "description": "History of previous assignees",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssigneeHistoryResponseDto"
+            }
+          },
           "sessionId": {
             "type": "string",
             "description": "Session ID for tracking AI agent work",
@@ -5703,6 +5791,7 @@
           "name",
           "description",
           "status",
+          "assigneeHistory",
           "comments",
           "inputRequests",
           "tags",

@@ -14,6 +14,14 @@ export type ActorResult = {
   avatarUrl: string | null;
 };
 
+export type AssigneeHistoryResult = {
+  id: string;
+  taskId: string;
+  assigneeActorId: string;
+  assigneeActor: ActorResult;
+  assignedAt: Date;
+};
+
 // Input types (for service methods)
 export type CreateTaskInput = {
   name: string;
@@ -87,6 +95,7 @@ export type TaskResult = {
   status: TaskStatus;
   assignee: string | null;
   assigneeActor: ActorResult | null;
+  assigneeHistory: AssigneeHistoryResult[];
   sessionId: string | null;
   comments: CommentResult[];
   inputRequests: InputRequestResult[];

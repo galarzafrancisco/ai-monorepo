@@ -631,6 +631,23 @@ export interface paths {
         patch: operations["TasksController_assignTaskToMe"];
         trace?: never;
     };
+    "/api/v1/tasks/tasks/{id}/return-to-previous-assignee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Return task to previous assignee from history */
+        patch: operations["TasksController_returnToPreviousAssignee"];
+        trace?: never;
+    };
     "/api/v1/tasks/tasks/search/query": {
         parameters: {
             query?: never;
@@ -2276,6 +2293,30 @@ export interface components {
              */
             dependsOnIds?: string[];
         };
+        AssigneeHistoryResponseDto: {
+            /**
+             * @description Unique identifier for the history entry
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Task ID this history entry belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            taskId: string;
+            /**
+             * @description Actor ID of the assignee
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            assigneeActorId: string;
+            /** @description Actor who was assigned */
+            assigneeActor: components["schemas"]["ActorResponseDto"];
+            /**
+             * @description Timestamp when this assignment occurred
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            assignedAt: string;
+        };
         CommentResponseDto: {
             /**
              * @description Unique identifier for the comment
@@ -2393,6 +2434,8 @@ export interface components {
             assignee?: Record<string, never> | null;
             /** @description Actor assigned to this task */
             assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
+            /** @description History of previous assignees */
+            assigneeHistory: components["schemas"]["AssigneeHistoryResponseDto"][];
             /**
              * @description Session ID for tracking AI agent work
              * @example session-123-abc
@@ -4719,6 +4762,36 @@ export interface operations {
                 };
             };
             /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_returnToPreviousAssignee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task returned to previous assignee successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Task not found or no previous assignee in history */
             404: {
                 headers: {
                     [name: string]: unknown;

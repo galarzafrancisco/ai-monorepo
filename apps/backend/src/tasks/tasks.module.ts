@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskEntity } from './task.entity';
 import { CommentEntity } from './comment.entity';
 import { InputRequestEntity } from './input-request.entity';
+import { AssigneeHistoryEntity } from './assignee-history.entity';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 import { TasksGateway } from './tasks.gateway';
@@ -15,7 +16,7 @@ import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TaskEntity, CommentEntity, InputRequestEntity]),
+    TypeOrmModule.forFeature([TaskEntity, CommentEntity, InputRequestEntity, AssigneeHistoryEntity]),
     AuthorizationServerModule,
     AuthGuardsModule,
     IdentityProviderModule,

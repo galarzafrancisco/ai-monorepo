@@ -44,8 +44,9 @@ import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { SearchTasksQueryDto } from './dto/search-tasks-query.dto';
 import { TaskSearchResultDto } from './dto/task-search-result.dto';
-import { TaskResult, CommentResult, TagResult, ActorResult, InputRequestResult } from './dto/service/tasks.service.types';
+import { TaskResult, CommentResult, TagResult, ActorResult, InputRequestResult, AssigneeHistoryResult } from './dto/service/tasks.service.types';
 import { ActorResponseDto } from '../identity-provider/dto/actor-response.dto';
+import { AssigneeHistoryResponseDto } from './dto/assignee-history-response.dto';
 import { TasksMcpGateway } from './tasks.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
@@ -153,6 +154,21 @@ export class TasksController {
     return this.mapResultToResponse(result);
   }
 
+
+  @Patch(':id/return-to-previous-assignee')
+  @RequireScopes(TasksScopes.WRITE.id)
+  @ApiOperation({ summary: 'Return task to previous assignee from history' })
+  @ApiOkResponse({
+    type: TaskResponseDto,
+    description: 'Task returned to previous assignee successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Task not found or no previous assignee in history' })
+  async returnToPreviousAssignee(
+    @Param() params: TaskParamsDto,
+  ): Promise<TaskResponseDto> {
+    const result = await this.TasksService.returnToPreviousAssignee(params.id);
+    return this.mapResultToResponse(result);
+  }
   @Delete(':id')
   @RequireScopes(TasksScopes.WRITE.id)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -390,6 +406,7 @@ export class TasksController {
       status: result.status,
       assignee: result.assignee,
       assigneeActor: result.assigneeActor ? this.mapActorResultToResponse(result.assigneeActor) : null,
+      assigneeHistory: result.assigneeHistory.map((h) => this.mapAssigneeHistoryResultToResponse(h)),
       sessionId: result.sessionId ?? '',
       comments: result.comments.map((c) => this.mapCommentResultToResponse(c)),
       inputRequests: result.inputRequests.map((ir) => this.mapInputRequestResultToResponse(ir)),
@@ -453,6 +470,16 @@ export class TasksController {
       resolvedAt: result.resolvedAt ? result.resolvedAt.toISOString() : null,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
+    };
+  }
+
+  private mapAssigneeHistoryResultToResponse(result: AssigneeHistoryResult): AssigneeHistoryResponseDto {
+    return {
+      id: result.id,
+      taskId: result.taskId,
+      assigneeActorId: result.assigneeActorId,
+      assigneeActor: this.mapActorResultToResponse(result.assigneeActor),
+      assignedAt: result.assignedAt.toISOString(),
     };
   }
 }

@@ -14,6 +14,7 @@ export type { AgentListResponseDto } from './models/AgentListResponseDto';
 export { AgentResponseDto } from './models/AgentResponseDto';
 export type { AnswerInputRequestDto } from './models/AnswerInputRequestDto';
 export type { AppendPageDto } from './models/AppendPageDto';
+export type { AssigneeHistoryResponseDto } from './models/AssigneeHistoryResponseDto';
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export { AuthJourneyResponseDto } from './models/AuthJourneyResponseDto';
 export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';

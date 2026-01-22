@@ -14,6 +14,7 @@ import {
 } from 'typeorm';
 import { CommentEntity } from './comment.entity';
 import { InputRequestEntity } from './input-request.entity';
+import { AssigneeHistoryEntity } from './assignee-history.entity';
 import { TagEntity } from '../meta/tag.entity';
 import { TaskStatus } from './enums';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -69,6 +70,9 @@ export class TaskEntity {
 
   @OneToMany(() => InputRequestEntity, (inputRequest) => inputRequest.task, { cascade: true })
   inputRequests!: InputRequestEntity[];
+
+  @OneToMany(() => AssigneeHistoryEntity, (history) => history.task, { cascade: true })
+  assigneeHistory!: AssigneeHistoryEntity[];
 
   @ManyToMany(() => TagEntity, (tag) => tag.tasks)
   @JoinTable({

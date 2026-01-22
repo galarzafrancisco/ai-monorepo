@@ -180,6 +180,26 @@ export class TaskService {
         });
     }
     /**
+     * Return task to previous assignee from history
+     * @param id Task UUID
+     * @returns TaskResponseDto Task returned to previous assignee successfully
+     * @throws ApiError
+     */
+    public static tasksControllerReturnToPreviousAssignee(
+        id: string,
+    ): CancelablePromise<TaskResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/tasks/tasks/{id}/return-to-previous-assignee',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Task not found or no previous assignee in history`,
+            },
+        });
+    }
+    /**
      * Search tasks by query string
      * @param query Search query string
      * @param limit Maximum number of results to return
