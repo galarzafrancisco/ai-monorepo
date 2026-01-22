@@ -23,8 +23,10 @@ export abstract class BaseAgentRunner implements AgentRunner {
       }
     };
 
+    const onError = cb.onError;
+
     try {
-      result = await this.runInternal(ctx, emit, setSession);
+      result = await this.runInternal(ctx, emit, setSession, onError);
     } catch (err: any) {
       await emit(`❌ Agent error: ${err?.message ?? String(err)}`);
     }
@@ -40,5 +42,6 @@ export abstract class BaseAgentRunner implements AgentRunner {
     ctx: AgentRunContext,
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
+    onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string>;
 }

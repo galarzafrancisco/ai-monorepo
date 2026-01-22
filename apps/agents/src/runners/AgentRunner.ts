@@ -21,6 +21,9 @@ export type AgentRunCallbacks = {
 
   /** Called for every human-readable event */
   onEvent?: (message: string) => void | Promise<void>;
+
+  /** Called when an error occurs (e.g., quota limit, API errors) */
+  onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>;
 };
 
 export type AgentRunResult = {

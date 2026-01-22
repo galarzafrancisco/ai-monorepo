@@ -12,7 +12,8 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
   protected async runInternal(
     ctx,
     emit,
-    setSession
+    setSession,
+    onError?
   ): Promise<string> {
 
     let finalResult = '';
@@ -51,6 +52,15 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
       if (text) await emit(text);
 
       if (msg.type === 'result' && msg.subtype === 'success') {
+        // Check if this is an error result (e.g., quota limit)
+        if (msg.is_error === true) {
+          if (onError) {
+            await onError({
+              message: typeof msg.result === 'string' ? msg.result : 'Unknown error',
+              rawMessage: msg,
+            });
+          }
+        }
         finalResult = msg.result;
       }
     }

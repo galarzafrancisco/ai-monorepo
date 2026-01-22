@@ -115,12 +115,23 @@ export class Coordinator {
             if (!sessionId) {
               setSession(agent.actorId, task.id, sessionId);
             }
+          },
+          onError: (error: { message: string; rawMessage?: any }) => {
+            console.log('Claude error detected');
+            console.log('error message:', error.message);
+            console.log('raw message', error.rawMessage);
+
+            // Post error to task as a comment
+            this.client.addComment(
+              task.id,
+              `⚠️ Claude Error Detected ⚠️\n\n${error.message}\n\n\`\`\`json\nraw message\n${JSON.stringify(error.rawMessage, null, 2)}\n\`\`\``
+            );
           }
         }
       )
-  
+
       console.log(results);
-      
+
       // Force a comment
       this.client.addComment(task.id, `Finished.\n\n${results.result}`);
     } catch (error) {
