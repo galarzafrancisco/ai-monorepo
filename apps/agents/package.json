@@ -5,7 +5,9 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "tsx src/index.ts"
+    "start": "tsx src/index.ts",
+    "start:claude": "dotenv -e .env.claude npm run start",
+    "start:codex": "dotenv -e .env.codex npm run start"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.76",
@@ -13,6 +15,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
+    "dotenv-cli": "^11.0.0",
     "shared": "^0.0.1",
     "tsx": "4.21.0",
     "typescript": "^5.7.3"
