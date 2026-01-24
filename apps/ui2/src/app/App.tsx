@@ -7,6 +7,7 @@ import { BASE_PATH } from '../shared/const/base';
 import './App.css';
 import { TasksRoutes } from '../features/tasks/TasksRoutes';
 import { LogoutPage } from './routes/LogoutPage';
+import { AboutPage } from './routes/AboutPage';
 import { ContextRoutes } from '../features/context/ContextRoutes';
 import { AgentsRoutes } from '../features/agents/AgentsRoutes';
 import { ToolsRoutes } from '../features/tools/ToolsRoutes';
@@ -42,6 +43,7 @@ export function App() {
         <AuthProvider>
           <ActorsProvider>
             <Routes>
+              <Route path="/about" element={<AboutPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route
                 path='*'
