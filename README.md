@@ -6,6 +6,10 @@ Monorepo to learn and experiment with application development.
 
 This repository is a sandbox for learning and experimenting with application development. It is structured as a monorepo with a 2-layer architecture (Backend → UI) and includes shared packages for types and utilities. The goal is to explore best practices, patterns, and techniques for building applications.
 
+## Joke
+
+Why did the cowboy start coding? He wanted to build a stable app.
+
 ## Quick Start
 
 ### Zero to Hero (Production Build)
