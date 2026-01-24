@@ -25,7 +25,7 @@ export function HomePage() {
   useEffect(() => {
     console.log('Home page useEffect hook triggered');
     console.log('setting section title');
-    setSectionTitle('Traff');
+    setSectionTitle('taico');
   }, []);
 
   return (

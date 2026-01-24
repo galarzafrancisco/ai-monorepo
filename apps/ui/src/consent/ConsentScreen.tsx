@@ -8,7 +8,7 @@ import { GetConsentMetadataResponseDto } from 'shared';
 
 
 export function ConsentScreen() {
-  usePageTitle('Authorization Consent - Traff');
+  usePageTitle('Authorization Consent - taico');
 
   const [searchParams] = useSearchParams();
   const flowId = searchParams.get('flow');

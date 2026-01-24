@@ -3827,8 +3827,8 @@
     }
   },
   "info": {
-    "title": "Traff API",
-    "description": "The Traff API description",
+    "title": "taico API",
+    "description": "The taico API description",
     "version": "1.0",
     "contact": {}
   },
