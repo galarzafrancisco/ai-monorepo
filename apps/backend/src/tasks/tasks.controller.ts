@@ -103,6 +103,7 @@ export class TasksController {
   async updateTask(
     @Param() params: TaskParamsDto,
     @Body() dto: UpdateTaskDto,
+    @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.updateTask(params.id, {
       name: dto.name,
@@ -111,7 +112,7 @@ export class TasksController {
       sessionId: dto.sessionId,
       tagNames: dto.tagNames,
       dependsOnIds: dto.dependsOnIds,
-    });
+    }, user.actorId);
     return this.mapResultToResponse(result);
   }
 
@@ -127,11 +128,12 @@ export class TasksController {
   async assignTask(
     @Param() params: TaskParamsDto,
     @Body() dto: AssignTaskDto,
+    @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.assignTask(params.id, {
       assigneeActorId: dto.assigneeActorId,
       sessionId: dto.sessionId,
-    });
+    }, user.actorId);
     return this.mapResultToResponse(result);
   }
 
@@ -149,7 +151,7 @@ export class TasksController {
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.assignTask(params.id, {
       assigneeActorId: user.actorId,
-    });
+    }, user.actorId);
     return this.mapResultToResponse(result);
   }
 
@@ -159,8 +161,11 @@ export class TasksController {
   @ApiOperation({ summary: 'Delete a task' })
   @ApiNoContentResponse({ description: 'Task deleted successfully' })
   @ApiNotFoundResponse({ description: 'Task not found' })
-  async deleteTask(@Param() params: TaskParamsDto): Promise<void> {
-    await this.TasksService.deleteTask(params.id);
+  async deleteTask(
+    @Param() params: TaskParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.TasksService.deleteTask(params.id, user.actorId);
   }
 
   @Get()
@@ -255,11 +260,12 @@ export class TasksController {
   async changeStatus(
     @Param() params: TaskParamsDto,
     @Body() dto: ChangeTaskStatusDto,
+    @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.changeStatus(params.id, {
       status: dto.status,
       comment: dto.comment,
-    });
+    }, user.actorId);
     return this.mapResultToResponse(result);
   }
 
@@ -275,11 +281,12 @@ export class TasksController {
   async addTagToTask(
     @Param() params: TaskParamsDto,
     @Body() dto: AddTagDto,
+    @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.addTagToTask(params.id, {
       name: dto.name,
       color: dto.color,
-    });
+    }, user.actorId);
     return this.mapResultToResponse(result);
   }
 
@@ -294,8 +301,9 @@ export class TasksController {
   async removeTagFromTask(
     @Param('id') taskId: string,
     @Param('tagId') tagId: string,
+    @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
-    const result = await this.TasksService.removeTagFromTask(taskId, tagId);
+    const result = await this.TasksService.removeTagFromTask(taskId, tagId, user.actorId);
     return this.mapResultToResponse(result);
   }
 

@@ -84,32 +84,32 @@ export class TasksGateway
 
   @OnEvent('task.created')
   handleTaskCreated(event: TaskCreatedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.created', event.task);
+    this.server.to(TASKS_ROOM).emit('task.created', event.payload, event.actor);
   }
 
   @OnEvent('task.updated')
   handleTaskUpdated(event: TaskUpdatedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.updated', event.task);
+    this.server.to(TASKS_ROOM).emit('task.updated', event.payload, event.actor);
   }
 
   @OnEvent('task.deleted')
   handleTaskDeleted(event: TaskDeletedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.deleted', { taskId: event.taskId });
+    this.server.to(TASKS_ROOM).emit('task.deleted', { taskId: event.taskId }, event.actor);
   }
 
   @OnEvent('task.assigned')
   handleTaskAssigned(event: TaskAssignedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.assigned', event.task);
+    this.server.to(TASKS_ROOM).emit('task.assigned', event.payload, event.actor);
   }
 
   @OnEvent('comment.added')
   handleCommentAdded(event: CommentAddedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.commented', event.comment);
+    this.server.to(TASKS_ROOM).emit('task.commented', event.payload, event.actor);
   }
 
   @OnEvent('task.statusChanged')
   handleStatusChanged(event: TaskStatusChangedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.status_changed', event.task);
+    this.server.to(TASKS_ROOM).emit('task.status_changed', event.payload, event.actor);
   }
 
 
@@ -119,10 +119,10 @@ export class TasksGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() body: TaskActivityPayload,
   ) {
-    
+
     // ultra-MVP "validation"
     if (!body?.taskId) return { ok: false, error: 'taskId required' };
-    
+
     const event = {
       taskId: body.taskId,
       kind: body.kind ?? 'worker.activity',
@@ -130,7 +130,7 @@ export class TasksGateway
       ts: body.ts ?? Date.now(),
       by: client.id, // optional: useful for debugging
     };
-    
+
     this.logger.log(event);
 
     // broadcast to everyone (including the sender)
