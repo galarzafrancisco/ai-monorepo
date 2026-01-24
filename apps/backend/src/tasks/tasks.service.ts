@@ -137,11 +137,11 @@ export class TasksService {
       name: taskWithRelations.name,
     });
 
-    this.eventEmitter.emit('task.created', new TaskCreatedEvent(taskWithRelations));
+    this.eventEmitter.emit('task.created', new TaskCreatedEvent({ id: taskWithRelations.createdByActorId }, taskWithRelations));
     return this.mapTaskToResult(taskWithRelations);
   }
 
-  async updateTask(taskId: string, input: UpdateTaskInput): Promise<TaskResult> {
+  async updateTask(taskId: string, input: UpdateTaskInput, actorId: string): Promise<TaskResult> {
     this.logger.log({
       message: 'Updating task',
       taskId,
@@ -216,11 +216,11 @@ export class TasksService {
       taskId: taskWithRelations.id,
     });
 
-    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(taskWithRelations));
+    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent({ id: actorId }, taskWithRelations));
     return this.mapTaskToResult(taskWithRelations);
   }
 
-  async assignTask(taskId: string, input: AssignTaskInput): Promise<TaskResult> {
+  async assignTask(taskId: string, input: AssignTaskInput, actorId: string): Promise<TaskResult> {
     this.logger.log({
       message: 'Assigning task',
       taskId,
@@ -238,6 +238,11 @@ export class TasksService {
       throw new TaskNotFoundError(taskId);
     }
     this.logger.debug(`task ${taskId} found`);
+
+    if (task.assigneeActorId === input.assigneeActorId) {
+      // Already assigned, no op
+      return this.mapTaskToResult(task);
+    }
 
     // Update assignee
     task.assigneeActorId = input.assigneeActorId;
@@ -265,11 +270,11 @@ export class TasksService {
       sessionId: assignedTask.sessionId,
     });
 
-    this.eventEmitter.emit('task.assigned', new TaskAssignedEvent(taskWithRelations!));
+    this.eventEmitter.emit('task.assigned', new TaskAssignedEvent({ id: actorId }, taskWithRelations!));
     return this.mapTaskToResult(taskWithRelations!);
   }
 
-  async deleteTask(taskId: string): Promise<void> {
+  async deleteTask(taskId: string, actorId: string): Promise<void> {
     this.logger.log({
       message: 'Deleting task',
       taskId,
@@ -288,7 +293,7 @@ export class TasksService {
       taskId,
     });
 
-    this.eventEmitter.emit('task.deleted', new TaskDeletedEvent(taskId));
+    this.eventEmitter.emit('task.deleted', new TaskDeletedEvent({ id: actorId }, taskId));
   }
 
   async listTasks(input: ListTasksInput): Promise<ListTasksResult> {
@@ -428,11 +433,11 @@ export class TasksService {
       taskId,
     });
 
-    this.eventEmitter.emit('comment.added', new CommentAddedEvent(commentWithRelations!));
+    this.eventEmitter.emit('comment.added', new CommentAddedEvent({ id: input.commenterActorId }, commentWithRelations!));
     return this.mapCommentToResult(commentWithRelations!);
   }
 
-  async changeStatus(taskId: string, input: ChangeStatusInput): Promise<TaskResult> {
+  async changeStatus(taskId: string, input: ChangeStatusInput, actorId: string): Promise<TaskResult> {
     this.logger.log({
       message: 'Changing task status',
       taskId,
@@ -495,7 +500,7 @@ export class TasksService {
       status: taskWithRelations.status,
     });
 
-    this.eventEmitter.emit('task.statusChanged', new TaskStatusChangedEvent(taskWithRelations));
+    this.eventEmitter.emit('task.statusChanged', new TaskStatusChangedEvent({ id: actorId }, taskWithRelations));
     return this.mapTaskToResult(taskWithRelations);
   }
 
@@ -504,7 +509,7 @@ export class TasksService {
     return this.metaService.createTag(input);
   }
 
-  async addTagToTask(taskId: string, input: AddTagInput): Promise<TaskResult> {
+  async addTagToTask(taskId: string, input: AddTagInput, actorId: string): Promise<TaskResult> {
     this.logger.log({
       message: 'Adding tag to task',
       taskId,
@@ -544,11 +549,11 @@ export class TasksService {
       throw new TaskNotFoundError(taskId);
     }
 
-    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(taskWithRelations));
+    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent({ id: actorId }, taskWithRelations));
     return this.mapTaskToResult(taskWithRelations);
   }
 
-  async removeTagFromTask(taskId: string, tagId: string): Promise<TaskResult> {
+  async removeTagFromTask(taskId: string, tagId: string, actorId): Promise<TaskResult> {
     this.logger.log({
       message: 'Removing tag from task',
       taskId,
@@ -586,7 +591,7 @@ export class TasksService {
       throw new TaskNotFoundError(taskId);
     }
 
-    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(taskWithRelations));
+    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent({ id: actorId }, taskWithRelations));
     return this.mapTaskToResult(taskWithRelations);
   }
 
@@ -719,7 +724,7 @@ export class TasksService {
         throw new TaskNotFoundError(input.taskId);
       }
 
-      this.eventEmitter.emit('task.updated', new TaskUpdatedEvent(taskWithRelations));
+      this.eventEmitter.emit('task.updated', new TaskUpdatedEvent({ id: input.askedByActorId }, taskWithRelations));
       return this.mapInputRequestToResult(savedInputRequest);
     } catch (error: any) {
       // If save fails, check what entity doesn't exist to provide a proper error message

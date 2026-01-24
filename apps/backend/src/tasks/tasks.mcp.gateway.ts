@@ -144,7 +144,7 @@ export class TasksMcpGateway {
         const task = await this.TasksService.assignTask(taskId, {
           assigneeActorId,
           sessionId,
-        });
+        }, user.actorId);
         return {
           content: [{
             type: "text",
@@ -191,12 +191,14 @@ export class TasksMcpGateway {
       },
       async ({ taskId, sessionId, branchName }) => {
         // Assign task
-        await this.TasksService.assignTask(taskId, { assigneeActorId: user.actorId, sessionId });
+        // TODO: Should this be a feature of the Backend itself? You can't start a task if it's not assigned to you?
+        // And if the task has no assignee and you start it, it gets assigned to you?
+        await this.TasksService.assignTask(taskId, { assigneeActorId: user.actorId, sessionId }, user.actorId);
 
         // Change status to IN_PROGRESS
         await this.TasksService.changeStatus(taskId, {
           status: TaskStatus.IN_PROGRESS,
-        });
+        }, user.actorId);
 
         // Add comment
         await this.TasksService.addComment(taskId, {
@@ -227,7 +229,7 @@ export class TasksMcpGateway {
         // Change status to FOR_REVIEW
         await this.TasksService.changeStatus(taskId, {
           status: TaskStatus.FOR_REVIEW,
-        });
+        }, user.actorId);
 
         // Add comment with PR link
         await this.TasksService.addComment(taskId, {
@@ -258,7 +260,7 @@ export class TasksMcpGateway {
         // Change status to DONE with comment
         await this.TasksService.changeStatus(taskId, {
           status: TaskStatus.DONE,
-        });
+        }, user.actorId);
 
         // Add a comment
         await this.TasksService.addComment(taskId, {
@@ -289,7 +291,7 @@ export class TasksMcpGateway {
         // Change status to IN_PROGRESS with comment
         await this.TasksService.changeStatus(taskId, {
           status: TaskStatus.IN_PROGRESS,
-        });
+        }, user.actorId);
 
         // Add a comment
         await this.TasksService.addComment(taskId, {
@@ -321,7 +323,7 @@ export class TasksMcpGateway {
         await this.TasksService.changeStatus(taskId, {
           status: status as TaskStatus,
           comment,
-        });
+        }, user.actorId);
 
         return {
           content: [{
@@ -347,7 +349,7 @@ export class TasksMcpGateway {
         await this.TasksService.addTagToTask(taskId, {
           name: tagName,
           color,
-        });
+        }, user.actorId);
 
         return {
           content: [{
@@ -369,7 +371,7 @@ export class TasksMcpGateway {
         },
       },
       async ({ taskId, tagId }) => {
-        await this.TasksService.removeTagFromTask(taskId, tagId);
+        await this.TasksService.removeTagFromTask(taskId, tagId, user.actorId);
 
         return {
           content: [{
@@ -386,7 +388,7 @@ export class TasksMcpGateway {
         title: 'Get all tags',
         description: 'List all available tags',
       },
-      async ({}) => {
+      async ({ }) => {
         const tags = await this.TasksService.getAllTags();
         return {
           content: [{

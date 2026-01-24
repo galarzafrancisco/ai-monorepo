@@ -7,14 +7,15 @@ Goal: keep Socket.IO specifics here, expose a clean TasksTransport interface.
 import { io, Socket } from "socket.io-client";
 import { CommentEntity } from "../../backend/src/tasks/comment.entity.js";
 import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
+import { EventActor } from "../../backend/src/tasks/events/tasks.events.js";
 
 export type TaskEvent =
-  | { type: "created"; task: TaskEntity }
-  | { type: "updated"; task: TaskEntity }
-  | { type: "deleted"; taskId: string }
-  | { type: "assigned"; task: TaskEntity }
-  | { type: "status_changed"; task: TaskEntity }
-  | { type: "commented"; comment: CommentEntity };
+  | { type: "created"; actorId: string; task: TaskEntity }
+  | { type: "updated"; actorId: string; task: TaskEntity }
+  | { type: "deleted"; actorId: string; taskId: string }
+  | { type: "assigned"; actorId: string; task: TaskEntity }
+  | { type: "status_changed"; actorId: string; task: TaskEntity }
+  | { type: "commented"; actorId: string; comment: CommentEntity };
 
 export type TaskActivity = {
   taskId: string;
@@ -52,7 +53,7 @@ export class SocketIOTasksTransport implements TasksTransport {
       reconnectionDelayMax?: number; // default: 5000ms
       randomizationFactor?: number; // default: 0.5
     }
-  ) {}
+  ) { }
 
   onTaskEvent(handler: (evt: TaskEvent) => void): void {
     this.handlers.push(handler);
@@ -141,29 +142,30 @@ export class SocketIOTasksTransport implements TasksTransport {
     });
 
     // ----- events we care about -----
-    this.socket.on("task.created", (task: TaskEntity) => this.emit({ type: "created", task }));
-    this.socket.on("task.assigned", (task: TaskEntity) => this.emit({ type: "assigned", task }));
-    this.socket.on("task.status_changed", (task: TaskEntity) => this.emit({ type: "status_changed", task }));
-    this.socket.on("task.updated", (task: TaskEntity) => this.emit({ type: "updated", task }));
+    // this.socket.on("task.created", (task: TaskEntity) => this.emit({ type: "created", task }));
+    // this.socket.on("task.assigned", (task: TaskEntity) => this.emit({ type: "assigned", task }));
+    // this.socket.on("task.status_changed", (task: TaskEntity) => this.emit({ type: "status_changed", task }));
+    // this.socket.on("task.updated", (task: TaskEntity) => this.emit({ type: "updated", task }));
 
-    // You currently ignore these server events, but the transport can still expose them cleanly:
-    this.socket.on("task.deleted", (payload: any) => {
-      // allow both { taskId } and raw taskId
-      const taskId: string | undefined =
-        typeof payload === "string" ? payload : payload?.taskId ?? payload?.id;
+    this.socket.on("task.created", (task: TaskEntity, actor: EventActor) =>
+      this.emit({ type: "created", actorId: actor.id, task })
+    );
+    this.socket.on("task.assigned", (task: TaskEntity, actor: EventActor) =>
+      this.emit({ type: "assigned", actorId: actor.id, task })
+    );
+    this.socket.on("task.status_changed", (task: TaskEntity, actor: EventActor) =>
+      this.emit({ type: "status_changed", actorId: actor.id, task })
+    );
+    this.socket.on("task.updated", (task: TaskEntity, actor: EventActor) =>
+      this.emit({ type: "updated", actorId: actor.id, task })
+    );
+    this.socket.on("task.deleted", ({taskId}: {taskId: string}, actor: EventActor) =>
+      this.emit({ type: "deleted", actorId: actor.id, taskId })
+    );
+    this.socket.on("comment.added", (comment: CommentEntity, actor: EventActor) =>
+      this.emit({ type: "commented", actorId: actor.id, comment })
 
-      if (!taskId) {
-        if (this.options?.debug) console.warn("[task.deleted] missing taskId payload:", payload);
-        return;
-      }
-
-      this.emit({ type: "deleted", taskId });
-    });
-
-    this.socket.on("task.commented", (payload: CommentEntity) => {
-      // assuming backend emits the created comment entity
-      this.emit({ type: "commented", comment: payload });
-    });
+    );
 
     // Wait until first connect or error so callers can await start()
     await new Promise<void>((resolve, reject) => {

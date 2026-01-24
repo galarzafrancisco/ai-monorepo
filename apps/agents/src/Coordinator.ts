@@ -58,8 +58,13 @@ export class Coordinator {
       console.log('Event received');
       console.log(`- Type: ${evt.type}`);
       console.log(`- Task: ${evt.task.name}`);
+      console.log(`- Actor: ${evt.actorId}`);
       console.log(`- Task status: ${evt.task.status}`);
       const task = evt.task;
+      if (task.assigneeActorId === evt.actorId) {
+        console.log(`- Update caused by assignee. Ignoring as this is a self event. ❌`);
+        return;
+      }
       this.handleTask(task);
     }
   }
