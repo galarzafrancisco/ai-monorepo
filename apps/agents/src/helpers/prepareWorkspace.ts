@@ -2,12 +2,9 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { ensureRepo } from "./ensureRepo.js";
+import { REPO, WORK_DIR } from "./config.js";
 
-const BASE_DIR =
-  "/Users/franciscogalarza/tmp"; // TODO: temporary hard code. Gotta be an absolute path.
-
-// TODO: hardcoded for now. Should come from the project associated with the task.
-const REPO = "https://github.com/galarzafrancisco/ai-monorepo.git";
+const BASE_DIR = WORK_DIR;
 
 export async function prepareWorkspace(
   taskId: string,

@@ -1,7 +1,7 @@
 // Coordinator.ts
 import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
 import { Traff } from "./Traff.js";
-import { ACCESS_TOKEN, BASE_URL } from "./helpers/config.js";
+import { ACCESS_TOKEN, AGENT_SLUG, BASE_URL } from "./helpers/config.js";
 import { prepareWorkspace } from "./helpers/prepareWorkspace.js";
 import { getSession, setSession } from "./helpers/sessionStore.js";
 import { ClaudeAgentRunner } from "./runners/ClaudeAgentRunner.js";
@@ -77,6 +77,10 @@ export class Coordinator {
       return;
     }
     console.log(`- Agent: @${agent.slug}`);
+    if (agent.slug != AGENT_SLUG) {
+      console.log(`- We only react to @${AGENT_SLUG}. Skipping. ❌`);
+      return;
+    }
 
     // Do we have runners for this agent?
     if (agent.type !== "claude" && agent.type !== "opencode") {
