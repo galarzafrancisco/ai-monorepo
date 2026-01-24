@@ -44,7 +44,7 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('taico API')
-    .setDescription('The taico API description')
+    .setDescription('taico API description')
     .setVersion('1.0')
     .addTag('traff')
     .addCookieAuth(

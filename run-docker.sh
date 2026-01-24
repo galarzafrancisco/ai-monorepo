@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to run the taico with Docker
+# Script to run taico with Docker
 # Usage: ./run-docker.sh [port]
 # Example: ./run-docker.sh 3001
 
