@@ -6,6 +6,8 @@ import { prepareWorkspace } from "./helpers/prepareWorkspace.js";
 import { getSession, setSession } from "./helpers/sessionStore.js";
 import { ClaudeAgentRunner } from "./runners/ClaudeAgentRunner.js";
 import { SocketIOTasksTransport, TaskEvent } from "./SocketIOTasksTransport.js"
+import { BaseAgentRunner } from "./runners/BaseAgentRunner.js";
+import { OpencodeAgentRunner } from "./runners/OpenCodeAgentRunner.js";
 
 export class Coordinator {
 
@@ -20,7 +22,7 @@ export class Coordinator {
       ACCESS_TOKEN,
       {
         namespace: '/tasks',
-        debug: true,
+        // debug: true,
       }
     );
 
@@ -50,11 +52,13 @@ export class Coordinator {
   }
 
   private handleEvent = async (evt: TaskEvent) => {
-    console.log(evt.type);
-    console.log(evt);
     // For now just look at create and assign and status change
     if (evt.type === 'created' || evt.type === 'assigned' || evt.type === 'status_changed') {
-      console.log('in')
+      console.log('--------------------------------------------------------');
+      console.log('Event received');
+      console.log(`- Type: ${evt.type}`);
+      console.log(`- Task: ${evt.task.name}`);
+      console.log(`- Task status: ${evt.task.status}`);
       const task = evt.task;
       this.handleTask(task);
     }
@@ -64,35 +68,50 @@ export class Coordinator {
     // Get the agent
     const actor = task.assigneeActor;
     if (!actor) {
-      console.log(`[⏰] task ${task.id} not assigned. Skipping.`);
+      console.log(`- Task ${task.id} not assigned. Skipping. ❌`);
       return;
     }
     const agent = await this.client.getAgent(actor.slug);
     if (!agent) {
-      console.log(`[⏰] agent @${actor.slug} not found. Skipping.`);
+      console.log(`- Agent @${actor.slug} not found. Skipping. ❌`);
       return;
     }
+    console.log(`- Agent: @${agent.slug}`);
 
     // Do we have runners for this agent?
-    if (agent.type !== "claude") {
-      console.log(`[⏰] agent @${actor.slug} of type "${agent.type}" not supported. Skipping.`);
+    if (agent.type !== "claude" && agent.type !== "opencode") {
+      console.log(`- Agent @${actor.slug} of type "${agent.type}" not supported. Skipping. ❌`);
       return;
     }
 
     // Does the agent respond to this status?
     if (!agent.statusTriggers.includes(task.status)) {
-      console.log(`[⏰] agent '${task.assigneeActorId}' doesn't react to status '${task.status}'. Skip.`);
+      console.log(`- Agent @${agent.slug} doesn't react to status '${task.status}'. Skip. ❌`);
       return;
     }
+
+    console.log(`- ✅ Conditions met. @${agent.slug} starting to work on task "${task.name}" 🦄`);
 
     // Load session
     const sessionId = getSession(agent.actorId, task.id);
 
     // Prep workspace
-    const { repoDir } = await prepareWorkspace(task.id, agent.actorId)
+    const { repoDir } = await prepareWorkspace(task.id, agent.actorId);
+    console.log(`- workspace prepped`);
 
     // Create agent runner
-    const runner = new ClaudeAgentRunner()
+    let runner: BaseAgentRunner | null = null;
+    if (agent.type === 'claude') {
+      runner = new ClaudeAgentRunner();
+    } else if (agent.type === 'opencode') {
+      runner = new OpencodeAgentRunner();
+    }
+
+    // This shouldn't happen because we checked first, but let's satisfy TypeScript
+    if (!runner) {
+      console.log(`- Agent @${actor.slug} of type "${agent.type}" not supported. Skipping. ❌`);
+      return;
+    }
 
     try {
       const results = await runner.run(
@@ -103,8 +122,9 @@ export class Coordinator {
         },
         {
           onEvent: (message: string) => {
-            console.log(`Message`);
+            console.log(`[agent message] ⤵️`);
             console.log(message);
+            console.log('[end of agent message] ⤴️')
             this.transport.publishActivity({
               taskId: task.id,
               message,
@@ -117,14 +137,14 @@ export class Coordinator {
             }
           },
           onError: (error: { message: string; rawMessage?: any }) => {
-            console.log('Claude error detected');
+            console.log('Error detected');
             console.log('error message:', error.message);
             console.log('raw message', error.rawMessage);
 
             // Post error to task as a comment
             this.client.addComment(
               task.id,
-              `⚠️ Claude Error Detected ⚠️\n\n${error.message}\n\n\`\`\`json\nraw message\n${JSON.stringify(error.rawMessage, null, 2)}\n\`\`\``
+              `⚠️ Error Detected ⚠️\n\n${error.message}\n\n\`\`\`json\nraw message\n${JSON.stringify(error.rawMessage, null, 2)}\n\`\`\``
             );
           }
         }

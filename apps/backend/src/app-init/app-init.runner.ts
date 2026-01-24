@@ -21,7 +21,6 @@ import { AgentEntity } from "src/agents/agent.entity";
 import { IdentityProviderService } from "src/identity-provider/identity-provider.service";
 import { Scope } from "src/auth/core/types/scope.type";
 import { createCodexDev } from "./agent/codex-dev.agent";
-import { createOpencodeDev } from "./agent/opencode-dev.agent";
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -144,11 +143,6 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createCodexDev);
     } catch (error) {
       this.logger.error('Error ensuring codex-dev Agent exists');
-    }
-    try {
-      await this.ensureAgentExists(createOpencodeDev);
-    } catch (error) {
-      this.logger.error('Error ensuring opencode-dev Agent exists');
     }
   }
 
