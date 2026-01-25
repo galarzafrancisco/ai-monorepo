@@ -3,20 +3,44 @@ import { TasksService } from './api';
 import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
 import { TagInput } from './TagInput';
+import { useDraftState } from '../hooks/useDraftState';
 
 interface CreateTaskFormProps {
   onClose: () => void;
 }
 
+interface TaskDraftState {
+  name: string;
+  description: string;
+  assignee: string;
+  sessionId: string;
+  tagNames: string[];
+  dependsOnIds: string[];
+}
+
+const defaultDraftState: TaskDraftState = {
+  name: '',
+  description: '',
+  assignee: '',
+  sessionId: '',
+  tagNames: [],
+  dependsOnIds: [],
+};
+
 export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
   const { toasts, showToast, removeToast } = useToast();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [assignee, setAssignee] = useState('');
-  const [sessionId, setSessionId] = useState('');
-  const [tagNames, setTagNames] = useState<string[]>([]);
-  const [dependsOnIds, setDependsOnIds] = useState<string[]>([]);
+  const [draftState, setDraftState, clearDraft] = useDraftState({
+    key: 'create-task-draft',
+    defaultValue: defaultDraftState,
+  });
   const [loading, setLoading] = useState(false);
+
+  // Extract individual fields from draft state for easier access
+  const { name, description, assignee, sessionId, tagNames, dependsOnIds } = draftState;
+
+  const updateField = <K extends keyof TaskDraftState>(field: K, value: TaskDraftState[K]) => {
+    setDraftState({ ...draftState, [field]: value });
+  };
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -41,6 +65,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
         ...(tagNames.length > 0 && { tagNames }),
         ...(dependsOnIds.length > 0 && { dependsOnIds }),
       });
+      clearDraft(); // Clear draft on successful submission
       onClose();
     } catch (err: any) {
       const errorMessage = err?.body?.detail || err?.message || 'Failed to create task';
@@ -66,7 +91,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
               id="name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => updateField('name', e.target.value)}
               required
               placeholder="Enter task name"
             />
@@ -77,7 +102,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
             <textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => updateField('description', e.target.value)}
               required
               placeholder="Enter task description"
               rows={4}
@@ -90,7 +115,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
               id="assignee"
               type="text"
               value={assignee}
-              onChange={(e) => setAssignee(e.target.value)}
+              onChange={(e) => updateField('assignee', e.target.value)}
               placeholder="Agent name or assignee"
             />
           </div>
@@ -101,7 +126,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
               id="sessionId"
               type="text"
               value={sessionId}
-              onChange={(e) => setSessionId(e.target.value)}
+              onChange={(e) => updateField('sessionId', e.target.value)}
               placeholder="Agent session ID"
             />
           </div>
@@ -110,7 +135,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
             <label htmlFor="tags">Tags</label>
             <TagInput
               value={tagNames}
-              onChange={setTagNames}
+              onChange={(value) => updateField('tagNames', value)}
               placeholder="Type to add tags..."
             />
           </div>
@@ -121,7 +146,7 @@ export function CreateTaskForm({ onClose }: CreateTaskFormProps) {
               id="dependsOn"
               type="text"
               value={dependsOnIds.join(', ')}
-              onChange={(e) => setDependsOnIds(e.target.value.split(',').map(id => id.trim()).filter(id => id))}
+              onChange={(e) => updateField('dependsOnIds', e.target.value.split(',').map(id => id.trim()).filter(id => id))}
               placeholder="Enter task IDs separated by commas"
             />
           </div>
