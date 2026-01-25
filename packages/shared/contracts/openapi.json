@@ -860,6 +860,47 @@
         ]
       }
     },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "operationId": "WebAuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated or current password is incorrect"
+          }
+        },
+        "summary": "Change password for authenticated user",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
     "/api/v1/auth-journeys/servers/{serverId}": {
       "get": {
         "operationId": "AuthJourneysController_getAuthJourneys",
@@ -4684,6 +4725,25 @@
         "required": [
           "user",
           "expiresIn"
+        ]
+      },
+      "ChangePasswordRequestDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "description": "Current password",
+            "example": "currentPassword123"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "New password (minimum 8 characters)",
+            "example": "newPassword456"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
         ]
       },
       "McpFlowResponseDto": {

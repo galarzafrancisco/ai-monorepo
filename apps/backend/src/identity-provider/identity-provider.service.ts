@@ -90,6 +90,31 @@ export class IdentityProviderService {
     return savedUser;
   }
 
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    // Find the user
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isActive: true },
+    });
+
+    if (!user) {
+      // TODO: this is an HTTP exception. Should be service error.
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      // TODO: this is an HTTP exception. Should be service error.
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Hash and update new password
+    user.passwordHash = await this.hashPassword(newPassword);
+    await this.userRepository.save(user);
+
+    this.logger.log(`Password changed successfully for user: ${user.email}`);
+  }
+
   private async hashPassword(password: string): Promise<string> {
     const saltRounds = 12;
     return bcrypt.hash(password, saltRounds);

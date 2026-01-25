@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ChangePasswordRequestDto } from '../models/ChangePasswordRequestDto';
 import type { LoginRequestDto } from '../models/LoginRequestDto';
 import type { LoginResponseDto } from '../models/LoginResponseDto';
 import type { UserResponseDto } from '../models/UserResponseDto';
@@ -66,6 +67,27 @@ export class WebAuthenticationService {
             url: '/api/v1/auth/me',
             errors: {
                 401: `Not authenticated`,
+            },
+        });
+    }
+    /**
+     * Change password for authenticated user
+     * @param requestBody
+     * @returns any Password changed successfully
+     * @throws ApiError
+     */
+    public static webAuthControllerChangePassword(
+        requestBody: ChangePasswordRequestDto,
+    ): CancelablePromise<{
+        ok?: boolean;
+    }> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/change-password',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                401: `Not authenticated or current password is incorrect`,
             },
         });
     }

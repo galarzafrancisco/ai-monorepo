@@ -17,6 +17,7 @@ import { IdentityProviderService } from '../identity-provider/identity-provider.
 import { LoginRequestDto } from './dto/login-request.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { ChangePasswordRequestDto } from './dto/change-password-request.dto';
 import { getConfig } from '../config/env.config';
 import { COOKIE_KEYS } from '../auth/core/constants/cookie-keys.constant';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
@@ -218,7 +219,7 @@ export class WebAuthController {
     if (!accessToken) {
       throw new UnauthorizedException('Not authenticated');
     }
-    
+
     // Validate token and get payload
     const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
 
@@ -240,5 +241,59 @@ export class WebAuthController {
       displayName: actor.displayName,
       role: actor.user.role,
     };
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password for authenticated user' })
+  @ApiBody({ type: ChangePasswordRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password changed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        ok: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Not authenticated or current password is incorrect',
+  })
+  async changePassword(
+    @Req() request: Request,
+    @Body() changePasswordDto: ChangePasswordRequestDto,
+  ): Promise<{ ok: boolean }> {
+    // Get access token from cookie
+    const accessToken = request.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
+
+    if (!accessToken) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    // Validate token and get payload
+    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
+
+    // Get user from database
+    const actor = await this.actorService.getActorById(payload.actor_id, true);
+    if (!actor) {
+      throw new UnauthorizedException('Actor not found');
+    }
+    if (!actor.user) {
+      this.logger.error("Actor returned no user. This should not happen")
+      throw new InternalServerErrorException('Failed to retrieve actor');
+    }
+
+    // Change the password
+    await this.identityProviderService.changePassword(
+      actor.user.id,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
+
+    this.logger.log(`Password changed for user: ${actor.user.email}`);
+
+    return { ok: true };
   }
 }

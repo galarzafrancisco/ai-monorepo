@@ -345,6 +345,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change password for authenticated user */
+        post: operations["WebAuthController_changePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth-journeys/servers/{serverId}": {
         parameters: {
             query?: never;
@@ -1704,6 +1721,18 @@ export interface components {
              * @example 600
              */
             expiresIn: number;
+        };
+        ChangePasswordRequestDto: {
+            /**
+             * @description Current password
+             * @example currentPassword123
+             */
+            currentPassword: string;
+            /**
+             * @description New password (minimum 8 characters)
+             * @example newPassword456
+             */
+            newPassword: string;
         };
         McpFlowResponseDto: {
             /**
@@ -3838,6 +3867,40 @@ export interface operations {
                 };
             };
             /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WebAuthController_changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Password changed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        ok?: boolean;
+                    };
+                };
+            };
+            /** @description Not authenticated or current password is incorrect */
             401: {
                 headers: {
                     [name: string]: unknown;

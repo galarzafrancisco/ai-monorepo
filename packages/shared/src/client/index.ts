@@ -17,6 +17,7 @@ export type { AppendPageDto } from './models/AppendPageDto';
 export type { AssignTaskDto } from './models/AssignTaskDto';
 export { AuthJourneyResponseDto } from './models/AuthJourneyResponseDto';
 export type { AuthorizationServerMetadataDto } from './models/AuthorizationServerMetadataDto';
+export type { ChangePasswordRequestDto } from './models/ChangePasswordRequestDto';
 export { ChangeTaskStatusDto } from './models/ChangeTaskStatusDto';
 export { ClientRegistrationResponseDto } from './models/ClientRegistrationResponseDto';
 export type { CommentResponseDto } from './models/CommentResponseDto';
