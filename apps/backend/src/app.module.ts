@@ -13,6 +13,7 @@ import { AgentsModule } from './agents/agents.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
 import { LlmHelperModule } from './llm-helper/llm-helper.module';
 import { MetaModule } from './meta/meta.module';
+import { FeedModule } from './feed/feed.module';
 import { getConfig } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
 
@@ -27,6 +28,7 @@ import { AppInitModule } from './app-init/app-init.module';
     EventEmitterModule.forRoot(),
     MetaModule,
     TasksModule,
+    FeedModule,
     ContextModule,
     McpRegistryModule,
     AuthJourneysModule,
