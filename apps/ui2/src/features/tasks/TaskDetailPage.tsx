@@ -280,7 +280,7 @@ export function TaskDetailPage() {
       </DataRowContainer>
 
       {/* Pops */}
-      {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} /> : null}
+      {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
     </div >
   );

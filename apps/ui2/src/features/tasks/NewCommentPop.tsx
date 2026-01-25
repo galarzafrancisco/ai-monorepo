@@ -1,14 +1,29 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { PopShell } from "../../app/shells/PopShell";
+import { useDraftState } from "../../shared/hooks/useDraftState";
 import "./NewCommentPop.css";
 
 type NewCommentPopProps = {
   onCancel?: () => void;
   onSave: (payload: { content: string }) => Promise<boolean>;
+  taskId: string;
 };
 
-export function NewCommentPop({ onCancel, onSave }: NewCommentPopProps) {
-  const [content, setContent] = useState("");
+interface CommentDraftState {
+  content: string;
+}
+
+const defaultDraftState: CommentDraftState = {
+  content: "",
+};
+
+export function NewCommentPop({ onCancel, onSave, taskId }: NewCommentPopProps) {
+  const [draftState, setDraftState, clearDraft] = useDraftState({
+    key: `new-comment-draft-${taskId}`,
+    defaultValue: defaultDraftState,
+  });
+
+  const { content } = draftState;
 
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -17,14 +32,18 @@ export function NewCommentPop({ onCancel, onSave }: NewCommentPopProps) {
   }, []);
 
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setContent(e.target.value);
+    setDraftState({ ...draftState, content: e.target.value });
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }
 
   async function handleSave(): Promise<boolean> {
-    return onSave({ content });
+    const success = await onSave({ content });
+    if (success) {
+      clearDraft();
+    }
+    return success;
   }
 
   return (
