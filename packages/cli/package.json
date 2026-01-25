@@ -1,0 +1,29 @@
+{
+  "name": "taico",
+  "version": "0.0.1",
+  "description": "CLI tool to run taico server and worker",
+  "type": "module",
+  "bin": {
+    "taico": "./bin/taico.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cli",
+    "taico",
+    "server",
+    "worker"
+  ],
+  "author": "Francisco Galarza",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "concurrently": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3"
+  }
+}
