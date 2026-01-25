@@ -3692,6 +3692,35 @@
         "tags": [
           "Agent"
         ]
+      },
+      "delete": {
+        "operationId": "AgentsController_deleteAgent",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "description": "Agent actor ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete an agent",
+        "tags": [
+          "Agent"
+        ]
       }
     },
     "/api/v1/agents/{slug}/tokens": {

@@ -233,21 +233,21 @@ export class AgentsService {
   //   return this.mapAgentToResult(agentWithRelations);
   // }
 
-  // async deleteAgent(agentId: string): Promise<void> {
-  //   this.logger.log(`Deleting agent: ${agentId}`);
+  async deleteAgent(actorId: string): Promise<void> {
+    this.logger.log(`Deleting agent with actorId: ${actorId}`);
 
-  //   const agent = await this.agentRepository.findOne({
-  //     where: { id: agentId },
-  //   });
+    const agent = await this.agentRepository.findOne({
+      where: { actorId },
+    });
 
-  //   if (!agent) {
-  //     throw new AgentNotFoundError(agentId);
-  //   }
+    if (!agent) {
+      throw new AgentNotFoundError(actorId);
+    }
 
-  //   await this.agentRepository.softRemove(agent);
+    await this.agentRepository.softRemove(agent);
 
-  //   this.eventEmitter.emit('agent.deleted', new AgentDeletedEvent(agentId));
-  // }
+    this.eventEmitter.emit('agent.deleted', new AgentDeletedEvent(actorId));
+  }
 
   async patchAgent(
     actorId: string,

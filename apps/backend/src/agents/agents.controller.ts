@@ -129,14 +129,13 @@ export class AgentsController {
   //   return this.mapResultToResponse(result);
   // }
 
-  // @Delete(':id')
-  // @RequireScopes(AgentsScopes.WRITE.id)
-  // @UseGuards(AccessTokenGuard)
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // @ApiOperation({ summary: 'Delete an agent' })
-  // async deleteAgent(@Param() params: AgentParamsDto): Promise<void> {
-  //   await this.agentsService.deleteAgent(params.id);
-  // }
+  @Delete(':actorId')
+  @RequireScopes(AgentsScopes.WRITE.id)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete an agent' })
+  async deleteAgent(@Param() params: AgentActorParamsDto): Promise<void> {
+    await this.agentsService.deleteAgent(params.actorId);
+  }
 
   private mapResultToResponse(result: AgentResult): AgentResponseDto {
     return {

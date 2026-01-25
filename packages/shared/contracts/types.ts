@@ -1124,7 +1124,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete an agent */
+        delete: operations["AgentsController_deleteAgent"];
         options?: never;
         head?: never;
         /** Patch an agent (update system prompt and/or status triggers) */
@@ -5808,6 +5809,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AgentResponseDto"];
                 };
+            };
+        };
+    };
+    AgentsController_deleteAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent actor ID */
+                actorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

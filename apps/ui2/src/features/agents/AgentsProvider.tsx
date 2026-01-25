@@ -13,12 +13,13 @@ export type AgentsContextValue = {
   loadAgentDetails: (slug: string) => Promise<Agent | null>;
   createAgent: (params: { name: string; slug: string }) => Promise<Agent | null>;
   updateAgent: (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[] }) => Promise<Agent | null>;
+  deleteAgent: (actorId: string) => Promise<boolean>;
 };
 
 const AgentsContext = createContext<AgentsContextValue | null>(null);
 
 export function AgentsProvider({ children }: { children: React.ReactNode }) {
-  const { agents, isLoading, error, loadAgentDetails, createAgent, updateAgent } = useAgents();
+  const { agents, isLoading, error, loadAgentDetails, createAgent, updateAgent, deleteAgent } = useAgents();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Provide a stable reference to avoid pointless rerenders.
@@ -32,6 +33,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       loadAgentDetails,
       createAgent,
       updateAgent,
+      deleteAgent,
     };
   }, [
     agents,
@@ -42,6 +44,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     loadAgentDetails,
     createAgent,
     updateAgent,
+    deleteAgent,
   ]);
 
   return <AgentsContext.Provider value={value}>{children}</AgentsContext.Provider>;

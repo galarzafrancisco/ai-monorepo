@@ -110,6 +110,27 @@ export const useAgents = () => {
     }
   };
 
+  // Delete agent
+  const deleteAgent = async (actorId: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await AgentsService.agentsControllerDeleteAgent(actorId);
+
+      // Remove from local state
+      setAgents((prevAgents) => {
+        return prevAgents.filter((agent) => agent.actorId !== actorId);
+      });
+
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete agent');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     // UI feedback
     isLoading,
@@ -121,5 +142,6 @@ export const useAgents = () => {
     loadAgentDetails,
     createAgent,
     updateAgent,
+    deleteAgent,
   };
 };

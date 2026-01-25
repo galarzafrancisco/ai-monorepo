@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAgentsCtx } from './AgentsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } from '../../ui/primitives';
+import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
 import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDto } from 'shared';
@@ -17,7 +18,7 @@ const DEFAULT_SCOPES = ['meta:read'];
 export function AgentDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { agents, setSectionTitle, loadAgentDetails, updateAgent } = useAgentsCtx();
+  const { agents, setSectionTitle, loadAgentDetails, updateAgent, deleteAgent } = useAgentsCtx();
 
   // Find agent from context first (for quick load)
   const agentFromList = agents.find(a => a.slug === slug);
@@ -472,6 +473,15 @@ export function AgentDetailPage() {
           ))
         )}
       </DataRowContainer>
+
+      {/* Delete */}
+      <DeleteWithConfirmation
+        className="agent-detail-page__actions"
+        onDelete={async () => {
+          await deleteAgent(agent.actorId);
+          navigate('/agents');
+        }}
+      />
 
       {/* Back button */}
       <DataRowContainer className="agent-detail-page__actions">

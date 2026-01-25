@@ -87,4 +87,21 @@ export class AgentService {
             mediaType: 'application/json',
         });
     }
+    /**
+     * Delete an agent
+     * @param actorId Agent actor ID
+     * @returns void
+     * @throws ApiError
+     */
+    public static agentsControllerDeleteAgent(
+        actorId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/agents/{actorId}',
+            path: {
+                'actorId': actorId,
+            },
+        });
+    }
 }

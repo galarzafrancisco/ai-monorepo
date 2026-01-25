@@ -4,6 +4,7 @@ import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
 import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer } from '../../ui/primitives';
+import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
 import { ActorSearchPop, Actor } from '../actors';
@@ -34,7 +35,6 @@ export function TaskDetailPage() {
   // Handlers for buttons
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
@@ -260,37 +260,13 @@ export function TaskDetailPage() {
       )}
 
       {/* Delete */}
-      <DataRowContainer className='task-detail-page__comment-buttons'>
-        {!showDeleteConfirm ? (
-          <Button
-            size='lg'
-            variant='danger'
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            Delete
-          </Button>
-        ) : (
-          <>
-            <Button
-              size='lg'
-              variant='secondary'
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size='lg'
-              variant='danger'
-              onClick={async () => {
-                await deleteTask({ taskId: task.id });
-                navigate('/tasks');
-              }}
-            >
-              Confirm Delete
-            </Button>
-          </>
-        )}
-      </DataRowContainer>
+      <DeleteWithConfirmation
+        className='task-detail-page__comment-buttons'
+        onDelete={async () => {
+          await deleteTask({ taskId: task.id });
+          navigate('/tasks');
+        }}
+      />
 
       {/* Back button */}
       <DataRowContainer className='task-detail-page__actions'>
