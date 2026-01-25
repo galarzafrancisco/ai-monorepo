@@ -87,9 +87,12 @@ export function AgentDetailPage() {
   useEffect(() => {
     if (!agentFromList && slug) {
       setIsLoading(true);
+      console.log("AGENT DETAIL PAGE")
       loadAgentDetails(slug).then((loadedAgent) => {
         setAgent(loadedAgent);
         setIsLoading(false);
+      }).catch(e => {
+        setAgent(null);
       });
     } else if (agentFromList) {
       setAgent(agentFromList);
@@ -478,7 +481,10 @@ export function AgentDetailPage() {
       <DeleteWithConfirmation
         className="agent-detail-page__actions"
         onDelete={async () => {
-          await deleteAgent(agent.actorId);
+          // TODO: Hack! I redirect before getting confirmation of delete.
+          // This is intentionally hacky, because when I get confirmation of deletion,
+          // this page renders again which throws an error for whatever reason. Fix!
+          deleteAgent(agent.actorId);
           navigate('/agents');
         }}
       />
