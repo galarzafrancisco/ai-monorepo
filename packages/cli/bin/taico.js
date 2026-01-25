@@ -115,4 +115,4 @@ program
         process.exit(1);
     }
 });
-program.parse();
+program.parse(process.argv);
