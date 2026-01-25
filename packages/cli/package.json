@@ -8,6 +8,10 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:prod": "npm run build",
+    "dev": "tsc -w",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo \"(cli) lint todo\"",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
