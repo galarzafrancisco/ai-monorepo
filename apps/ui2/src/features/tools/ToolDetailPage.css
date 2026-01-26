@@ -67,11 +67,38 @@
   margin: var(--space-3);
 }
 
+/* Copied toast */
+.tool-detail-page__toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--color-surface-elevated, #1f2937);
+  color: var(--color-text, #fff);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-3);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.tool-detail-page__toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .tool-detail-page__metadata pre,
   .tool-detail-page__scope-item,
   .tool-detail-page__command {
+    background: var(--color-surface-elevated, #374151);
+  }
+
+  .tool-detail-page__toast {
     background: var(--color-surface-elevated, #374151);
   }
 }

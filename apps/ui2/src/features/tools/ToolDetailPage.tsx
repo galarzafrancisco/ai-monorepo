@@ -19,6 +19,13 @@ export function ToolDetailPage() {
   const [isLoading, setIsLoading] = useState(!toolFromList);
   const [expandedMetadata, setExpandedMetadata] = useState(false);
   const [authorizationServerMetadata, setAuthorizationServerMetadata] = useState<any | null>(null);
+  const [showCopiedToast, setShowCopiedToast] = useState(false);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setShowCopiedToast(true);
+    setTimeout(() => setShowCopiedToast(false), 1500);
+  };
 
   // Load tool details if not in list
   useEffect(() => {
@@ -136,52 +143,55 @@ export function ToolDetailPage() {
 
 
       {/* URL */}
-      {tool.url && (
-        <>
-          <DataRowContainer title="Server URL" className="tool-detail-page__section">
-            <DataRow>
-              <Text size="2" style="mono" className="tool-detail-page__url">
-                {tool.url}
+      {tool.url ? (
+        <DataRowContainer title="Server URL" className="tool-detail-page__section">
+          <DataRow onClick={() => copyToClipboard(tool.url || '')}>
+            <Text size="2" style="mono" className="tool-detail-page__url">
+              {tool.url}
+              <Text size='1' tone='muted'>tap to copy</Text>
+            </Text>
+          </DataRow>
+        </DataRowContainer >
+      ) : null
+      }
+
+      {/* Inspector Command */}
+      {
+        tool.url && (
+          <DataRowContainer title="Configure" className="tool-detail-page__section">
+            <DataRow onClick={() => copyToClipboard(`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`)}>
+              <Text as="span" weight="medium" size="3">
+                Inspector Command
+              </Text>
+              <Text size="2" tone="muted">
+                Run this command to start the MCP inspector:
+              </Text>
+              <Text as='span' style='mono'>
+                  {`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`}
+                  <Text size='1' tone='muted'>tap to copy</Text>
               </Text>
             </DataRow>
           </DataRowContainer>
-        </>
-      )}
-
-      {/* Inspector Command */}
-      {tool.url && (
-        <DataRowContainer title="Configure" className="tool-detail-page__section">
-          <DataRow>
-            <Text as="span" weight="medium" size="3">
-              Inspector Command
-            </Text>
-            <Text size="2" tone="muted">
-              Run this command to start the MCP inspector:
-            </Text>
-            <Text as='span' style='mono'>
-              <div onClick={() => navigator.clipboard.writeText(`npx @modelcontextprotocol/inspector ${tool.url}`)}>
-                {`npx @modelcontextprotocol/inspector ${tool.url}`}
-              </div>
-            </Text>
-          </DataRow>
-        </DataRowContainer>
-      )}
+        )
+      }
 
       {/* Scopes (Permissions) */}
-      {scopes.length ? (
-        <DataRowContainer title="Scopes">
-          {scopes.map(scope => (
-            <DataRow key={scope.id}>
-              <Text size="2" style="mono" weight="medium">{scope.id}</Text>
-              <Text size="2" tone="muted">{scope.description}</Text>
-            </DataRow>
-          ))}
-        </DataRowContainer>
-      ) : (
-        <Text tone="muted" size="2">
-          This server doesn't have any permissions configured
-        </Text>
-      )}
+      {
+        scopes.length ? (
+          <DataRowContainer title="Scopes">
+            {scopes.map(scope => (
+              <DataRow key={scope.id}>
+                <Text size="2" style="mono" weight="medium">{scope.id}</Text>
+                <Text size="2" tone="muted">{scope.description}</Text>
+              </DataRow>
+            ))}
+          </DataRowContainer>
+        ) : (
+          <Text tone="muted" size="2">
+            This server doesn't have any permissions configured
+          </Text>
+        )
+      }
 
 
 
@@ -209,6 +219,11 @@ export function ToolDetailPage() {
           Back to Tools
         </Button>
       </DataRowContainer>
-    </div>
+
+      {/* Copied toast */}
+      <div className={`tool-detail-page__toast ${showCopiedToast ? 'tool-detail-page__toast--visible' : ''}`}>
+        Copied!
+      </div>
+    </div >
   );
 }
