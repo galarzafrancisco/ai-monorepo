@@ -16,6 +16,6 @@ export class ChangePasswordRequestDto {
   })
   @IsString()
   @IsNotEmpty()
-  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @MinLength(2, { message: 'Password must be at least 2 characters long' })
   newPassword!: string;
 }

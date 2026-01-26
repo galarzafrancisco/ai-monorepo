@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { checker } from 'vite-plugin-checker';
 
 // https://vite.dev/config/
 export default defineConfig({
   // @ts-expect-error - monorepo vite version mismatch
-  plugins: [react()],
+  plugins: [react(), checker({ typescript: true })],
   resolve: {
     // Fix multiple React instances in monorepo by deduplicating
     dedupe: ['react', 'react-dom', 'react-router-dom'],
