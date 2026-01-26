@@ -40,6 +40,8 @@ export type { DeleteConnectionResponseDto } from './models/DeleteConnectionRespo
 export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto';
 export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto';
 export type { DeleteServerResponseDto } from './models/DeleteServerResponseDto';
+export { FeedItemResponseDto } from './models/FeedItemResponseDto';
+export type { FeedListResponseDto } from './models/FeedListResponseDto';
 export type { FlowClientDto } from './models/FlowClientDto';
 export type { FlowServerDto } from './models/FlowServerDto';
 export { GetConsentMetadataResponseDto } from './models/GetConsentMetadataResponseDto';
@@ -91,6 +93,7 @@ export { AuthorizationJourneysService } from './services/AuthorizationJourneysSe
 export { AuthorizationServerService } from './services/AuthorizationServerService';
 export { ContextService } from './services/ContextService';
 export { DiscoveryService } from './services/DiscoveryService';
+export { FeedService } from './services/FeedService';
 export { JwksService } from './services/JwksService';
 export { MetaService } from './services/MetaService';
 export { TaskService } from './services/TaskService';

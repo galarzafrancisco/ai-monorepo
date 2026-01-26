@@ -2749,6 +2749,67 @@
         ]
       }
     },
+    "/api/v1/feed": {
+      "get": {
+        "description": "Retrieve a timeline of events that have occurred in the system, optionally filtered by task",
+        "operationId": "FeedController_listFeed",
+        "parameters": [
+          {
+            "name": "taskId",
+            "required": false,
+            "in": "query",
+            "description": "Filter feed items by task ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (1-100)",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of feed items sorted by recency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get activity feed",
+        "tags": [
+          "Feed"
+        ]
+      }
+    },
     "/api/v1/context/blocks": {
       "post": {
         "operationId": "ContextController_createPage",
@@ -6033,6 +6094,107 @@
         },
         "required": [
           "answer"
+        ]
+      },
+      "FeedItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the feed item",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "eventType": {
+            "type": "string",
+            "description": "Type of event that occurred",
+            "enum": [
+              "TASK_CREATED",
+              "TASK_UPDATED",
+              "TASK_ASSIGNED",
+              "TASK_STATUS_CHANGED",
+              "TASK_DELETED",
+              "COMMENT_ADDED"
+            ],
+            "example": "TASK_CREATED"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "ID of the task this event is related to",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "taskName": {
+            "type": "string",
+            "description": "Name of the task this event is related to",
+            "example": "Implement user authentication"
+          },
+          "actor": {
+            "description": "Actor who triggered this event",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata about the event",
+            "example": {
+              "oldStatus": "NOT_STARTED",
+              "newStatus": "IN_PROGRESS"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When this event occurred",
+            "example": "2025-11-03T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "eventType",
+          "taskId",
+          "taskName",
+          "actor",
+          "createdAt"
+        ]
+      },
+      "FeedListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of feed items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedItemResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of feed items",
+            "example": 100
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page",
+            "example": 50
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 2
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
         ]
       },
       "CreatePageDto": {

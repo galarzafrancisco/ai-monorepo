@@ -834,6 +834,26 @@ export interface paths {
         patch: operations["TasksController_handleMcp_patch"];
         trace?: never;
     };
+    "/api/v1/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get activity feed
+         * @description Retrieve a timeline of events that have occurred in the system, optionally filtered by task
+         */
+        get: operations["FeedController_listFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/context/blocks": {
         parameters: {
             query?: never;
@@ -2613,6 +2633,68 @@ export interface components {
              * @example Use JWT with refresh tokens for better security and scalability
              */
             answer: string;
+        };
+        FeedItemResponseDto: {
+            /**
+             * @description Unique identifier for the feed item
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Type of event that occurred
+             * @example TASK_CREATED
+             * @enum {string}
+             */
+            eventType: "TASK_CREATED" | "TASK_UPDATED" | "TASK_ASSIGNED" | "TASK_STATUS_CHANGED" | "TASK_DELETED" | "COMMENT_ADDED";
+            /**
+             * @description ID of the task this event is related to
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            taskId: string;
+            /**
+             * @description Name of the task this event is related to
+             * @example Implement user authentication
+             */
+            taskName: string;
+            /** @description Actor who triggered this event */
+            actor: components["schemas"]["ActorResponseDto"];
+            /**
+             * @description Additional metadata about the event
+             * @example {
+             *       "oldStatus": "NOT_STARTED",
+             *       "newStatus": "IN_PROGRESS"
+             *     }
+             */
+            metadata?: Record<string, never>;
+            /**
+             * @description When this event occurred
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+        };
+        FeedListResponseDto: {
+            /** @description List of feed items */
+            items: components["schemas"]["FeedItemResponseDto"][];
+            /**
+             * @description Total number of feed items
+             * @example 100
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Items per page
+             * @example 50
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 2
+             */
+            totalPages: number;
         };
         CreatePageDto: {
             /**
@@ -5264,6 +5346,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    FeedController_listFeed: {
+        parameters: {
+            query?: {
+                /** @description Filter feed items by task ID */
+                taskId?: string;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (1-100) */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated list of feed items sorted by recency */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedListResponseDto"];
+                };
             };
         };
     };
