@@ -109,15 +109,12 @@ export class TasksMcpGateway {
         description: 'Fuzzy search for actors by display name or slug. Returns matching actors sorted by relevance.',
         inputSchema: {
           query: z.string(),
-          limit: z.number().optional(),
-          threshold: z.number().optional(),
         },
       },
-      async ({ query, limit, threshold }) => {
+      async ({ query }) => {
         const results = await this.ActorService.searchActors({
           query,
-          limit,
-          threshold,
+          limit: 10,
         });
         return {
           content: [{
