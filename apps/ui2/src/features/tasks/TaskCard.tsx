@@ -10,6 +10,12 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
       label: `💬 ${task.comments.length}`
     })
   }
+  const openQuestions = task.inputRequests.filter(i => !i.resolvedAt).length;
+  if (openQuestions) {
+    tags.push({
+      label: `✋ ${openQuestions}`
+    })
+  }
   return (
     <BoardCard
       leading={<Avatar name={task.createdByActor.displayName} size='md' src={task.createdByActor.avatarUrl || undefined}/>}
@@ -18,7 +24,7 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
       animation={animation}
       onClick={onClick}
       pulseKey={pulseKey}
-      highlight={task.inputRequests?.length > 0}
+      highlight={task.inputRequests.filter(i => !i.resolvedAt)?.length > 0}
       footer={
         <>
           <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>

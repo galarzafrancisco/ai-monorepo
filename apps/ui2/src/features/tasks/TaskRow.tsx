@@ -14,13 +14,26 @@ export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, an
     return () => clearTimeout(t);
   }, [pulseKey]);
 
+  const tags = task.tags.map(tag => ({ label: tag.name }));
+  if (task.comments.length) {
+    tags.push({
+      label: `💬 ${task.comments.length}`
+    })
+  }
+  const openQuestions = task.inputRequests.filter(i => !i.resolvedAt).length;
+  if (openQuestions) {
+    tags.push({
+      label: `✋ ${openQuestions}`
+    })
+  }
+
   return (
     <DataRow
       leading={<Avatar name={task.createdByActor.displayName} size='lg' src={task.createdByActor.avatarUrl || undefined}/>}
       topRight={elapsedTime(task.updatedAt)}
-      tags={task.tags.map(tag => ({ label: tag.name }))}
+      tags={tags}
       animation={animation}
-      highlight={task.inputRequests?.length > 0}
+      highlight={task.inputRequests.filter(i => !i.resolvedAt)?.length > 0}
       onClick={onClick}
     >
       <Text className='pre'>
@@ -41,20 +54,6 @@ export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, an
         {task.assignee ? `Assigned: @${task.assignee}` : "unassigned"}
         {" · "}
         {`Created by @${task.createdByActor.slug}`}
-        {task.comments.length > 0 && (
-          <span
-            style={{
-              marginLeft: 8,
-              padding: "1px 6px",
-              borderRadius: 999,
-              fontSize: 11,
-              background: "var(--surface-2)",
-              color: "var(--text-muted)",
-            }}
-          >
-            [ 💬 {task.comments.length} ]
-          </span>
-        )}
       </div>
     </DataRow >
   );
