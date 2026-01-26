@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TasksModule } from './tasks/tasks.module';
 import { ContextModule } from './context/context.module';
 import { McpRegistryModule } from './mcp-registry/mcp-registry.module';
@@ -26,6 +27,7 @@ import { AppInitModule } from './app-init/app-init.module';
       synchronize: true,
     }),
     EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     MetaModule,
     TasksModule,
     ContextModule,

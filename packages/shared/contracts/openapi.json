@@ -4008,7 +4008,8 @@
             "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
             "example": "none",
             "enum": [
-              "none"
+              "none",
+              "client_secret_basic"
             ]
           },
           "grant_types": {
@@ -4158,7 +4159,8 @@
             "description": "Authentication method for the token endpoint (MCP clients use \"none\")",
             "example": "none",
             "enum": [
-              "none"
+              "none",
+              "client_secret_basic"
             ]
           },
           "scope": {

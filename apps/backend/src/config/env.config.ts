@@ -40,6 +40,9 @@ export interface AppConfig {
   webAccessTokenDurationMinutes: number;
   webRefreshTokenDurationDays: number;
 
+  // Cleanup Configuration
+  mcpClientPruneRetentionHours: number;
+
   // Development Configuration
   vitePort: string;
 }
@@ -79,6 +82,9 @@ export function loadConfig(): AppConfig {
     // Web refresh token: 1 day
     webRefreshTokenDurationDays: parseInt(process.env.WEB_REFRESH_TOKEN_DURATION_DAYS || '1', 10),
 
+    // Cleanup Configuration
+    mcpClientPruneRetentionHours: parseInt(process.env.MCP_CLIENT_PRUNE_RETENTION_HOURS || '6', 10),
+
     // Development Configuration
     vitePort: process.env.VITE_PORT || '1000',
   };
@@ -92,6 +98,7 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Database Path: ${config.databasePath}`);
   logger.log(`  - ADK URL: ${config.adkUrl}`);
   logger.log(`  - Ollama URL: ${config.ollamaUrl}`);
+  logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
 
   return config;
 }

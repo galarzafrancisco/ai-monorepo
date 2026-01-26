@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import {
   AuthJourneyEntity,
   ConnectionAuthorizationFlowEntity,
@@ -10,6 +10,16 @@ import { AuthJourneyStatus } from './enums/auth-journey-status.enum';
 import { CreateAuthJourneyInput } from './dto/service/auth-journeys.service.types';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { McpAuthorizationFlowStatus } from './enums/mcp-authorization-flow-status.enum';
+import { RegisteredClientEntity } from '../authorization-server/entities/registered-client.entity';
+
+export type PruneStaleClientsResult = {
+  cutoff: Date;
+  staleFlows: number;
+  deletedClients: number;
+  deletedJourneys: number;
+  deletedMcpFlows: number;
+  deletedConnectionFlows: number;
+};
 
 @Injectable()
 export class AuthJourneysService {
@@ -215,5 +225,66 @@ export class AuthJourneysService {
     status: AuthJourneyStatus
   ): Promise<void> {
     await this.authJourneyRepository.update(journeyId, { status });
+  }
+
+  async pruneStaleMcpClients(retentionHours: number): Promise<PruneStaleClientsResult> {
+    const cutoff = new Date(Date.now() - retentionHours * 60 * 60 * 1000);
+
+    const staleFlows = await this.mcpAuthorizationFlowRepository
+      .createQueryBuilder('flow')
+      .innerJoinAndSelect('flow.authJourney', 'journey')
+      .innerJoinAndSelect('flow.client', 'client')
+      .where('flow.status != :flowCompleted', {
+        flowCompleted: McpAuthorizationFlowStatus.AUTHORIZATION_CODE_EXCHANGED,
+      })
+      .andWhere('journey.status != :journeyCompleted', {
+        journeyCompleted: AuthJourneyStatus.AUTHORIZATION_CODE_EXCHANGED,
+      })
+      .andWhere('flow.updatedAt < :cutoff', { cutoff })
+      .andWhere('journey.updatedAt < :cutoff', { cutoff })
+      .getMany();
+
+    if (staleFlows.length === 0) {
+      return {
+        cutoff,
+        staleFlows: 0,
+        deletedClients: 0,
+        deletedJourneys: 0,
+        deletedMcpFlows: 0,
+        deletedConnectionFlows: 0,
+      };
+    }
+
+    const clientIds = Array.from(new Set(staleFlows.map(flow => flow.clientId)));
+    const journeyIds = Array.from(new Set(staleFlows.map(flow => flow.authorizationJourneyId)));
+    const mcpFlowIds = Array.from(new Set(staleFlows.map(flow => flow.id)));
+
+    const result = await this.authJourneyRepository.manager.transaction(async manager => {
+      const connectionDelete = await manager.delete(ConnectionAuthorizationFlowEntity, {
+        authorizationJourneyId: In(journeyIds),
+      });
+      const mcpFlowDelete = await manager.delete(McpAuthorizationFlowEntity, {
+        id: In(mcpFlowIds),
+      });
+      const journeyDelete = await manager.delete(AuthJourneyEntity, {
+        id: In(journeyIds),
+      });
+      const clientDelete = await manager.delete(RegisteredClientEntity, {
+        id: In(clientIds),
+      });
+
+      return {
+        deletedClients: clientDelete.affected || 0,
+        deletedJourneys: journeyDelete.affected || 0,
+        deletedMcpFlows: mcpFlowDelete.affected || 0,
+        deletedConnectionFlows: connectionDelete.affected || 0,
+      };
+    });
+
+    return {
+      cutoff,
+      staleFlows: staleFlows.length,
+      ...result,
+    };
   }
 }
