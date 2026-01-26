@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { ActorEntity } from './actor.entity';
 import { ActorType } from './enums';
 import { CreateActorInput } from './dto/service/actor.service.types';
+import { SearchService } from '../search/search.service';
+import { SearchResult } from '../search/search.types';
 
 @Injectable()
 export class ActorService {
@@ -12,6 +14,7 @@ export class ActorService {
   constructor(
     @InjectRepository(ActorEntity)
     private readonly actorRepository: Repository<ActorEntity>,
+    private readonly searchService: SearchService,
   ) {}
 
   /**
@@ -109,5 +112,35 @@ export class ActorService {
     return this.actorRepository.find({
       order: { displayName: 'ASC' },
     });
+  }
+
+  /**
+   * Search actors by display name or slug using fuzzy search
+   */
+  async searchActors({
+    query,
+    limit,
+    threshold,
+  }: {
+    query: string;
+    limit?: number;
+    threshold?: number;
+  }): Promise<SearchResult<ActorEntity>[]> {
+    this.logger.log(`Searching actors with query: ${query}`);
+
+    // Get all actors
+    const actors = await this.listActors();
+
+    // Use search service for fuzzy search
+    const results = this.searchService.search({
+      items: actors,
+      primaryField: 'displayName',
+      secondaryField: 'slug',
+      query,
+      limit,
+      threshold,
+    });
+
+    return results;
   }
 }
