@@ -10,6 +10,7 @@ import { AuthorizationServerModule } from './authorization-server/authorization-
 import { DiscoveryModule } from './discovery/discovery.module';
 import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
 import { AgentsModule } from './agents/agents.module';
+import { ThreadsModule } from './threads/threads.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
 import { LlmHelperModule } from './llm-helper/llm-helper.module';
 import { MetaModule } from './meta/meta.module';
@@ -33,6 +34,7 @@ import { AppInitModule } from './app-init/app-init.module';
     AuthorizationServerModule,
     DiscoveryModule,
     AgentsModule,
+    ThreadsModule,
     IdentityProviderModule,
     LlmHelperModule,
     AppInitModule,

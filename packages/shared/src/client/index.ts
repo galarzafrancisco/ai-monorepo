@@ -94,5 +94,6 @@ export { DiscoveryService } from './services/DiscoveryService';
 export { JwksService } from './services/JwksService';
 export { MetaService } from './services/MetaService';
 export { TaskService } from './services/TaskService';
+export { ThreadsService } from './services/ThreadsService';
 export { ToolsService } from './services/ToolsService';
 export { WebAuthenticationService } from './services/WebAuthenticationService';
