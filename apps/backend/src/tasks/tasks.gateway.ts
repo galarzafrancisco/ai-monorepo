@@ -18,6 +18,7 @@ import {
   TaskDeletedEvent,
   CommentAddedEvent,
   TaskStatusChangedEvent,
+  InputRequestAnsweredEvent,
 } from './events/tasks.events';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
@@ -110,6 +111,11 @@ export class TasksGateway
   @OnEvent('task.statusChanged')
   handleStatusChanged(event: TaskStatusChangedEvent) {
     this.server.to(TASKS_ROOM).emit('task.status_changed', event.payload, event.actor);
+  }
+
+  @OnEvent('input_request.answered')
+  handleInputRequestAnswered(event: InputRequestAnsweredEvent) {
+    this.server.to(TASKS_ROOM).emit('input.request.answered', event.payload, event.actor);
   }
 
 

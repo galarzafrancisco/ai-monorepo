@@ -379,6 +379,7 @@ export class TasksController {
     @Param('id') taskId: string,
     @Param('inputRequestId') inputRequestId: string,
     @Body() dto: AnswerInputRequestDto,
+    @CurrentUser() user: UserContext,
   ): Promise<InputRequestResponseDto> {
     const result = await this.TasksService.answerInputRequest(
       taskId,
@@ -386,6 +387,7 @@ export class TasksController {
       {
         answer: dto.answer,
       },
+      user.actorId,
     );
     return this.mapInputRequestResultToResponse(result);
   }

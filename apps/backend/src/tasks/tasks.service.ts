@@ -40,6 +40,7 @@ import {
   TaskDeletedEvent,
   CommentAddedEvent,
   TaskStatusChangedEvent,
+  InputRequestAnsweredEvent,
 } from './events/tasks.events';
 import { MetaService } from '../meta/meta.service';
 import { TagEntity } from '../meta/tag.entity';
@@ -758,6 +759,7 @@ export class TasksService {
     taskId: string,
     inputRequestId: string,
     input: AnswerInputRequestInput,
+    actorId: string,
   ): Promise<InputRequestResult> {
     this.logger.log({
       message: 'Answering input request',
@@ -783,6 +785,8 @@ export class TasksService {
       inputRequestId,
       taskId,
     });
+
+    this.eventEmitter.emit('input_request.answered', new InputRequestAnsweredEvent({ id: actorId }, updatedInputRequest));
 
     return this.mapInputRequestToResult(updatedInputRequest);
   }

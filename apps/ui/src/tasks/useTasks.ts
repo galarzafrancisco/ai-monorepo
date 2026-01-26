@@ -123,6 +123,21 @@ export const useTasks = () => {
       }
     });
 
+    newSocket.on('input.request.answered', async (inputRequest: { taskId: string }) => {
+      try {
+        const updatedTask = await TasksService.tasksControllerGetTask(inputRequest.taskId);
+        setTasks((prev) => {
+          const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
+          if (existingTaskIndex === -1) {
+            return sortTasks([updatedTask, ...prev]);
+          }
+          return sortTasks(prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+        });
+      } catch (err) {
+        console.error('Failed to refresh task after input request answer', err);
+      }
+    });
+
     newSocket.on('task.status_changed', (task: Task) => {
       setTasks((prev) =>
         sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
