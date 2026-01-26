@@ -82,6 +82,16 @@ export function ToolDetailPage() {
     tags.push({ label: 'remote', color: 'green' });
   }
 
+  const toolUrl = tool.url ?? '';
+  const hasUrl = Boolean(toolUrl);
+  const inspectorCommand = hasUrl
+    ? `npx @modelcontextprotocol/inspector --transport http --server-url ${toolUrl}`
+    : '';
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   return (
     <div className="tool-detail-page">
 
@@ -136,33 +146,49 @@ export function ToolDetailPage() {
 
 
       {/* URL */}
-      {tool.url && (
+      {hasUrl && (
         <>
           <DataRowContainer title="Server URL" className="tool-detail-page__section">
             <DataRow>
-              <Text size="2" style="mono" className="tool-detail-page__url">
-                {tool.url}
-              </Text>
+              <Stack spacing="2">
+                <Text size="2" tone="muted">
+                  Copy/paste this URL when configuring clients.
+                </Text>
+                <div className="tool-detail-page__field">
+                  <input
+                    type="text"
+                    readOnly
+                    value={toolUrl}
+                    className="tool-detail-page__input"
+                  />
+                  <Button size="sm" onClick={() => copyToClipboard(toolUrl)}>
+                    Copy URL
+                  </Button>
+                </div>
+              </Stack>
             </DataRow>
           </DataRowContainer>
         </>
       )}
 
       {/* Inspector Command */}
-      {tool.url && (
+      {hasUrl && (
         <DataRowContainer title="Configure" className="tool-detail-page__section">
           <DataRow>
-            <Text as="span" weight="medium" size="3">
-              Inspector Command
-            </Text>
-            <Text size="2" tone="muted">
-              Run this command to start the MCP inspector:
-            </Text>
-            <Text as='span' style='mono'>
-              <div onClick={() => navigator.clipboard.writeText(`npx @modelcontextprotocol/inspector ${tool.url}`)}>
-                {`npx @modelcontextprotocol/inspector ${tool.url}`}
+            <Stack spacing="2">
+              <Text as="span" weight="medium" size="3">
+                Inspector Command
+              </Text>
+              <Text size="2" tone="muted">
+                Run this command to start the MCP inspector:
+              </Text>
+              <div className="tool-detail-page__command">
+                <code>{inspectorCommand}</code>
               </div>
-            </Text>
+              <Button size="sm" onClick={() => copyToClipboard(inspectorCommand)}>
+                Copy command
+              </Button>
+            </Stack>
           </DataRow>
         </DataRowContainer>
       )}

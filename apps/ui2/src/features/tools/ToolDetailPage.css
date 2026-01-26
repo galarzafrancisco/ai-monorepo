@@ -12,6 +12,30 @@
   word-break: break-all;
 }
 
+.tool-detail-page__field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.tool-detail-page__input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  font-size: var(--font-size-2);
+  background: var(--surface-1);
+  color: var(--text);
+  width: 100%;
+  flex: 1;
+  min-width: 220px;
+}
+
+.tool-detail-page__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 /* Scopes list */
 .tool-detail-page__scopes {
   display: flex;
