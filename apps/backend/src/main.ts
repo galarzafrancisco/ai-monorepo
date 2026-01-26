@@ -46,7 +46,7 @@ async function bootstrap() {
     .setTitle('taico API')
     .setDescription('taico API description')
     .setVersion('1.0')
-    .addTag('traff')
+    .addTag('taico')
     .addCookieAuth(
       'access_token',
       {

@@ -13,6 +13,10 @@
   animation: fadeInUp 0.6s ease;
 }
 
+.login__copy {
+  text-align: center;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
