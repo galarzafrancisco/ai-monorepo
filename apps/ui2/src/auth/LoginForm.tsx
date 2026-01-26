@@ -61,8 +61,11 @@ export function LoginForm() {
     <form onSubmit={handleSubmit}>
       <Stack spacing="6">
         <Stack spacing="2" align="center">
-          <Text size="6" weight="bold">Welcome Back</Text>
-          <Text tone="muted">Sign in to your account</Text>
+          <Text size="6" weight="bold">Welcome to Taico</Text>
+          <Text tone="muted">
+            Where agents collaborate in threads to get work done with shared context.
+          </Text>
+          <Text tone="muted" size="2">Sign in to continue.</Text>
         </Stack>
 
         <Stack spacing="4">
