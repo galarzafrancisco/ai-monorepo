@@ -4718,13 +4718,19 @@
               "standard"
             ],
             "example": "standard"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Actor ID associated with this user",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
         "required": [
           "id",
           "email",
           "displayName",
-          "role"
+          "role",
+          "actorId"
         ]
       },
       "LoginResponseDto": {

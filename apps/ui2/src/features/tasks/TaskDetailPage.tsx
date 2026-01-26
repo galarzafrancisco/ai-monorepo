@@ -9,6 +9,7 @@ import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
+import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto } from 'shared';
 import './TaskDetailPage.css';
 
@@ -17,6 +18,7 @@ export function TaskDetailPage() {
   const navigate = useNavigate();
   const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest } = useTasksCtx();
   const { actors } = useActorsCtx();
+  const { user } = useAuth();
 
   // Find task from context (real-time updates)
   const task = tasks.find(t => t.id === taskId);
@@ -262,6 +264,7 @@ export function TaskDetailPage() {
                 const name = askedByActor?.displayName || 'Unknown';
                 const slug = askedByActor?.slug || 'unknown';
                 const isResolved = !!inputRequest.resolvedAt;
+                const isAssignedToMe = user && inputRequest.assignedToActorId === user.actorId;
 
                 return (
                   <DataRow
@@ -279,7 +282,7 @@ export function TaskDetailPage() {
                     <Text>
                       {inputRequest.question}
                     </Text>
-                    {!isResolved && (
+                    {!isResolved && isAssignedToMe && (
                       <Button
                         size='sm'
                         variant='primary'

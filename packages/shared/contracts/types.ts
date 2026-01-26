@@ -1729,6 +1729,11 @@ export interface components {
              * @enum {string}
              */
             role: "admin" | "standard";
+            /**
+             * @description Actor ID associated with this user
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            actorId: string;
         };
         LoginResponseDto: {
             /** @description Authenticated user information */

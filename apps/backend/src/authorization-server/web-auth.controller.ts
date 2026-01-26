@@ -89,6 +89,7 @@ export class WebAuthController {
         email: user.email,
         displayName: actor.displayName,
         role: user.role,
+        actorId: user.actorId,
       },
       expiresIn:  expiresInSeconds,
     };
@@ -154,6 +155,7 @@ export class WebAuthController {
         email: user.email,
         displayName: actor.displayName,
         role: user.role,
+        actorId: user.actorId,
       },
       expiresIn,
     };
@@ -240,6 +242,7 @@ export class WebAuthController {
       email: actor.user.email,
       displayName: actor.displayName,
       role: actor.user.role,
+      actorId: actor.user.actorId,
     };
   }
 

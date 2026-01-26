@@ -19,6 +19,10 @@ export type UserResponseDto = {
      * User role
      */
     role: UserResponseDto.role;
+    /**
+     * Actor ID associated with this user
+     */
+    actorId: string;
 };
 export namespace UserResponseDto {
     /**
