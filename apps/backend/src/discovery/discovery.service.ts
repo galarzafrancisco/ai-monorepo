@@ -75,8 +75,7 @@ export class DiscoveryService {
         GrantType.REFRESH_TOKEN,
       ],
       token_endpoint_auth_methods_supported: [
-        'client_secret_basic',
-        'private_key_jwt',
+        'none',
       ],
       code_challenge_methods_supported: ['S256'],
     };

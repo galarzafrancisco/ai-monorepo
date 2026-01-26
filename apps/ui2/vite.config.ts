@@ -13,7 +13,8 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: [
-      'air.local'
+      'air.local',
+      'debug.american-broomstick.com'
     ],
     port: Number(process.env.VITE_PORT) || 1000,
     proxy: {
