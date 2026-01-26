@@ -83,7 +83,7 @@ export function loadConfig(): AppConfig {
     webRefreshTokenDurationDays: parseInt(process.env.WEB_REFRESH_TOKEN_DURATION_DAYS || '1', 10),
 
     // Cleanup Configuration
-    mcpClientPruneRetentionHours: parseInt(process.env.MCP_CLIENT_PRUNE_RETENTION_HOURS || '6', 10),
+    mcpClientPruneRetentionHours: parseFloat(process.env.MCP_CLIENT_PRUNE_RETENTION_HOURS || '0.75'),
 
     // Development Configuration
     vitePort: process.env.VITE_PORT || '1000',
