@@ -53,7 +53,7 @@ export class TasksMcpGateway {
     )
 
     server.registerTool(
-      'get_task',
+      'fetch',
       {
         title: 'Get task details',
         description: 'Retrieve full details of a task by ID',
@@ -73,7 +73,7 @@ export class TasksMcpGateway {
     )
 
     server.registerTool(
-      'search_tasks',
+      'search',
       {
         title: 'Search tasks',
         description: 'Fuzzy search for tasks by name and description. Returns matching tasks sorted by relevance.',
