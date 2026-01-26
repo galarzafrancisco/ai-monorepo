@@ -7,13 +7,16 @@ import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowCon
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
-import { ActorSearchPop, Actor } from '../actors';
+import { AnswerInputRequestPop } from './AnswerInputRequestPop';
+import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
+import { InputRequestResponseDto } from 'shared';
 import './TaskDetailPage.css';
 
 export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const navigate = useNavigate();
-  const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe } = useTasksCtx();
+  const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest } = useTasksCtx();
+  const { actors } = useActorsCtx();
 
   // Find task from context (real-time updates)
   const task = tasks.find(t => t.id === taskId);
@@ -35,6 +38,7 @@ export function TaskDetailPage() {
   // Handlers for buttons
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
+  const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
 
   const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
@@ -70,6 +74,25 @@ export function TaskDetailPage() {
   }
   const cancelAssignment = () => {
     setShowAssignPop(false);
+  }
+
+  const saveAnswerToInputRequest = async ({ answer }: { answer: string }): Promise<boolean> => {
+    if (!task || !respondingToInputRequest) {
+      return false;
+    }
+    try {
+      await answerInputRequest({
+        taskId: task.id,
+        inputRequestId: respondingToInputRequest.id,
+        answer,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  const cancelAnswerInputRequest = () => {
+    setRespondingToInputRequest(null);
   }
 
   // If task not found in context, could be loading or invalid
@@ -183,30 +206,118 @@ export function TaskDetailPage() {
         </DataRow>
       </DataRowContainer >
 
-      {/* Comments */}
+      {/* Comments and Input Requests Timeline */}
       <DataRowContainer className='task-detail-page__section' >
         {
-          [...task.comments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map(comment => {
-            const name = comment.commenterActor?.displayName || 'unknown';
-            const slug = comment.commenterActor?.slug || 'unknown';
-            return (
-              <DataRow
-                key={comment.id}
-                leading={<Avatar size={'sm'} name={name} src={comment.commenterActor?.avatarUrl || undefined}/>}
-                topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
-              >
-                <Text as='span' weight='medium' size='3'>
-                  {name}
-                </Text>
-                <Text as='span' weight='normal' tone='muted' size='3'>
-                  {` @${slug}`}
-                </Text>
-                <Text>
-                  {comment.content}
-                </Text>
-              </DataRow>
-            )
-          })
+          // Combine comments and input requests, sorted by timestamp
+          (() => {
+            type TimelineItem =
+              | { type: 'comment'; data: typeof task.comments[0]; timestamp: number }
+              | { type: 'inputRequest'; data: InputRequestResponseDto; timestamp: number }
+              | { type: 'inputResponse'; data: InputRequestResponseDto; timestamp: number };
+
+            const timeline: TimelineItem[] = [
+              ...task.comments.map(comment => ({
+                type: 'comment' as const,
+                data: comment,
+                timestamp: new Date(comment.createdAt).getTime(),
+              })),
+              ...task.inputRequests.map(inputRequest => ({
+                type: 'inputRequest' as const,
+                data: inputRequest,
+                timestamp: new Date(inputRequest.createdAt).getTime(),
+              })),
+              ...task.inputRequests.filter(ir => ir.resolvedAt).map(inputRequest => ({
+                type: 'inputResponse' as const,
+                data: inputRequest,
+                timestamp: new Date(inputRequest.updatedAt).getTime(),
+              })),
+            ].sort((a, b) => a.timestamp - b.timestamp);
+
+            return timeline.map((item, index) => {
+              if (item.type === 'comment') {
+                const comment = item.data;
+                const name = comment.commenterActor?.displayName || 'unknown';
+                const slug = comment.commenterActor?.slug || 'unknown';
+                return (
+                  <DataRow
+                    key={`comment-${comment.id}`}
+                    leading={<Avatar size={'sm'} name={name} src={comment.commenterActor?.avatarUrl || undefined}/>}
+                    topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
+                  >
+                    <Text as='span' weight='medium' size='3'>
+                      {name}
+                    </Text>
+                    <Text as='span' weight='normal' tone='muted' size='3'>
+                      {` @${slug}`}
+                    </Text>
+                    <Text>
+                      {comment.content}
+                    </Text>
+                  </DataRow>
+                );
+              } else if (item.type === 'inputRequest') {
+                const inputRequest = item.data;
+                const askedByActor = actors.find(a => a.id === inputRequest.askedByActorId);
+                const name = askedByActor?.displayName || 'Unknown';
+                const slug = askedByActor?.slug || 'unknown';
+                const isResolved = !!inputRequest.resolvedAt;
+
+                return (
+                  <DataRow
+                    key={`input-request-${inputRequest.id}`}
+                    leading={<Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined}/>}
+                    tags={[{ label: isResolved ? 'resolved question' : 'question', color: isResolved ? 'gray' : 'orange' }]}
+                    topRight={<Text size='1' tone='muted'>{elapsedTime(inputRequest.createdAt)}</Text>}
+                  >
+                    <Text as='span' weight='medium' size='3'>
+                      {name}
+                    </Text>
+                    <Text as='span' weight='normal' tone='muted' size='3'>
+                      {` @${slug}`}
+                    </Text>
+                    <Text>
+                      {inputRequest.question}
+                    </Text>
+                    {!isResolved && (
+                      <Button
+                        size='sm'
+                        variant='primary'
+                        onClick={() => setRespondingToInputRequest(inputRequest)}
+                      >
+                        Respond
+                      </Button>
+                    )}
+                  </DataRow>
+                );
+              } else {
+                // inputResponse
+                const inputRequest = item.data;
+                const assignedToActor = actors.find(a => a.id === inputRequest.assignedToActorId);
+                const name = assignedToActor?.displayName || 'Unknown';
+                const slug = assignedToActor?.slug || 'unknown';
+
+                return (
+                  <DataRow
+                    key={`input-response-${inputRequest.id}`}
+                    leading={<Avatar size={'sm'} name={name} src={assignedToActor?.avatarUrl || undefined}/>}
+                    tags={[{ label: 'answer', color: 'green' }]}
+                    topRight={<Text size='1' tone='muted'>{elapsedTime(inputRequest.updatedAt)}</Text>}
+                  >
+                    <Text as='span' weight='medium' size='3'>
+                      {name}
+                    </Text>
+                    <Text as='span' weight='normal' tone='muted' size='3'>
+                      {` @${slug}`}
+                    </Text>
+                    <Text>
+                      {typeof inputRequest.answer === 'string' ? inputRequest.answer : JSON.stringify(inputRequest.answer)}
+                    </Text>
+                  </DataRow>
+                );
+              }
+            });
+          })()
         }
       </DataRowContainer>
 
@@ -282,6 +393,15 @@ export function TaskDetailPage() {
       {/* Pops */}
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
+      {respondingToInputRequest ? (
+        <AnswerInputRequestPop
+          onCancel={cancelAnswerInputRequest}
+          onSave={saveAnswerToInputRequest}
+          taskId={task.id}
+          inputRequestId={respondingToInputRequest.id}
+          question={respondingToInputRequest.question}
+        />
+      ) : null}
     </div >
   );
 }

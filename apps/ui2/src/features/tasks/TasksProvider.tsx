@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { TaskActivityItem, useTasks } from "./useTasks"; // your abstraction hook
 import type { Task } from "./types";
 import { TaskStatus } from "./const";
-import { CommentResponseDto, CreateTaskDto, TaskResponseDto } from "shared";
+import { CommentResponseDto, CreateTaskDto, TaskResponseDto, InputRequestResponseDto } from "shared";
 
 // Animation state tracked per status (for column-based animations)
 export type AnimationState = {
@@ -32,6 +32,11 @@ export type TasksContextValue = {
     assigneeActorId: string;
   }) => Promise<TaskResponseDto>;
   assignTaskToMe: ({ taskId }: { taskId: string }) => Promise<TaskResponseDto>;
+  answerInputRequest: ({ taskId, inputRequestId, answer }: {
+    taskId: string;
+    inputRequestId: string;
+    answer: string;
+  }) => Promise<InputRequestResponseDto>;
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
@@ -60,7 +65,7 @@ type ActiveAnimation = {
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
-  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, activityByTaskId } = useTasks();
+  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasks();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Refs for synchronous computation
@@ -186,6 +191,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       addComment,
       assignTask,
       assignTaskToMe,
+      answerInputRequest,
       isLoading,
       error,
       isConnected,
@@ -203,6 +209,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     addComment,
     assignTask,
     assignTaskToMe,
+    answerInputRequest,
     isLoading,
     error,
     isConnected,

@@ -101,6 +101,11 @@ export const useTasks = () => {
     return await TasksService.tasksControllerAssignTaskToMe(taskId);
   }
 
+  // Answer input request
+  const answerInputRequest = async ({ taskId, inputRequestId, answer }: { taskId: string, inputRequestId: string, answer: string }) => {
+    return await TasksService.tasksControllerAnswerInputRequest(taskId, inputRequestId, { answer });
+  }
+
   // Load tasks
   const loadTasks = async () => {
     setIsLoading(true);
@@ -224,6 +229,7 @@ export const useTasks = () => {
     addComment,
     assignTask,
     assignTaskToMe,
+    answerInputRequest,
 
 
     // Transport
