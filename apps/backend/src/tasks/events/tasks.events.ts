@@ -1,5 +1,6 @@
 import { TaskEntity } from '../task.entity';
 import { CommentEntity } from '../comment.entity';
+import { InputRequestEntity } from '../input-request.entity';
 
 export type EventActor = {
   id: string;
@@ -55,5 +56,11 @@ export class TaskDeletedEvent {
 export class CommentAddedEvent extends TaskDomainEvent<CommentEntity> {
   constructor(actor: EventActor, comment: CommentEntity) {
     super(actor, comment);
+  }
+}
+
+export class InputRequestAnsweredEvent extends TaskDomainEvent<InputRequestEntity> {
+  constructor(actor: EventActor, inputRequest: InputRequestEntity) {
+    super(actor, inputRequest);
   }
 }
