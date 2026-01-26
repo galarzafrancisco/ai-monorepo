@@ -26,12 +26,14 @@ export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, an
       <Text className='pre'>
         #{task.id.slice(0, 6)}
       </Text>
-      <Text weight="bold" size='3' tone='default'>
-        <span className="task-row__title">
-          <span className="task-row__titleText">{task.name}</span>
-          {pulse ? <span className="task-row__pulseDot" aria-hidden /> : null}
-        </span>
-      </Text>
+      <div style={{ minWidth: 0, overflow: 'hidden' }}>
+        <Text weight="bold" size='3' tone='default'>
+          <span className="task-row__title">
+            <span className="task-row__titleText">{task.name}</span>
+            {pulse ? <span className="task-row__pulseDot" aria-hidden /> : null}
+          </span>
+        </Text>
+      </div>
       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {task.description}
       </div>
