@@ -486,3 +486,47 @@
   --shadow-2: 0 4px 8px rgba(79, 209, 197, 0.22);
   --shadow-3: 0 8px 24px rgba(79, 209, 197, 0.3);
 }
+
+/* ===== PARTY THEME (Playful warm palette) ===== */
+[data-theme='party'] {
+  /* Theme color values */
+  --theme-bg: #fff7f0;
+  --theme-app-surface: #ffe8d6;
+  --theme-surface: #fff1e6;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 255, 247, 240;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #2b1b0f;
+  --text-muted: #6b4f3a;
+  --text-inverse: #ffffff;
+
+  /* Colors - Borders */
+  --border: #f3c4a7;
+  --border-subtle: #f8d9c4;
+
+  /* Colors - Interactive */
+  --accent: #ff6b6b;
+  --accent-contrast: #ffffff;
+  --accent-hover: #ff8787;
+
+  /* Colors - Semantic */
+  --success: #2ec4b6;
+  --warning: #f4b400;
+  --danger: #ff4d6d;
+
+  /* Colors - Focus */
+  --focus-ring: #ff6b6b;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(255, 107, 107, 0.18);
+  --shadow-2: 0 4px 8px rgba(255, 107, 107, 0.2);
+  --shadow-3: 0 8px 24px rgba(255, 107, 107, 0.26);
+}

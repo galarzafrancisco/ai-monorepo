@@ -15,6 +15,7 @@ const THEMES = [
   { value: 'mono', label: 'Mono', description: 'Black and white minimalism' },
   { value: 'terminal-amber', label: 'Terminal Amber', description: 'Terminal tones without the green' },
   { value: 'oceanic', label: 'Oceanic', description: 'Cool blues and teals' },
+  { value: 'party', label: 'Party', description: 'Playful warm palette' },
 ] as const;
 
 export function SettingsAppearancePage() {
