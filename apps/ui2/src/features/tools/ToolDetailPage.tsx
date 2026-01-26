@@ -155,20 +155,30 @@ export function ToolDetailPage() {
       ) : null
       }
 
-      {/* Inspector Command */}
       {
         tool.url && (
           <DataRowContainer title="Configure" className="tool-detail-page__section">
+            {/* Inspector Command */}
             <DataRow onClick={() => copyToClipboard(`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`)}>
-              <Text as="span" weight="medium" size="3">
+              <Text weight="medium" size="3">
                 Inspector Command
               </Text>
               <Text size="2" tone="muted">
                 Run this command to start the MCP inspector:
               </Text>
-              <Text as='span' style='mono'>
-                  {`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`}
-                  <Text size='1' tone='muted'>tap to copy</Text>
+              <Text style='mono'>
+                {`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`}
+                <Text size='1' tone='muted'>tap to copy</Text>
+              </Text>
+            </DataRow>
+            {/* Claude Code Command */}
+            <DataRow onClick={() => copyToClipboard(`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`)}>
+              <Text weight="medium" size="3">
+                Claude Code
+              </Text>
+              <Text style='mono'>
+                {`claude mcp add ${tool.providedId} --transport http ${tool.url}`}
+                <Text size='1' tone='muted'>tap to copy</Text>
               </Text>
             </DataRow>
           </DataRowContainer>
