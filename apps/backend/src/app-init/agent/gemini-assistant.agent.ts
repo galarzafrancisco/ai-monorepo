@@ -5,7 +5,7 @@ import { ASSISTANT_PROMPT } from "./prompts";
 
 export const createGeminiAssistant: CreateAgentInput = {
   slug: 'gemini-assistant',
-  name: 'Gemini 2.5 Flash',
+  name: 'Gemini Assistant',
   type: AgentType.ADK,
   avatarUrl: '/icons/agent-development-kit.png',
   description: 'Gemini 2.5 Flash with an assistant persona, running on a ADK',
