@@ -154,6 +154,254 @@
         ]
       }
     },
+    "/api/v1/meta/projects": {
+      "post": {
+        "operationId": "ProjectsController_createProject",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Project created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new project",
+        "tags": [
+          "Meta - Projects"
+        ]
+      },
+      "get": {
+        "operationId": "ProjectsController_getAllProjects",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get all projects",
+        "tags": [
+          "Meta - Projects"
+        ]
+      }
+    },
+    "/api/v1/meta/projects/search": {
+      "get": {
+        "operationId": "ProjectsController_searchProjects",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "example": "taico",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of results",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "threshold",
+            "required": false,
+            "in": "query",
+            "description": "Match threshold (0-1)",
+            "schema": {
+              "example": 0.3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of matching projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Search projects by name and description",
+        "tags": [
+          "Meta - Projects"
+        ]
+      }
+    },
+    "/api/v1/meta/projects/{projectId}": {
+      "get": {
+        "operationId": "ProjectsController_getProject",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get project by ID",
+        "tags": [
+          "Meta - Projects"
+        ]
+      },
+      "patch": {
+        "operationId": "ProjectsController_updateProject",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Project updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update project (partial update)",
+        "tags": [
+          "Meta - Projects"
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectsController_deleteProject",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Project deleted successfully"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a project",
+        "tags": [
+          "Meta - Projects"
+        ]
+      }
+    },
     "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
       "post": {
         "description": "Implements RFC 7591 Dynamic Client Registration for OAuth 2.0. Validates client metadata, generates credentials, and persists the client configuration. Requires authorization_code and refresh_token grant types with PKCE support per MCP specification.",
@@ -4006,6 +4254,108 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Project slug (e.g., \"taico\")",
+            "example": "taico"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description",
+            "example": "AI task management platform"
+          },
+          "repoUrl": {
+            "type": "string",
+            "description": "Repository URL for code projects",
+            "example": "https://github.com/user/repo"
+          },
+          "color": {
+            "type": "string",
+            "description": "Tag color in hex format",
+            "example": "#FF6B6B"
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      },
+      "ProjectResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Project unique identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "tagId": {
+            "type": "string",
+            "description": "Tag ID associated with this project",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "tagName": {
+            "type": "string",
+            "description": "Tag name (project:slug format)",
+            "example": "project:taico"
+          },
+          "tagColor": {
+            "type": "string",
+            "description": "Tag color in hex format",
+            "example": "#FF6B6B"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Project slug",
+            "example": "taico"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description",
+            "example": "AI task management platform"
+          },
+          "repoUrl": {
+            "type": "string",
+            "description": "Repository URL",
+            "example": "https://github.com/user/repo"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "tagId",
+          "tagName",
+          "tagColor",
+          "slug",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PatchProjectDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Project description",
+            "example": "AI task management platform"
+          },
+          "repoUrl": {
+            "type": "string",
+            "description": "Repository URL for code projects",
+            "example": "https://github.com/user/repo"
+          }
+        }
       },
       "RegisterClientDto": {
         "type": "object",

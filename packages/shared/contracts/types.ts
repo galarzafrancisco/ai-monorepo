@@ -73,6 +73,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meta/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all projects */
+        get: operations["ProjectsController_getAllProjects"];
+        put?: never;
+        /** Create a new project */
+        post: operations["ProjectsController_createProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meta/projects/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search projects by name and description */
+        get: operations["ProjectsController_searchProjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meta/projects/{projectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get project by ID */
+        get: operations["ProjectsController_getProject"];
+        put?: never;
+        post?: never;
+        /** Delete a project */
+        delete: operations["ProjectsController_deleteProject"];
+        options?: never;
+        head?: never;
+        /** Update project (partial update) */
+        patch: operations["ProjectsController_updateProject"];
+        trace?: never;
+    };
     "/api/v1/auth/clients/register/mcp/{serverId}/{version}": {
         parameters: {
             query?: never;
@@ -1238,6 +1292,87 @@ export interface components {
              * @example 2024-01-15T10:30:00.000Z
              */
             updatedAt: string;
+        };
+        CreateProjectDto: {
+            /**
+             * @description Project slug (e.g., "taico")
+             * @example taico
+             */
+            slug: string;
+            /**
+             * @description Project description
+             * @example AI task management platform
+             */
+            description?: string;
+            /**
+             * @description Repository URL for code projects
+             * @example https://github.com/user/repo
+             */
+            repoUrl?: string;
+            /**
+             * @description Tag color in hex format
+             * @example #FF6B6B
+             */
+            color?: string;
+        };
+        ProjectResponseDto: {
+            /**
+             * @description Project unique identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Tag ID associated with this project
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            tagId: string;
+            /**
+             * @description Tag name (project:slug format)
+             * @example project:taico
+             */
+            tagName: string;
+            /**
+             * @description Tag color in hex format
+             * @example #FF6B6B
+             */
+            tagColor: string;
+            /**
+             * @description Project slug
+             * @example taico
+             */
+            slug: string;
+            /**
+             * @description Project description
+             * @example AI task management platform
+             */
+            description?: string;
+            /**
+             * @description Repository URL
+             * @example https://github.com/user/repo
+             */
+            repoUrl?: string;
+            /**
+             * @description Creation timestamp
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Last update timestamp
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        PatchProjectDto: {
+            /**
+             * @description Project description
+             * @example AI task management platform
+             */
+            description?: string;
+            /**
+             * @description Repository URL for code projects
+             * @example https://github.com/user/repo
+             */
+            repoUrl?: string;
         };
         RegisterClientDto: {
             /**
@@ -3370,6 +3505,180 @@ export interface operations {
                 content?: never;
             };
             /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProjectsController_getAllProjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all projects */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"][];
+                };
+            };
+        };
+    };
+    ProjectsController_createProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProjectDto"];
+            };
+        };
+        responses: {
+            /** @description Project created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProjectsController_searchProjects: {
+        parameters: {
+            query: {
+                /** @description Search query */
+                q: string;
+                /** @description Maximum number of results */
+                limit?: number;
+                /** @description Match threshold (0-1) */
+                threshold?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of matching projects */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"][];
+                };
+            };
+        };
+    };
+    ProjectsController_getProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Project found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"];
+                };
+            };
+            /** @description Project not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProjectsController_deleteProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Project deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Project not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProjectsController_updateProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchProjectDto"];
+            };
+        };
+        responses: {
+            /** @description Project updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Project not found */
             404: {
                 headers: {
                     [name: string]: unknown;

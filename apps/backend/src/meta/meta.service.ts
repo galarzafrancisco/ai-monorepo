@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TagEntity } from './tag.entity';
+import { ProjectEntity } from './project.entity';
 import {
   CreateTagInput,
   TagResult,
@@ -41,6 +42,8 @@ export class MetaService {
   constructor(
     @InjectRepository(TagEntity)
     private readonly tagRepository: Repository<TagEntity>,
+    @InjectRepository(ProjectEntity)
+    private readonly projectRepository: Repository<ProjectEntity>,
   ) {}
 
   /**
@@ -80,6 +83,11 @@ export class MetaService {
         tagName: tag.name,
         color: tag.color,
       });
+
+      // Auto-create project if tag starts with 'project:'
+      if (tag.name.startsWith('project:')) {
+        await this.autoCreateProject(tag);
+      }
     } else {
       this.logger.log({
         message: 'Tag already exists',
@@ -89,6 +97,46 @@ export class MetaService {
     }
 
     return this.mapTagToResult(tag);
+  }
+
+  /**
+   * Auto-create a project when a tag with 'project:' prefix is created
+   */
+  private async autoCreateProject(tag: TagEntity): Promise<void> {
+    const slug = tag.name.replace('project:', '').trim();
+
+    if (!slug) {
+      this.logger.warn({
+        message: 'Cannot create project: empty slug after removing prefix',
+        tagName: tag.name,
+      });
+      return;
+    }
+
+    this.logger.log({
+      message: 'Auto-creating project for tag',
+      tagId: tag.id,
+      slug,
+    });
+
+    // Check if project already exists
+    const existingProject = await this.projectRepository.findOne({
+      where: { tagId: tag.id },
+    });
+
+    if (!existingProject) {
+      const project = this.projectRepository.create({
+        tagId: tag.id,
+        slug,
+      });
+      await this.projectRepository.save(project);
+
+      this.logger.log({
+        message: 'Project auto-created',
+        projectId: project.id,
+        slug,
+      });
+    }
   }
 
   async getAllTags(): Promise<TagResult[]> {
@@ -209,6 +257,11 @@ export class MetaService {
           tagName: tag.name,
           color: tag.color,
         });
+
+        // Auto-create project if tag starts with 'project:'
+        if (tag.name.startsWith('project:')) {
+          await this.autoCreateProject(tag);
+        }
       }
 
       tags.push(tag);
@@ -239,6 +292,11 @@ export class MetaService {
         tagName: tag.name,
         color: tag.color,
       });
+
+      // Auto-create project if tag starts with 'project:'
+      if (tag.name.startsWith('project:')) {
+        await this.autoCreateProject(tag);
+      }
     }
 
     return tag;
