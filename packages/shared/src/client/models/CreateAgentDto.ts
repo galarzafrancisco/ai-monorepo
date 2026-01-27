@@ -48,6 +48,7 @@ export namespace CreateAgentDto {
         CLAUDE = 'claude',
         CODEX = 'codex',
         OPENCODE = 'opencode',
+        ADK = 'adk',
         OTHER = 'other',
     }
 }

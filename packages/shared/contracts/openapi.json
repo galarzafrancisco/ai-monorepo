@@ -6559,6 +6559,7 @@
               "claude",
               "codex",
               "opencode",
+              "adk",
               "other"
             ],
             "default": "claude"
@@ -6648,6 +6649,7 @@
               "claude",
               "codex",
               "opencode",
+              "adk",
               "other"
             ]
           },

@@ -8,6 +8,7 @@ import { ClaudeAgentRunner } from "./runners/ClaudeAgentRunner.js";
 import { SocketIOTasksTransport, TaskEvent } from "./SocketIOTasksTransport.js"
 import { BaseAgentRunner } from "./runners/BaseAgentRunner.js";
 import { OpencodeAgentRunner } from "./runners/OpenCodeAgentRunner.js";
+import { ADKAgentRunner } from "./runners/ADKAgentRunner.js";
 
 export class Coordinator {
 
@@ -88,7 +89,7 @@ export class Coordinator {
     }
 
     // Do we have runners for this agent?
-    if (agent.type !== "claude" && agent.type !== "opencode") {
+    if (agent.type !== "claude" && agent.type !== "opencode" && agent.type !== "adk") {
       console.log(`- Agent @${actor.slug} of type "${agent.type}" not supported. Skipping. ❌`);
       return;
     }
@@ -114,6 +115,8 @@ export class Coordinator {
       runner = new ClaudeAgentRunner();
     } else if (agent.type === 'opencode') {
       runner = new OpencodeAgentRunner();
+    } else if (agent.type === 'adk') {
+      runner = new ADKAgentRunner();
     }
 
     // This shouldn't happen because we checked first, but let's satisfy TypeScript
