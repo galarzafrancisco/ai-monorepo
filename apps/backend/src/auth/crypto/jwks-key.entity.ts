@@ -31,9 +31,6 @@ export class JwksKeyEntity {
   @Column({ type: 'datetime', name: 'expires_at' })
   expiresAt!: Date;
 
-  @Column({ type: 'datetime', name: 'verify_until' })
-  verifyUntil!: Date;
-
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 
