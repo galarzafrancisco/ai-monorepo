@@ -68,6 +68,7 @@ export namespace AgentResponseDto {
         CLAUDE = 'claude',
         CODEX = 'codex',
         OPENCODE = 'opencode',
+        ADK = 'adk',
         OTHER = 'other',
     }
 }
