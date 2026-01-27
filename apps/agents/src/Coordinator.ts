@@ -100,13 +100,34 @@ export class Coordinator {
       return;
     }
 
+    // Extract project slug from tags and get project repo URL
+    let repoUrl: string | null = null;
+    const projectTag = task.tags?.find((tag) => tag.name.startsWith('project:'));
+    if (projectTag) {
+      const projectSlug = projectTag.name.replace('project:', '');
+      console.log(`- Found project tag: ${projectTag.name}, slug: ${projectSlug}`);
+
+      const project = await this.client.getProjectBySlug(projectSlug);
+      if (project) {
+        console.log(`- Project found: ${project.slug}`);
+        repoUrl = project.repoUrl;
+        if (repoUrl) {
+          console.log(`- Using project repo: ${repoUrl}`);
+        } else {
+          console.log(`- Project has no repoUrl, using default`);
+        }
+      } else {
+        console.log(`- Project not found for slug: ${projectSlug}`);
+      }
+    }
+
     console.log(`- ✅ Conditions met. @${agent.slug} starting to work on task "${task.name}" 🦄`);
 
     // Load session
     const sessionId = getSession(agent.actorId, task.id);
 
     // Prep workspace
-    const { repoDir } = await prepareWorkspace(task.id, agent.actorId);
+    const { repoDir } = await prepareWorkspace(task.id, agent.actorId, repoUrl);
     console.log(`- workspace prepped`);
 
     // Create agent runner

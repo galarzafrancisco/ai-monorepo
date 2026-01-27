@@ -283,6 +283,45 @@
         ]
       }
     },
+    "/api/v1/meta/projects/by-slug/{slug}": {
+      "get": {
+        "operationId": "ProjectsController_getProjectBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get project by slug",
+        "tags": [
+          "Meta - Projects"
+        ]
+      }
+    },
     "/api/v1/meta/projects/{projectId}": {
       "get": {
         "operationId": "ProjectsController_getProject",

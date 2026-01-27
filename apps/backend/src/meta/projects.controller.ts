@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -106,6 +107,23 @@ export class ProjectsController {
       threshold: threshold ? parseFloat(String(threshold)) : undefined,
     });
     return result.map((project) => this.mapProjectResultToResponse(project));
+  }
+
+  @Get('by-slug/:slug')
+  @ApiOperation({ summary: 'Get project by slug' })
+  @ApiOkResponse({
+    type: ProjectResponseDto,
+    description: 'Project found',
+  })
+  @ApiNotFoundResponse({ description: 'Project not found' })
+  async getProjectBySlug(
+    @Param('slug') slug: string,
+  ): Promise<ProjectResponseDto> {
+    const result = await this.projectsService.getProjectBySlug(slug);
+    if (!result) {
+      throw new NotFoundException(`Project with slug ${slug} not found`);
+    }
+    return this.mapProjectResultToResponse(result);
   }
 
   @Get(':projectId')

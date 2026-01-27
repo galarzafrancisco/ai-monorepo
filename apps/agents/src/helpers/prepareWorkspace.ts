@@ -9,6 +9,7 @@ const BASE_DIR = WORK_DIR;
 export async function prepareWorkspace(
   taskId: string,
   agentId: string,
+  repoUrl?: string | null,
 ) {
   console.log(`prepping workspace for agent '${agentId}' to work on task '${taskId}'`);
   const workDir = join(BASE_DIR, taskId, agentId);
@@ -17,8 +18,12 @@ export async function prepareWorkspace(
   // Ensure directories exist
   mkdirSync(workDir, { recursive: true });
 
+  // Use provided repoUrl if available, otherwise fallback to REPO from config
+  const targetRepo = repoUrl || REPO;
+  console.log(`using repo: ${targetRepo}`);
+
   // Ensure repo exists inside workspace
-  await ensureRepo(REPO, repoDir);
+  await ensureRepo(targetRepo, repoDir);
 
   return {
     workDir,

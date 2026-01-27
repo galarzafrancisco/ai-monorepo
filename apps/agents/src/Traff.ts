@@ -103,4 +103,34 @@ export class Traff {
     }
     return;
   }
+
+  async getProjectBySlug(slug: string): Promise<{ id: string; slug: string; repoUrl: string | null } | null> {
+    const url = `${this.baseUrl}/api/v1/meta/projects/by-slug/${encodeURIComponent(slug)}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { accept: "application/json", authorization: `Bearer ${this.accessToken}` },
+    });
+
+    if (res.status === 404) {
+      return null;
+    }
+
+    if (res.status !== 200) {
+      throw new Error(
+        [
+          `[Traff] Failed to fetch project by slug.`,
+          `GET ${url}`,
+          `Expected 200, got ${res.status} ${res.statusText}`,
+        ].join("\n")
+      );
+    }
+
+    const project = await res.json();
+    return {
+      id: project.id,
+      slug: project.slug,
+      repoUrl: project.repoUrl,
+    };
+  }
 }

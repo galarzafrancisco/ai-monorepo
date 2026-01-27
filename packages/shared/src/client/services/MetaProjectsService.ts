@@ -63,6 +63,26 @@ export class MetaProjectsService {
         });
     }
     /**
+     * Get project by slug
+     * @param slug
+     * @returns ProjectResponseDto Project found
+     * @throws ApiError
+     */
+    public static projectsControllerGetProjectBySlug(
+        slug: string,
+    ): CancelablePromise<ProjectResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/meta/projects/by-slug/{slug}',
+            path: {
+                'slug': slug,
+            },
+            errors: {
+                404: `Project not found`,
+            },
+        });
+    }
+    /**
      * Get project by ID
      * @param projectId
      * @returns ProjectResponseDto Project found
