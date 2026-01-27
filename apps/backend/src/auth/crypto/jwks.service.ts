@@ -102,19 +102,20 @@ export class JwksService {
     const config = getConfig();
     const now = new Date();
 
-    // Fetch all keys (not soft-deleted)
-    const allKeys = await this.keyRepository.find({
+    // Calculate the cutoff date for verification
+    // Keys are valid for verification if: expiresAt + verifyingTtl > now
+    // Which can be rewritten as: expiresAt > now - verifyingTtl
+    const cutoffDate = new Date(now);
+    cutoffDate.setHours(cutoffDate.getHours() - config.jwksKeyVerifyingTtlHours);
+
+    // Fetch keys that are still valid for verification (filtered at DB level)
+    const validKeys = await this.keyRepository.find({
+      where: {
+        expiresAt: MoreThan(cutoffDate),
+      },
       order: {
         createdAt: 'DESC',
       },
-    });
-
-    // Filter keys where expiresAt + verifyingTtl > now
-    // This allows keys to be used for verification even after they stop being used for signing
-    const validKeys = allKeys.filter((key) => {
-      const verifyUntil = new Date(key.expiresAt);
-      verifyUntil.setHours(verifyUntil.getHours() + config.jwksKeyVerifyingTtlHours);
-      return verifyUntil > now;
     });
 
     this.logger.debug(`Found ${validKeys.length} valid keys for JWKS endpoint`);
