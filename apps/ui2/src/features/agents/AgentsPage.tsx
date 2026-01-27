@@ -147,6 +147,7 @@ function getTypeTag(type: AgentResponseDto.type): DataRowTag {
     [AgentResponseDto.type.CLAUDE]: 'purple',
     [AgentResponseDto.type.CODEX]: 'green',
     [AgentResponseDto.type.OPENCODE]: 'blue',
+    [AgentResponseDto.type.ADK]: 'red',
     [AgentResponseDto.type.OTHER]: 'gray',
   };
 

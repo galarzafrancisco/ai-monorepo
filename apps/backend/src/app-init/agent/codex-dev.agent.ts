@@ -8,7 +8,7 @@ export const createCodexDev: CreateAgentInput = {
   name: 'GPT-5.2-Codex Developer',
   type: AgentType.OPENCODE,
   avatarUrl: '/icons/OpenAI-white-monoblossom.svg',
-  description: 'GPT-5.2-Codex with a Developer persona, running on a Opencode harness',
+  description: 'GPT-5.2-Codex with a Developer persona, running on an Opencode harness',
   systemPrompt: DEV_PROMPT,
   statusTriggers: [TaskStatus.NOT_STARTED],
   allowedTools: [],

@@ -178,16 +178,16 @@
 }
 
 /* row interactions */
-.data-row {
+.data-row--clickable {
   cursor: pointer;
   user-select: none;
 }
 
-.data-row:hover {
+.data-row--clickable:hover {
   background: color-mix(in srgb, var(--card-bg) 92%, var(--surface));
 }
 
-.data-row:active {
+.data-row--clickable:active {
   background: color-mix(in srgb, var(--card-bg) 84%, var(--surface));
 }
 

@@ -3099,7 +3099,7 @@ export interface components {
              * @example claude
              * @enum {string}
              */
-            type: "claude" | "codex" | "opencode" | "other";
+            type: "claude" | "codex" | "opencode" | "adk" | "other";
             /**
              * @description Short description of what this agent does
              * @example A helpful assistant agent
@@ -3162,7 +3162,7 @@ export interface components {
              * @example claude
              * @enum {string}
              */
-            type: "claude" | "codex" | "opencode" | "other";
+            type: "claude" | "codex" | "opencode" | "adk" | "other";
             /**
              * @description Short description of what this agent does
              * @example A helpful assistant agent
