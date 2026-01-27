@@ -3587,6 +3587,13 @@ export interface operations {
                     "application/json": components["schemas"]["GetConsentMetadataResponseDto"];
                 };
             };
+            /** @description Authentication required to access consent metadata */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Authorization flow not found */
             404: {
                 headers: {

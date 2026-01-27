@@ -10,6 +10,7 @@ import {
   HttpStatus,
   BadRequestException,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +20,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiUnauthorizedResponse,
+  ApiCookieAuth,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AuthorizationService } from './authorization.service';
@@ -38,6 +40,7 @@ import { GetConsentMetadataResponseDto } from './dto/consent-metadata-response.d
 import { ScopesResponseDto } from './dto/scope-response.dto';
 import { getFrontendPath } from '../config/frontend.config';
 import { ALL_API_SCOPES } from '../auth/core/scopes/all-api.scopes';
+import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 
 @ApiTags('Authorization Server')
 @Controller('auth')
@@ -142,6 +145,8 @@ export class AuthorizationController {
   }
 
   @Get('consent/:flowId')
+  @UseGuards(AccessTokenGuard)
+  @ApiCookieAuth('JWT-Cookie')
   @ApiOperation({
     summary: 'Get metadata for the consent screen from flow ID',
     description: 'Retrieves authorization flow details for the consent screen',
@@ -149,6 +154,9 @@ export class AuthorizationController {
   @ApiOkResponse({
     description: 'Consent metadata retrieved successfully',
     type: GetConsentMetadataResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required to access consent metadata',
   })
   @ApiNotFoundResponse({
     description: 'Authorization flow not found',

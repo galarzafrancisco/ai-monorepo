@@ -470,10 +470,18 @@
               }
             }
           },
+          "401": {
+            "description": "Authentication required to access consent metadata"
+          },
           "404": {
             "description": "Authorization flow not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Get metadata for the consent screen from flow ID",
         "tags": [
           "Authorization Server"

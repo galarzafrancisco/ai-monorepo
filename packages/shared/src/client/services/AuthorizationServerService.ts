@@ -179,6 +179,7 @@ export class AuthorizationServerService {
                 'flowId': flowId,
             },
             errors: {
+                401: `Authentication required to access consent metadata`,
                 404: `Authorization flow not found`,
             },
         });
