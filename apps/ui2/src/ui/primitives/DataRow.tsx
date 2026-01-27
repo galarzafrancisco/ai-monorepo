@@ -48,10 +48,11 @@ export function DataRow({
 }: DataRowProps) {
   const animationClass = animation ? `data-row--${animation}` : "";
   const highlightClass = highlight ? "data-row--highlight": "";
+  const clickClass = onClick ? "data-row--clickable" : "";
 
   return (
     <div className={`data-row__wrapper ${animationClass}`} onClick={onClick}>
-      <div className={`data-row ${highlightClass} ${className}`} data-component="data-row">
+      <div className={`data-row ${highlightClass} ${clickClass} ${className}`} data-component="data-row">
 
         {/* Leading */}
         {leading ? <div className="data-row__leading">{leading}</div> : null}
