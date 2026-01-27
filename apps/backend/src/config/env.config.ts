@@ -32,7 +32,8 @@ export interface AppConfig {
 
   // Security Configuration
   clientSecretLength: number;
-  jwksKeyTtlHours: number;
+  jwksKeySigningTtlHours: number;
+  jwksKeyVerifyingTtlHours: number;
 
   // Token Duration Configuration (in seconds)
   mcpAccessTokenDurationSeconds: number;
@@ -67,7 +68,8 @@ export function loadConfig(): AppConfig {
 
     // Security Configuration
     clientSecretLength: parseInt(process.env.CLIENT_SECRET_LENGTH || '32', 10),
-    jwksKeyTtlHours: parseInt(process.env.JWKS_KEY_TTL_HOURS || '24', 10),
+    jwksKeySigningTtlHours: parseInt(process.env.JWKS_KEY_SIGNING_TTL_HOURS || '24', 10),
+    jwksKeyVerifyingTtlHours: parseInt(process.env.JWKS_KEY_VERIFYING_TTL_HOURS || '168', 10), // 7 days default
 
     // Token Duration Configuration
     // MCP access token: 10 minutes initially (for testing), increase to 1 hour in production

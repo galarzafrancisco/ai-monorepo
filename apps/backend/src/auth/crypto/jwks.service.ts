@@ -70,10 +70,16 @@ export class JwksService {
     const publicJwk = await exportJWK(publicKey);
     const kid = await calculateJwkThumbprint(publicJwk);
 
-    // Calculate expiration date based on TTL
+    // Calculate expiration dates based on TTLs
     const config = getConfig();
+
+    // expiresAt: when the key stops being used for signing
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + config.jwksKeyTtlHours);
+    expiresAt.setHours(expiresAt.getHours() + config.jwksKeySigningTtlHours);
+
+    // verifyUntil: when the key stops being used for verifying tokens
+    const verifyUntil = new Date();
+    verifyUntil.setHours(verifyUntil.getHours() + config.jwksKeyVerifyingTtlHours);
 
     // Create and save the new key
     const newKey = this.keyRepository.create({
@@ -83,6 +89,7 @@ export class JwksService {
       algorithm: ALG,
       isActive: true,
       expiresAt,
+      verifyUntil,
     });
 
     const savedKey = await this.keyRepository.save(newKey);
@@ -100,7 +107,7 @@ export class JwksService {
     const now = new Date();
     const validKeys = await this.keyRepository.find({
       where: {
-        expiresAt: MoreThan(now),
+        verifyUntil: MoreThan(now),
       },
       order: {
         createdAt: 'DESC',
