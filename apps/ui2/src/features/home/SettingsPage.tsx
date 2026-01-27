@@ -56,6 +56,25 @@ export function SettingsPage() {
           </Row>
         </Stack>
       </Card>
+
+      <Card padding="5">
+        <Stack spacing="3">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">Projects</Text>
+            <Text tone="muted">Manage your projects</Text>
+          </Stack>
+          <Row justify="space-between" align="center">
+            <Text size="2" tone="muted">View and edit project details</Text>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/settings/projects')}
+            >
+              Manage Projects
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
     </Stack>
   );
 }
