@@ -315,6 +315,7 @@ export class ContextController {
 
   private mapTagToResponse(result: TagResult): ContextTagResponseDto {
     return {
+      id: result.id,
       name: result.name,
       color: result.color,
     };

@@ -8,9 +8,10 @@ import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
+import { TagSearchPop } from './TagSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
-import { InputRequestResponseDto } from 'shared';
+import { InputRequestResponseDto, TagResponseDto } from 'shared';
 import './TaskDetailPage.css';
 
 export function TaskDetailPage() {
@@ -40,6 +41,7 @@ export function TaskDetailPage() {
   // Handlers for buttons
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
+  const [showTagPop, setShowTagPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
 
   const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
@@ -95,6 +97,38 @@ export function TaskDetailPage() {
   }
   const cancelAnswerInputRequest = () => {
     setRespondingToInputRequest(null);
+  }
+
+  const saveTag = async (tag: TagResponseDto): Promise<boolean> => {
+    if (!task) {
+      return false;
+    }
+    try {
+      await TasksService.tasksControllerAddTagToTask(task.id, {
+        name: tag.name,
+        color: tag.color,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  const cancelTag = () => {
+    setShowTagPop(false);
+  }
+
+  const removeTag = async (tagId: string) => {
+    if (!task) {
+      return;
+    }
+    try {
+      await TasksService.tasksControllerRemoveTagFromTask(task.id, tagId);
+    } catch (err: unknown) {
+      const errorMessage = (err as { body?: { detail?: string }; message?: string })?.body?.detail
+        || (err as { message?: string })?.message
+        || 'Failed to remove tag';
+      setError(errorMessage);
+    }
   }
 
   // If task not found in context, could be loading or invalid
@@ -184,6 +218,38 @@ export function TaskDetailPage() {
           null
         )}
       </DataRowContainer >
+
+      {/* Tags */}
+      <DataRowContainer className='task-detail-page__section'>
+        <div className="task-detail-page__tags">
+          <Text size='2' weight='medium'>Tags</Text>
+          <div className="task-detail-page__tags-list">
+            {task.tags.length === 0 ? (
+              <Text size='2' tone='muted'>No tags</Text>
+            ) : (
+              task.tags.map(tag => (
+                <button
+                  key={tag.id}
+                  className="task-detail-page__tag"
+                  style={{ backgroundColor: tag.color || '#999' }}
+                  onClick={() => removeTag(tag.id)}
+                  title="Click to remove"
+                >
+                  {tag.name}
+                  <span className="task-detail-page__tag-remove">×</span>
+                </button>
+              ))
+            )}
+            <Button
+              size='sm'
+              variant='secondary'
+              onClick={() => setShowTagPop(true)}
+            >
+              + Add Tag
+            </Button>
+          </div>
+        </div>
+      </DataRowContainer>
 
       {/* Description */}
       <DataRowContainer className='task-detail-page__section' >
@@ -396,6 +462,7 @@ export function TaskDetailPage() {
       {/* Pops */}
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
+      {showTagPop ? <TagSearchPop onCancel={cancelTag} onSave={saveTag} existingTags={task.tags} /> : null}
       {respondingToInputRequest ? (
         <AnswerInputRequestPop
           onCancel={cancelAnswerInputRequest}

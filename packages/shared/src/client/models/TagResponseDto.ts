@@ -4,6 +4,10 @@
 /* eslint-disable */
 export type TagResponseDto = {
     /**
+     * Unique identifier for the tag
+     */
+    id: string;
+    /**
      * Name of the tag
      */
     name: string;

@@ -447,6 +447,7 @@ export class TasksController {
 
   private mapTagResultToResponse(result: TagResult): TagResponseDto {
     return {
+      id: result.id,
       name: result.name,
       color: result.color,
     };
