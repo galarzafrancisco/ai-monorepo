@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, HttpCode } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, HttpCode, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -7,11 +7,16 @@ import {
   ApiConflictResponse,
   ApiOkResponse,
   ApiNotFoundResponse,
+  ApiCookieAuth,
 } from '@nestjs/swagger';
 import { ClientRegistrationService } from './client-registration.service';
 import { RegisterClientDto } from './dto/register-client.dto';
 import { ClientRegistrationResponseDto } from './dto/client-registration-response.dto';
 import { RegisteredClientEntity } from './entities/registered-client.entity';
+import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
+import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
+import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
+import { UserScopes } from '../auth/core/scopes/user.scopes';
 
 @ApiTags('Authorization Server')
 @Controller('auth/clients')
@@ -64,6 +69,9 @@ export class ClientRegistrationController {
   }
 
   @Get(':clientId')
+  @ApiCookieAuth('JWT-Cookie')
+  @UseGuards(AccessTokenGuard, ScopesGuard)
+  @RequireScopes(UserScopes.ADMIN.id)
   @ApiOperation({
     summary: 'Retrieve client registration information',
     description:
@@ -85,6 +93,9 @@ export class ClientRegistrationController {
   }
 
   @Get()
+  @ApiCookieAuth('JWT-Cookie')
+  @UseGuards(AccessTokenGuard, ScopesGuard)
+  @RequireScopes(UserScopes.ADMIN.id)
   @ApiOperation({
     summary: 'List all registered clients (Admin)',
     description:

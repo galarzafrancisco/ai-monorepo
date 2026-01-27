@@ -239,6 +239,11 @@
             "description": "Client not found"
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "Retrieve client registration information",
         "tags": [
           "Authorization Server"
@@ -265,6 +270,11 @@
             }
           }
         },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
         "summary": "List all registered clients (Admin)",
         "tags": [
           "Authorization Server"
