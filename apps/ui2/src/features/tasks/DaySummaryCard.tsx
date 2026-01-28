@@ -21,7 +21,7 @@ export function DaySummaryCard({ date, taskCount, isExpanded, onClick }: DaySumm
       <div className="day-summary-card__content">
         <span className="day-summary-card__chevron">{chevron}</span>
         <span className="day-summary-card__text">
-          <strong>{dateLabel}</strong> · {taskCount} {taskCount === 1 ? 'task' : 'tasks'} shipped
+          <strong>{dateLabel}</strong> · {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
         </span>
       </div>
     </BoardCard>

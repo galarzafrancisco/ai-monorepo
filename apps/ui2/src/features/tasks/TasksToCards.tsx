@@ -19,6 +19,7 @@ export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = fa
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
+  // Normal columns (not started, in progress, review)
   if (!groupByDay) {
     return (
       <>
@@ -47,6 +48,7 @@ export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = fa
   }
 
   // Group by day
+  const elements: JSX.Element[] = [];
   const groups = groupTasksByDay(allTasks);
 
   const toggleDay = (dateKey: string) => {
@@ -61,67 +63,72 @@ export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = fa
     });
   };
 
-  return (
-    <>
-      {groups.map(group => {
-        if (group.isToday) {
-          // Today's tasks are not grouped, just shown directly
-          return group.tasks.map(task => {
-            const isExiting = exitingIdSet.has(task.id);
-            const isEntering = enteringIds.has(task.id);
+  groups.forEach(group => {
+    if (group.isToday) {
+      // Today's tasks are not grouped, just shown directly
+      group.tasks.forEach(task => {
+        const isExiting = exitingIdSet.has(task.id);
+        const isEntering = enteringIds.has(task.id);
 
-            const activity = activityByTaskId[task.id];
+        const activity = activityByTaskId[task.id];
 
-            let animation: BoardCardAnimation | undefined;
-            if (isExiting) animation = 'exiting';
-            else if (isEntering) animation = 'entering';
+        let animation: BoardCardAnimation | undefined;
+        if (isExiting) animation = 'exiting';
+        else if (isEntering) animation = 'entering';
 
-            return (
-              <TaskCard
-                key={isExiting ? `exiting-${task.id}` : task.id}
-                task={task}
-                animation={animation}
-                onClick={() => navigate(`/tasks/task/${task.id}`)}
-                pulseKey={activity?.ts}
-              />
-            );
-          });
-        }
-
-        // Past days: show summary card with expand/collapse
-        const isExpanded = expandedDays.has(group.dateKey);
-
-        return (
-          <div key={group.dateKey}>
-            <DaySummaryCard
-              date={group.date}
-              taskCount={group.tasks.length}
-              isExpanded={isExpanded}
-              onClick={() => toggleDay(group.dateKey)}
-            />
-            {isExpanded && group.tasks.map(task => {
-              const isExiting = exitingIdSet.has(task.id);
-              const isEntering = enteringIds.has(task.id);
-
-              const activity = activityByTaskId[task.id];
-
-              let animation: BoardCardAnimation | undefined;
-              if (isExiting) animation = 'exiting';
-              else if (isEntering) animation = 'entering';
-
-              return (
-                <TaskCard
-                  key={isExiting ? `exiting-${task.id}` : task.id}
-                  task={task}
-                  animation={animation}
-                  onClick={() => navigate(`/tasks/task/${task.id}`)}
-                  pulseKey={activity?.ts}
-                />
-              );
-            })}
-          </div>
+        const element = (
+          <TaskCard
+            key={isExiting ? `exiting-${task.id}` : task.id}
+            task={task}
+            animation={animation}
+            onClick={() => navigate(`/tasks/task/${task.id}`)}
+            pulseKey={activity?.ts}
+          />
         );
-      })}
-    </>
-  );
+        elements.push(element);
+      });
+    }
+
+    // Past days: show summary card with expand/collapse
+    const isExpanded = expandedDays.has(group.dateKey);
+
+    elements.push((
+      <DaySummaryCard
+        key={`date-group-${group.date}`}
+        date={group.date}
+        taskCount={group.tasks.length}
+        isExpanded={isExpanded}
+        onClick={() => toggleDay(group.dateKey)}
+      />
+    ));
+
+    if (isExpanded) {
+      group.tasks.forEach(task => {
+        const isExiting = exitingIdSet.has(task.id);
+        const isEntering = enteringIds.has(task.id);
+
+        const activity = activityByTaskId[task.id];
+
+        let animation: BoardCardAnimation | undefined;
+        if (isExiting) animation = 'exiting';
+        else if (isEntering) animation = 'entering';
+
+        const element = (
+          <TaskCard
+            key={isExiting ? `exiting-${task.id}` : task.id}
+            task={task}
+            animation={animation}
+            onClick={() => navigate(`/tasks/task/${task.id}`)}
+            pulseKey={activity?.ts}
+          />
+        );
+        elements.push(element);
+      });
+    }
+  });
+
+  return <>
+    {elements}
+  </>
 }
+
