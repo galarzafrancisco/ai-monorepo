@@ -1,25 +1,24 @@
-export interface CreatePageInput {
+export interface CreateBlockInput {
   title: string;
   content: string;
-  author: string;
+  createdByActorId: string;
   tagNames?: string[];
   parentId?: string | null;
 }
 
-export interface UpdatePageInput {
+export interface UpdateBlockInput {
   title?: string;
   content?: string;
-  author?: string;
   tagNames?: string[];
   parentId?: string | null;
   order?: number;
 }
 
-export interface AppendPageInput {
+export interface AppendBlockInput {
   content: string;
 }
 
-export interface ListPagesInput {
+export interface ListBlocksInput {
   tag?: string;
 }
 
@@ -40,23 +39,27 @@ export interface CreateTagInput {
   name: string;
 }
 
-export interface PageResult {
+export interface BlockResult {
   id: string;
   title: string;
   content: string;
-  author: string;
+  createdByActorId: string;
+  createdBy: string | null;
+  assigneeActorId?: string | null;
+  assignee?: string | null;
   tags: TagResult[];
   parentId: string | null;
   order: number;
-  children?: PageResult[];
+  children?: BlockResult[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface PageSummaryResult {
+export interface BlockSummaryResult {
   id: string;
   title: string;
-  author: string;
+  createdByActorId: string;
+  createdBy: string | null;
   tags: TagResult[];
   parentId: string | null;
   order: number;
@@ -64,13 +67,14 @@ export interface PageSummaryResult {
   updatedAt: Date;
 }
 
-export interface PageTreeResult {
+export interface BlockTreeResult {
   id: string;
   title: string;
-  author: string;
+  createdByActorId: string;
+  createdBy: string | null;
   parentId: string | null;
   order: number;
-  children: PageTreeResult[];
+  children: BlockTreeResult[];
   createdAt: Date;
   updatedAt: Date;
 }

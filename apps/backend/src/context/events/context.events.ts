@@ -1,18 +1,18 @@
-import { ContextPageEntity } from '../page.entity';
+import { ContextBlockEntity } from '../block.entity';
 
 /**
  * Domain events for the Context domain.
  * These events decouple the service layer from transport concerns (WebSocket, HTTP, etc.)
  */
 
-export class PageCreatedEvent {
-  constructor(public readonly page: ContextPageEntity) {}
+export class BlockCreatedEvent {
+  constructor(public readonly block: ContextBlockEntity) {}
 }
 
-export class PageUpdatedEvent {
-  constructor(public readonly page: ContextPageEntity) {}
+export class BlockUpdatedEvent {
+  constructor(public readonly block: ContextBlockEntity) {}
 }
 
-export class PageDeletedEvent {
-  constructor(public readonly pageId: string) {}
+export class BlockDeletedEvent {
+  constructor(public readonly blockId: string) {}
 }

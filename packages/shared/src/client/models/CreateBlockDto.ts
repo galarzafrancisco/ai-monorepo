@@ -2,21 +2,21 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type CreatePageDto = {
+export type CreateBlockDto = {
     /**
-     * Title of the wiki page
+     * Title of the context block
      */
     title: string;
     /**
-     * Markdown content of the page
+     * Markdown content of the block
      */
     content: string;
     /**
-     * Array of tag names to associate with the page
+     * Array of tag names to associate with the block
      */
     tagNames?: Array<string>;
     /**
-     * Parent page ID for nesting
+     * Parent block ID for nesting
      */
     parentId?: string;
 };

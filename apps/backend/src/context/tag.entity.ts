@@ -8,9 +8,9 @@ import {
   VersionColumn,
   ManyToMany,
 } from 'typeorm';
-import { ContextPageEntity } from './page.entity';
+import { ContextBlockEntity } from './block.entity';
 
-@Entity({ name: 'wiki_tags' })
+@Entity({ name: 'context_tags' })
 export class ContextTagEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -21,8 +21,8 @@ export class ContextTagEntity {
   @Column({ type: 'text', nullable: true })
   color?: string;
 
-  @ManyToMany(() => ContextPageEntity, (page) => page.tags, { onDelete: 'CASCADE' })
-  pages!: ContextPageEntity[];
+  @ManyToMany(() => ContextBlockEntity, (block) => block.tags, { onDelete: 'CASCADE' })
+  blocks!: ContextBlockEntity[];
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

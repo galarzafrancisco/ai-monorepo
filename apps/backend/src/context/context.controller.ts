@@ -26,21 +26,21 @@ import {
 } from '@nestjs/swagger';
 import type { Request, Response } from "express";
 import { ContextService } from './context.service';
-import { CreatePageDto } from './dto/create-page.dto';
-import { PageResponseDto } from './dto/page-response.dto';
-import { PageListResponseDto } from './dto/page-list-response.dto';
-import { PageSummaryDto } from './dto/page-summary.dto';
-import { PageParamsDto } from './dto/page-params.dto';
-import { UpdatePageDto } from './dto/update-page.dto';
-import { AppendPageDto } from './dto/append-page.dto';
+import { CreateBlockDto } from './dto/create-block.dto';
+import { BlockResponseDto } from './dto/block-response.dto';
+import { BlockListResponseDto } from './dto/block-list-response.dto';
+import { BlockSummaryDto } from './dto/block-summary.dto';
+import { BlockParamsDto } from './dto/block-params.dto';
+import { UpdateBlockDto } from './dto/update-block.dto';
+import { AppendBlockDto } from './dto/append-block.dto';
 import { AddContextTagDto } from './dto/add-wiki-tag.dto';
 import { CreateContextTagDto } from './dto/create-wiki-tag.dto';
 import { ContextTagResponseDto } from './dto/wiki-tag-response.dto';
-import { ListPagesQueryDto } from './dto/list-pages-query.dto';
-import { PageTreeResponseDto } from './dto/page-tree-response.dto';
-import { ReorderPageDto } from './dto/reorder-page.dto';
-import { MovePageDto } from './dto/move-page.dto';
-import { PageResult, PageSummaryResult, TagResult, PageTreeResult } from './dto/service/context.service.types';
+import { ListBlocksQueryDto } from './dto/list-blocks-query.dto';
+import { BlockTreeResponseDto } from './dto/block-tree-response.dto';
+import { ReorderBlockDto } from './dto/reorder-block.dto';
+import { MoveBlockDto } from './dto/move-block.dto';
+import { BlockResult, BlockSummaryResult, TagResult, BlockTreeResult } from './dto/service/context.service.types';
 import { ContextMcpGateway } from './context.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
@@ -65,18 +65,18 @@ export class ContextController {
   @RequireScopes(ContextScopes.WRITE.id)
   @ApiOperation({ summary: 'Create a new wiki page' })
   @ApiCreatedResponse({
-    type: PageResponseDto,
+    type: BlockResponseDto,
     description: 'Context page created successfully',
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async createPage(
-    @Body() dto: CreatePageDto,
+  async createBlock(
+    @Body() dto: CreateBlockDto,
     @CurrentUser() user: UserContext,
-  ): Promise<PageResponseDto> {
-    const result = await this.contextService.createPage({
+  ): Promise<BlockResponseDto> {
+    const result = await this.contextService.createBlock({
       title: dto.title,
       content: dto.content,
-      author: user.actorId,
+      createdByActorId: user.actorId,
       tagNames: dto.tagNames,
       parentId: dto.parentId,
     });
@@ -87,11 +87,11 @@ export class ContextController {
   @Get()
   @ApiOperation({ summary: 'List wiki pages without content' })
   @ApiOkResponse({
-    type: PageListResponseDto,
+    type: BlockListResponseDto,
     description: 'List of wiki pages',
   })
-  async listPages(@Query() query: ListPagesQueryDto): Promise<PageListResponseDto> {
-    const items = await this.contextService.listPages({ tag: query.tag });
+  async listBlocks(@Query() query: ListBlocksQueryDto): Promise<BlockListResponseDto> {
+    const items = await this.contextService.listBlocks({ tag: query.tag });
     return {
       items: items.map((item) => this.mapToSummary(item)),
     };
@@ -100,22 +100,22 @@ export class ContextController {
   @Get('tree')
   @ApiOperation({ summary: 'Get page hierarchy tree' })
   @ApiOkResponse({
-    type: [PageTreeResponseDto],
+    type: [BlockTreeResponseDto],
     description: 'Page hierarchy tree',
   })
-  async getPageTree(): Promise<PageTreeResponseDto[]> {
-    const result = await this.contextService.getPageTree();
+  async getBlockTree(): Promise<BlockTreeResponseDto[]> {
+    const result = await this.contextService.getBlockTree();
     return result.map((node) => this.mapToTreeResponse(node));
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Fetch a wiki page by ID' })
   @ApiOkResponse({
-    type: PageResponseDto,
+    type: BlockResponseDto,
     description: 'Context page retrieved successfully',
   })
-  async getPage(@Param() params: PageParamsDto): Promise<PageResponseDto> {
-    const result = await this.contextService.getPageById(params.id);
+  async getBlock(@Param() params: BlockParamsDto): Promise<BlockResponseDto> {
+    const result = await this.contextService.getBlockById(params.id);
     return this.mapToResponse(result);
   }
 
@@ -123,21 +123,20 @@ export class ContextController {
   @RequireScopes(ContextScopes.WRITE.id)
   @ApiOperation({ summary: 'Update an existing wiki page' })
   @ApiOkResponse({
-    type: PageResponseDto,
+    type: BlockResponseDto,
     description: 'Context page updated successfully',
   })
   @ApiBadRequestResponse({
     description: 'No update fields provided',
   })
-  async updatePage(
-    @Param() params: PageParamsDto,
-    @Body() dto: UpdatePageDto,
+  async updateBlock(
+    @Param() params: BlockParamsDto,
+    @Body() dto: UpdateBlockDto,
     @CurrentUser() user: UserContext,
-  ): Promise<PageResponseDto> {
+  ): Promise<BlockResponseDto> {
     if (
       dto.title === undefined &&
       dto.content === undefined &&
-      dto.author === undefined &&
       dto.tagNames === undefined &&
       dto.parentId === undefined &&
       dto.order === undefined
@@ -145,10 +144,9 @@ export class ContextController {
       throw new BadRequestException('At least one field must be provided');
     }
 
-    const result = await this.contextService.updatePage(params.id, {
+    const result = await this.contextService.updateBlock(params.id, {
       title: dto.title,
       content: dto.content,
-      author: user.actorId,
       tagNames: dto.tagNames,
       parentId: dto.parentId,
       order: dto.order,
@@ -161,14 +159,14 @@ export class ContextController {
   @RequireScopes(ContextScopes.WRITE.id)
   @ApiOperation({ summary: 'Append content to an existing wiki page' })
   @ApiOkResponse({
-    type: PageResponseDto,
+    type: BlockResponseDto,
     description: 'Context page content appended successfully',
   })
-  async appendToPage(
-    @Param() params: PageParamsDto,
-    @Body() dto: AppendPageDto,
-  ): Promise<PageResponseDto> {
-    const result = await this.contextService.appendToPage(params.id, {
+  async appendToBlock(
+    @Param() params: BlockParamsDto,
+    @Body() dto: AppendBlockDto,
+  ): Promise<BlockResponseDto> {
+    const result = await this.contextService.appendToBlock(params.id, {
       content: dto.content,
     });
 
@@ -179,14 +177,14 @@ export class ContextController {
   @RequireScopes(ContextScopes.WRITE.id)
   @ApiOperation({ summary: 'Reorder a page within siblings' })
   @ApiOkResponse({
-    type: PageResponseDto,
+    type: BlockResponseDto,
     description: 'Page reordered successfully',
   })
-  async reorderPage(
-    @Param() params: PageParamsDto,
-    @Body() dto: ReorderPageDto,
-  ): Promise<PageResponseDto> {
-    const result = await this.contextService.reorderPage(params.id, dto.newOrder);
+  async reorderBlock(
+    @Param() params: BlockParamsDto,
+    @Body() dto: ReorderBlockDto,
+  ): Promise<BlockResponseDto> {
+    const result = await this.contextService.reorderBlock(params.id, dto.newOrder);
     return this.mapToResponse(result);
   }
 
@@ -194,17 +192,17 @@ export class ContextController {
   @RequireScopes(ContextScopes.WRITE.id)
   @ApiOperation({ summary: 'Move page to different parent' })
   @ApiOkResponse({
-    type: PageResponseDto,
+    type: BlockResponseDto,
     description: 'Page moved successfully',
   })
   @ApiBadRequestResponse({
     description: 'Circular reference detected or parent not found',
   })
-  async movePage(
-    @Param() params: PageParamsDto,
-    @Body() dto: MovePageDto,
-  ): Promise<PageResponseDto> {
-    const result = await this.contextService.movePage(params.id, dto.newParentId);
+  async moveBlock(
+    @Param() params: BlockParamsDto,
+    @Body() dto: MoveBlockDto,
+  ): Promise<BlockResponseDto> {
+    const result = await this.contextService.moveBlock(params.id, dto.newParentId);
     return this.mapToResponse(result);
   }
 
@@ -213,23 +211,23 @@ export class ContextController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a wiki page' })
   @ApiNoContentResponse({ description: 'Context page deleted successfully' })
-  async deletePage(@Param() params: PageParamsDto): Promise<void> {
-    await this.contextService.deletePage(params.id);
+  async deleteBlock(@Param() params: BlockParamsDto): Promise<void> {
+    await this.contextService.deleteBlock(params.id);
   }
 
   @Post(':id/tags')
   @RequireScopes(ContextScopes.WRITE.id)
   @ApiOperation({ summary: 'Add a tag to a wiki page' })
   @ApiCreatedResponse({
-    type: PageResponseDto,
+    type: BlockResponseDto,
     description: 'Tag added to page successfully',
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async addTagToPage(
-    @Param() params: PageParamsDto,
+  async addTagToBlock(
+    @Param() params: BlockParamsDto,
     @Body() dto: AddContextTagDto,
-  ): Promise<PageResponseDto> {
-    const result = await this.contextService.addTagToPage(params.id, {
+  ): Promise<BlockResponseDto> {
+    const result = await this.contextService.addTagToBlock(params.id, {
       name: dto.name,
       color: dto.color,
     });
@@ -240,14 +238,14 @@ export class ContextController {
   @RequireScopes(ContextScopes.WRITE.id)
   @ApiOperation({ summary: 'Remove a tag from a wiki page' })
   @ApiOkResponse({
-    type: PageResponseDto,
+    type: BlockResponseDto,
     description: 'Tag removed from page successfully',
   })
-  async removeTagFromPage(
+  async removeTagFromBlock(
     @Param('id') pageId: string,
     @Param('tagId') tagId: string,
-  ): Promise<PageResponseDto> {
-    const result = await this.contextService.removeTagFromPage(pageId, tagId);
+  ): Promise<BlockResponseDto> {
+    const result = await this.contextService.removeTagFromBlock(pageId, tagId);
     return this.mapToResponse(result);
   }
 
@@ -286,12 +284,13 @@ export class ContextController {
     await this.contextService.deleteTag(tagId);
   }
 
-  private mapToResponse(result: PageResult): PageResponseDto {
+  private mapToResponse(result: BlockResult): BlockResponseDto {
     return {
       id: result.id,
       title: result.title,
       content: result.content,
-      author: result.author,
+      createdByActorId: result.createdByActorId,
+      createdBy: result.createdBy,
       tags: result.tags.map((tag) => this.mapTagToResponse(tag)),
       parentId: result.parentId,
       order: result.order,
@@ -300,11 +299,12 @@ export class ContextController {
     };
   }
 
-  private mapToSummary(result: PageSummaryResult): PageSummaryDto {
+  private mapToSummary(result: BlockSummaryResult): BlockSummaryDto {
     return {
       id: result.id,
       title: result.title,
-      author: result.author,
+      createdByActorId: result.createdByActorId,
+      createdBy: result.createdBy,
       tags: result.tags.map((tag) => this.mapTagToResponse(tag)),
       parentId: result.parentId,
       order: result.order,
@@ -321,11 +321,12 @@ export class ContextController {
     };
   }
 
-  private mapToTreeResponse(result: PageTreeResult): PageTreeResponseDto {
+  private mapToTreeResponse(result: BlockTreeResult): BlockTreeResponseDto {
     return {
       id: result.id,
       title: result.title,
-      author: result.author,
+      createdByActorId: result.createdByActorId,
+      createdBy: result.createdBy,
       parentId: result.parentId,
       order: result.order,
       children: result.children.map((child) => this.mapToTreeResponse(child)),

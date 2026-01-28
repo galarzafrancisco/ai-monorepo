@@ -1,9 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength, IsArray, IsUUID, IsInt, Min, ValidateIf } from 'class-validator';
 
-export class UpdatePageDto {
+export class UpdateBlockDto {
   @ApiPropertyOptional({
-    description: 'Updated title of the wiki page',
+    description: 'Updated title of the context block',
     example: 'Updated onboarding guide',
   })
   @IsOptional()
@@ -12,7 +12,7 @@ export class UpdatePageDto {
   title?: string;
 
   @ApiPropertyOptional({
-    description: 'Updated markdown content of the page',
+    description: 'Updated markdown content of the block',
     example: '## Updated content',
   })
   @IsOptional()
@@ -20,16 +20,7 @@ export class UpdatePageDto {
   content?: string;
 
   @ApiPropertyOptional({
-    description: 'Updated author of the page',
-    example: 'Agent Roo',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(120)
-  author?: string;
-
-  @ApiPropertyOptional({
-    description: 'Array of tag names to associate with the page',
+    description: 'Array of tag names to associate with the block',
     example: ['documentation', 'onboarding'],
     type: [String],
   })
@@ -39,7 +30,7 @@ export class UpdatePageDto {
   tagNames?: string[];
 
   @ApiPropertyOptional({
-    description: 'Parent page ID (null to remove parent)',
+    description: 'Parent block ID (null to remove parent)',
     example: '123e4567-e89b-12d3-a456-426614174000',
     type: String,
     nullable: true,

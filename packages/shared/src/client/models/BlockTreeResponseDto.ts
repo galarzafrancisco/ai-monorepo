@@ -2,32 +2,35 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ContextTagResponseDto } from './ContextTagResponseDto';
-export type PageSummaryDto = {
+export type BlockTreeResponseDto = {
     /**
-     * Unique identifier for the page
+     * Unique identifier for the block
      */
     id: string;
     /**
-     * Title of the wiki page
+     * Title of the context block
      */
     title: string;
     /**
-     * Author of the wiki page
+     * Actor ID of the block creator
      */
-    author: string;
+    createdByActorId: string;
     /**
-     * Tags associated with the page
+     * Creator slug from the associated actor
      */
-    tags: Array<ContextTagResponseDto>;
+    createdBy: Record<string, any> | null;
     /**
-     * Parent page ID (null if root page)
+     * Parent block ID (null if root block)
      */
     parentId: Record<string, any> | null;
     /**
      * Order within siblings
      */
     order: number;
+    /**
+     * Child blocks
+     */
+    children: Array<BlockTreeResponseDto>;
     /**
      * Creation timestamp
      */

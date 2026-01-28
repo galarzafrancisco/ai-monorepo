@@ -2,30 +2,30 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ContextPageEntity } from './page.entity';
+import { ContextBlockEntity } from './block.entity';
 import { ContextTagEntity } from './tag.entity';
 import {
   AddTagInput,
-  AppendPageInput,
-  CreatePageInput,
+  AppendBlockInput,
+  CreateBlockInput,
   CreateTagInput,
-  ListPagesInput,
-  PageResult,
-  PageSummaryResult,
-  PageTreeResult,
+  ListBlocksInput,
+  BlockResult,
+  BlockSummaryResult,
+  BlockTreeResult,
   TagResult,
-  UpdatePageInput,
+  UpdateBlockInput,
 } from './dto/service/context.service.types';
 import {
-  PageNotFoundError,
-  ParentPageNotFoundError,
+  BlockNotFoundError,
+  ParentBlockNotFoundError,
   CircularReferenceError,
 } from './errors/context.errors';
 import { getRandomTagColor } from '../common/utils/color-palette.util';
 import {
-  PageCreatedEvent,
-  PageUpdatedEvent,
-  PageDeletedEvent,
+  BlockCreatedEvent,
+  BlockUpdatedEvent,
+  BlockDeletedEvent,
 } from './events/context.events';
 
 @Injectable()
@@ -33,27 +33,27 @@ export class ContextService {
   private readonly logger = new Logger(ContextService.name);
 
   constructor(
-    @InjectRepository(ContextPageEntity)
-    private readonly pageRepository: Repository<ContextPageEntity>,
+    @InjectRepository(ContextBlockEntity)
+    private readonly blockRepository: Repository<ContextBlockEntity>,
     @InjectRepository(ContextTagEntity)
     private readonly tagRepository: Repository<ContextTagEntity>,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createPage(input: CreatePageInput): Promise<PageResult> {
+  async createBlock(input: CreateBlockInput): Promise<BlockResult> {
     this.logger.log({
-      message: 'Creating wiki page',
+      message: 'Creating context block',
       title: input.title,
-      author: input.author,
+      author: input.createdByActorId,
     });
 
     // Validate parent exists if provided
     if (input.parentId) {
-      const parent = await this.pageRepository.findOne({
+      const parent = await this.blockRepository.findOne({
         where: { id: input.parentId },
       });
       if (!parent) {
-        throw new ParentPageNotFoundError(input.parentId);
+        throw new ParentBlockNotFoundError(input.parentId);
       }
     }
 
@@ -64,7 +64,7 @@ export class ContextService {
         ? { parentId: null as any }
         : { parentId: input.parentId };
 
-      const siblings = await this.pageRepository.find({
+      const siblings = await this.blockRepository.find({
         where: whereClause,
         order: { order: 'DESC' },
         take: 1,
@@ -74,197 +74,195 @@ export class ContextService {
       }
     }
 
-    const page = this.pageRepository.create({
+    const block = this.blockRepository.create({
       title: input.title,
       content: input.content,
-      author: input.author,
+      createdByActorId: input.createdByActorId,
       parentId: input.parentId,
       order,
       tags: [],
     });
 
-    const saved = await this.pageRepository.save(page);
+    const saved = await this.blockRepository.save(block);
 
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
       const tags = await this.findOrCreateTags(input.tagNames);
       saved.tags = tags;
-      await this.pageRepository.save(saved);
+      await this.blockRepository.save(saved);
     }
 
     // Reload with relations
-    const pageWithTags = await this.pageRepository.findOne({
+    const blockWithTags = await this.blockRepository.findOne({
       where: { id: saved.id },
-      relations: ['tags'],
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
     this.logger.log({
-      message: 'Context page created',
-      pageId: saved.id,
+      message: 'Context block.created',
+      blockId: saved.id,
     });
 
-    // Emit page created event
-    this.eventEmitter.emit('page.created', new PageCreatedEvent(pageWithTags!));
+    // Emit block.created event
+    this.eventEmitter.emit('block.created', new BlockCreatedEvent(blockWithTags!));
 
-    return this.mapToResult(pageWithTags!);
+    return this.mapToResult(blockWithTags!);
   }
 
-  async listPages(input?: ListPagesInput): Promise<PageSummaryResult[]> {
-    this.logger.log({ message: 'Listing wiki pages', tag: input?.tag });
+  async listBlocks(input?: ListBlocksInput): Promise<BlockSummaryResult[]> {
+    this.logger.log({ message: 'Listing context blocks', tag: input?.tag });
 
     // If tag filter is provided, use query builder for join
     if (input?.tag) {
-      const pages = await this.pageRepository
-        .createQueryBuilder('page')
-        .leftJoinAndSelect('page.tags', 'tags')
-        .innerJoin('page.tags', 'filterTag')
+      const blocks = await this.blockRepository
+        .createQueryBuilder('block')
+        .leftJoinAndSelect('block.tags', 'tags')
+        .leftJoinAndSelect('block.createdByActor', 'createdByActor')
+        .innerJoin('block.tags', 'filterTag')
         .where('filterTag.name = :tagName', { tagName: input.tag })
-        .orderBy('page.createdAt', 'DESC')
+        .orderBy('block.createdAt', 'DESC')
         .getMany();
 
-      return pages.map((page) => this.mapToSummary(page));
+      return blocks.map((block) => this.mapToSummary(block));
     }
 
     // Standard filtering without tags
-    const pages = await this.pageRepository.find({
-      relations: ['tags'],
+    const blocks = await this.blockRepository.find({
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
       order: { createdAt: 'DESC' },
     });
 
-    return pages.map((page) => this.mapToSummary(page));
+    return blocks.map((block) => this.mapToSummary(block));
   }
 
-  async getPageById(pageId: string): Promise<PageResult> {
-    this.logger.log({ message: 'Fetching wiki page', pageId });
+  async getBlockById(blockId: string): Promise<BlockResult> {
+    this.logger.log({ message: 'Fetching context block', blockId });
 
-    const page = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    if (!page) {
-      throw new PageNotFoundError(pageId);
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
     }
 
-    return this.mapToResult(page);
+    return this.mapToResult(block);
   }
 
-  async updatePage(
-    pageId: string,
-    input: UpdatePageInput,
-  ): Promise<PageResult> {
-    this.logger.log({ message: 'Updating wiki page', pageId });
+  async updateBlock(
+    blockId: string,
+    input: UpdateBlockInput,
+  ): Promise<BlockResult> {
+    this.logger.log({ message: 'Updating context block', blockId });
 
-    const page = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    if (!page) {
-      throw new PageNotFoundError(pageId);
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
     }
 
     // Validate parent changes
     if (input.parentId !== undefined) {
       // Prevent self-reference
-      if (input.parentId === pageId) {
+      if (input.parentId === blockId) {
         throw new CircularReferenceError();
       }
 
       // Validate parent exists if not null
       if (input.parentId !== null) {
-        const parent = await this.pageRepository.findOne({
+        const parent = await this.blockRepository.findOne({
           where: { id: input.parentId },
         });
         if (!parent) {
-          throw new ParentPageNotFoundError(input.parentId);
+          throw new ParentBlockNotFoundError(input.parentId);
         }
 
         // Check for circular reference
-        await this.validateNoCircularReference(pageId, input.parentId);
+        await this.validateNoCircularReference(blockId, input.parentId);
       }
 
-      page.parentId = input.parentId;
+      block.parentId = input.parentId;
     }
 
     if (input.title !== undefined) {
-      page.title = input.title;
+      block.title = input.title;
     }
     if (input.content !== undefined) {
-      page.content = input.content;
-    }
-    if (input.author !== undefined) {
-      page.author = input.author;
+      block.content = input.content;
     }
     if (input.order !== undefined) {
-      page.order = input.order;
+      block.order = input.order;
     }
 
     // Handle tags if provided
     if (input.tagNames !== undefined) {
       if (input.tagNames.length === 0) {
-        page.tags = [];
+        block.tags = [];
       } else {
-        page.tags = await this.findOrCreateTags(input.tagNames);
+        block.tags = await this.findOrCreateTags(input.tagNames);
       }
     }
 
-    const saved = await this.pageRepository.save(page);
+    const saved = await this.blockRepository.save(block);
 
     // Reload with relations
-    const pageWithTags = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const blockWithTags = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    this.logger.log({ message: 'Context page updated', pageId: saved.id });
+    this.logger.log({ message: 'Context block.updated', blockId: saved.id });
 
-    // Emit page updated event
-    this.eventEmitter.emit('page.updated', new PageUpdatedEvent(pageWithTags!));
+    // Emit block.updated event
+    this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(blockWithTags!));
 
-    return this.mapToResult(pageWithTags!);
+    return this.mapToResult(blockWithTags!);
   }
 
-  async appendToPage(
-    pageId: string,
-    input: AppendPageInput,
-  ): Promise<PageResult> {
-    this.logger.log({ message: 'Appending wiki page content', pageId });
+  async appendToBlock(
+    blockId: string,
+    input: AppendBlockInput,
+  ): Promise<BlockResult> {
+    this.logger.log({ message: 'Appending context block content', blockId });
 
-    const page = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    if (!page) {
-      throw new PageNotFoundError(pageId);
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
     }
 
-    page.content = `${page.content}${input.content}`;
+    block.content = `${block.content}${input.content}`;
 
-    const saved = await this.pageRepository.save(page);
+    const saved = await this.blockRepository.save(block);
 
-    this.logger.log({ message: 'Context page content appended', pageId: saved.id });
+    this.logger.log({ message: 'Context block content appended', blockId: saved.id });
 
-    // Emit page updated event (appending is an update)
-    this.eventEmitter.emit('page.updated', new PageUpdatedEvent(saved));
+    // Emit block.updated event (appending is an update)
+    this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(saved));
 
     return this.mapToResult(saved);
   }
 
-  async deletePage(pageId: string): Promise<void> {
-    this.logger.log({ message: 'Deleting wiki page', pageId });
+  async deleteBlock(blockId: string): Promise<void> {
+    this.logger.log({ message: 'Deleting context block', blockId });
 
-    const result = await this.pageRepository.delete(pageId);
+    const result = await this.blockRepository.delete(blockId);
 
     if (!result.affected) {
-      throw new PageNotFoundError(pageId);
+      throw new BlockNotFoundError(blockId);
     }
 
-    this.logger.log({ message: 'Context page deleted', pageId });
+    this.logger.log({ message: 'Context block.deleted', blockId });
 
-    // Emit page deleted event
-    this.eventEmitter.emit('page.deleted', new PageDeletedEvent(pageId));
+    // Emit block.deleted event
+    this.eventEmitter.emit('block.deleted', new BlockDeletedEvent(blockId));
   }
 
   async createTag(input: CreateTagInput): Promise<TagResult> {
@@ -300,16 +298,16 @@ export class ContextService {
     return this.mapTagToResult(tag);
   }
 
-  async addTagToPage(pageId: string, input: AddTagInput): Promise<PageResult> {
-    this.logger.log({ message: 'Adding tag to page', pageId, tagName: input.name });
+  async addTagToBlock(blockId: string, input: AddTagInput): Promise<BlockResult> {
+    this.logger.log({ message: 'Adding tag to page', blockId, tagName: input.name });
 
-    const page = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    if (!page) {
-      throw new PageNotFoundError(pageId);
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
     }
 
     // Find or create the tag (case-insensitive)
@@ -323,50 +321,50 @@ export class ContextService {
       tag = await this.tagRepository.save(tag);
     }
 
-    // Add tag to page if not already present
-    if (!page.tags.some((t) => t.id === tag.id)) {
-      page.tags.push(tag);
-      await this.pageRepository.save(page);
+    // Add tag to block if not already present
+    if (!block.tags.some((t) => t.id === tag.id)) {
+      block.tags.push(tag);
+      await this.blockRepository.save(block);
     }
 
     // Reload with relations
-    const pageWithRelations = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const pageWithRelations = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    this.logger.log({ message: 'Tag added to page', pageId, tagId: tag.id });
+    this.logger.log({ message: 'Tag added to page', blockId, tagId: tag.id });
 
-    // Emit page updated event (tag changes are updates)
-    this.eventEmitter.emit('page.updated', new PageUpdatedEvent(pageWithRelations!));
+    // Emit block.updated event (tag changes are updates)
+    this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(pageWithRelations!));
 
     return this.mapToResult(pageWithRelations!);
   }
 
-  async removeTagFromPage(pageId: string, tagId: string): Promise<PageResult> {
-    this.logger.log({ message: 'Removing tag from page', pageId, tagId });
+  async removeTagFromBlock(blockId: string, tagId: string): Promise<BlockResult> {
+    this.logger.log({ message: 'Removing tag from page', blockId, tagId });
 
-    const page = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    if (!page) {
-      throw new PageNotFoundError(pageId);
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
     }
 
-    page.tags = page.tags.filter((tag) => tag.id !== tagId);
-    await this.pageRepository.save(page);
+    block.tags = block.tags.filter((tag) => tag.id !== tagId);
+    await this.blockRepository.save(block);
 
-    this.logger.log({ message: 'Tag removed from page', pageId, tagId });
+    this.logger.log({ message: 'Tag removed from page', blockId, tagId });
 
     // Check if tag is now orphaned and clean it up
     await this.cleanupOrphanedTag(tagId);
 
-    // Emit page updated event (tag changes are updates)
-    this.eventEmitter.emit('page.updated', new PageUpdatedEvent(page));
+    // Emit block.updated event (tag changes are updates)
+    this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(block));
 
-    return this.mapToResult(page);
+    return this.mapToResult(block);
   }
 
   async getAllTags(): Promise<TagResult[]> {
@@ -419,7 +417,7 @@ export class ContextService {
       return;
     }
 
-    if (tagWithPages.pages.length === 0) {
+    if (tagWithPages.blocks.length === 0) {
       this.logger.log({
         message: 'Tag is orphaned, cleaning up',
         tagId,
@@ -436,147 +434,149 @@ export class ContextService {
       this.logger.log({
         message: 'Tag still has pages, keeping it',
         tagId,
-        pageCount: tagWithPages.pages.length,
+        pageCount: tagWithPages.blocks.length,
       });
     }
   }
 
-  async getChildPages(parentId: string | null): Promise<PageSummaryResult[]> {
+  async getChildBlocks(parentId: string | null): Promise<BlockSummaryResult[]> {
     this.logger.log({ message: 'Fetching child pages', parentId });
 
     const whereClause = parentId === null
       ? { parentId: null as any }
       : { parentId };
 
-    const children = await this.pageRepository.find({
+    const children = await this.blockRepository.find({
       where: whereClause,
-      relations: ['tags'],
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
       order: { order: 'ASC' },
     });
 
-    return children.map((page) => this.mapToSummary(page));
+    return children.map((block) => this.mapToSummary(block));
   }
 
-  async getPageTree(): Promise<PageTreeResult[]> {
-    this.logger.log({ message: 'Fetching page tree' });
+  async getBlockTree(): Promise<BlockTreeResult[]> {
+    this.logger.log({ message: 'Fetching block tree' });
 
-    // Get all pages
-    const allPages = await this.pageRepository.find({
+    // Get all blocks with actor relations
+    const allBlocks = await this.blockRepository.find({
+      relations: ['createdByActor'],
       order: { order: 'ASC' },
     });
 
     // Build tree structure
-    const pageMap = new Map<string, PageTreeResult>();
-    const rootPages: PageTreeResult[] = [];
+    const blockMap = new Map<string, BlockTreeResult>();
+    const rootBlocks: BlockTreeResult[] = [];
 
     // First pass: create all nodes
-    for (const page of allPages) {
-      pageMap.set(page.id, {
-        id: page.id,
-        title: page.title,
-        author: page.author,
-        parentId: page.parentId ?? null,
-        order: page.order,
+    for (const block of allBlocks) {
+      blockMap.set(block.id, {
+        id: block.id,
+        title: block.title,
+        createdByActorId: block.createdByActorId,
+        createdBy: block.createdBy,
+        parentId: block.parentId ?? null,
+        order: block.order,
         children: [],
-        createdAt: page.createdAt,
-        updatedAt: page.updatedAt,
+        createdAt: block.createdAt,
+        updatedAt: block.updatedAt,
       });
     }
 
     // Second pass: build tree
-    for (const page of allPages) {
-      const node = pageMap.get(page.id)!;
-      if (page.parentId === null || page.parentId === undefined) {
-        rootPages.push(node);
+    for (const block of allBlocks) {
+      const node = blockMap.get(block.id)!;
+      if (block.parentId === null || block.parentId === undefined) {
+        rootBlocks.push(node);
       } else {
-        const parent = pageMap.get(page.parentId);
+        const parent = blockMap.get(block.parentId);
         if (parent) {
           parent.children.push(node);
         } else {
           // Parent not found, treat as root
-          rootPages.push(node);
+          rootBlocks.push(node);
         }
       }
     }
 
-    return rootPages;
+    return rootBlocks;
   }
 
-  async reorderPage(pageId: string, newOrder: number): Promise<PageResult> {
-    this.logger.log({ message: 'Reordering page', pageId, newOrder });
+  async reorderBlock(blockId: string, newOrder: number): Promise<BlockResult> {
+    this.logger.log({ message: 'Reordering page', blockId, newOrder });
 
-    const page = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    if (!page) {
-      throw new PageNotFoundError(pageId);
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
     }
 
-    page.order = newOrder;
-    await this.pageRepository.save(page);
+    block.order = newOrder;
+    await this.blockRepository.save(block);
 
-    return this.mapToResult(page);
+    return this.mapToResult(block);
   }
 
-  async movePage(
-    pageId: string,
+  async moveBlock(
+    blockId: string,
     newParentId: string | null,
-  ): Promise<PageResult> {
-    this.logger.log({ message: 'Moving page', pageId, newParentId });
+  ): Promise<BlockResult> {
+    this.logger.log({ message: 'Moving page', blockId, newParentId });
 
-    const page = await this.pageRepository.findOne({
-      where: { id: pageId },
-      relations: ['tags'],
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    if (!page) {
-      throw new PageNotFoundError(pageId);
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
     }
 
     // Prevent self-reference
-    if (newParentId === pageId) {
+    if (newParentId === blockId) {
       throw new CircularReferenceError();
     }
 
     // Validate parent exists if not null
     if (newParentId !== null) {
-      const parent = await this.pageRepository.findOne({
+      const parent = await this.blockRepository.findOne({
         where: { id: newParentId },
       });
       if (!parent) {
-        throw new ParentPageNotFoundError(newParentId);
+        throw new ParentBlockNotFoundError(newParentId);
       }
 
       // Check for circular reference
-      await this.validateNoCircularReference(pageId, newParentId);
+      await this.validateNoCircularReference(blockId, newParentId);
     }
 
-    page.parentId = newParentId;
+    block.parentId = newParentId;
 
     // Calculate new order (append to end of siblings)
     const whereClause = newParentId === null
       ? { parentId: null as any }
       : { parentId: newParentId };
 
-    const siblings = await this.pageRepository.find({
+    const siblings = await this.blockRepository.find({
       where: whereClause,
       order: { order: 'DESC' },
       take: 1,
     });
-    page.order = siblings.length > 0 ? siblings[0].order + 1 : 0;
+    block.order = siblings.length > 0 ? siblings[0].order + 1 : 0;
 
-    await this.pageRepository.save(page);
+    await this.blockRepository.save(block);
 
-    return this.mapToResult(page);
+    return this.mapToResult(block);
   }
 
   private async validateNoCircularReference(
-    pageId: string,
+    blockId: string,
     newParentId: string,
   ): Promise<void> {
-    // Walk up the ancestor chain to check if pageId appears
+    // Walk up the ancestor chain to check if blockId appears
     let currentId: string | null = newParentId;
     const visited = new Set<string>();
 
@@ -587,13 +587,13 @@ export class ContextService {
       }
       visited.add(currentId);
 
-      // Check if we've reached the page being moved
-      if (currentId === pageId) {
+      // Check if we've reached the block being moved
+      if (currentId === blockId) {
         throw new CircularReferenceError();
       }
 
       // Get parent of current page
-      const current = await this.pageRepository.findOne({
+      const current = await this.blockRepository.findOne({
         where: { id: currentId },
         select: ['id', 'parentId'],
       });
@@ -606,30 +606,34 @@ export class ContextService {
     }
   }
 
-  private mapToResult(page: ContextPageEntity): PageResult {
+  private mapToResult(block: ContextBlockEntity): BlockResult {
     return {
-      id: page.id,
-      title: page.title,
-      content: page.content,
-      author: page.author,
-      tags: (page.tags || []).map((tag) => this.mapTagToResult(tag)),
-      parentId: page.parentId ?? null,
-      order: page.order,
-      createdAt: page.createdAt,
-      updatedAt: page.updatedAt,
+      id: block.id,
+      title: block.title,
+      content: block.content,
+      createdByActorId: block.createdByActorId,
+      createdBy: block.createdBy,
+      assigneeActorId: block.assigneeActorId,
+      assignee: block.assignee,
+      tags: (block.tags || []).map((tag) => this.mapTagToResult(tag)),
+      parentId: block.parentId ?? null,
+      order: block.order,
+      createdAt: block.createdAt,
+      updatedAt: block.updatedAt,
     };
   }
 
-  private mapToSummary(page: ContextPageEntity): PageSummaryResult {
+  private mapToSummary(block: ContextBlockEntity): BlockSummaryResult {
     return {
-      id: page.id,
-      title: page.title,
-      author: page.author,
-      tags: (page.tags || []).map((tag) => this.mapTagToResult(tag)),
-      parentId: page.parentId ?? null,
-      order: page.order,
-      createdAt: page.createdAt,
-      updatedAt: page.updatedAt,
+      id: block.id,
+      title: block.title,
+      createdByActorId: block.createdByActorId,
+      createdBy: block.createdBy,
+      tags: (block.tags || []).map((tag) => this.mapTagToResult(tag)),
+      parentId: block.parentId ?? null,
+      order: block.order,
+      createdAt: block.createdAt,
+      updatedAt: block.updatedAt,
     };
   }
 

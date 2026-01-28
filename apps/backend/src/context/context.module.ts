@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ContextService } from './context.service';
 import { ContextController } from './context.controller';
-import { ContextPageEntity } from './page.entity';
+import { ContextBlockEntity } from './block.entity';
 import { ContextTagEntity } from './tag.entity';
 import { ContextMcpGateway } from './context.mcp.gateway';
 import { ContextGateway } from './context.gateway';
@@ -11,7 +11,7 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ContextPageEntity, ContextTagEntity]),
+    TypeOrmModule.forFeature([ContextBlockEntity, ContextTagEntity]),
     AuthorizationServerModule,
     AuthGuardsModule,
   ],

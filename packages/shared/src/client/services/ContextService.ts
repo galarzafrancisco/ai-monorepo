@@ -3,16 +3,16 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AddContextTagDto } from '../models/AddContextTagDto';
-import type { AppendPageDto } from '../models/AppendPageDto';
+import type { AppendBlockDto } from '../models/AppendBlockDto';
+import type { BlockListResponseDto } from '../models/BlockListResponseDto';
+import type { BlockResponseDto } from '../models/BlockResponseDto';
+import type { BlockTreeResponseDto } from '../models/BlockTreeResponseDto';
 import type { ContextTagResponseDto } from '../models/ContextTagResponseDto';
+import type { CreateBlockDto } from '../models/CreateBlockDto';
 import type { CreateContextTagDto } from '../models/CreateContextTagDto';
-import type { CreatePageDto } from '../models/CreatePageDto';
-import type { MovePageDto } from '../models/MovePageDto';
-import type { PageListResponseDto } from '../models/PageListResponseDto';
-import type { PageResponseDto } from '../models/PageResponseDto';
-import type { PageTreeResponseDto } from '../models/PageTreeResponseDto';
-import type { ReorderPageDto } from '../models/ReorderPageDto';
-import type { UpdatePageDto } from '../models/UpdatePageDto';
+import type { MoveBlockDto } from '../models/MoveBlockDto';
+import type { ReorderBlockDto } from '../models/ReorderBlockDto';
+import type { UpdateBlockDto } from '../models/UpdateBlockDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -20,12 +20,12 @@ export class ContextService {
     /**
      * Create a new wiki page
      * @param requestBody
-     * @returns PageResponseDto Context page created successfully
+     * @returns BlockResponseDto Context page created successfully
      * @throws ApiError
      */
-    public static contextControllerCreatePage(
-        requestBody: CreatePageDto,
-    ): CancelablePromise<PageResponseDto> {
+    public static contextControllerCreateBlock(
+        requestBody: CreateBlockDto,
+    ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/context/blocks',
@@ -38,13 +38,13 @@ export class ContextService {
     }
     /**
      * List wiki pages without content
-     * @param tag Filter pages by tag name
-     * @returns PageListResponseDto List of wiki pages
+     * @param tag Filter blocks by tag name
+     * @returns BlockListResponseDto List of wiki pages
      * @throws ApiError
      */
-    public static contextControllerListPages(
+    public static contextControllerListBlocks(
         tag?: string,
-    ): CancelablePromise<PageListResponseDto> {
+    ): CancelablePromise<BlockListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/context/blocks',
@@ -55,10 +55,10 @@ export class ContextService {
     }
     /**
      * Get page hierarchy tree
-     * @returns PageTreeResponseDto Page hierarchy tree
+     * @returns BlockTreeResponseDto Page hierarchy tree
      * @throws ApiError
      */
-    public static contextControllerGetPageTree(): CancelablePromise<Array<PageTreeResponseDto>> {
+    public static contextControllerGetBlockTree(): CancelablePromise<Array<BlockTreeResponseDto>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/context/blocks/tree',
@@ -66,13 +66,13 @@ export class ContextService {
     }
     /**
      * Fetch a wiki page by ID
-     * @param id Context page identifier
-     * @returns PageResponseDto Context page retrieved successfully
+     * @param id Context block identifier
+     * @returns BlockResponseDto Context page retrieved successfully
      * @throws ApiError
      */
-    public static contextControllerGetPage(
+    public static contextControllerGetBlock(
         id: string,
-    ): CancelablePromise<PageResponseDto> {
+    ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/context/blocks/{id}',
@@ -83,15 +83,15 @@ export class ContextService {
     }
     /**
      * Update an existing wiki page
-     * @param id Context page identifier
+     * @param id Context block identifier
      * @param requestBody
-     * @returns PageResponseDto Context page updated successfully
+     * @returns BlockResponseDto Context page updated successfully
      * @throws ApiError
      */
-    public static contextControllerUpdatePage(
+    public static contextControllerUpdateBlock(
         id: string,
-        requestBody: UpdatePageDto,
-    ): CancelablePromise<PageResponseDto> {
+        requestBody: UpdateBlockDto,
+    ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/context/blocks/{id}',
@@ -107,11 +107,11 @@ export class ContextService {
     }
     /**
      * Delete a wiki page
-     * @param id Context page identifier
+     * @param id Context block identifier
      * @returns void
      * @throws ApiError
      */
-    public static contextControllerDeletePage(
+    public static contextControllerDeleteBlock(
         id: string,
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
@@ -124,15 +124,15 @@ export class ContextService {
     }
     /**
      * Append content to an existing wiki page
-     * @param id Context page identifier
+     * @param id Context block identifier
      * @param requestBody
-     * @returns PageResponseDto Context page content appended successfully
+     * @returns BlockResponseDto Context page content appended successfully
      * @throws ApiError
      */
-    public static contextControllerAppendToPage(
+    public static contextControllerAppendToBlock(
         id: string,
-        requestBody: AppendPageDto,
-    ): CancelablePromise<PageResponseDto> {
+        requestBody: AppendBlockDto,
+    ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/context/blocks/{id}/append',
@@ -145,15 +145,15 @@ export class ContextService {
     }
     /**
      * Reorder a page within siblings
-     * @param id Context page identifier
+     * @param id Context block identifier
      * @param requestBody
-     * @returns PageResponseDto Page reordered successfully
+     * @returns BlockResponseDto Page reordered successfully
      * @throws ApiError
      */
-    public static contextControllerReorderPage(
+    public static contextControllerReorderBlock(
         id: string,
-        requestBody: ReorderPageDto,
-    ): CancelablePromise<PageResponseDto> {
+        requestBody: ReorderBlockDto,
+    ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/context/blocks/{id}/reorder',
@@ -166,15 +166,15 @@ export class ContextService {
     }
     /**
      * Move page to different parent
-     * @param id Context page identifier
+     * @param id Context block identifier
      * @param requestBody
-     * @returns PageResponseDto Page moved successfully
+     * @returns BlockResponseDto Page moved successfully
      * @throws ApiError
      */
-    public static contextControllerMovePage(
+    public static contextControllerMoveBlock(
         id: string,
-        requestBody: MovePageDto,
-    ): CancelablePromise<PageResponseDto> {
+        requestBody: MoveBlockDto,
+    ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/context/blocks/{id}/move',
@@ -190,15 +190,15 @@ export class ContextService {
     }
     /**
      * Add a tag to a wiki page
-     * @param id Context page identifier
+     * @param id Context block identifier
      * @param requestBody
-     * @returns PageResponseDto Tag added to page successfully
+     * @returns BlockResponseDto Tag added to page successfully
      * @throws ApiError
      */
-    public static contextControllerAddTagToPage(
+    public static contextControllerAddTagToBlock(
         id: string,
         requestBody: AddContextTagDto,
-    ): CancelablePromise<PageResponseDto> {
+    ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/context/blocks/{id}/tags',
@@ -216,13 +216,13 @@ export class ContextService {
      * Remove a tag from a wiki page
      * @param id
      * @param tagId
-     * @returns PageResponseDto Tag removed from page successfully
+     * @returns BlockResponseDto Tag removed from page successfully
      * @throws ApiError
      */
-    public static contextControllerRemoveTagFromPage(
+    public static contextControllerRemoveTagFromBlock(
         id: string,
         tagId: string,
-    ): CancelablePromise<PageResponseDto> {
+    ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/context/blocks/{id}/tags/{tagId}',

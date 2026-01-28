@@ -1,40 +1,47 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ContextTagResponseDto } from './wiki-tag-response.dto';
 
-export class PageResponseDto {
+export class BlockResponseDto {
   @ApiProperty({
-    description: 'Unique identifier for the page',
+    description: 'Unique identifier for the block',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
-    description: 'Title of the wiki page',
+    description: 'Title of the context block',
     example: 'How to onboard new agents',
   })
   title!: string;
 
   @ApiProperty({
-    description: 'Markdown content of the wiki page',
+    description: 'Markdown content of the context block',
     example: '# Welcome to Context',
   })
   content!: string;
 
   @ApiProperty({
-    description: 'Author of the wiki page',
-    example: 'Agent Roo',
+    description: 'Actor ID of the block creator',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  author!: string;
+  createdByActorId!: string;
 
   @ApiProperty({
-    description: 'Tags associated with the page',
+    description: 'Creator slug from the associated actor',
+    example: 'agent-roo',
+    nullable: true,
+  })
+  createdBy!: string | null;
+
+  @ApiProperty({
+    description: 'Tags associated with the block',
     type: [ContextTagResponseDto],
     example: [{ id: '123', name: 'project-alpha', color: '#FF5733', description: 'Project Alpha notes', createdAt: '2025-01-01T12:00:00.000Z', updatedAt: '2025-01-01T12:00:00.000Z' }],
   })
   tags!: ContextTagResponseDto[];
 
   @ApiProperty({
-    description: 'Parent page ID (null if root page)',
+    description: 'Parent block ID (null if root block)',
     example: '123e4567-e89b-12d3-a456-426614174000',
     nullable: true,
   })

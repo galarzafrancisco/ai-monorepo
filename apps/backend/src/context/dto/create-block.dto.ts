@@ -1,9 +1,9 @@
 import { IsNotEmpty, IsString, MaxLength, IsArray, IsOptional, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreatePageDto {
+export class CreateBlockDto {
   @ApiProperty({
-    description: 'Title of the wiki page',
+    description: 'Title of the context block',
     example: 'How to onboard new agents',
   })
   @IsString()
@@ -12,7 +12,7 @@ export class CreatePageDto {
   title!: string;
 
   @ApiProperty({
-    description: 'Markdown content of the page',
+    description: 'Markdown content of the block',
     example: '# Welcome to Context\nThis is the onboarding guide.',
   })
   @IsString()
@@ -20,7 +20,7 @@ export class CreatePageDto {
   content!: string;
 
   @ApiPropertyOptional({
-    description: 'Array of tag names to associate with the page',
+    description: 'Array of tag names to associate with the block',
     example: ['documentation', 'onboarding'],
     type: [String],
   })
@@ -30,7 +30,7 @@ export class CreatePageDto {
   tagNames?: string[];
 
   @ApiPropertyOptional({
-    description: 'Parent page ID for nesting',
+    description: 'Parent block ID for nesting',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsOptional()

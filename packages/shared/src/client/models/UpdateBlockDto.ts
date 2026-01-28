@@ -2,25 +2,21 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type UpdatePageDto = {
+export type UpdateBlockDto = {
     /**
-     * Updated title of the wiki page
+     * Updated title of the context block
      */
     title?: string;
     /**
-     * Updated markdown content of the page
+     * Updated markdown content of the block
      */
     content?: string;
     /**
-     * Updated author of the page
-     */
-    author?: string;
-    /**
-     * Array of tag names to associate with the page
+     * Array of tag names to associate with the block
      */
     tagNames?: Array<string>;
     /**
-     * Parent page ID (null to remove parent)
+     * Parent block ID (null to remove parent)
      */
     parentId?: string | null;
     /**

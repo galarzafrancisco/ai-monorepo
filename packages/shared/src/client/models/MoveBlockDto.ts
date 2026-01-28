@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AppendPageDto = {
+export type MoveBlockDto = {
     /**
-     * Markdown content to append to the existing page content
+     * New parent page ID (null to move to root)
      */
-    content: string;
+    newParentId: Record<string, any> | null;
 };
 

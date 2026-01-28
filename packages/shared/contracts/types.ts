@@ -913,10 +913,10 @@ export interface paths {
             cookie?: never;
         };
         /** List wiki pages without content */
-        get: operations["ContextController_listPages"];
+        get: operations["ContextController_listBlocks"];
         put?: never;
         /** Create a new wiki page */
-        post: operations["ContextController_createPage"];
+        post: operations["ContextController_createBlock"];
         delete?: never;
         options?: never;
         head?: never;
@@ -931,7 +931,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get page hierarchy tree */
-        get: operations["ContextController_getPageTree"];
+        get: operations["ContextController_getBlockTree"];
         put?: never;
         post?: never;
         delete?: never;
@@ -948,15 +948,15 @@ export interface paths {
             cookie?: never;
         };
         /** Fetch a wiki page by ID */
-        get: operations["ContextController_getPage"];
+        get: operations["ContextController_getBlock"];
         put?: never;
         post?: never;
         /** Delete a wiki page */
-        delete: operations["ContextController_deletePage"];
+        delete: operations["ContextController_deleteBlock"];
         options?: never;
         head?: never;
         /** Update an existing wiki page */
-        patch: operations["ContextController_updatePage"];
+        patch: operations["ContextController_updateBlock"];
         trace?: never;
     };
     "/api/v1/context/blocks/{id}/append": {
@@ -969,7 +969,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Append content to an existing wiki page */
-        post: operations["ContextController_appendToPage"];
+        post: operations["ContextController_appendToBlock"];
         delete?: never;
         options?: never;
         head?: never;
@@ -990,7 +990,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Reorder a page within siblings */
-        patch: operations["ContextController_reorderPage"];
+        patch: operations["ContextController_reorderBlock"];
         trace?: never;
     };
     "/api/v1/context/blocks/{id}/move": {
@@ -1007,7 +1007,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Move page to different parent */
-        patch: operations["ContextController_movePage"];
+        patch: operations["ContextController_moveBlock"];
         trace?: never;
     };
     "/api/v1/context/blocks/{id}/tags": {
@@ -1020,7 +1020,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add a tag to a wiki page */
-        post: operations["ContextController_addTagToPage"];
+        post: operations["ContextController_addTagToBlock"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1038,7 +1038,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Remove a tag from a wiki page */
-        delete: operations["ContextController_removeTagFromPage"];
+        delete: operations["ContextController_removeTagFromBlock"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2778,20 +2778,20 @@ export interface components {
              */
             answer: string;
         };
-        CreatePageDto: {
+        CreateBlockDto: {
             /**
-             * @description Title of the wiki page
+             * @description Title of the context block
              * @example How to onboard new agents
              */
             title: string;
             /**
-             * @description Markdown content of the page
+             * @description Markdown content of the block
              * @example # Welcome to Context
              *     This is the onboarding guide.
              */
             content: string;
             /**
-             * @description Array of tag names to associate with the page
+             * @description Array of tag names to associate with the block
              * @example [
              *       "documentation",
              *       "onboarding"
@@ -2799,7 +2799,7 @@ export interface components {
              */
             tagNames?: string[];
             /**
-             * @description Parent page ID for nesting
+             * @description Parent block ID for nesting
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             parentId?: string;
@@ -2821,29 +2821,34 @@ export interface components {
              */
             color?: string;
         };
-        PageResponseDto: {
+        BlockResponseDto: {
             /**
-             * @description Unique identifier for the page
+             * @description Unique identifier for the block
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             id: string;
             /**
-             * @description Title of the wiki page
+             * @description Title of the context block
              * @example How to onboard new agents
              */
             title: string;
             /**
-             * @description Markdown content of the wiki page
+             * @description Markdown content of the context block
              * @example # Welcome to Context
              */
             content: string;
             /**
-             * @description Author of the wiki page
-             * @example Agent Roo
+             * @description Actor ID of the block creator
+             * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            author: string;
+            createdByActorId: string;
             /**
-             * @description Tags associated with the page
+             * @description Creator slug from the associated actor
+             * @example agent-roo
+             */
+            createdBy: Record<string, never> | null;
+            /**
+             * @description Tags associated with the block
              * @example [
              *       {
              *         "id": "123",
@@ -2857,7 +2862,7 @@ export interface components {
              */
             tags: components["schemas"]["ContextTagResponseDto"][];
             /**
-             * @description Parent page ID (null if root page)
+             * @description Parent block ID (null if root block)
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             parentId: Record<string, never> | null;
@@ -2877,24 +2882,29 @@ export interface components {
              */
             updatedAt: string;
         };
-        PageSummaryDto: {
+        BlockSummaryDto: {
             /**
-             * @description Unique identifier for the page
+             * @description Unique identifier for the block
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             id: string;
             /**
-             * @description Title of the wiki page
+             * @description Title of the context block
              * @example How to onboard new agents
              */
             title: string;
             /**
-             * @description Author of the wiki page
-             * @example Agent Roo
+             * @description Actor ID of the block creator
+             * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            author: string;
+            createdByActorId: string;
             /**
-             * @description Tags associated with the page
+             * @description Creator slug from the associated actor
+             * @example agent-roo
+             */
+            createdBy: Record<string, never> | null;
+            /**
+             * @description Tags associated with the block
              * @example [
              *       {
              *         "id": "123",
@@ -2908,7 +2918,7 @@ export interface components {
              */
             tags: components["schemas"]["ContextTagResponseDto"][];
             /**
-             * @description Parent page ID (null if root page)
+             * @description Parent block ID (null if root block)
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             parentId: Record<string, never> | null;
@@ -2928,28 +2938,33 @@ export interface components {
              */
             updatedAt: string;
         };
-        PageListResponseDto: {
-            /** @description List of wiki pages */
-            items: components["schemas"]["PageSummaryDto"][];
+        BlockListResponseDto: {
+            /** @description List of context blocks */
+            items: components["schemas"]["BlockSummaryDto"][];
         };
-        PageTreeResponseDto: {
+        BlockTreeResponseDto: {
             /**
-             * @description Unique identifier for the page
+             * @description Unique identifier for the block
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             id: string;
             /**
-             * @description Title of the wiki page
+             * @description Title of the context block
              * @example How to onboard new agents
              */
             title: string;
             /**
-             * @description Author of the wiki page
-             * @example Agent Roo
+             * @description Actor ID of the block creator
+             * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            author: string;
+            createdByActorId: string;
             /**
-             * @description Parent page ID (null if root page)
+             * @description Creator slug from the associated actor
+             * @example agent-roo
+             */
+            createdBy: Record<string, never> | null;
+            /**
+             * @description Parent block ID (null if root block)
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             parentId: Record<string, never> | null;
@@ -2959,10 +2974,10 @@ export interface components {
              */
             order: number;
             /**
-             * @description Child pages
+             * @description Child blocks
              * @example []
              */
-            children: components["schemas"]["PageTreeResponseDto"][];
+            children: components["schemas"]["BlockTreeResponseDto"][];
             /**
              * @description Creation timestamp
              * @example 2025-01-01T12:00:00.000Z
@@ -2974,24 +2989,19 @@ export interface components {
              */
             updatedAt: string;
         };
-        UpdatePageDto: {
+        UpdateBlockDto: {
             /**
-             * @description Updated title of the wiki page
+             * @description Updated title of the context block
              * @example Updated onboarding guide
              */
             title?: string;
             /**
-             * @description Updated markdown content of the page
+             * @description Updated markdown content of the block
              * @example ## Updated content
              */
             content?: string;
             /**
-             * @description Updated author of the page
-             * @example Agent Roo
-             */
-            author?: string;
-            /**
-             * @description Array of tag names to associate with the page
+             * @description Array of tag names to associate with the block
              * @example [
              *       "documentation",
              *       "onboarding"
@@ -2999,7 +3009,7 @@ export interface components {
              */
             tagNames?: string[];
             /**
-             * @description Parent page ID (null to remove parent)
+             * @description Parent block ID (null to remove parent)
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             parentId?: string | null;
@@ -3009,21 +3019,21 @@ export interface components {
              */
             order?: number;
         };
-        AppendPageDto: {
+        AppendBlockDto: {
             /**
-             * @description Markdown content to append to the existing page content
+             * @description Markdown content to append to the existing block content
              * @example ## Additional details
              */
             content: string;
         };
-        ReorderPageDto: {
+        ReorderBlockDto: {
             /**
              * @description New order position within siblings
              * @example 2
              */
             newOrder: number;
         };
-        MovePageDto: {
+        MoveBlockDto: {
             /**
              * @description New parent page ID (null to move to root)
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -5652,10 +5662,10 @@ export interface operations {
             };
         };
     };
-    ContextController_listPages: {
+    ContextController_listBlocks: {
         parameters: {
             query?: {
-                /** @description Filter pages by tag name */
+                /** @description Filter blocks by tag name */
                 tag?: string;
             };
             header?: never;
@@ -5670,12 +5680,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageListResponseDto"];
+                    "application/json": components["schemas"]["BlockListResponseDto"];
                 };
             };
         };
     };
-    ContextController_createPage: {
+    ContextController_createBlock: {
         parameters: {
             query?: never;
             header?: never;
@@ -5684,7 +5694,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreatePageDto"];
+                "application/json": components["schemas"]["CreateBlockDto"];
             };
         };
         responses: {
@@ -5694,7 +5704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["BlockResponseDto"];
                 };
             };
             /** @description Invalid input data */
@@ -5706,7 +5716,7 @@ export interface operations {
             };
         };
     };
-    ContextController_getPageTree: {
+    ContextController_getBlockTree: {
         parameters: {
             query?: never;
             header?: never;
@@ -5721,17 +5731,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageTreeResponseDto"][];
+                    "application/json": components["schemas"]["BlockTreeResponseDto"][];
                 };
             };
         };
     };
-    ContextController_getPage: {
+    ContextController_getBlock: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Context page identifier */
+                /** @description Context block identifier */
                 id: string;
             };
             cookie?: never;
@@ -5744,17 +5754,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["BlockResponseDto"];
                 };
             };
         };
     };
-    ContextController_deletePage: {
+    ContextController_deleteBlock: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Context page identifier */
+                /** @description Context block identifier */
                 id: string;
             };
             cookie?: never;
@@ -5770,19 +5780,19 @@ export interface operations {
             };
         };
     };
-    ContextController_updatePage: {
+    ContextController_updateBlock: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Context page identifier */
+                /** @description Context block identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdatePageDto"];
+                "application/json": components["schemas"]["UpdateBlockDto"];
             };
         };
         responses: {
@@ -5792,7 +5802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["BlockResponseDto"];
                 };
             };
             /** @description No update fields provided */
@@ -5804,19 +5814,19 @@ export interface operations {
             };
         };
     };
-    ContextController_appendToPage: {
+    ContextController_appendToBlock: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Context page identifier */
+                /** @description Context block identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AppendPageDto"];
+                "application/json": components["schemas"]["AppendBlockDto"];
             };
         };
         responses: {
@@ -5826,24 +5836,24 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["BlockResponseDto"];
                 };
             };
         };
     };
-    ContextController_reorderPage: {
+    ContextController_reorderBlock: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Context page identifier */
+                /** @description Context block identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReorderPageDto"];
+                "application/json": components["schemas"]["ReorderBlockDto"];
             };
         };
         responses: {
@@ -5853,24 +5863,24 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["BlockResponseDto"];
                 };
             };
         };
     };
-    ContextController_movePage: {
+    ContextController_moveBlock: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Context page identifier */
+                /** @description Context block identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MovePageDto"];
+                "application/json": components["schemas"]["MoveBlockDto"];
             };
         };
         responses: {
@@ -5880,7 +5890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["BlockResponseDto"];
                 };
             };
             /** @description Circular reference detected or parent not found */
@@ -5892,12 +5902,12 @@ export interface operations {
             };
         };
     };
-    ContextController_addTagToPage: {
+    ContextController_addTagToBlock: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Context page identifier */
+                /** @description Context block identifier */
                 id: string;
             };
             cookie?: never;
@@ -5914,7 +5924,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["BlockResponseDto"];
                 };
             };
             /** @description Invalid input data */
@@ -5926,7 +5936,7 @@ export interface operations {
             };
         };
     };
-    ContextController_removeTagFromPage: {
+    ContextController_removeTagFromBlock: {
         parameters: {
             query?: never;
             header?: never;
@@ -5944,7 +5954,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageResponseDto"];
+                    "application/json": components["schemas"]["BlockResponseDto"];
                 };
             };
         };

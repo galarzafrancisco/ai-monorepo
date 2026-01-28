@@ -3056,14 +3056,14 @@
     },
     "/api/v1/context/blocks": {
       "post": {
-        "operationId": "ContextController_createPage",
+        "operationId": "ContextController_createBlock",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreatePageDto"
+                "$ref": "#/components/schemas/CreateBlockDto"
               }
             }
           }
@@ -3074,7 +3074,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/BlockResponseDto"
                 }
               }
             }
@@ -3094,13 +3094,13 @@
         ]
       },
       "get": {
-        "operationId": "ContextController_listPages",
+        "operationId": "ContextController_listBlocks",
         "parameters": [
           {
             "name": "tag",
             "required": false,
             "in": "query",
-            "description": "Filter pages by tag name",
+            "description": "Filter blocks by tag name",
             "schema": {
               "example": "tutorial",
               "type": "string"
@@ -3113,7 +3113,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageListResponseDto"
+                  "$ref": "#/components/schemas/BlockListResponseDto"
                 }
               }
             }
@@ -3132,7 +3132,7 @@
     },
     "/api/v1/context/blocks/tree": {
       "get": {
-        "operationId": "ContextController_getPageTree",
+        "operationId": "ContextController_getBlockTree",
         "parameters": [],
         "responses": {
           "200": {
@@ -3142,7 +3142,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/PageTreeResponseDto"
+                    "$ref": "#/components/schemas/BlockTreeResponseDto"
                   }
                 }
               }
@@ -3162,13 +3162,13 @@
     },
     "/api/v1/context/blocks/{id}": {
       "get": {
-        "operationId": "ContextController_getPage",
+        "operationId": "ContextController_getBlock",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Context page identifier",
+            "description": "Context block identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -3181,7 +3181,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/BlockResponseDto"
                 }
               }
             }
@@ -3198,13 +3198,13 @@
         ]
       },
       "patch": {
-        "operationId": "ContextController_updatePage",
+        "operationId": "ContextController_updateBlock",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Context page identifier",
+            "description": "Context block identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -3216,7 +3216,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdatePageDto"
+                "$ref": "#/components/schemas/UpdateBlockDto"
               }
             }
           }
@@ -3227,7 +3227,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/BlockResponseDto"
                 }
               }
             }
@@ -3247,13 +3247,13 @@
         ]
       },
       "delete": {
-        "operationId": "ContextController_deletePage",
+        "operationId": "ContextController_deleteBlock",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Context page identifier",
+            "description": "Context block identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -3278,13 +3278,13 @@
     },
     "/api/v1/context/blocks/{id}/append": {
       "post": {
-        "operationId": "ContextController_appendToPage",
+        "operationId": "ContextController_appendToBlock",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Context page identifier",
+            "description": "Context block identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -3296,7 +3296,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AppendPageDto"
+                "$ref": "#/components/schemas/AppendBlockDto"
               }
             }
           }
@@ -3307,7 +3307,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/BlockResponseDto"
                 }
               }
             }
@@ -3326,13 +3326,13 @@
     },
     "/api/v1/context/blocks/{id}/reorder": {
       "patch": {
-        "operationId": "ContextController_reorderPage",
+        "operationId": "ContextController_reorderBlock",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Context page identifier",
+            "description": "Context block identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -3344,7 +3344,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReorderPageDto"
+                "$ref": "#/components/schemas/ReorderBlockDto"
               }
             }
           }
@@ -3355,7 +3355,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/BlockResponseDto"
                 }
               }
             }
@@ -3374,13 +3374,13 @@
     },
     "/api/v1/context/blocks/{id}/move": {
       "patch": {
-        "operationId": "ContextController_movePage",
+        "operationId": "ContextController_moveBlock",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Context page identifier",
+            "description": "Context block identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -3392,7 +3392,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MovePageDto"
+                "$ref": "#/components/schemas/MoveBlockDto"
               }
             }
           }
@@ -3403,7 +3403,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/BlockResponseDto"
                 }
               }
             }
@@ -3425,13 +3425,13 @@
     },
     "/api/v1/context/blocks/{id}/tags": {
       "post": {
-        "operationId": "ContextController_addTagToPage",
+        "operationId": "ContextController_addTagToBlock",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "Context page identifier",
+            "description": "Context block identifier",
             "schema": {
               "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
@@ -3454,7 +3454,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/BlockResponseDto"
                 }
               }
             }
@@ -3476,7 +3476,7 @@
     },
     "/api/v1/context/blocks/{id}/tags/{tagId}": {
       "delete": {
-        "operationId": "ContextController_removeTagFromPage",
+        "operationId": "ContextController_removeTagFromBlock",
         "parameters": [
           {
             "name": "id",
@@ -3501,7 +3501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageResponseDto"
+                  "$ref": "#/components/schemas/BlockResponseDto"
                 }
               }
             }
@@ -6466,21 +6466,21 @@
           "answer"
         ]
       },
-      "CreatePageDto": {
+      "CreateBlockDto": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "description": "Title of the wiki page",
+            "description": "Title of the context block",
             "example": "How to onboard new agents"
           },
           "content": {
             "type": "string",
-            "description": "Markdown content of the page",
+            "description": "Markdown content of the block",
             "example": "# Welcome to Context\nThis is the onboarding guide."
           },
           "tagNames": {
-            "description": "Array of tag names to associate with the page",
+            "description": "Array of tag names to associate with the block",
             "example": [
               "documentation",
               "onboarding"
@@ -6492,7 +6492,7 @@
           },
           "parentId": {
             "type": "string",
-            "description": "Parent page ID for nesting",
+            "description": "Parent block ID for nesting",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
@@ -6525,31 +6525,37 @@
           "name"
         ]
       },
-      "PageResponseDto": {
+      "BlockResponseDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Unique identifier for the page",
+            "description": "Unique identifier for the block",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "title": {
             "type": "string",
-            "description": "Title of the wiki page",
+            "description": "Title of the context block",
             "example": "How to onboard new agents"
           },
           "content": {
             "type": "string",
-            "description": "Markdown content of the wiki page",
+            "description": "Markdown content of the context block",
             "example": "# Welcome to Context"
           },
-          "author": {
+          "createdByActorId": {
             "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
+            "description": "Actor ID of the block creator",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "createdBy": {
+            "type": "object",
+            "description": "Creator slug from the associated actor",
+            "example": "agent-roo",
+            "nullable": true
           },
           "tags": {
-            "description": "Tags associated with the page",
+            "description": "Tags associated with the block",
             "example": [
               {
                 "id": "123",
@@ -6567,7 +6573,7 @@
           },
           "parentId": {
             "type": "object",
-            "description": "Parent page ID (null if root page)",
+            "description": "Parent block ID (null if root block)",
             "example": "123e4567-e89b-12d3-a456-426614174000",
             "nullable": true
           },
@@ -6591,7 +6597,8 @@
           "id",
           "title",
           "content",
-          "author",
+          "createdByActorId",
+          "createdBy",
           "tags",
           "parentId",
           "order",
@@ -6599,26 +6606,32 @@
           "updatedAt"
         ]
       },
-      "PageSummaryDto": {
+      "BlockSummaryDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Unique identifier for the page",
+            "description": "Unique identifier for the block",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "title": {
             "type": "string",
-            "description": "Title of the wiki page",
+            "description": "Title of the context block",
             "example": "How to onboard new agents"
           },
-          "author": {
+          "createdByActorId": {
             "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
+            "description": "Actor ID of the block creator",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "createdBy": {
+            "type": "object",
+            "description": "Creator slug from the associated actor",
+            "example": "agent-roo",
+            "nullable": true
           },
           "tags": {
-            "description": "Tags associated with the page",
+            "description": "Tags associated with the block",
             "example": [
               {
                 "id": "123",
@@ -6636,7 +6649,7 @@
           },
           "parentId": {
             "type": "object",
-            "description": "Parent page ID (null if root page)",
+            "description": "Parent block ID (null if root block)",
             "example": "123e4567-e89b-12d3-a456-426614174000",
             "nullable": true
           },
@@ -6659,7 +6672,8 @@
         "required": [
           "id",
           "title",
-          "author",
+          "createdByActorId",
+          "createdBy",
           "tags",
           "parentId",
           "order",
@@ -6667,14 +6681,14 @@
           "updatedAt"
         ]
       },
-      "PageListResponseDto": {
+      "BlockListResponseDto": {
         "type": "object",
         "properties": {
           "items": {
-            "description": "List of wiki pages",
+            "description": "List of context blocks",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PageSummaryDto"
+              "$ref": "#/components/schemas/BlockSummaryDto"
             }
           }
         },
@@ -6682,27 +6696,33 @@
           "items"
         ]
       },
-      "PageTreeResponseDto": {
+      "BlockTreeResponseDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Unique identifier for the page",
+            "description": "Unique identifier for the block",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "title": {
             "type": "string",
-            "description": "Title of the wiki page",
+            "description": "Title of the context block",
             "example": "How to onboard new agents"
           },
-          "author": {
+          "createdByActorId": {
             "type": "string",
-            "description": "Author of the wiki page",
-            "example": "Agent Roo"
+            "description": "Actor ID of the block creator",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "createdBy": {
+            "type": "object",
+            "description": "Creator slug from the associated actor",
+            "example": "agent-roo",
+            "nullable": true
           },
           "parentId": {
             "type": "object",
-            "description": "Parent page ID (null if root page)",
+            "description": "Parent block ID (null if root block)",
             "example": "123e4567-e89b-12d3-a456-426614174000",
             "nullable": true
           },
@@ -6712,11 +6732,11 @@
             "example": 0
           },
           "children": {
-            "description": "Child pages",
+            "description": "Child blocks",
             "example": [],
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PageTreeResponseDto"
+              "$ref": "#/components/schemas/BlockTreeResponseDto"
             }
           },
           "createdAt": {
@@ -6733,7 +6753,8 @@
         "required": [
           "id",
           "title",
-          "author",
+          "createdByActorId",
+          "createdBy",
           "parentId",
           "order",
           "children",
@@ -6741,26 +6762,21 @@
           "updatedAt"
         ]
       },
-      "UpdatePageDto": {
+      "UpdateBlockDto": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "description": "Updated title of the wiki page",
+            "description": "Updated title of the context block",
             "example": "Updated onboarding guide"
           },
           "content": {
             "type": "string",
-            "description": "Updated markdown content of the page",
+            "description": "Updated markdown content of the block",
             "example": "## Updated content"
           },
-          "author": {
-            "type": "string",
-            "description": "Updated author of the page",
-            "example": "Agent Roo"
-          },
           "tagNames": {
-            "description": "Array of tag names to associate with the page",
+            "description": "Array of tag names to associate with the block",
             "example": [
               "documentation",
               "onboarding"
@@ -6772,7 +6788,7 @@
           },
           "parentId": {
             "type": "string",
-            "description": "Parent page ID (null to remove parent)",
+            "description": "Parent block ID (null to remove parent)",
             "example": "123e4567-e89b-12d3-a456-426614174000",
             "nullable": true
           },
@@ -6783,12 +6799,12 @@
           }
         }
       },
-      "AppendPageDto": {
+      "AppendBlockDto": {
         "type": "object",
         "properties": {
           "content": {
             "type": "string",
-            "description": "Markdown content to append to the existing page content",
+            "description": "Markdown content to append to the existing block content",
             "example": "\n## Additional details"
           }
         },
@@ -6796,7 +6812,7 @@
           "content"
         ]
       },
-      "ReorderPageDto": {
+      "ReorderBlockDto": {
         "type": "object",
         "properties": {
           "newOrder": {
@@ -6809,7 +6825,7 @@
           "newOrder"
         ]
       },
-      "MovePageDto": {
+      "MoveBlockDto": {
         "type": "object",
         "properties": {
           "newParentId": {

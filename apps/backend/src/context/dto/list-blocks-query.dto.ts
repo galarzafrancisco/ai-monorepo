@@ -1,9 +1,9 @@
 import { IsString, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class ListPagesQueryDto {
+export class ListBlocksQueryDto {
   @ApiPropertyOptional({
-    description: 'Filter pages by tag name',
+    description: 'Filter blocks by tag name',
     example: 'tutorial',
   })
   @IsString()

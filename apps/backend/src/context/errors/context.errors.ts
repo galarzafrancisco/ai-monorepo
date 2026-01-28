@@ -1,8 +1,8 @@
 import { ErrorCodes } from '../../../../../packages/shared/errors/error-codes';
 
 export const ContextErrorCodes = {
-  PAGE_NOT_FOUND: ErrorCodes.PAGE_NOT_FOUND,
-  PARENT_PAGE_NOT_FOUND: ErrorCodes.PARENT_PAGE_NOT_FOUND,
+  BLOCK_NOT_FOUND: ErrorCodes.PAGE_NOT_FOUND,
+  PARENT_BLOCK_NOT_FOUND: ErrorCodes.PARENT_PAGE_NOT_FOUND,
   CIRCULAR_REFERENCE: ErrorCodes.CIRCULAR_REFERENCE,
 } as const;
 
@@ -20,19 +20,19 @@ export abstract class ContextDomainError extends Error {
   }
 }
 
-export class PageNotFoundError extends ContextDomainError {
-  constructor(pageId: string) {
-    super('Context page not found.', ContextErrorCodes.PAGE_NOT_FOUND, {
-      pageId,
+export class BlockNotFoundError extends ContextDomainError {
+  constructor(blockId: string) {
+    super('Context block not found.', ContextErrorCodes.BLOCK_NOT_FOUND, {
+      blockId,
     });
   }
 }
 
-export class ParentPageNotFoundError extends ContextDomainError {
+export class ParentBlockNotFoundError extends ContextDomainError {
   constructor(parentId: string) {
     super(
-      `Parent page with ID ${parentId} not found`,
-      ContextErrorCodes.PARENT_PAGE_NOT_FOUND,
+      `Parent block with ID ${parentId} not found`,
+      ContextErrorCodes.PARENT_BLOCK_NOT_FOUND,
       { parentId },
     );
   }

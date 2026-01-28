@@ -26,7 +26,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ tag }) => {
-        const pages = await this.contextService.listPages({ tag });
+        const pages = await this.contextService.listBlocks({ tag });
         return {
           content: [{
             type: "text",
@@ -42,11 +42,11 @@ export class ContextMcpGateway {
         title: 'Get wiki page',
         description: 'Retrieve the full content of a wiki page by ID',
         inputSchema: {
-          pageId: z.string(),
+          blockId: z.string(),
         },
       },
-      async ({ pageId }) => {
-        const page = await this.contextService.getPageById(pageId);
+      async ({ blockId }) => {
+        const page = await this.contextService.getBlockById(blockId);
         return {
           content: [{
             type: "text",
@@ -70,10 +70,10 @@ export class ContextMcpGateway {
         },
       },
       async ({ title, content, author, parentId, tagNames }) => {
-        const page = await this.contextService.createPage({
+        const page = await this.contextService.createBlock({
           title,
           content,
-          author,
+          createdByActorId: author,
           parentId,
           tagNames,
         });
@@ -92,7 +92,7 @@ export class ContextMcpGateway {
         title: 'Update wiki page',
         description: 'Update the title, content, author, parent, or tags of an existing wiki page',
         inputSchema: {
-          pageId: z.string(),
+          blockId: z.string(),
           title: z.string().optional(),
           content: z.string().optional(),
           author: z.string().optional(),
@@ -100,15 +100,14 @@ export class ContextMcpGateway {
           tagNames: z.array(z.string()).optional(),
         },
       },
-      async ({ pageId, title, content, author, parentId, tagNames }) => {
+      async ({ blockId, title, content, author, parentId, tagNames }) => {
         if (title === undefined && content === undefined && author === undefined && parentId === undefined && tagNames === undefined) {
           throw new Error('At least one field must be provided to update the page.');
         }
 
-        const page = await this.contextService.updatePage(pageId, {
+        const page = await this.contextService.updateBlock(blockId, {
           title,
           content,
-          author,
           parentId,
           tagNames,
         });
@@ -128,12 +127,12 @@ export class ContextMcpGateway {
         title: 'Append wiki page content',
         description: 'Append markdown content to the end of an existing wiki page',
         inputSchema: {
-          pageId: z.string(),
+          blockId: z.string(),
           content: z.string(),
         },
       },
-      async ({ pageId, content }) => {
-        const page = await this.contextService.appendToPage(pageId, { content });
+      async ({ blockId, content }) => {
+        const page = await this.contextService.appendToBlock(blockId, { content });
         return {
           content: [{
             type: "text",
@@ -149,15 +148,15 @@ export class ContextMcpGateway {
         title: 'Delete wiki page',
         description: 'Delete a wiki page by its identifier',
         inputSchema: {
-          pageId: z.string(),
+          blockId: z.string(),
         },
       },
-      async ({ pageId }) => {
-        await this.contextService.deletePage(pageId);
+      async ({ blockId }) => {
+        await this.contextService.deleteBlock(blockId);
         return {
           content: [{
             type: "text",
-            text: JSON.stringify({ status: 'deleted', pageId }),
+            text: JSON.stringify({ status: 'deleted', blockId }),
           }],
         };
       }
@@ -169,13 +168,13 @@ export class ContextMcpGateway {
         title: 'Add tag to page',
         description: 'Add a tag to a wiki page by tag name (creates tag if it does not exist)',
         inputSchema: {
-          pageId: z.string(),
+          blockId: z.string(),
           tagName: z.string(),
           color: z.string().optional(),
         },
       },
-      async ({ pageId, tagName, color }) => {
-        await this.contextService.addTagToPage(pageId, {
+      async ({ blockId, tagName, color }) => {
+        await this.contextService.addTagToBlock(blockId, {
           name: tagName,
           color,
         });
@@ -195,12 +194,12 @@ export class ContextMcpGateway {
         title: 'Remove tag from page',
         description: 'Remove a tag from a wiki page',
         inputSchema: {
-          pageId: z.string(),
+          blockId: z.string(),
           tagId: z.string(),
         },
       },
-      async ({ pageId, tagId }) => {
-        await this.contextService.removeTagFromPage(pageId, tagId);
+      async ({ blockId, tagId }) => {
+        await this.contextService.removeTagFromBlock(blockId, tagId);
 
         return {
           content: [{
@@ -238,7 +237,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ parentId }) => {
-        const children = await this.contextService.getChildPages(parentId);
+        const children = await this.contextService.getChildBlocks(parentId);
         return {
           content: [{
             type: "text",
@@ -255,7 +254,7 @@ export class ContextMcpGateway {
         description: 'Get the complete hierarchical tree structure of all pages',
       },
       async ({}) => {
-        const tree = await this.contextService.getPageTree();
+        const tree = await this.contextService.getBlockTree();
         return {
           content: [{
             type: "text",

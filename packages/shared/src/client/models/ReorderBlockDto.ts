@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type MovePageDto = {
+export type ReorderBlockDto = {
     /**
-     * New parent page ID (null to move to root)
+     * New order position within siblings
      */
-    newParentId: Record<string, any> | null;
+    newOrder: number;
 };
 

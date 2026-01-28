@@ -2,17 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ContextService } from './context.service';
-import { ContextPageEntity } from './page.entity';
+import { ContextBlockEntity } from './block.entity';
 import { ContextTagEntity } from './tag.entity';
 import {
-  PageNotFoundError,
-  ParentPageNotFoundError,
+  BlockNotFoundError,
+  ParentBlockNotFoundError,
   CircularReferenceError,
 } from './errors/context.errors';
 
 describe('ContextService', () => {
   let service: ContextService;
-  let pageRepository: Repository<ContextPageEntity>;
+  let pageRepository: Repository<ContextBlockEntity>;
   let tagRepository: Repository<ContextTagEntity>;
 
   beforeEach(async () => {
@@ -20,7 +20,7 @@ describe('ContextService', () => {
       providers: [
         ContextService,
         {
-          provide: getRepositoryToken(ContextPageEntity),
+          provide: getRepositoryToken(ContextBlockEntity),
           useClass: Repository,
         },
         {
@@ -31,21 +31,21 @@ describe('ContextService', () => {
     }).compile();
 
     service = module.get<ContextService>(ContextService);
-    pageRepository = module.get<Repository<ContextPageEntity>>(
-      getRepositoryToken(ContextPageEntity),
+    pageRepository = module.get<Repository<ContextBlockEntity>>(
+      getRepositoryToken(ContextBlockEntity),
     );
     tagRepository = module.get<Repository<ContextTagEntity>>(
       getRepositoryToken(ContextTagEntity),
     );
   });
 
-  describe('createPage', () => {
+  describe('createBlock', () => {
     it('should create a page with default order 0 when no siblings exist', async () => {
       const mockPage = {
         id: '1',
         title: 'Test Page',
         content: 'Test Content',
-        author: 'Test Author',
+        createdByActorId: 'Test Author',
         parentId: null,
         order: 0,
         tags: [],
@@ -58,10 +58,10 @@ describe('ContextService', () => {
       jest.spyOn(pageRepository, 'save').mockResolvedValue(mockPage as any);
       jest.spyOn(pageRepository, 'findOne').mockResolvedValue(mockPage as any);
 
-      const result = await service.createPage({
+      const result = await service.createBlock({
         title: 'Test Page',
         content: 'Test Content',
-        author: 'Test Author',
+        createdByActorId: 'Test Author',
         parentId: null,
       });
 
@@ -77,7 +77,7 @@ describe('ContextService', () => {
       const existingSibling = {
         id: '1',
         order: 5,
-      } as ContextPageEntity;
+      } as ContextBlockEntity;
 
       jest.spyOn(pageRepository, 'find').mockResolvedValue([existingSibling]);
       jest.spyOn(pageRepository, 'create').mockReturnValue({
@@ -95,47 +95,47 @@ describe('ContextService', () => {
         tags: [],
       } as any);
 
-      const result = await service.createPage({
+      const result = await service.createBlock({
         title: 'Test Page',
         content: 'Test Content',
-        author: 'Test Author',
+        createdByActorId: 'Test Author',
         parentId: null,
       });
 
       expect(result.order).toBe(6);
     });
 
-    it('should throw ParentPageNotFoundError when parent does not exist', async () => {
+    it('should throw ParentBlockNotFoundError when parent does not exist', async () => {
       jest.spyOn(pageRepository, 'findOne').mockResolvedValue(null);
 
       await expect(
-        service.createPage({
+        service.createBlock({
           title: 'Test Page',
           content: 'Test Content',
-          author: 'Test Author',
+          createdByActorId: 'Test Author',
           parentId: 'non-existent-id',
         }),
-      ).rejects.toThrow(ParentPageNotFoundError);
+      ).rejects.toThrow(ParentBlockNotFoundError);
     });
   });
 
-  describe('updatePage - circular reference detection', () => {
+  describe('updateBlock - circular reference detection', () => {
     it('should throw CircularReferenceError when setting page as its own parent', async () => {
       const mockPage = {
-        id: 'page-1',
+        id: 'block-1',
         title: 'Test Page',
         content: 'Test Content',
-        author: 'Test Author',
+        createdByActorId: 'Test Author',
         parentId: null,
         order: 0,
         tags: [],
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       jest.spyOn(pageRepository, 'findOne').mockResolvedValue(mockPage);
 
       await expect(
-        service.updatePage('page-1', {
-          parentId: 'page-1',
+        service.updateBlock('block-1', {
+          parentId: 'block-1',
         }),
       ).rejects.toThrow(CircularReferenceError);
     });
@@ -143,127 +143,127 @@ describe('ContextService', () => {
     it('should throw CircularReferenceError for circular chain (A → B → C → A)', async () => {
       // Page A trying to set parent to C
       const pageA = {
-        id: 'page-a',
+        id: 'block-a',
         parentId: null,
         tags: [],
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       const pageB = {
-        id: 'page-b',
-        parentId: 'page-a',
-      } as unknown as ContextPageEntity;
+        id: 'block-b',
+        parentId: 'block-a',
+      } as unknown as ContextBlockEntity;
 
       const pageC = {
-        id: 'page-c',
-        parentId: 'page-b',
-      } as unknown as ContextPageEntity;
+        id: 'block-c',
+        parentId: 'block-b',
+      } as unknown as ContextBlockEntity;
 
       jest
         .spyOn(pageRepository, 'findOne')
         .mockImplementation(({ where }: any) => {
-          if (where.id === 'page-a') return Promise.resolve(pageA);
-          if (where.id === 'page-b') return Promise.resolve(pageB);
-          if (where.id === 'page-c') return Promise.resolve(pageC);
+          if (where.id === 'block-a') return Promise.resolve(pageA);
+          if (where.id === 'block-b') return Promise.resolve(pageB);
+          if (where.id === 'block-c') return Promise.resolve(pageC);
           return Promise.resolve(null);
         });
 
       // Trying to set A's parent to C would create: C → B → A → C
       await expect(
-        service.updatePage('page-a', {
-          parentId: 'page-c',
+        service.updateBlock('block-a', {
+          parentId: 'block-c',
         }),
       ).rejects.toThrow(CircularReferenceError);
     });
 
     it('should allow valid parent change', async () => {
       const pageA = {
-        id: 'page-a',
+        id: 'block-a',
         parentId: null,
         tags: [],
         order: 0,
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       const pageB = {
-        id: 'page-b',
+        id: 'block-b',
         parentId: null,
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       jest
         .spyOn(pageRepository, 'findOne')
         .mockImplementation(({ where }: any) => {
-          if (where.id === 'page-a') return Promise.resolve(pageA);
-          if (where.id === 'page-b') return Promise.resolve(pageB);
+          if (where.id === 'block-a') return Promise.resolve(pageA);
+          if (where.id === 'block-b') return Promise.resolve(pageB);
           return Promise.resolve(null);
         });
 
       jest.spyOn(pageRepository, 'save').mockResolvedValue({
         ...pageA,
-        parentId: 'page-b',
+        parentId: 'block-b',
       } as any);
 
-      const result = await service.updatePage('page-a', {
-        parentId: 'page-b',
+      const result = await service.updateBlock('block-a', {
+        parentId: 'block-b',
       });
 
-      expect(result.parentId).toBe('page-b');
+      expect(result.parentId).toBe('block-b');
     });
   });
 
-  describe('movePage', () => {
+  describe('moveBlock', () => {
     it('should throw CircularReferenceError when moving page to itself', async () => {
       const mockPage = {
-        id: 'page-1',
+        id: 'block-1',
         tags: [],
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       jest.spyOn(pageRepository, 'findOne').mockResolvedValue(mockPage);
 
-      await expect(service.movePage('page-1', 'page-1')).rejects.toThrow(
+      await expect(service.moveBlock('block-1', 'block-1')).rejects.toThrow(
         CircularReferenceError,
       );
     });
 
-    it('should throw ParentPageNotFoundError when moving to non-existent parent', async () => {
+    it('should throw ParentBlockNotFoundError when moving to non-existent parent', async () => {
       const mockPage = {
-        id: 'page-1',
+        id: 'block-1',
         tags: [],
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       jest
         .spyOn(pageRepository, 'findOne')
         .mockImplementation(({ where }: any) => {
-          if (where.id === 'page-1') return Promise.resolve(mockPage);
+          if (where.id === 'block-1') return Promise.resolve(mockPage);
           return Promise.resolve(null);
         });
 
       await expect(
-        service.movePage('page-1', 'non-existent-parent'),
-      ).rejects.toThrow(ParentPageNotFoundError);
+        service.moveBlock('block-1', 'non-existent-parent'),
+      ).rejects.toThrow(ParentBlockNotFoundError);
     });
 
     it('should update order when moving to new parent', async () => {
       const page = {
-        id: 'page-1',
+        id: 'block-1',
         parentId: null,
         order: 0,
         tags: [],
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       const newParent = {
         id: 'parent-1',
         parentId: null,
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       const existingChild = {
         id: 'child-1',
         parentId: 'parent-1',
         order: 2,
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       jest
         .spyOn(pageRepository, 'findOne')
         .mockImplementation(({ where }: any) => {
-          if (where.id === 'page-1') return Promise.resolve(page);
+          if (where.id === 'block-1') return Promise.resolve(page);
           if (where.id === 'parent-1') return Promise.resolve(newParent);
           return Promise.resolve(null);
         });
@@ -276,20 +276,20 @@ describe('ContextService', () => {
         order: 3,
       } as any);
 
-      const result = await service.movePage('page-1', 'parent-1');
+      const result = await service.moveBlock('block-1', 'parent-1');
 
       expect(result.parentId).toBe('parent-1');
       expect(result.order).toBe(3);
     });
   });
 
-  describe('getPageTree', () => {
+  describe('getBlockTree', () => {
     it('should return proper hierarchy with children sorted by order', async () => {
       const pages = [
         {
           id: 'root-1',
           title: 'Root 1',
-          author: 'Author',
+          createdByActorId: 'Author',
           parentId: null,
           order: 0,
           createdAt: new Date(),
@@ -298,7 +298,7 @@ describe('ContextService', () => {
         {
           id: 'child-2',
           title: 'Child 2',
-          author: 'Author',
+          createdByActorId: 'Author',
           parentId: 'root-1',
           order: 1,
           createdAt: new Date(),
@@ -307,7 +307,7 @@ describe('ContextService', () => {
         {
           id: 'child-1',
           title: 'Child 1',
-          author: 'Author',
+          createdByActorId: 'Author',
           parentId: 'root-1',
           order: 0,
           createdAt: new Date(),
@@ -316,17 +316,17 @@ describe('ContextService', () => {
         {
           id: 'root-2',
           title: 'Root 2',
-          author: 'Author',
+          createdByActorId: 'Author',
           parentId: null,
           order: 1,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ] as ContextPageEntity[];
+      ] as ContextBlockEntity[];
 
       jest.spyOn(pageRepository, 'find').mockResolvedValue(pages);
 
-      const result = await service.getPageTree();
+      const result = await service.getBlockTree();
 
       // Should have 2 root pages
       expect(result).toHaveLength(2);
@@ -344,33 +344,33 @@ describe('ContextService', () => {
     it('should handle orphaned pages (parent not found)', async () => {
       const pages = [
         {
-          id: 'page-1',
+          id: 'block-1',
           title: 'Page 1',
-          author: 'Author',
+          createdByActorId: 'Author',
           parentId: 'non-existent',
           order: 0,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ] as ContextPageEntity[];
+      ] as ContextBlockEntity[];
 
       jest.spyOn(pageRepository, 'find').mockResolvedValue(pages);
 
-      const result = await service.getPageTree();
+      const result = await service.getBlockTree();
 
       // Orphaned page should be treated as root
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('page-1');
+      expect(result[0].id).toBe('block-1');
     });
   });
 
-  describe('reorderPage', () => {
+  describe('reorderBlock', () => {
     it('should update page order', async () => {
       const mockPage = {
-        id: 'page-1',
+        id: 'block-1',
         order: 0,
         tags: [],
-      } as unknown as ContextPageEntity;
+      } as unknown as ContextBlockEntity;
 
       jest.spyOn(pageRepository, 'findOne').mockResolvedValue(mockPage);
       jest.spyOn(pageRepository, 'save').mockResolvedValue({
@@ -378,7 +378,7 @@ describe('ContextService', () => {
         order: 5,
       } as any);
 
-      const result = await service.reorderPage('page-1', 5);
+      const result = await service.reorderBlock('block-1', 5);
 
       expect(result.order).toBe(5);
       expect(pageRepository.save).toHaveBeenCalledWith(
@@ -386,11 +386,11 @@ describe('ContextService', () => {
       );
     });
 
-    it('should throw PageNotFoundError when page does not exist', async () => {
+    it('should throw BlockNotFoundError when page does not exist', async () => {
       jest.spyOn(pageRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(service.reorderPage('non-existent', 5)).rejects.toThrow(
-        PageNotFoundError,
+      await expect(service.reorderBlock('non-existent', 5)).rejects.toThrow(
+        BlockNotFoundError,
       );
     });
   });
