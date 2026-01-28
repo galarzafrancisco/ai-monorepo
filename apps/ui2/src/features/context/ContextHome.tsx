@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { DataRowContainer } from "../../ui/primitives";
 import { useContextCtx } from "./ContextProvider";
 import { useContextBlocks } from "./useContextBlocks";
 import { ContextBlockRow } from "./ContextBlockRow";
@@ -7,6 +9,7 @@ import "./ContextHome.css";
 export function ContextHome(): JSX.Element {
   const { setSectionTitle } = useContextCtx();
   const { blocks, isLoading, error } = useContextBlocks();
+  const navigate = useNavigate();
 
   // Set page title
   useEffect(() => {
@@ -26,10 +29,14 @@ export function ContextHome(): JSX.Element {
   }
 
   return (
-    <div className="context-home">
+    <DataRowContainer>
       {blocks.map((block) => (
-        <ContextBlockRow key={block.id} block={block} />
+        <ContextBlockRow
+          key={block.id}
+          block={block}
+          onClick={() => navigate(`/context/block/${block.id}`)}
+        />
       ))}
-    </div>
+    </DataRowContainer>
   );
 }

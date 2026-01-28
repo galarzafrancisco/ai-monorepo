@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Button, Text, Stack, Chip } from '../../ui/primitives';
 import { useContextBlock } from './useContextBlocks';
 import { useContextCtx } from './ContextProvider';
 import './ContextBlockDetailPage.css';
@@ -17,42 +18,52 @@ export function ContextBlockDetailPage() {
   }, [block, setSectionTitle]);
 
   if (isLoading) {
-    return <div className="context-block-detail__loading">Loading...</div>;
+    return (
+      <div className="context-block-detail__loading">
+        <Text>Loading...</Text>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="context-block-detail__error">Error: {error}</div>;
+    return (
+      <div className="context-block-detail__error">
+        <Text className="text--error">Error: {error}</Text>
+      </div>
+    );
   }
 
   if (!block) {
-    return <div className="context-block-detail__error">Context block not found</div>;
+    return (
+      <div className="context-block-detail__error">
+        <Text className="text--error">Context block not found</Text>
+      </div>
+    );
   }
 
   return (
     <div className="context-block-detail">
-      <button className="context-block-detail__back" onClick={() => navigate('/context/home')}>
+      <Button variant="ghost" size="sm" onClick={() => navigate('/context/home')}>
         ← Back to list
-      </button>
+      </Button>
 
-      <div className="context-block-detail__header">
-        <h1 className="context-block-detail__title">{block.title}</h1>
-        <div className="context-block-detail__tags">
-          {block.tags.map((tag) => (
-            <span
-              key={tag.id}
-              className="context-block-detail__tag"
-              style={{ backgroundColor: tag.color || '#ccc' }}
-            >
-              {tag.name}
-            </span>
-          ))}
-        </div>
+      <Stack spacing="3" className="context-block-detail__header">
+        <Text size="6" weight="bold">{block.title}</Text>
+
+        {block.tags.length > 0 && (
+          <div className="context-block-detail__tags">
+            {block.tags.map((tag) => (
+              <Chip key={tag.id}>{tag.name}</Chip>
+            ))}
+          </div>
+        )}
+
         <div className="context-block-detail__meta">
-          <span>by {block.author}</span>
-          <span>•</span>
-          <span>{new Date(block.createdAt).toLocaleDateString()}</span>
+          <Text size="2" tone="muted">by {block.author}</Text>
+          <Text size="2" tone="muted">•</Text>
+          <Text size="2" tone="muted">{new Date(block.createdAt).toLocaleDateString()}</Text>
         </div>
-      </div>
+      </Stack>
 
       <div className="context-block-detail__content">
         <pre>{block.content}</pre>

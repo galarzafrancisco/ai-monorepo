@@ -1,36 +1,28 @@
-import { useNavigate } from 'react-router-dom';
+import { DataRow, Text, Avatar } from '../../ui/primitives';
 import { ContextBlock } from './types';
-import './ContextBlockRow.css';
+import { elapsedTime } from '../../shared/helpers/elapsedTime';
 
-export function ContextBlockRow({ block }: { block: ContextBlock }) {
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate(`/context/block/${block.id}`);
-  };
+export function ContextBlockRow({ block, onClick }: { block: ContextBlock; onClick?: () => void }) {
+  const tags = block.tags.map(tag => ({ label: tag.name }));
 
   return (
-    <div className="context-block-row" onClick={handleClick}>
-      <div className="context-block-row__header">
-        <h3 className="context-block-row__title">{block.title}</h3>
-        <div className="context-block-row__tags">
-          {block.tags.map((tag) => (
-            <span
-              key={tag.id}
-              className="context-block-row__tag"
-              style={{ backgroundColor: tag.color || '#ccc' }}
-            >
-              {tag.name}
-            </span>
-          ))}
-        </div>
+    <DataRow
+      leading={<Avatar name={block.author} size='lg' />}
+      topRight={elapsedTime(block.createdAt)}
+      tags={tags}
+      onClick={onClick}
+    >
+      <Text className='pre'>
+        #{block.id.slice(0, 6)}
+      </Text>
+      <div style={{ minWidth: 0, overflow: 'hidden' }}>
+        <Text weight="bold" size='3' tone='default'>
+          {block.title}
+        </Text>
       </div>
-      <div className="context-block-row__meta">
-        <span className="context-block-row__author">by {block.author}</span>
-        <span className="context-block-row__date">
-          {new Date(block.createdAt).toLocaleDateString()}
-        </span>
+      <div style={{ fontSize: 12 }} className="text--tone-muted">
+        Created by {block.author}
       </div>
-    </div>
+    </DataRow>
   );
 }

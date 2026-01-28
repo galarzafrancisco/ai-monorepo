@@ -6,6 +6,6 @@ export type ContextBlock = {
   tags: Array<{ id: string; name: string; color?: string }>;
   parentId: string | null;
   order: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 };
