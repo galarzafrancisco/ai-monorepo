@@ -12,21 +12,23 @@ export async function prepareWorkspace(
   repoUrl?: string | null,
 ) {
   console.log(`prepping workspace for agent '${agentId}' to work on task '${taskId}'`);
-  const workDir = join(BASE_DIR, taskId, agentId);
-  const repoDir = join(workDir, "repo");
+  let workDir = join(BASE_DIR, taskId, agentId);
 
-  // Ensure directories exist
+  // Ensure base directory exists
   mkdirSync(workDir, { recursive: true });
 
-  // Use provided repoUrl if available, otherwise fallback to REPO from config
-  const targetRepo = repoUrl || REPO;
-  console.log(`using repo: ${targetRepo}`);
+  // If no repoUrl provided, just return the base workDir
+  if (!repoUrl) {
+    console.log(`no repo url provided, using base workDir: ${workDir}`);
+    return workDir;
+  }
 
-  // Ensure repo exists inside workspace
-  await ensureRepo(targetRepo, repoDir);
+  // If repoUrl provided, update workDir to point to the repo path
+  workDir = join(workDir, "repo");
+  console.log(`using repo: ${repoUrl}`);
 
-  return {
-    workDir,
-    repoDir,
-  };
+  // Ensure repo exists at the workDir location
+  await ensureRepo(repoUrl, workDir);
+
+  return workDir;
 }

@@ -127,7 +127,7 @@ export class Coordinator {
     const sessionId = getSession(agent.actorId, task.id);
 
     // Prep workspace
-    const { repoDir } = await prepareWorkspace(task.id, agent.actorId, repoUrl);
+    const workDir = await prepareWorkspace(task.id, agent.actorId, repoUrl);
     console.log(`- workspace prepped`);
 
     // Create agent runner
@@ -151,7 +151,7 @@ export class Coordinator {
         {
           taskId: task.id,
           prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
-          cwd: repoDir,
+          cwd: workDir,
         },
         {
           onEvent: (message: string) => {
