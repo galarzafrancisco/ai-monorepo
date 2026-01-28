@@ -240,9 +240,11 @@ export function ToolDetailPage() {
             </Text>
           </DataRow>
         ) : (
-          authorizations.map(auth => {
-            const statusDisplay = getAuthStatusDisplay(auth.status);
-            const connectedAt = elapsedTime(auth.createdAt);
+          [...authorizations]
+            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+            .map(auth => {
+              const statusDisplay = getAuthStatusDisplay(auth.status);
+              const lastUpdatedAt = elapsedTime(auth.updatedAt);
 
             return (
               <DataRow key={auth.id}>
@@ -254,7 +256,7 @@ export function ToolDetailPage() {
                 {/* Actor connection info */}
                 {auth.actor && (
                   <Text size="2" tone="muted">
-                    @{auth.actor.slug} connected {connectedAt}
+                    @{auth.actor.slug} updated {lastUpdatedAt}
                   </Text>
                 )}
 
@@ -265,14 +267,6 @@ export function ToolDetailPage() {
                   </Chip>
                 </div>
 
-                {/* Permissions requested */}
-                {auth.mcpAuthorizationFlow.scope && (
-                  <div style={{ marginTop: '4px' }}>
-                    <Text size="2" tone="muted">
-                      Permissions: {auth.mcpAuthorizationFlow.scope}
-                    </Text>
-                  </div>
-                )}
               </DataRow>
             );
           })
