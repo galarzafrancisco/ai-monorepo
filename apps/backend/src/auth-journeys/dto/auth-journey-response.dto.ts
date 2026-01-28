@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { AuthJourneyStatus } from '../enums/auth-journey-status.enum';
 import { McpFlowResponseDto } from './mcp-flow-response.dto';
 import { ConnectionFlowResponseDto } from './connection-flow-response.dto';
+import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 
 export class AuthJourneyResponseDto {
   @ApiProperty({
@@ -16,6 +17,13 @@ export class AuthJourneyResponseDto {
     enum: AuthJourneyStatus,
   })
   status!: AuthJourneyStatus;
+
+  @ApiProperty({
+    description: 'The actor (user) associated with this authorization journey',
+    type: ActorResponseDto,
+    nullable: true,
+  })
+  actor!: ActorResponseDto | null;
 
   @ApiProperty({
     description: 'The MCP authorization flow for this journey',

@@ -1908,6 +1908,34 @@ export interface components {
              */
             newPassword: string;
         };
+        ActorResponseDto: {
+            /**
+             * @description Unique identifier for the actor
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Type of the actor
+             * @example human
+             * @enum {string}
+             */
+            type: "human" | "agent";
+            /**
+             * @description Unique slug identifier for the actor
+             * @example john@example.com
+             */
+            slug: string;
+            /**
+             * @description Display name of the actor
+             * @example John Doe
+             */
+            displayName: string;
+            /**
+             * @description URL to the actor avatar image
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: string | null;
+        };
         McpFlowResponseDto: {
             /**
              * @description System-generated UUID for the MCP authorization flow
@@ -2021,6 +2049,8 @@ export interface components {
              * @enum {string}
              */
             status: "not_started" | "USER_CONSENT_REJECTED" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
+            /** @description The actor (user) associated with this authorization journey */
+            actor: components["schemas"]["ActorResponseDto"] | null;
             /** @description The MCP authorization flow for this journey */
             mcpAuthorizationFlow: components["schemas"]["McpFlowResponseDto"];
             /** @description Connection authorization flows for this journey */
@@ -2413,34 +2443,6 @@ export interface components {
         JwksResponseDto: {
             /** @description Collection of JSON Web Keys currently valid for signature verification. */
             keys: components["schemas"]["JwkResponseDto"][];
-        };
-        ActorResponseDto: {
-            /**
-             * @description Unique identifier for the actor
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Type of the actor
-             * @example human
-             * @enum {string}
-             */
-            type: "human" | "agent";
-            /**
-             * @description Unique slug identifier for the actor
-             * @example john@example.com
-             */
-            slug: string;
-            /**
-             * @description Display name of the actor
-             * @example John Doe
-             */
-            displayName: string;
-            /**
-             * @description URL to the actor avatar image
-             * @example https://example.com/avatar.png
-             */
-            avatarUrl?: string | null;
         };
         CreateTaskDto: {
             /**

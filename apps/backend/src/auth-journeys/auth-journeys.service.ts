@@ -84,6 +84,7 @@ export class AuthJourneysService {
           },
         },
         relations: {
+          actor: true,
           mcpAuthorizationFlow: {
             client: {}
           },

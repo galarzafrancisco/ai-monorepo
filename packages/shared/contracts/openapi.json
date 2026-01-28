@@ -5181,6 +5181,47 @@
           "newPassword"
         ]
       },
+      "ActorResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the actor",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the actor",
+            "enum": [
+              "human",
+              "agent"
+            ],
+            "example": "human"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Unique slug identifier for the actor",
+            "example": "john@example.com"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name of the actor",
+            "example": "John Doe"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "URL to the actor avatar image",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "slug",
+          "displayName"
+        ]
+      },
       "McpFlowResponseDto": {
         "type": "object",
         "properties": {
@@ -5347,6 +5388,15 @@
               "authorization_code_exchanged"
             ]
           },
+          "actor": {
+            "description": "The actor (user) associated with this authorization journey",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
           "mcpAuthorizationFlow": {
             "description": "The MCP authorization flow for this journey",
             "allOf": [
@@ -5376,6 +5426,7 @@
         "required": [
           "id",
           "status",
+          "actor",
           "mcpAuthorizationFlow",
           "connectionAuthorizationFlows",
           "createdAt",
@@ -5902,47 +5953,6 @@
         },
         "required": [
           "keys"
-        ]
-      },
-      "ActorResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the actor",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of the actor",
-            "enum": [
-              "human",
-              "agent"
-            ],
-            "example": "human"
-          },
-          "slug": {
-            "type": "string",
-            "description": "Unique slug identifier for the actor",
-            "example": "john@example.com"
-          },
-          "displayName": {
-            "type": "string",
-            "description": "Display name of the actor",
-            "example": "John Doe"
-          },
-          "avatarUrl": {
-            "type": "string",
-            "description": "URL to the actor avatar image",
-            "example": "https://example.com/avatar.png",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "slug",
-          "displayName"
         ]
       },
       "CreateTaskDto": {

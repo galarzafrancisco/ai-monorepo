@@ -32,6 +32,13 @@ export class AuthJourneysController {
     return {
       id: journey.id,
       status: journey.status,
+      actor: journey.actor ? {
+        id: journey.actor.id,
+        type: journey.actor.type,
+        slug: journey.actor.slug,
+        displayName: journey.actor.displayName,
+        avatarUrl: journey.actor.avatarUrl,
+      } : null,
       mcpAuthorizationFlow: this.mapMcpFlowToResponse(journey.mcpAuthorizationFlow),
       connectionAuthorizationFlows: journey.connectionAuthorizationFlows.map(flow =>
         this.mapConnectionFlowToResponse(flow),

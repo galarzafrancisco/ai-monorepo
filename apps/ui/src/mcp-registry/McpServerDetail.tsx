@@ -605,14 +605,14 @@ export function McpServerDetail() {
 
       {/* Auth Journeys Section (Debug/Monitoring) */}
       <div className="admin-section">
-        <h2 className="section-title">Client Connections & Auth Flows</h2>
+        <h2 className="section-title">Authorizations</h2>
         <div className="section-divider"></div>
         <p className="subsection-description" style={{ marginBottom: '16px' }}>
-          Live monitoring of client connections and their authorization state
+          Live monitoring of MCP client authorizations and their authentication state
         </p>
 
         {authJourneys.length === 0 ? (
-          <p style={{ color: '#888', fontSize: '14px' }}>No active client connections</p>
+          <p style={{ color: '#888', fontSize: '14px' }}>No active authorizations</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {authJourneys
@@ -643,6 +643,11 @@ export function McpServerDetail() {
                       </span>
                     </div>
                     <div style={{ fontSize: '11px', color: '#6c757d', lineHeight: '1.5' }}>
+                      {journey.actor && (
+                        <div style={{ marginBottom: '4px' }}>
+                          <strong>User:</strong> {journey.actor.displayName} ({journey.actor.slug})
+                        </div>
+                      )}
                       <div>Journey ID: {journey.id}</div>
                       <div>Started: {new Date(journey.createdAt).toLocaleString()}</div>
                       <div>Last Update: {new Date(journey.updatedAt).toLocaleString()}</div>

@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ActorResponseDto } from './ActorResponseDto';
 import type { ConnectionFlowResponseDto } from './ConnectionFlowResponseDto';
 import type { McpFlowResponseDto } from './McpFlowResponseDto';
 export type AuthJourneyResponseDto = {
@@ -13,6 +14,10 @@ export type AuthJourneyResponseDto = {
      * Current status of the authorization journey
      */
     status: AuthJourneyResponseDto.status;
+    /**
+     * The actor (user) associated with this authorization journey
+     */
+    actor: ActorResponseDto | null;
     /**
      * The MCP authorization flow for this journey
      */
