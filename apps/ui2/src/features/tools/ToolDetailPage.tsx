@@ -1,10 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
-import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
 import './ToolDetailPage.css';
+
+// Helper to get status color and label
+function getAuthStatusDisplay(status: string): { color: 'gray' | 'blue' | 'green' | 'yellow' | 'orange' | 'red' | 'purple', label: string } {
+  switch (status) {
+    case 'AUTHORIZATION_CODE_EXCHANGED':
+      return { color: 'green', label: 'Active' };
+    case 'USER_CONSENT_REJECTED':
+      return { color: 'red', label: 'Rejected' };
+    case 'AUTHORIZATION_CODE_ISSUED':
+      return { color: 'blue', label: 'Code Issued' };
+    case 'mcp_auth_flow_started':
+      return { color: 'yellow', label: 'Flow Started' };
+    case 'mcp_auth_flow_completed':
+      return { color: 'blue', label: 'MCP Auth Complete' };
+    case 'CONNECTIONS_FLOW_STARTED':
+      return { color: 'yellow', label: 'Connecting' };
+    case 'CONNECTIONS_FLOW_COMPLETED':
+      return { color: 'blue', label: 'Connected' };
+    case 'not_started':
+      return { color: 'gray', label: 'Not Started' };
+    default:
+      return { color: 'gray', label: status.replace(/_/g, ' ').toLowerCase() };
+  }
+}
 
 export function ToolDetailPage() {
   const { toolId } = useParams<{ toolId: string }>();
@@ -216,24 +240,42 @@ export function ToolDetailPage() {
             </Text>
           </DataRow>
         ) : (
-          authorizations.map(auth => (
-            <DataRow key={auth.id}>
-              <Text weight="medium" size="3">
-                {auth.mcpAuthorizationFlow.clientName || 'Unknown Client'}
-              </Text>
-              <Text size="2" tone="muted">
-                Client ID: {auth.mcpAuthorizationFlow.clientId.slice(0, 8)}...
-              </Text>
-              <Text size="2" tone="muted">
-                Status: {auth.status.replace(/_/g, ' ').toLowerCase()}
-              </Text>
-              {auth.actor && (
-                <Text size="2" tone="muted">
-                  User: {auth.actor.displayName} (@{auth.actor.slug})
+          authorizations.map(auth => {
+            const statusDisplay = getAuthStatusDisplay(auth.status);
+            const connectedAt = elapsedTime(auth.createdAt);
+
+            return (
+              <DataRow key={auth.id}>
+                {/* Client name */}
+                <Text weight="medium" size="3">
+                  {auth.mcpAuthorizationFlow.clientName || 'Unknown Client'}
                 </Text>
-              )}
-            </DataRow>
-          ))
+
+                {/* Actor connection info */}
+                {auth.actor && (
+                  <Text size="2" tone="muted">
+                    {auth.actor.slug} connected {connectedAt}
+                  </Text>
+                )}
+
+                {/* Status tag */}
+                <div style={{ marginTop: '4px' }}>
+                  <Chip color={statusDisplay.color}>
+                    {statusDisplay.label}
+                  </Chip>
+                </div>
+
+                {/* Permissions requested */}
+                {auth.mcpAuthorizationFlow.scope && (
+                  <div style={{ marginTop: '4px' }}>
+                    <Text size="2" tone="muted">
+                      Permissions: {auth.mcpAuthorizationFlow.scope}
+                    </Text>
+                  </div>
+                )}
+              </DataRow>
+            );
+          })
         )}
       </DataRowContainer>
 
