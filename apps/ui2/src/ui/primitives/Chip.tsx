@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import "./Chip.css";
 
 export interface ChipProps {
 

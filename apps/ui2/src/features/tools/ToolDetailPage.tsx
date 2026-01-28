@@ -254,7 +254,7 @@ export function ToolDetailPage() {
                 {/* Actor connection info */}
                 {auth.actor && (
                   <Text size="2" tone="muted">
-                    {auth.actor.slug} connected {connectedAt}
+                    @{auth.actor.slug} connected {connectedAt}
                   </Text>
                 )}
 
