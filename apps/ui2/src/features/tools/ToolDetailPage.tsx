@@ -3,19 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } from '../../ui/primitives';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
-import { Tool, ToolScope, ToolClient } from './types';
+import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
 import './ToolDetailPage.css';
 
 export function ToolDetailPage() {
   const { toolId } = useParams<{ toolId: string }>();
   const navigate = useNavigate();
-  const { tools, setSectionTitle, loadToolDetails, loadToolScopes, loadToolClients } = useToolsCtx();
+  const { tools, setSectionTitle, loadToolDetails, loadToolScopes, loadToolClients, loadToolAuthorizations } = useToolsCtx();
 
   // Find tool from context first (for quick load)
   const toolFromList = tools.find(t => t.id === toolId);
   const [tool, setTool] = useState<Tool | null>(toolFromList || null);
   const [scopes, setScopes] = useState<ToolScope[]>([]);
   const [clients, setClients] = useState<ToolClient[]>([]);
+  const [authorizations, setAuthorizations] = useState<ToolAuthorization[]>([]);
   const [isLoading, setIsLoading] = useState(!toolFromList);
   const [expandedMetadata, setExpandedMetadata] = useState(false);
   const [authorizationServerMetadata, setAuthorizationServerMetadata] = useState<any | null>(null);
@@ -40,13 +41,14 @@ export function ToolDetailPage() {
     }
   }, [toolId, toolFromList, loadToolDetails]);
 
-  // Load scopes and clients when tool is available
+  // Load scopes, clients, and authorizations when tool is available
   useEffect(() => {
     if (tool && toolId) {
       loadToolScopes(toolId).then(setScopes);
       loadToolClients(toolId).then(setClients);
+      loadToolAuthorizations(toolId).then(setAuthorizations);
     }
-  }, [tool, toolId, loadToolScopes, loadToolClients]);
+  }, [tool, toolId, loadToolScopes, loadToolClients, loadToolAuthorizations]);
 
   // Set section title for IosShell
   useEffect(() => {
@@ -205,18 +207,34 @@ export function ToolDetailPage() {
 
 
 
-      {/* Clients */}
-      <DataRowContainer title="Clients" className="tool-detail-page__section">
-        <DataRow
-          onClick={() => navigate(`/tools/tool/${tool.id}/clients`)}
-        >
-          <Text tone="muted" size="2">
-            {clients.length === 0
-              ? 'No OAuth clients configured'
-              : `${clients.length} OAuth client${clients.length === 1 ? '' : 's'} configured`}
-          </Text>
-          <Text size="2" tone="muted">Tap to view clients</Text>
-        </DataRow>
+      {/* Authorizations */}
+      <DataRowContainer title="Authorizations" className="tool-detail-page__section">
+        {authorizations.length === 0 ? (
+          <DataRow>
+            <Text tone="muted" size="2">
+              No active authorizations
+            </Text>
+          </DataRow>
+        ) : (
+          authorizations.map(auth => (
+            <DataRow key={auth.id}>
+              <Text weight="medium" size="3">
+                {auth.mcpAuthorizationFlow.clientName || 'Unknown Client'}
+              </Text>
+              <Text size="2" tone="muted">
+                Client ID: {auth.mcpAuthorizationFlow.clientId.slice(0, 8)}...
+              </Text>
+              <Text size="2" tone="muted">
+                Status: {auth.status.replace(/_/g, ' ').toLowerCase()}
+              </Text>
+              {auth.actor && (
+                <Text size="2" tone="muted">
+                  User: {auth.actor.displayName} (@{auth.actor.slug})
+                </Text>
+              )}
+            </DataRow>
+          ))
+        )}
       </DataRowContainer>
 
       {/* Back button */}

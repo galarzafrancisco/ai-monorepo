@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ToolsService } from './api';
-import type { Tool, ToolScope, ToolClient } from './types';
+import { ToolsService, AuthorizationJourneysService } from './api';
+import type { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
 
 export const useTools = () => {
   // UI feedback
@@ -77,6 +77,19 @@ export const useTools = () => {
     }
   }, []);
 
+  // Load authorizations (auth journeys) for a tool
+  const loadToolAuthorizations = useCallback(async (serverId: string): Promise<ToolAuthorization[]> => {
+    console.log(`loading authorizations for server ${serverId}`)
+    try {
+      const authorizations = await AuthorizationJourneysService.authJourneysControllerGetAuthJourneys(serverId);
+      console.log(`authorizations:`, authorizations)
+      return authorizations;
+    } catch (err) {
+      console.error('Failed to load authorizations:', err);
+      return [];
+    }
+  }, []);
+
   // Load single client details
   const loadClientDetails = useCallback(async (connectionId: string): Promise<ToolClient | null> => {
     setIsLoading(true);
@@ -103,6 +116,7 @@ export const useTools = () => {
     loadToolDetails,
     loadToolScopes,
     loadToolClients,
+    loadToolAuthorizations,
     loadClientDetails,
   };
 };

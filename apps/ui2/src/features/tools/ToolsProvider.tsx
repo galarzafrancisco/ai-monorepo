@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useTools } from "./useTools";
-import type { Tool, ToolScope, ToolClient } from "./types";
+import type { Tool, ToolScope, ToolClient, ToolAuthorization } from "./types";
 
 // Shape this to match what pages/layout need.
 export type ToolsContextValue = {
@@ -12,6 +12,7 @@ export type ToolsContextValue = {
   loadToolDetails: (serverId: string) => Promise<Tool | null>;
   loadToolScopes: (serverId: string) => Promise<ToolScope[]>;
   loadToolClients: (serverId: string) => Promise<ToolClient[]>;
+  loadToolAuthorizations: (serverId: string) => Promise<ToolAuthorization[]>;
   loadClientDetails: (connectionId: string) => Promise<ToolClient | null>;
 };
 
@@ -25,6 +26,7 @@ export function ToolsProvider({ children }: { children: React.ReactNode }) {
     loadToolDetails,
     loadToolScopes,
     loadToolClients,
+    loadToolAuthorizations,
     loadClientDetails,
   } = useTools();
   const [sectionTitle, setSectionTitle] = useState("");
@@ -40,6 +42,7 @@ export function ToolsProvider({ children }: { children: React.ReactNode }) {
       loadToolDetails,
       loadToolScopes,
       loadToolClients,
+      loadToolAuthorizations,
       loadClientDetails,
     };
   }, [
@@ -51,6 +54,7 @@ export function ToolsProvider({ children }: { children: React.ReactNode }) {
     loadToolDetails,
     loadToolScopes,
     loadToolClients,
+    loadToolAuthorizations,
     loadClientDetails,
   ]);
 

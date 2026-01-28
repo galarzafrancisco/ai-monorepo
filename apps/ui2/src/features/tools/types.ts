@@ -4,4 +4,5 @@ export type {
   ScopeResponseDto as ToolScope,
   ConnectionResponseDto as ToolClient,
   ServerListResponseDto as ToolListResponse,
+  AuthJourneyResponseDto as ToolAuthorization,
 } from 'shared';
