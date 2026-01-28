@@ -7,6 +7,8 @@ import { IdentityProviderModule } from "src/identity-provider/identity-provider.
 import { User } from "src/identity-provider/user.entity";
 import { ActorEntity } from "src/identity-provider/actor.entity";
 import { AgentEntity } from "src/agents/agent.entity";
+import { MetaModule } from "src/meta/meta.module";
+import { ContextModule } from "src/context/context.module";
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { AgentEntity } from "src/agents/agent.entity";
     AgentsModule,
     McpRegistryModule,
     IdentityProviderModule,
+    MetaModule,
+    ContextModule,
   ],
   providers: [
     AppInitRunner

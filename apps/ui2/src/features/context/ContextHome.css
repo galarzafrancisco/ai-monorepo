@@ -1,0 +1,21 @@
+.context-home {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+}
+
+.context-home__loading,
+.context-home__error,
+.context-home__empty {
+  padding: 24px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.context-home__error {
+  color: #d32f2f;
+}
+
+.context-home__empty {
+  color: #666;
+}
