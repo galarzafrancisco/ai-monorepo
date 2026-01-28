@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ContextService } from './api';
-import { ContextBlock } from './types';
+import { ContextBlock, ContextBlockSummary } from './types';
 
 export function useContextBlocks() {
-  const [blocks, setBlocks] = useState<ContextBlock[]>([]);
+  const [blocks, setBlocks] = useState<ContextBlockSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +16,7 @@ export function useContextBlocks() {
         setError(null);
         const data = await ContextService.contextControllerListPages();
         if (isMounted) {
-          setBlocks(data as unknown as ContextBlock[]);
+          setBlocks(data.items);
         }
       } catch (err) {
         if (isMounted) {
@@ -54,7 +54,7 @@ export function useContextBlock(id: string) {
         setError(null);
         const data = await ContextService.contextControllerGetPage(id);
         if (isMounted) {
-          setBlock(data as unknown as ContextBlock);
+          setBlock(data);
         }
       } catch (err) {
         if (isMounted) {

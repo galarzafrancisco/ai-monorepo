@@ -1,11 +1,4 @@
-export type ContextBlock = {
-  id: string;
-  title: string;
-  content: string;
-  author: string;
-  tags: Array<{ id: string; name: string; color?: string }>;
-  parentId: string | null;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
-};
+export type {
+  PageResponseDto as ContextBlock,
+  PageSummaryDto as ContextBlockSummary,
+} from 'shared';

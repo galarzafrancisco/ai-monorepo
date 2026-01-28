@@ -48,8 +48,6 @@ export function ContextBlockDetailPage() {
       </Button>
 
       <Stack spacing="3" className="context-block-detail__header">
-        <Text size="6" weight="bold">{block.title}</Text>
-
         {block.tags.length > 0 && (
           <div className="context-block-detail__tags">
             {block.tags.map((tag) => (
@@ -61,7 +59,7 @@ export function ContextBlockDetailPage() {
         <div className="context-block-detail__meta">
           <Text size="2" tone="muted">by {block.author}</Text>
           <Text size="2" tone="muted">•</Text>
-          <Text size="2" tone="muted">{new Date(block.createdAt).toLocaleDateString()}</Text>
+          <Text size="2" tone="muted">{new Date(block.createdAt).toDateString()}</Text>
         </div>
       </Stack>
 

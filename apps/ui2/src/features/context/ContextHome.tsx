@@ -11,6 +11,8 @@ export function ContextHome(): JSX.Element {
   const { blocks, isLoading, error } = useContextBlocks();
   const navigate = useNavigate();
 
+  console.log(`blocks`)
+  console.log(blocks)
   // Set page title
   useEffect(() => {
     setSectionTitle("Context Blocks");
@@ -33,7 +35,7 @@ export function ContextHome(): JSX.Element {
       {blocks.map((block) => (
         <ContextBlockRow
           key={block.id}
-          block={block}
+          blockSummary={block}
           onClick={() => navigate(`/context/block/${block.id}`)}
         />
       ))}
