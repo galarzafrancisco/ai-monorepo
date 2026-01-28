@@ -1,6 +1,7 @@
 # taico
 
 Monorepo to learn and experiment with application development.
+Build timing check: README update.
 
 ## Overview
 
