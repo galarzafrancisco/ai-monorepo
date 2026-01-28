@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ContextPage } from './types';
-import type { UpdatePageDto } from 'shared';
+import type { UpdateBlockDto } from 'shared';
 import { TagInput } from './TagInput';
 import { RichEditor } from './RichEditor';
 
@@ -25,7 +25,6 @@ export function ContextPageEditForm({
 }: ContextPageEditFormProps) {
   const [title, setTitle] = useState(page.title);
   const [content, setContent] = useState(page.content);
-  const [author, setAuthor] = useState(page.author);
   const [tagNames, setTagNames] = useState<string[]>(page.tags?.map(t => t.name) || []);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -46,7 +45,7 @@ export function ContextPageEditForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const payload: UpdatePageDto = {};
+    const payload: UpdateBlockDto = {};
     let hasChanges = false;
 
     if (title !== page.title) {
@@ -55,10 +54,6 @@ export function ContextPageEditForm({
     }
     if (content !== page.content) {
       payload.content = content;
-      hasChanges = true;
-    }
-    if (author !== page.author) {
-      payload.author = author;
       hasChanges = true;
     }
 
@@ -125,19 +120,6 @@ export function ContextPageEditForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Give your page a headline"
-              required
-              disabled={isUpdating || isDeleting}
-            />
-          </div>
-
-          <div className="context-form-group">
-            <label htmlFor="edit-author">Author *</label>
-            <input
-              id="edit-author"
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Who wrote this?"
               required
               disabled={isUpdating || isDeleting}
             />

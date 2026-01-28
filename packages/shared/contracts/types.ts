@@ -2846,7 +2846,7 @@ export interface components {
              * @description Creator slug from the associated actor
              * @example agent-roo
              */
-            createdBy: Record<string, never> | null;
+            createdBy: string | null;
             /**
              * @description Tags associated with the block
              * @example [
@@ -2902,7 +2902,7 @@ export interface components {
              * @description Creator slug from the associated actor
              * @example agent-roo
              */
-            createdBy: Record<string, never> | null;
+            createdBy: string | null;
             /**
              * @description Tags associated with the block
              * @example [
@@ -2962,7 +2962,7 @@ export interface components {
              * @description Creator slug from the associated actor
              * @example agent-roo
              */
-            createdBy: Record<string, never> | null;
+            createdBy: string | null;
             /**
              * @description Parent block ID (null if root block)
              * @example 123e4567-e89b-12d3-a456-426614174000

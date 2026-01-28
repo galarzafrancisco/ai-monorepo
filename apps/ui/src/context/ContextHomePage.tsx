@@ -8,7 +8,7 @@ import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
 import { ContextPageForm } from './ContextPageForm';
 import { PageTree } from './PageTree';
-import type { CreatePageDto } from 'shared';
+import type { CreateBlockDto } from 'shared';
 import type { ContextPageTree } from './types';
 
 export function ContextHomePage() {
@@ -45,7 +45,7 @@ export function ContextHomePage() {
     loadTree();
   }, [getPageTree]);
 
-  const handleCreatePage = async (data: CreatePageDto) => {
+  const handleCreatePage = async (data: CreateBlockDto) => {
     const created = await createPage(data);
     setShowForm(false);
     // Reload tree to show new page

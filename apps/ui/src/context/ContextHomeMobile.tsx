@@ -120,7 +120,7 @@ export function ContextHomeMobile() {
 
             <div className="mobile-context-page-meta">
               <span className="mobile-context-page-author">
-                👤 {page.author}
+                👤 {page.createdBy || 'unknown'}
               </span>
               <span className="mobile-context-page-time">
                 {formatTime(page.updatedAt)}

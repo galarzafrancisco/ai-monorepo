@@ -1,8 +1,8 @@
 // Re-export shared contract types for ergonomics
 export type {
-  PageResponseDto as ContextPage,
-  PageSummaryDto as ContextPageSummary,
-  PageTreeResponseDto as ContextPageTree,
+  BlockResponseDto as ContextPage,
+  BlockSummaryDto as ContextPageSummary,
+  BlockTreeResponseDto as ContextPageTree,
 } from 'shared';
 
 export interface SlashCommand {

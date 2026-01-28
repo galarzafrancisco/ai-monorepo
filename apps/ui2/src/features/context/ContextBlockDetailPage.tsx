@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Text, Stack, Chip } from '../../ui/primitives';
 import { useContextBlock } from './useContextBlocks';
 import { useContextCtx } from './ContextProvider';
+import { ContextTagResponseDto } from 'shared';
 import './ContextBlockDetailPage.css';
 
 export function ContextBlockDetailPage() {
@@ -50,14 +51,14 @@ export function ContextBlockDetailPage() {
       <Stack spacing="3" className="context-block-detail__header">
         {block.tags.length > 0 && (
           <div className="context-block-detail__tags">
-            {block.tags.map((tag) => (
+            {block.tags.map((tag: ContextTagResponseDto) => (
               <Chip key={tag.id}>{tag.name}</Chip>
             ))}
           </div>
         )}
 
         <div className="context-block-detail__meta">
-          <Text size="2" tone="muted">by {block.author}</Text>
+          <Text size="2" tone="muted">by {block.createdBy || 'unknown'}</Text>
           <Text size="2" tone="muted">•</Text>
           <Text size="2" tone="muted">{new Date(block.createdAt).toDateString()}</Text>
         </div>

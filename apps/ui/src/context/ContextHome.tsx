@@ -64,7 +64,7 @@ export function ContextHome() {
             )}
 
             <div className="context-card-meta">
-              <span>By {page.author}</span>
+              <span>By {page.createdBy || 'unknown'}</span>
               <span>Created {new Date(page.createdAt).toLocaleDateString()}</span>
               {page.updatedAt !== page.createdAt && (
                 <span>Updated {new Date(page.updatedAt).toLocaleDateString()}</span>

@@ -73,7 +73,7 @@ export function ContextPageView() {
           <div className="context-page-detail-header">
             <h1 className="context-page-detail-title">{selectedPage.title}</h1>
             <div className="context-page-detail-meta">
-              <span>By {selectedPage.author}</span>
+              <span>By {selectedPage.createdBy || 'unknown'}</span>
               <span>•</span>
               <span>Created {formatDate(selectedPage.createdAt)}</span>
               <span>•</span>

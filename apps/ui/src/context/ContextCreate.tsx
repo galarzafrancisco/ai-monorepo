@@ -1,14 +1,14 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useContext } from './useContext';
 import { ContextPageForm } from './ContextPageForm';
-import type { CreatePageDto } from 'shared';
+import type { CreateBlockDto } from 'shared';
 
 export function ContextCreate() {
   const navigate = useNavigate();
   const { pageId } = useParams<{ pageId: string }>();
   const { pages, isCreating, createPage, getPageTree } = useContext();
 
-  const handleCreatePage = async (data: CreatePageDto) => {
+  const handleCreatePage = async (data: CreateBlockDto) => {
     const created = await createPage(data);
     // Reload tree to show new page
     await getPageTree();

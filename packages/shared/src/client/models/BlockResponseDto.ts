@@ -23,7 +23,7 @@ export type BlockResponseDto = {
     /**
      * Creator slug from the associated actor
      */
-    createdBy: Record<string, any> | null;
+    createdBy: string | null;
     /**
      * Tags associated with the block
      */

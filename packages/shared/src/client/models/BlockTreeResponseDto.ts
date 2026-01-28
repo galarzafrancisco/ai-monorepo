@@ -18,7 +18,7 @@ export type BlockTreeResponseDto = {
     /**
      * Creator slug from the associated actor
      */
-    createdBy: Record<string, any> | null;
+    createdBy: string | null;
     /**
      * Parent block ID (null if root block)
      */

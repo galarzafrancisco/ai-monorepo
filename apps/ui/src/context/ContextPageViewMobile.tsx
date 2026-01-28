@@ -5,7 +5,7 @@ import { MarkdownPreview } from './MarkdownPreview';
 import { ContextPageForm } from './ContextPageForm';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Breadcrumb } from './Breadcrumb';
-import type { UpdatePageDto } from 'shared';
+import type { UpdateBlockDto } from 'shared';
 import './ContextMobile.css';
 
 export function ContextPageViewMobile() {
@@ -80,7 +80,7 @@ export function ContextPageViewMobile() {
   };
 
   const handleUpdate = useCallback(
-    async (payload: UpdatePageDto) => {
+    async (payload: UpdateBlockDto) => {
       if (!pageId) return;
       await updatePage(pageId, payload);
       setShowEditModal(false);
@@ -124,7 +124,7 @@ export function ContextPageViewMobile() {
         {pageId && <Breadcrumb pageId={pageId} pages={pages} />}
         <h1 className="mobile-context-page-detail-title">{selectedPage.title}</h1>
         <div className="mobile-context-page-detail-meta">
-          <span>By {selectedPage.author}</span>
+          <span>By {selectedPage.createdBy || 'unknown'}</span>
           <span>•</span>
           <span>Created {formatDateTime(selectedPage.createdAt)}</span>
           <span>•</span>

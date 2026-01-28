@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, useMemo } from 'react';
 import type { ContextPage, ContextPageSummary } from './types';
-import type { CreatePageDto, UpdatePageDto } from 'shared';
+import type { CreateBlockDto, UpdateBlockDto } from 'shared';
 import { TagInput } from './TagInput';
 import { RichEditor } from './RichEditor';
 
@@ -29,7 +29,7 @@ type ContextPageFormProps =
       mode: 'create';
       page?: never;
       pages: ContextPageSummary[];
-      onSubmit: (data: CreatePageDto) => Promise<void>;
+      onSubmit: (data: CreateBlockDto) => Promise<void>;
       onCancel: () => void;
       isSubmitting: boolean;
       defaultParentId?: string;
@@ -38,7 +38,7 @@ type ContextPageFormProps =
       mode: 'edit';
       page: ContextPage;
       pages: ContextPageSummary[];
-      onSubmit: (data: UpdatePageDto) => Promise<void>;
+      onSubmit: (data: UpdateBlockDto) => Promise<void>;
       onCancel: () => void;
       isSubmitting: boolean;
       defaultParentId?: never;
@@ -55,7 +55,6 @@ export function ContextPageForm({
 }: ContextPageFormProps) {
   const [title, setTitle] = useState(page?.title || '');
   const [content, setContent] = useState(page?.content || '');
-  const [author, setAuthor] = useState(page?.author || '');
   const [tagNames, setTagNames] = useState<string[]>(page?.tags?.map(t => t.name) || []);
   const [parentId, setParentId] = useState<string | null>(() => {
     if (mode === 'create' && defaultParentId) {
@@ -97,17 +96,16 @@ export function ContextPageForm({
     try {
       if (mode === 'create') {
         // Create mode: send all fields (author is auto-populated if not provided)
-        const payload: CreatePageDto = {
+        const payload: CreateBlockDto = {
           title: title.trim(),
           content: content.trim(),
-          ...(author.trim() && { author: author.trim() }),
           ...(tagNames.length > 0 && { tagNames }),
           ...(parentId && { parentId }),
         };
         await onSubmit(payload);
       } else {
         // Edit mode: only send changed fields
-        const payload: UpdatePageDto = {};
+        const payload: UpdateBlockDto = {};
         let hasChanges = false;
 
         if (title !== page.title) {
@@ -116,10 +114,6 @@ export function ContextPageForm({
         }
         if (content !== page.content) {
           payload.content = content;
-          hasChanges = true;
-        }
-        if (author !== page.author) {
-          payload.author = author;
           hasChanges = true;
         }
 
@@ -167,18 +161,6 @@ export function ContextPageForm({
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Give your page a headline"
           required
-          disabled={isSubmitting}
-        />
-      </div>
-
-      <div className="context-form-group">
-        <label htmlFor={`${mode}-author`}>Author</label>
-        <input
-          id={`${mode}-author`}
-          type="text"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          placeholder="Leave blank to use your account"
           disabled={isSubmitting}
         />
       </div>

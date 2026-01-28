@@ -10,7 +10,7 @@ import { TagBadge } from './TagBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Breadcrumb } from './Breadcrumb';
 import { PageTree } from './PageTree';
-import type { UpdatePageDto, CreatePageDto } from 'shared';
+import type { UpdateBlockDto, CreateBlockDto } from 'shared';
 import type { ContextPageTree } from './types';
 
 function formatDate(value: string) {
@@ -89,7 +89,7 @@ export function ContextLayout() {
     [navigate],
   );
 
-  const handleCreatePage = async (data: CreatePageDto) => {
+  const handleCreatePage = async (data: CreateBlockDto) => {
     const created = await createPage(data);
     // Reload tree to show new page
     const tree = await getPageTree();
@@ -98,7 +98,7 @@ export function ContextLayout() {
   };
 
   const handleUpdate = useCallback(
-    async (payload: UpdatePageDto) => {
+    async (payload: UpdateBlockDto) => {
       if (!pageId) return;
       await updatePage(pageId, payload);
       setErrorMessage('');
@@ -267,7 +267,7 @@ export function ContextLayout() {
               <div className="context-page-detail-header">
                 <h1 className="context-page-detail-title">{selectedPage.title}</h1>
                 <div className="context-page-detail-meta">
-                  <span>By {selectedPage.author}</span>
+                  <span>By {selectedPage.createdBy || 'unknown'}</span>
                   <span>•</span>
                   <span>Created {formatDate(selectedPage.createdAt)}</span>
                   <span>•</span>

@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useContext } from './useContext';
 import { ContextPageForm } from './ContextPageForm';
-import type { UpdatePageDto } from 'shared';
+import type { UpdateBlockDto } from 'shared';
 
 export function ContextPageEdit() {
   const { pageId } = useParams<{ pageId: string }>();
@@ -16,7 +16,7 @@ export function ContextPageEdit() {
   }, [pageId, selectPage]);
 
   const handleUpdate = useCallback(
-    async (payload: UpdatePageDto) => {
+    async (payload: UpdateBlockDto) => {
       if (!pageId) return;
       await updatePage(pageId, payload);
       // Reload tree in case title changed

@@ -20,6 +20,7 @@ export class BlockTreeResponseDto {
   createdByActorId!: string;
 
   @ApiProperty({
+    type: String,
     description: 'Creator slug from the associated actor',
     example: 'agent-roo',
     nullable: true,

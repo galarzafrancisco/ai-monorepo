@@ -1,13 +1,14 @@
 import { DataRow, Text, Avatar } from '../../ui/primitives';
 import { ContextBlockSummary } from './types';
 import { elapsedTime } from '../../shared/helpers/elapsedTime';
+import { ContextTagResponseDto } from 'shared';
 
 export function ContextBlockRow({ blockSummary, onClick }: { blockSummary: ContextBlockSummary; onClick?: () => void }) {
-  const tags = blockSummary.tags.map(tag => ({ label: tag.name }));
+  const tags = blockSummary.tags.map((tag: ContextTagResponseDto) => ({ label: tag.name }));
 
   return (
     <DataRow
-      leading={<Avatar name={blockSummary.author} size='lg' />}
+      leading={<Avatar name={blockSummary.createdBy || 'unknown'} size='lg' />}
       topRight={elapsedTime(blockSummary.createdAt)}
       tags={tags}
       onClick={onClick}
@@ -21,7 +22,7 @@ export function ContextBlockRow({ blockSummary, onClick }: { blockSummary: Conte
         </Text>
       </div>
       <div style={{ fontSize: 12 }} className="text--tone-muted">
-        Created by {blockSummary.author}
+        Created by {blockSummary.createdBy || 'unknown'}
       </div>
     </DataRow>
   );

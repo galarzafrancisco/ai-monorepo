@@ -31,7 +31,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ pageId, onTagAdded }) 
   const handleAddExistingTag = async (tagName: string) => {
     try {
       setIsSubmitting(true);
-      await ContextService.contextControllerAddTagToPage(pageId, {
+      await ContextService.contextControllerAddTagToBlock(pageId, {
         name: tagName,
       });
       onTagAdded();
@@ -48,7 +48,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ pageId, onTagAdded }) 
 
     try {
       setIsSubmitting(true);
-      await ContextService.contextControllerAddTagToPage(pageId, {
+      await ContextService.contextControllerAddTagToBlock(pageId, {
         name: newTagName.trim(),
         color: newTagColor,
       });

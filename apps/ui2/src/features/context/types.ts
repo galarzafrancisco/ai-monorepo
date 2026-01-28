@@ -1,4 +1,4 @@
 export type {
-  PageResponseDto as ContextBlock,
-  PageSummaryDto as ContextBlockSummary,
+  BlockResponseDto as ContextBlock,
+  BlockSummaryDto as ContextBlockSummary,
 } from 'shared';

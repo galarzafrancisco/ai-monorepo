@@ -14,7 +14,7 @@ export function useContextBlocks() {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await ContextService.contextControllerListPages();
+        const data = await ContextService.contextControllerListBlocks();
         if (isMounted) {
           setBlocks(data.items);
         }
@@ -52,7 +52,7 @@ export function useContextBlock(id: string) {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await ContextService.contextControllerGetPage(id);
+        const data = await ContextService.contextControllerGetBlock(id);
         if (isMounted) {
           setBlock(data);
         }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { CreatePageDto, UpdatePageDto } from 'shared';
+import type { CreateBlockDto, UpdateBlockDto } from 'shared';
 import { ContextService } from './api';
 import { getUIWebSocketUrl } from '../config/api';
 import type { ContextPage, ContextPageSummary, ContextPageTree } from './types';
@@ -23,7 +23,7 @@ export const useContext = () => {
     setIsLoadingList(true);
     setError(null);
     try {
-      const response = await ContextService.contextControllerListPages();
+      const response = await ContextService.contextControllerListBlocks();
       setPages(response.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load wiki pages');
@@ -37,7 +37,7 @@ export const useContext = () => {
     setError(null);
     setSelectedPage(null);
     try {
-      const page = await ContextService.contextControllerGetPage(id);
+      const page = await ContextService.contextControllerGetBlock(id);
       setSelectedPage(page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch wiki page');
@@ -47,18 +47,19 @@ export const useContext = () => {
   }, []);
 
   const createPage = useCallback(
-    async (payload: CreatePageDto) => {
+    async (payload: CreateBlockDto) => {
       setIsCreating(true);
       setError(null);
       try {
-        const created = await ContextService.contextControllerCreatePage(payload);
+        const created = await ContextService.contextControllerCreateBlock(payload);
         setPages((prev) => {
           const withoutCreated = prev.filter((page) => page.id !== created.id);
           return [
             {
               id: created.id,
               title: created.title,
-              author: created.author,
+              createdBy: created.createdBy,
+              createdByActorId: created.createdByActorId,
               tags: created.tags,
               parentId: created.parentId,
               order: created.order,
@@ -88,18 +89,19 @@ export const useContext = () => {
   );
 
   const updatePage = useCallback(
-    async (id: string, payload: UpdatePageDto) => {
+    async (id: string, payload: UpdateBlockDto) => {
       setIsUpdating(true);
       setError(null);
       try {
-        const updated = await ContextService.contextControllerUpdatePage(id, payload);
+        const updated = await ContextService.contextControllerUpdateBlock(id, payload);
         setPages((prev) =>
           prev.map((p) =>
             p.id === id
               ? {
                   id: updated.id,
                   title: updated.title,
-                  author: updated.author,
+                  createdBy: updated.createdBy,
+                  createdByActorId: updated.createdByActorId,
                   tags: updated.tags,
                   parentId: updated.parentId,
                   order: updated.order,
@@ -128,7 +130,7 @@ export const useContext = () => {
       setIsDeleting(true);
       setError(null);
       try {
-        await ContextService.contextControllerDeletePage(id);
+        await ContextService.contextControllerDeleteBlock(id);
         setPages((prev) => prev.filter((p) => p.id !== id));
         if (selectedPage?.id === id) {
           setSelectedPage(null);
@@ -148,7 +150,7 @@ export const useContext = () => {
       setIsUpdating(true);
       setError(null);
       try {
-        const updated = await ContextService.contextControllerAppendToPage(id, { content });
+        const updated = await ContextService.contextControllerAppendToBlock(id, { content });
         if (selectedPage?.id === id) {
           setSelectedPage(updated);
         }
@@ -167,14 +169,15 @@ export const useContext = () => {
     async (pageId: string, tagData: { name: string; color?: string; description?: string }) => {
       setError(null);
       try {
-        const updated = await ContextService.contextControllerAddTagToPage(pageId, tagData);
+        const updated = await ContextService.contextControllerAddTagToBlock(pageId, tagData);
         setPages((prev) =>
           prev.map((p) =>
             p.id === pageId
               ? {
                   id: updated.id,
                   title: updated.title,
-                  author: updated.author,
+                  createdBy: updated.createdBy,
+                  createdByActorId: updated.createdByActorId,
                   tags: updated.tags,
                   parentId: updated.parentId,
                   order: updated.order,
@@ -200,14 +203,15 @@ export const useContext = () => {
     async (pageId: string, tagId: string) => {
       setError(null);
       try {
-        const updated = await ContextService.contextControllerRemoveTagFromPage(pageId, tagId);
+        const updated = await ContextService.contextControllerRemoveTagFromBlock(pageId, tagId);
         setPages((prev) =>
           prev.map((p) =>
             p.id === pageId
               ? {
                   id: updated.id,
                   title: updated.title,
-                  author: updated.author,
+                  createdBy: updated.createdBy,
+                  createdByActorId: updated.createdByActorId,
                   tags: updated.tags,
                   parentId: updated.parentId,
                   order: updated.order,
@@ -232,7 +236,7 @@ export const useContext = () => {
   const getPageTree = useCallback(async (): Promise<ContextPageTree[]> => {
     setError(null);
     try {
-      const tree = await ContextService.contextControllerGetPageTree();
+      const tree = await ContextService.contextControllerGetBlockTree();
       return tree;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch page tree');
@@ -244,7 +248,7 @@ export const useContext = () => {
     async (pageId: string, newOrder: number) => {
       setError(null);
       try {
-        const updated = await ContextService.contextControllerReorderPage(pageId, {
+        const updated = await ContextService.contextControllerReorderBlock(pageId, {
           newOrder,
         });
         setPages((prev) =>
@@ -253,7 +257,8 @@ export const useContext = () => {
               ? {
                   id: updated.id,
                   title: updated.title,
-                  author: updated.author,
+                  createdBy: updated.createdBy,
+                  createdByActorId: updated.createdByActorId,
                   tags: updated.tags,
                   parentId: updated.parentId,
                   order: updated.order,
@@ -279,7 +284,7 @@ export const useContext = () => {
     async (pageId: string, newParentId: string | null) => {
       setError(null);
       try {
-        const updated = await ContextService.contextControllerMovePage(pageId, {
+        const updated = await ContextService.contextControllerMoveBlock(pageId, {
           newParentId: newParentId as any,
         });
         setPages((prev) =>
@@ -288,7 +293,8 @@ export const useContext = () => {
               ? {
                   id: updated.id,
                   title: updated.title,
-                  author: updated.author,
+                  createdBy: updated.createdBy,
+                  createdByActorId: updated.createdByActorId,
                   tags: updated.tags,
                   parentId: updated.parentId,
                   order: updated.order,
@@ -348,7 +354,8 @@ export const useContext = () => {
           {
             id: page.id,
             title: page.title,
-            author: page.author,
+            createdBy: page.createdBy,
+            createdByActorId: page.createdByActorId,
             tags: page.tags,
             parentId: page.parentId,
             order: page.order,
@@ -367,7 +374,8 @@ export const useContext = () => {
             ? {
                 id: page.id,
                 title: page.title,
-                author: page.author,
+                createdBy: page.createdBy,
+            createdByActorId: page.createdByActorId,
                 tags: page.tags,
                 parentId: page.parentId,
                 order: page.order,
