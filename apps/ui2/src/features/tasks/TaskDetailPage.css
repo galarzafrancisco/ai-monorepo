@@ -62,16 +62,15 @@
   min-height: 48px;
   max-height: 48px;
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--r-2);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface);
-  overflow: hidden;
 }
 
 .task-detail-page__activity-placeholder {
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
+  width: 100%;
+  text-align: center;
   transition: opacity 0.2s ease;
 }
 
@@ -85,7 +84,27 @@
   display: flex;
   align-items: center;
   padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-3);
   background: var(--surface);
+  box-shadow: var(--shadow-1);
+  font-weight: var(--fw-medium);
+  overflow: hidden;
+}
+
+.task-detail-page__activity-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+  opacity: 0.18;
+  transform: translateX(-100%);
+  animation: task-detail-activity-wave 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.task-detail-page__activity-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .task-detail-page__activity-card.is-entering {
@@ -115,6 +134,15 @@
   to {
     opacity: 0;
     transform: translateY(-6px);
+  }
+}
+
+@keyframes task-detail-activity-wave {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
   }
 }
 

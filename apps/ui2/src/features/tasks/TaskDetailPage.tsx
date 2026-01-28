@@ -439,10 +439,9 @@ export function TaskDetailPage() {
       {/* Live activity */}
       <DataRowContainer className='task-detail-page__section'>
         <div className="task-detail-page__activity">
-          <Text size='2' weight='medium'>Live activity</Text>
           <div className={`task-detail-page__activity-slot ${liveActivity ? 'task-detail-page__activity-slot--active' : ''}`}>
             <div className="task-detail-page__activity-placeholder">
-              <Text size='2' tone='muted'>No live activity yet</Text>
+              <Text size='2' tone='muted'>Live activity will show here</Text>
             </div>
             {liveActivity ? (
               <div
