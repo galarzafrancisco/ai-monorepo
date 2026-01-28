@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            packages/shared/package-lock.json
 
       - name: Build everything
         run: npm run zero-to-prod
@@ -99,6 +102,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy-pr:
     name: Copy Manifests to spark-ops

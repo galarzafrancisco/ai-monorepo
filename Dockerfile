@@ -11,7 +11,7 @@ COPY apps/ui2/package*.json ./apps/ui2/
 COPY packages/shared/package*.json ./packages/shared/
 
 # Install all dependencies (including dev dependencies for building)
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 # Copy source code
 COPY . .
@@ -30,7 +30,7 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY packages/shared/package*.json ./packages/shared/
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 
 # Copy built files from builder
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
