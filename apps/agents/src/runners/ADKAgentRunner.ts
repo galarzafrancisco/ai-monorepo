@@ -64,8 +64,10 @@ export class ADKAgentRunner extends BaseAgentRunner {
 
     for await (const msg of stream) {
       // map → string
-      const text = this.formatter.format(msg);
-      if (text) await emit(text);
+      const messages = this.formatter.format(msg);
+      messages.forEach(async (message) => {
+        await emit(message);
+      });
     }
 
     return finalResult;
