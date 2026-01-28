@@ -1,0 +1,27 @@
+.day-summary-card {
+  cursor: pointer;
+  background-color: var(--color-surface-secondary, #f5f5f5);
+}
+
+.day-summary-card:hover {
+  background-color: var(--color-surface-hover, #e8e8e8);
+}
+
+.day-summary-card__content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.day-summary-card__chevron {
+  font-size: 12px;
+  color: var(--color-text-muted, #666);
+  width: 16px;
+  display: inline-block;
+}
+
+.day-summary-card__text {
+  font-size: 14px;
+  color: var(--color-text-default, #000);
+}

@@ -88,6 +88,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
             tasks={filteredTasks}
             enteringIds={mobileAnimationState.enteringIds}
             exitingTasks={mobileAnimationState.exitingTasks}
+            groupByDay={statusFilter === TaskStatus.DONE}
           />
           <button
             className="tasks-fab"
@@ -144,6 +145,7 @@ function BoardColumn({ tasks, status, animationState }: { tasks: Task[], status:
           tasks={filteredTasks}
           enteringIds={animationState.enteringIds}
           exitingTasks={animationState.exitingTasks}
+          groupByDay={status === TaskStatus.DONE}
         />
       </div>
     </div>
