@@ -447,7 +447,9 @@ export function TaskDetailPage() {
               <div
                 className={`task-detail-page__activity-card ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
               >
-                <Text size='2'>{liveActivity.message.trim().slice(0, 52)}...</Text>
+                <Text size='2' className='task-detail-page__activity-message'>
+                  {liveActivity.message.replace(/\s+/g, ' ').trim()}
+                </Text>
               </div>
             ) : null}
           </div>

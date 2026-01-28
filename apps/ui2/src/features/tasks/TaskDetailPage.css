@@ -107,6 +107,14 @@
   z-index: 1;
 }
 
+.task-detail-page__activity-message {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  display: block;
+}
+
 .task-detail-page__activity-card.is-entering {
   animation: task-detail-activity-in 0.22s ease-out;
 }
