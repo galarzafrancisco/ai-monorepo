@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
@@ -12,14 +12,23 @@ import { TagSearchPop } from './TagSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto, TagResponseDto } from 'shared';
+import { TaskActivityItem } from './useTasks';
 import './TaskDetailPage.css';
 
 export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const navigate = useNavigate();
-  const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest } = useTasksCtx();
+  const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasksCtx();
   const { actors } = useActorsCtx();
   const { user } = useAuth();
+
+  const [liveActivity, setLiveActivity] = useState<TaskActivityItem | null>(null);
+  const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
+  const activityHideTimerRef = useRef<number | null>(null);
+  const activityExitTimerRef = useRef<number | null>(null);
+
+  const ACTIVITY_VISIBLE_MS = 3500;
+  const ACTIVITY_EXIT_MS = 220;
 
   // Find task from context (real-time updates)
   const task = tasks.find(t => t.id === taskId);
@@ -33,6 +42,17 @@ export function TaskDetailPage() {
     }
     setSectionTitle(task.name);
   }, [task, setSectionTitle]);
+
+  useEffect(() => {
+    return () => {
+      if (activityHideTimerRef.current) {
+        window.clearTimeout(activityHideTimerRef.current);
+      }
+      if (activityExitTimerRef.current) {
+        window.clearTimeout(activityExitTimerRef.current);
+      }
+    };
+  }, []);
 
   // Loading / error state
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +150,32 @@ export function TaskDetailPage() {
       setError(errorMessage);
     }
   }
+
+  const activity = task ? activityByTaskId[task.id] : null;
+
+  useEffect(() => {
+    if (!task || !activity) {
+      return;
+    }
+
+    if (activityHideTimerRef.current) {
+      window.clearTimeout(activityHideTimerRef.current);
+    }
+    if (activityExitTimerRef.current) {
+      window.clearTimeout(activityExitTimerRef.current);
+    }
+
+    setLiveActivity(activity);
+    setActivityPhase('enter');
+
+    activityHideTimerRef.current = window.setTimeout(() => {
+      setActivityPhase('exit');
+      activityExitTimerRef.current = window.setTimeout(() => {
+        setLiveActivity(null);
+        setActivityPhase('idle');
+      }, ACTIVITY_EXIT_MS);
+    }, ACTIVITY_VISIBLE_MS);
+  }, [activity, task, ACTIVITY_EXIT_MS, ACTIVITY_VISIBLE_MS]);
 
   // If task not found in context, could be loading or invalid
   if (!task) {
@@ -388,6 +434,25 @@ export function TaskDetailPage() {
             });
           })()
         }
+      </DataRowContainer>
+
+      {/* Live activity */}
+      <DataRowContainer className='task-detail-page__section'>
+        <div className="task-detail-page__activity">
+          <Text size='2' weight='medium'>Live activity</Text>
+          <div className={`task-detail-page__activity-slot ${liveActivity ? 'task-detail-page__activity-slot--active' : ''}`}>
+            <div className="task-detail-page__activity-placeholder">
+              <Text size='2' tone='muted'>No live activity yet</Text>
+            </div>
+            {liveActivity ? (
+              <div
+                className={`task-detail-page__activity-card ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
+              >
+                <Text size='2'>{liveActivity.message}</Text>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </DataRowContainer>
 
       {/* Status */}

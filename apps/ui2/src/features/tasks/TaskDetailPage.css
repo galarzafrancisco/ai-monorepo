@@ -49,6 +49,75 @@
   min-width: 0;
 }
 
+/* Live activity */
+.task-detail-page__activity {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.task-detail-page__activity-slot {
+  position: relative;
+  min-height: 48px;
+  max-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.task-detail-page__activity-placeholder {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  transition: opacity 0.2s ease;
+}
+
+.task-detail-page__activity-slot--active .task-detail-page__activity-placeholder {
+  opacity: 0;
+}
+
+.task-detail-page__activity-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+}
+
+.task-detail-page__activity-card.is-entering {
+  animation: task-detail-activity-in 0.22s ease-out;
+}
+
+.task-detail-page__activity-card.is-exiting {
+  animation: task-detail-activity-out 0.22s ease-in forwards;
+}
+
+@keyframes task-detail-activity-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes task-detail-activity-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
 /* Autocomplete */
 .task-detail-page__autocomplete {
   position: relative;
