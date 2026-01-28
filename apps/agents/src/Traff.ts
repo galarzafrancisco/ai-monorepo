@@ -1,6 +1,7 @@
 // agentApiClient.ts
 import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
 import { CreateCommentDto } from "../../backend/src/tasks/dto/create-comment.dto.js";
+import { ProjectResponseDto } from "@taico/shared/client";
 
 export class Traff {
   constructor(
@@ -104,7 +105,7 @@ export class Traff {
     return;
   }
 
-  async getProjectBySlug(slug: string): Promise<{ id: string; slug: string; repoUrl: string | null } | null> {
+  async getProjectBySlug(slug: string): Promise<ProjectResponseDto | null> {
     const url = `${this.baseUrl}/api/v1/meta/projects/by-slug/${encodeURIComponent(slug)}`;
 
     const res = await fetch(url, {
@@ -126,11 +127,7 @@ export class Traff {
       );
     }
 
-    const project = await res.json();
-    return {
-      id: project.id,
-      slug: project.slug,
-      repoUrl: project.repoUrl,
-    };
+    const project = await res.json() as ProjectResponseDto;
+    return project;
   }
 }
