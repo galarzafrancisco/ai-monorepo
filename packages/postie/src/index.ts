@@ -22,11 +22,10 @@ export interface PostieConfig {
  * - Other messaging platforms
  */
 export class Postie {
-  private telegramMessenger?: import('./telegram').TelegramMessenger;
+  private telegramMessenger?: TelegramMessenger;
 
   constructor(config: PostieConfig) {
     if (config.telegram) {
-      const { TelegramMessenger } = require('./telegram');
       this.telegramMessenger = new TelegramMessenger(config.telegram);
     }
   }

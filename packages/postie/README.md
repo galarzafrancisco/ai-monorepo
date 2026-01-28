@@ -4,8 +4,10 @@ A TypeScript package for sending messages via Telegram and other platforms.
 
 ## Installation
 
+Postie is a workspace package. From the repo root, add it to the app that will use it:
+
 ```bash
-npm install postie
+npm -w <app-name> add postie
 ```
 
 ## Usage
