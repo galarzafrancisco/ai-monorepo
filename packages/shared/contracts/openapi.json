@@ -4034,7 +4034,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Patch an agent (update system prompt and/or status triggers)",
+        "summary": "Patch an agent (update system prompt, status triggers, and/or type)",
         "tags": [
           "Agent"
         ]
@@ -7195,6 +7195,18 @@
                 "DONE"
               ]
             }
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of agent (provider)",
+            "example": "claude",
+            "enum": [
+              "claude",
+              "codex",
+              "opencode",
+              "adk",
+              "other"
+            ]
           }
         }
       },

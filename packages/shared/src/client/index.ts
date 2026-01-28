@@ -62,7 +62,7 @@ export type { PageListResponseDto } from './models/PageListResponseDto';
 export type { PageResponseDto } from './models/PageResponseDto';
 export type { PageSummaryDto } from './models/PageSummaryDto';
 export type { PageTreeResponseDto } from './models/PageTreeResponseDto';
-export type { PatchAgentDto } from './models/PatchAgentDto';
+export { PatchAgentDto } from './models/PatchAgentDto';
 export type { PatchProjectDto } from './models/PatchProjectDto';
 export type { ProjectResponseDto } from './models/ProjectResponseDto';
 export { RegisterClientDto } from './models/RegisterClientDto';

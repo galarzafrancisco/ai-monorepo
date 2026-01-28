@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo, useState } from "react";
 import { useAgents } from "./useAgents";
 import type { Agent } from "./types";
 import type { TaskStatus } from "../../shared/const/taskStatus";
+import type { AgentResponseDto } from "shared";
 
 // Shape this to match what pages/layout need.
 export type AgentsContextValue = {
@@ -12,7 +13,7 @@ export type AgentsContextValue = {
   setSectionTitle: (title: string) => void;
   loadAgentDetails: (slug: string) => Promise<Agent | null>;
   createAgent: (params: { name: string; slug: string }) => Promise<Agent | null>;
-  updateAgent: (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[] }) => Promise<Agent | null>;
+  updateAgent: (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[]; type?: AgentResponseDto.type }) => Promise<Agent | null>;
   deleteAgent: (actorId: string) => Promise<boolean>;
 };
 

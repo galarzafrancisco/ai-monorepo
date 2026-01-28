@@ -94,7 +94,7 @@ export class AgentsController {
 
   @Patch(':actorId')
   @RequireScopes(AgentsScopes.WRITE.id)
-  @ApiOperation({ summary: 'Patch an agent (update system prompt and/or status triggers)' })
+  @ApiOperation({ summary: 'Patch an agent (update system prompt, status triggers, and/or type)' })
   @ApiOkResponse({ type: AgentResponseDto })
   async patchAgent(
     @Param() params: AgentActorParamsDto,
@@ -103,6 +103,7 @@ export class AgentsController {
     const result = await this.agentsService.patchAgent(params.actorId, {
       systemPrompt: dto.systemPrompt,
       statusTriggers: dto.statusTriggers,
+      type: dto.type,
     });
     return this.mapResultToResponse(result);
   }

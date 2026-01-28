@@ -1216,7 +1216,7 @@ export interface paths {
         delete: operations["AgentsController_deleteAgent"];
         options?: never;
         head?: never;
-        /** Patch an agent (update system prompt and/or status triggers) */
+        /** Patch an agent (update system prompt, status triggers, and/or type) */
         patch: operations["AgentsController_patchAgent"];
         trace?: never;
     };
@@ -3286,6 +3286,12 @@ export interface components {
              *     ]
              */
             statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /**
+             * @description Type of agent (provider)
+             * @example claude
+             * @enum {string}
+             */
+            type?: "claude" | "codex" | "opencode" | "adk" | "other";
         };
         IssueAccessTokenRequestDto: {
             /**

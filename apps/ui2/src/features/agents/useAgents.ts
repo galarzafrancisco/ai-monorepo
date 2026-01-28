@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AgentsService } from './api';
 import type { Agent } from './types';
 import type { TaskStatus } from '../../shared/const/taskStatus';
+import type { AgentResponseDto } from 'shared';
 
 export const useAgents = () => {
   // UI feedback
@@ -87,7 +88,7 @@ export const useAgents = () => {
   };
 
   // Update agent
-  const updateAgent = async (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[] }): Promise<Agent | null> => {
+  const updateAgent = async (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[]; type?: AgentResponseDto.type }): Promise<Agent | null> => {
     setIsLoading(true);
     setError(null);
     try {

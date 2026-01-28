@@ -6,6 +6,7 @@ import {
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from 'src/tasks/enums';
+import { AgentType } from '../enums';
 
 export class PatchAgentDto {
   @ApiPropertyOptional({
@@ -26,4 +27,13 @@ export class PatchAgentDto {
   @IsEnum(TaskStatus, { each: true })
   @IsOptional()
   statusTriggers?: TaskStatus[];
+
+  @ApiPropertyOptional({
+    description: 'Type of agent (provider)',
+    example: 'claude',
+    enum: AgentType,
+  })
+  @IsEnum(AgentType)
+  @IsOptional()
+  type?: AgentType;
 }

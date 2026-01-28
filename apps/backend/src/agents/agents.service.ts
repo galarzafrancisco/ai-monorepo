@@ -275,6 +275,9 @@ export class AgentsService {
     if (input.statusTriggers !== undefined) {
       agent.statusTriggers = input.statusTriggers;
     }
+    if (input.type !== undefined) {
+      agent.type = input.type;
+    }
 
     const updatedAgent = await this.agentRepository.save(agent);
 

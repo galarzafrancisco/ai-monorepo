@@ -9,6 +9,7 @@ import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDt
 import { AgentTokensService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
+import { EditAgentTypePop } from './EditAgentTypePop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import './AgentDetailPage.css';
 import { useActorsCtx } from '../actors';
@@ -42,6 +43,7 @@ export function AgentDetailPage() {
   // Edit agent state
   const [showEditSystemPromptPop, setShowEditSystemPromptPop] = useState(false);
   const [showEditStatusTriggersPop, setShowEditStatusTriggersPop] = useState(false);
+  const [showEditAgentTypePop, setShowEditAgentTypePop] = useState(false);
 
   // Find actor associated with this agent
   const { actors } = useActorsCtx();
@@ -196,6 +198,23 @@ export function AgentDetailPage() {
     }
   };
 
+  // Handle saving agent type
+  const handleSaveAgentType = async ({ type }: { type: AgentResponseDto.type }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { type });
+      if (updated) {
+        setAgent(updated);
+        setShowEditAgentTypePop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update agent type:', err);
+      return false;
+    }
+  };
+
   // Handle revoking a token
   const handleRevokeToken = async (tokenId: string) => {
     if (!slug) return;
@@ -274,6 +293,16 @@ export function AgentDetailPage() {
         <DataRow onClick={() => setShowEditSystemPromptPop(true)}>
           <Text size="2" className="agent-detail-page__system-prompst">
             {agent.systemPrompt || 'No system prompt configured'}
+          </Text>
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
+
+      {/* Agent Type */}
+      <DataRowContainer title="Agent Type" className="agent-detail-page__section">
+        <DataRow onClick={() => setShowEditAgentTypePop(true)}>
+          <Text size="2" tone="muted">
+            {agent.type}
           </Text>
           <Text size="1" tone="muted">tap to edit</Text>
         </DataRow>
@@ -513,6 +542,13 @@ export function AgentDetailPage() {
           initialValue={agent.statusTriggers as TaskStatus[]}
           onCancel={() => setShowEditStatusTriggersPop(false)}
           onSave={handleSaveStatusTriggers}
+        />
+      )}
+      {showEditAgentTypePop && agent && (
+        <EditAgentTypePop
+          initialValue={agent.type}
+          onCancel={() => setShowEditAgentTypePop(false)}
+          onSave={handleSaveAgentType}
         />
       )}
     </div>

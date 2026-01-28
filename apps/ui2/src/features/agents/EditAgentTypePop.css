@@ -1,0 +1,44 @@
+.edit-agent-type-pop__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2);
+}
+
+.edit-agent-type-pop__description {
+  margin-bottom: var(--space-1);
+}
+
+.edit-agent-type-pop__radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.edit-agent-type-pop__radio-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background-color: var(--surface);
+  border-radius: var(--radius-2);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-agent-type-pop__radio-item:hover {
+  background-color: var(--surface-hover);
+}
+
+.edit-agent-type-pop__radio {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.edit-agent-type-pop__type-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
