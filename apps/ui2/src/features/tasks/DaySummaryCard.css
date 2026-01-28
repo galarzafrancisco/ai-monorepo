@@ -1,27 +1,27 @@
 .day-summary-card {
   cursor: pointer;
-  background-color: var(--color-surface-secondary, #f5f5f5);
+  background-color: var(--surface);
 }
 
 .day-summary-card:hover {
-  background-color: var(--color-surface-hover, #e8e8e8);
+  opacity: 0.9;
 }
 
 .day-summary-card__content {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 0;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
 }
 
 .day-summary-card__chevron {
-  font-size: 12px;
-  color: var(--color-text-muted, #666);
+  font-size: var(--fs-1);
+  color: var(--text-muted);
   width: 16px;
   display: inline-block;
 }
 
 .day-summary-card__text {
-  font-size: 14px;
-  color: var(--color-text-default, #000);
+  font-size: var(--fs-2);
+  color: var(--text);
 }
