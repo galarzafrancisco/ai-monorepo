@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { TagResponseDto } from 'shared';
-import { TasksService } from './api';
+import type { MetaTagResponseDto } from 'shared';
+import { MetaService } from 'shared';
 
 interface TagInputProps {
   value: string[]; // Array of tag names
@@ -14,10 +14,10 @@ export const TagInput: React.FC<TagInputProps> = ({
   placeholder = 'Type to add tags...'
 }) => {
   const [inputValue, setInputValue] = useState('');
-  const [suggestions, setSuggestions] = useState<TagResponseDto[]>([]);
+  const [suggestions, setSuggestions] = useState<MetaTagResponseDto[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [allTags, setAllTags] = useState<TagResponseDto[]>([]);
+  const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -25,7 +25,7 @@ export const TagInput: React.FC<TagInputProps> = ({
   useEffect(() => {
     const loadTags = async () => {
       try {
-        const tags = await TasksService.tasksControllerGetAllTags();
+        const tags = await MetaService.metaControllerGetAllTags();
         setAllTags(tags);
       } catch (error) {
         console.error('Failed to load tags:', error);
@@ -40,7 +40,7 @@ export const TagInput: React.FC<TagInputProps> = ({
       if (inputValue.trim().length > 0) {
         const query = inputValue.trim().toLowerCase();
         const filtered = allTags
-          .filter((tag: TagResponseDto) =>
+          .filter((tag: MetaTagResponseDto) =>
             tag.name.toLowerCase().includes(query) && !value.includes(tag.name)
           );
         setSuggestions(filtered);

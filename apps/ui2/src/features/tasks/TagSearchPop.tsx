@@ -1,21 +1,20 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
 import { Text, DataRowTag } from "../../ui/primitives";
-import { TasksService } from './api';
-import { TagResponseDto } from 'shared';
+import { MetaService, MetaTagResponseDto } from 'shared';
 import "./TagSearchPop.css";
 
 type TagSearchPopProps = {
   onCancel?: () => void;
-  onSave: (tag: TagResponseDto) => Promise<boolean>;
-  existingTags: TagResponseDto[]; // Tags already on the task
+  onSave: (tag: MetaTagResponseDto) => Promise<boolean>;
+  existingTags: { id: string }[]; // Tags already on the task (only id is used for filtering)
 };
 
 export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopProps) {
-  const [allTags, setAllTags] = useState<TagResponseDto[]>([]);
+  const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [query, setQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<TagResponseDto | null>(null);
+  const [selectedTag, setSelectedTag] = useState<MetaTagResponseDto | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -25,7 +24,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
   useEffect(() => {
     const loadTags = async () => {
       try {
-        const tags = await TasksService.tasksControllerGetAllTags();
+        const tags = await MetaService.metaControllerGetAllTags();
         setAllTags(tags);
       } catch (err) {
         console.error('Failed to load tags:', err);
@@ -123,6 +122,8 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
             id: '', // Will be assigned by backend
             name: query.trim(),
             color: undefined,
+            createdAt: '',
+            updatedAt: '',
           });
         }
         break;
@@ -135,7 +136,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
     }
   }, [filteredTags, highlightedIndex, canCreateNew, selectedTag, query]);
 
-  const handleSelectTag = (tag: TagResponseDto) => {
+  const handleSelectTag = (tag: MetaTagResponseDto) => {
     setSelectedTag(tag);
   };
 
@@ -144,6 +145,8 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
       id: '', // Will be assigned by backend
       name: query.trim(),
       color: undefined,
+      createdAt: '',
+      updatedAt: '',
     });
   };
 

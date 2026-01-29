@@ -8,8 +8,6 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export { ActorResponseDto } from './models/ActorResponseDto';
-export type { AddContextTagDto } from './models/AddContextTagDto';
-export type { AddTagDto } from './models/AddTagDto';
 export type { AgentListResponseDto } from './models/AgentListResponseDto';
 export { AgentResponseDto } from './models/AgentResponseDto';
 export type { AnswerInputRequestDto } from './models/AnswerInputRequestDto';
@@ -33,7 +31,6 @@ export { CreateAgentDto } from './models/CreateAgentDto';
 export type { CreateBlockDto } from './models/CreateBlockDto';
 export type { CreateCommentDto } from './models/CreateCommentDto';
 export type { CreateConnectionDto } from './models/CreateConnectionDto';
-export type { CreateContextTagDto } from './models/CreateContextTagDto';
 export type { CreateInputRequestDto } from './models/CreateInputRequestDto';
 export type { CreateMappingDto } from './models/CreateMappingDto';
 export type { CreateProjectDto } from './models/CreateProjectDto';

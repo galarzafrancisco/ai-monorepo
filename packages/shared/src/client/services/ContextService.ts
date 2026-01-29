@@ -2,14 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AddContextTagDto } from '../models/AddContextTagDto';
 import type { AppendBlockDto } from '../models/AppendBlockDto';
 import type { BlockListResponseDto } from '../models/BlockListResponseDto';
 import type { BlockResponseDto } from '../models/BlockResponseDto';
 import type { BlockTreeResponseDto } from '../models/BlockTreeResponseDto';
-import type { ContextTagResponseDto } from '../models/ContextTagResponseDto';
 import type { CreateBlockDto } from '../models/CreateBlockDto';
-import type { CreateContextTagDto } from '../models/CreateContextTagDto';
+import type { CreateTagDto } from '../models/CreateTagDto';
 import type { MoveBlockDto } from '../models/MoveBlockDto';
 import type { ReorderBlockDto } from '../models/ReorderBlockDto';
 import type { UpdateBlockDto } from '../models/UpdateBlockDto';
@@ -197,7 +195,7 @@ export class ContextService {
      */
     public static contextControllerAddTagToBlock(
         id: string,
-        requestBody: AddContextTagDto,
+        requestBody: CreateTagDto,
     ): CancelablePromise<BlockResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -228,53 +226,6 @@ export class ContextService {
             url: '/api/v1/context/blocks/{id}/tags/{tagId}',
             path: {
                 'id': id,
-                'tagId': tagId,
-            },
-        });
-    }
-    /**
-     * Create a new tag
-     * @param requestBody
-     * @returns ContextTagResponseDto Tag created successfully
-     * @throws ApiError
-     */
-    public static contextControllerCreateTag(
-        requestBody: CreateContextTagDto,
-    ): CancelablePromise<ContextTagResponseDto> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/context/blocks/tags',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `Invalid input data`,
-            },
-        });
-    }
-    /**
-     * Get all tags
-     * @returns ContextTagResponseDto List of all tags
-     * @throws ApiError
-     */
-    public static contextControllerGetAllTags(): CancelablePromise<Array<ContextTagResponseDto>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/context/blocks/tags/all',
-        });
-    }
-    /**
-     * Delete a tag from the system
-     * @param tagId
-     * @returns void
-     * @throws ApiError
-     */
-    public static contextControllerDeleteTag(
-        tagId: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/v1/context/blocks/tags/{tagId}',
-            path: {
                 'tagId': tagId,
             },
         });

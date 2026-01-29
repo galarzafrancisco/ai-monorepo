@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { TagResponseDto } from 'shared';
-import { TasksService } from './api';
+import type { MetaTagResponseDto } from 'shared';
+import { MetaService, TaskService } from 'shared';
 
 interface TagSelectorProps {
   taskId: string;
@@ -8,7 +8,7 @@ interface TagSelectorProps {
 }
 
 export const TagSelector: React.FC<TagSelectorProps> = ({ taskId, onTagAdded }) => {
-  const [allTags, setAllTags] = useState<TagResponseDto[]>([]);
+  const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3B82F6');
@@ -21,7 +21,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ taskId, onTagAdded }) 
 
   const loadAllTags = async () => {
     try {
-      const tags = await TasksService.tasksControllerGetAllTags();
+      const tags = await MetaService.metaControllerGetAllTags();
       setAllTags(tags);
     } catch (error) {
       console.error('Failed to load tags:', error);
@@ -31,7 +31,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ taskId, onTagAdded }) 
   const handleAddExistingTag = async (tagName: string) => {
     try {
       setIsSubmitting(true);
-      await TasksService.tasksControllerAddTagToTask(taskId, {
+      await TaskService.tasksControllerAddTagToTask(taskId, {
         name: tagName,
       });
       onTagAdded();
@@ -48,9 +48,8 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ taskId, onTagAdded }) 
 
     try {
       setIsSubmitting(true);
-      await TasksService.tasksControllerAddTagToTask(taskId, {
+      await TaskService.tasksControllerAddTagToTask(taskId, {
         name: newTagName.trim(),
-        color: newTagColor,
       });
       setNewTagName('');
       setNewTagColor('#3B82F6');

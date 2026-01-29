@@ -11,7 +11,7 @@ import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
-import { InputRequestResponseDto, TagResponseDto } from 'shared';
+import { InputRequestResponseDto, MetaTagResponseDto } from 'shared';
 import { TaskActivityItem } from './useTasks';
 import './TaskDetailPage.css';
 
@@ -119,14 +119,13 @@ export function TaskDetailPage() {
     setRespondingToInputRequest(null);
   }
 
-  const saveTag = async (tag: TagResponseDto): Promise<boolean> => {
+  const saveTag = async (tag: MetaTagResponseDto): Promise<boolean> => {
     if (!task) {
       return false;
     }
     try {
       await TasksService.tasksControllerAddTagToTask(task.id, {
         name: tag.name,
-        color: tag.color,
       });
       return true;
     } catch {

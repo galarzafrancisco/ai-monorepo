@@ -2619,7 +2619,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddTagDto"
+                "$ref": "#/components/schemas/CreateTagDto"
               }
             }
           }
@@ -2695,108 +2695,6 @@
           }
         ],
         "summary": "Remove a tag from a task",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/tags": {
-      "post": {
-        "operationId": "TasksController_createTag",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTagDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tag created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new tag",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/tags/all": {
-      "get": {
-        "operationId": "TasksController_getAllTags",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of all tags",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TagResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get all tags",
-        "tags": [
-          "Task"
-        ]
-      }
-    },
-    "/api/v1/tasks/tasks/tags/{tagId}": {
-      "delete": {
-        "operationId": "TasksController_deleteTag",
-        "parameters": [
-          {
-            "name": "tagId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Tag deleted successfully"
-          },
-          "404": {
-            "description": "Tag not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete a tag from the system",
         "tags": [
           "Task"
         ]
@@ -3443,7 +3341,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddContextTagDto"
+                "$ref": "#/components/schemas/CreateTagDto"
               }
             }
           }
@@ -3513,105 +3411,6 @@
           }
         ],
         "summary": "Remove a tag from a wiki page",
-        "tags": [
-          "Context"
-        ]
-      }
-    },
-    "/api/v1/context/blocks/tags": {
-      "post": {
-        "operationId": "ContextController_createTag",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateContextTagDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tag created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ContextTagResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new tag",
-        "tags": [
-          "Context"
-        ]
-      }
-    },
-    "/api/v1/context/blocks/tags/all": {
-      "get": {
-        "operationId": "ContextController_getAllTags",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of all tags",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ContextTagResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get all tags",
-        "tags": [
-          "Context"
-        ]
-      }
-    },
-    "/api/v1/context/blocks/tags/{tagId}": {
-      "delete": {
-        "operationId": "ContextController_deleteTag",
-        "parameters": [
-          {
-            "name": "tagId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Tag deleted successfully"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete a tag from the system",
         "tags": [
           "Context"
         ]
@@ -6417,24 +6216,6 @@
           "status"
         ]
       },
-      "AddTagDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "bug"
-          },
-          "color": {
-            "type": "string",
-            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
-            "example": "#FF5733"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
       "CreateInputRequestDto": {
         "type": "object",
         "properties": {
@@ -6837,37 +6618,6 @@
         },
         "required": [
           "newParentId"
-        ]
-      },
-      "AddContextTagDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "project-alpha"
-          },
-          "color": {
-            "type": "string",
-            "description": "Color for the tag (hex format). If not provided, a random color will be assigned.",
-            "example": "#FF5733"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "CreateContextTagDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the tag",
-            "example": "project-alpha"
-          }
-        },
-        "required": [
-          "name"
         ]
       },
       "AuthorizationServerMetadataDto": {

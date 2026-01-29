@@ -2,7 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AddTagDto } from '../models/AddTagDto';
 import type { AnswerInputRequestDto } from '../models/AnswerInputRequestDto';
 import type { AssignTaskDto } from '../models/AssignTaskDto';
 import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto';
@@ -12,7 +11,6 @@ import type { CreateInputRequestDto } from '../models/CreateInputRequestDto';
 import type { CreateTagDto } from '../models/CreateTagDto';
 import type { CreateTaskDto } from '../models/CreateTaskDto';
 import type { InputRequestResponseDto } from '../models/InputRequestResponseDto';
-import type { TagResponseDto } from '../models/TagResponseDto';
 import type { TaskListResponseDto } from '../models/TaskListResponseDto';
 import type { TaskResponseDto } from '../models/TaskResponseDto';
 import type { TaskSearchResultDto } from '../models/TaskSearchResultDto';
@@ -261,7 +259,7 @@ export class TaskService {
      */
     public static tasksControllerAddTagToTask(
         id: string,
-        requestBody: AddTagDto,
+        requestBody: CreateTagDto,
     ): CancelablePromise<TaskResponseDto> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -297,56 +295,6 @@ export class TaskService {
             },
             errors: {
                 404: `Task not found`,
-            },
-        });
-    }
-    /**
-     * Create a new tag
-     * @param requestBody
-     * @returns TagResponseDto Tag created successfully
-     * @throws ApiError
-     */
-    public static tasksControllerCreateTag(
-        requestBody: CreateTagDto,
-    ): CancelablePromise<TagResponseDto> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/tasks/tasks/tags',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `Invalid input data`,
-            },
-        });
-    }
-    /**
-     * Get all tags
-     * @returns TagResponseDto List of all tags
-     * @throws ApiError
-     */
-    public static tasksControllerGetAllTags(): CancelablePromise<Array<TagResponseDto>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/tasks/tasks/tags/all',
-        });
-    }
-    /**
-     * Delete a tag from the system
-     * @param tagId
-     * @returns void
-     * @throws ApiError
-     */
-    public static tasksControllerDeleteTag(
-        tagId: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/v1/tasks/tasks/tags/{tagId}',
-            path: {
-                'tagId': tagId,
-            },
-            errors: {
-                404: `Tag not found`,
             },
         });
     }

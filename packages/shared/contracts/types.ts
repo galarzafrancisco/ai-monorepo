@@ -804,57 +804,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tasks/tasks/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a new tag */
-        post: operations["TasksController_createTag"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/tags/all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all tags */
-        get: operations["TasksController_getAllTags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/tasks/tasks/tags/{tagId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a tag from the system */
-        delete: operations["TasksController_deleteTag"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/tasks/tasks/{id}/input-requests": {
         parameters: {
             query?: never;
@@ -1039,57 +988,6 @@ export interface paths {
         post?: never;
         /** Remove a tag from a wiki page */
         delete: operations["ContextController_removeTagFromBlock"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/blocks/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a new tag */
-        post: operations["ContextController_createTag"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/blocks/tags/all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all tags */
-        get: operations["ContextController_getAllTags"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/blocks/tags/{tagId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a tag from the system */
-        delete: operations["ContextController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2747,18 +2645,6 @@ export interface components {
              */
             comment?: string;
         };
-        AddTagDto: {
-            /**
-             * @description Name of the tag
-             * @example bug
-             */
-            name: string;
-            /**
-             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
-             * @example #FF5733
-             */
-            color?: string;
-        };
         CreateInputRequestDto: {
             /**
              * @description ID of the actor assigned to answer the question. Defaults to task creator if not provided.
@@ -3039,25 +2925,6 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             newParentId: Record<string, never> | null;
-        };
-        AddContextTagDto: {
-            /**
-             * @description Name of the tag
-             * @example project-alpha
-             */
-            name: string;
-            /**
-             * @description Color for the tag (hex format). If not provided, a random color will be assigned.
-             * @example #FF5733
-             */
-            color?: string;
-        };
-        CreateContextTagDto: {
-            /**
-             * @description Name of the tag
-             * @example project-alpha
-             */
-            name: string;
         };
         AuthorizationServerMetadataDto: {
             /**
@@ -5324,7 +5191,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AddTagDto"];
+                "application/json": components["schemas"]["CreateTagDto"];
             };
         };
         responses: {
@@ -5375,84 +5242,6 @@ export interface operations {
                 };
             };
             /** @description Task not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_createTag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTagDto"];
-            };
-        };
-        responses: {
-            /** @description Tag created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_getAllTags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of all tags */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TagResponseDto"][];
-                };
-            };
-        };
-    };
-    TasksController_deleteTag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tagId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Tag deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Tag not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5914,7 +5703,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AddContextTagDto"];
+                "application/json": components["schemas"]["CreateTagDto"];
             };
         };
         responses: {
@@ -5956,77 +5745,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BlockResponseDto"];
                 };
-            };
-        };
-    };
-    ContextController_createTag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateContextTagDto"];
-            };
-        };
-        responses: {
-            /** @description Tag created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ContextTagResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ContextController_getAllTags: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of all tags */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ContextTagResponseDto"][];
-                };
-            };
-        };
-    };
-    ContextController_deleteTag: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tagId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Tag deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
