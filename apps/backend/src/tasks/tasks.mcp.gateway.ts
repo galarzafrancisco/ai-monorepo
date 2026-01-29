@@ -1,21 +1,25 @@
-import { Injectable } from "@nestjs/common";
-import type { Request, Response } from "express";
-import { TasksService } from "./tasks.service";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { z } from "zod";
-import { TaskStatus } from "./enums";
-import { AuthContext, UserContext } from "src/auth/guards/context/auth-context.types";
-import { TasksScopes } from "./tasks.scopes";
-import { ActorService } from "src/identity-provider/actor.service";
+import { Injectable } from '@nestjs/common';
+import type { Request, Response } from 'express';
+import { TasksService } from './tasks.service';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { z } from 'zod';
+import { TaskStatus } from './enums';
+import {
+  AuthContext,
+  UserContext,
+} from 'src/auth/guards/context/auth-context.types';
+import { TasksScopes } from './tasks.scopes';
+import { ActorService } from 'src/identity-provider/actor.service';
+import { MetaService } from 'src/meta/meta.service';
 
 @Injectable()
 export class TasksMcpGateway {
-
   constructor(
-    private readonly TasksService: TasksService,
-    private readonly ActorService: ActorService,
-  ) { }
+    private readonly tasksService: TasksService,
+    private readonly metaService: MetaService,
+    private readonly actorService: ActorService,
+  ) {}
 
   private buildServer(user: UserContext, authContext: AuthContext): McpServer {
     const server = new McpServer({
@@ -23,7 +27,9 @@ export class TasksMcpGateway {
       version: '0.0.0',
     });
 
-    const canWrite = authContext.scopes.find(scope => scope === TasksScopes.WRITE.id);
+    const canWrite = authContext.scopes.find(
+      (scope) => scope === TasksScopes.WRITE.id,
+    );
 
     server.registerTool(
       'list_tasks',
@@ -35,26 +41,30 @@ export class TasksMcpGateway {
         },
       },
       async ({ tag }) => {
-        const tasks = await this.TasksService.listTasks({
+        const tasks = await this.tasksService.listTasks({
           tag,
           page: 0,
           limit: 20,
         });
         return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(tasks.items.map(t => {
-              return {
-                name: t.name,
-                assignee: t.assignee,
-                status: t.status,
-                id: t.id,
-              }
-            })),
-          }],
-        }
-      }
-    )
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                tasks.items.map((t) => {
+                  return {
+                    name: t.name,
+                    assignee: t.assignee,
+                    status: t.status,
+                    id: t.id,
+                  };
+                }),
+              ),
+            },
+          ],
+        };
+      },
+    );
 
     server.registerTool(
       'fetch',
@@ -66,21 +76,24 @@ export class TasksMcpGateway {
         },
       },
       async ({ taskId }) => {
-        const task = await this.TasksService.getTaskById(taskId);
+        const task = await this.tasksService.getTaskById(taskId);
         return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(task),
-          }],
-        }
-      }
-    )
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(task),
+            },
+          ],
+        };
+      },
+    );
 
     server.registerTool(
       'search',
       {
         title: 'Search tasks',
-        description: 'Fuzzy search for tasks by name and description. Returns matching tasks sorted by relevance.',
+        description:
+          'Fuzzy search for tasks by name and description. Returns matching tasks sorted by relevance.',
         inputSchema: {
           query: z.string(),
           limit: z.number().optional(),
@@ -88,326 +101,407 @@ export class TasksMcpGateway {
         },
       },
       async ({ query, limit, threshold }) => {
-        const results = await this.TasksService.searchTasks({
+        const results = await this.tasksService.searchTasks({
           query,
           limit,
           threshold,
         });
         return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(results),
-          }],
-        }
-      }
-    )
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results),
+            },
+          ],
+        };
+      },
+    );
 
     server.registerTool(
       'search_actors',
       {
         title: 'Search actors',
-        description: 'Fuzzy search for actors by display name or slug. Returns matching actors sorted by relevance.',
+        description:
+          'Fuzzy search for actors by display name or slug. Returns matching actors sorted by relevance.',
         inputSchema: {
           query: z.string(),
         },
       },
       async ({ query }) => {
-        const results = await this.ActorService.searchActors({
+        const results = await this.actorService.searchActors({
           query,
           limit: 10,
         });
         return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(results),
-          }],
-        }
-      }
-    )
-
-    canWrite && server.registerTool(
-      'create_task',
-      {
-        title: 'Create a new task',
-        description: 'Create task with name and description',
-        inputSchema: {
-          name: z.string(),
-          description: z.string(),
-          assigneeActorId: z.string().optional(),
-          sessionId: z.string().optional(),
-          dependsOnIds: z.array(z.string()).optional(),
-        },
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results),
+            },
+          ],
+        };
       },
-      async ({ name, description, assigneeActorId, sessionId, dependsOnIds }) => {
-        const task = await this.TasksService.createTask({
+    );
+
+    canWrite &&
+      server.registerTool(
+        'create_task',
+        {
+          title: 'Create a new task',
+          description: 'Create task with name and description',
+          inputSchema: {
+            name: z.string(),
+            description: z.string(),
+            assigneeActorId: z.string().optional(),
+            sessionId: z.string().optional(),
+            dependsOnIds: z.array(z.string()).optional(),
+          },
+        },
+        async ({
           name,
           description,
           assigneeActorId,
           sessionId,
-          createdByActorId: user.actorId,
           dependsOnIds,
-        });
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(task),
-          }],
-        }
-      }
-    )
-
-    canWrite && server.registerTool(
-      'assign_task',
-      {
-        title: 'Assign task',
-        description: 'Assign task to someone, optionally with session',
-        inputSchema: {
-          taskId: z.string(),
-          assigneeActorId: z.string(),
-          sessionId: z.string().optional(),
+        }) => {
+          const task = await this.tasksService.createTask({
+            name,
+            description,
+            assigneeActorId,
+            sessionId,
+            createdByActorId: user.actorId,
+            dependsOnIds,
+          });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(task),
+              },
+            ],
+          };
         },
-      },
-      async ({ taskId, assigneeActorId, sessionId }) => {
-        const task = await this.TasksService.assignTask(taskId, {
-          assigneeActorId,
-          sessionId,
-        }, user.actorId);
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
+      );
 
-    canWrite && server.registerTool(
-      'add_comment',
-      {
-        title: 'Add comment to task',
-        description: 'Add comment',
-        inputSchema: {
-          taskId: z.string(),
-          content: z.string(),
+    canWrite &&
+      server.registerTool(
+        'assign_task',
+        {
+          title: 'Assign task',
+          description: 'Assign task to someone, optionally with session',
+          inputSchema: {
+            taskId: z.string(),
+            assigneeActorId: z.string(),
+            sessionId: z.string().optional(),
+          },
         },
-      },
-      async ({ taskId, content }) => {
-        await this.TasksService.addComment(taskId, {
-          commenterActorId: user.actorId,
-          content,
-        });
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
-
-    canWrite && server.registerTool(
-      'mark_task_in_progress',
-      {
-        title: 'Start working on task',
-        description: 'Assign task to yourself, set status to IN_PROGRESS, add comment with branch info',
-        inputSchema: {
-          taskId: z.string(),
-          sessionId: z.string(),
-          branchName: z.string(),
+        async ({ taskId, assigneeActorId, sessionId }) => {
+          const task = await this.tasksService.assignTask(
+            taskId,
+            {
+              assigneeActorId,
+              sessionId,
+            },
+            user.actorId,
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
         },
-      },
-      async ({ taskId, sessionId, branchName }) => {
-        // Assign task
-        // TODO: Should this be a feature of the Backend itself? You can't start a task if it's not assigned to you?
-        // And if the task has no assignee and you start it, it gets assigned to you?
-        await this.TasksService.assignTask(taskId, { assigneeActorId: user.actorId, sessionId }, user.actorId);
+      );
 
-        // Change status to IN_PROGRESS
-        await this.TasksService.changeStatus(taskId, {
-          status: TaskStatus.IN_PROGRESS,
-        }, user.actorId);
-
-        // Add comment
-        await this.TasksService.addComment(taskId, {
-          commenterActorId: user.actorId,
-          content: `Starting to work on this. I've created the branch ${branchName}`,
-        });
-
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
-
-    canWrite && server.registerTool(
-      'mark_task_for_review',
-      {
-        title: 'Submit task for review',
-        description: 'Set status to FOR_REVIEW and add PR link comment',
-        inputSchema: {
-          taskId: z.string(),
-          prLink: z.string(),
+    canWrite &&
+      server.registerTool(
+        'add_comment',
+        {
+          title: 'Add comment to task',
+          description: 'Add comment',
+          inputSchema: {
+            taskId: z.string(),
+            content: z.string(),
+          },
         },
-      },
-      async ({ taskId, prLink }) => {
-        // Change status to FOR_REVIEW
-        await this.TasksService.changeStatus(taskId, {
-          status: TaskStatus.FOR_REVIEW,
-        }, user.actorId);
-
-        // Add comment with PR link
-        await this.TasksService.addComment(taskId, {
-          commenterActorId: user.actorId,
-          content: `Opened PR for review: ${prLink}`,
-        });
-
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
-
-    canWrite && server.registerTool(
-      'mark_task_done',
-      {
-        title: 'Mark task as done',
-        description: 'Set status to DONE with completion comment',
-        inputSchema: {
-          taskId: z.string(),
-          comment: z.string(),
+        async ({ taskId, content }) => {
+          await this.tasksService.addComment(taskId, {
+            commenterActorId: user.actorId,
+            content,
+          });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
         },
-      },
-      async ({ taskId, comment }) => {
-        // Change status to DONE with comment
-        await this.TasksService.changeStatus(taskId, {
-          status: TaskStatus.DONE,
-        }, user.actorId);
+      );
 
-        // Add a comment
-        await this.TasksService.addComment(taskId, {
-          commenterActorId: user.actorId,
-          content: comment,
-        });
-
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
-
-    canWrite && server.registerTool(
-      'mark_task_needs_work',
-      {
-        title: 'Flags the task as needing work',
-        description: 'Set status to back to IN_PROGRESS with a comment',
-        inputSchema: {
-          taskId: z.string(),
-          comment: z.string(),
+    canWrite &&
+      server.registerTool(
+        'mark_task_in_progress',
+        {
+          title: 'Start working on task',
+          description:
+            'Assign task to yourself, set status to IN_PROGRESS, add comment with branch info',
+          inputSchema: {
+            taskId: z.string(),
+            sessionId: z.string(),
+            branchName: z.string(),
+          },
         },
-      },
-      async ({ taskId, comment }) => {
-        // Change status to IN_PROGRESS with comment
-        await this.TasksService.changeStatus(taskId, {
-          status: TaskStatus.IN_PROGRESS,
-        }, user.actorId);
+        async ({ taskId, sessionId, branchName }) => {
+          // Assign task
+          // TODO: Should this be a feature of the Backend itself? You can't start a task if it's not assigned to you?
+          // And if the task has no assignee and you start it, it gets assigned to you?
+          await this.tasksService.assignTask(
+            taskId,
+            { assigneeActorId: user.actorId, sessionId },
+            user.actorId,
+          );
 
-        // Add a comment
-        await this.TasksService.addComment(taskId, {
-          commenterActorId: user.actorId,
-          content: comment,
-        });
+          // Change status to IN_PROGRESS
+          await this.tasksService.changeStatus(
+            taskId,
+            {
+              status: TaskStatus.IN_PROGRESS,
+            },
+            user.actorId,
+          );
 
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
+          // Add comment
+          await this.tasksService.addComment(taskId, {
+            commenterActorId: user.actorId,
+            content: `Starting to work on this. I've created the branch ${branchName}`,
+          });
 
-    canWrite && server.registerTool(
-      'change_task_status',
-      {
-        title: 'Change task status',
-        description: 'Change task status with optional comment',
-        inputSchema: {
-          taskId: z.string(),
-          status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'FOR_REVIEW', 'DONE']),
-          comment: z.string().optional(),
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
         },
-      },
-      async ({ taskId, status, comment }) => {
-        await this.TasksService.changeStatus(taskId, {
-          status: status as TaskStatus,
-          comment,
-        }, user.actorId);
+      );
 
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
-
-    canWrite && server.registerTool(
-      'add_tag_to_task',
-      {
-        title: 'Add tag to task',
-        description: 'Add a tag to a task by tag name',
-        inputSchema: {
-          taskId: z.string(),
-          tagName: z.string(),
-          color: z.string().optional(),
+    canWrite &&
+      server.registerTool(
+        'mark_task_for_review',
+        {
+          title: 'Submit task for review',
+          description: 'Set status to FOR_REVIEW and add PR link comment',
+          inputSchema: {
+            taskId: z.string(),
+            prLink: z.string(),
+          },
         },
-      },
-      async ({ taskId, tagName, color }) => {
-        await this.TasksService.addTagToTask(taskId, {
-          name: tagName,
-          color,
-        }, user.actorId);
+        async ({ taskId, prLink }) => {
+          // Change status to FOR_REVIEW
+          await this.tasksService.changeStatus(
+            taskId,
+            {
+              status: TaskStatus.FOR_REVIEW,
+            },
+            user.actorId,
+          );
 
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
+          // Add comment with PR link
+          await this.tasksService.addComment(taskId, {
+            commenterActorId: user.actorId,
+            content: `Opened PR for review: ${prLink}`,
+          });
 
-    canWrite && server.registerTool(
-      'remove_tag_from_task',
-      {
-        title: 'Remove tag from task',
-        description: 'Remove a tag from a task',
-        inputSchema: {
-          taskId: z.string(),
-          tagId: z.string(),
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
         },
-      },
-      async ({ taskId, tagId }) => {
-        await this.TasksService.removeTagFromTask(taskId, tagId, user.actorId);
+      );
 
-        return {
-          content: [{
-            type: "text",
-            text: "done",
-          }],
-        }
-      }
-    )
+    canWrite &&
+      server.registerTool(
+        'mark_task_done',
+        {
+          title: 'Mark task as done',
+          description: 'Set status to DONE with completion comment',
+          inputSchema: {
+            taskId: z.string(),
+            comment: z.string(),
+          },
+        },
+        async ({ taskId, comment }) => {
+          // Change status to DONE with comment
+          await this.tasksService.changeStatus(
+            taskId,
+            {
+              status: TaskStatus.DONE,
+            },
+            user.actorId,
+          );
+
+          // Add a comment
+          await this.tasksService.addComment(taskId, {
+            commenterActorId: user.actorId,
+            content: comment,
+          });
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
+    canWrite &&
+      server.registerTool(
+        'mark_task_needs_work',
+        {
+          title: 'Flags the task as needing work',
+          description: 'Set status to back to IN_PROGRESS with a comment',
+          inputSchema: {
+            taskId: z.string(),
+            comment: z.string(),
+          },
+        },
+        async ({ taskId, comment }) => {
+          // Change status to IN_PROGRESS with comment
+          await this.tasksService.changeStatus(
+            taskId,
+            {
+              status: TaskStatus.IN_PROGRESS,
+            },
+            user.actorId,
+          );
+
+          // Add a comment
+          await this.tasksService.addComment(taskId, {
+            commenterActorId: user.actorId,
+            content: comment,
+          });
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
+    canWrite &&
+      server.registerTool(
+        'change_task_status',
+        {
+          title: 'Change task status',
+          description: 'Change task status with optional comment',
+          inputSchema: {
+            taskId: z.string(),
+            status: z.enum([
+              'NOT_STARTED',
+              'IN_PROGRESS',
+              'FOR_REVIEW',
+              'DONE',
+            ]),
+            comment: z.string().optional(),
+          },
+        },
+        async ({ taskId, status, comment }) => {
+          await this.tasksService.changeStatus(
+            taskId,
+            {
+              status: status as TaskStatus,
+              comment,
+            },
+            user.actorId,
+          );
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
+    canWrite &&
+      server.registerTool(
+        'add_tag_to_task',
+        {
+          title: 'Add tag to task',
+          description: 'Add a tag to a task by tag name',
+          inputSchema: {
+            taskId: z.string(),
+            tagName: z.string(),
+          },
+        },
+        async ({ taskId, tagName }) => {
+          await this.tasksService.addTagToTask(
+            taskId,
+            {
+              name: tagName,
+            },
+            user.actorId,
+          );
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
+    canWrite &&
+      server.registerTool(
+        'remove_tag_from_task',
+        {
+          title: 'Remove tag from task',
+          description: 'Remove a tag from a task',
+          inputSchema: {
+            taskId: z.string(),
+            tagId: z.string(),
+          },
+        },
+        async ({ taskId, tagId }) => {
+          await this.tasksService.removeTagFromTask(
+            taskId,
+            tagId,
+            user.actorId,
+          );
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
 
     server.registerTool(
       'get_all_tags',
@@ -415,48 +509,59 @@ export class TasksMcpGateway {
         title: 'Get all tags',
         description: 'List all available tags',
       },
-      async ({ }) => {
-        const tags = await this.TasksService.getAllTags();
+      async ({}) => {
+        const tags = await this.metaService.getAllTags();
         return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(tags),
-          }],
-        }
-      }
-    )
-
-    canWrite && server.registerTool(
-      'ask_for_input',
-      {
-        title: 'Ask for input from user',
-        description: 'Use this tool when you need input from a user. This is the ONLY way for headless agents to communicate with users. Provide the taskId, your question, and optionally the actorId of who to ask (defaults to task creator if not provided).',
-        inputSchema: {
-          taskId: z.string(),
-          question: z.string(),
-          actorId: z.string().optional(),
-        },
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(tags),
+            },
+          ],
+        };
       },
-      async ({ taskId, question, actorId }) => {
-        const inputRequest = await this.TasksService.createInputRequest({
-          taskId,
-          askedByActorId: user.actorId,
-          assignedToActorId: actorId,
-          question,
-        });
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify(inputRequest),
-          }],
-        }
-      }
-    )
+    );
+
+    canWrite &&
+      server.registerTool(
+        'ask_for_input',
+        {
+          title: 'Ask for input from user',
+          description:
+            'Use this tool when you need input from a user. This is the ONLY way for headless agents to communicate with users. Provide the taskId, your question, and optionally the actorId of who to ask (defaults to task creator if not provided).',
+          inputSchema: {
+            taskId: z.string(),
+            question: z.string(),
+            actorId: z.string().optional(),
+          },
+        },
+        async ({ taskId, question, actorId }) => {
+          const inputRequest = await this.tasksService.createInputRequest({
+            taskId,
+            askedByActorId: user.actorId,
+            assignedToActorId: actorId,
+            question,
+          });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(inputRequest),
+              },
+            ],
+          };
+        },
+      );
 
     return server;
   }
 
-  async handleRequest(req: Request, res: Response, user: UserContext, authContext: AuthContext) {
+  async handleRequest(
+    req: Request,
+    res: Response,
+    user: UserContext,
+    authContext: AuthContext,
+  ) {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,

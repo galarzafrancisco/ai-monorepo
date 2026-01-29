@@ -32,11 +32,6 @@ export interface TagResult {
 
 export interface AddTagInput {
   name: string;
-  color?: string;
-}
-
-export interface CreateTagInput {
-  name: string;
 }
 
 export interface BlockResult {

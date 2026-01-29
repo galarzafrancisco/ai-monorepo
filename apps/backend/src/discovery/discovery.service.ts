@@ -10,15 +10,16 @@ import {
 import { createTasks, createTasksScopes } from 'src/app-init/mcp/tasks.mcp';
 import { getConfig } from 'src/config/env.config';
 import { CreateServerInput } from 'src/mcp-registry/dto';
-import { createContext, createContextScopes } from 'src/app-init/mcp/context.mcp';
+import {
+  createContext,
+  createContextScopes,
+} from 'src/app-init/mcp/context.mcp';
 import { Scope } from 'src/auth/core/types/scope.type';
 
 @Injectable()
 export class DiscoveryService {
   private readonly systemServers: SystemServer[] = [];
-  constructor(
-    private readonly mcpRegistryService: McpRegistryService,
-  ) {
+  constructor(private readonly mcpRegistryService: McpRegistryService) {
     this.populateSystemServers();
   }
 
@@ -30,7 +31,7 @@ export class DiscoveryService {
   private populateSystemServer(server: CreateServerInput, scopes: Scope[]) {
     const config = getConfig();
     if (!server.url) {
-      return
+      return;
     }
     const systemServer: SystemServer = {
       path: new URL(server.url).pathname,
@@ -38,13 +39,13 @@ export class DiscoveryService {
         resource: server.url,
         // No need to add the .well-known/oauth-authorization-server part, the client will add it automatically
         authorization_servers: [
-          `${config.issuerUrl}/mcp/${server.providedId}/0.0.0`
+          `${config.issuerUrl}/mcp/${server.providedId}/0.0.0`,
         ],
-        scopes_supported: scopes.map(s => s.id),
-        bearer_methods_supported: ["header"],
+        scopes_supported: scopes.map((s) => s.id),
+        bearer_methods_supported: ['header'],
         resource_name: server.name,
-      }
-    }
+      },
+    };
     this.systemServers.push(systemServer);
   }
 
@@ -55,8 +56,8 @@ export class DiscoveryService {
       input.lookupBy === 'id'
         ? await this.mcpRegistryService.getServerById(input.serverIdentifier)
         : await this.mcpRegistryService.getServerByProvidedId(
-          input.serverIdentifier,
-        );
+            input.serverIdentifier,
+          );
 
     const serverIdentifier = server.providedId ?? server.id;
     const scopes = (server.scopes ?? [])
@@ -74,9 +75,7 @@ export class DiscoveryService {
         GrantType.AUTHORIZATION_CODE,
         GrantType.REFRESH_TOKEN,
       ],
-      token_endpoint_auth_methods_supported: [
-        'none',
-      ],
+      token_endpoint_auth_methods_supported: ['none'],
       code_challenge_methods_supported: ['S256'],
     };
   }
@@ -84,7 +83,7 @@ export class DiscoveryService {
   private findSystemServer(pathParts: string[]): SystemServer | null {
     const path = `/${pathParts.join('/')}`;
 
-    const server = this.systemServers.find(server => {
+    const server = this.systemServers.find((server) => {
       return server.path === path;
     });
 
@@ -95,7 +94,9 @@ export class DiscoveryService {
     return null;
   }
 
-  async getProtectedResourceMetadata(path: string[]): Promise<ProtectedResourceMetadataResult | null> {
+  async getProtectedResourceMetadata(
+    path: string[],
+  ): Promise<ProtectedResourceMetadataResult | null> {
     return this.findSystemServer(path)?.metadata || null;
   }
 }

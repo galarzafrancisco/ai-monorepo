@@ -34,10 +34,16 @@ export class AuthJourneyEntity {
   actor?: ActorEntity | null;
 
   // Many connection authorization flows can be linked to this one
-  @OneToMany(() => ConnectionAuthorizationFlowEntity, (connectionAuthenticationFlow) => connectionAuthenticationFlow.authJourney)
+  @OneToMany(
+    () => ConnectionAuthorizationFlowEntity,
+    (connectionAuthenticationFlow) => connectionAuthenticationFlow.authJourney,
+  )
   connectionAuthorizationFlows!: ConnectionAuthorizationFlowEntity[];
 
-  @OneToOne(() => McpAuthorizationFlowEntity, (mcpAuthenticationFlow) => mcpAuthenticationFlow.authJourney)
+  @OneToOne(
+    () => McpAuthorizationFlowEntity,
+    (mcpAuthenticationFlow) => mcpAuthenticationFlow.authJourney,
+  )
   mcpAuthorizationFlow!: McpAuthorizationFlowEntity;
 
   @CreateDateColumn({ name: 'created_at' })

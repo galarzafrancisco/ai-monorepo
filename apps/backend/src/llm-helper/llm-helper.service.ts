@@ -19,7 +19,9 @@ export class LlmHelperService {
       const modelExists = models.some((model) => model.name === this.model);
 
       if (!modelExists) {
-        this.logger.log(`Model ${this.model} not found. Pulling from Ollama...`);
+        this.logger.log(
+          `Model ${this.model} not found. Pulling from Ollama...`,
+        );
 
         try {
           await this.ollama.pull({ model: this.model });
@@ -39,7 +41,9 @@ export class LlmHelperService {
    */
   async generateTitle(message: string): Promise<string> {
     try {
-      this.logger.debug(`Generating title for message: ${message.substring(0, 50)}...`);
+      this.logger.debug(
+        `Generating title for message: ${message.substring(0, 50)}...`,
+      );
 
       const response = await this.ollama.chat({
         model: this.model,

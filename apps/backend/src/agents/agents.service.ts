@@ -35,7 +35,7 @@ export class AgentsService {
     @InjectRepository(ActorEntity)
     private readonly actorRepository: Repository<ActorEntity>,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async createAgent(input: CreateAgentInput): Promise<AgentResult> {
     this.logger.log(`Creating agent with slug: ${input.slug}`);
@@ -100,9 +100,7 @@ export class AgentsService {
   }
 
   async listAgents(input: ListAgentsInput): Promise<ListAgentsResult> {
-    this.logger.log(
-      `Listing agents with filters: ${JSON.stringify(input)}`,
-    );
+    this.logger.log(`Listing agents with filters: ${JSON.stringify(input)}`);
 
     const skip = (input.page - 1) * input.limit;
 
@@ -118,7 +116,6 @@ export class AgentsService {
       skip,
       take: input.limit,
     });
-
 
     return {
       items: agents.map((agent) => {
@@ -298,7 +295,10 @@ export class AgentsService {
     return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
   }
 
-  private mapAgentToResult(agent: AgentEntity, actor: ActorEntity): AgentResult {
+  private mapAgentToResult(
+    agent: AgentEntity,
+    actor: ActorEntity,
+  ): AgentResult {
     return {
       actorId: actor.id,
       slug: actor.slug,

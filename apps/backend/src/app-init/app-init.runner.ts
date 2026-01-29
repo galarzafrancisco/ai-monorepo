@@ -1,34 +1,44 @@
-import { Inject, Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, IsNull } from "typeorm";
-import { AgentsService } from "src/agents/agents.service";
-import { createClaudeDev } from "./agent/claude-dev.agent";
-import { McpRegistryService } from "src/mcp-registry/mcp-registry.service";
-import { createTasks, createTasksScopes } from "./mcp/tasks.mcp";
-import { CreateServerInput, ServerRecord } from "src/mcp-registry/dto";
-import { ScopeAlreadyExistsError, ServerAlreadyExistsError } from "src/mcp-registry/errors/mcp-registry.errors";
-import { AgentResult, CreateAgentInput } from "src/agents/dto/service/agents.service.types";
-import { AgentSlugConflictError } from "src/agents/errors/agents.errors";
-import { createContext, createContextScopes } from "./mcp/context.mcp";
-import { getConfig } from "src/config/env.config";
-import { devUser, devUserRole } from "./user/dev.user";
-import { adminUser, adminUserRole } from "./user/admin.user";
-import { CreateUserInput } from "src/identity-provider/dto/service/identity-provider.service.types";
-import { UserRole, ActorType } from "src/identity-provider/enums";
-import { User } from "src/identity-provider/user.entity";
-import { ActorEntity } from "src/identity-provider/actor.entity";
-import { AgentEntity } from "src/agents/agent.entity";
-import { IdentityProviderService } from "src/identity-provider/identity-provider.service";
-import { Scope } from "src/auth/core/types/scope.type";
-import { createCodexDev } from "./agent/codex-dev.agent";
-import { createGeminiAssistant } from "./agent/gemini-assistant.agent";
-import { MetaService } from "src/meta/meta.service";
-import { ContextService } from "src/context/context.service";
-import { DEV_PROMPT, ASSISTANT_PROMPT } from "./agent/prompts";
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
+import { AgentsService } from 'src/agents/agents.service';
+import { createClaudeDev } from './agent/claude-dev.agent';
+import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
+import { createTasks, createTasksScopes } from './mcp/tasks.mcp';
+import { CreateServerInput, ServerRecord } from 'src/mcp-registry/dto';
+import {
+  ScopeAlreadyExistsError,
+  ServerAlreadyExistsError,
+} from 'src/mcp-registry/errors/mcp-registry.errors';
+import {
+  AgentResult,
+  CreateAgentInput,
+} from 'src/agents/dto/service/agents.service.types';
+import { AgentSlugConflictError } from 'src/agents/errors/agents.errors';
+import { createContext, createContextScopes } from './mcp/context.mcp';
+import { getConfig } from 'src/config/env.config';
+import { devUser, devUserRole } from './user/dev.user';
+import { adminUser, adminUserRole } from './user/admin.user';
+import { CreateUserInput } from 'src/identity-provider/dto/service/identity-provider.service.types';
+import { UserRole, ActorType } from 'src/identity-provider/enums';
+import { User } from 'src/identity-provider/user.entity';
+import { ActorEntity } from 'src/identity-provider/actor.entity';
+import { AgentEntity } from 'src/agents/agent.entity';
+import { IdentityProviderService } from 'src/identity-provider/identity-provider.service';
+import { Scope } from 'src/auth/core/types/scope.type';
+import { createCodexDev } from './agent/codex-dev.agent';
+import { createGeminiAssistant } from './agent/gemini-assistant.agent';
+import { MetaService } from 'src/meta/meta.service';
+import { ContextService } from 'src/context/context.service';
+import { DEV_PROMPT, ASSISTANT_PROMPT } from './agent/prompts';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
-
   private logger = new Logger(AppInitRunner.name);
 
   constructor(
@@ -44,7 +54,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     private readonly actorRepository: Repository<ActorEntity>,
     @InjectRepository(AgentEntity)
     private readonly agentRepository: Repository<AgentEntity>,
-  ) { }
+  ) {}
 
   async onApplicationBootstrap() {
     const config = getConfig();
@@ -75,7 +85,9 @@ export class AppInitRunner implements OnApplicationBootstrap {
     });
 
     if (usersWithoutActor.length > 0) {
-      this.logger.log(`Found ${usersWithoutActor.length} users without actors, migrating...`);
+      this.logger.log(
+        `Found ${usersWithoutActor.length} users without actors, migrating...`,
+      );
       for (const user of usersWithoutActor) {
         try {
           // Check if an actor with this slug already exists
@@ -109,7 +121,9 @@ export class AppInitRunner implements OnApplicationBootstrap {
     });
 
     if (agentsWithoutActor.length > 0) {
-      this.logger.log(`Found ${agentsWithoutActor.length} agents without actors, migrating...`);
+      this.logger.log(
+        `Found ${agentsWithoutActor.length} agents without actors, migrating...`,
+      );
       for (const agent of agentsWithoutActor) {
         try {
           // Check if an actor with this slug already exists
@@ -185,13 +199,17 @@ export class AppInitRunner implements OnApplicationBootstrap {
     }
   }
 
-  async ensureAgentExists(agentConfig: CreateAgentInput): Promise<AgentResult | null> {
+  async ensureAgentExists(
+    agentConfig: CreateAgentInput,
+  ): Promise<AgentResult | null> {
     let agent: AgentResult | null = null;
     try {
       agent = await this.agentsService.createAgent(agentConfig);
     } catch (error) {
       if (error instanceof AgentSlugConflictError) {
-        agent = await this.agentsService.getAgentBySlug({ slug: agentConfig.slug });
+        agent = await this.agentsService.getAgentBySlug({
+          slug: agentConfig.slug,
+        });
         // TODO: rework the update method
         // agent = await this.agentsService.updateAgent(agent.id, createClaudeDev);
       } else {
@@ -201,14 +219,20 @@ export class AppInitRunner implements OnApplicationBootstrap {
     return agent;
   }
 
-  async ensureMcpServerExists(serverConfig: CreateServerInput, scopesConfig: Scope[]): Promise<ServerRecord | null> {
+  async ensureMcpServerExists(
+    serverConfig: CreateServerInput,
+    scopesConfig: Scope[],
+  ): Promise<ServerRecord | null> {
     let server: ServerRecord | null = null;
     try {
       server = await this.mcpRegistryService.createServer(serverConfig);
     } catch (error) {
       if (error instanceof ServerAlreadyExistsError) {
-        server = await this.mcpRegistryService.getServerByProvidedId(serverConfig.providedId);
-        if (server.name != serverConfig.name ||
+        server = await this.mcpRegistryService.getServerByProvidedId(
+          serverConfig.providedId,
+        );
+        if (
+          server.name != serverConfig.name ||
           server.description != serverConfig.description ||
           server.url != serverConfig.url
         ) {
@@ -216,7 +240,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
             name: serverConfig.name,
             description: serverConfig.description,
             url: serverConfig.url,
-          })
+          });
         }
       } else {
         throw error;
@@ -228,7 +252,9 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.log(`Scopes ensured for MCP Server ${server.name}`);
     } catch (error) {
       if (!(error instanceof ScopeAlreadyExistsError)) {
-        this.logger.error(`Error ensuring scopes for MCP Server ${server.name}: ${error}`);
+        this.logger.error(
+          `Error ensuring scopes for MCP Server ${server.name}: ${error}`,
+        );
         throw error;
       }
       this.logger.log(`Scopes already exist for MCP Server ${server.name}`);
@@ -236,12 +262,15 @@ export class AppInitRunner implements OnApplicationBootstrap {
     return server;
   }
 
-  async ensureUserExists(userConfig: CreateUserInput, userRole: UserRole): Promise<User | null> {
+  async ensureUserExists(
+    userConfig: CreateUserInput,
+    userRole: UserRole,
+  ): Promise<User | null> {
     let user: User | null = null;
     try {
       user = await this.identityProviderService.createUser(userConfig);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw error;
     }
     return user;
@@ -262,9 +291,15 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.log('Ensuring prompt context blocks exist');
 
       // Check if developer prompt already exists
-      const existingPages = await this.contextService.listBlocks({ tag: 'prompt' });
-      const devPromptExists = existingPages.some(page => page.title === 'Developer Agent Prompt');
-      const assistantPromptExists = existingPages.some(page => page.title === 'Personal Assistant Prompt');
+      const existingPages = await this.contextService.listBlocks({
+        tag: 'prompt',
+      });
+      const devPromptExists = existingPages.some(
+        (page) => page.title === 'Developer Agent Prompt',
+      );
+      const assistantPromptExists = existingPages.some(
+        (page) => page.title === 'Personal Assistant Prompt',
+      );
 
       if (!devPromptExists) {
         this.logger.log('Creating developer agent prompt context block');

@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsArray, IsOptional, IsNumber, Min, Max, MinLength, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 /**
  * Request DTO for issuing a long-lived access token.
@@ -7,7 +16,8 @@ import { IsString, IsArray, IsOptional, IsNumber, Min, Max, MinLength, MaxLength
  */
 export class IssueAccessTokenRequestDto {
   @ApiProperty({
-    description: 'Human-readable name for this token (e.g., "CI/CD Pipeline Token")',
+    description:
+      'Human-readable name for this token (e.g., "CI/CD Pipeline Token")',
     example: 'Production API Token',
     minLength: 1,
     maxLength: 100,

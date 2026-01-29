@@ -170,7 +170,9 @@ export class ProjectsController {
     await this.projectsService.deleteProject(projectId);
   }
 
-  private mapProjectResultToResponse(result: ProjectResult): ProjectResponseDto {
+  private mapProjectResultToResponse(
+    result: ProjectResult,
+  ): ProjectResponseDto {
     return {
       id: result.id,
       tagId: result.tagId,

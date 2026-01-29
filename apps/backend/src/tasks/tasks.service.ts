@@ -15,7 +15,6 @@ import {
   CreateCommentInput,
   ListTasksInput,
   AddTagInput,
-  CreateTagInput,
   CreateInputRequestInput,
   AnswerInputRequestInput,
   TaskResult,
@@ -64,7 +63,7 @@ export class TasksService {
     private readonly metaService: MetaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly searchService: SearchService,
-  ) { }
+  ) {}
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
     this.logger.log({
@@ -78,7 +77,9 @@ export class TasksService {
     let assigneeActorId: string | null = null;
 
     if (input.assigneeActorId) {
-      const assigneeActor = await this.actorService.getActorByIdOrSlug(input.assigneeActorId);
+      const assigneeActor = await this.actorService.getActorByIdOrSlug(
+        input.assigneeActorId,
+      );
       if (!assigneeActor) {
         throw new Error(`Assignee actor not found: ${input.assigneeActorId}`);
       }
@@ -86,7 +87,9 @@ export class TasksService {
     }
 
     // createdBy is required - look up the actor first by id then slug
-    const createdByActor = await this.actorService.getActorByIdOrSlug(input.createdByActorId);
+    const createdByActor = await this.actorService.getActorByIdOrSlug(
+      input.createdByActorId,
+    );
     if (!createdByActor) {
       throw new Error(`Creator actor not found: ${input.createdByActorId}`);
     }
@@ -105,7 +108,9 @@ export class TasksService {
 
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
-      const tags = await this.metaService.findOrCreateTagEntities(input.tagNames);
+      const tags = await this.metaService.findOrCreateTagEntities(
+        input.tagNames,
+      );
       savedTask.tags = tags;
       await this.taskRepository.save(savedTask);
     }
@@ -125,7 +130,15 @@ export class TasksService {
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: savedTask.id },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!taskWithRelations) {
@@ -138,11 +151,21 @@ export class TasksService {
       name: taskWithRelations.name,
     });
 
-    this.eventEmitter.emit('task.created', new TaskCreatedEvent({ id: taskWithRelations.createdByActorId }, taskWithRelations));
+    this.eventEmitter.emit(
+      'task.created',
+      new TaskCreatedEvent(
+        { id: taskWithRelations.createdByActorId },
+        taskWithRelations,
+      ),
+    );
     return this.mapTaskToResult(taskWithRelations);
   }
 
-  async updateTask(taskId: string, input: UpdateTaskInput, actorId: string): Promise<TaskResult> {
+  async updateTask(
+    taskId: string,
+    input: UpdateTaskInput,
+    actorId: string,
+  ): Promise<TaskResult> {
     this.logger.log({
       message: 'Updating task',
       taskId,
@@ -150,7 +173,15 @@ export class TasksService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!task) {
@@ -167,7 +198,9 @@ export class TasksService {
       if (input.assigneeActorId === null) {
         task.assigneeActorId = null; // defined but null means they're removing assignee
       } else {
-        const assigneeActor = await this.actorService.getActorByIdOrSlug(input.assigneeActorId);
+        const assigneeActor = await this.actorService.getActorByIdOrSlug(
+          input.assigneeActorId,
+        );
         if (assigneeActor) {
           task.assigneeActorId = assigneeActor.id;
         } else {
@@ -181,7 +214,9 @@ export class TasksService {
       if (input.tagNames.length === 0) {
         task.tags = [];
       } else {
-        task.tags = await this.metaService.findOrCreateTagEntities(input.tagNames);
+        task.tags = await this.metaService.findOrCreateTagEntities(
+          input.tagNames,
+        );
       }
     }
 
@@ -205,7 +240,15 @@ export class TasksService {
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!taskWithRelations) {
@@ -217,11 +260,18 @@ export class TasksService {
       taskId: taskWithRelations.id,
     });
 
-    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent({ id: actorId }, taskWithRelations));
+    this.eventEmitter.emit(
+      'task.updated',
+      new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
+    );
     return this.mapTaskToResult(taskWithRelations);
   }
 
-  async assignTask(taskId: string, input: AssignTaskInput, actorId: string): Promise<TaskResult> {
+  async assignTask(
+    taskId: string,
+    input: AssignTaskInput,
+    actorId: string,
+  ): Promise<TaskResult> {
     this.logger.log({
       message: 'Assigning task',
       taskId,
@@ -232,7 +282,15 @@ export class TasksService {
     this.logger.debug(`finding task ${taskId}`);
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
     if (!task) {
       this.logger.debug(`task ${taskId} not found`);
@@ -253,14 +311,22 @@ export class TasksService {
     if (input.sessionId !== undefined) {
       task.sessionId = input.sessionId || null;
     }
-    this.logger.debug(`task ready to save:`, task)
+    this.logger.debug(`task ready to save:`, task);
     const assignedTask = await this.taskRepository.save(task);
     this.logger.debug(`saved task: ${assignedTask}`);
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
     this.logger.debug(`task from db`, taskWithRelations);
 
@@ -271,7 +337,10 @@ export class TasksService {
       sessionId: assignedTask.sessionId,
     });
 
-    this.eventEmitter.emit('task.assigned', new TaskAssignedEvent({ id: actorId }, taskWithRelations!));
+    this.eventEmitter.emit(
+      'task.assigned',
+      new TaskAssignedEvent({ id: actorId }, taskWithRelations!),
+    );
     return this.mapTaskToResult(taskWithRelations!);
   }
 
@@ -294,13 +363,20 @@ export class TasksService {
       taskId,
     });
 
-    this.eventEmitter.emit('task.deleted', new TaskDeletedEvent({ id: actorId }, taskId));
+    this.eventEmitter.emit(
+      'task.deleted',
+      new TaskDeletedEvent({ id: actorId }, taskId),
+    );
   }
 
   async listTasks(input: ListTasksInput): Promise<ListTasksResult> {
     this.logger.log({
       message: 'Listing tasks',
-      filters: { assignee: input.assignee, sessionId: input.sessionId, tag: input.tag },
+      filters: {
+        assignee: input.assignee,
+        sessionId: input.sessionId,
+        tag: input.tag,
+      },
       page: input.page,
       limit: input.limit,
     });
@@ -321,10 +397,14 @@ export class TasksService {
         .where('filterTag.name = :tagName', { tagName: input.tag });
 
       if (input.assignee) {
-        queryBuilder.andWhere('assigneeActor.slug = :assignee', { assignee: input.assignee });
+        queryBuilder.andWhere('assigneeActor.slug = :assignee', {
+          assignee: input.assignee,
+        });
       }
       if (input.sessionId) {
-        queryBuilder.andWhere('task.sessionId = :sessionId', { sessionId: input.sessionId });
+        queryBuilder.andWhere('task.sessionId = :sessionId', {
+          sessionId: input.sessionId,
+        });
       }
 
       queryBuilder
@@ -361,16 +441,17 @@ export class TasksService {
       .leftJoinAndSelect('task.createdByActor', 'createdByActor');
 
     if (input.assignee) {
-      queryBuilder.andWhere('assigneeActor.slug = :assignee', { assignee: input.assignee });
+      queryBuilder.andWhere('assigneeActor.slug = :assignee', {
+        assignee: input.assignee,
+      });
     }
     if (input.sessionId) {
-      queryBuilder.andWhere('task.sessionId = :sessionId', { sessionId: input.sessionId });
+      queryBuilder.andWhere('task.sessionId = :sessionId', {
+        sessionId: input.sessionId,
+      });
     }
 
-    queryBuilder
-      .orderBy('task.updatedAt', 'DESC')
-      .skip(skip)
-      .take(input.limit);
+    queryBuilder.orderBy('task.updatedAt', 'DESC').skip(skip).take(input.limit);
 
     const [tasks, total] = await queryBuilder.getManyAndCount();
 
@@ -392,7 +473,15 @@ export class TasksService {
   async getTaskById(taskId: string): Promise<TaskResult> {
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!task) {
@@ -402,7 +491,10 @@ export class TasksService {
     return this.mapTaskToResult(task);
   }
 
-  async addComment(taskId: string, input: CreateCommentInput): Promise<CommentResult> {
+  async addComment(
+    taskId: string,
+    input: CreateCommentInput,
+  ): Promise<CommentResult> {
     this.logger.log({
       message: 'Adding comment',
       taskId,
@@ -434,11 +526,21 @@ export class TasksService {
       taskId,
     });
 
-    this.eventEmitter.emit('comment.added', new CommentAddedEvent({ id: input.commenterActorId }, commentWithRelations!));
+    this.eventEmitter.emit(
+      'comment.added',
+      new CommentAddedEvent(
+        { id: input.commenterActorId },
+        commentWithRelations!,
+      ),
+    );
     return this.mapCommentToResult(commentWithRelations!);
   }
 
-  async changeStatus(taskId: string, input: ChangeStatusInput, actorId: string): Promise<TaskResult> {
+  async changeStatus(
+    taskId: string,
+    input: ChangeStatusInput,
+    actorId: string,
+  ): Promise<TaskResult> {
     this.logger.log({
       message: 'Changing task status',
       taskId,
@@ -447,7 +549,15 @@ export class TasksService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!task) {
@@ -488,7 +598,15 @@ export class TasksService {
     // Reload to get updated comments if any were added
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!taskWithRelations) {
@@ -501,16 +619,18 @@ export class TasksService {
       status: taskWithRelations.status,
     });
 
-    this.eventEmitter.emit('task.statusChanged', new TaskStatusChangedEvent({ id: actorId }, taskWithRelations));
+    this.eventEmitter.emit(
+      'task.statusChanged',
+      new TaskStatusChangedEvent({ id: actorId }, taskWithRelations),
+    );
     return this.mapTaskToResult(taskWithRelations);
   }
 
-  async createTag(input: CreateTagInput): Promise<TagResult> {
-    // Delegate to MetaService
-    return this.metaService.createTag(input);
-  }
-
-  async addTagToTask(taskId: string, input: AddTagInput, actorId: string): Promise<TaskResult> {
+  async addTagToTask(
+    taskId: string,
+    input: AddTagInput,
+    actorId: string,
+  ): Promise<TaskResult> {
     this.logger.log({
       message: 'Adding tag to task',
       taskId,
@@ -519,7 +639,15 @@ export class TasksService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!task) {
@@ -527,7 +655,7 @@ export class TasksService {
     }
 
     // Find or create the tag using MetaService
-    const tag = await this.metaService.findOrCreateTagEntity(input.name, input.color);
+    const tag = await this.metaService.findOrCreateTagEntity(input.name);
 
     // Add tag to task if not already present
     if (!task.tags.some((t) => t.id === tag.id)) {
@@ -543,18 +671,33 @@ export class TasksService {
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!taskWithRelations) {
       throw new TaskNotFoundError(taskId);
     }
 
-    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent({ id: actorId }, taskWithRelations));
+    this.eventEmitter.emit(
+      'task.updated',
+      new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
+    );
     return this.mapTaskToResult(taskWithRelations);
   }
 
-  async removeTagFromTask(taskId: string, tagId: string, actorId): Promise<TaskResult> {
+  async removeTagFromTask(
+    taskId: string,
+    tagId: string,
+    actorId,
+  ): Promise<TaskResult> {
     this.logger.log({
       message: 'Removing tag from task',
       taskId,
@@ -563,7 +706,15 @@ export class TasksService {
 
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!task) {
@@ -585,25 +736,26 @@ export class TasksService {
     // Reload with relations to get updated task
     const taskWithRelations = await this.taskRepository.findOne({
       where: { id: taskId },
-      relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+      relations: [
+        'comments',
+        'comments.commenterActor',
+        'inputRequests',
+        'tags',
+        'dependsOn',
+        'assigneeActor',
+        'createdByActor',
+      ],
     });
 
     if (!taskWithRelations) {
       throw new TaskNotFoundError(taskId);
     }
 
-    this.eventEmitter.emit('task.updated', new TaskUpdatedEvent({ id: actorId }, taskWithRelations));
+    this.eventEmitter.emit(
+      'task.updated',
+      new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
+    );
     return this.mapTaskToResult(taskWithRelations);
-  }
-
-  async getAllTags(): Promise<TagResult[]> {
-    // Delegate to MetaService
-    return this.metaService.getAllTags();
-  }
-
-  async deleteTag(tagId: string): Promise<void> {
-    // Delegate to MetaService
-    return this.metaService.deleteTag(tagId);
   }
 
   private mapTaskToResult(task: TaskEntity): TaskResult {
@@ -617,10 +769,14 @@ export class TasksService {
       description: task.description,
       status: task.status,
       assignee: task.assignee,
-      assigneeActor: task.assigneeActor ? this.mapActorToResult(task.assigneeActor) : null,
+      assigneeActor: task.assigneeActor
+        ? this.mapActorToResult(task.assigneeActor)
+        : null,
       sessionId: task.sessionId,
       comments: task.comments.map((c) => this.mapCommentToResult(c)),
-      inputRequests: (task.inputRequests || []).map((ir) => this.mapInputRequestToResult(ir)),
+      inputRequests: (task.inputRequests || []).map((ir) =>
+        this.mapInputRequestToResult(ir),
+      ),
       tags: (task.tags || []).map((t) => this.mapTagToResult(t)),
       createdByActor: this.mapActorToResult(task.createdByActor),
       dependsOnIds: (task.dependsOn || []).map((t) => t.id),
@@ -636,7 +792,9 @@ export class TasksService {
       id: comment.id,
       taskId: comment.taskId,
       commenterName: comment.commenterName,
-      commenterActor: comment.commenterActor ? this.mapActorToResult(comment.commenterActor) : null,
+      commenterActor: comment.commenterActor
+        ? this.mapActorToResult(comment.commenterActor)
+        : null,
       content: comment.content,
       createdAt: comment.createdAt,
     };
@@ -662,7 +820,9 @@ export class TasksService {
     };
   }
 
-  private mapInputRequestToResult(inputRequest: InputRequestEntity): InputRequestResult {
+  private mapInputRequestToResult(
+    inputRequest: InputRequestEntity,
+  ): InputRequestResult {
     return {
       id: inputRequest.id,
       taskId: inputRequest.taskId,
@@ -676,7 +836,9 @@ export class TasksService {
     };
   }
 
-  async createInputRequest(input: CreateInputRequestInput): Promise<InputRequestResult> {
+  async createInputRequest(
+    input: CreateInputRequestInput,
+  ): Promise<InputRequestResult> {
     this.logger.log({
       message: 'Creating input request',
       taskId: input.taskId,
@@ -706,7 +868,8 @@ export class TasksService {
     });
 
     try {
-      const savedInputRequest = await this.inputRequestRepository.save(inputRequest);
+      const savedInputRequest =
+        await this.inputRequestRepository.save(inputRequest);
 
       this.logger.log({
         message: 'Input request created',
@@ -718,14 +881,25 @@ export class TasksService {
       // Reload with relations
       const taskWithRelations = await this.taskRepository.findOne({
         where: { id: input.taskId },
-        relations: ['comments', 'comments.commenterActor', 'inputRequests', 'tags', 'dependsOn', 'assigneeActor', 'createdByActor'],
+        relations: [
+          'comments',
+          'comments.commenterActor',
+          'inputRequests',
+          'tags',
+          'dependsOn',
+          'assigneeActor',
+          'createdByActor',
+        ],
       });
 
       if (!taskWithRelations) {
         throw new TaskNotFoundError(input.taskId);
       }
 
-      this.eventEmitter.emit('task.updated', new TaskUpdatedEvent({ id: input.askedByActorId }, taskWithRelations));
+      this.eventEmitter.emit(
+        'task.updated',
+        new TaskUpdatedEvent({ id: input.askedByActorId }, taskWithRelations),
+      );
       return this.mapInputRequestToResult(savedInputRequest);
     } catch (error: any) {
       // If save fails, check what entity doesn't exist to provide a proper error message
@@ -772,13 +946,16 @@ export class TasksService {
     });
 
     if (!inputRequest) {
-      throw new Error(`Input request ${inputRequestId} not found for task ${taskId}`);
+      throw new Error(
+        `Input request ${inputRequestId} not found for task ${taskId}`,
+      );
     }
 
     inputRequest.answer = input.answer;
     inputRequest.resolvedAt = new Date();
 
-    const updatedInputRequest = await this.inputRequestRepository.save(inputRequest);
+    const updatedInputRequest =
+      await this.inputRequestRepository.save(inputRequest);
 
     this.logger.log({
       message: 'Input request answered',
@@ -786,7 +963,10 @@ export class TasksService {
       taskId,
     });
 
-    this.eventEmitter.emit('input_request.answered', new InputRequestAnsweredEvent({ id: actorId }, updatedInputRequest));
+    this.eventEmitter.emit(
+      'input_request.answered',
+      new InputRequestAnsweredEvent({ id: actorId }, updatedInputRequest),
+    );
 
     return this.mapInputRequestToResult(updatedInputRequest);
   }

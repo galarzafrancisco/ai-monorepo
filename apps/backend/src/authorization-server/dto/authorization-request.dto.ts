@@ -16,7 +16,8 @@ import { ResponseType } from '../enums';
  */
 export class AuthorizationRequestDto {
   @ApiProperty({
-    description: 'OAuth 2.0 response type (must be "code" for authorization code flow)',
+    description:
+      'OAuth 2.0 response type (must be "code" for authorization code flow)',
     example: 'code',
     enum: ResponseType,
   })

@@ -3,10 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TagEntity } from './tag.entity';
 import { ProjectEntity } from './project.entity';
-import {
-  CreateTagInput,
-  TagResult,
-} from './dto/service/meta.service.types';
+import { CreateTagInput, TagResult } from './dto/service/meta.service.types';
 
 /**
  * Predefined color palette for tags
@@ -273,7 +270,10 @@ export class MetaService {
   /**
    * Find or create a single tag entity by name with optional color
    */
-  async findOrCreateTagEntity(name: string, color?: string): Promise<TagEntity> {
+  async findOrCreateTagEntity(
+    name: string,
+    color?: string,
+  ): Promise<TagEntity> {
     const normalizedName = name.trim();
 
     let tag = await this.tagRepository.findOne({
@@ -303,7 +303,7 @@ export class MetaService {
   }
 
   /**
-   * Check if a tag is orphaned (no tasks or other entities reference it)
+   * Check if a tag is orphaned (no tasks or blocks reference it)
    * and delete it if so
    */
   async cleanupOrphanedTag(tagId: string): Promise<void> {
@@ -312,12 +312,12 @@ export class MetaService {
       tagId,
     });
 
-    const tagWithTasks = await this.tagRepository.findOne({
+    const tagWithRelations = await this.tagRepository.findOne({
       where: { id: tagId },
-      relations: ['tasks'],
+      relations: ['tasks', 'blocks'],
     });
 
-    if (!tagWithTasks) {
+    if (!tagWithRelations) {
       this.logger.warn({
         message: 'Tag not found for cleanup check',
         tagId,
@@ -325,11 +325,14 @@ export class MetaService {
       return;
     }
 
-    if (tagWithTasks.tasks.length === 0) {
+    const taskCount = tagWithRelations.tasks?.length || 0;
+    const blockCount = tagWithRelations.blocks?.length || 0;
+
+    if (taskCount === 0 && blockCount === 0) {
       this.logger.log({
         message: 'Tag is orphaned, cleaning up',
         tagId,
-        tagName: tagWithTasks.name,
+        tagName: tagWithRelations.name,
       });
 
       await this.tagRepository.softDelete(tagId);
@@ -340,9 +343,10 @@ export class MetaService {
       });
     } else {
       this.logger.log({
-        message: 'Tag still has tasks, keeping it',
+        message: 'Tag still in use, keeping it',
         tagId,
-        taskCount: tagWithTasks.tasks.length,
+        taskCount,
+        blockCount,
       });
     }
   }

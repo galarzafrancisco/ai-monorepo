@@ -15,7 +15,8 @@ export class TokenExchangeRequestDto {
   grant_type!: 'urn:ietf:params:oauth:grant-type:token-exchange';
 
   @ApiProperty({
-    description: 'The access token that represents the identity of the party on behalf of whom the request is being made',
+    description:
+      'The access token that represents the identity of the party on behalf of whom the request is being made',
     example: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   @IsString()
@@ -30,14 +31,16 @@ export class TokenExchangeRequestDto {
   subject_token_type!: 'urn:ietf:params:oauth:token-type:access_token';
 
   @ApiProperty({
-    description: 'Resource server URL that the client wants to access with the exchanged token',
+    description:
+      'Resource server URL that the client wants to access with the exchanged token',
     example: 'http://localhost:4001/',
   })
   @IsString()
   resource!: string;
 
   @ApiPropertyOptional({
-    description: 'Optional space-delimited list of scopes for the exchanged token',
+    description:
+      'Optional space-delimited list of scopes for the exchanged token',
     example: 'tasks:read tasks:write',
   })
   @IsOptional()

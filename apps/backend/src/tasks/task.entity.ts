@@ -67,7 +67,9 @@ export class TaskEntity {
   @OneToMany(() => CommentEntity, (comment) => comment.task, { cascade: true })
   comments!: CommentEntity[];
 
-  @OneToMany(() => InputRequestEntity, (inputRequest) => inputRequest.task, { cascade: true })
+  @OneToMany(() => InputRequestEntity, (inputRequest) => inputRequest.task, {
+    cascade: true,
+  })
   inputRequests!: InputRequestEntity[];
 
   @ManyToMany(() => TagEntity, (tag) => tag.tasks)

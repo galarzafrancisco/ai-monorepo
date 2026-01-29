@@ -52,12 +52,6 @@ export type ListTasksInput = {
 
 export type AddTagInput = {
   name: string;
-  color?: string;
-};
-
-export type CreateTagInput = {
-  name: string;
-  color?: string;
 };
 
 export type CreateInputRequestInput = {

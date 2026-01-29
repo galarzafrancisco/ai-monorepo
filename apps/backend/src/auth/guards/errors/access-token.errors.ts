@@ -1,13 +1,13 @@
-import { ErrorCodes } from "../../../../../../packages/shared/errors/error-codes";
+import { ErrorCodes } from '../../../../../../packages/shared/errors/error-codes';
 
 export const AccessTokenErrorCodes = {
   MISSING_ACCESS_TOKEN: ErrorCodes.MISSING_ACCESS_TOKEN,
   INVALID_ACCESS_TOKEN: ErrorCodes.INVALID_ACCESS_TOKEN,
   INSUFFICIENT_SCOPE: ErrorCodes.INSUFFICIENT_SCOPE,
-}
+};
 
 type AccessTokenErrorCode =
-  typeof AccessTokenErrorCodes[keyof typeof AccessTokenErrorCodes];
+  (typeof AccessTokenErrorCodes)[keyof typeof AccessTokenErrorCodes];
 
 /**
  * Base class for all Token domain errors
@@ -27,33 +27,20 @@ export abstract class AccessTokenDomainError extends Error {
 /** Thrown when the request contains no usable access token */
 export class MissingAccessTokenError extends AccessTokenDomainError {
   constructor() {
-    super(
-      'Missing access token',
-      AccessTokenErrorCodes.MISSING_ACCESS_TOKEN,
-    );
+    super('Missing access token', AccessTokenErrorCodes.MISSING_ACCESS_TOKEN);
   }
 }
 
 /** Thrown when an access token is present but fails validation (expired, bad sig, etc.) */
 export class InvalidAccessTokenError extends AccessTokenDomainError {
-  constructor(
-    message: string,
-  ) {
-    super(
-      message,
-      AccessTokenErrorCodes.INVALID_ACCESS_TOKEN,
-    )
+  constructor(message: string) {
+    super(message, AccessTokenErrorCodes.INVALID_ACCESS_TOKEN);
   }
 }
 
 /** Thrown when the access token is valid but lacks required scopes */
 export class InsufficientScopeError extends AccessTokenDomainError {
-  constructor(
-    message: string,
-  ) {
-    super(
-      message,
-      AccessTokenErrorCodes.INSUFFICIENT_SCOPE,
-    )
+  constructor(message: string) {
+    super(message, AccessTokenErrorCodes.INSUFFICIENT_SCOPE);
   }
 }

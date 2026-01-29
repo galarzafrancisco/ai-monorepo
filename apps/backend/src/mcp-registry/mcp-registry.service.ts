@@ -101,14 +101,18 @@ export class McpRegistryService {
 
     return {
       ...this.mapServerEntityToRecord(server),
-      scopes: (server.scopes ?? []).map((scope) => this.mapScopeEntityToRecord(scope)),
+      scopes: (server.scopes ?? []).map((scope) =>
+        this.mapScopeEntityToRecord(scope),
+      ),
       connections: (server.connections ?? []).map((connection) =>
         this.mapConnectionEntityToRecord(connection),
       ),
     };
   }
 
-  async getServerByProvidedId(providedId: string): Promise<ServerWithRelationsRecord> {
+  async getServerByProvidedId(
+    providedId: string,
+  ): Promise<ServerWithRelationsRecord> {
     const server = await this.serverRepository.findOne({
       where: { providedId },
       relations: ['scopes', 'connections'],
@@ -120,7 +124,9 @@ export class McpRegistryService {
 
     return {
       ...this.mapServerEntityToRecord(server),
-      scopes: (server.scopes ?? []).map((scope) => this.mapScopeEntityToRecord(scope)),
+      scopes: (server.scopes ?? []).map((scope) =>
+        this.mapScopeEntityToRecord(scope),
+      ),
       connections: (server.connections ?? []).map((connection) =>
         this.mapConnectionEntityToRecord(connection),
       ),
@@ -132,7 +138,9 @@ export class McpRegistryService {
    * Optimized for hot-path operations (e.g., token exchange)
    * @returns Server UUID or null if not found
    */
-  async resolveServerIdFromProvidedId(providedId: string): Promise<string | null> {
+  async resolveServerIdFromProvidedId(
+    providedId: string,
+  ): Promise<string | null> {
     // Check cache first
     const cached = this.serverIdCache.get(providedId);
     if (cached) {
@@ -307,9 +315,7 @@ export class McpRegistryService {
     return this.mapConnectionEntityToRecord(savedConnection);
   }
 
-  async listConnectionsByServer(
-    serverId: string,
-  ): Promise<ConnectionRecord[]> {
+  async listConnectionsByServer(serverId: string): Promise<ConnectionRecord[]> {
     // Verify server exists
     await this.assertServerExists(serverId);
 
@@ -318,10 +324,14 @@ export class McpRegistryService {
       order: { friendlyName: 'ASC' },
     });
 
-    return connections.map((connection) => this.mapConnectionEntityToRecord(connection));
+    return connections.map((connection) =>
+      this.mapConnectionEntityToRecord(connection),
+    );
   }
 
-  async getConnection(connectionId: string): Promise<ConnectionWithMappingsRecord> {
+  async getConnection(
+    connectionId: string,
+  ): Promise<ConnectionWithMappingsRecord> {
     const connection = await this.connectionRepository.findOne({
       where: { id: connectionId },
       relations: ['server', 'mappings'],
@@ -354,11 +364,17 @@ export class McpRegistryService {
     // If updating friendly name, check for duplicates
     if (input.friendlyName && input.friendlyName !== connection.friendlyName) {
       const existing = await this.connectionRepository.findOne({
-        where: { serverId: connection.serverId, friendlyName: input.friendlyName },
+        where: {
+          serverId: connection.serverId,
+          friendlyName: input.friendlyName,
+        },
       });
 
       if (existing) {
-        throw new ConnectionNameConflictError(input.friendlyName, connection.serverId);
+        throw new ConnectionNameConflictError(
+          input.friendlyName,
+          connection.serverId,
+        );
       }
     }
 
@@ -423,7 +439,10 @@ export class McpRegistryService {
       const savedMapping = await this.mappingRepository.save(mapping);
       return this.mapMappingEntityToRecord(savedMapping);
     } catch (error) {
-      if (error instanceof QueryFailedError && (error as { code?: string }).code === '23505') {
+      if (
+        error instanceof QueryFailedError &&
+        (error as { code?: string }).code === '23505'
+      ) {
         throw new InvalidMappingError(
           `Mapping already exists for scope '${input.scopeId}' and downstream scope '${input.downstreamScope}'.`,
         );
@@ -498,8 +517,14 @@ export class McpRegistryService {
       name: server.name,
       description: server.description,
       url: server.url,
-      createdAt: server.createdAt instanceof Date ? server.createdAt : new Date(server.createdAt),
-      updatedAt: server.updatedAt instanceof Date ? server.updatedAt : new Date(server.updatedAt),
+      createdAt:
+        server.createdAt instanceof Date
+          ? server.createdAt
+          : new Date(server.createdAt),
+      updatedAt:
+        server.updatedAt instanceof Date
+          ? server.updatedAt
+          : new Date(server.updatedAt),
     };
   }
 
@@ -508,12 +533,20 @@ export class McpRegistryService {
       id: scope.id,
       serverId: scope.serverId,
       description: scope.description,
-      createdAt: scope.createdAt instanceof Date ? scope.createdAt : new Date(scope.createdAt),
-      updatedAt: scope.updatedAt instanceof Date ? scope.updatedAt : new Date(scope.updatedAt),
+      createdAt:
+        scope.createdAt instanceof Date
+          ? scope.createdAt
+          : new Date(scope.createdAt),
+      updatedAt:
+        scope.updatedAt instanceof Date
+          ? scope.updatedAt
+          : new Date(scope.updatedAt),
     };
   }
 
-  private mapConnectionEntityToRecord(connection: McpConnectionEntity): ConnectionRecord {
+  private mapConnectionEntityToRecord(
+    connection: McpConnectionEntity,
+  ): ConnectionRecord {
     return {
       id: connection.id,
       serverId: connection.serverId,
@@ -523,13 +556,19 @@ export class McpRegistryService {
       authorizeUrl: connection.authorizeUrl,
       tokenUrl: connection.tokenUrl,
       createdAt:
-        connection.createdAt instanceof Date ? connection.createdAt : new Date(connection.createdAt),
+        connection.createdAt instanceof Date
+          ? connection.createdAt
+          : new Date(connection.createdAt),
       updatedAt:
-        connection.updatedAt instanceof Date ? connection.updatedAt : new Date(connection.updatedAt),
+        connection.updatedAt instanceof Date
+          ? connection.updatedAt
+          : new Date(connection.updatedAt),
     };
   }
 
-  private mapMappingEntityToRecord(mapping: McpScopeMappingEntity): MappingRecord {
+  private mapMappingEntityToRecord(
+    mapping: McpScopeMappingEntity,
+  ): MappingRecord {
     return {
       id: mapping.id,
       scopeId: mapping.scopeId,
@@ -537,9 +576,13 @@ export class McpRegistryService {
       connectionId: mapping.connectionId,
       downstreamScope: mapping.downstreamScope,
       createdAt:
-        mapping.createdAt instanceof Date ? mapping.createdAt : new Date(mapping.createdAt),
+        mapping.createdAt instanceof Date
+          ? mapping.createdAt
+          : new Date(mapping.createdAt),
       updatedAt:
-        mapping.updatedAt instanceof Date ? mapping.updatedAt : new Date(mapping.updatedAt),
+        mapping.updatedAt instanceof Date
+          ? mapping.updatedAt
+          : new Date(mapping.updatedAt),
     };
   }
 }

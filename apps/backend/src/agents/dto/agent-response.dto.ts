@@ -42,7 +42,6 @@ export class AgentResponseDto {
 
   // TODO: refine description and examples and types
   @ApiProperty({
-    
     description: 'List of status that trigger this agent',
     example: ['NOT_STARTED', 'IN_PROGRESS'],
     type: [String],

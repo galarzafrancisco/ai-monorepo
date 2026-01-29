@@ -4,5 +4,5 @@
  */
 export enum TokenEndpointAuthMethod {
   NONE = 'none',
-  CLIENT_SECRET_BASIC ='client_secret_basic',
+  CLIENT_SECRET_BASIC = 'client_secret_basic',
 }

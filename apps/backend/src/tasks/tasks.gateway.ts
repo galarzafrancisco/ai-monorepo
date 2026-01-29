@@ -25,7 +25,6 @@ import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { TasksScopes } from './tasks.scopes';
 
-
 const TASKS_ROOM = 'tasks';
 
 type TaskActivityPayload = {
@@ -49,7 +48,8 @@ type TaskActivityPayload = {
   namespace: '/tasks',
 })
 export class TasksGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -95,29 +95,38 @@ export class TasksGateway
 
   @OnEvent('task.deleted')
   handleTaskDeleted(event: TaskDeletedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.deleted', { taskId: event.taskId }, event.actor);
+    this.server
+      .to(TASKS_ROOM)
+      .emit('task.deleted', { taskId: event.taskId }, event.actor);
   }
 
   @OnEvent('task.assigned')
   handleTaskAssigned(event: TaskAssignedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.assigned', event.payload, event.actor);
+    this.server
+      .to(TASKS_ROOM)
+      .emit('task.assigned', event.payload, event.actor);
   }
 
   @OnEvent('comment.added')
   handleCommentAdded(event: CommentAddedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.commented', event.payload, event.actor);
+    this.server
+      .to(TASKS_ROOM)
+      .emit('task.commented', event.payload, event.actor);
   }
 
   @OnEvent('task.statusChanged')
   handleStatusChanged(event: TaskStatusChangedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.status_changed', event.payload, event.actor);
+    this.server
+      .to(TASKS_ROOM)
+      .emit('task.status_changed', event.payload, event.actor);
   }
 
   @OnEvent('input_request.answered')
   handleInputRequestAnswered(event: InputRequestAnsweredEvent) {
-    this.server.to(TASKS_ROOM).emit('input.request.answered', event.payload, event.actor);
+    this.server
+      .to(TASKS_ROOM)
+      .emit('input.request.answered', event.payload, event.actor);
   }
-
 
   // Listen to incoming messages
   @SubscribeMessage('task.activity.post')
@@ -125,7 +134,6 @@ export class TasksGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() body: TaskActivityPayload,
   ) {
-
     // ultra-MVP "validation"
     if (!body?.taskId) return { ok: false, error: 'taskId required' };
 

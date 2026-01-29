@@ -6,7 +6,8 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export class IssueAccessTokenResponseDto {
   @ApiProperty({
-    description: 'Unique identifier for this token (can be used for revocation)',
+    description:
+      'Unique identifier for this token (can be used for revocation)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;

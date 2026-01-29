@@ -1,9 +1,17 @@
-import { Injectable, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import * as bcrypt from 'bcrypt';
-import { CreateUserInput, UpdateUserRoleInput } from './dto/service/identity-provider.service.types';
+import {
+  CreateUserInput,
+  UpdateUserRoleInput,
+} from './dto/service/identity-provider.service.types';
 import { ActorService } from './actor.service';
 import { ActorEntity } from './actor.entity';
 
@@ -14,9 +22,12 @@ export class IdentityProviderService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly actorService: ActorService,
-  ) { }
+  ) {}
 
-  async validateUser(email: string, password: string): Promise<{ user: User, actor: ActorEntity }> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<{ user: User; actor: ActorEntity }> {
     const user = await this.userRepository.findOne({
       where: { email, isActive: true },
       relations: { actor: true },
@@ -36,11 +47,11 @@ export class IdentityProviderService {
     // User must come with the actor expanded given how we queried it from the DB
     // But check just in case
     if (!user.actor) {
-      this.logger.error("User returned no actor. This should not happen!")
+      this.logger.error('User returned no actor. This should not happen!');
       // TODO: this is an HTTP exception. Should be service error.
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
-    const actor = user.actor as ActorEntity;
+    const actor = user.actor;
 
     return { user, actor };
   }
@@ -57,7 +68,10 @@ export class IdentityProviderService {
     });
   }
 
-  async updateUserRole(userId: string, updateUserRoleInput: UpdateUserRoleInput): Promise<User> {
+  async updateUserRole(
+    userId: string,
+    updateUserRoleInput: UpdateUserRoleInput,
+  ): Promise<User> {
     const { role } = updateUserRoleInput;
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -75,7 +89,7 @@ export class IdentityProviderService {
     const actor = await this.actorService.createUserActor({
       slug,
       displayName,
-    })
+    });
 
     // Create user with actor reference
     const user = this.userRepository.create({
@@ -90,7 +104,11 @@ export class IdentityProviderService {
     return savedUser;
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     // Find the user
     const user = await this.userRepository.findOne({
       where: { id: userId, isActive: true },
@@ -102,7 +120,10 @@ export class IdentityProviderService {
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
       // TODO: this is an HTTP exception. Should be service error.
       throw new UnauthorizedException('Current password is incorrect');

@@ -33,7 +33,8 @@ export class TokenRequestDto {
   client_id!: string;
 
   @ApiPropertyOptional({
-    description: 'Authorization code that was issued by the /authorize endpoint',
+    description:
+      'Authorization code that was issued by the /authorize endpoint',
     example: 'SplxlOBeZQQYbYS6WxSbIA',
   })
   @ValidateIf((dto) => dto.grant_type === GrantType.AUTHORIZATION_CODE)
@@ -42,7 +43,8 @@ export class TokenRequestDto {
   code?: string;
 
   @ApiPropertyOptional({
-    description: 'Redirect URI used during authorization (required when code is present)',
+    description:
+      'Redirect URI used during authorization (required when code is present)',
     example: 'http://localhost:6274/oauth/callback/debug',
   })
   @ValidateIf((dto) => dto.grant_type === GrantType.AUTHORIZATION_CODE)
@@ -52,7 +54,8 @@ export class TokenRequestDto {
   redirect_uri?: string;
 
   @ApiPropertyOptional({
-    description: 'PKCE code verifier used to validate the authorization code exchange',
+    description:
+      'PKCE code verifier used to validate the authorization code exchange',
     example: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
   })
   @ValidateIf((dto) => dto.grant_type === GrantType.AUTHORIZATION_CODE)
@@ -72,7 +75,8 @@ export class TokenRequestDto {
   refresh_token?: string;
 
   @ApiPropertyOptional({
-    description: 'Optional list of scopes to narrow when refreshing a token (space-delimited)',
+    description:
+      'Optional list of scopes to narrow when refreshing a token (space-delimited)',
     example: 'tasks:read tasks:write',
   })
   @IsOptional()
@@ -80,7 +84,8 @@ export class TokenRequestDto {
   scope?: string;
 
   @ApiPropertyOptional({
-    description: 'Optional resource indicator (RFC 8707) - identifies the target resource server',
+    description:
+      'Optional resource indicator (RFC 8707) - identifies the target resource server',
     example: 'http://localhost:4001/',
   })
   @IsOptional()

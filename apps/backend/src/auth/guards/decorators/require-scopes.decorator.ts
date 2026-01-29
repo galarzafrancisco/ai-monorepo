@@ -15,8 +15,12 @@ export interface RequiredScopesMetadata {
  * @RequireScopes('task.read', 'task.write') // default mode=all
  * @RequireScopes({ mode: 'any', scopes: ['task.read', 'task.write'] })
  */
-export function RequireScopes(...scopes: string[]): MethodDecorator & ClassDecorator;
-export function RequireScopes(meta: RequiredScopesMetadata): MethodDecorator & ClassDecorator;
+export function RequireScopes(
+  ...scopes: string[]
+): MethodDecorator & ClassDecorator;
+export function RequireScopes(
+  meta: RequiredScopesMetadata,
+): MethodDecorator & ClassDecorator;
 export function RequireScopes(
   ...args: [RequiredScopesMetadata] | string[]
 ): MethodDecorator & ClassDecorator {

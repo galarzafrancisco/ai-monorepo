@@ -16,8 +16,7 @@ export const TokenErrorCodes = {
   REFRESH_TOKEN_REVOKED: ErrorCodes.REFRESH_TOKEN_REVOKED,
 } as const;
 
-type TokenErrorCode =
-  typeof TokenErrorCodes[keyof typeof TokenErrorCodes];
+type TokenErrorCode = (typeof TokenErrorCodes)[keyof typeof TokenErrorCodes];
 
 /**
  * Base class for all Token domain errors
@@ -36,11 +35,9 @@ export abstract class TokenDomainError extends Error {
 
 export class InvalidGrantTypeError extends TokenDomainError {
   constructor(grantType: string) {
-    super(
-      'Invalid grant_type.',
-      TokenErrorCodes.INVALID_GRANT_TYPE,
-      { grantType },
-    );
+    super('Invalid grant_type.', TokenErrorCodes.INVALID_GRANT_TYPE, {
+      grantType,
+    });
   }
 }
 
@@ -66,10 +63,7 @@ export class InvalidAuthorizationCodeError extends TokenDomainError {
 
 export class ClientIdMismatchError extends TokenDomainError {
   constructor() {
-    super(
-      'Client ID mismatch.',
-      TokenErrorCodes.CLIENT_ID_MISMATCH,
-    );
+    super('Client ID mismatch.', TokenErrorCodes.CLIENT_ID_MISMATCH);
   }
 }
 
@@ -93,46 +87,31 @@ export class AuthorizationCodeExpiredError extends TokenDomainError {
 
 export class RedirectUriMismatchError extends TokenDomainError {
   constructor() {
-    super(
-      'Redirect URI mismatch.',
-      TokenErrorCodes.REDIRECT_URI_MISMATCH,
-    );
+    super('Redirect URI mismatch.', TokenErrorCodes.REDIRECT_URI_MISMATCH);
   }
 }
 
 export class MissingPkceParametersError extends TokenDomainError {
   constructor() {
-    super(
-      'Missing PKCE parameters.',
-      TokenErrorCodes.MISSING_PKCE_PARAMETERS,
-    );
+    super('Missing PKCE parameters.', TokenErrorCodes.MISSING_PKCE_PARAMETERS);
   }
 }
 
 export class InvalidCodeVerifierError extends TokenDomainError {
   constructor() {
-    super(
-      'Invalid code_verifier.',
-      TokenErrorCodes.INVALID_CODE_VERIFIER,
-    );
+    super('Invalid code_verifier.', TokenErrorCodes.INVALID_CODE_VERIFIER);
   }
 }
 
 export class InvalidRefreshTokenError extends TokenDomainError {
   constructor() {
-    super(
-      'Invalid refresh token.',
-      TokenErrorCodes.INVALID_REFRESH_TOKEN,
-    );
+    super('Invalid refresh token.', TokenErrorCodes.INVALID_REFRESH_TOKEN);
   }
 }
 
 export class RefreshTokenExpiredError extends TokenDomainError {
   constructor() {
-    super(
-      'Refresh token has expired.',
-      TokenErrorCodes.REFRESH_TOKEN_EXPIRED,
-    );
+    super('Refresh token has expired.', TokenErrorCodes.REFRESH_TOKEN_EXPIRED);
   }
 }
 

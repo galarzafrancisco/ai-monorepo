@@ -22,7 +22,6 @@ import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/con
 import { AuthCryptoModule } from '../auth/crypto/auth-crypto.module';
 import { WebAuthService } from './web-auth.service';
 
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([

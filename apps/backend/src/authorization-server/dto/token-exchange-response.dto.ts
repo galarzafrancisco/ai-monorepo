@@ -30,7 +30,8 @@ export class TokenExchangeResponseDto {
   expires_in!: number;
 
   @ApiProperty({
-    description: 'Space-delimited list of scopes granted for the exchanged token',
+    description:
+      'Space-delimited list of scopes granted for the exchanged token',
     example: 'tasks:read tasks:write',
   })
   scope!: string;

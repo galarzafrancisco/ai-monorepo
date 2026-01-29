@@ -12,9 +12,7 @@ export class SearchService {
    * @param input - Search input with items, fields, and query
    * @returns Array of search results sorted by match confidence (best matches first)
    */
-  search<T extends SearchableEntity>(
-    input: SearchInput<T>,
-  ): SearchResult<T>[] {
+  search<T extends SearchableEntity>(input: SearchInput<T>): SearchResult<T>[] {
     const {
       items,
       primaryField,

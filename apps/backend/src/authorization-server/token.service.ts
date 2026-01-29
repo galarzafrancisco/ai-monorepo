@@ -42,14 +42,18 @@ export class TokenService {
     private readonly tokenSignerService: TokenSignerService,
     @InjectRepository(McpRefreshTokenEntity)
     private readonly mcpRefreshTokenRepository: Repository<McpRefreshTokenEntity>,
-  ) { }
+  ) {}
 
   /**
    * Handle OAuth 2.0 token requests.
    * Routes to appropriate handler based on grant_type.
    */
-  async handleTokenRequest(tokenRequest: TokenRequestDto): Promise<TokenResponseDto> {
-    this.logger.debug(`Processing token request for client: ${tokenRequest.client_id}, grant_type: ${tokenRequest.grant_type}`);
+  async handleTokenRequest(
+    tokenRequest: TokenRequestDto,
+  ): Promise<TokenResponseDto> {
+    this.logger.debug(
+      `Processing token request for client: ${tokenRequest.client_id}, grant_type: ${tokenRequest.grant_type}`,
+    );
 
     switch (tokenRequest.grant_type) {
       case GrantType.AUTHORIZATION_CODE:
@@ -66,24 +70,39 @@ export class TokenService {
    * Implements OAuth 2.0 authorization code grant with PKCE validation
    * @deprecated Use handleTokenRequest instead
    */
-  async exchangeAuthorizationCode(tokenRequest: TokenRequestDto): Promise<TokenResponseDto> {
+  async exchangeAuthorizationCode(
+    tokenRequest: TokenRequestDto,
+  ): Promise<TokenResponseDto> {
     return this.handleTokenRequest(tokenRequest);
   }
 
   /**
    * Handle authorization_code grant type
    */
-  private async handleAuthorizationCodeGrant(tokenRequest: TokenRequestDto): Promise<TokenResponseDto> {
+  private async handleAuthorizationCodeGrant(
+    tokenRequest: TokenRequestDto,
+  ): Promise<TokenResponseDto> {
     // Validate required parameters
-    if (!tokenRequest.code || !tokenRequest.code_verifier || !tokenRequest.redirect_uri) {
+    if (
+      !tokenRequest.code ||
+      !tokenRequest.code_verifier ||
+      !tokenRequest.redirect_uri
+    ) {
       throw new MissingRequiredParametersError(tokenRequest.grant_type);
     }
 
     // Find the authorization flow by authorization code
-    const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByAuthorizationCode(
-      tokenRequest.code,
-      ['client', 'server', 'authJourney', 'authJourney.actor', 'authJourney.actor.user']
-    );
+    const mcpAuthFlow =
+      await this.authJourneysService.findMcpAuthFlowByAuthorizationCode(
+        tokenRequest.code,
+        [
+          'client',
+          'server',
+          'authJourney',
+          'authJourney.actor',
+          'authJourney.actor.user',
+        ],
+      );
 
     if (!mcpAuthFlow) {
       this.logger.warn(`Authorization code not found: ${tokenRequest.code}`);
@@ -103,7 +122,10 @@ export class TokenService {
     }
 
     // Validate authorization code hasn't expired
-    if (!mcpAuthFlow.authorizationCodeExpiresAt || new Date() > mcpAuthFlow.authorizationCodeExpiresAt) {
+    if (
+      !mcpAuthFlow.authorizationCodeExpiresAt ||
+      new Date() > mcpAuthFlow.authorizationCodeExpiresAt
+    ) {
       this.logger.warn(`Authorization code expired`);
       throw new AuthorizationCodeExpiredError();
     }
@@ -133,7 +155,8 @@ export class TokenService {
 
     // Mark authorization code as used
     mcpAuthFlow.authorizationCodeUsed = true;
-    mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_CODE_EXCHANGED;
+    mcpAuthFlow.status =
+      McpAuthorizationFlowStatus.AUTHORIZATION_CODE_EXCHANGED;
     await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
     await this.authJourneysService.updateAuthJourneyStatus(
       mcpAuthFlow.authorizationJourneyId,
@@ -143,7 +166,10 @@ export class TokenService {
     // Generate tokens
     const config = getConfig();
     const accessToken = await this.generateAccessToken(mcpAuthFlow);
-    const refreshToken = await this.generateAndStoreRefreshToken(mcpAuthFlow, tokenRequest.client_id);
+    const refreshToken = await this.generateAndStoreRefreshToken(
+      mcpAuthFlow,
+      tokenRequest.client_id,
+    );
 
     // Build token response
     const tokenResponse: TokenResponseDto = {
@@ -151,10 +177,14 @@ export class TokenService {
       token_type: TokenType.BEARER,
       expires_in: config.mcpAccessTokenDurationSeconds,
       refresh_token: refreshToken,
-      scope: mcpAuthFlow.client.scopes ? mcpAuthFlow.client.scopes.join(' ') : undefined,
+      scope: mcpAuthFlow.client.scopes
+        ? mcpAuthFlow.client.scopes.join(' ')
+        : undefined,
     };
 
-    this.logger.log(`Issued access token for client: ${tokenRequest.client_id}`);
+    this.logger.log(
+      `Issued access token for client: ${tokenRequest.client_id}`,
+    );
 
     return tokenResponse;
   }
@@ -163,7 +193,9 @@ export class TokenService {
    * Handle refresh_token grant type
    * Implements OAuth 2.0 refresh token grant with token rotation
    */
-  private async handleRefreshTokenGrant(tokenRequest: TokenRequestDto): Promise<TokenResponseDto> {
+  private async handleRefreshTokenGrant(
+    tokenRequest: TokenRequestDto,
+  ): Promise<TokenResponseDto> {
     this.logger.debug('refresh token request');
     // Validate required parameters
     if (!tokenRequest.refresh_token) {
@@ -171,7 +203,9 @@ export class TokenService {
     }
 
     // Hash the provided refresh token to compare with stored hash
-    const tokenHash = createHash('sha256').update(tokenRequest.refresh_token).digest('hex');
+    const tokenHash = createHash('sha256')
+      .update(tokenRequest.refresh_token)
+      .digest('hex');
 
     // Find the refresh token in database with related authorization flow
     const storedToken = await this.mcpRefreshTokenRepository.findOne({
@@ -218,7 +252,10 @@ export class TokenService {
     // Generate new tokens
     const config = getConfig();
     const accessToken = await this.generateAccessToken(mcpAuthFlow);
-    const newRefreshToken = await this.generateAndStoreRefreshToken(mcpAuthFlow, tokenRequest.client_id);
+    const newRefreshToken = await this.generateAndStoreRefreshToken(
+      mcpAuthFlow,
+      tokenRequest.client_id,
+    );
 
     // Build token response
     const tokenResponse: TokenResponseDto = {
@@ -226,10 +263,14 @@ export class TokenService {
       token_type: TokenType.BEARER,
       expires_in: config.mcpAccessTokenDurationSeconds,
       refresh_token: newRefreshToken,
-      scope: mcpAuthFlow.client.scopes ? mcpAuthFlow.client.scopes.join(' ') : undefined,
+      scope: mcpAuthFlow.client.scopes
+        ? mcpAuthFlow.client.scopes.join(' ')
+        : undefined,
     };
 
-    this.logger.log(`Refreshed access token for client: ${tokenRequest.client_id}`);
+    this.logger.log(
+      `Refreshed access token for client: ${tokenRequest.client_id}`,
+    );
 
     return tokenResponse;
   }
@@ -259,11 +300,16 @@ export class TokenService {
   /**
    * Generate a signed JWT access token
    */
-  private async generateAccessToken(mcpAuthFlow: McpAuthorizationFlowEntity): Promise<string> {
-
-    if (!mcpAuthFlow.authJourney.actorId || !mcpAuthFlow.authJourney.actor || !mcpAuthFlow.authJourney.actor.user) {
+  private async generateAccessToken(
+    mcpAuthFlow: McpAuthorizationFlowEntity,
+  ): Promise<string> {
+    if (
+      !mcpAuthFlow.authJourney.actorId ||
+      !mcpAuthFlow.authJourney.actor ||
+      !mcpAuthFlow.authJourney.actor.user
+    ) {
       // Cannot generate an access token for a flow without a user
-      throw new Error("Cannot generate access token. Actor or user not found.")
+      throw new Error('Cannot generate access token. Actor or user not found.');
     }
 
     // Build JWT payload
@@ -324,26 +370,33 @@ export class TokenService {
 
     await this.mcpRefreshTokenRepository.save(refreshToken);
 
-    this.logger.debug(`Stored refresh token for flow: ${mcpAuthFlow.id}, expires: ${expiresAt.toISOString()}`);
+    this.logger.debug(
+      `Stored refresh token for flow: ${mcpAuthFlow.id}, expires: ${expiresAt.toISOString()}`,
+    );
 
     // Return the unhashed token
     return token;
   }
-
 
   /**
    * Introspect a token to validate and return its metadata
    * Implements OAuth 2.0 Token Introspection (RFC 7662)
    */
   // TODO: this is a service. Should not have DTOs with HTTP concerns as interfaces. Fix!
-  async introspectToken(request: IntrospectTokenRequestDto): Promise<IntrospectTokenResponseDto> {
-    this.logger.debug(`Introspecting token${request.client_id ? ` for client: ${request.client_id}` : ''}`);
+  async introspectToken(
+    request: IntrospectTokenRequestDto,
+  ): Promise<IntrospectTokenResponseDto> {
+    this.logger.debug(
+      `Introspecting token${request.client_id ? ` for client: ${request.client_id}` : ''}`,
+    );
 
     let claims: AccessTokenClaims;
     try {
       claims = await this.tokenVerifierService.verifyAndDecode(request.token);
     } catch (error) {
-      this.logger.warn(`Token introspection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.logger.warn(
+        `Token introspection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
       return { active: false } as IntrospectTokenResponseDto;
     }
 
@@ -371,7 +424,9 @@ export class TokenService {
       version: claims.version,
     };
 
-    this.logger.log(`Token introspection successful for client: ${claims.client_id}`);
+    this.logger.log(
+      `Token introspection successful for client: ${claims.client_id}`,
+    );
     return response;
   }
 }

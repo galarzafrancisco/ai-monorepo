@@ -1,9 +1,4 @@
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TokenTypeHint } from '../enums';
 
@@ -29,7 +24,8 @@ export class IntrospectTokenRequestDto {
   token_type_hint?: TokenTypeHint;
 
   @ApiPropertyOptional({
-    description: 'Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.',
+    description:
+      'Client identifier for optional validation against the token claims. Per RFC 7662, this is not required - the client_id is extracted from the token itself.',
     example: '0bab273987a2e163c3abb40c631ec0a4',
   })
   @IsOptional()
@@ -38,7 +34,8 @@ export class IntrospectTokenRequestDto {
   client_id?: string;
 
   @ApiPropertyOptional({
-    description: 'Client secret for confidential clients (MCP clients typically omit this)',
+    description:
+      'Client secret for confidential clients (MCP clients typically omit this)',
     example: 's3cr3t',
     nullable: true,
   })

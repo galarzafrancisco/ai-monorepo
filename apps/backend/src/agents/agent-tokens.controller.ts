@@ -62,7 +62,6 @@ export class AgentTokensController {
     @Body() dto: IssueAccessTokenRequestDto,
     @CurrentUser() user: UserContext,
   ): Promise<IssueAccessTokenResponseDto> {
-
     // TODO: This is a controller. There's a bunch of logic here that belongs in a service.
     // TODO: Fine for now, but we need tighter controls of who can issue what tokens
 
@@ -120,7 +119,9 @@ export class AgentTokensController {
     const agent = await this.agentsService.getAgentBySlug({ slug });
 
     // Get all tokens for this agent
-    const tokens = await this.issuedAccessTokenService.listTokensForSubject(agent.actorId);
+    const tokens = await this.issuedAccessTokenService.listTokensForSubject(
+      agent.actorId,
+    );
 
     return tokens.map((token) => ({
       id: token.id,
@@ -173,7 +174,8 @@ export class AgentTokensController {
     }
 
     // Revoke the token
-    const revokedToken = await this.issuedAccessTokenService.revokeTokenById(tokenId);
+    const revokedToken =
+      await this.issuedAccessTokenService.revokeTokenById(tokenId);
     if (!revokedToken) {
       throw new NotFoundException('Token not found');
     }

@@ -37,7 +37,16 @@ export class BlockResponseDto {
   @ApiProperty({
     description: 'Tags associated with the block',
     type: [ContextTagResponseDto],
-    example: [{ id: '123', name: 'project-alpha', color: '#FF5733', description: 'Project Alpha notes', createdAt: '2025-01-01T12:00:00.000Z', updatedAt: '2025-01-01T12:00:00.000Z' }],
+    example: [
+      {
+        id: '123',
+        name: 'project-alpha',
+        color: '#FF5733',
+        description: 'Project Alpha notes',
+        createdAt: '2025-01-01T12:00:00.000Z',
+        updatedAt: '2025-01-01T12:00:00.000Z',
+      },
+    ],
   })
   tags!: ContextTagResponseDto[];
 

@@ -12,7 +12,7 @@ export const ClientRegistrationErrorCodes = {
 } as const;
 
 type ClientRegistrationErrorCode =
-  typeof ClientRegistrationErrorCodes[keyof typeof ClientRegistrationErrorCodes];
+  (typeof ClientRegistrationErrorCodes)[keyof typeof ClientRegistrationErrorCodes];
 
 /**
  * Base class for all Client Registration domain errors
@@ -31,11 +31,9 @@ export abstract class ClientRegistrationDomainError extends Error {
 
 export class ClientNotFoundError extends ClientRegistrationDomainError {
   constructor(clientId: string) {
-    super(
-      'Client not found.',
-      ClientRegistrationErrorCodes.CLIENT_NOT_FOUND,
-      { clientId },
-    );
+    super('Client not found.', ClientRegistrationErrorCodes.CLIENT_NOT_FOUND, {
+      clientId,
+    });
   }
 }
 

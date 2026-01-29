@@ -13,7 +13,8 @@ export class TokenResponseDto {
   access_token!: string;
 
   @ApiProperty({
-    description: 'Type of token issued (MCP clients always receive Bearer tokens)',
+    description:
+      'Type of token issued (MCP clients always receive Bearer tokens)',
     enum: TokenType,
     example: TokenType.BEARER,
     default: TokenType.BEARER,

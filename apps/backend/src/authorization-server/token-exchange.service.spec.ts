@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotFoundException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { TokenExchangeService } from './token-exchange.service';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
@@ -14,7 +18,9 @@ describe('TokenExchangeService', () => {
   let service: TokenExchangeService;
   let mcpConnectionRepository: jest.Mocked<Repository<McpConnectionEntity>>;
   let mcpScopeMappingRepository: jest.Mocked<Repository<McpScopeMappingEntity>>;
-  let connectionAuthorizationFlowRepository: jest.Mocked<Repository<ConnectionAuthorizationFlowEntity>>;
+  let connectionAuthorizationFlowRepository: jest.Mocked<
+    Repository<ConnectionAuthorizationFlowEntity>
+  >;
   let jwksService: jest.Mocked<JwksService>;
 
   const mockConnection: McpConnectionEntity = {
@@ -74,9 +80,15 @@ describe('TokenExchangeService', () => {
     }).compile();
 
     service = module.get<TokenExchangeService>(TokenExchangeService);
-    mcpConnectionRepository = module.get(getRepositoryToken(McpConnectionEntity));
-    mcpScopeMappingRepository = module.get(getRepositoryToken(McpScopeMappingEntity));
-    connectionAuthorizationFlowRepository = module.get(getRepositoryToken(ConnectionAuthorizationFlowEntity));
+    mcpConnectionRepository = module.get(
+      getRepositoryToken(McpConnectionEntity),
+    );
+    mcpScopeMappingRepository = module.get(
+      getRepositoryToken(McpScopeMappingEntity),
+    );
+    connectionAuthorizationFlowRepository = module.get(
+      getRepositoryToken(ConnectionAuthorizationFlowEntity),
+    );
     jwksService = module.get(JwksService);
   });
 
@@ -140,8 +152,13 @@ describe('TokenExchangeService', () => {
       mcpScopeMappingRepository.find.mockResolvedValue(mockMappings);
 
       // Using reflection to access private method for testing
-      const resolveMethod = (service as any).resolveDownstreamScopes.bind(service);
-      const result = await resolveMethod(['tasks:read', 'tasks:write'], 'connection-uuid');
+      const resolveMethod = (service as any).resolveDownstreamScopes.bind(
+        service,
+      );
+      const result = await resolveMethod(
+        ['tasks:read', 'tasks:write'],
+        'connection-uuid',
+      );
 
       expect(result).toEqual([
         'https://www.googleapis.com/auth/tasks.readonly',
@@ -169,8 +186,13 @@ describe('TokenExchangeService', () => {
 
       mcpScopeMappingRepository.find.mockResolvedValue(mockMappings);
 
-      const resolveMethod = (service as any).resolveDownstreamScopes.bind(service);
-      const result = await resolveMethod(['tasks:read', 'tasks:write'], 'connection-uuid');
+      const resolveMethod = (service as any).resolveDownstreamScopes.bind(
+        service,
+      );
+      const result = await resolveMethod(
+        ['tasks:read', 'tasks:write'],
+        'connection-uuid',
+      );
 
       expect(result).toEqual(['https://www.googleapis.com/auth/tasks']);
       expect(result.length).toBe(1);
@@ -179,27 +201,39 @@ describe('TokenExchangeService', () => {
 
   describe('scope validation', () => {
     it('should allow subset of entitled scopes', () => {
-      const validateMethod = (service as any).validateScopeEntitlement.bind(service);
+      const validateMethod = (service as any).validateScopeEntitlement.bind(
+        service,
+      );
       const requestedScopes = ['scope1'];
       const entitledScopes = ['scope1', 'scope2', 'scope3'];
 
-      expect(() => validateMethod(requestedScopes, entitledScopes)).not.toThrow();
+      expect(() =>
+        validateMethod(requestedScopes, entitledScopes),
+      ).not.toThrow();
     });
 
     it('should throw ForbiddenException for scope escalation', () => {
-      const validateMethod = (service as any).validateScopeEntitlement.bind(service);
+      const validateMethod = (service as any).validateScopeEntitlement.bind(
+        service,
+      );
       const requestedScopes = ['scope1', 'scope2', 'scope-not-entitled'];
       const entitledScopes = ['scope1', 'scope2'];
 
-      expect(() => validateMethod(requestedScopes, entitledScopes)).toThrow(ForbiddenException);
+      expect(() => validateMethod(requestedScopes, entitledScopes)).toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should allow empty requested scopes', () => {
-      const validateMethod = (service as any).validateScopeEntitlement.bind(service);
+      const validateMethod = (service as any).validateScopeEntitlement.bind(
+        service,
+      );
       const requestedScopes: string[] = [];
       const entitledScopes = ['scope1', 'scope2'];
 
-      expect(() => validateMethod(requestedScopes, entitledScopes)).not.toThrow();
+      expect(() =>
+        validateMethod(requestedScopes, entitledScopes),
+      ).not.toThrow();
     });
   });
 
@@ -292,7 +326,9 @@ describe('TokenExchangeService', () => {
         refreshToken: undefined,
       };
 
-      const refreshMethod = (service as any).refreshDownstreamToken.bind(service);
+      const refreshMethod = (service as any).refreshDownstreamToken.bind(
+        service,
+      );
 
       await expect(
         refreshMethod(authFlowWithoutRefreshToken, mockConnection),

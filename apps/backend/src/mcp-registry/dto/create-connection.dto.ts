@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsUrl, MaxLength, IsOptional, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUrl,
+  MaxLength,
+  IsOptional,
+  Matches,
+} from 'class-validator';
 
 export class CreateConnectionDto {
   @ApiProperty({
@@ -12,7 +19,8 @@ export class CreateConnectionDto {
   friendlyName!: string;
 
   @ApiProperty({
-    description: 'Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.',
+    description:
+      'Unique identifier for this connection (alphanumeric, dash, underscore only). Used for token exchange.',
     example: 'google-oauth',
     required: false,
   })
@@ -20,7 +28,8 @@ export class CreateConnectionDto {
   @IsOptional()
   @MaxLength(255)
   @Matches(/^[a-zA-Z0-9_-]+$/, {
-    message: 'providedId must contain only alphanumeric characters, dashes, and underscores',
+    message:
+      'providedId must contain only alphanumeric characters, dashes, and underscores',
   })
   providedId?: string;
 

@@ -57,7 +57,9 @@ async function bootstrap() {
 
   // Validate inputs
   if (!email || !displayName || !slug || !password) {
-    console.error('❌ Error: All fields are required (email, displayName, password)');
+    console.error(
+      '❌ Error: All fields are required (email, displayName, password)',
+    );
     process.exit(1);
   }
 

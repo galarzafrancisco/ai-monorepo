@@ -255,7 +255,7 @@ export const ErrorCatalog: Record<
     type: '/errors/token/invalid-code-verifier',
     retryable: false,
   },
-    [ErrorCodes.MISSING_ACCESS_TOKEN]: {
+  [ErrorCodes.MISSING_ACCESS_TOKEN]: {
     status: 401,
     title: 'Missing access token',
     type: '/errors/auth/missing-access-token',

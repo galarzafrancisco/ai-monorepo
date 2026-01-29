@@ -1,4 +1,11 @@
-import { All, Controller, Get, NotFoundException, Param, UseGuards } from '@nestjs/common';
+import {
+  All,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiOkResponse,
@@ -88,7 +95,7 @@ export class DiscoveryController {
 
   @Get('oauth-protected-resource/*path')
   async all(
-    @Param('path') path: string[]
+    @Param('path') path: string[],
   ): Promise<ProtectedResourceMetadataResult> {
     /*
     MCP Clients should fetch protected resource metadata form the endpoint present in the WWW-Authenticate header, but they don't.

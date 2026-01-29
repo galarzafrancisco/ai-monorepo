@@ -2,8 +2,8 @@
 Dumb helper that extracts the auth token from a cookie
 */
 
-import { Request } from "express";
-import { COOKIE_KEYS } from "../../core/constants";
+import { Request } from 'express';
+import { COOKIE_KEYS } from '../../core/constants';
 
 export function extractTokenFromCookie(req: Request): string | null {
   const token = req.cookies?.[COOKIE_KEYS.ACCESS_TOKEN] || '';
@@ -11,7 +11,9 @@ export function extractTokenFromCookie(req: Request): string | null {
   return token.length > 0 ? token : null;
 }
 
-export function tokenFromCookies(cookies?: Record<string, string>): string | null {
+export function tokenFromCookies(
+  cookies?: Record<string, string>,
+): string | null {
   if (!cookies) return null;
   const token = cookies[COOKIE_KEYS.ACCESS_TOKEN] || '';
   return token.length > 0 ? token : null;

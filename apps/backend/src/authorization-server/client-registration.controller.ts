@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, Param, HttpCode, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  HttpCode,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -23,7 +31,7 @@ import { UserScopes } from '../auth/core/scopes/user.scopes';
 export class ClientRegistrationController {
   constructor(
     private readonly clientRegistrationService: ClientRegistrationService,
-  ) { }
+  ) {}
 
   private mapToClientRegistrationResponseDto(
     client: RegisteredClientEntity,
@@ -36,7 +44,8 @@ export class ClientRegistrationController {
       token_endpoint_auth_method: client.tokenEndpointAuthMethod,
       client_id_issued_at: Math.floor(client.createdAt.getTime() / 1000),
     };
-    if (client.contacts && client.contacts.length > 0) response.contacts = client.contacts;
+    if (client.contacts && client.contacts.length > 0)
+      response.contacts = client.contacts;
     return response;
   }
 
@@ -63,7 +72,10 @@ export class ClientRegistrationController {
     @Param('serverId') serverId: string,
     @Param('version') version: string,
   ): Promise<ClientRegistrationResponseDto> {
-    const client = await this.clientRegistrationService.registerClient(dto, serverId);
+    const client = await this.clientRegistrationService.registerClient(
+      dto,
+      serverId,
+    );
 
     return this.mapToClientRegistrationResponseDto(client);
   }

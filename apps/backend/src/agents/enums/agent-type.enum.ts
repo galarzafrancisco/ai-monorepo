@@ -4,7 +4,7 @@ export enum AgentType {
   OPENCODE = 'opencode',
   ADK = 'adk',
   OTHER = 'other',
-};
+}
 
 export const DEFAULT_AGENT_AVATAR: Record<AgentType, string | null> = {
   [AgentType.CLAUDE]: '/icons/claude-ai-icon.webp',

@@ -1,25 +1,29 @@
-import { Injectable, InternalServerErrorException, Logger, UnauthorizedException } from "@nestjs/common";
-import { createHash, randomBytes } from "crypto";
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { createHash, randomBytes } from 'crypto';
 import { SignJWT, importPKCS8 } from 'jose';
-import { RefreshTokenEntity } from "./entities/refresh-token.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { IdentityProviderService } from "../identity-provider/identity-provider.service";
-import { getConfig } from "../config/env.config";
-import { JwksService } from "../auth/crypto/jwks.service";
-import { AccessTokenClaims } from "src/auth/core/types/access-token-claims.type";
-import { Scope } from "src/auth/core/types/scope.type";
-import { ALL_TASKS_SCOPES } from "src/tasks/tasks.scopes";
-import { ALL_CONTEXT_SCOPES } from "src/context/context.scopes";
-import { ALL_MCP_SCOPES } from "src/auth/core/scopes/mcp.scopes";
-import { UserScopes } from "src/auth/core/scopes/user.scopes";
-import { ALL_AGENTS_SCOPES } from "src/agents/agents.scopes";
-import { ALL_MCP_REGISTRY_SCOPES } from "src/mcp-registry/mcp-registry.scopes";
-import { ALL_META_SCOPES } from "src/meta/meta.scopes";
-import { ActorEntity } from "src/identity-provider/actor.entity";
-import { User } from "src/identity-provider/user.entity";
-import { ActorService } from "src/identity-provider/actor.service";
-
+import { RefreshTokenEntity } from './entities/refresh-token.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { IdentityProviderService } from '../identity-provider/identity-provider.service';
+import { getConfig } from '../config/env.config';
+import { JwksService } from '../auth/crypto/jwks.service';
+import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
+import { Scope } from 'src/auth/core/types/scope.type';
+import { ALL_TASKS_SCOPES } from 'src/tasks/tasks.scopes';
+import { ALL_CONTEXT_SCOPES } from 'src/context/context.scopes';
+import { ALL_MCP_SCOPES } from 'src/auth/core/scopes/mcp.scopes';
+import { UserScopes } from 'src/auth/core/scopes/user.scopes';
+import { ALL_AGENTS_SCOPES } from 'src/agents/agents.scopes';
+import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
+import { ALL_META_SCOPES } from 'src/meta/meta.scopes';
+import { ActorEntity } from 'src/identity-provider/actor.entity';
+import { User } from 'src/identity-provider/user.entity';
+import { ActorService } from 'src/identity-provider/actor.service';
 
 @Injectable()
 export class WebAuthService {
@@ -31,17 +35,29 @@ export class WebAuthService {
     private readonly jwksService: JwksService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
-  ) { }
+  ) {}
 
   /**
    * Web Authentication: Login with email and password
    * Returns access and refresh tokens
    */
-  async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; expiresInSeconds: number, actor: ActorEntity, user: User }> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresInSeconds: number;
+    actor: ActorEntity;
+    user: User;
+  }> {
     this.logger.debug(`Login attempt for email: ${email}`);
 
     // Validate user credentials (throws if user not found or credentials invalid)
-    const { user, actor } = await this.identityProviderService.validateUser(email, password);
+    const { user, actor } = await this.identityProviderService.validateUser(
+      email,
+      password,
+    );
 
     // Generate access token using centralized config
     const config = getConfig();
@@ -66,7 +82,6 @@ export class WebAuthService {
     };
   }
 
-
   /**
    * Generate a signed JWT access token for web authentication
    */
@@ -79,7 +94,10 @@ export class WebAuthService {
     const signingKey = await this.jwksService.getActiveSigningKey();
 
     // Import private key from PEM
-    const privateKey = await importPKCS8(signingKey.privateKeyPem, signingKey.algorithm);
+    const privateKey = await importPKCS8(
+      signingKey.privateKeyPem,
+      signingKey.algorithm,
+    );
 
     // Build JWT payload
     const now = Math.floor(Date.now() / 1000);
@@ -94,7 +112,7 @@ export class WebAuthService {
       ...ALL_MCP_SCOPES,
       ...ALL_META_SCOPES,
       user.role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
-    ]
+    ];
 
     const payload: AccessTokenClaims = {
       iss: config.issuerUrl,
@@ -104,7 +122,7 @@ export class WebAuthService {
       actor_type: actor.type,
       displayName: actor.displayName,
       email: user.email,
-      scope: scopes.map(s => s.id),
+      scope: scopes.map((s) => s.id),
       aud: 'ai-backend',
       client_id: 'web-app',
       // mcp_server_identifier: 'not needed for non-mcp',
@@ -126,7 +144,6 @@ export class WebAuthService {
 
     return jwt;
   }
-
 
   /**
    * Generate and store a refresh token in the database
@@ -158,12 +175,17 @@ export class WebAuthService {
     return token;
   }
 
-
   /**
    * Web Authentication: Refresh access token using refresh token
    * Returns new access and refresh tokens
    */
-  async refreshWebToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number, user: User, actor: ActorEntity }> {
+  async refreshWebToken(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+    user: User;
+    actor: ActorEntity;
+  }> {
     this.logger.debug('Refresh token request');
 
     // Hash the provided refresh token to compare with stored hash
@@ -200,13 +222,17 @@ export class WebAuthService {
     // Generate new tokens
     const user = storedToken.user;
     if (!user) {
-      this.logger.error("User not found for refresh token. This should not happen");
+      this.logger.error(
+        'User not found for refresh token. This should not happen',
+      );
       // TODO: this is an HTTP exception. Should be service error.
       throw new InternalServerErrorException('Failed to retrieve user');
     }
     const actor = storedToken.user.actor;
     if (!actor) {
-      this.logger.error("Actor not found for refresh token. This should not happen");
+      this.logger.error(
+        'Actor not found for refresh token. This should not happen',
+      );
       // TODO: this is an HTTP exception. Should be service error.
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
@@ -219,7 +245,9 @@ export class WebAuthService {
     );
     const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
 
-    this.logger.log(`Refresh token exchanged successfully for user: ${user.email}`);
+    this.logger.log(
+      `Refresh token exchanged successfully for user: ${user.email}`,
+    );
 
     return {
       accessToken: newAccessToken,

@@ -83,7 +83,8 @@ export class IssuedAccessTokenResponseDto {
   lastUsedAt!: string | null;
 
   @ApiProperty({
-    description: 'Whether the token is still valid (not expired and not revoked)',
+    description:
+      'Whether the token is still valid (not expired and not revoked)',
     example: true,
   })
   isValid!: boolean;

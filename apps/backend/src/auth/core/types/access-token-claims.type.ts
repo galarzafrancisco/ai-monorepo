@@ -1,4 +1,4 @@
-import { ActorType } from "src/identity-provider/enums";
+import { ActorType } from 'src/identity-provider/enums';
 
 /**
  * Shape of the JWT payload we issue for access tokens.

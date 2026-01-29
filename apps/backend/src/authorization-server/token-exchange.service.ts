@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+  UnauthorizedException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
@@ -40,17 +47,25 @@ export class TokenExchangeService {
     request: TokenExchangeRequestDto,
     serverIdentifier: string,
   ): Promise<TokenExchangeResponseDto> {
-    this.logger.debug(`Processing token exchange for resource: ${request.resource}`);
+    this.logger.debug(
+      `Processing token exchange for resource: ${request.resource}`,
+    );
 
     // Step 1: Resolve MCP Server UUID from providedId (with caching)
-    const serverId = await this.mcpRegistryService.resolveServerIdFromProvidedId(serverIdentifier);
+    const serverId =
+      await this.mcpRegistryService.resolveServerIdFromProvidedId(
+        serverIdentifier,
+      );
     if (!serverId) {
       this.logger.warn(`MCP Server not found: ${serverIdentifier}`);
       throw new NotFoundException('MCP Server not found');
     }
 
     // Step 2: Validate and decode MCP JWT
-    const mcpTokenPayload = await this.validateMcpJwt(request.subject_token, serverIdentifier);
+    const mcpTokenPayload = await this.validateMcpJwt(
+      request.subject_token,
+      serverIdentifier,
+    );
 
     // Step 3: Extract MCP scopes from JWT
     const mcpScopes = mcpTokenPayload.scope;
@@ -107,7 +122,9 @@ export class TokenExchangeService {
 
     // Additional checks: audience
     if (claims.aud !== expectedAudience) {
-      this.logger.warn(`MCP JWT audience mismatch: expected ${expectedAudience}, got ${claims.aud}`);
+      this.logger.warn(
+        `MCP JWT audience mismatch: expected ${expectedAudience}, got ${claims.aud}`,
+      );
       throw new UnauthorizedException('MCP JWT audience mismatch');
     }
 
@@ -244,7 +261,9 @@ export class TokenExchangeService {
     connection: McpConnectionEntity,
   ): Promise<DownstreamTokenInfo> {
     if (!authFlow.refreshToken) {
-      this.logger.warn('No refresh token available for downstream token refresh');
+      this.logger.warn(
+        'No refresh token available for downstream token refresh',
+      );
       throw new UnauthorizedException('No refresh token available');
     }
 
@@ -295,7 +314,9 @@ export class TokenExchangeService {
       this.logger.error(
         `Failed to refresh downstream token: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
-      throw new InternalServerErrorException('Failed to refresh downstream token');
+      throw new InternalServerErrorException(
+        'Failed to refresh downstream token',
+      );
     }
   }
 

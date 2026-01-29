@@ -17,7 +17,6 @@ import { getConfig } from 'src/config/env.config';
 
 @Injectable()
 export class ClientRegistrationService {
-  
   private logger = new Logger(ClientRegistrationService.name);
 
   constructor(
@@ -36,7 +35,6 @@ export class ClientRegistrationService {
     dto: RegisterClientDto,
     serverId: string,
   ): Promise<RegisteredClientEntity> {
-
     // Validate payload without touching the database
 
     // Validate required fields
@@ -56,8 +54,9 @@ export class ClientRegistrationService {
         : null;
 
     // Validate that the MCP Server exists
-    const mcpServer = await this.mcpRegistryService.getServerByProvidedId(serverId); // service throws if not found
-    
+    const mcpServer =
+      await this.mcpRegistryService.getServerByProvidedId(serverId); // service throws if not found
+
     // Create and persist the client entity
     let scopes: string[] = [];
     if (dto.scope && dto.scope.trim() != '') {
@@ -77,10 +76,11 @@ export class ClientRegistrationService {
     const savedClient = await this.clientRepository.save(client);
 
     // Create an Authorization Journey
-    const authJourney = await this.authJourneyService.createJourneyForMcpRegistration({
-      mcpServerId: mcpServer.id,
-      mcpClientId: savedClient.id,
-    });
+    const authJourney =
+      await this.authJourneyService.createJourneyForMcpRegistration({
+        mcpServerId: mcpServer.id,
+        mcpClientId: savedClient.id,
+      });
 
     // Return the client with the plaintext secret (only time it's exposed)
     return {
@@ -147,7 +147,9 @@ export class ClientRegistrationService {
 
   private validateRedirectUris(redirectUris: string[]): void {
     if (redirectUris.length === 0) {
-      throw new InvalidRedirectUriError('At least one redirect URI is required');
+      throw new InvalidRedirectUriError(
+        'At least one redirect URI is required',
+      );
     }
 
     // More lax validation for MCP clients - allow localhost and http

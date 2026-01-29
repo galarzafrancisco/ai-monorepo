@@ -86,15 +86,22 @@ export class AgentsController {
   @Get(':slug')
   @ApiOperation({ summary: 'Get an agent by slug' })
   @ApiOkResponse({ type: AgentResponseDto })
-  async getAgentBySlug(@Param() params: AgentParamsDto): Promise<AgentResponseDto> {
-    console.log(params)
-    const result = await this.agentsService.getAgentBySlug({slug: params.slug});
+  async getAgentBySlug(
+    @Param() params: AgentParamsDto,
+  ): Promise<AgentResponseDto> {
+    console.log(params);
+    const result = await this.agentsService.getAgentBySlug({
+      slug: params.slug,
+    });
     return this.mapResultToResponse(result);
   }
 
   @Patch(':actorId')
   @RequireScopes(AgentsScopes.WRITE.id)
-  @ApiOperation({ summary: 'Patch an agent (update system prompt, status triggers, and/or type)' })
+  @ApiOperation({
+    summary:
+      'Patch an agent (update system prompt, status triggers, and/or type)',
+  })
   @ApiOkResponse({ type: AgentResponseDto })
   async patchAgent(
     @Param() params: AgentActorParamsDto,

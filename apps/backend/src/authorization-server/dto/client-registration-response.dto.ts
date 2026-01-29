@@ -15,7 +15,8 @@ export class ClientRegistrationResponseDto {
   client_name!: string;
 
   @ApiProperty({
-    description: 'Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)',
+    description:
+      'Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)',
     example: ['http://localhost:3000/callback', 'https://example.com/callback'],
     type: [String],
   })
@@ -30,7 +31,8 @@ export class ClientRegistrationResponseDto {
   grant_types!: GrantType[];
 
   @ApiProperty({
-    description: 'Authentication method for the token endpoint (MCP clients use "none")',
+    description:
+      'Authentication method for the token endpoint (MCP clients use "none")',
     example: TokenEndpointAuthMethod.NONE,
     enum: TokenEndpointAuthMethod,
   })
@@ -53,7 +55,8 @@ export class ClientRegistrationResponseDto {
   contacts?: string[] | null;
 
   @ApiProperty({
-    description: 'Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.',
+    description:
+      'Time at which the client identifier was issued. The time is represented as the number of seconds from 1970-01-01T00:00:00Z as measured in UTC until the date/time of issuance.',
     example: '604846800',
   })
   client_id_issued_at!: number;

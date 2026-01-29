@@ -27,7 +27,6 @@ import { ActorService } from 'src/identity-provider/actor.service';
 @ApiTags('Web Authentication')
 @Controller('auth')
 export class WebAuthController {
-
   private logger = new Logger(WebAuthController.name);
 
   constructor(
@@ -59,7 +58,7 @@ export class WebAuthController {
       await this.webAuthService.login(loginDto.email, loginDto.password);
 
     this.logger.log('Got access token');
-    
+
     // Determine if cookies should be secure (HTTPS only)
     const config = getConfig();
     const isProduction = config.nodeEnv === 'production';
@@ -91,7 +90,7 @@ export class WebAuthController {
         role: user.role,
         actorId: user.actorId,
       },
-      expiresIn:  expiresInSeconds,
+      expiresIn: expiresInSeconds,
     };
   }
 
@@ -223,16 +222,17 @@ export class WebAuthController {
     }
 
     // Validate token and get payload
-    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
+    const payload =
+      await this.tokenVerifierService.verifyAndDecode(accessToken);
 
-    payload.actor_id
+    payload.actor_id;
     // Get user from database
     const actor = await this.actorService.getActorById(payload.actor_id, true);
     if (!actor) {
       throw new UnauthorizedException('Actor not found');
     }
     if (!actor.user) {
-      this.logger.error("Actor returned no user. This should not happen")
+      this.logger.error('Actor returned no user. This should not happen');
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
 
@@ -276,7 +276,8 @@ export class WebAuthController {
     }
 
     // Validate token and get payload
-    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
+    const payload =
+      await this.tokenVerifierService.verifyAndDecode(accessToken);
 
     // Get user from database
     const actor = await this.actorService.getActorById(payload.actor_id, true);
@@ -284,7 +285,7 @@ export class WebAuthController {
       throw new UnauthorizedException('Actor not found');
     }
     if (!actor.user) {
-      this.logger.error("Actor returned no user. This should not happen")
+      this.logger.error('Actor returned no user. This should not happen');
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
 

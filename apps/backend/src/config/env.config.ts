@@ -68,18 +68,36 @@ export function loadConfig(): AppConfig {
 
     // Security Configuration
     clientSecretLength: parseInt(process.env.CLIENT_SECRET_LENGTH || '32', 10),
-    jwksKeySigningTtlHours: parseInt(process.env.JWKS_KEY_SIGNING_TTL_HOURS || '72', 10),
-    jwksKeyVerifyingTtlHours: parseInt(process.env.JWKS_KEY_VERIFYING_TTL_HOURS || '1440', 10), // 60 days default
+    jwksKeySigningTtlHours: parseInt(
+      process.env.JWKS_KEY_SIGNING_TTL_HOURS || '72',
+      10,
+    ),
+    jwksKeyVerifyingTtlHours: parseInt(
+      process.env.JWKS_KEY_VERIFYING_TTL_HOURS || '1440',
+      10,
+    ), // 60 days default
 
     // Token Duration Configuration
     // MCP access token: 10 minutes initially (for testing), increase to 1 hour in production
-    mcpAccessTokenDurationSeconds: parseInt(process.env.MCP_ACCESS_TOKEN_DURATION_SECONDS || '600', 10),
+    mcpAccessTokenDurationSeconds: parseInt(
+      process.env.MCP_ACCESS_TOKEN_DURATION_SECONDS || '600',
+      10,
+    ),
     // MCP refresh token: 7 days
-    mcpRefreshTokenDurationDays: parseInt(process.env.MCP_REFRESH_TOKEN_DURATION_DAYS || '7', 10),
+    mcpRefreshTokenDurationDays: parseInt(
+      process.env.MCP_REFRESH_TOKEN_DURATION_DAYS || '7',
+      10,
+    ),
     // Web access token: 60 minutes
-    webAccessTokenDurationMinutes: parseInt(process.env.WEB_ACCESS_TOKEN_DURATION_MINUTES || '60', 10),
+    webAccessTokenDurationMinutes: parseInt(
+      process.env.WEB_ACCESS_TOKEN_DURATION_MINUTES || '60',
+      10,
+    ),
     // Web refresh token: 1 day
-    webRefreshTokenDurationDays: parseInt(process.env.WEB_REFRESH_TOKEN_DURATION_DAYS || '1', 10),
+    webRefreshTokenDurationDays: parseInt(
+      process.env.WEB_REFRESH_TOKEN_DURATION_DAYS || '1',
+      10,
+    ),
 
     // Development Configuration
     vitePort: process.env.VITE_PORT || '1000',

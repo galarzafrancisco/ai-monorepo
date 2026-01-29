@@ -3,12 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ContextBlockEntity } from './block.entity';
-import { ContextTagEntity } from './tag.entity';
+import { MetaService } from '../meta/meta.service';
+import { TagEntity } from '../meta/tag.entity';
+
 import {
   AddTagInput,
   AppendBlockInput,
   CreateBlockInput,
-  CreateTagInput,
   ListBlocksInput,
   BlockResult,
   BlockSummaryResult,
@@ -21,7 +22,6 @@ import {
   ParentBlockNotFoundError,
   CircularReferenceError,
 } from './errors/context.errors';
-import { getRandomTagColor } from '../common/utils/color-palette.util';
 import {
   BlockCreatedEvent,
   BlockUpdatedEvent,
@@ -35,9 +35,8 @@ export class ContextService {
   constructor(
     @InjectRepository(ContextBlockEntity)
     private readonly blockRepository: Repository<ContextBlockEntity>,
-    @InjectRepository(ContextTagEntity)
-    private readonly tagRepository: Repository<ContextTagEntity>,
     private readonly eventEmitter: EventEmitter2,
+    private readonly metaService: MetaService,
   ) {}
 
   async createBlock(input: CreateBlockInput): Promise<BlockResult> {
@@ -60,9 +59,10 @@ export class ContextService {
     // Calculate default order (max sibling order + 1)
     let order = 0;
     if (input.parentId !== undefined) {
-      const whereClause = input.parentId === null
-        ? { parentId: null as any }
-        : { parentId: input.parentId };
+      const whereClause =
+        input.parentId === null
+          ? { parentId: null as any }
+          : { parentId: input.parentId };
 
       const siblings = await this.blockRepository.find({
         where: whereClause,
@@ -87,7 +87,9 @@ export class ContextService {
 
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
-      const tags = await this.findOrCreateTags(input.tagNames);
+      const tags = await this.metaService.findOrCreateTagEntities(
+        input.tagNames,
+      );
       saved.tags = tags;
       await this.blockRepository.save(saved);
     }
@@ -104,7 +106,10 @@ export class ContextService {
     });
 
     // Emit block.created event
-    this.eventEmitter.emit('block.created', new BlockCreatedEvent(blockWithTags!));
+    this.eventEmitter.emit(
+      'block.created',
+      new BlockCreatedEvent(blockWithTags!),
+    );
 
     return this.mapToResult(blockWithTags!);
   }
@@ -203,7 +208,9 @@ export class ContextService {
       if (input.tagNames.length === 0) {
         block.tags = [];
       } else {
-        block.tags = await this.findOrCreateTags(input.tagNames);
+        block.tags = await this.metaService.findOrCreateTagEntities(
+          input.tagNames,
+        );
       }
     }
 
@@ -218,7 +225,10 @@ export class ContextService {
     this.logger.log({ message: 'Context block.updated', blockId: saved.id });
 
     // Emit block.updated event
-    this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(blockWithTags!));
+    this.eventEmitter.emit(
+      'block.updated',
+      new BlockUpdatedEvent(blockWithTags!),
+    );
 
     return this.mapToResult(blockWithTags!);
   }
@@ -242,7 +252,10 @@ export class ContextService {
 
     const saved = await this.blockRepository.save(block);
 
-    this.logger.log({ message: 'Context block content appended', blockId: saved.id });
+    this.logger.log({
+      message: 'Context block content appended',
+      blockId: saved.id,
+    });
 
     // Emit block.updated event (appending is an update)
     this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(saved));
@@ -265,41 +278,16 @@ export class ContextService {
     this.eventEmitter.emit('block.deleted', new BlockDeletedEvent(blockId));
   }
 
-  async createTag(input: CreateTagInput): Promise<TagResult> {
+  async addTagToBlock(
+    blockId: string,
+    input: AddTagInput,
+    actorId: string,
+  ): Promise<BlockResult> {
     this.logger.log({
-      message: 'Creating tag',
+      message: 'Adding tag to block',
+      blockId,
       tagName: input.name,
     });
-
-    // Check if tag already exists (case-insensitive)
-    let tag = await this.tagRepository.findOne({ where: { name: input.name } });
-
-    if (!tag) {
-      // Create new tag with random color
-      tag = this.tagRepository.create({
-        name: input.name,
-        color: getRandomTagColor(),
-      });
-      tag = await this.tagRepository.save(tag);
-      this.logger.log({
-        message: 'Tag created',
-        tagId: tag.id,
-        tagName: tag.name,
-        color: tag.color,
-      });
-    } else {
-      this.logger.log({
-        message: 'Tag already exists',
-        tagId: tag.id,
-        tagName: tag.name,
-      });
-    }
-
-    return this.mapTagToResult(tag);
-  }
-
-  async addTagToBlock(blockId: string, input: AddTagInput): Promise<BlockResult> {
-    this.logger.log({ message: 'Adding tag to page', blockId, tagName: input.name });
 
     const block = await this.blockRepository.findOne({
       where: { id: blockId },
@@ -310,39 +298,40 @@ export class ContextService {
       throw new BlockNotFoundError(blockId);
     }
 
-    // Find or create the tag (case-insensitive)
-    let tag = await this.tagRepository.findOne({ where: { name: input.name } });
-
-    if (!tag) {
-      tag = this.tagRepository.create({
-        name: input.name,
-        color: input.color ?? getRandomTagColor(),
-      });
-      tag = await this.tagRepository.save(tag);
-    }
+    // Find or create the tag using MetaService
+    const tag = await this.metaService.findOrCreateTagEntity(input.name);
 
     // Add tag to block if not already present
     if (!block.tags.some((t) => t.id === tag.id)) {
       block.tags.push(tag);
       await this.blockRepository.save(block);
+      this.logger.log({
+        message: 'Tag added to block',
+        blockId,
+        tagId: tag.id,
+      });
     }
 
     // Reload with relations
-    const pageWithRelations = await this.blockRepository.findOne({
+    const blockWithRelations = await this.blockRepository.findOne({
       where: { id: blockId },
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    this.logger.log({ message: 'Tag added to page', blockId, tagId: tag.id });
-
     // Emit block.updated event (tag changes are updates)
-    this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(pageWithRelations!));
+    this.eventEmitter.emit(
+      'block.updated',
+      new BlockUpdatedEvent(blockWithRelations!),
+    );
 
-    return this.mapToResult(pageWithRelations!);
+    return this.mapToResult(blockWithRelations!);
   }
 
-  async removeTagFromBlock(blockId: string, tagId: string): Promise<BlockResult> {
-    this.logger.log({ message: 'Removing tag from page', blockId, tagId });
+  async removeTagFromBlock(
+    blockId: string,
+    tagId: string,
+  ): Promise<BlockResult> {
+    this.logger.log({ message: 'Removing tag from block', blockId, tagId });
 
     const block = await this.blockRepository.findOne({
       where: { id: blockId },
@@ -356,10 +345,10 @@ export class ContextService {
     block.tags = block.tags.filter((tag) => tag.id !== tagId);
     await this.blockRepository.save(block);
 
-    this.logger.log({ message: 'Tag removed from page', blockId, tagId });
+    this.logger.log({ message: 'Tag removed from block', blockId, tagId });
 
-    // Check if tag is now orphaned and clean it up
-    await this.cleanupOrphanedTag(tagId);
+    // Check if tag is now orphaned and clean it up using MetaService
+    await this.metaService.cleanupOrphanedTag(tagId);
 
     // Emit block.updated event (tag changes are updates)
     this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(block));
@@ -367,84 +356,11 @@ export class ContextService {
     return this.mapToResult(block);
   }
 
-  async getAllTags(): Promise<TagResult[]> {
-    this.logger.log({ message: 'Getting all tags' });
-
-    const tags = await this.tagRepository.find({
-      order: { name: 'ASC' },
-    });
-
-    return tags.map((tag) => this.mapTagToResult(tag));
-  }
-
-  async deleteTag(tagId: string): Promise<void> {
-    this.logger.log({
-      message: 'Deleting tag',
-      tagId,
-    });
-
-    const result = await this.tagRepository.softDelete(tagId);
-
-    if (result.affected === 0) {
-      this.logger.warn({
-        message: 'Tag not found for deletion',
-        tagId,
-      });
-    } else {
-      this.logger.log({
-        message: 'Tag deleted',
-        tagId,
-      });
-    }
-  }
-
-  private async cleanupOrphanedTag(tagId: string): Promise<void> {
-    this.logger.log({
-      message: 'Checking if tag is orphaned',
-      tagId,
-    });
-
-    const tagWithPages = await this.tagRepository.findOne({
-      where: { id: tagId },
-      relations: ['pages'],
-    });
-
-    if (!tagWithPages) {
-      this.logger.warn({
-        message: 'Tag not found for cleanup check',
-        tagId,
-      });
-      return;
-    }
-
-    if (tagWithPages.blocks.length === 0) {
-      this.logger.log({
-        message: 'Tag is orphaned, cleaning up',
-        tagId,
-        tagName: tagWithPages.name,
-      });
-
-      await this.tagRepository.softDelete(tagId);
-
-      this.logger.log({
-        message: 'Orphaned tag cleaned up',
-        tagId,
-      });
-    } else {
-      this.logger.log({
-        message: 'Tag still has pages, keeping it',
-        tagId,
-        pageCount: tagWithPages.blocks.length,
-      });
-    }
-  }
-
   async getChildBlocks(parentId: string | null): Promise<BlockSummaryResult[]> {
     this.logger.log({ message: 'Fetching child pages', parentId });
 
-    const whereClause = parentId === null
-      ? { parentId: null as any }
-      : { parentId };
+    const whereClause =
+      parentId === null ? { parentId: null as any } : { parentId };
 
     const children = await this.blockRepository.find({
       where: whereClause,
@@ -556,9 +472,10 @@ export class ContextService {
     block.parentId = newParentId;
 
     // Calculate new order (append to end of siblings)
-    const whereClause = newParentId === null
-      ? { parentId: null as any }
-      : { parentId: newParentId };
+    const whereClause =
+      newParentId === null
+        ? { parentId: null as any }
+        : { parentId: newParentId };
 
     const siblings = await this.blockRepository.find({
       where: whereClause,
@@ -637,7 +554,7 @@ export class ContextService {
     };
   }
 
-  private mapTagToResult(tag: ContextTagEntity): TagResult {
+  private mapTagToResult(tag: TagEntity): TagResult {
     return {
       id: tag.id,
       name: tag.name,
@@ -645,41 +562,5 @@ export class ContextService {
       createdAt: tag.createdAt,
       updatedAt: tag.updatedAt,
     };
-  }
-
-  /**
-   * Helper method to find or create tags by name (case-insensitive)
-   */
-  private async findOrCreateTags(tagNames: string[]): Promise<ContextTagEntity[]> {
-    const tags: ContextTagEntity[] = [];
-
-    for (const tagName of tagNames) {
-      const normalizedName = tagName.trim();
-      if (!normalizedName) continue;
-
-      // Try to find existing tag (case-insensitive due to NOCASE collation)
-      let tag = await this.tagRepository.findOne({
-        where: { name: normalizedName }
-      });
-
-      if (!tag) {
-        // Create new tag with normalized name and random color
-        tag = this.tagRepository.create({
-          name: normalizedName,
-          color: getRandomTagColor(),
-        });
-        tag = await this.tagRepository.save(tag);
-        this.logger.log({
-          message: 'Tag created',
-          tagId: tag.id,
-          tagName: tag.name,
-          color: tag.color,
-        });
-      }
-
-      tags.push(tag);
-    }
-
-    return tags;
   }
 }

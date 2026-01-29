@@ -7,7 +7,7 @@ export const ContextErrorCodes = {
 } as const;
 
 type ContextErrorCode =
-  typeof ContextErrorCodes[keyof typeof ContextErrorCodes];
+  (typeof ContextErrorCodes)[keyof typeof ContextErrorCodes];
 
 export abstract class ContextDomainError extends Error {
   constructor(

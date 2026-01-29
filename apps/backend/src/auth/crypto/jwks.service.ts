@@ -2,12 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, LessThan } from 'typeorm';
 import { JwksKeyEntity } from './jwks-key.entity';
-import { generateKeyPair, exportJWK, exportPKCS8, exportSPKI, calculateJwkThumbprint, importSPKI, JWK } from 'jose';
+import {
+  generateKeyPair,
+  exportJWK,
+  exportPKCS8,
+  exportSPKI,
+  calculateJwkThumbprint,
+  importSPKI,
+  JWK,
+} from 'jose';
 import { getConfig } from 'src/config/env.config';
 
-
 /* -------- algorithm -------- */
-const ALG          = 'RS256' as const   // keep the string literal
+const ALG = 'RS256' as const; // keep the string literal
 
 @Injectable()
 export class JwksService {
@@ -51,10 +58,7 @@ export class JwksService {
     this.logger.log('Rotating JWKS key');
 
     // Mark all currently active keys as inactive
-    await this.keyRepository.update(
-      { isActive: true },
-      { isActive: false },
-    );
+    await this.keyRepository.update({ isActive: true }, { isActive: false });
 
     // Generate new RSA key pair
     const { publicKey, privateKey } = await generateKeyPair(ALG, {
@@ -65,7 +69,7 @@ export class JwksService {
     // Export keys to PEM format for storage
     const publicKeyPem = await exportSPKI(publicKey);
     const privateKeyPem = await exportPKCS8(privateKey);
-    
+
     // Generate a unique key ID
     const publicJwk = await exportJWK(publicKey);
     const kid = await calculateJwkThumbprint(publicJwk);
@@ -88,7 +92,9 @@ export class JwksService {
     });
 
     const savedKey = await this.keyRepository.save(newKey);
-    this.logger.log(`Created new key: ${savedKey.kid}, expires at: ${savedKey.expiresAt.toISOString()}`);
+    this.logger.log(
+      `Created new key: ${savedKey.kid}, expires at: ${savedKey.expiresAt.toISOString()}`,
+    );
 
     return savedKey;
   }
@@ -106,7 +112,9 @@ export class JwksService {
     // Keys are valid for verification if: expiresAt + verifyingTtl > now
     // Which can be rewritten as: expiresAt > now - verifyingTtl
     const cutoffDate = new Date(now);
-    cutoffDate.setHours(cutoffDate.getHours() - config.jwksKeyVerifyingTtlHours);
+    cutoffDate.setHours(
+      cutoffDate.getHours() - config.jwksKeyVerifyingTtlHours,
+    );
 
     // Fetch keys that are still valid for verification (filtered at DB level)
     const validKeys = await this.keyRepository.find({
@@ -123,8 +131,7 @@ export class JwksService {
     // Convert stored keys to JWK format
     const jwks: JWK[] = await Promise.all(
       validKeys.map(async (key) => {
-        
-        const publicKey = await importSPKI(key.publicKeyPem, key.algorithm)
+        const publicKey = await importSPKI(key.publicKeyPem, key.algorithm);
 
         // Export as JWK
         const publicJwk = await exportJWK(publicKey);
@@ -165,5 +172,4 @@ export class JwksService {
 
     return deletedCount;
   }
-
 }

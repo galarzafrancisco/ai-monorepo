@@ -9,6 +9,7 @@ import {
   ManyToMany,
 } from 'typeorm';
 import { TaskEntity } from '../tasks/task.entity';
+import { ContextBlockEntity } from 'src/context/block.entity';
 
 @Entity({ name: 'tags' })
 export class TagEntity {
@@ -23,6 +24,11 @@ export class TagEntity {
 
   @ManyToMany(() => TaskEntity, (task) => task.tags, { onDelete: 'CASCADE' })
   tasks!: TaskEntity[];
+
+  @ManyToMany(() => ContextBlockEntity, (block) => block.tags, {
+    onDelete: 'CASCADE',
+  })
+  blocks!: ContextBlockEntity[];
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

@@ -44,11 +44,23 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       if (exception.code == ErrorCodes.MISSING_ACCESS_TOKEN) {
         const resourceMetadataUrl = `${this.config.issuerUrl}/.well-known/oauth-protected-resource${instance}`;
         // TODO: this realm MCP feels wrong to throw system wide
-        response.setHeaders(new Headers({ 'WWW-Authenticate': `Bearer resource_metadata="${resourceMetadataUrl}" realm="mcp"` }));
+        response.setHeaders(
+          new Headers({
+            'WWW-Authenticate': `Bearer resource_metadata="${resourceMetadataUrl}" realm="mcp"`,
+          }),
+        );
       } else if (exception.code == ErrorCodes.INVALID_ACCESS_TOKEN) {
-        response.setHeaders(new Headers({ 'WWW-Authenticate': `Bearer resource_metadata="<RESOURCE_METADATA_URL>", error="invalid_token", error_description="The access token is invalid or has expired"` }));
+        response.setHeaders(
+          new Headers({
+            'WWW-Authenticate': `Bearer resource_metadata="<RESOURCE_METADATA_URL>", error="invalid_token", error_description="The access token is invalid or has expired"`,
+          }),
+        );
       } else if (exception.code == ErrorCodes.INSUFFICIENT_SCOPE) {
-        response.setHeaders(new Headers({ 'WWW-Authenticate': `WWW-Authenticate: Bearer resource_metadata="<RESOURCE_METADATA_URL>", error="insufficient_scope", scope="<REQUIRED_SCOPES>"` }));
+        response.setHeaders(
+          new Headers({
+            'WWW-Authenticate': `WWW-Authenticate: Bearer resource_metadata="<RESOURCE_METADATA_URL>", error="insufficient_scope", scope="<REQUIRED_SCOPES>"`,
+          }),
+        );
       }
 
       response.status(problem.status).json(problem);

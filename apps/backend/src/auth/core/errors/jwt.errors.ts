@@ -1,4 +1,4 @@
-import { ErrorCodes } from "../../../../../../packages/shared/errors/error-codes";
+import { ErrorCodes } from '../../../../../../packages/shared/errors/error-codes';
 
 // Module-scoped re-export of error codes used by JWT Service
 export const JWTErrorCodes = {
@@ -7,9 +7,7 @@ export const JWTErrorCodes = {
   VALIDATION_FAILED: ErrorCodes.VALIDATION_FAILED,
 } as const;
 
-type JWTErrorCode =
-  typeof JWTErrorCodes[keyof typeof JWTErrorCodes];
-
+type JWTErrorCode = (typeof JWTErrorCodes)[keyof typeof JWTErrorCodes];
 
 /**
  * Base class for all Token domain errors
@@ -28,27 +26,18 @@ export abstract class TokenDomainError extends Error {
 
 export class TokenExpiredError extends TokenDomainError {
   constructor() {
-    super(
-      'Token has expired.',
-      JWTErrorCodes.TOKEN_EXPIRED,
-    );
+    super('Token has expired.', JWTErrorCodes.TOKEN_EXPIRED);
   }
 }
 
 export class InvalidTokenSignaturedError extends TokenDomainError {
   constructor() {
-    super(
-      'Invalid token signature.',
-      JWTErrorCodes.INVALID_TOKEN_SIGNATURE,
-    );
+    super('Invalid token signature.', JWTErrorCodes.INVALID_TOKEN_SIGNATURE);
   }
 }
 
 export class TokenValidationError extends TokenDomainError {
   constructor(message: string) {
-    super(
-      message,
-      JWTErrorCodes.VALIDATION_FAILED,
-    );
+    super(message, JWTErrorCodes.VALIDATION_FAILED);
   }
 }

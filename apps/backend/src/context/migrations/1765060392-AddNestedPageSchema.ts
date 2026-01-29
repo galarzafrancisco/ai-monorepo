@@ -1,4 +1,10 @@
-import { MigrationInterface, QueryRunner, TableColumn, TableIndex, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  TableColumn,
+  TableIndex,
+  TableForeignKey,
+} from 'typeorm';
 
 export class AddNestedPageSchema1765060392 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {

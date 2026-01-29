@@ -4,16 +4,9 @@ import { AccessTokenGuard } from './guards/access-token.guard';
 import { AuthCryptoModule } from '../crypto/auth-crypto.module';
 
 @Module({
-  imports: [
-    AuthCryptoModule,
-  ],
-  providers: [
-    AccessTokenValidationService,
-    AccessTokenGuard,
-  ],
+  imports: [AuthCryptoModule],
+  providers: [AccessTokenValidationService, AccessTokenGuard],
   controllers: [],
-  exports: [
-    AccessTokenValidationService,
-  ],
+  exports: [AccessTokenValidationService],
 })
 export class AuthGuardsModule {}

@@ -1,17 +1,19 @@
-import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
-import { JwksService } from "./jwks.service";
-import { AccessTokenClaims } from "../core/types/access-token-claims.type";
-import { errors, JWK, jwtVerify } from "jose";
-import { getConfig } from "src/config/env.config";
-import { InvalidTokenSignaturedError, TokenExpiredError, TokenValidationError } from "../core/errors/jwt.errors";
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { JwksService } from './jwks.service';
+import { AccessTokenClaims } from '../core/types/access-token-claims.type';
+import { errors, JWK, jwtVerify } from 'jose';
+import { getConfig } from 'src/config/env.config';
+import {
+  InvalidTokenSignaturedError,
+  TokenExpiredError,
+  TokenValidationError,
+} from '../core/errors/jwt.errors';
 
 @Injectable()
 export class TokenVerifierService {
   private logger = new Logger(TokenVerifierService.name);
 
-  constructor(
-    private readonly jwksService: JwksService,
-  ) { }
+  constructor(private readonly jwksService: JwksService) {}
 
   /**
    * Decodes a JWT
@@ -42,7 +44,8 @@ export class TokenVerifierService {
         this.logger.warn('Token introspection failed: bad signature');
         throw new InvalidTokenSignaturedError();
       } else {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         this.logger.warn(`Token introspection failed: ${errorMessage}`);
         throw new TokenValidationError(errorMessage);
       }

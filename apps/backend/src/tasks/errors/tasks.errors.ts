@@ -9,8 +9,7 @@ export const TasksErrorCodes = {
   AGENT_NOT_FOUND: ErrorCodes.AGENT_NOT_FOUND,
 } as const;
 
-type TasksErrorCode =
-  typeof TasksErrorCodes[keyof typeof TasksErrorCodes];
+type TasksErrorCode = (typeof TasksErrorCodes)[keyof typeof TasksErrorCodes];
 
 /**
  * Base class for all Tasks domain errors

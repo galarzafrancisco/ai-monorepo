@@ -44,7 +44,7 @@ export class AuthorizationService {
     private readonly mcpRegistryService: McpRegistryService,
     private readonly tokenService: TokenService,
     private readonly tokenVerifierService: TokenVerifierService,
-  ) { }
+  ) {}
 
   async getAllAPIScopes(): Promise<Scope[]> {
     return ALL_API_SCOPES;
@@ -60,7 +60,8 @@ export class AuthorizationService {
     version: string,
   ): Promise<string> {
     // Validate that the MCP Server exists
-    const mcpServer = await this.mcpRegistryService.getServerByProvidedId(serverIdentifier);
+    const mcpServer =
+      await this.mcpRegistryService.getServerByProvidedId(serverIdentifier);
     if (!mcpServer) {
       throw new McpServerNotFoundError(serverIdentifier);
     }
@@ -75,7 +76,10 @@ export class AuthorizationService {
 
     // Validate that the redirect_uri matches one of the registered URIs
     if (!client.redirectUris.includes(authRequest.redirect_uri)) {
-      throw new InvalidRedirectUriError(authRequest.redirect_uri, authRequest.client_id);
+      throw new InvalidRedirectUriError(
+        authRequest.redirect_uri,
+        authRequest.client_id,
+      );
     }
 
     // Validate the scopes requested
@@ -85,23 +89,27 @@ export class AuthorizationService {
     let scopes: string[] = [];
     if (authRequest.scope) {
       const requestedScopes = authRequest.scope.split(' '); // in GET /authorize, the scopes are space delimited
-      const allowedScopes = mcpServer.scopes.map(s => s.id);
-      scopes = requestedScopes.filter(s => allowedScopes.includes(s));
+      const allowedScopes = mcpServer.scopes.map((s) => s.id);
+      scopes = requestedScopes.filter((s) => allowedScopes.includes(s));
     }
 
     // Find the existing MCP authorization flow for this client and server
-    const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByClientAndServer(
-      client.id,
-      mcpServer.id,
-      ['authJourney']
-    );
+    const mcpAuthFlow =
+      await this.authJourneysService.findMcpAuthFlowByClientAndServer(
+        client.id,
+        mcpServer.id,
+        ['authJourney'],
+      );
 
     if (!mcpAuthFlow) {
-      throw new AuthFlowNotFoundError(`client: ${authRequest.client_id}, server: ${serverIdentifier}`);
+      throw new AuthFlowNotFoundError(
+        `client: ${authRequest.client_id}, server: ${serverIdentifier}`,
+      );
     }
 
     // Change status
-    mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED;
+    mcpAuthFlow.status =
+      McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED;
 
     // Store the PKCE parameters and other OAuth request data
     mcpAuthFlow.codeChallenge = authRequest.code_challenge;
@@ -128,7 +136,7 @@ export class AuthorizationService {
   async getConsentMetadataFromFlowId(flowId: string): Promise<ConsentMetadata> {
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
       flowId,
-      ['server', 'client', 'authJourney']
+      ['server', 'client', 'authJourney'],
     );
 
     if (!mcpAuthFlow) {
@@ -168,7 +176,7 @@ export class AuthorizationService {
     // Fetch the flow using the flow_id as a CSRF protection token
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
       consentDecision.flow_id,
-      ['server', 'client', 'authJourney']
+      ['server', 'client', 'authJourney'],
     );
 
     if (!mcpAuthFlow) {
@@ -182,11 +190,18 @@ export class AuthorizationService {
 
     // Verify the server matches
     if (mcpAuthFlow.server.providedId !== serverIdentifier) {
-      throw new ServerIdentifierMismatchError(serverIdentifier, mcpAuthFlow.server.providedId);
+      throw new ServerIdentifierMismatchError(
+        serverIdentifier,
+        mcpAuthFlow.server.providedId,
+      );
     }
 
     // Verify required PKCE parameters exist
-    if (!mcpAuthFlow.codeChallenge || !mcpAuthFlow.redirectUri || !mcpAuthFlow.state) {
+    if (
+      !mcpAuthFlow.codeChallenge ||
+      !mcpAuthFlow.redirectUri ||
+      !mcpAuthFlow.state
+    ) {
       throw new InvalidFlowStateError('missing required parameters');
     }
 
@@ -201,7 +216,10 @@ export class AuthorizationService {
       );
       const errorUrl = new URL(mcpAuthFlow.redirectUri);
       errorUrl.searchParams.set('error', 'access_denied');
-      errorUrl.searchParams.set('error_description', 'User denied the authorization request');
+      errorUrl.searchParams.set(
+        'error_description',
+        'User denied the authorization request',
+      );
       errorUrl.searchParams.set('state', mcpAuthFlow.state);
       return errorUrl.toString();
     }
@@ -210,11 +228,14 @@ export class AuthorizationService {
     const accessToken = req.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
     if (accessToken && mcpAuthFlow.authJourney) {
       try {
-        const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
+        const payload =
+          await this.tokenVerifierService.verifyAndDecode(accessToken);
         mcpAuthFlow.authJourney.actorId = payload.sub;
         await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
       } catch (error) {
-        this.logger.warn(`Failed to extract user ID from access token: ${error}`);
+        this.logger.warn(
+          `Failed to extract user ID from access token: ${error}`,
+        );
         // Continue with the flow even if we couldn't extract the user ID
       }
     }
@@ -237,29 +258,39 @@ export class AuthorizationService {
    */
   private async processNextDownstreamFlow(journeyId: string): Promise<string> {
     // Get all connection flows for this journey
-    const connectionFlows = await this.authJourneysService.getConnectionFlowsForJourney(
-      journeyId,
-      ['mcpConnection', 'mcpConnection.mappings', 'authJourney', 'authJourney.mcpAuthorizationFlow']
-    );
+    const connectionFlows =
+      await this.authJourneysService.getConnectionFlowsForJourney(journeyId, [
+        'mcpConnection',
+        'mcpConnection.mappings',
+        'authJourney',
+        'authJourney.mcpAuthorizationFlow',
+      ]);
 
     // If there are no connections, complete the MCP auth flow immediately
     if (connectionFlows.length === 0) {
-      this.logger.log('No downstream connections to authorize, completing MCP auth');
+      this.logger.log(
+        'No downstream connections to authorize, completing MCP auth',
+      );
       return this.completeMcpAuthFlow(journeyId);
     }
 
     // Check if any scopes were requested in the MCP auth flow
     const mcpAuthFlow = connectionFlows[0]?.authJourney?.mcpAuthorizationFlow;
-    const hasRequestedScopes = mcpAuthFlow?.scopes && mcpAuthFlow.scopes.length > 0;
+    const hasRequestedScopes =
+      mcpAuthFlow?.scopes && mcpAuthFlow.scopes.length > 0;
 
     // If no scopes were requested, skip downstream flows and complete MCP auth
     if (!hasRequestedScopes) {
-      this.logger.log('No scopes requested, skipping downstream OAuth flows and completing MCP auth');
+      this.logger.log(
+        'No scopes requested, skipping downstream OAuth flows and completing MCP auth',
+      );
       return this.completeMcpAuthFlow(journeyId);
     }
 
     // Find the next pending connection flow
-    const nextPendingFlow = connectionFlows.find(flow => flow.status === ConnectionAuthorizationFlowStatus.PENDING);
+    const nextPendingFlow = connectionFlows.find(
+      (flow) => flow.status === ConnectionAuthorizationFlowStatus.PENDING,
+    );
 
     if (nextPendingFlow) {
       await this.authJourneysService.updateAuthJourneyStatus(
@@ -271,28 +302,37 @@ export class AuthorizationService {
     }
 
     // Check if all flows are authorized
-    const allAuthorized = connectionFlows.every(flow => flow.status === ConnectionAuthorizationFlowStatus.AUTHORIZED);
-    const anyFailed = connectionFlows.some(flow => flow.status === ConnectionAuthorizationFlowStatus.FAILED);
+    const allAuthorized = connectionFlows.every(
+      (flow) => flow.status === ConnectionAuthorizationFlowStatus.AUTHORIZED,
+    );
+    const anyFailed = connectionFlows.some(
+      (flow) => flow.status === ConnectionAuthorizationFlowStatus.FAILED,
+    );
 
     if (allAuthorized) {
-      this.logger.log('All downstream connections authorized, completing MCP auth');
+      this.logger.log(
+        'All downstream connections authorized, completing MCP auth',
+      );
       await this.authJourneysService.updateAuthJourneyStatus(
         journeyId,
         AuthJourneyStatus.CONNECTIONS_FLOW_COMPLETED,
       );
       return this.completeMcpAuthFlow(journeyId);
     } else if (anyFailed) {
-      throw new DownstreamAuthFailedError('One or more downstream connections failed to authorize');
+      throw new DownstreamAuthFailedError(
+        'One or more downstream connections failed to authorize',
+      );
     } else {
       throw new NoPendingConnectionFlowsError();
     }
-
   }
 
   /**
    * Initiate OAuth for a single connection
    */
-  private async initiateConnectionOAuth(connectionFlow: ConnectionAuthorizationFlowEntity): Promise<string> {
+  private async initiateConnectionOAuth(
+    connectionFlow: ConnectionAuthorizationFlowEntity,
+  ): Promise<string> {
     const config = getConfig();
     const callbackUrl = config.callbackUrl;
 
@@ -305,7 +345,10 @@ export class AuthorizationService {
 
     // Build the authorization URL
     const authUrl = new URL(connectionFlow.mcpConnection.authorizeUrl);
-    authUrl.searchParams.set('client_id', connectionFlow.mcpConnection.clientId);
+    authUrl.searchParams.set(
+      'client_id',
+      connectionFlow.mcpConnection.clientId,
+    );
     authUrl.searchParams.set('redirect_uri', callbackUrl);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('state', state);
@@ -325,23 +368,29 @@ export class AuthorizationService {
 
       // Filter mappings to only include requested scopes
       const relevantMappings = connectionFlow.mcpConnection.mappings.filter(
-        mapping => requestedScopes.includes(mapping.scopeId)
+        (mapping) => requestedScopes.includes(mapping.scopeId),
       );
 
       // Extract downstream scopes
-      const downstreamScopes = relevantMappings.map(m => m.downstreamScope);
+      const downstreamScopes = relevantMappings.map((m) => m.downstreamScope);
 
       if (downstreamScopes.length > 0) {
         // Add scopes to the authorization URL (space-separated for OAuth)
         authUrl.searchParams.set('scope', downstreamScopes.join(' '));
       } else {
-        this.logger.warn('No downstream scopes mapped for requested MCP scopes!');
+        this.logger.warn(
+          'No downstream scopes mapped for requested MCP scopes!',
+        );
       }
     } else {
-      this.logger.warn(`Scope mapping skipped - mcpAuthFlow.scope: ${!!mcpAuthFlow?.scopes}, mappings: ${!!connectionFlow.mcpConnection.mappings}`);
+      this.logger.warn(
+        `Scope mapping skipped - mcpAuthFlow.scope: ${!!mcpAuthFlow?.scopes}, mappings: ${!!connectionFlow.mcpConnection.mappings}`,
+      );
     }
 
-    this.logger.log(`Initiating downstream OAuth flow for connection ${connectionFlow.mcpConnection.friendlyName}`);
+    this.logger.log(
+      `Initiating downstream OAuth flow for connection ${connectionFlow.mcpConnection.friendlyName}`,
+    );
     this.logger.log(`Authorization URL: ${authUrl.toString()}`);
 
     // Return the authorization URL for redirect
@@ -354,7 +403,8 @@ export class AuthorizationService {
   private async completeMcpAuthFlow(journeyId: string): Promise<string> {
     this.logger.debug(`Finishing auth flow for journey ${journeyId}`);
     // Get the MCP auth flow for this journey
-    const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowByJourneyId(journeyId);
+    const mcpAuthFlow =
+      await this.authJourneysService.findMcpAuthFlowByJourneyId(journeyId);
 
     if (!mcpAuthFlow) {
       throw new AuthFlowNotFoundError(journeyId);
@@ -392,20 +442,25 @@ export class AuthorizationService {
   /**
    * Handle callback from downstream OAuth provider
    */
-  async handleDownstreamCallback(callbackRequest: CallbackRequestDto): Promise<string> {
+  async handleDownstreamCallback(
+    callbackRequest: CallbackRequestDto,
+  ): Promise<string> {
     // Check for errors from the downstream provider
     if (callbackRequest.error) {
-      this.logger.error(`Downstream auth failed: ${callbackRequest.error} - ${callbackRequest.error_description}`);
+      this.logger.error(
+        `Downstream auth failed: ${callbackRequest.error} - ${callbackRequest.error_description}`,
+      );
       throw new DownstreamAuthFailedError(
-        callbackRequest.error_description || callbackRequest.error
+        callbackRequest.error_description || callbackRequest.error,
       );
     }
 
     // Find the connection flow by state
-    const connectionFlow = await this.authJourneysService.findConnectionFlowByState(
-      callbackRequest.state,
-      ['mcpConnection', 'authJourney', 'authJourney.mcpAuthorizationFlow']
-    );
+    const connectionFlow =
+      await this.authJourneysService.findConnectionFlowByState(
+        callbackRequest.state,
+        ['mcpConnection', 'authJourney', 'authJourney.mcpAuthorizationFlow'],
+      );
 
     if (!connectionFlow) {
       throw new ConnectionFlowNotFoundError(callbackRequest.state);
@@ -418,13 +473,17 @@ export class AuthorizationService {
     await this.exchangeCodeForToken(connectionFlow);
 
     // Process the next downstream flow (or complete if all done)
-    return this.processNextDownstreamFlow(connectionFlow.authorizationJourneyId);
+    return this.processNextDownstreamFlow(
+      connectionFlow.authorizationJourneyId,
+    );
   }
 
   /**
    * Exchange authorization code for access token with downstream provider
    */
-  private async exchangeCodeForToken(connectionFlow: ConnectionAuthorizationFlowEntity): Promise<void> {
+  private async exchangeCodeForToken(
+    connectionFlow: ConnectionAuthorizationFlowEntity,
+  ): Promise<void> {
     const config = getConfig();
     const callbackUrl = config.callbackUrl;
 
@@ -467,7 +526,9 @@ export class AuthorizationService {
       connectionFlow.status = ConnectionAuthorizationFlowStatus.AUTHORIZED;
       await this.authJourneysService.saveConnectionFlow(connectionFlow);
 
-      this.logger.log(`Successfully exchanged token for connection ${connectionFlow.mcpConnection.friendlyName}`);
+      this.logger.log(
+        `Successfully exchanged token for connection ${connectionFlow.mcpConnection.friendlyName}`,
+      );
     } catch (error) {
       this.logger.error(`Error exchanging token: ${error}`);
       connectionFlow.status = ConnectionAuthorizationFlowStatus.FAILED;

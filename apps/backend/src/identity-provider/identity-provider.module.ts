@@ -9,7 +9,11 @@ import { AuthGuardsModule } from 'src/auth/guards/auth-guards.module';
 import { SearchModule } from 'src/search/search.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, ActorEntity]), AuthGuardsModule, SearchModule],
+  imports: [
+    TypeOrmModule.forFeature([User, ActorEntity]),
+    AuthGuardsModule,
+    SearchModule,
+  ],
   controllers: [ActorController],
   providers: [IdentityProviderService, ActorService],
   exports: [IdentityProviderService, ActorService, TypeOrmModule],

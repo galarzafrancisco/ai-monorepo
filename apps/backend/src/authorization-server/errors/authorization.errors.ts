@@ -16,7 +16,7 @@ export const AuthorizationErrorCodes = {
 } as const;
 
 type AuthorizationErrorCode =
-  typeof AuthorizationErrorCodes[keyof typeof AuthorizationErrorCodes];
+  (typeof AuthorizationErrorCodes)[keyof typeof AuthorizationErrorCodes];
 
 /**
  * Base class for all Authorization domain errors
@@ -114,21 +114,17 @@ export class TokenExchangeFailedError extends AuthorizationDomainError {
 
 export class McpServerNotFoundError extends AuthorizationDomainError {
   constructor(serverIdentifier: string) {
-    super(
-      'MCP server not found.',
-      AuthorizationErrorCodes.SERVER_NOT_FOUND,
-      { serverIdentifier },
-    );
+    super('MCP server not found.', AuthorizationErrorCodes.SERVER_NOT_FOUND, {
+      serverIdentifier,
+    });
   }
 }
 
 export class McpClientNotFoundError extends AuthorizationDomainError {
   constructor(clientId: string) {
-    super(
-      'Client not found.',
-      AuthorizationErrorCodes.CLIENT_NOT_FOUND,
-      { clientId },
-    );
+    super('Client not found.', AuthorizationErrorCodes.CLIENT_NOT_FOUND, {
+      clientId,
+    });
   }
 }
 

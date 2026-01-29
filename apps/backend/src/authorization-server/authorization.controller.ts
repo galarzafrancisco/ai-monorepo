@@ -76,11 +76,12 @@ export class AuthorizationController {
   ): Promise<void> {
     try {
       // Process the authorization request and get the flow ID
-      const flowId = await this.authorizationService.processAuthorizationRequest(
-        authRequest,
-        serverIdentifier,
-        version,
-      );
+      const flowId =
+        await this.authorizationService.processAuthorizationRequest(
+          authRequest,
+          serverIdentifier,
+          version,
+        );
 
       // Redirect to the consent screen with the flow ID
       // Use centralized frontend URL configuration
@@ -91,13 +92,20 @@ export class AuthorizationController {
       if (authRequest.redirect_uri) {
         const errorUrl = new URL(authRequest.redirect_uri);
         errorUrl.searchParams.set('error', 'server_error');
-        errorUrl.searchParams.set('error_description', error instanceof Error ? error.message : 'Unknown error');
+        errorUrl.searchParams.set(
+          'error_description',
+          error instanceof Error ? error.message : 'Unknown error',
+        );
         if (authRequest.state) {
           errorUrl.searchParams.set('state', authRequest.state);
         }
         res.redirect(HttpStatus.FOUND, errorUrl.toString());
       } else {
-        throw new BadRequestException(error instanceof Error ? error.message : 'Authorization request failed');
+        throw new BadRequestException(
+          error instanceof Error
+            ? error.message
+            : 'Authorization request failed',
+        );
       }
     }
   }
@@ -110,7 +118,8 @@ export class AuthorizationController {
   })
   @ApiResponse({
     status: HttpStatus.FOUND,
-    description: 'Redirects to client redirect_uri with authorization code or error',
+    description:
+      'Redirects to client redirect_uri with authorization code or error',
   })
   @ApiBadRequestResponse({
     description: 'Invalid consent decision or flow state',
@@ -129,18 +138,21 @@ export class AuthorizationController {
     @Res() res: Response,
   ): Promise<void> {
     try {
-      const redirectUrl = await this.authorizationService.processConsentDecision(
-        consentDecision,
-        serverIdentifier,
-        version,
-        req,
-      );
+      const redirectUrl =
+        await this.authorizationService.processConsentDecision(
+          consentDecision,
+          serverIdentifier,
+          version,
+          req,
+        );
 
       this.logger.debug(`controller redirecting to ${redirectUrl}`);
       res.redirect(HttpStatus.FOUND, redirectUrl);
     } catch (error) {
       // If we can't redirect, throw the error
-      throw new BadRequestException(error instanceof Error ? error.message : 'Consent processing failed');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Consent processing failed',
+      );
     }
   }
 
@@ -164,7 +176,10 @@ export class AuthorizationController {
   async getConsentMetadata(
     @Param() params: GetConsentMetadataParamsDto,
   ): Promise<GetConsentMetadataResponseDto> {
-    const consentMetadata = await this.authorizationService.getConsentMetadataFromFlowId(params.flowId);
+    const consentMetadata =
+      await this.authorizationService.getConsentMetadataFromFlowId(
+        params.flowId,
+      );
     return consentMetadata;
   }
 
@@ -199,7 +214,8 @@ export class AuthorizationController {
       'Introspects an access token to validate it and retrieve its metadata. Verifies JWT signature, expiration, and claims according to RFC 7662.',
   })
   @ApiOkResponse({
-    description: 'Token introspection response (active true/false with metadata)',
+    description:
+      'Token introspection response (active true/false with metadata)',
     type: IntrospectTokenResponseDto,
   })
   @ApiBadRequestResponse({
@@ -268,11 +284,16 @@ export class AuthorizationController {
     @Res() res: Response,
   ): Promise<void> {
     try {
-      const redirectUrl = await this.authorizationService.handleDownstreamCallback(callbackRequest);
+      const redirectUrl =
+        await this.authorizationService.handleDownstreamCallback(
+          callbackRequest,
+        );
       res.redirect(HttpStatus.FOUND, redirectUrl);
     } catch (error) {
       // If there's an error, show an error page
-      throw new BadRequestException(error instanceof Error ? error.message : 'Callback processing failed');
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Callback processing failed',
+      );
     }
   }
 

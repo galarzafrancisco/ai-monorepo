@@ -12,14 +12,13 @@ export abstract class TaskDomainEvent<TPayload = unknown> {
   constructor(
     public readonly actor: EventActor,
     public readonly payload: TPayload,
-  ) { }
+  ) {}
 }
 
 /**
  * Domain events for the Tasks domain.
  * These events decouple the service layer from transport concerns (WebSocket, HTTP, etc.)
  */
-
 
 export class TaskCreatedEvent extends TaskDomainEvent<TaskEntity> {
   constructor(actor: EventActor, task: TaskEntity) {
@@ -50,7 +49,7 @@ export class TaskDeletedEvent {
   constructor(
     public readonly actor: EventActor,
     public readonly taskId: string,
-  ) { }
+  ) {}
 }
 
 export class CommentAddedEvent extends TaskDomainEvent<CommentEntity> {

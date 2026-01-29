@@ -24,7 +24,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import type { Request, Response } from "express";
+import type { Request, Response } from 'express';
 import { ContextService } from './context.service';
 import { CreateBlockDto } from './dto/create-block.dto';
 import { BlockResponseDto } from './dto/block-response.dto';
@@ -33,22 +33,27 @@ import { BlockSummaryDto } from './dto/block-summary.dto';
 import { BlockParamsDto } from './dto/block-params.dto';
 import { UpdateBlockDto } from './dto/update-block.dto';
 import { AppendBlockDto } from './dto/append-block.dto';
-import { AddContextTagDto } from './dto/add-wiki-tag.dto';
-import { CreateContextTagDto } from './dto/create-wiki-tag.dto';
+import { CreateTagDto } from '../meta/dto/create-tag.dto';
 import { ContextTagResponseDto } from './dto/wiki-tag-response.dto';
 import { ListBlocksQueryDto } from './dto/list-blocks-query.dto';
 import { BlockTreeResponseDto } from './dto/block-tree-response.dto';
 import { ReorderBlockDto } from './dto/reorder-block.dto';
 import { MoveBlockDto } from './dto/move-block.dto';
-import { BlockResult, BlockSummaryResult, TagResult, BlockTreeResult } from './dto/service/context.service.types';
+import {
+  BlockResult,
+  BlockSummaryResult,
+  TagResult,
+  BlockTreeResult,
+} from './dto/service/context.service.types';
 import { ContextMcpGateway } from './context.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
-import type { UserContext } from '../auth/guards/context/auth-context.types';
+import type { AuthContext, UserContext } from '../auth/guards/context/auth-context.types';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { ContextScopes } from './context.scopes';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
+import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 
 @ApiTags('Context')
 @ApiCookieAuth('JWT-Cookie')
@@ -90,7 +95,9 @@ export class ContextController {
     type: BlockListResponseDto,
     description: 'List of wiki pages',
   })
-  async listBlocks(@Query() query: ListBlocksQueryDto): Promise<BlockListResponseDto> {
+  async listBlocks(
+    @Query() query: ListBlocksQueryDto,
+  ): Promise<BlockListResponseDto> {
     const items = await this.contextService.listBlocks({ tag: query.tag });
     return {
       items: items.map((item) => this.mapToSummary(item)),
@@ -184,7 +191,10 @@ export class ContextController {
     @Param() params: BlockParamsDto,
     @Body() dto: ReorderBlockDto,
   ): Promise<BlockResponseDto> {
-    const result = await this.contextService.reorderBlock(params.id, dto.newOrder);
+    const result = await this.contextService.reorderBlock(
+      params.id,
+      dto.newOrder,
+    );
     return this.mapToResponse(result);
   }
 
@@ -202,7 +212,10 @@ export class ContextController {
     @Param() params: BlockParamsDto,
     @Body() dto: MoveBlockDto,
   ): Promise<BlockResponseDto> {
-    const result = await this.contextService.moveBlock(params.id, dto.newParentId);
+    const result = await this.contextService.moveBlock(
+      params.id,
+      dto.newParentId,
+    );
     return this.mapToResponse(result);
   }
 
@@ -225,12 +238,16 @@ export class ContextController {
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async addTagToBlock(
     @Param() params: BlockParamsDto,
-    @Body() dto: AddContextTagDto,
+    @Body() dto: CreateTagDto,
+    @CurrentUser() user: UserContext,
   ): Promise<BlockResponseDto> {
-    const result = await this.contextService.addTagToBlock(params.id, {
-      name: dto.name,
-      color: dto.color,
-    });
+    const result = await this.contextService.addTagToBlock(
+      params.id,
+      {
+        name: dto.name,
+      },
+      user.actorId,
+    );
     return this.mapToResponse(result);
   }
 
@@ -247,41 +264,6 @@ export class ContextController {
   ): Promise<BlockResponseDto> {
     const result = await this.contextService.removeTagFromBlock(pageId, tagId);
     return this.mapToResponse(result);
-  }
-
-  @Post('tags')
-  @RequireScopes(ContextScopes.WRITE.id)
-  @ApiOperation({ summary: 'Create a new tag' })
-  @ApiCreatedResponse({
-    type: ContextTagResponseDto,
-    description: 'Tag created successfully',
-  })
-  @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async createTag(@Body() dto: CreateContextTagDto): Promise<ContextTagResponseDto> {
-    const result = await this.contextService.createTag({
-      name: dto.name,
-    });
-    return this.mapTagToResponse(result);
-  }
-
-  @Get('tags/all')
-  @ApiOperation({ summary: 'Get all tags' })
-  @ApiOkResponse({
-    type: [ContextTagResponseDto],
-    description: 'List of all tags',
-  })
-  async getAllTags(): Promise<ContextTagResponseDto[]> {
-    const result = await this.contextService.getAllTags();
-    return result.map((tag) => this.mapTagToResponse(tag));
-  }
-
-  @Delete('tags/:tagId')
-  @RequireScopes(ContextScopes.WRITE.id)
-  @ApiOperation({ summary: 'Delete a tag from the system' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: 'Tag deleted successfully' })
-  async deleteTag(@Param('tagId') tagId: string): Promise<void> {
-    await this.contextService.deleteTag(tagId);
   }
 
   private mapToResponse(result: BlockResult): BlockResponseDto {
@@ -336,8 +318,13 @@ export class ContextController {
   }
 
   @All('mcp')
-  @RequireScopes(McpScopes .USE.id)
-  async handleMcp(@Req() req: Request, @Res() res: Response) {
-    await this.gateway.handleRequest(req, res);
+  @RequireScopes(McpScopes.USE.id)
+  async handleMcp(
+    @CurrentUser() user: UserContext,
+    @CurrentAuth() authContext: AuthContext,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await this.gateway.handleRequest(req, res, user, authContext);
   }
 }

@@ -1,7 +1,7 @@
-import { CreateAgentInput } from "src/agents/dto/service/agents.service.types";
-import { AgentType } from "src/agents/enums";
-import { TaskStatus } from "src/tasks/enums";
-import { ASSISTANT_PROMPT } from "./prompts";
+import { CreateAgentInput } from 'src/agents/dto/service/agents.service.types';
+import { AgentType } from 'src/agents/enums';
+import { TaskStatus } from 'src/tasks/enums';
+import { ASSISTANT_PROMPT } from './prompts';
 
 export const createGeminiAssistant: CreateAgentInput = {
   slug: 'gemini-assistant',
@@ -14,4 +14,4 @@ export const createGeminiAssistant: CreateAgentInput = {
   allowedTools: [],
   isActive: true,
   concurrencyLimit: 1,
-}
+};

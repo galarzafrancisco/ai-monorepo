@@ -1,4 +1,4 @@
-import { Scope } from "src/auth/core/types/scope.type";
+import { Scope } from 'src/auth/core/types/scope.type';
 
 export const MetaScopes = {
   READ: {
@@ -11,5 +11,4 @@ export const MetaScopes = {
   },
 } as const satisfies Record<string, Scope>;
 
-export const ALL_META_SCOPES: readonly Scope[] =
-  Object.values(MetaScopes);
+export const ALL_META_SCOPES: readonly Scope[] = Object.values(MetaScopes);

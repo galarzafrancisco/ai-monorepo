@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TokenType } from '../enums';
 import { AccessTokenClaims } from '../../auth/core/types/access-token-claims.type';
 
-
 /**
  * DTO for OAuth 2.0 token introspection responses (RFC 7662).
  * Mirrors the claims we issue in the JWT payload.

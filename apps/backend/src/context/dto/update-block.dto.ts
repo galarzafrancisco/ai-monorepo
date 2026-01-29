@@ -1,5 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, IsArray, IsUUID, IsInt, Min, ValidateIf } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  MaxLength,
+  IsArray,
+  IsUUID,
+  IsInt,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 
 export class UpdateBlockDto {
   @ApiPropertyOptional({

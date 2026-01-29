@@ -66,7 +66,7 @@ export class IssuedAccessTokenService {
     const now = Math.floor(Date.now() / 1000);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expirationDays);
-    const expSeconds = now + (expirationDays * 24 * 60 * 60);
+    const expSeconds = now + expirationDays * 24 * 60 * 60;
 
     // Build JWT claims
     const claims: AccessTokenClaims = {
@@ -107,7 +107,7 @@ export class IssuedAccessTokenService {
 
     this.logger.log(
       `Issued access token "${input.name}" for actor ${input.subjectActor.slug} ` +
-      `(expires: ${expiresAt.toISOString()})`
+        `(expires: ${expiresAt.toISOString()})`,
     );
 
     return {
@@ -119,7 +119,9 @@ export class IssuedAccessTokenService {
   /**
    * List all tokens issued for a specific subject actor
    */
-  async listTokensForSubject(subjectActorId: string): Promise<IssuedAccessTokenEntity[]> {
+  async listTokensForSubject(
+    subjectActorId: string,
+  ): Promise<IssuedAccessTokenEntity[]> {
     return this.tokenRepository.find({
       where: { subjectActorId },
       relations: ['subjectActor', 'issuedByActor'],
@@ -140,7 +142,9 @@ export class IssuedAccessTokenService {
   /**
    * Revoke a token by its database ID
    */
-  async revokeTokenById(tokenId: string): Promise<IssuedAccessTokenEntity | null> {
+  async revokeTokenById(
+    tokenId: string,
+  ): Promise<IssuedAccessTokenEntity | null> {
     const token = await this.tokenRepository.findOne({
       where: { id: tokenId },
       relations: ['subjectActor', 'issuedByActor'],
@@ -208,9 +212,6 @@ export class IssuedAccessTokenService {
    * Update last used timestamp for a token
    */
   async updateLastUsed(jti: string): Promise<void> {
-    await this.tokenRepository.update(
-      { jti },
-      { lastUsedAt: new Date() }
-    );
+    await this.tokenRepository.update({ jti }, { lastUsedAt: new Date() });
   }
 }

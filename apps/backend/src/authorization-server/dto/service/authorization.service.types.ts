@@ -1,4 +1,4 @@
-import { McpAuthorizationFlowStatus } from "src/auth-journeys/enums/mcp-authorization-flow-status.enum";
+import { McpAuthorizationFlowStatus } from 'src/auth-journeys/enums/mcp-authorization-flow-status.enum';
 
 /*
 Metadata to show on the consent screen

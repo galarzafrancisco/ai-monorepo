@@ -13,7 +13,9 @@ export interface BasicAuthCredentials {
  * @param headers - HTTP request headers
  * @returns Extracted credentials or null if not present/invalid
  */
-export function extractBasicAuth(headers: IncomingHttpHeaders): BasicAuthCredentials | null {
+export function extractBasicAuth(
+  headers: IncomingHttpHeaders,
+): BasicAuthCredentials | null {
   const authHeader = headers.authorization;
 
   if (!authHeader) {

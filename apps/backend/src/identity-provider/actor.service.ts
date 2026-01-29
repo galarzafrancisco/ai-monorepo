@@ -20,7 +20,11 @@ export class ActorService {
   /**
    * Create a new actor for a user
    */
-  async createUserActor({slug, displayName, avatarUrl}: CreateActorInput): Promise<ActorEntity> {
+  async createUserActor({
+    slug,
+    displayName,
+    avatarUrl,
+  }: CreateActorInput): Promise<ActorEntity> {
     this.logger.log(`Creating user actor with slug: ${slug}`);
 
     const actor = this.actorRepository.create({
@@ -36,7 +40,11 @@ export class ActorService {
   /**
    * Create a new actor for an agent
    */
-  async createAgentActor({slug, displayName, avatarUrl}: CreateActorInput): Promise<ActorEntity> {
+  async createAgentActor({
+    slug,
+    displayName,
+    avatarUrl,
+  }: CreateActorInput): Promise<ActorEntity> {
     this.logger.log(`Creating agent actor with slug: ${slug}`);
 
     const actor = this.actorRepository.create({
@@ -61,17 +69,19 @@ export class ActorService {
   /**
    * Get actor by ID
    */
-  async getActorById(id: string, withUser?: boolean): Promise<ActorEntity | null> {
+  async getActorById(
+    id: string,
+    withUser?: boolean,
+  ): Promise<ActorEntity | null> {
     return this.actorRepository.findOne({
       where: { id },
-      relations: { user: withUser }
+      relations: { user: withUser },
     });
   }
 
   async getActorByIdOrSlug(idOrSlug: string): Promise<ActorEntity | null> {
     const actor = await this.getActorById(idOrSlug);
-    if (actor)
-      return actor;
+    if (actor) return actor;
     return this.getActorBySlug(idOrSlug);
   }
 

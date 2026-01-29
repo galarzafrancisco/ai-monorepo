@@ -8,7 +8,7 @@ export class AgentParamsDto {
       bySlug: {
         summary: 'By slug',
         value: 'alfred',
-      }
+      },
     },
   })
   @IsString()

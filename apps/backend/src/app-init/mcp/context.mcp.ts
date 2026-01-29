@@ -1,17 +1,17 @@
-import { McpScopes } from "src/auth/core/scopes/mcp.scopes";
-import { Scope } from "src/auth/core/types/scope.type";
-import { getConfig } from "src/config/env.config";
-import { CreateServerInput } from "src/mcp-registry/dto";
-import { ContextScopes } from "src/context/context.scopes";
+import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
+import { Scope } from 'src/auth/core/types/scope.type';
+import { getConfig } from 'src/config/env.config';
+import { CreateServerInput } from 'src/mcp-registry/dto';
+import { ContextScopes } from 'src/context/context.scopes';
 
 const config = getConfig();
 
 export const createContext: CreateServerInput = {
   providedId: 'context',
-  name: "Context",
-  description: "Context",
+  name: 'Context',
+  description: 'Context',
   url: `${config.issuerUrl}/api/v1/context/blocks/mcp`,
-}
+};
 
 export const createContextScopes: Scope[] = [
   McpScopes.USE,

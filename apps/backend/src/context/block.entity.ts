@@ -13,7 +13,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { ContextTagEntity } from './tag.entity';
+import { TagEntity } from 'src/meta/tag.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 
 @Entity({ name: 'context_blocks' })
@@ -48,19 +48,21 @@ export class ContextBlockEntity {
   @JoinColumn({ name: 'assignee_actor_id' })
   assigneeActor?: ActorEntity;
 
-  @ManyToMany(() => ContextTagEntity, (tag) => tag.blocks)
+  @ManyToMany(() => TagEntity, (tag) => tag.blocks)
   @JoinTable({
     name: 'context_block_tags',
     joinColumn: { name: 'block_id' },
     inverseJoinColumn: { name: 'tag_id' },
   })
-  tags!: ContextTagEntity[];
+  tags!: TagEntity[];
 
-  @ManyToOne(() => ContextBlockEntity, block => block.children, { nullable: true })
+  @ManyToOne(() => ContextBlockEntity, (block) => block.children, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'parent_id' })
   parent?: ContextBlockEntity | null;
 
-  @OneToMany(() => ContextBlockEntity, block => block.parent)
+  @OneToMany(() => ContextBlockEntity, (block) => block.parent)
   children!: ContextBlockEntity[];
 
   @VersionColumn({ name: 'row_version' })

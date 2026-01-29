@@ -2,10 +2,16 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
 
-import { REQUIRED_SCOPES_KEY, RequiredScopesMetadata } from '../decorators/require-scopes.decorator';
+import {
+  REQUIRED_SCOPES_KEY,
+  RequiredScopesMetadata,
+} from '../decorators/require-scopes.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import type { AuthContext } from '../context/auth-context.types';
-import { InvalidAccessTokenError, InsufficientScopeError } from '../errors/access-token.errors';
+import {
+  InvalidAccessTokenError,
+  InsufficientScopeError,
+} from '../errors/access-token.errors';
 
 @Injectable()
 export class ScopesGuard implements CanActivate {
@@ -19,10 +25,9 @@ export class ScopesGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const meta = this.reflector.getAllAndOverride<RequiredScopesMetadata | undefined>(
-      REQUIRED_SCOPES_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const meta = this.reflector.getAllAndOverride<
+      RequiredScopesMetadata | undefined
+    >(REQUIRED_SCOPES_KEY, [context.getHandler(), context.getClass()]);
 
     // No scopes required => allow
     if (!meta || meta.scopes.length === 0) return true;
@@ -36,7 +41,9 @@ export class ScopesGuard implements CanActivate {
 
     // If someone forgot to apply AccessTokenGuard globally, fail closed
     if (!auth) {
-      throw new InvalidAccessTokenError('Missing auth context (did AccessTokenGuard run?)');
+      throw new InvalidAccessTokenError(
+        'Missing auth context (did AccessTokenGuard run?)',
+      );
     }
 
     const tokenScopes = new Set((auth.scopes ?? []).filter(Boolean));

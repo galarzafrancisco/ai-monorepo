@@ -20,9 +20,7 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { ContextScopes } from './context.scopes';
 
-
 const CONTEXT_ROOM = 'context';
-
 
 /**
  * WebSocket gateway for Context domain.
@@ -38,7 +36,8 @@ const CONTEXT_ROOM = 'context';
   namespace: '/context',
 })
 export class ContextGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -55,8 +54,8 @@ export class ContextGateway
   }
 
   /*
-     * Room implementation
-     */
+   * Room implementation
+   */
 
   @SubscribeMessage('context.subscribe')
   subscribe(@ConnectedSocket() client: Socket) {
@@ -82,6 +81,8 @@ export class ContextGateway
 
   @OnEvent('block.deleted')
   handlePageDeleted(event: BlockDeletedEvent) {
-    this.server.to(CONTEXT_ROOM).emit('block.deleted', { blockId: event.blockId });
+    this.server
+      .to(CONTEXT_ROOM)
+      .emit('block.deleted', { blockId: event.blockId });
   }
 }

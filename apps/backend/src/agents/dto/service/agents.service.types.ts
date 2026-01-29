@@ -1,5 +1,5 @@
-import { TaskStatus } from "src/tasks/enums";
-import { AgentType } from "../../../agents/enums";
+import { TaskStatus } from 'src/tasks/enums';
+import { AgentType } from '../../../agents/enums';
 
 export type CreateAgentInput = {
   slug: string;
@@ -14,7 +14,7 @@ export type CreateAgentInput = {
   avatarUrl?: string;
 };
 
-export type UpdateAgentInput = Partial<CreateAgentInput>
+export type UpdateAgentInput = Partial<CreateAgentInput>;
 
 export type PatchAgentInput = {
   systemPrompt?: string;

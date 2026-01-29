@@ -58,7 +58,8 @@ export class JwkResponseDto {
 
 export class JwksResponseDto {
   @ApiProperty({
-    description: 'Collection of JSON Web Keys currently valid for signature verification.',
+    description:
+      'Collection of JSON Web Keys currently valid for signature verification.',
     type: [JwkResponseDto],
   })
   keys!: JwkResponseDto[];

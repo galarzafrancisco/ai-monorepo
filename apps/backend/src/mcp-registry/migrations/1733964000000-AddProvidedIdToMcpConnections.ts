@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddProvidedIdToMcpConnections1733964000000 implements MigrationInterface {
+export class AddProvidedIdToMcpConnections1733964000000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Add providedId column to mcp_connections table
     await queryRunner.query(`

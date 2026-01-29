@@ -7,12 +7,12 @@ import { UserRole } from '../../enums';
 
 // Input types (for service methods)
 export type CreateUserInput = {
-  email: string,
-  displayName: string,
-  slug: string,
-  password: string,
+  email: string;
+  displayName: string;
+  slug: string;
+  password: string;
 };
 
 export type UpdateUserRoleInput = {
-  role: UserRole,
+  role: UserRole;
 };

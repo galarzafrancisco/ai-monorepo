@@ -22,14 +22,14 @@ export type AuthorizationServerMetadataResult = {
 };
 
 export type ProtectedResourceMetadataResult = {
-  resource: string,
-  authorization_servers: string[],
-  scopes_supported: string[],
-  bearer_methods_supported: string[],
-  resource_name: string,
-}
+  resource: string;
+  authorization_servers: string[];
+  scopes_supported: string[];
+  bearer_methods_supported: string[];
+  resource_name: string;
+};
 
 export type SystemServer = {
-  path: string,
-  metadata: ProtectedResourceMetadataResult,
-}
+  path: string;
+  metadata: ProtectedResourceMetadataResult;
+};

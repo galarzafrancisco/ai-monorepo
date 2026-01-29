@@ -11,8 +11,7 @@ export class AuthorizationServerMetadataDto {
   @ApiProperty({
     description:
       'Authorization endpoint for initiating OAuth 2.0 authorization code flows',
-    example:
-      'https://auth.example.com/api/v1/authorize/mcp/inventory/v1',
+    example: 'https://auth.example.com/api/v1/authorize/mcp/inventory/v1',
   })
   authorization_endpoint!: string;
 

@@ -13,7 +13,6 @@ import { RegisteredClientEntity } from '../../authorization-server/entities/regi
 import { AuthJourneyEntity } from './auth-journey.entity';
 import { McpAuthorizationFlowStatus } from '../enums/mcp-authorization-flow-status.enum';
 
-
 @Entity('mcp_authorization_flows')
 export class McpAuthorizationFlowEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -38,7 +37,12 @@ export class McpAuthorizationFlowEntity {
   @Column({ type: 'text', name: 'code_challenge', nullable: true })
   codeChallenge?: string;
 
-  @Column({ type: 'varchar', length: 10, name: 'code_challenge_method', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 10,
+    name: 'code_challenge_method',
+    nullable: true,
+  })
   codeChallengeMethod?: string;
 
   // OAuth state parameter for CSRF protection
@@ -62,7 +66,11 @@ export class McpAuthorizationFlowEntity {
   authorizationCode?: string;
 
   // Authorization code expiry timestamp
-  @Column({ type: 'datetime', name: 'authorization_code_expires_at', nullable: true })
+  @Column({
+    type: 'datetime',
+    name: 'authorization_code_expires_at',
+    nullable: true,
+  })
   authorizationCodeExpiresAt?: Date;
 
   // Whether the authorization code has been used (single-use)

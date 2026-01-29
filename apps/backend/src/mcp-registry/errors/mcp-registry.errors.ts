@@ -16,7 +16,7 @@ export const McpRegistryErrorCodes = {
 } as const;
 
 type McpRegistryErrorCode =
-  typeof McpRegistryErrorCodes[keyof typeof McpRegistryErrorCodes];
+  (typeof McpRegistryErrorCodes)[keyof typeof McpRegistryErrorCodes];
 
 /**
  * Base class for all Tools domain errors

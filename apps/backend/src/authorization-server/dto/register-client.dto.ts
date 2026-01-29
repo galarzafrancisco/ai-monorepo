@@ -25,13 +25,14 @@ import { GrantType, ResponseType, TokenEndpointAuthMethod } from '../enums';
 // - logo_uri?: string
 // - policy_uri?: string
 // - jwks_uri?: string
-// - jwks? 
+// - jwks?
 // - software_id?
 // - software_version?
 
 export class RegisterClientDto {
   @ApiProperty({
-    description: 'Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)',
+    description:
+      'Array of redirect URIs for authorization callbacks (supports http and localhost for MCP clients)',
     example: ['http://localhost:3000/callback', 'https://example.com/callback'],
     type: [String],
   })
@@ -41,7 +42,8 @@ export class RegisterClientDto {
   redirect_uris!: string[]; // ✅
 
   @ApiProperty({
-    description: 'Authentication method for the token endpoint (MCP clients use "none")',
+    description:
+      'Authentication method for the token endpoint (MCP clients use "none")',
     example: TokenEndpointAuthMethod.NONE,
     enum: TokenEndpointAuthMethod,
   })
@@ -61,7 +63,8 @@ export class RegisterClientDto {
   grant_types!: GrantType[]; // ✅
 
   @ApiProperty({
-    description: 'Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.',
+    description:
+      'Array of the OAuth 2.0 response type strings that the client can use at the authorization endpoint.',
     example: [ResponseType.CODE],
     enum: ResponseType,
     isArray: true,
@@ -81,7 +84,7 @@ export class RegisterClientDto {
 
   /*
    * Optional fields
-  */
+   */
 
   @ApiPropertyOptional({
     description: 'Requested scopes for the client',
@@ -100,7 +103,7 @@ export class RegisterClientDto {
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
-  contacts?: string[];  // ✅
+  contacts?: string[]; // ✅
 
   @ApiPropertyOptional({
     description: 'Terms of service URI for the client registration',
@@ -127,7 +130,8 @@ export class RegisterClientDto {
   logo_uri?: string;
 
   @ApiPropertyOptional({
-    description: 'URL that the client provides to the end-user to read about how the profile data will be used',
+    description:
+      'URL that the client provides to the end-user to read about how the profile data will be used',
     example: 'https://example.com/privacy',
   })
   @IsUrl()
@@ -135,7 +139,8 @@ export class RegisterClientDto {
   policy_uri?: string;
 
   @ApiPropertyOptional({
-    description: 'URL for the client JSON Web Key Set document. If specified, must not include jwks parameter',
+    description:
+      'URL for the client JSON Web Key Set document. If specified, must not include jwks parameter',
     example: 'https://example.com/.well-known/jwks.json',
   })
   @IsUrl()
@@ -143,15 +148,18 @@ export class RegisterClientDto {
   jwks_uri?: string;
 
   @ApiPropertyOptional({
-    description: 'Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter',
-    example: '{"keys":[{"kty":"RSA","use":"sig","kid":"key-1","n":"...","e":"AQAB"}]}',
+    description:
+      'Client JSON Web Key Set document value as a JSON string. If specified, must not include jwks_uri parameter',
+    example:
+      '{"keys":[{"kty":"RSA","use":"sig","kid":"key-1","n":"...","e":"AQAB"}]}',
   })
   @IsString()
   @IsOptional()
   jwks?: string;
 
   @ApiPropertyOptional({
-    description: 'Unique identifier string assigned by the client developer or software publisher',
+    description:
+      'Unique identifier string assigned by the client developer or software publisher',
     example: 'my-oauth-app-v1',
   })
   @IsString()
@@ -165,5 +173,4 @@ export class RegisterClientDto {
   @IsString()
   @IsOptional()
   software_version?: string;
-
 }

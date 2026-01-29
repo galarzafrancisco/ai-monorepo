@@ -24,7 +24,7 @@ import {
   ApiNotFoundResponse,
   ApiCookieAuth,
 } from '@nestjs/swagger';
-import type { Request, Response } from "express";
+import type { Request, Response } from 'express';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -37,19 +37,27 @@ import { InputRequestResponseDto } from './dto/input-request-response.dto';
 import { CreateInputRequestDto } from './dto/create-input-request.dto';
 import { AnswerInputRequestDto } from './dto/answer-input-request.dto';
 import { TagResponseDto } from './dto/tag-response.dto';
-import { AddTagDto } from './dto/add-tag.dto';
-import { CreateTagDto } from './dto/create-tag.dto';
+import { CreateTagDto } from '../meta/dto/create-tag.dto';
 import { TaskParamsDto } from './dto/task-params.dto';
 import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { SearchTasksQueryDto } from './dto/search-tasks-query.dto';
 import { TaskSearchResultDto } from './dto/task-search-result.dto';
-import { TaskResult, CommentResult, TagResult, ActorResult, InputRequestResult } from './dto/service/tasks.service.types';
+import {
+  TaskResult,
+  CommentResult,
+  TagResult,
+  ActorResult,
+  InputRequestResult,
+} from './dto/service/tasks.service.types';
 import { ActorResponseDto } from '../identity-provider/dto/actor-response.dto';
 import { TasksMcpGateway } from './tasks.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
-import type { AuthContext, UserContext } from '../auth/guards/context/auth-context.types';
+import type {
+  AuthContext,
+  UserContext,
+} from '../auth/guards/context/auth-context.types';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { TasksScopes } from './tasks.scopes';
@@ -65,7 +73,7 @@ export class TasksController {
   constructor(
     private readonly TasksService: TasksService,
     private readonly gateway: TasksMcpGateway,
-  ) { }
+  ) {}
 
   @Post()
   @RequireScopes(TasksScopes.READ.id)
@@ -105,14 +113,18 @@ export class TasksController {
     @Body() dto: UpdateTaskDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
-    const result = await this.TasksService.updateTask(params.id, {
-      name: dto.name,
-      description: dto.description,
-      assigneeActorId: dto.assigneeActorId,
-      sessionId: dto.sessionId,
-      tagNames: dto.tagNames,
-      dependsOnIds: dto.dependsOnIds,
-    }, user.actorId);
+    const result = await this.TasksService.updateTask(
+      params.id,
+      {
+        name: dto.name,
+        description: dto.description,
+        assigneeActorId: dto.assigneeActorId,
+        sessionId: dto.sessionId,
+        tagNames: dto.tagNames,
+        dependsOnIds: dto.dependsOnIds,
+      },
+      user.actorId,
+    );
     return this.mapResultToResponse(result);
   }
 
@@ -130,10 +142,14 @@ export class TasksController {
     @Body() dto: AssignTaskDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
-    const result = await this.TasksService.assignTask(params.id, {
-      assigneeActorId: dto.assigneeActorId,
-      sessionId: dto.sessionId,
-    }, user.actorId);
+    const result = await this.TasksService.assignTask(
+      params.id,
+      {
+        assigneeActorId: dto.assigneeActorId,
+        sessionId: dto.sessionId,
+      },
+      user.actorId,
+    );
     return this.mapResultToResponse(result);
   }
 
@@ -149,9 +165,13 @@ export class TasksController {
     @Param() params: TaskParamsDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
-    const result = await this.TasksService.assignTask(params.id, {
-      assigneeActorId: user.actorId,
-    }, user.actorId);
+    const result = await this.TasksService.assignTask(
+      params.id,
+      {
+        assigneeActorId: user.actorId,
+      },
+      user.actorId,
+    );
     return this.mapResultToResponse(result);
   }
 
@@ -169,7 +189,9 @@ export class TasksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List tasks with optional filtering and pagination' })
+  @ApiOperation({
+    summary: 'List tasks with optional filtering and pagination',
+  })
   @ApiOkResponse({
     type: TaskListResponseDto,
     description: 'Paginated list of tasks',
@@ -262,10 +284,14 @@ export class TasksController {
     @Body() dto: ChangeTaskStatusDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
-    const result = await this.TasksService.changeStatus(params.id, {
-      status: dto.status,
-      comment: dto.comment,
-    }, user.actorId);
+    const result = await this.TasksService.changeStatus(
+      params.id,
+      {
+        status: dto.status,
+        comment: dto.comment,
+      },
+      user.actorId,
+    );
     return this.mapResultToResponse(result);
   }
 
@@ -280,13 +306,14 @@ export class TasksController {
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async addTagToTask(
     @Param() params: TaskParamsDto,
-    @Body() dto: AddTagDto,
+    @Body() dto: CreateTagDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
-    const result = await this.TasksService.addTagToTask(params.id, {
-      name: dto.name,
-      color: dto.color,
-    }, user.actorId);
+    const result = await this.TasksService.addTagToTask(
+      params.id,
+      { name: dto.name },
+      user.actorId,
+    );
     return this.mapResultToResponse(result);
   }
 
@@ -303,44 +330,12 @@ export class TasksController {
     @Param('tagId') tagId: string,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
-    const result = await this.TasksService.removeTagFromTask(taskId, tagId, user.actorId);
+    const result = await this.TasksService.removeTagFromTask(
+      taskId,
+      tagId,
+      user.actorId,
+    );
     return this.mapResultToResponse(result);
-  }
-
-  @Post('tags')
-  @RequireScopes(TasksScopes.WRITE.id)
-  @ApiOperation({ summary: 'Create a new tag' })
-  @ApiCreatedResponse({
-    type: TagResponseDto,
-    description: 'Tag created successfully',
-  })
-  @ApiBadRequestResponse({ description: 'Invalid input data' })
-  async createTag(@Body() dto: CreateTagDto): Promise<TagResponseDto> {
-    const result = await this.TasksService.createTag({
-      name: dto.name,
-    });
-    return this.mapTagResultToResponse(result);
-  }
-
-  @Get('tags/all')
-  @ApiOperation({ summary: 'Get all tags' })
-  @ApiOkResponse({
-    type: [TagResponseDto],
-    description: 'List of all tags',
-  })
-  async getAllTags(): Promise<TagResponseDto[]> {
-    const result = await this.TasksService.getAllTags();
-    return result.map((tag) => this.mapTagResultToResponse(tag));
-  }
-
-  @Delete('tags/:tagId')
-  @RequireScopes(TasksScopes.WRITE.id)
-  @ApiOperation({ summary: 'Delete a tag from the system' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: 'Tag deleted successfully' })
-  @ApiNotFoundResponse({ description: 'Tag not found' })
-  async deleteTag(@Param('tagId') tagId: string): Promise<void> {
-    await this.TasksService.deleteTag(tagId);
   }
 
   @Post(':id/input-requests')
@@ -399,10 +394,14 @@ export class TasksController {
       description: result.description,
       status: result.status,
       assignee: result.assignee,
-      assigneeActor: result.assigneeActor ? this.mapActorResultToResponse(result.assigneeActor) : null,
+      assigneeActor: result.assigneeActor
+        ? this.mapActorResultToResponse(result.assigneeActor)
+        : null,
       sessionId: result.sessionId ?? '',
       comments: result.comments.map((c) => this.mapCommentResultToResponse(c)),
-      inputRequests: result.inputRequests.map((ir) => this.mapInputRequestResultToResponse(ir)),
+      inputRequests: result.inputRequests.map((ir) =>
+        this.mapInputRequestResultToResponse(ir),
+      ),
       tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
       createdByActor: this.mapActorResultToResponse(result.createdByActor),
       dependsOnIds: result.dependsOnIds,
@@ -417,7 +416,7 @@ export class TasksController {
     @CurrentUser() user: UserContext,
     @CurrentAuth() authContext: AuthContext,
     @Req() req: Request,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     await this.gateway.handleRequest(req, res, user, authContext);
   }
@@ -429,7 +428,9 @@ export class TasksController {
       id: result.id,
       taskId: result.taskId,
       commenterName: result.commenterName,
-      commenterActor: result.commenterActor ? this.mapActorResultToResponse(result.commenterActor) : null,
+      commenterActor: result.commenterActor
+        ? this.mapActorResultToResponse(result.commenterActor)
+        : null,
       content: result.content,
       createdAt: result.createdAt.toISOString(),
     };
@@ -453,7 +454,9 @@ export class TasksController {
     };
   }
 
-  private mapInputRequestResultToResponse(result: InputRequestResult): InputRequestResponseDto {
+  private mapInputRequestResultToResponse(
+    result: InputRequestResult,
+  ): InputRequestResponseDto {
     return {
       id: result.id,
       taskId: result.taskId,

@@ -4,7 +4,8 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class GetAuthorizationServerMetadataParamsDto {
   @ApiProperty({
     name: 'mcpServerId',
-    description: 'MCP server UUID or provided identifier registered in the catalog.',
+    description:
+      'MCP server UUID or provided identifier registered in the catalog.',
     example: 'inventory-service',
   })
   @IsString()
