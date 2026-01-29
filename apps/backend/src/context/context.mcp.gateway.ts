@@ -23,22 +23,22 @@ export class ContextMcpGateway {
     });
 
     server.registerTool(
-      'list_pages',
+      'list_blocks',
       {
-        title: 'List wiki pages',
+        title: 'List context blocks',
         description:
-          'Get a list of all wiki pages with metadata (title, id, author)',
+          'Get a list of all context blocks with metadata (title, id, author)',
         inputSchema: {
           tag: z.string().optional(),
         },
       },
       async ({ tag }) => {
-        const pages = await this.contextService.listBlocks({ tag });
+        const blocks = await this.contextService.listBlocks({ tag });
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(pages),
+              text: JSON.stringify(blocks),
             },
           ],
         };
@@ -46,21 +46,21 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'get_page',
+      'get_block',
       {
-        title: 'Get wiki page',
-        description: 'Retrieve the full content of a wiki page by ID',
+        title: 'Get context block',
+        description: 'Retrieve the full content of a context block by ID',
         inputSchema: {
           blockId: z.string(),
         },
       },
       async ({ blockId }) => {
-        const page = await this.contextService.getBlockById(blockId);
+        const block = await this.contextService.getBlockById(blockId);
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(page),
+              text: JSON.stringify(block),
             },
           ],
         };
@@ -68,11 +68,11 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'create_page',
+      'create_block',
       {
-        title: 'Create wiki page',
+        title: 'Create context block',
         description:
-          'Create a new wiki page with title, content, author, and optional parent',
+          'Create a new context block with title, content, author, and optional parent',
         inputSchema: {
           title: z.string(),
           content: z.string(),
@@ -81,7 +81,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ title, content, parentId, tagNames }) => {
-        const page = await this.contextService.createBlock({
+        const block = await this.contextService.createBlock({
           title,
           content,
           createdByActorId: user.actorId,
@@ -92,7 +92,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(page),
+              text: JSON.stringify(block),
             },
           ],
         };
@@ -100,11 +100,11 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'update_page',
+      'update_block',
       {
-        title: 'Update wiki page',
+        title: 'Update context block',
         description:
-          'Update the title, content, author, parent, or tags of an existing wiki page',
+          'Update the title, content, author, parent, or tags of an existing context block',
         inputSchema: {
           blockId: z.string(),
           title: z.string().optional(),
@@ -123,11 +123,11 @@ export class ContextMcpGateway {
           tagNames === undefined
         ) {
           throw new Error(
-            'At least one field must be provided to update the page.',
+            'At least one field must be provided to update the block.',
           );
         }
 
-        const page = await this.contextService.updateBlock(blockId, {
+        const block = await this.contextService.updateBlock(blockId, {
           title,
           content,
           parentId,
@@ -138,7 +138,7 @@ export class ContextMcpGateway {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(page),
+              text: JSON.stringify(block),
             },
           ],
         };
@@ -146,25 +146,25 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'append_page',
+      'append_block',
       {
-        title: 'Append wiki page content',
+        title: 'Append context block content',
         description:
-          'Append markdown content to the end of an existing wiki page',
+          'Append markdown content to the end of an existing context block',
         inputSchema: {
           blockId: z.string(),
           content: z.string(),
         },
       },
       async ({ blockId, content }) => {
-        const page = await this.contextService.appendToBlock(blockId, {
+        const block = await this.contextService.appendToBlock(blockId, {
           content,
         });
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(page),
+              text: JSON.stringify(block),
             },
           ],
         };
@@ -172,10 +172,10 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'delete_page',
+      'delete_block',
       {
-        title: 'Delete wiki page',
-        description: 'Delete a wiki page by its identifier',
+        title: 'Delete context block',
+        description: 'Delete a context block by its identifier',
         inputSchema: {
           blockId: z.string(),
         },
@@ -194,11 +194,11 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'add_tag_to_page',
+      'add_tag_to_block',
       {
-        title: 'Add tag to page',
+        title: 'Add tag to block',
         description:
-          'Add a tag to a wiki page by tag name (creates tag if it does not exist)',
+          'Add a tag to a context block by tag name (creates tag if it does not exist)',
         inputSchema: {
           blockId: z.string(),
           tagName: z.string(),
@@ -223,10 +223,10 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'remove_tag_from_page',
+      'remove_tag_from_block',
       {
-        title: 'Remove tag from page',
-        description: 'Remove a tag from a wiki page',
+        title: 'Remove tag from block',
+        description: 'Remove a tag from a context block',
         inputSchema: {
           blockId: z.string(),
           tagId: z.string(),
@@ -266,11 +266,11 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'get_child_pages',
+      'get_child_blocks',
       {
-        title: 'Get child pages',
+        title: 'Get child blocks',
         description:
-          'Get all child pages for a given parent page ID (or null for root pages)',
+          'Get all child blocks for a given parent block ID (or null for root blocks)',
         inputSchema: {
           parentId: z.string().nullable(),
         },
@@ -289,11 +289,11 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
-      'get_page_tree',
+      'get_block_tree',
       {
-        title: 'Get page tree',
+        title: 'Get block tree',
         description:
-          'Get the complete hierarchical tree structure of all pages',
+          'Get the complete hierarchical tree structure of all blocks',
       },
       async ({ }) => {
         const tree = await this.contextService.getBlockTree();
