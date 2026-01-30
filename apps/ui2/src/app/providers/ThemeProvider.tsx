@@ -11,7 +11,8 @@ type Theme =
   | 'halo'
   | 'mono'
   | 'terminal-amber'
-  | 'oceanic';
+  | 'oceanic'
+  | 'tribute';
 
 interface ThemeContextValue {
   theme: Theme;

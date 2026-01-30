@@ -530,3 +530,47 @@
   --shadow-2: 0 4px 8px rgba(255, 107, 107, 0.2);
   --shadow-3: 0 8px 24px rgba(255, 107, 107, 0.26);
 }
+
+/* ===== TRIBUTE THEME (Inspired by the old UI's dark sidebar) ===== */
+[data-theme='tribute'] {
+  /* Theme color values */
+  --theme-bg: #0b1220;
+  --theme-app-surface: #060a12;
+  --theme-surface: #1e293b;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 11, 18, 32;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-inverse: #0b1220;
+
+  /* Colors - Borders */
+  --border: #1e293b;
+  --border-subtle: #141d2e;
+
+  /* Colors - Interactive */
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-hover: #3b82f6;
+
+  /* Colors - Semantic */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* Colors - Focus */
+  --focus-ring: #2563eb;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.6);
+}

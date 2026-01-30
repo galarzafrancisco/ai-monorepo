@@ -16,6 +16,7 @@ const THEMES = [
   { value: 'terminal-amber', label: 'Terminal Amber', description: 'Terminal tones without the green' },
   { value: 'oceanic', label: 'Oceanic', description: 'Cool blues and teals' },
   { value: 'party', label: 'Party', description: 'Playful warm palette' },
+  { value: 'tribute', label: 'Tribute', description: 'Inspired by the old UI\'s dark sidebar' },
 ] as const;
 
 export function SettingsAppearancePage() {
