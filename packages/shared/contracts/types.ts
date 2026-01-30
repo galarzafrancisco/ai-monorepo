@@ -1153,6 +1153,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agent-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List agent runs with optional filters */
+        get: operations["AgentRunsController_listAgentRuns"];
+        put?: never;
+        /** Create a new agent run */
+        post: operations["AgentRunsController_createAgentRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent-runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an agent run by ID */
+        get: operations["AgentRunsController_getAgentRunById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update an agent run */
+        patch: operations["AgentRunsController_updateAgentRun"];
+        trace?: never;
+    };
     "/api/v1/threads": {
         parameters: {
             query?: never;
@@ -3401,6 +3437,107 @@ export interface components {
              * @example true
              */
             isValid: boolean;
+        };
+        CreateAgentRunDto: {
+            /**
+             * @description UUID of the actor (agent) running
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            actorId: string;
+            /**
+             * @description UUID of the parent task being executed
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            parentTaskId: string;
+        };
+        TaskInfoDto: {
+            /**
+             * @description Task ID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Task name
+             * @example Implement authentication
+             */
+            name: string;
+        };
+        AgentRunResponseDto: {
+            /**
+             * @description Unique identifier for the agent run
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description UUID of the actor (agent) running
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            actorId: string;
+            /** @description Actor information */
+            actor?: components["schemas"]["ActorResponseDto"] | null;
+            /**
+             * @description UUID of the parent task being executed
+             * @example 123e4567-e89b-12d3-a456-426614174002
+             */
+            parentTaskId: string;
+            /** @description Parent task information */
+            parentTask?: components["schemas"]["TaskInfoDto"] | null;
+            /**
+             * @description Run creation timestamp
+             * @example 2026-01-30T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Timestamp when the run started
+             * @example 2026-01-30T10:30:00.000Z
+             */
+            startedAt?: Record<string, never> | null;
+            /**
+             * @description Timestamp when the run ended
+             * @example 2026-01-30T10:45:00.000Z
+             */
+            endedAt?: Record<string, never> | null;
+            /**
+             * @description Timestamp of the last ping/heartbeat
+             * @example 2026-01-30T10:40:00.000Z
+             */
+            lastPing?: Record<string, never> | null;
+        };
+        AgentRunListResponseDto: {
+            /** @description List of agent runs */
+            items: components["schemas"]["AgentRunResponseDto"][];
+            /**
+             * @description Total count of agent runs
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Items per page
+             * @example 20
+             */
+            limit: number;
+        };
+        UpdateAgentRunDto: {
+            /**
+             * @description Timestamp when the run started
+             * @example 2026-01-30T10:30:00.000Z
+             */
+            startedAt?: string | null;
+            /**
+             * @description Timestamp when the run ended
+             * @example 2026-01-30T10:45:00.000Z
+             */
+            endedAt?: string | null;
+            /**
+             * @description Timestamp of the last ping/heartbeat
+             * @example 2026-01-30T10:40:00.000Z
+             */
+            lastPing?: string | null;
         };
         CreateThreadDto: {
             /**
@@ -6417,6 +6554,137 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["IssuedAccessTokenResponseDto"];
                 };
+            };
+        };
+    };
+    AgentRunsController_listAgentRuns: {
+        parameters: {
+            query?: {
+                /** @description Filter by actor ID */
+                actorId?: string;
+                /** @description Filter by parent task ID */
+                parentTaskId?: string;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of agent runs retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunListResponseDto"];
+                };
+            };
+        };
+    };
+    AgentRunsController_createAgentRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAgentRunDto"];
+            };
+        };
+        responses: {
+            /** @description Agent run created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AgentRunsController_getAgentRunById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent run ID */
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent run retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunResponseDto"];
+                };
+            };
+            /** @description Agent run not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AgentRunsController_updateAgentRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent run ID */
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAgentRunDto"];
+            };
+        };
+        responses: {
+            /** @description Agent run updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Agent run not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

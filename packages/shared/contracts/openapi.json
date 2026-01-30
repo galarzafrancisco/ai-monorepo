@@ -3999,6 +3999,207 @@
         ]
       }
     },
+    "/api/v1/agent-runs": {
+      "post": {
+        "operationId": "AgentRunsController_createAgentRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentRunDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Agent run created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new agent run",
+        "tags": [
+          "AgentRun"
+        ]
+      },
+      "get": {
+        "operationId": "AgentRunsController_listAgentRuns",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by actor ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "parentTaskId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by parent task ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174001",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of agent runs retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List agent runs with optional filters",
+        "tags": [
+          "AgentRun"
+        ]
+      }
+    },
+    "/api/v1/agent-runs/{runId}": {
+      "get": {
+        "operationId": "AgentRunsController_getAgentRunById",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "Agent run ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agent run retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Agent run not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get an agent run by ID",
+        "tags": [
+          "AgentRun"
+        ]
+      },
+      "patch": {
+        "operationId": "AgentRunsController_updateAgentRun",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "Agent run ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAgentRunDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Agent run updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Agent run not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update an agent run",
+        "tags": [
+          "AgentRun"
+        ]
+      }
+    },
     "/api/v1/threads": {
       "post": {
         "operationId": "ThreadsController_createThread",
@@ -7585,6 +7786,167 @@
           "createdAt",
           "isValid"
         ]
+      },
+      "CreateAgentRunDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "description": "UUID of the actor (agent) running",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "parentTaskId": {
+            "type": "string",
+            "description": "UUID of the parent task being executed",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          }
+        },
+        "required": [
+          "actorId",
+          "parentTaskId"
+        ]
+      },
+      "TaskInfoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Task name",
+            "example": "Implement authentication"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "AgentRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the agent run",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "UUID of the actor (agent) running",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "actor": {
+            "description": "Actor information",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "parentTaskId": {
+            "type": "string",
+            "description": "UUID of the parent task being executed",
+            "example": "123e4567-e89b-12d3-a456-426614174002"
+          },
+          "parentTask": {
+            "description": "Parent task information",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TaskInfoDto"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Run creation timestamp",
+            "example": "2026-01-30T10:30:00.000Z"
+          },
+          "startedAt": {
+            "type": "object",
+            "description": "Timestamp when the run started",
+            "example": "2026-01-30T10:30:00.000Z",
+            "nullable": true
+          },
+          "endedAt": {
+            "type": "object",
+            "description": "Timestamp when the run ended",
+            "example": "2026-01-30T10:45:00.000Z",
+            "nullable": true
+          },
+          "lastPing": {
+            "type": "object",
+            "description": "Timestamp of the last ping/heartbeat",
+            "example": "2026-01-30T10:40:00.000Z",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "actorId",
+          "parentTaskId",
+          "createdAt"
+        ]
+      },
+      "AgentRunListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of agent runs",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentRunResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total count of agent runs",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "UpdateAgentRunDto": {
+        "type": "object",
+        "properties": {
+          "startedAt": {
+            "type": "string",
+            "description": "Timestamp when the run started",
+            "example": "2026-01-30T10:30:00.000Z",
+            "nullable": true
+          },
+          "endedAt": {
+            "type": "string",
+            "description": "Timestamp when the run ended",
+            "example": "2026-01-30T10:45:00.000Z",
+            "nullable": true
+          },
+          "lastPing": {
+            "type": "string",
+            "description": "Timestamp of the last ping/heartbeat",
+            "example": "2026-01-30T10:40:00.000Z",
+            "nullable": true
+          }
+        }
       },
       "CreateThreadDto": {
         "type": "object",
