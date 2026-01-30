@@ -132,6 +132,7 @@ export class ContextMcpGateway {
           content,
           parentId,
           tagNames,
+          actorId: user.actorId,
         });
 
         return {
@@ -159,6 +160,7 @@ export class ContextMcpGateway {
       async ({ blockId, content }) => {
         const block = await this.contextService.appendToBlock(blockId, {
           content,
+          actorId: user.actorId,
         });
         return {
           content: [
@@ -181,7 +183,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ blockId }) => {
-        await this.contextService.deleteBlock(blockId);
+        await this.contextService.deleteBlock(blockId, user.actorId);
         return {
           content: [
             {
@@ -233,7 +235,7 @@ export class ContextMcpGateway {
         },
       },
       async ({ blockId, tagId }) => {
-        await this.contextService.removeTagFromBlock(blockId, tagId);
+        await this.contextService.removeTagFromBlock(blockId, tagId, user.actorId);
 
         return {
           content: [

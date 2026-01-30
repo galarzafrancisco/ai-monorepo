@@ -157,6 +157,7 @@ export class ContextController {
       tagNames: dto.tagNames,
       parentId: dto.parentId,
       order: dto.order,
+      actorId: user.actorId,
     });
 
     return this.mapToResponse(result);
@@ -172,9 +173,11 @@ export class ContextController {
   async appendToBlock(
     @Param() params: BlockParamsDto,
     @Body() dto: AppendBlockDto,
+    @CurrentUser() user: UserContext,
   ): Promise<BlockResponseDto> {
     const result = await this.contextService.appendToBlock(params.id, {
       content: dto.content,
+      actorId: user.actorId,
     });
 
     return this.mapToResponse(result);
@@ -224,8 +227,11 @@ export class ContextController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a wiki page' })
   @ApiNoContentResponse({ description: 'Context page deleted successfully' })
-  async deleteBlock(@Param() params: BlockParamsDto): Promise<void> {
-    await this.contextService.deleteBlock(params.id);
+  async deleteBlock(
+    @Param() params: BlockParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.contextService.deleteBlock(params.id, user.actorId);
   }
 
   @Post(':id/tags')
@@ -261,8 +267,13 @@ export class ContextController {
   async removeTagFromBlock(
     @Param('id') pageId: string,
     @Param('tagId') tagId: string,
+    @CurrentUser() user: UserContext,
   ): Promise<BlockResponseDto> {
-    const result = await this.contextService.removeTagFromBlock(pageId, tagId);
+    const result = await this.contextService.removeTagFromBlock(
+      pageId,
+      tagId,
+      user.actorId,
+    );
     return this.mapToResponse(result);
   }
 

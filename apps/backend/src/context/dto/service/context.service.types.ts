@@ -12,10 +12,12 @@ export interface UpdateBlockInput {
   tagNames?: string[];
   parentId?: string | null;
   order?: number;
+  actorId?: string;
 }
 
 export interface AppendBlockInput {
   content: string;
+  actorId?: string;
 }
 
 export interface ListBlocksInput {

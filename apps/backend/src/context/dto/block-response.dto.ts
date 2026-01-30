@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ContextTagResponseDto } from './wiki-tag-response.dto';
+import { ContextBlockEntity } from '../block.entity';
 
 export class BlockResponseDto {
   @ApiProperty({
@@ -74,4 +75,30 @@ export class BlockResponseDto {
     example: '2025-01-02T15:30:00.000Z',
   })
   updatedAt!: string;
+
+  /**
+   * Static factory method to create a DTO from a domain entity.
+   * This provides explicit, centralized mapping from entity to wire representation.
+   */
+  static fromEntity(block: ContextBlockEntity): BlockResponseDto {
+    const dto = new BlockResponseDto();
+    dto.id = block.id;
+    dto.title = block.title;
+    dto.content = block.content;
+    dto.createdByActorId = block.createdByActorId;
+    dto.createdBy = block.createdBy;
+    dto.tags =
+      block.tags?.map((tag) => ({
+        id: tag.id,
+        name: tag.name,
+        color: tag.color,
+        createdAt: tag.createdAt.toISOString(),
+        updatedAt: tag.updatedAt.toISOString(),
+      })) || [];
+    dto.parentId = block.parentId ?? null;
+    dto.order = block.order;
+    dto.createdAt = block.createdAt.toISOString();
+    dto.updatedAt = block.updatedAt.toISOString();
+    return dto;
+  }
 }

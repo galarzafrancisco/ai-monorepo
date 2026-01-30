@@ -15,6 +15,8 @@ import {
   BlockUpdatedEvent,
   BlockDeletedEvent,
 } from './events/context.events';
+import { BlockResponseDto } from './dto/block-response.dto';
+import { ContextWireEvents } from './api/context.wire-events';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
@@ -24,8 +26,14 @@ const CONTEXT_ROOM = 'context';
 
 /**
  * WebSocket gateway for Context domain.
- * Listens to domain events and broadcasts them via WebSocket.
- * This decouples the service layer from transport concerns.
+ *
+ * Acts as a transport adapter that:
+ * 1. Listens to internal domain events (Symbol-based)
+ * 2. Maps domain entities to DTOs
+ * 3. Emits stable wire events to clients
+ *
+ * This decouples the service layer from transport concerns,
+ * similar to how HTTP controllers map entities to response DTOs.
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(ContextScopes.READ.id)
@@ -69,20 +77,54 @@ export class ContextGateway
     return { ok: true };
   }
 
-  @OnEvent('block.created')
-  handlePageCreated(event: BlockCreatedEvent) {
-    this.server.to(CONTEXT_ROOM).emit('block.created', event.block);
+  /**
+   * Domain event handlers
+   * These listen to internal Symbol-based events and map them to wire events.
+   */
+
+  @OnEvent(BlockCreatedEvent.INTERNAL)
+  handleBlockCreated(event: BlockCreatedEvent) {
+    const dto = BlockResponseDto.fromEntity(event.block);
+
+    this.server.to(CONTEXT_ROOM).emit(ContextWireEvents.CONTEXT_BLOCK_CREATED, {
+      payload: dto,
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Block created event emitted',
+      blockId: event.block.id,
+      actorId: event.actor.id,
+    });
   }
 
-  @OnEvent('block.updated')
-  handlePageUpdated(event: BlockUpdatedEvent) {
-    this.server.to(CONTEXT_ROOM).emit('block.updated', event.block);
+  @OnEvent(BlockUpdatedEvent.INTERNAL)
+  handleBlockUpdated(event: BlockUpdatedEvent) {
+    const dto = BlockResponseDto.fromEntity(event.block);
+
+    this.server.to(CONTEXT_ROOM).emit(ContextWireEvents.CONTEXT_BLOCK_UPDATED, {
+      payload: dto,
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Block updated event emitted',
+      blockId: event.block.id,
+      actorId: event.actor.id,
+    });
   }
 
-  @OnEvent('block.deleted')
-  handlePageDeleted(event: BlockDeletedEvent) {
-    this.server
-      .to(CONTEXT_ROOM)
-      .emit('block.deleted', { blockId: event.blockId });
+  @OnEvent(BlockDeletedEvent.INTERNAL)
+  handleBlockDeleted(event: BlockDeletedEvent) {
+    this.server.to(CONTEXT_ROOM).emit(ContextWireEvents.CONTEXT_BLOCK_DELETED, {
+      payload: { blockId: event.blockId },
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Block deleted event emitted',
+      blockId: event.blockId,
+      actorId: event.actor.id,
+    });
   }
 }

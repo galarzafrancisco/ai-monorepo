@@ -105,10 +105,10 @@ export class ContextService {
       blockId: saved.id,
     });
 
-    // Emit block.created event
+    // Emit domain event with actor information
     this.eventEmitter.emit(
-      'block.created',
-      new BlockCreatedEvent(blockWithTags!),
+      BlockCreatedEvent.INTERNAL,
+      new BlockCreatedEvent(blockWithTags!, { id: input.createdByActorId }),
     );
 
     return this.mapToResult(blockWithTags!);
@@ -224,10 +224,12 @@ export class ContextService {
 
     this.logger.log({ message: 'Context block.updated', blockId: saved.id });
 
-    // Emit block.updated event
+    // Emit domain event with actor information
+    // Use actorId from input if provided, otherwise fall back to the block's creator
+    const actorId = input.actorId ?? blockWithTags!.createdByActorId;
     this.eventEmitter.emit(
-      'block.updated',
-      new BlockUpdatedEvent(blockWithTags!),
+      BlockUpdatedEvent.INTERNAL,
+      new BlockUpdatedEvent(blockWithTags!, { id: actorId }),
     );
 
     return this.mapToResult(blockWithTags!);
@@ -257,14 +259,29 @@ export class ContextService {
       blockId: saved.id,
     });
 
-    // Emit block.updated event (appending is an update)
-    this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(saved));
+    // Emit domain event (appending is an update)
+    // Use actorId from input if provided, otherwise fall back to the block's creator
+    const actorId = input.actorId ?? saved.createdByActorId;
+    this.eventEmitter.emit(
+      BlockUpdatedEvent.INTERNAL,
+      new BlockUpdatedEvent(saved, { id: actorId }),
+    );
 
     return this.mapToResult(saved);
   }
 
-  async deleteBlock(blockId: string): Promise<void> {
+  async deleteBlock(blockId: string, actorId?: string): Promise<void> {
     this.logger.log({ message: 'Deleting context block', blockId });
+
+    // Get block first to retrieve creator actorId if none provided
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      select: ['id', 'createdByActorId'],
+    });
+
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
+    }
 
     const result = await this.blockRepository.delete(blockId);
 
@@ -274,8 +291,13 @@ export class ContextService {
 
     this.logger.log({ message: 'Context block.deleted', blockId });
 
-    // Emit block.deleted event
-    this.eventEmitter.emit('block.deleted', new BlockDeletedEvent(blockId));
+    // Emit domain event with actor information
+    // Use provided actorId or fall back to the block's creator
+    const eventActorId = actorId ?? block.createdByActorId;
+    this.eventEmitter.emit(
+      BlockDeletedEvent.INTERNAL,
+      new BlockDeletedEvent(blockId, { id: eventActorId }),
+    );
   }
 
   async addTagToBlock(
@@ -318,10 +340,10 @@ export class ContextService {
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
-    // Emit block.updated event (tag changes are updates)
+    // Emit domain event (tag changes are updates)
     this.eventEmitter.emit(
-      'block.updated',
-      new BlockUpdatedEvent(blockWithRelations!),
+      BlockUpdatedEvent.INTERNAL,
+      new BlockUpdatedEvent(blockWithRelations!, { id: actorId }),
     );
 
     return this.mapToResult(blockWithRelations!);
@@ -330,6 +352,7 @@ export class ContextService {
   async removeTagFromBlock(
     blockId: string,
     tagId: string,
+    actorId?: string,
   ): Promise<BlockResult> {
     this.logger.log({ message: 'Removing tag from block', blockId, tagId });
 
@@ -350,8 +373,13 @@ export class ContextService {
     // Check if tag is now orphaned and clean it up using MetaService
     await this.metaService.cleanupOrphanedTag(tagId);
 
-    // Emit block.updated event (tag changes are updates)
-    this.eventEmitter.emit('block.updated', new BlockUpdatedEvent(block));
+    // Emit domain event (tag changes are updates)
+    // Use provided actorId or fall back to the block's creator
+    const eventActorId = actorId ?? block.createdByActorId;
+    this.eventEmitter.emit(
+      BlockUpdatedEvent.INTERNAL,
+      new BlockUpdatedEvent(block, { id: eventActorId }),
+    );
 
     return this.mapToResult(block);
   }
