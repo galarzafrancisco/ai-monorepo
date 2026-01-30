@@ -25,6 +25,10 @@ export type CreateTaskInput = {
   dependsOnIds?: string[];
 };
 
+export type CreateTaskInThreadInput = CreateTaskInput & {
+  runId: string;
+};
+
 export type UpdateTaskInput = Partial<CreateTaskInput>;
 
 export type AssignTaskInput = {

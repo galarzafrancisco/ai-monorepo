@@ -12,6 +12,8 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 import { MetaModule } from '../meta/meta.module';
 import { SearchModule } from '../search/search.module';
+import { AgentRunsModule } from '../agent-runs/agent-runs.module';
+import { ThreadsModule } from '../threads/threads.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { SearchModule } from '../search/search.module';
     IdentityProviderModule,
     MetaModule,
     SearchModule,
+    AgentRunsModule,
+    ThreadsModule,
   ],
   controllers: [TasksController],
   providers: [TasksService, TasksGateway, TasksMcpGateway],

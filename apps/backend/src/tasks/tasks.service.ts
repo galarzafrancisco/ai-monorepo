@@ -9,6 +9,7 @@ import { InputRequestEntity } from './input-request.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import {
   CreateTaskInput,
+  CreateTaskInThreadInput,
   UpdateTaskInput,
   AssignTaskInput,
   ChangeStatusInput,
@@ -45,6 +46,8 @@ import { MetaService } from '../meta/meta.service';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { SearchService } from '../search/search.service';
+import { AgentRunsService } from '../agent-runs/agent-runs.service';
+import { ThreadsService } from '../threads/threads.service';
 
 @Injectable()
 export class TasksService {
@@ -63,6 +66,8 @@ export class TasksService {
     private readonly metaService: MetaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly searchService: SearchService,
+    private readonly agentRunsService: AgentRunsService,
+    private readonly threadsService: ThreadsService,
   ) {}
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
@@ -159,6 +164,73 @@ export class TasksService {
       ),
     );
     return this.mapTaskToResult(taskWithRelations);
+  }
+
+  async createTaskInThread(
+    input: CreateTaskInThreadInput,
+  ): Promise<TaskResult> {
+    this.logger.log({
+      message: 'Creating task in thread',
+      name: input.name,
+      runId: input.runId,
+    });
+
+    // First, retrieve the agent run
+    const agentRun = await this.agentRunsService.getAgentRunById(input.runId);
+
+    // Enforce that the caller must be the actor in the agent run
+    if (agentRun.actorId !== input.createdByActorId) {
+      throw new Error(
+        `Unauthorized: caller ${input.createdByActorId} is not the actor in agent run ${input.runId}`,
+      );
+    }
+
+    // Get the parent task from the agent run
+    const parentTaskId = agentRun.parentTaskId;
+
+    // Create the task using the existing method
+    const task = await this.createTask({
+      name: input.name,
+      description: input.description,
+      assigneeActorId: input.assigneeActorId,
+      sessionId: input.sessionId,
+      createdByActorId: input.createdByActorId,
+      tagNames: input.tagNames,
+      dependsOnIds: input.dependsOnIds,
+    });
+
+    // Try to find a thread where the parent task is
+    let thread = await this.threadsService.findThreadByTaskId(parentTaskId);
+
+    if (thread) {
+      // Thread exists, attach the task to it
+      this.logger.log({
+        message: 'Attaching task to existing thread',
+        taskId: task.id,
+        threadId: thread.id,
+      });
+      await this.threadsService.attachTask(thread.id, task.id);
+    } else {
+      // Thread doesn't exist, create it and attach both tasks
+      this.logger.log({
+        message: 'Creating new thread for tasks',
+        parentTaskId,
+        newTaskId: task.id,
+      });
+      thread = await this.threadsService.createThread({
+        createdByActorId: input.createdByActorId,
+        taskIds: [parentTaskId, task.id],
+      });
+    }
+
+    this.logger.log({
+      message: 'Task created in thread',
+      taskId: task.id,
+      threadId: thread.id,
+      runId: input.runId,
+    });
+
+    return task;
   }
 
   async updateTask(

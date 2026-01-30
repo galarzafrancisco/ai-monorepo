@@ -21,7 +21,11 @@ export class TasksMcpGateway {
     private readonly actorService: ActorService,
   ) {}
 
-  private buildServer(user: UserContext, authContext: AuthContext): McpServer {
+  private buildServer(
+    user: UserContext,
+    authContext: AuthContext,
+    runId?: string,
+  ): McpServer {
     const server = new McpServer({
       name: 'Tasks',
       version: '0.0.0',
@@ -164,14 +168,31 @@ export class TasksMcpGateway {
           sessionId,
           dependsOnIds,
         }) => {
-          const task = await this.tasksService.createTask({
-            name,
-            description,
-            assigneeActorId,
-            sessionId,
-            createdByActorId: user.actorId,
-            dependsOnIds,
-          });
+          let task;
+
+          // If we have a run ID, create task in thread
+          if (runId) {
+            task = await this.tasksService.createTaskInThread({
+              name,
+              description,
+              assigneeActorId,
+              sessionId,
+              createdByActorId: user.actorId,
+              dependsOnIds,
+              runId,
+            });
+          } else {
+            // Otherwise, create task normally
+            task = await this.tasksService.createTask({
+              name,
+              description,
+              assigneeActorId,
+              sessionId,
+              createdByActorId: user.actorId,
+              dependsOnIds,
+            });
+          }
+
           return {
             content: [
               {
@@ -561,6 +582,7 @@ export class TasksMcpGateway {
     res: Response,
     user: UserContext,
     authContext: AuthContext,
+    runId?: string,
   ) {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
@@ -571,7 +593,7 @@ export class TasksMcpGateway {
       transport.close();
     });
 
-    const server = this.buildServer(user, authContext);
+    const server = this.buildServer(user, authContext, runId);
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   }

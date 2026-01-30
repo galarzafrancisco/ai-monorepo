@@ -345,6 +345,35 @@ export class ThreadsService {
     return this.mapThreadToResult(updatedThread);
   }
 
+  async findThreadByTaskId(taskId: string): Promise<ThreadResult | null> {
+    this.logger.log({
+      message: 'Finding thread by task ID',
+      taskId,
+    });
+
+    const thread = await this.threadRepository
+      .createQueryBuilder('thread')
+      .leftJoinAndSelect('thread.createdByActor', 'createdByActor')
+      .leftJoinAndSelect('thread.tasks', 'tasks')
+      .leftJoinAndSelect('tasks.assigneeActor', 'taskAssigneeActor')
+      .leftJoinAndSelect('tasks.createdByActor', 'taskCreatedByActor')
+      .leftJoinAndSelect('tasks.tags', 'taskTags')
+      .leftJoinAndSelect('tasks.comments', 'taskComments')
+      .leftJoinAndSelect('tasks.inputRequests', 'taskInputRequests')
+      .leftJoinAndSelect('thread.referencedContextBlocks', 'referencedContextBlocks')
+      .leftJoinAndSelect('thread.tags', 'tags')
+      .leftJoinAndSelect('thread.participants', 'participants')
+      .innerJoin('thread.tasks', 'filterTask')
+      .where('filterTask.id = :taskId', { taskId })
+      .getOne();
+
+    if (!thread) {
+      return null;
+    }
+
+    return this.mapThreadToResult(thread);
+  }
+
   private async getThreadWithRelations(threadId: string): Promise<ThreadEntity> {
     const thread = await this.threadRepository.findOne({
       where: { id: threadId },

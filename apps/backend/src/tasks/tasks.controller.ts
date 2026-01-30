@@ -63,6 +63,7 @@ import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorat
 import { TasksScopes } from './tasks.scopes';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
+import { CurrentRunId } from 'src/auth/guards/decorators/current-run-id.decorator';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
@@ -415,10 +416,11 @@ export class TasksController {
   async handleMcp(
     @CurrentUser() user: UserContext,
     @CurrentAuth() authContext: AuthContext,
+    @CurrentRunId() runId: string | undefined,
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    await this.gateway.handleRequest(req, res, user, authContext);
+    await this.gateway.handleRequest(req, res, user, authContext, runId);
   }
 
   private mapCommentResultToResponse(

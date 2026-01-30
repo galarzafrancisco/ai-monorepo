@@ -2952,6 +2952,652 @@
         ]
       }
     },
+    "/api/v1/agent-runs": {
+      "post": {
+        "operationId": "AgentRunsController_createAgentRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentRunDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Agent run created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new agent run",
+        "tags": [
+          "AgentRun"
+        ]
+      },
+      "get": {
+        "operationId": "AgentRunsController_listAgentRuns",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by actor ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "parentTaskId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by parent task ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174001",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of agent runs retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List agent runs with optional filters",
+        "tags": [
+          "AgentRun"
+        ]
+      }
+    },
+    "/api/v1/agent-runs/{runId}": {
+      "get": {
+        "operationId": "AgentRunsController_getAgentRunById",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "Agent run ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agent run retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Agent run not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get an agent run by ID",
+        "tags": [
+          "AgentRun"
+        ]
+      },
+      "patch": {
+        "operationId": "AgentRunsController_updateAgentRun",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "Agent run ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAgentRunDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Agent run updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Agent run not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update an agent run",
+        "tags": [
+          "AgentRun"
+        ]
+      }
+    },
+    "/api/v1/threads": {
+      "post": {
+        "operationId": "ThreadsController_createThread",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateThreadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Thread created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new thread",
+        "tags": [
+          "Threads"
+        ]
+      },
+      "get": {
+        "operationId": "ThreadsController_listThreads",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-based)",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of threads",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all threads with lightweight retrieval",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}": {
+      "patch": {
+        "operationId": "ThreadsController_updateThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateThreadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update thread title",
+        "tags": [
+          "Threads"
+        ]
+      },
+      "get": {
+        "operationId": "ThreadsController_getThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thread found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a thread by ID with full details",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/tasks": {
+      "post": {
+        "operationId": "ThreadsController_attachTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task attached successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread or task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Attach a task to the thread",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/context-blocks": {
+      "post": {
+        "operationId": "ThreadsController_referenceContextBlock",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferenceContextBlockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Context block referenced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread or context block not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Reference a context block in the thread",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/tags": {
+      "post": {
+        "operationId": "ThreadsController_addTagToThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag added to thread successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Add a tag to a thread",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/tags/{tagId}": {
+      "delete": {
+        "operationId": "ThreadsController_removeTagFromThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag removed from thread successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Remove a tag from a thread",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/participants": {
+      "post": {
+        "operationId": "ThreadsController_addParticipant",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddParticipantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Participant added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread or actor not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Add a participant to the thread",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/context/blocks": {
       "post": {
         "operationId": "ContextController_createBlock",
@@ -3996,652 +4642,6 @@
         "summary": "Revoke an agent token",
         "tags": [
           "Agent Tokens"
-        ]
-      }
-    },
-    "/api/v1/agent-runs": {
-      "post": {
-        "operationId": "AgentRunsController_createAgentRun",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAgentRunDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Agent run created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentRunResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new agent run",
-        "tags": [
-          "AgentRun"
-        ]
-      },
-      "get": {
-        "operationId": "AgentRunsController_listAgentRuns",
-        "parameters": [
-          {
-            "name": "actorId",
-            "required": false,
-            "in": "query",
-            "description": "Filter by actor ID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          },
-          {
-            "name": "parentTaskId",
-            "required": false,
-            "in": "query",
-            "description": "Filter by parent task ID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174001",
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number (1-indexed)",
-            "schema": {
-              "default": 1,
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of items per page",
-            "schema": {
-              "default": 20,
-              "example": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of agent runs retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentRunListResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List agent runs with optional filters",
-        "tags": [
-          "AgentRun"
-        ]
-      }
-    },
-    "/api/v1/agent-runs/{runId}": {
-      "get": {
-        "operationId": "AgentRunsController_getAgentRunById",
-        "parameters": [
-          {
-            "name": "runId",
-            "required": true,
-            "in": "path",
-            "description": "Agent run ID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Agent run retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentRunResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Agent run not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get an agent run by ID",
-        "tags": [
-          "AgentRun"
-        ]
-      },
-      "patch": {
-        "operationId": "AgentRunsController_updateAgentRun",
-        "parameters": [
-          {
-            "name": "runId",
-            "required": true,
-            "in": "path",
-            "description": "Agent run ID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAgentRunDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Agent run updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentRunResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Agent run not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Update an agent run",
-        "tags": [
-          "AgentRun"
-        ]
-      }
-    },
-    "/api/v1/threads": {
-      "post": {
-        "operationId": "ThreadsController_createThread",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateThreadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Thread created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new thread",
-        "tags": [
-          "Threads"
-        ]
-      },
-      "get": {
-        "operationId": "ThreadsController_listThreads",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number (1-based)",
-            "schema": {
-              "minimum": 1,
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of items per page",
-            "schema": {
-              "minimum": 1,
-              "maximum": 200,
-              "example": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Paginated list of threads",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadListResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List all threads with lightweight retrieval",
-        "tags": [
-          "Threads"
-        ]
-      }
-    },
-    "/api/v1/threads/{id}": {
-      "patch": {
-        "operationId": "ThreadsController_updateThread",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Thread UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateThreadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Thread updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Thread not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Update thread title",
-        "tags": [
-          "Threads"
-        ]
-      },
-      "get": {
-        "operationId": "ThreadsController_getThread",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Thread UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Thread found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Thread not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get a thread by ID with full details",
-        "tags": [
-          "Threads"
-        ]
-      }
-    },
-    "/api/v1/threads/{id}/tasks": {
-      "post": {
-        "operationId": "ThreadsController_attachTask",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Thread UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AttachTaskDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Task attached successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Thread or task not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Attach a task to the thread",
-        "tags": [
-          "Threads"
-        ]
-      }
-    },
-    "/api/v1/threads/{id}/context-blocks": {
-      "post": {
-        "operationId": "ThreadsController_referenceContextBlock",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Thread UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReferenceContextBlockDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Context block referenced successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Thread or context block not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Reference a context block in the thread",
-        "tags": [
-          "Threads"
-        ]
-      }
-    },
-    "/api/v1/threads/{id}/tags": {
-      "post": {
-        "operationId": "ThreadsController_addTagToThread",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Thread UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTagDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tag added to thread successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Thread not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Add a tag to a thread",
-        "tags": [
-          "Threads"
-        ]
-      }
-    },
-    "/api/v1/threads/{id}/tags/{tagId}": {
-      "delete": {
-        "operationId": "ThreadsController_removeTagFromThread",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tagId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Tag removed from thread successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Thread not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Remove a tag from a thread",
-        "tags": [
-          "Threads"
-        ]
-      }
-    },
-    "/api/v1/threads/{id}/participants": {
-      "post": {
-        "operationId": "ThreadsController_addParticipant",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Thread UUID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddParticipantDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Participant added successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThreadResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid input data"
-          },
-          "404": {
-            "description": "Thread or actor not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Add a participant to the thread",
-        "tags": [
-          "Threads"
         ]
       }
     }
@@ -6873,6 +6873,502 @@
           "answer"
         ]
       },
+      "CreateAgentRunDto": {
+        "type": "object",
+        "properties": {
+          "parentTaskId": {
+            "type": "string",
+            "description": "UUID of the parent task being executed",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          }
+        },
+        "required": [
+          "parentTaskId"
+        ]
+      },
+      "TaskInfoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Task name",
+            "example": "Implement authentication"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "AgentRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the agent run",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "UUID of the actor (agent) running",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "actor": {
+            "description": "Actor information",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "parentTaskId": {
+            "type": "string",
+            "description": "UUID of the parent task being executed",
+            "example": "123e4567-e89b-12d3-a456-426614174002"
+          },
+          "parentTask": {
+            "description": "Parent task information",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TaskInfoDto"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Run creation timestamp",
+            "example": "2026-01-30T10:30:00.000Z"
+          },
+          "startedAt": {
+            "type": "object",
+            "description": "Timestamp when the run started",
+            "example": "2026-01-30T10:30:00.000Z",
+            "nullable": true
+          },
+          "endedAt": {
+            "type": "object",
+            "description": "Timestamp when the run ended",
+            "example": "2026-01-30T10:45:00.000Z",
+            "nullable": true
+          },
+          "lastPing": {
+            "type": "object",
+            "description": "Timestamp of the last ping/heartbeat",
+            "example": "2026-01-30T10:40:00.000Z",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "actorId",
+          "parentTaskId",
+          "createdAt"
+        ]
+      },
+      "AgentRunListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of agent runs",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentRunResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total count of agent runs",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "UpdateAgentRunDto": {
+        "type": "object",
+        "properties": {
+          "startedAt": {
+            "type": "string",
+            "description": "Timestamp when the run started",
+            "example": "2026-01-30T10:30:00.000Z",
+            "nullable": true
+          },
+          "endedAt": {
+            "type": "string",
+            "description": "Timestamp when the run ended",
+            "example": "2026-01-30T10:45:00.000Z",
+            "nullable": true
+          },
+          "lastPing": {
+            "type": "string",
+            "description": "Timestamp of the last ping/heartbeat",
+            "example": "2026-01-30T10:40:00.000Z",
+            "nullable": true
+          }
+        }
+      },
+      "CreateThreadDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the thread. If not provided, will be auto-generated.",
+            "example": "Implement authentication feature"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with the thread",
+            "example": [
+              "bug",
+              "urgent"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "taskIds": {
+            "description": "Array of task IDs to attach to this thread",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contextBlockIds": {
+            "description": "Array of context block IDs to reference in this thread",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "participantActorIds": {
+            "description": "Array of actor IDs to add as participants",
+            "example": [
+              "actor-uuid-1",
+              "actor-uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TaskSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Task name",
+            "example": "Implement user authentication"
+          },
+          "description": {
+            "type": "string",
+            "description": "Task description",
+            "example": "Add JWT-based authentication to the API"
+          },
+          "status": {
+            "type": "string",
+            "description": "Task status",
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "FOR_REVIEW",
+              "DONE"
+            ],
+            "example": "IN_PROGRESS"
+          },
+          "assigneeActor": {
+            "description": "Assignee actor details",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "createdByActor": {
+            "description": "Creator actor details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "tags": {
+            "description": "Tags associated with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagResponseDto"
+            }
+          },
+          "commentCount": {
+            "type": "number",
+            "description": "Number of comments on the task",
+            "example": 5
+          },
+          "inputRequests": {
+            "description": "Input requests associated with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InputRequestResponseDto"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Task last update timestamp",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "createdByActor",
+          "tags",
+          "commentCount",
+          "inputRequests",
+          "updatedAt"
+        ]
+      },
+      "ContextBlockSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Context block ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Context block title",
+            "example": "API Design Documentation"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "ThreadResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Thread ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Thread title",
+            "example": "Implement authentication feature"
+          },
+          "createdByActor": {
+            "description": "Actor who created the thread",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "tasks": {
+            "description": "Tasks attached to this thread",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskSummaryResponseDto"
+            }
+          },
+          "referencedContextBlocks": {
+            "description": "Context blocks referenced in this thread",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextBlockSummaryResponseDto"
+            }
+          },
+          "tags": {
+            "description": "Tags associated with this thread",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetaTagResponseDto"
+            }
+          },
+          "participants": {
+            "description": "Participants in this thread",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActorResponseDto"
+            }
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the thread was created",
+            "example": "2024-01-15T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When the thread was last updated",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdByActor",
+          "tasks",
+          "referencedContextBlocks",
+          "tags",
+          "participants",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateThreadDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Updated title of the thread",
+            "example": "Updated authentication feature implementation"
+          }
+        }
+      },
+      "ThreadListItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Thread ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "title": {
+            "type": "string",
+            "description": "Thread title",
+            "example": "Implement authentication feature"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "ThreadListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Array of thread list items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadListItemResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of threads",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "AttachTaskDto": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "description": "Task UUID to attach to the thread",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "taskId"
+        ]
+      },
+      "ReferenceContextBlockDto": {
+        "type": "object",
+        "properties": {
+          "contextBlockId": {
+            "type": "string",
+            "description": "Context block UUID to reference in the thread",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "contextBlockId"
+        ]
+      },
+      "AddParticipantDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "description": "Actor UUID to add as a participant",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "actorId"
+        ]
+      },
       "CreateBlockDto": {
         "type": "object",
         "properties": {
@@ -7785,502 +8281,6 @@
           "expiresAt",
           "createdAt",
           "isValid"
-        ]
-      },
-      "CreateAgentRunDto": {
-        "type": "object",
-        "properties": {
-          "parentTaskId": {
-            "type": "string",
-            "description": "UUID of the parent task being executed",
-            "example": "123e4567-e89b-12d3-a456-426614174001"
-          }
-        },
-        "required": [
-          "parentTaskId"
-        ]
-      },
-      "TaskInfoDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Task ID",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Task name",
-            "example": "Implement authentication"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ]
-      },
-      "AgentRunResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for the agent run",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "actorId": {
-            "type": "string",
-            "description": "UUID of the actor (agent) running",
-            "example": "123e4567-e89b-12d3-a456-426614174001"
-          },
-          "actor": {
-            "description": "Actor information",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
-          "parentTaskId": {
-            "type": "string",
-            "description": "UUID of the parent task being executed",
-            "example": "123e4567-e89b-12d3-a456-426614174002"
-          },
-          "parentTask": {
-            "description": "Parent task information",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TaskInfoDto"
-              }
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Run creation timestamp",
-            "example": "2026-01-30T10:30:00.000Z"
-          },
-          "startedAt": {
-            "type": "object",
-            "description": "Timestamp when the run started",
-            "example": "2026-01-30T10:30:00.000Z",
-            "nullable": true
-          },
-          "endedAt": {
-            "type": "object",
-            "description": "Timestamp when the run ended",
-            "example": "2026-01-30T10:45:00.000Z",
-            "nullable": true
-          },
-          "lastPing": {
-            "type": "object",
-            "description": "Timestamp of the last ping/heartbeat",
-            "example": "2026-01-30T10:40:00.000Z",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "actorId",
-          "parentTaskId",
-          "createdAt"
-        ]
-      },
-      "AgentRunListResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "List of agent runs",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AgentRunResponseDto"
-            }
-          },
-          "total": {
-            "type": "number",
-            "description": "Total count of agent runs",
-            "example": 42
-          },
-          "page": {
-            "type": "number",
-            "description": "Current page number",
-            "example": 1
-          },
-          "limit": {
-            "type": "number",
-            "description": "Items per page",
-            "example": 20
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "limit"
-        ]
-      },
-      "UpdateAgentRunDto": {
-        "type": "object",
-        "properties": {
-          "startedAt": {
-            "type": "string",
-            "description": "Timestamp when the run started",
-            "example": "2026-01-30T10:30:00.000Z",
-            "nullable": true
-          },
-          "endedAt": {
-            "type": "string",
-            "description": "Timestamp when the run ended",
-            "example": "2026-01-30T10:45:00.000Z",
-            "nullable": true
-          },
-          "lastPing": {
-            "type": "string",
-            "description": "Timestamp of the last ping/heartbeat",
-            "example": "2026-01-30T10:40:00.000Z",
-            "nullable": true
-          }
-        }
-      },
-      "CreateThreadDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Title of the thread. If not provided, will be auto-generated.",
-            "example": "Implement authentication feature"
-          },
-          "tagNames": {
-            "description": "Array of tag names to associate with the thread",
-            "example": [
-              "bug",
-              "urgent"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "taskIds": {
-            "description": "Array of task IDs to attach to this thread",
-            "example": [
-              "uuid-1",
-              "uuid-2"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "contextBlockIds": {
-            "description": "Array of context block IDs to reference in this thread",
-            "example": [
-              "uuid-1",
-              "uuid-2"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "participantActorIds": {
-            "description": "Array of actor IDs to add as participants",
-            "example": [
-              "actor-uuid-1",
-              "actor-uuid-2"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "TaskSummaryResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Task ID",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Task name",
-            "example": "Implement user authentication"
-          },
-          "description": {
-            "type": "string",
-            "description": "Task description",
-            "example": "Add JWT-based authentication to the API"
-          },
-          "status": {
-            "type": "string",
-            "description": "Task status",
-            "enum": [
-              "NOT_STARTED",
-              "IN_PROGRESS",
-              "FOR_REVIEW",
-              "DONE"
-            ],
-            "example": "IN_PROGRESS"
-          },
-          "assigneeActor": {
-            "description": "Assignee actor details",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
-          "createdByActor": {
-            "description": "Creator actor details",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
-          "tags": {
-            "description": "Tags associated with the task",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TagResponseDto"
-            }
-          },
-          "commentCount": {
-            "type": "number",
-            "description": "Number of comments on the task",
-            "example": 5
-          },
-          "inputRequests": {
-            "description": "Input requests associated with the task",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/InputRequestResponseDto"
-            }
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Task last update timestamp",
-            "example": "2024-01-15T10:30:00Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "description",
-          "status",
-          "createdByActor",
-          "tags",
-          "commentCount",
-          "inputRequests",
-          "updatedAt"
-        ]
-      },
-      "ContextBlockSummaryResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Context block ID",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Context block title",
-            "example": "API Design Documentation"
-          }
-        },
-        "required": [
-          "id",
-          "title"
-        ]
-      },
-      "ThreadResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Thread ID",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Thread title",
-            "example": "Implement authentication feature"
-          },
-          "createdByActor": {
-            "description": "Actor who created the thread",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
-          "tasks": {
-            "description": "Tasks attached to this thread",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TaskSummaryResponseDto"
-            }
-          },
-          "referencedContextBlocks": {
-            "description": "Context blocks referenced in this thread",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ContextBlockSummaryResponseDto"
-            }
-          },
-          "tags": {
-            "description": "Tags associated with this thread",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MetaTagResponseDto"
-            }
-          },
-          "participants": {
-            "description": "Participants in this thread",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ActorResponseDto"
-            }
-          },
-          "rowVersion": {
-            "type": "number",
-            "description": "Row version for optimistic locking",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "When the thread was created",
-            "example": "2024-01-15T10:30:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "When the thread was last updated",
-            "example": "2024-01-15T10:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "createdByActor",
-          "tasks",
-          "referencedContextBlocks",
-          "tags",
-          "participants",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateThreadDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Updated title of the thread",
-            "example": "Updated authentication feature implementation"
-          }
-        }
-      },
-      "ThreadListItemResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Thread ID",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "title": {
-            "type": "string",
-            "description": "Thread title",
-            "example": "Implement authentication feature"
-          }
-        },
-        "required": [
-          "id",
-          "title"
-        ]
-      },
-      "ThreadListResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "Array of thread list items",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ThreadListItemResponseDto"
-            }
-          },
-          "total": {
-            "type": "number",
-            "description": "Total number of threads",
-            "example": 42
-          },
-          "page": {
-            "type": "number",
-            "description": "Current page number",
-            "example": 1
-          },
-          "limit": {
-            "type": "number",
-            "description": "Items per page",
-            "example": 20
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "Total number of pages",
-            "example": 3
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "limit",
-          "totalPages"
-        ]
-      },
-      "AttachTaskDto": {
-        "type": "object",
-        "properties": {
-          "taskId": {
-            "type": "string",
-            "description": "Task UUID to attach to the thread",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          }
-        },
-        "required": [
-          "taskId"
-        ]
-      },
-      "ReferenceContextBlockDto": {
-        "type": "object",
-        "properties": {
-          "contextBlockId": {
-            "type": "string",
-            "description": "Context block UUID to reference in the thread",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          }
-        },
-        "required": [
-          "contextBlockId"
-        ]
-      },
-      "AddParticipantDto": {
-        "type": "object",
-        "properties": {
-          "actorId": {
-            "type": "string",
-            "description": "Actor UUID to add as a participant",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          }
-        },
-        "required": [
-          "actorId"
         ]
       }
     }
