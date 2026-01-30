@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ThreadsService } from './api';
-import type { Thread } from './types';
+import type { ThreadListItem, Thread } from './types';
 
 export const useThreads = () => {
   // UI feedback
@@ -8,7 +8,7 @@ export const useThreads = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Data store
-  const [threads, setThreads] = useState<Thread[]>([]);
+  const [threads, setThreads] = useState<ThreadListItem[]>([]);
 
   // Boot
   useEffect(() => {
@@ -29,6 +29,11 @@ export const useThreads = () => {
     }
   };
 
+  // Get single thread with full details
+  const getThread = useCallback(async (id: string): Promise<Thread> => {
+    return await ThreadsService.getThread(id);
+  }, []);
+
   return {
     // UI feedback
     isLoading,
@@ -37,5 +42,6 @@ export const useThreads = () => {
     // Data
     threads,
     loadThreads,
+    getThread,
   };
 };

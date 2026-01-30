@@ -1,0 +1,6 @@
+.thread-context-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+}

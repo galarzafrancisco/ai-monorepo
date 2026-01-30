@@ -1,7 +1,3 @@
-// Thread types will be defined here
-export interface Thread {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export types from shared package
+export type { ThreadListItemResponseDto as ThreadListItem } from 'shared';
+export type { ThreadResponseDto as Thread } from 'shared';

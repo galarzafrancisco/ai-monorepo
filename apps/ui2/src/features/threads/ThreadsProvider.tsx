@@ -1,20 +1,21 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useThreads } from "./useThreads";
-import type { Thread } from "./types";
+import type { ThreadListItem, Thread } from "./types";
 
 // Shape this to match what pages/layout need.
 export type ThreadsContextValue = {
-  threads: Thread[];
+  threads: ThreadListItem[];
   isLoading: boolean;
   error: string | null;
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
+  getThread: (id: string) => Promise<Thread>;
 };
 
 const ThreadsContext = createContext<ThreadsContextValue | null>(null);
 
 export function ThreadsProvider({ children }: { children: React.ReactNode }) {
-  const { threads, isLoading, error } = useThreads();
+  const { threads, isLoading, error, getThread } = useThreads();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Provide a stable reference to avoid pointless rerenders.
@@ -25,6 +26,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       error,
       sectionTitle,
       setSectionTitle,
+      getThread,
     };
   }, [
     threads,
@@ -32,6 +34,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     error,
     sectionTitle,
     setSectionTitle,
+    getThread,
   ]);
 
   return <ThreadsContext.Provider value={value}>{children}</ThreadsContext.Provider>;
