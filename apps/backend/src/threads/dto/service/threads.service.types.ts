@@ -25,9 +25,14 @@ export type TagResult = {
 export type TaskSummaryResult = {
   id: string;
   name: string;
+  description: string;
   status: TaskStatus;
   assigneeActor: ActorResult | null;
   createdByActor: ActorResult;
+  tags: TagResult[];
+  commentCount: number;
+  inputRequests: any[]; // InputRequestEntity type
+  updatedAt: Date;
 };
 
 export type ContextBlockSummaryResult = {

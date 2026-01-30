@@ -353,6 +353,9 @@ export class ThreadsService {
         'tasks',
         'tasks.assigneeActor',
         'tasks.createdByActor',
+        'tasks.tags',
+        'tasks.comments',
+        'tasks.inputRequests',
         'referencedContextBlocks',
         'tags',
         'participants',
@@ -418,6 +421,7 @@ export class ThreadsService {
     return {
       id: task.id,
       name: task.name,
+      description: task.description,
       status: task.status,
       assigneeActor: task.assigneeActor
         ? this.mapActorToResult(task.assigneeActor)
@@ -425,6 +429,10 @@ export class ThreadsService {
       createdByActor: task.createdByActor
         ? this.mapActorToResult(task.createdByActor)
         : ({} as ActorResult), // Should always be present
+      tags: (task.tags || []).map((tag) => this.mapTagToResult(tag)),
+      commentCount: task.comments?.length || 0,
+      inputRequests: task.inputRequests || [],
+      updatedAt: task.updatedAt,
     };
   }
 

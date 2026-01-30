@@ -284,11 +284,16 @@ export class ThreadsController {
     return {
       id: result.id,
       name: result.name,
+      description: result.description,
       status: result.status,
       assigneeActor: result.assigneeActor
         ? this.mapActorResultToResponse(result.assigneeActor)
         : null,
       createdByActor: this.mapActorResultToResponse(result.createdByActor),
+      tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
+      commentCount: result.commentCount,
+      inputRequests: result.inputRequests,
+      updatedAt: result.updatedAt.toISOString(),
     };
   }
 

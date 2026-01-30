@@ -7653,6 +7653,11 @@
             "description": "Task name",
             "example": "Implement user authentication"
           },
+          "description": {
+            "type": "string",
+            "description": "Task description",
+            "example": "Add JWT-based authentication to the API"
+          },
           "status": {
             "type": "string",
             "description": "Task status",
@@ -7680,13 +7685,42 @@
                 "$ref": "#/components/schemas/ActorResponseDto"
               }
             ]
+          },
+          "tags": {
+            "description": "Tags associated with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagResponseDto"
+            }
+          },
+          "commentCount": {
+            "type": "number",
+            "description": "Number of comments on the task",
+            "example": 5
+          },
+          "inputRequests": {
+            "description": "Input requests associated with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InputRequestResponseDto"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Task last update timestamp",
+            "example": "2024-01-15T10:30:00Z"
           }
         },
         "required": [
           "id",
           "name",
+          "description",
           "status",
-          "createdByActor"
+          "createdByActor",
+          "tags",
+          "commentCount",
+          "inputRequests",
+          "updatedAt"
         ]
       },
       "ContextBlockSummaryResponseDto": {

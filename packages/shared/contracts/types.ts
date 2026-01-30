@@ -3453,6 +3453,11 @@ export interface components {
              */
             name: string;
             /**
+             * @description Task description
+             * @example Add JWT-based authentication to the API
+             */
+            description: string;
+            /**
              * @description Task status
              * @example IN_PROGRESS
              * @enum {string}
@@ -3462,6 +3467,20 @@ export interface components {
             assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
             /** @description Creator actor details */
             createdByActor: components["schemas"]["ActorResponseDto"];
+            /** @description Tags associated with the task */
+            tags: components["schemas"]["TagResponseDto"][];
+            /**
+             * @description Number of comments on the task
+             * @example 5
+             */
+            commentCount: number;
+            /** @description Input requests associated with the task */
+            inputRequests: components["schemas"]["InputRequestResponseDto"][];
+            /**
+             * @description Task last update timestamp
+             * @example 2024-01-15T10:30:00Z
+             */
+            updatedAt: string;
         };
         ContextBlockSummaryResponseDto: {
             /**

@@ -1,44 +1,60 @@
-import { Card, Text, Avatar } from "../../ui/primitives";
+import { Avatar, BoardCard } from "../../ui/primitives";
 import { TaskSummaryResponseDto } from "shared";
+import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { useNavigate } from "react-router-dom";
 import "./ThreadTaskCard.css";
-
-const STATUS_LABELS: Record<TaskSummaryResponseDto.status, string> = {
-  [TaskSummaryResponseDto.status.NOT_STARTED]: "Not Started",
-  [TaskSummaryResponseDto.status.IN_PROGRESS]: "In Progress",
-  [TaskSummaryResponseDto.status.FOR_REVIEW]: "For Review",
-  [TaskSummaryResponseDto.status.DONE]: "Done",
-};
 
 export function ThreadTaskCard({
   task,
 }: {
   task: TaskSummaryResponseDto;
 }): JSX.Element {
+  const navigate = useNavigate();
+
+  // Build tags array similar to TaskCard
+  const tags = task.tags.map((tag) => ({ label: tag.name }));
+  if (task.commentCount > 0) {
+    tags.push({
+      label: `💬 ${task.commentCount}`,
+    });
+  }
+  const openQuestions = task.inputRequests.filter((i) => !i.resolvedAt).length;
+  if (openQuestions > 0) {
+    tags.push({
+      label: `✋ ${openQuestions}`,
+    });
+  }
+
+  const handleClick = () => {
+    navigate(`/tasks/task/${task.id}`);
+  };
+
   return (
-    <Card className="thread-task-card">
-      <div className="thread-task-card__header">
+    <BoardCard
+      leading={
         <Avatar
           name={task.createdByActor.displayName}
-          size="sm"
+          size="md"
           src={task.createdByActor.avatarUrl || undefined}
         />
-        <Text size="1" tone="muted">
-          #{task.id.slice(0, 6)}
-        </Text>
-      </div>
-      <Text size="2" weight="semibold">
-        {task.name}
-      </Text>
-      <div className="thread-task-card__footer">
-        <Text size="1" tone="muted">
-          {STATUS_LABELS[task.status]}
-        </Text>
-        {task.assigneeActor && (
-          <Text size="1" tone="muted">
-            @{task.assigneeActor.slug}
-          </Text>
-        )}
-      </div>
-    </Card>
+      }
+      topRight={elapsedTime(task.updatedAt)}
+      tags={tags}
+      onClick={handleClick}
+      highlight={openQuestions > 0}
+      footer={
+        <>
+          <span className="row-detail truncate">#{task.id.slice(0, 6)}</span>
+          <span className="row-detail truncate">
+            {task.assigneeActor
+              ? `Assigned: @${task.assigneeActor.slug}`
+              : "unassigned"}
+          </span>
+        </>
+      }
+    >
+      <div className="row-title truncate">{task.name}</div>
+      <div className="row-subtitle truncate">{task.description}</div>
+    </BoardCard>
   );
 }
