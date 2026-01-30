@@ -1,9 +1,11 @@
 // agentApiClient.ts
 import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
 import { CreateCommentDto } from "../../backend/src/tasks/dto/create-comment.dto.js";
+import { AgentRunResponseDto } from "../../backend/src/agent-runs/dto/agent-run-response.dto.js";
+import { CreateAgentRunDto } from "../../backend/src/agent-runs/dto/create-agent-run.dto.js";
 import { ProjectResponseDto } from "@taico/shared/client";
 
-export class Traff {
+export class Taico {
   constructor(
     private readonly baseUrl: string,
     private readonly accessToken: string,
@@ -129,5 +131,32 @@ export class Traff {
 
     const project = await res.json() as ProjectResponseDto;
     return project;
+  }
+
+  async startRun(taskId: string): Promise<AgentRunResponseDto | null> {
+    const url = `${this.baseUrl}/api/v1/agent-runs`;
+
+    const payload: CreateAgentRunDto = {
+      parentTaskId: taskId,
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        authorization: `Bearer ${this.accessToken}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    // Most APIs return 201 for successful POSTs, but allow 200 as well
+    if (res.status !== 200 && res.status !== 201) {
+      console.error(`Failed to post comment to task ${taskId}:`);
+    }
+
+    
+    const run = await res.json() as AgentRunResponseDto;
+    return run;
   }
 }

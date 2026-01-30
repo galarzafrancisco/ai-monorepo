@@ -1,6 +1,6 @@
 // Coordinator.ts
 import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
-import { Traff } from "./Traff.js";
+import { Taico } from "./Taico.js";
 import { ACCESS_TOKEN, AGENT_SLUG, BASE_URL } from "./helpers/config.js";
 import { prepareWorkspace } from "./helpers/prepareWorkspace.js";
 import { getSession, setSession } from "./helpers/sessionStore.js";
@@ -14,7 +14,7 @@ export class Coordinator {
 
   private ready: boolean = false;
   private transport: SocketIOTasksTransport;
-  private client: Traff;
+  private client: Taico;
 
   // Make transport
   constructor() {
@@ -27,7 +27,7 @@ export class Coordinator {
       }
     );
 
-    this.client = new Traff(BASE_URL, ACCESS_TOKEN);
+    this.client = new Taico(BASE_URL, ACCESS_TOKEN);
   }
 
   async connect(): Promise<boolean> {
@@ -147,6 +147,9 @@ export class Coordinator {
     }
 
     try {
+      const run = await this.client.startRun(task.id);
+      console.log(`Started Agent Run ID ${run?.id}`);
+      
       const results = await runner.run(
         {
           taskId: task.id,

@@ -6,8 +6,6 @@ import {
   Body,
   Param,
   Query,
-  HttpCode,
-  HttpStatus,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -36,6 +34,8 @@ import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { AgentRunsScopes } from './agent-runs.scopes';
+import { CurrentUser } from 'src/auth/guards/decorators/current-user.decorator';
+import type { UserContext } from 'src/auth/guards/context/auth-context.types';
 
 @ApiTags('AgentRun')
 @ApiCookieAuth('JWT-Cookie')
@@ -55,9 +55,10 @@ export class AgentRunsController {
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async createAgentRun(
     @Body() dto: CreateAgentRunDto,
+    @CurrentUser() user: UserContext,
   ): Promise<AgentRunResponseDto> {
     const result = await this.agentRunsService.createAgentRun({
-      actorId: dto.actorId,
+      actorId: user.actorId,
       parentTaskId: dto.parentTaskId,
     });
     return this.mapResultToResponse(result);
