@@ -7664,12 +7664,6 @@
             ],
             "example": "IN_PROGRESS"
           },
-          "assignee": {
-            "type": "object",
-            "description": "Assignee slug",
-            "example": "john-doe",
-            "nullable": true
-          },
           "assigneeActor": {
             "description": "Assignee actor details",
             "nullable": true,

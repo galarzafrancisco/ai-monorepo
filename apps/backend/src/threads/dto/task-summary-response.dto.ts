@@ -23,13 +23,6 @@ export class TaskSummaryResponseDto {
   status!: TaskStatus;
 
   @ApiPropertyOptional({
-    description: 'Assignee slug',
-    example: 'john-doe',
-    nullable: true,
-  })
-  assignee!: string | null;
-
-  @ApiPropertyOptional({
     description: 'Assignee actor details',
     type: ActorResponseDto,
     nullable: true,

@@ -285,7 +285,6 @@ export class ThreadsController {
       id: result.id,
       name: result.name,
       status: result.status,
-      assignee: result.assignee,
       assigneeActor: result.assigneeActor
         ? this.mapActorResultToResponse(result.assigneeActor)
         : null,

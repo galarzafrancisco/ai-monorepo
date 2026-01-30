@@ -17,10 +17,6 @@ export type TaskSummaryResponseDto = {
      */
     status: TaskSummaryResponseDto.status;
     /**
-     * Assignee slug
-     */
-    assignee?: Record<string, any> | null;
-    /**
      * Assignee actor details
      */
     assigneeActor?: ActorResponseDto | null;

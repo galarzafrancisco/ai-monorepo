@@ -3458,11 +3458,6 @@ export interface components {
              * @enum {string}
              */
             status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
-            /**
-             * @description Assignee slug
-             * @example john-doe
-             */
-            assignee?: Record<string, never> | null;
             /** @description Assignee actor details */
             assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
             /** @description Creator actor details */

@@ -26,7 +26,6 @@ export type TaskSummaryResult = {
   id: string;
   name: string;
   status: TaskStatus;
-  assignee: string | null;
   assigneeActor: ActorResult | null;
   createdByActor: ActorResult;
 };

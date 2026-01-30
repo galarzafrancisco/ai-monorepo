@@ -419,7 +419,6 @@ export class ThreadsService {
       id: task.id,
       name: task.name,
       status: task.status,
-      assignee: task.assignee,
       assigneeActor: task.assigneeActor
         ? this.mapActorToResult(task.assigneeActor)
         : null,
