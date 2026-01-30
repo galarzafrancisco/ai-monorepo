@@ -409,6 +409,19 @@ export class TasksService {
       sessionId: assignedTask.sessionId,
     });
 
+    const thread = await this.threadsService.findThreadByTaskId(taskId);
+    if (thread) {
+      const isParticipant = thread.participants.some(
+        (participant) => participant.id === input.assigneeActorId,
+      );
+      if (!isParticipant) {
+        await this.threadsService.addParticipant(
+          thread.id,
+          input.assigneeActorId,
+        );
+      }
+    }
+
     this.eventEmitter.emit(
       'task.assigned',
       new TaskAssignedEvent({ id: actorId }, taskWithRelations!),
