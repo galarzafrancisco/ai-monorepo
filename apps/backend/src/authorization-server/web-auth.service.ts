@@ -19,6 +19,7 @@ import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { User } from 'src/identity-provider/user.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { ALL_WEB_SCOPES } from 'src/auth/core/scopes/all-web.scopes';
+import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
 
 @Injectable()
 export class WebAuthService {
@@ -103,6 +104,7 @@ export class WebAuthService {
     console.log(user.role)
     const scopes: Scope[] = [
       ...ALL_WEB_SCOPES,
+      ...ALL_MCP_REGISTRY_SCOPES,
       user.role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
     ];
 
