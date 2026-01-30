@@ -110,7 +110,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
           await this.userRepository.save(user);
           this.logger.log(`Linked user ${user.email} to actor ${actor.id}`);
         } catch (error) {
-          this.logger.error(`Failed to migrate user ${user.email}: ${error}`);
+          this.logger.error(`Failed to migrate user ${user.email}`);
         }
       }
     }
@@ -146,7 +146,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
           await this.agentRepository.save(agent);
           this.logger.log(`Linked agent ${agent.slug} to actor ${actor.id}`);
         } catch (error) {
-          this.logger.error(`Failed to migrate agent ${agent.slug}: ${error}`);
+          this.logger.error(`Failed to migrate agent ${agent.slug}`);
         }
       }
     }
@@ -253,7 +253,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     } catch (error) {
       if (!(error instanceof ScopeAlreadyExistsError)) {
         this.logger.error(
-          `Error ensuring scopes for MCP Server ${server.name}: ${error}`,
+          `Error ensuring scopes for MCP Server ${server.name}`,
         );
         throw error;
       }
@@ -270,8 +270,23 @@ export class AppInitRunner implements OnApplicationBootstrap {
     try {
       user = await this.identityProviderService.createUser(userConfig);
     } catch (error) {
-      console.log(error);
-      throw error;
+      // Maybe user already exists? Fetch
+      try {
+        user = await this.identityProviderService.getUserByEmail(userConfig.email);
+      } catch (error2) {
+        this.logger.log("Failed to create user");
+        throw error;
+      }
+    }
+    if (!user) {
+      return user
+    }
+
+    // update role
+    try {
+      await this.identityProviderService.updateUserRole(user.id, {role: userRole});
+    } catch (error) {
+      this.logger.log("Failed to update user role");
     }
     return user;
   }
@@ -282,7 +297,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.metaService.createTag({ name: 'prompt' });
       this.logger.log('Prompt tag ensured');
     } catch (error) {
-      this.logger.error('Error ensuring prompt tag exists', error);
+      this.logger.error('Error ensuring prompt tag exists');
     }
   }
 
@@ -325,7 +340,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
       this.logger.log('Prompt context blocks ensured');
     } catch (error) {
-      this.logger.error('Error ensuring prompt context blocks exist', error);
+      this.logger.error('Error ensuring prompt context blocks exist');
     }
   }
 }

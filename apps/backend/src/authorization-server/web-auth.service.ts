@@ -99,6 +99,8 @@ export class WebAuthService {
     const config = getConfig();
 
     // Determine scopes based on role
+    console.log("USER ROLE")
+    console.log(user.role)
     const scopes: Scope[] = [
       ...ALL_WEB_SCOPES,
       user.role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
