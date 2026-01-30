@@ -87,6 +87,8 @@ export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = fa
         );
         elements.push(element);
       });
+      // Skip creating a DaySummaryCard for today since tasks are already shown above
+      return;
     }
 
     // Past days: show summary card with expand/collapse
