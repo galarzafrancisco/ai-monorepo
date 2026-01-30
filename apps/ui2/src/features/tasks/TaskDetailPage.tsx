@@ -13,6 +13,7 @@ import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto, MetaTagResponseDto } from 'shared';
 import { TaskActivityItem } from './useTasks';
+import { TaskCard } from './TaskCard';
 import './TaskDetailPage.css';
 
 export function TaskDetailPage() {
@@ -215,6 +216,15 @@ export function TaskDetailPage() {
           {error}
         </ErrorText>
       )}
+
+      {/* Task Card - Similar to board view */}
+      <DataRowContainer className='task-detail-page__section'>
+        <TaskCard
+          task={task}
+          onClick={() => navigate(`/tasks/task/${task.id}`)}
+          pulseKey={activity?.ts}
+        />
+      </DataRowContainer>
 
       {/* Meta */}
       <DataRowContainer className='task-detail-page__section'>
