@@ -14,16 +14,11 @@ import { getConfig } from '../config/env.config';
 import { JwksService } from '../auth/crypto/jwks.service';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { Scope } from 'src/auth/core/types/scope.type';
-import { ALL_TASKS_SCOPES } from 'src/tasks/tasks.scopes';
-import { ALL_CONTEXT_SCOPES } from 'src/context/context.scopes';
-import { ALL_MCP_SCOPES } from 'src/auth/core/scopes/mcp.scopes';
 import { UserScopes } from 'src/auth/core/scopes/user.scopes';
-import { ALL_AGENTS_SCOPES } from 'src/agents/agents.scopes';
-import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
-import { ALL_META_SCOPES } from 'src/meta/meta.scopes';
 import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { User } from 'src/identity-provider/user.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
+import { ALL_WEB_SCOPES } from 'src/auth/core/scopes/all-web.scopes';
 
 @Injectable()
 export class WebAuthService {
@@ -105,12 +100,7 @@ export class WebAuthService {
 
     // Determine scopes based on role
     const scopes: Scope[] = [
-      ...ALL_TASKS_SCOPES,
-      ...ALL_CONTEXT_SCOPES,
-      ...ALL_AGENTS_SCOPES,
-      ...ALL_MCP_REGISTRY_SCOPES,
-      ...ALL_MCP_SCOPES,
-      ...ALL_META_SCOPES,
+      ...ALL_WEB_SCOPES,
       user.role === 'admin' ? UserScopes.ADMIN : UserScopes.STANDARD,
     ];
 
