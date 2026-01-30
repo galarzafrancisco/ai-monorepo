@@ -12,6 +12,7 @@ import { CreateTaskDto, AssignTaskDto } from 'shared';
 
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
+const TASKS_PAGE_SIZE = 100;
 
 
 type TaskActivityEvent = {
@@ -111,7 +112,7 @@ export const useTasks = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await TasksService.tasksControllerListTasks();
+      const response = await TasksService.tasksControllerListTasks(undefined, undefined, undefined, 1, TASKS_PAGE_SIZE);
       setTasks(sortTasks(response.items));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
