@@ -4,6 +4,7 @@ import { ALL_TASKS_SCOPES } from 'src/tasks/tasks.scopes';
 import { ALL_CONTEXT_SCOPES } from 'src/context/context.scopes';
 import { ALL_AGENTS_SCOPES } from 'src/agents/agents.scopes';
 import { ALL_MCP_SCOPES } from './mcp.scopes';
+import { ALL_THREADS_SCOPES } from 'src/threads/threads.scopes';
 
 export const ALL_API_SCOPES: Scope[] = [
   // Metadata
@@ -14,6 +15,8 @@ export const ALL_API_SCOPES: Scope[] = [
   ...ALL_CONTEXT_SCOPES,
   // Agents
   ...ALL_AGENTS_SCOPES,
+  // Threads
+  ...ALL_THREADS_SCOPES,
   // Permissions to use MCP
   ...ALL_MCP_SCOPES,
 ];

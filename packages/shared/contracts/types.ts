@@ -1160,10 +1160,114 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List threads (placeholder) */
+        /** List all threads with lightweight retrieval */
         get: operations["ThreadsController_listThreads"];
         put?: never;
+        /** Create a new thread */
+        post: operations["ThreadsController_createThread"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a thread by ID with full details */
+        get: operations["ThreadsController_getThread"];
+        put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update thread title */
+        patch: operations["ThreadsController_updateThread"];
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach a task to the thread */
+        post: operations["ThreadsController_attachTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/context-blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reference a context block in the thread */
+        post: operations["ThreadsController_referenceContextBlock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a tag to a thread */
+        post: operations["ThreadsController_addTagToThread"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a tag from a thread */
+        delete: operations["ThreadsController_removeTagFromThread"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/participants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a participant to the thread */
+        post: operations["ThreadsController_addParticipant"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3297,6 +3401,185 @@ export interface components {
              * @example true
              */
             isValid: boolean;
+        };
+        CreateThreadDto: {
+            /**
+             * @description Title of the thread. If not provided, will be auto-generated.
+             * @example Implement authentication feature
+             */
+            title?: string;
+            /**
+             * @description Array of tag names to associate with the thread
+             * @example [
+             *       "bug",
+             *       "urgent"
+             *     ]
+             */
+            tagNames?: string[];
+            /**
+             * @description Array of task IDs to attach to this thread
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            taskIds?: string[];
+            /**
+             * @description Array of context block IDs to reference in this thread
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            contextBlockIds?: string[];
+            /**
+             * @description Array of actor IDs to add as participants
+             * @example [
+             *       "actor-uuid-1",
+             *       "actor-uuid-2"
+             *     ]
+             */
+            participantActorIds?: string[];
+        };
+        TaskSummaryResponseDto: {
+            /**
+             * @description Task ID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Task name
+             * @example Implement user authentication
+             */
+            name: string;
+            /**
+             * @description Task status
+             * @example IN_PROGRESS
+             * @enum {string}
+             */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
+            /**
+             * @description Assignee slug
+             * @example john-doe
+             */
+            assignee?: Record<string, never> | null;
+            /** @description Assignee actor details */
+            assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
+            /** @description Creator actor details */
+            createdByActor: components["schemas"]["ActorResponseDto"];
+        };
+        ContextBlockSummaryResponseDto: {
+            /**
+             * @description Context block ID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Context block title
+             * @example API Design Documentation
+             */
+            title: string;
+        };
+        ThreadResponseDto: {
+            /**
+             * @description Thread ID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Thread title
+             * @example Implement authentication feature
+             */
+            title: string;
+            /** @description Actor who created the thread */
+            createdByActor: components["schemas"]["ActorResponseDto"];
+            /** @description Tasks attached to this thread */
+            tasks: components["schemas"]["TaskSummaryResponseDto"][];
+            /** @description Context blocks referenced in this thread */
+            referencedContextBlocks: components["schemas"]["ContextBlockSummaryResponseDto"][];
+            /** @description Tags associated with this thread */
+            tags: components["schemas"]["MetaTagResponseDto"][];
+            /** @description Participants in this thread */
+            participants: components["schemas"]["ActorResponseDto"][];
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description When the thread was created
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description When the thread was last updated
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdateThreadDto: {
+            /**
+             * @description Updated title of the thread
+             * @example Updated authentication feature implementation
+             */
+            title?: string;
+        };
+        ThreadListItemResponseDto: {
+            /**
+             * @description Thread ID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Thread title
+             * @example Implement authentication feature
+             */
+            title: string;
+        };
+        ThreadListResponseDto: {
+            /** @description Array of thread list items */
+            items: components["schemas"]["ThreadListItemResponseDto"][];
+            /**
+             * @description Total number of threads
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Items per page
+             * @example 20
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 3
+             */
+            totalPages: number;
+        };
+        AttachTaskDto: {
+            /**
+             * @description Task UUID to attach to the thread
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            taskId: string;
+        };
+        ReferenceContextBlockDto: {
+            /**
+             * @description Context block UUID to reference in the thread
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            contextBlockId: string;
+        };
+        AddParticipantDto: {
+            /**
+             * @description Actor UUID to add as a participant
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            actorId: string;
         };
     };
     responses: never;
@@ -6125,15 +6408,318 @@ export interface operations {
     };
     ThreadsController_listThreads: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (1-based) */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Returns list of threads */
+            /** @description Paginated list of threads */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadListResponseDto"];
+                };
+            };
+        };
+    };
+    ThreadsController_createThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateThreadDto"];
+            };
+        };
+        responses: {
+            /** @description Thread created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_getThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread found */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_updateThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateThreadDto"];
+            };
+        };
+        responses: {
+            /** @description Thread updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_attachTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachTaskDto"];
+            };
+        };
+        responses: {
+            /** @description Task attached successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread or task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_referenceContextBlock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReferenceContextBlockDto"];
+            };
+        };
+        responses: {
+            /** @description Context block referenced successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread or context block not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_addTagToThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagDto"];
+            };
+        };
+        responses: {
+            /** @description Tag added to thread successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_removeTagFromThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed from thread successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_addParticipant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddParticipantDto"];
+            };
+        };
+        responses: {
+            /** @description Participant added successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread or actor not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

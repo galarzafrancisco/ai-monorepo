@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from 'src/context/block.entity';
+import { ThreadEntity } from '../threads/thread.entity';
 
 @Entity({ name: 'tags' })
 export class TagEntity {
@@ -29,6 +30,11 @@ export class TagEntity {
     onDelete: 'CASCADE',
   })
   blocks!: ContextBlockEntity[];
+
+  @ManyToMany(() => ThreadEntity, (thread) => thread.tags, {
+    onDelete: 'CASCADE',
+  })
+  threads!: ThreadEntity[];
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
