@@ -13,6 +13,9 @@ export type AgentRunContext = {
 
   /** Arbitrary agent-specific config */
   options?: Record<string, any>;
+
+  /** For backend traceability */
+  runId: string;
 };
 
 export type AgentRunCallbacks = {

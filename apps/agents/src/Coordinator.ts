@@ -130,6 +130,13 @@ export class Coordinator {
     const workDir = await prepareWorkspace(task.id, agent.actorId, repoUrl);
     console.log(`- workspace prepped`);
 
+    const run = await this.client.startRun(task.id);
+    if (!run) {
+      console.error(`Failed to create a run ❌`);
+      return;
+    }
+    console.log(`Started Agent Run ID ${run.id}`);
+
     // Create agent runner
     let runner: BaseAgentRunner | null = null;
     if (agent.type === 'claude') {
@@ -147,14 +154,13 @@ export class Coordinator {
     }
 
     try {
-      const run = await this.client.startRun(task.id);
-      console.log(`Started Agent Run ID ${run?.id}`);
       
       const results = await runner.run(
         {
           taskId: task.id,
           prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
           cwd: workDir,
+          runId: run.id,
         },
         {
           onEvent: (message: string) => {

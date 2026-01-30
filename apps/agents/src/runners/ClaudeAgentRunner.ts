@@ -3,6 +3,8 @@ import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
+import { RUN_ID_HEADER } from "src/helpers/config.js";
+import { AgentRunContext } from "./AgentRunner.js";
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
@@ -10,10 +12,10 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
   private formatter = new ClaudeMessageFormatter();
 
   protected async runInternal(
-    ctx,
-    emit,
-    setSession,
-    onError?
+    ctx: AgentRunContext,
+    emit: (msg: string) => Promise<void>,
+    setSession: (id: string) => Promise<void>,
+    onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
 
     let finalResult = '';
@@ -30,7 +32,8 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
             type: "http",
             url: `${BASE_URL}/api/v1/tasks/tasks/mcp`,
             headers: {
-              Authorization: `Bearer ${ACCESS_TOKEN}`
+              Authorization: `Bearer ${ACCESS_TOKEN}`,
+              [RUN_ID_HEADER]: ctx.runId,
             },
           }
         }

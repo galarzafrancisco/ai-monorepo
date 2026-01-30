@@ -3,6 +3,8 @@ import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { LlmAgent, Runner, InMemorySessionService, MCPToolset } from "@google/adk";
 import { ADKMessageFormatter } from "src/formatters/ADKMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
+import { RUN_ID_HEADER } from "src/helpers/config.js";
+import { AgentRunContext } from "./AgentRunner.js";
 
 export class ADKAgentRunner extends BaseAgentRunner {
   readonly kind = 'adk';
@@ -12,10 +14,10 @@ export class ADKAgentRunner extends BaseAgentRunner {
   private sessionService = new InMemorySessionService();
   
   protected async runInternal(
-    ctx,
-    emit,
-    setSession,
-    onError?
+    ctx: AgentRunContext,
+    emit: (msg: string) => Promise<void>,
+    setSession: (id: string) => Promise<void>,
+    onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
     
     let finalResult = '';
@@ -37,7 +39,8 @@ export class ADKAgentRunner extends BaseAgentRunner {
           type: 'StreamableHTTPConnectionParams',
           url: `${BASE_URL}/api/v1/tasks/tasks/mcp`,
           header: {
-            Authorization: `Bearer ${ACCESS_TOKEN}`
+            Authorization: `Bearer ${ACCESS_TOKEN}`,
+            [RUN_ID_HEADER]: ctx.runId,
           },
         })
       ]

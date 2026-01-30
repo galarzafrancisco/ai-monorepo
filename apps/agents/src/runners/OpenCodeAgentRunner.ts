@@ -3,6 +3,8 @@ import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { createOpencode, createOpencodeServer, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
 import { OpencodeMessageFormatter } from "src/formatters/OpencodeMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
+import { RUN_ID_HEADER } from "src/helpers/config.js";
+import { AgentRunContext } from "./AgentRunner.js";
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind = 'opencode';
@@ -11,7 +13,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   private client: OpencodeClient | null = null;
   private close: () => void = () => { };
 
-  async init() {
+  async init({ runId }: { runId: string }) {
     console.log('Starting Opencode client');
 
     let lastError: unknown;
@@ -31,7 +33,8 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
                 type: "remote",
                 url: `${BASE_URL}/api/v1/tasks/tasks/mcp`,
                 headers: {
-                  Authorization: `Bearer ${ACCESS_TOKEN}`
+                  Authorization: `Bearer ${ACCESS_TOKEN}`,
+                  [RUN_ID_HEADER]: runId,
                 },
                 enabled: true,
               }
@@ -53,13 +56,13 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   }
 
   protected async runInternal(
-    ctx,
-    emit,
-    setSession,
-    onError?
+    ctx: AgentRunContext,
+    emit: (msg: string) => Promise<void>,
+    setSession: (id: string) => Promise<void>,
+    onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
     // Start client
-    await this.init();
+    await this.init({ runId: ctx.runId });
     if (!this.client) {
       throw new Error("Failed to create Opencode client");
     }
@@ -117,7 +120,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     const messages = this.formatter.format(response.info, response.parts);
     messages.forEach(emit);
 
-    
+
     console.log("---------- FINAL RESULT ----------");
     finalResult = this.formatter.format(response.info, [])[0];
     console.log(finalResult);

@@ -4,6 +4,8 @@ export const WORK_DIR = process.env.WORK_DIR || '';
 export const REPO = process.env.REPO || '';
 export const AGENT_SLUG = process.env.AGENT_SLUG || '';
 
+export const RUN_ID_HEADER = 'x-taico-run-id';
+
 if (!ACCESS_TOKEN) {
   console.error('env ACCESS_TOKEN not available');
   process.exit(1);

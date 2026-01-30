@@ -12,7 +12,6 @@ import {
   AddTagInput,
   ListThreadsInput,
   ThreadResult,
-  ThreadListItemResult,
   ListThreadsResult,
   ActorResult,
   TagResult,
