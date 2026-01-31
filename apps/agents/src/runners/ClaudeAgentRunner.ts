@@ -37,7 +37,14 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
             },
           }
         },
-        allowedTools: ['mcp__tasks__*'],
+        allowedTools: [
+          'mcp__tasks__*',
+          'SlashCommand',
+          'Bash',
+          'Read',
+          'Write',
+          'Edit',
+        ],
       },
     });
 
