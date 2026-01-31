@@ -36,7 +36,8 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
               [RUN_ID_HEADER]: ctx.runId,
             },
           }
-        }
+        },
+        allowedTools: ['mcp__tasks__*'],
       },
     });
 
