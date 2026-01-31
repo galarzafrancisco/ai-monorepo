@@ -220,18 +220,7 @@
 }
 
 .task-detail-page__edit-tags {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font-size: var(--fs-2);
-  color: var(--accent);
   cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.task-detail-page__edit-tags:hover {
-  color: var(--accent-hover);
 }
 
 /* Floating action button (FAB) for comments */

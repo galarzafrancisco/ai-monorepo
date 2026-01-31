@@ -154,7 +154,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags, onRemoveTag }: Ta
 
   return (
     <PopShell
-      title="Edit Tags"
+      title="Tags"
       onCancel={onCancel}
     >
       <div className="tag-search-pop">

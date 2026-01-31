@@ -247,12 +247,14 @@ export function TaskDetailPage() {
             {task.tags.map(tag => (
               <Chip key={tag.id}>{tag.name}</Chip>
             ))}
-            <button
+            <Text
+              size='1'
+              tone='muted'
               className="task-detail-page__edit-tags"
               onClick={() => setShowTagPop(true)}
             >
-              {task.tags.length === 0 ? '+ add tag' : 'edit tags'}
-            </button>
+              {task.tags.length === 0 ? '+ add tag' : 'tap to edit'}
+            </Text>
           </div>
         </DataRow>
 
