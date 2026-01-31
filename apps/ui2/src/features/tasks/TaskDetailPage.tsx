@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
-import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
@@ -223,7 +223,6 @@ export function TaskDetailPage() {
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
             StatusTag({ status: task.status }),
-            ...task.tags.map(tag => ({ label: tag.name })),
           ]}
           topRight={<Text size='1' tone='muted'>{elapsedTime(task.updatedAt)}</Text>}
         >
@@ -243,6 +242,17 @@ export function TaskDetailPage() {
           ) : (
             null
           )}
+          {/* Tags inline */}
+          <div className="task-detail-page__meta-tags">
+            {task.tags.map(tag => (
+              <Chip key={tag.id}>{tag.name}</Chip>
+            ))}
+            <span className="task-detail-page__edit-tags" onClick={() => setShowTagPop(true)}>
+              <Text size='1' tone='muted'>
+                {task.tags.length === 0 ? '+ add tag' : 'tap to edit'}
+              </Text>
+            </span>
+          </div>
         </DataRow>
 
         {/* Assignee */}
@@ -263,38 +273,6 @@ export function TaskDetailPage() {
           null
         )}
       </DataRowContainer >
-
-      {/* Tags */}
-      <DataRowContainer className='task-detail-page__section'>
-        <div className="task-detail-page__tags">
-          <Text size='2' weight='medium'>Tags</Text>
-          <div className="task-detail-page__tags-list">
-            {task.tags.length === 0 ? (
-              <Text size='2' tone='muted'>No tags</Text>
-            ) : (
-              task.tags.map(tag => (
-                <button
-                  key={tag.id}
-                  className="task-detail-page__tag"
-                  style={{ backgroundColor: tag.color || '#999' }}
-                  onClick={() => removeTag(tag.id)}
-                  title="Click to remove"
-                >
-                  {tag.name}
-                  <span className="task-detail-page__tag-remove">×</span>
-                </button>
-              ))
-            )}
-            <Button
-              size='sm'
-              variant='secondary'
-              onClick={() => setShowTagPop(true)}
-            >
-              + Add Tag
-            </Button>
-          </div>
-        </div>
-      </DataRowContainer>
 
       {/* Description */}
       <DataRowContainer className='task-detail-page__section' >
@@ -527,7 +505,7 @@ export function TaskDetailPage() {
       {/* Pops */}
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
-      {showTagPop ? <TagSearchPop onCancel={cancelTag} onSave={saveTag} existingTags={task.tags} /> : null}
+      {showTagPop ? <TagSearchPop onCancel={cancelTag} onSave={saveTag} existingTags={task.tags} onRemoveTag={removeTag} /> : null}
       {respondingToInputRequest ? (
         <AnswerInputRequestPop
           onCancel={cancelAnswerInputRequest}

@@ -1,20 +1,20 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { Text, DataRowTag } from "../../ui/primitives";
-import { MetaService, MetaTagResponseDto } from 'shared';
+import { Text, Chip } from "../../ui/primitives";
+import { MetaService, MetaTagResponseDto, TagResponseDto } from 'shared';
 import "./TagSearchPop.css";
 
 type TagSearchPopProps = {
   onCancel?: () => void;
   onSave: (tag: MetaTagResponseDto) => Promise<boolean>;
-  existingTags: { id: string }[]; // Tags already on the task (only id is used for filtering)
+  existingTags: TagResponseDto[]; // Tags already on the task (from task response)
+  onRemoveTag: (tagId: string) => void; // Handler to remove a tag
 };
 
-export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopProps) {
+export function TagSearchPop({ onCancel, onSave, existingTags, onRemoveTag }: TagSearchPopProps) {
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [query, setQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<MetaTagResponseDto | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -97,7 +97,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
     }
   }, [highlightedIndex, filteredTags.length, canCreateNew]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLInputElement>) => {
     const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
     if (totalItems === 0) return;
 
@@ -114,122 +114,111 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
         break;
       case 'Enter':
         e.preventDefault();
+        let tagToAdd: MetaTagResponseDto | null = null;
         if (highlightedIndex < filteredTags.length) {
-          setSelectedTag(filteredTags[highlightedIndex]);
+          tagToAdd = filteredTags[highlightedIndex];
         } else if (canCreateNew && highlightedIndex === filteredTags.length) {
           // Create new tag
-          setSelectedTag({
+          tagToAdd = {
             id: '', // Will be assigned by backend
             name: query.trim(),
             color: undefined,
             createdAt: '',
             updatedAt: '',
-          });
+          };
         }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        if (selectedTag) {
-          setSelectedTag(null);
+        if (tagToAdd) {
+          await onSave(tagToAdd);
+          // Don't clear the search - let user add more tags
         }
         break;
     }
-  }, [filteredTags, highlightedIndex, canCreateNew, selectedTag, query]);
+  }, [filteredTags, highlightedIndex, canCreateNew, query, onSave]);
 
-  const handleSelectTag = (tag: MetaTagResponseDto) => {
-    setSelectedTag(tag);
+  const handleSelectTag = async (tag: MetaTagResponseDto) => {
+    await onSave(tag);
+    // Don't clear the search - let user add more tags
   };
 
-  const handleCreateNew = () => {
-    setSelectedTag({
+  const handleCreateNew = async () => {
+    const newTag: MetaTagResponseDto = {
       id: '', // Will be assigned by backend
       name: query.trim(),
       color: undefined,
       createdAt: '',
       updatedAt: '',
-    });
+    };
+    await onSave(newTag);
+    // Don't clear the search - let user add more tags
   };
-
-  const handleClearSelection = () => {
-    setSelectedTag(null);
-    setQuery("");
-    inputRef.current?.focus();
-  };
-
-  async function handleSave(): Promise<boolean> {
-    if (!selectedTag) {
-      return false;
-    }
-    return onSave(selectedTag);
-  }
 
   return (
     <PopShell
-      title="Add Tag"
+      title="Tags"
       onCancel={onCancel}
-      onSave={handleSave}
     >
       <div className="tag-search-pop">
-        {/* Search input or selected tag display */}
-        {selectedTag ? (
-          <div className="tag-search-pop__selected" onClick={handleClearSelection}>
-            <div className="tag-search-pop__tag-badge" style={{ backgroundColor: selectedTag.color || '#999' }}>
-              {selectedTag.name}
-            </div>
-            <Text tone="muted" size="2" className="tag-search-pop__clear">tap to change</Text>
-          </div>
-        ) : (
-          <>
-            <input
-              ref={inputRef}
-              type="text"
-              className="tag-search-pop__input"
-              placeholder="Search or create tag..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
+        {/* Search input */}
+        <input
+          ref={inputRef}
+          type="text"
+          className="tag-search-pop__input"
+          placeholder="Search or create tag..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
 
-            {/* Dropdown list */}
-            <div className="tag-search-pop__list" ref={listRef}>
-              {isLoadingTags ? (
-                <div className="tag-search-pop__empty">
-                  <Text tone="muted">Loading tags...</Text>
-                </div>
-              ) : filteredTags.length === 0 && !canCreateNew ? (
-                <div className="tag-search-pop__empty">
-                  <Text tone="muted">No tags found</Text>
-                </div>
-              ) : (
-                <>
-                  {filteredTags.map((tag, index) => (
-                    <div
-                      key={tag.id}
-                      className={`tag-search-pop__item ${index === highlightedIndex ? 'tag-search-pop__item--highlighted' : ''}`}
-                      onClick={() => handleSelectTag(tag)}
-                      onMouseEnter={() => setHighlightedIndex(index)}
-                    >
-                      <div className="tag-search-pop__tag-badge" style={{ backgroundColor: tag.color || '#999' }}>
-                        {tag.name}
-                      </div>
-                    </div>
-                  ))}
-                  {canCreateNew && (
-                    <div
-                      className={`tag-search-pop__item tag-search-pop__item--create ${highlightedIndex === filteredTags.length ? 'tag-search-pop__item--highlighted' : ''}`}
-                      onClick={handleCreateNew}
-                      onMouseEnter={() => setHighlightedIndex(filteredTags.length)}
-                    >
-                      <Text size="2" tone="muted">Create new tag:</Text>
-                      <div className="tag-search-pop__tag-badge" style={{ backgroundColor: '#999' }}>
-                        {query.trim()}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+        {/* Dropdown list */}
+        <div className="tag-search-pop__list" ref={listRef}>
+          {isLoadingTags ? (
+            <div className="tag-search-pop__empty">
+              <Text tone="muted">Loading tags...</Text>
             </div>
-          </>
+          ) : filteredTags.length === 0 && !canCreateNew ? (
+            <div className="tag-search-pop__empty">
+              <Text tone="muted">No tags found</Text>
+            </div>
+          ) : (
+            <>
+              {filteredTags.map((tag, index) => (
+                <div
+                  key={tag.id}
+                  className={`tag-search-pop__item ${index === highlightedIndex ? 'tag-search-pop__item--highlighted' : ''}`}
+                  onClick={() => handleSelectTag(tag)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                >
+                  <Chip>{tag.name}</Chip>
+                </div>
+              ))}
+              {canCreateNew && (
+                <div
+                  className={`tag-search-pop__item tag-search-pop__item--create ${highlightedIndex === filteredTags.length ? 'tag-search-pop__item--highlighted' : ''}`}
+                  onClick={handleCreateNew}
+                  onMouseEnter={() => setHighlightedIndex(filteredTags.length)}
+                >
+                  <Text size="2" tone="muted">Create new tag:</Text>
+                  <Chip>{query.trim()}</Chip>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Existing tags at bottom */}
+        {existingTags.length > 0 && (
+          <div className="tag-search-pop__existing">
+            <div className="tag-search-pop__existing-list">
+              {existingTags.map(tag => (
+                <Chip
+                  key={tag.id}
+                  onRemove={() => onRemoveTag(tag.id)}
+                >
+                  {tag.name}
+                </Chip>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </PopShell>
