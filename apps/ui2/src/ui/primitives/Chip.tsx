@@ -9,14 +9,29 @@ export interface ChipProps {
   color?: "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple";
 
   className?: string;
+
+  /** Optional remove handler. When provided, shows an 'x' button */
+  onRemove?: () => void;
 }
 
 
 export function Chip(props: ChipProps) {
 
   return (
-    <span className={`chip chip--${props.color ?? "gray"}`}>
+    <span className={`chip chip--${props.color ?? "gray"} ${props.onRemove ? 'chip--removable' : ''}`}>
       {props.children}
+      {props.onRemove && (
+        <button
+          className="chip__remove"
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onRemove?.();
+          }}
+          aria-label="Remove"
+        >
+          ×
+        </button>
+      )}
     </span>
   )
 }

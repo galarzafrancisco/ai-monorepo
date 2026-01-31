@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { Text, DataRowTag } from "../../ui/primitives";
-import { MetaService, MetaTagResponseDto } from 'shared';
+import { Text, Chip } from "../../ui/primitives";
+import { MetaService, MetaTagResponseDto, TagResponseDto } from 'shared';
 import "./TagSearchPop.css";
 
 type TagSearchPopProps = {
   onCancel?: () => void;
   onSave: (tag: MetaTagResponseDto) => Promise<boolean>;
-  existingTags: { id: string }[]; // Tags already on the task (only id is used for filtering)
+  existingTags: TagResponseDto[]; // Tags already on the task (from task response)
+  onRemoveTag: (tagId: string) => void; // Handler to remove a tag
 };
 
-export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopProps) {
+export function TagSearchPop({ onCancel, onSave, existingTags, onRemoveTag }: TagSearchPopProps) {
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [query, setQuery] = useState("");
@@ -165,17 +166,32 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
 
   return (
     <PopShell
-      title="Add Tag"
+      title="Edit Tags"
       onCancel={onCancel}
       onSave={handleSave}
     >
       <div className="tag-search-pop">
+        {/* Existing tags */}
+        {existingTags.length > 0 && (
+          <div className="tag-search-pop__existing">
+            <Text size="2" weight="medium">Current tags:</Text>
+            <div className="tag-search-pop__existing-list">
+              {existingTags.map(tag => (
+                <Chip
+                  key={tag.id}
+                  onRemove={() => onRemoveTag(tag.id)}
+                >
+                  {tag.name}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Search input or selected tag display */}
         {selectedTag ? (
           <div className="tag-search-pop__selected" onClick={handleClearSelection}>
-            <div className="tag-search-pop__tag-badge" style={{ backgroundColor: selectedTag.color || '#999' }}>
-              {selectedTag.name}
-            </div>
+            <Chip>{selectedTag.name}</Chip>
             <Text tone="muted" size="2" className="tag-search-pop__clear">tap to change</Text>
           </div>
         ) : (
@@ -209,9 +225,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
                       onClick={() => handleSelectTag(tag)}
                       onMouseEnter={() => setHighlightedIndex(index)}
                     >
-                      <div className="tag-search-pop__tag-badge" style={{ backgroundColor: tag.color || '#999' }}>
-                        {tag.name}
-                      </div>
+                      <Chip>{tag.name}</Chip>
                     </div>
                   ))}
                   {canCreateNew && (
@@ -221,9 +235,7 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
                       onMouseEnter={() => setHighlightedIndex(filteredTags.length)}
                     >
                       <Text size="2" tone="muted">Create new tag:</Text>
-                      <div className="tag-search-pop__tag-badge" style={{ backgroundColor: '#999' }}>
-                        {query.trim()}
-                      </div>
+                      <Chip>{query.trim()}</Chip>
                     </div>
                   )}
                 </>

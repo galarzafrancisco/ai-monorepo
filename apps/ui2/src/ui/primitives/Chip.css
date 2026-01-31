@@ -10,6 +10,38 @@
   border: 1px solid var(--border);
   background: var(--chip-bg, transparent);
   color: var(--chip-fg, var(--text));
+  gap: 4px;
+}
+
+.chip--removable {
+  padding-right: 4px;
+}
+
+.chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--chip-fg, var(--text));
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.chip__remove:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.chip__remove:active {
+  background: rgba(0, 0, 0, 0.15);
 }
 
 /* chip color variants (tweak to your palette) */
