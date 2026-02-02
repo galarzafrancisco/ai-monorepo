@@ -2,9 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ActorResponseDto } from './ActorResponseDto';
-import type { ConnectionFlowResponseDto } from './ConnectionFlowResponseDto';
-import type { McpFlowResponseDto } from './McpFlowResponseDto';
+import type { ActorResponseDto } from './ActorResponseDto.js';
+import type { ConnectionFlowResponseDto } from './ConnectionFlowResponseDto.js';
+import type { McpFlowResponseDto } from './McpFlowResponseDto.js';
 export type AuthJourneyResponseDto = {
     /**
      * System-generated UUID for the authorization journey

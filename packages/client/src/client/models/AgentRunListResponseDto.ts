@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AgentRunResponseDto } from './AgentRunResponseDto';
+import type { AgentRunResponseDto } from './AgentRunResponseDto.js';
 export type AgentRunListResponseDto = {
     /**
      * List of agent runs

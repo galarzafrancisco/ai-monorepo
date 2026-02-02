@@ -2,12 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { ApiError } from './ApiError';
-import type { ApiRequestOptions } from './ApiRequestOptions';
-import type { ApiResult } from './ApiResult';
-import { CancelablePromise } from './CancelablePromise';
-import type { OnCancel } from './CancelablePromise';
-import type { OpenAPIConfig } from './OpenAPI';
+import { ApiError } from './ApiError.js';
+import type { ApiRequestOptions } from './ApiRequestOptions.js';
+import type { ApiResult } from './ApiResult.js';
+import { CancelablePromise } from './CancelablePromise.js';
+import type { OnCancel } from './CancelablePromise.js';
+import type { OpenAPIConfig } from './OpenAPI.js';
 
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;

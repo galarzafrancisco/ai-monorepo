@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ScopeDto } from './ScopeDto';
+import type { ScopeDto } from './ScopeDto.js';
 export type ScopesResponseDto = {
     /**
      * List of all available scopes in the system

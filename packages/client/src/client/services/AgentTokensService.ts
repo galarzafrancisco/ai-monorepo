@@ -2,12 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { IssueAccessTokenRequestDto } from '../models/IssueAccessTokenRequestDto';
-import type { IssueAccessTokenResponseDto } from '../models/IssueAccessTokenResponseDto';
-import type { IssuedAccessTokenResponseDto } from '../models/IssuedAccessTokenResponseDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { IssueAccessTokenRequestDto } from '../models/IssueAccessTokenRequestDto.js';
+import type { IssueAccessTokenResponseDto } from '../models/IssueAccessTokenResponseDto.js';
+import type { IssuedAccessTokenResponseDto } from '../models/IssuedAccessTokenResponseDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class AgentTokensService {
     /**
      * Issue a new access token for an agent

@@ -2,17 +2,17 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AddParticipantDto } from '../models/AddParticipantDto';
-import type { AttachTaskDto } from '../models/AttachTaskDto';
-import type { CreateTagDto } from '../models/CreateTagDto';
-import type { CreateThreadDto } from '../models/CreateThreadDto';
-import type { ReferenceContextBlockDto } from '../models/ReferenceContextBlockDto';
-import type { ThreadListResponseDto } from '../models/ThreadListResponseDto';
-import type { ThreadResponseDto } from '../models/ThreadResponseDto';
-import type { UpdateThreadDto } from '../models/UpdateThreadDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { AddParticipantDto } from '../models/AddParticipantDto.js';
+import type { AttachTaskDto } from '../models/AttachTaskDto.js';
+import type { CreateTagDto } from '../models/CreateTagDto.js';
+import type { CreateThreadDto } from '../models/CreateThreadDto.js';
+import type { ReferenceContextBlockDto } from '../models/ReferenceContextBlockDto.js';
+import type { ThreadListResponseDto } from '../models/ThreadListResponseDto.js';
+import type { ThreadResponseDto } from '../models/ThreadResponseDto.js';
+import type { UpdateThreadDto } from '../models/UpdateThreadDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class ThreadsService {
     /**
      * Create a new thread

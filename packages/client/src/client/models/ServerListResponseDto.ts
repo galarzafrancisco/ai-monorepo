@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ServerResponseDto } from './ServerResponseDto';
+import type { ServerResponseDto } from './ServerResponseDto.js';
 export type ServerListResponseDto = {
     /**
      * List of MCP servers

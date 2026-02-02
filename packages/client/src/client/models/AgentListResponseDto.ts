@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AgentResponseDto } from './AgentResponseDto';
+import type { AgentResponseDto } from './AgentResponseDto.js';
 export type AgentListResponseDto = {
     /**
      * List of agents

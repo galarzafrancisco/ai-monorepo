@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ContextTagResponseDto } from './ContextTagResponseDto';
+import type { ContextTagResponseDto } from './ContextTagResponseDto.js';
 export type BlockSummaryDto = {
     /**
      * Unique identifier for the block

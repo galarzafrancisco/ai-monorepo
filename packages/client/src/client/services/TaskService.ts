@@ -2,22 +2,22 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AnswerInputRequestDto } from '../models/AnswerInputRequestDto';
-import type { AssignTaskDto } from '../models/AssignTaskDto';
-import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto';
-import type { CommentResponseDto } from '../models/CommentResponseDto';
-import type { CreateCommentDto } from '../models/CreateCommentDto';
-import type { CreateInputRequestDto } from '../models/CreateInputRequestDto';
-import type { CreateTagDto } from '../models/CreateTagDto';
-import type { CreateTaskDto } from '../models/CreateTaskDto';
-import type { InputRequestResponseDto } from '../models/InputRequestResponseDto';
-import type { TaskListResponseDto } from '../models/TaskListResponseDto';
-import type { TaskResponseDto } from '../models/TaskResponseDto';
-import type { TaskSearchResultDto } from '../models/TaskSearchResultDto';
-import type { UpdateTaskDto } from '../models/UpdateTaskDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { AnswerInputRequestDto } from '../models/AnswerInputRequestDto.js';
+import type { AssignTaskDto } from '../models/AssignTaskDto.js';
+import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto.js';
+import type { CommentResponseDto } from '../models/CommentResponseDto.js';
+import type { CreateCommentDto } from '../models/CreateCommentDto.js';
+import type { CreateInputRequestDto } from '../models/CreateInputRequestDto.js';
+import type { CreateTagDto } from '../models/CreateTagDto.js';
+import type { CreateTaskDto } from '../models/CreateTaskDto.js';
+import type { InputRequestResponseDto } from '../models/InputRequestResponseDto.js';
+import type { TaskListResponseDto } from '../models/TaskListResponseDto.js';
+import type { TaskResponseDto } from '../models/TaskResponseDto.js';
+import type { TaskSearchResultDto } from '../models/TaskSearchResultDto.js';
+import type { UpdateTaskDto } from '../models/UpdateTaskDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class TaskService {
     /**
      * Create a new task

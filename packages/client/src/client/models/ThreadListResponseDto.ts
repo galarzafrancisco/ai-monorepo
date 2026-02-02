@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ThreadListItemResponseDto } from './ThreadListItemResponseDto';
+import type { ThreadListItemResponseDto } from './ThreadListItemResponseDto.js';
 export type ThreadListResponseDto = {
     /**
      * Array of thread list items

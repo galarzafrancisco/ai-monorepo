@@ -2,20 +2,20 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ClientRegistrationResponseDto } from '../models/ClientRegistrationResponseDto';
-import type { ConsentDecisionDto } from '../models/ConsentDecisionDto';
-import type { GetConsentMetadataResponseDto } from '../models/GetConsentMetadataResponseDto';
-import type { IntrospectTokenRequestDto } from '../models/IntrospectTokenRequestDto';
-import type { IntrospectTokenResponseDto } from '../models/IntrospectTokenResponseDto';
-import type { RegisterClientDto } from '../models/RegisterClientDto';
-import type { ScopesResponseDto } from '../models/ScopesResponseDto';
-import type { TokenExchangeRequestDto } from '../models/TokenExchangeRequestDto';
-import type { TokenExchangeResponseDto } from '../models/TokenExchangeResponseDto';
-import type { TokenRequestDto } from '../models/TokenRequestDto';
-import type { TokenResponseDto } from '../models/TokenResponseDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { ClientRegistrationResponseDto } from '../models/ClientRegistrationResponseDto.js';
+import type { ConsentDecisionDto } from '../models/ConsentDecisionDto.js';
+import type { GetConsentMetadataResponseDto } from '../models/GetConsentMetadataResponseDto.js';
+import type { IntrospectTokenRequestDto } from '../models/IntrospectTokenRequestDto.js';
+import type { IntrospectTokenResponseDto } from '../models/IntrospectTokenResponseDto.js';
+import type { RegisterClientDto } from '../models/RegisterClientDto.js';
+import type { ScopesResponseDto } from '../models/ScopesResponseDto.js';
+import type { TokenExchangeRequestDto } from '../models/TokenExchangeRequestDto.js';
+import type { TokenExchangeResponseDto } from '../models/TokenExchangeResponseDto.js';
+import type { TokenRequestDto } from '../models/TokenRequestDto.js';
+import type { TokenResponseDto } from '../models/TokenResponseDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class AuthorizationServerService {
     /**
      * Register a new OAuth 2.0 client (Dynamic Client Registration)

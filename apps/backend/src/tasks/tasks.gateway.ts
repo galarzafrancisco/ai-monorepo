@@ -239,7 +239,7 @@ export class TasksGateway
   }
 
   // Listen to incoming messages
-  @SubscribeMessage('task.activity.post')
+  @SubscribeMessage(TaskWireEvents.TASK_ACTIVITY_POST)
   postTaskActivity(
     @ConnectedSocket() client: Socket,
     @MessageBody() body: TaskActivityPayload,

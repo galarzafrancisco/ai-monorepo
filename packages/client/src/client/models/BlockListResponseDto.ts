@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { BlockSummaryDto } from './BlockSummaryDto';
+import type { BlockSummaryDto } from './BlockSummaryDto.js';
 export type BlockListResponseDto = {
     /**
      * List of context blocks

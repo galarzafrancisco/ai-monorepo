@@ -2,13 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AgentListResponseDto } from '../models/AgentListResponseDto';
-import type { AgentResponseDto } from '../models/AgentResponseDto';
-import type { CreateAgentDto } from '../models/CreateAgentDto';
-import type { PatchAgentDto } from '../models/PatchAgentDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { AgentListResponseDto } from '../models/AgentListResponseDto.js';
+import type { AgentResponseDto } from '../models/AgentResponseDto.js';
+import type { CreateAgentDto } from '../models/CreateAgentDto.js';
+import type { PatchAgentDto } from '../models/PatchAgentDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class AgentService {
     /**
      * Create a new agent

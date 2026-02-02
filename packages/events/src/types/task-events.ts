@@ -22,6 +22,7 @@ export const TaskWireEvents = {
   TASK_COMMENTED: 'task.commented',
   INPUT_REQUEST_ANSWERED: 'input.request.answered',
   TASK_ACTIVITY: 'task.activity',
+  TASK_ACTIVITY_POST: 'task.activity.post',
 } as const;
 
 export type TaskWireEventName =

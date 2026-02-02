@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ActorResponseDto } from './ActorResponseDto';
-import type { ContextBlockSummaryResponseDto } from './ContextBlockSummaryResponseDto';
-import type { MetaTagResponseDto } from './MetaTagResponseDto';
-import type { TaskSummaryResponseDto } from './TaskSummaryResponseDto';
+import type { ActorResponseDto } from './ActorResponseDto.js';
+import type { ContextBlockSummaryResponseDto } from './ContextBlockSummaryResponseDto.js';
+import type { MetaTagResponseDto } from './MetaTagResponseDto.js';
+import type { TaskSummaryResponseDto } from './TaskSummaryResponseDto.js';
 export type ThreadResponseDto = {
     /**
      * Thread ID

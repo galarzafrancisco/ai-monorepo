@@ -2,8 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { FlowClientDto } from './FlowClientDto';
-import type { FlowServerDto } from './FlowServerDto';
+import type { FlowClientDto } from './FlowClientDto.js';
+import type { FlowServerDto } from './FlowServerDto.js';
 export type GetConsentMetadataResponseDto = {
     /**
      * Unique identifier of the authorization flow

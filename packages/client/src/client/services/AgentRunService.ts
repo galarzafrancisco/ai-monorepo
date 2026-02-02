@@ -2,13 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AgentRunListResponseDto } from '../models/AgentRunListResponseDto';
-import type { AgentRunResponseDto } from '../models/AgentRunResponseDto';
-import type { CreateAgentRunDto } from '../models/CreateAgentRunDto';
-import type { UpdateAgentRunDto } from '../models/UpdateAgentRunDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { AgentRunListResponseDto } from '../models/AgentRunListResponseDto.js';
+import type { AgentRunResponseDto } from '../models/AgentRunResponseDto.js';
+import type { CreateAgentRunDto } from '../models/CreateAgentRunDto.js';
+import type { UpdateAgentRunDto } from '../models/UpdateAgentRunDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class AgentRunService {
     /**
      * Create a new agent run
