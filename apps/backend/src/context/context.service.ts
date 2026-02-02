@@ -250,7 +250,7 @@ export class ContextService {
       throw new BlockNotFoundError(blockId);
     }
 
-    block.content = `${block.content}${input.content}`;
+    block.content = `${block.content}\n${input.content}`;
 
     const saved = await this.blockRepository.save(block);
 
