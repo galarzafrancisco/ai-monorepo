@@ -2,10 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AuthJourneyResponseDto } from '../models/AuthJourneyResponseDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { AuthJourneyResponseDto } from '../models/AuthJourneyResponseDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class AuthorizationJourneysService {
     /**
      * Get authorization journeys for an MCP server (debug/monitoring)

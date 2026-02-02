@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { TaskResponseDto } from './TaskResponseDto';
+import type { TaskResponseDto } from './TaskResponseDto.js';
 export type TaskListResponseDto = {
     /**
      * List of tasks

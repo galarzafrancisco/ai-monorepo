@@ -61,8 +61,9 @@ export class Coordinator {
       console.log(`- Task: ${evt.task.name}`);
       console.log(`- Actor: ${evt.actorId}`);
       console.log(`- Task status: ${evt.task.status}`);
+      console.log(`- Task assignee: ${evt.task.assigneeActor?.id}`);
       const task = evt.task;
-      if (task.assignee === evt.actorId) {
+      if (task.assigneeActor?.id === evt.actorId) {
         console.log(`- Update caused by assignee. Ignoring as this is a self event. ❌`);
         return;
       }
@@ -110,7 +111,7 @@ export class Coordinator {
       const project = await this.client.getProjectBySlug(projectSlug);
       if (project) {
         console.log(`- Project found: ${project.slug}`);
-        repoUrl = project.repoUrl;
+        repoUrl = project.repoUrl ?? null;
         if (repoUrl) {
           console.log(`- Using project repo: ${repoUrl}`);
         } else {

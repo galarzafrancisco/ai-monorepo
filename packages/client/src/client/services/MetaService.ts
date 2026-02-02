@@ -2,11 +2,11 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { CreateTagDto } from '../models/CreateTagDto';
-import type { MetaTagResponseDto } from '../models/MetaTagResponseDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { CreateTagDto } from '../models/CreateTagDto.js';
+import type { MetaTagResponseDto } from '../models/MetaTagResponseDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class MetaService {
     /**
      * Create a new tag

@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ActorResponseDto } from './ActorResponseDto';
+import type { ActorResponseDto } from './ActorResponseDto.js';
 export type CommentResponseDto = {
     /**
      * Unique identifier for the comment

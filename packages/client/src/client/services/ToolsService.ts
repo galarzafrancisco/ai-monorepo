@@ -2,24 +2,24 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ConnectionResponseDto } from '../models/ConnectionResponseDto';
-import type { CreateConnectionDto } from '../models/CreateConnectionDto';
-import type { CreateMappingDto } from '../models/CreateMappingDto';
-import type { CreateScopeDto } from '../models/CreateScopeDto';
-import type { CreateServerDto } from '../models/CreateServerDto';
-import type { DeleteConnectionResponseDto } from '../models/DeleteConnectionResponseDto';
-import type { DeleteMappingResponseDto } from '../models/DeleteMappingResponseDto';
-import type { DeleteScopeResponseDto } from '../models/DeleteScopeResponseDto';
-import type { DeleteServerResponseDto } from '../models/DeleteServerResponseDto';
-import type { MappingResponseDto } from '../models/MappingResponseDto';
-import type { ScopeResponseDto } from '../models/ScopeResponseDto';
-import type { ServerListResponseDto } from '../models/ServerListResponseDto';
-import type { ServerResponseDto } from '../models/ServerResponseDto';
-import type { UpdateConnectionDto } from '../models/UpdateConnectionDto';
-import type { UpdateServerDto } from '../models/UpdateServerDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { ConnectionResponseDto } from '../models/ConnectionResponseDto.js';
+import type { CreateConnectionDto } from '../models/CreateConnectionDto.js';
+import type { CreateMappingDto } from '../models/CreateMappingDto.js';
+import type { CreateScopeDto } from '../models/CreateScopeDto.js';
+import type { CreateServerDto } from '../models/CreateServerDto.js';
+import type { DeleteConnectionResponseDto } from '../models/DeleteConnectionResponseDto.js';
+import type { DeleteMappingResponseDto } from '../models/DeleteMappingResponseDto.js';
+import type { DeleteScopeResponseDto } from '../models/DeleteScopeResponseDto.js';
+import type { DeleteServerResponseDto } from '../models/DeleteServerResponseDto.js';
+import type { MappingResponseDto } from '../models/MappingResponseDto.js';
+import type { ScopeResponseDto } from '../models/ScopeResponseDto.js';
+import type { ServerListResponseDto } from '../models/ServerListResponseDto.js';
+import type { ServerResponseDto } from '../models/ServerResponseDto.js';
+import type { UpdateConnectionDto } from '../models/UpdateConnectionDto.js';
+import type { UpdateServerDto } from '../models/UpdateServerDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class ToolsService {
     /**
      * Register a new MCP server

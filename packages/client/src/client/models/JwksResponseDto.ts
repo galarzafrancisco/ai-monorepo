@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { JwkResponseDto } from './JwkResponseDto';
+import type { JwkResponseDto } from './JwkResponseDto.js';
 export type JwksResponseDto = {
     /**
      * Collection of JSON Web Keys currently valid for signature verification.

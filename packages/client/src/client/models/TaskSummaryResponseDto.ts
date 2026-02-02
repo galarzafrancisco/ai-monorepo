@@ -2,9 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ActorResponseDto } from './ActorResponseDto';
-import type { InputRequestResponseDto } from './InputRequestResponseDto';
-import type { TagResponseDto } from './TagResponseDto';
+import type { ActorResponseDto } from './ActorResponseDto.js';
+import type { InputRequestResponseDto } from './InputRequestResponseDto.js';
+import type { TagResponseDto } from './TagResponseDto.js';
 export type TaskSummaryResponseDto = {
     /**
      * Task ID

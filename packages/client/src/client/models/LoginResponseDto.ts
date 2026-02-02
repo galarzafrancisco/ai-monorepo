@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { UserResponseDto } from './UserResponseDto';
+import type { UserResponseDto } from './UserResponseDto.js';
 export type LoginResponseDto = {
     /**
      * Authenticated user information

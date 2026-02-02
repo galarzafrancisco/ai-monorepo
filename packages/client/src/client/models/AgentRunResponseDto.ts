@@ -2,8 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ActorResponseDto } from './ActorResponseDto';
-import type { TaskInfoDto } from './TaskInfoDto';
+import type { ActorResponseDto } from './ActorResponseDto.js';
+import type { TaskInfoDto } from './TaskInfoDto.js';
 export type AgentRunResponseDto = {
     /**
      * Unique identifier for the agent run

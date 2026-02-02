@@ -2,18 +2,18 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AppendBlockDto } from '../models/AppendBlockDto';
-import type { BlockListResponseDto } from '../models/BlockListResponseDto';
-import type { BlockResponseDto } from '../models/BlockResponseDto';
-import type { BlockTreeResponseDto } from '../models/BlockTreeResponseDto';
-import type { CreateBlockDto } from '../models/CreateBlockDto';
-import type { CreateTagDto } from '../models/CreateTagDto';
-import type { MoveBlockDto } from '../models/MoveBlockDto';
-import type { ReorderBlockDto } from '../models/ReorderBlockDto';
-import type { UpdateBlockDto } from '../models/UpdateBlockDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { AppendBlockDto } from '../models/AppendBlockDto.js';
+import type { BlockListResponseDto } from '../models/BlockListResponseDto.js';
+import type { BlockResponseDto } from '../models/BlockResponseDto.js';
+import type { BlockTreeResponseDto } from '../models/BlockTreeResponseDto.js';
+import type { CreateBlockDto } from '../models/CreateBlockDto.js';
+import type { CreateTagDto } from '../models/CreateTagDto.js';
+import type { MoveBlockDto } from '../models/MoveBlockDto.js';
+import type { ReorderBlockDto } from '../models/ReorderBlockDto.js';
+import type { UpdateBlockDto } from '../models/UpdateBlockDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class ContextService {
     /**
      * Create a new wiki page

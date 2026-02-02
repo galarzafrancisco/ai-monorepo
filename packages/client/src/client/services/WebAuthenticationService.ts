@@ -2,13 +2,13 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ChangePasswordRequestDto } from '../models/ChangePasswordRequestDto';
-import type { LoginRequestDto } from '../models/LoginRequestDto';
-import type { LoginResponseDto } from '../models/LoginResponseDto';
-import type { UserResponseDto } from '../models/UserResponseDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { ChangePasswordRequestDto } from '../models/ChangePasswordRequestDto.js';
+import type { LoginRequestDto } from '../models/LoginRequestDto.js';
+import type { LoginResponseDto } from '../models/LoginResponseDto.js';
+import type { UserResponseDto } from '../models/UserResponseDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class WebAuthenticationService {
     /**
      * Login with email and password

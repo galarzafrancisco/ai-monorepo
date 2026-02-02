@@ -2,12 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { CreateProjectDto } from '../models/CreateProjectDto';
-import type { PatchProjectDto } from '../models/PatchProjectDto';
-import type { ProjectResponseDto } from '../models/ProjectResponseDto';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import type { CreateProjectDto } from '../models/CreateProjectDto.js';
+import type { PatchProjectDto } from '../models/PatchProjectDto.js';
+import type { ProjectResponseDto } from '../models/ProjectResponseDto.js';
+import type { CancelablePromise } from '../core/CancelablePromise.js';
+import { OpenAPI } from '../core/OpenAPI.js';
+import { request as __request } from '../core/request.js';
 export class MetaProjectsService {
     /**
      * Create a new project
