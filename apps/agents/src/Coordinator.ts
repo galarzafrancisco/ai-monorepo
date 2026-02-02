@@ -9,6 +9,7 @@ import { SocketIOTasksTransport, TaskEvent } from "./SocketIOTasksTransport.js"
 import { BaseAgentRunner } from "./runners/BaseAgentRunner.js";
 import { OpencodeAgentRunner } from "./runners/OpenCodeAgentRunner.js";
 import { ADKAgentRunner } from "./runners/ADKAgentRunner.js";
+import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
 
 export class Coordinator {
 
@@ -68,6 +69,20 @@ export class Coordinator {
       }
       this.handleTask(task);
     }
+  }
+  
+  private makeSystemPrompt(task: TaskEntity, agent: AgentResponseDto): string {
+    return `# About you
+    You are ${agent.name}. Your slug is @${agent.slug}.
+    You got triggered by new activity in task "${task.id}".
+    Fetch the task and proceed according to the following instructions.
+
+    # Delegating
+    You have the ability of breaking down the task by creating new tasks. This is useful when your task is too big or if you need help from other actors.
+    You can assign sub tasks to yourself or to other actors. Subtasks run in parallel. If sequence is important (a task builds on another) you can use the dependsOn field to express this dependency.
+    You will be notified when subtasks are completed or when they need your input.
+
+    ${agent.systemPrompt}`;
   }
 
   private async handleTask(task: TaskEntity) {
@@ -158,7 +173,8 @@ export class Coordinator {
       const results = await runner.run(
         {
           taskId: task.id,
-          prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
+          prompt: this.makeSystemPrompt(task, agent),
+          // prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
           cwd: workDir,
           runId: run.id,
         },

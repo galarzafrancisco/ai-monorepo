@@ -36,6 +36,7 @@ import { createGeminiAssistant } from './agent/gemini-assistant.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT } from './agent/prompts';
+import { createMiddleManager } from './agent/middle-manager.agent';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -170,6 +171,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createGeminiAssistant);
     } catch (error) {
       this.logger.error('Error ensuring gemini-assistant Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createMiddleManager);
+    } catch (error) {
+      this.logger.error('Error ensuring middle-manager Agent exists');
     }
   }
 
