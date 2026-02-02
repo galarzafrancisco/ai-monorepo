@@ -2,13 +2,11 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DataRowContainer } from "../../ui/primitives";
 import { useContextCtx } from "./ContextProvider";
-import { useContextBlocks } from "./useContextBlocks";
 import { ContextBlockRow } from "./ContextBlockRow";
 import "./ContextHome.css";
 
 export function ContextHome(): JSX.Element {
-  const { setSectionTitle } = useContextCtx();
-  const { blocks, isLoading, error } = useContextBlocks();
+  const { setSectionTitle, blocks, isLoading, error } = useContextCtx();
   const navigate = useNavigate();
 
   console.log(`blocks`)

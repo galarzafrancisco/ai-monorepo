@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-// import { useContext } from "./useContext"; // your abstraction hook
+import { useContextBlocks } from "./useContextBlocks";
+import type { ContextBlockSummary } from "./types";
 
 // Shape this to match what pages/layout need.
 export type ContextContextValue = {
-  // isLoading: boolean;
-  // error: string | null;
-  // isConnected: boolean;
+  blocks: ContextBlockSummary[];
+  isLoading: boolean;
+  error: string | null;
+  isConnected: boolean;
+  reload: () => Promise<void>;
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
 };
@@ -13,25 +16,27 @@ export type ContextContextValue = {
 const ContextContext = createContext<ContextContextValue | null>(null);
 
 export function ContextProvider({ children }: { children: React.ReactNode }) {
-  // IMPORTANT: this is where the one websocket connection should be created
-  // const { tasks, isLoading, error, isConnected } = useContext();
+  // WebSocket connection for real-time updates
+  const { blocks, isLoading, error, isConnected, reload } = useContextBlocks();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<ContextContextValue>(() => {
     return {
-      // tasks,
-      // isLoading,
-      // error,
-      // isConnected,
+      blocks,
+      isLoading,
+      error,
+      isConnected,
+      reload,
       sectionTitle,
       setSectionTitle,
     };
   }, [
-    // tasks,
-    // isLoading,
-    // error,
-    // isConnected,
+    blocks,
+    isLoading,
+    error,
+    isConnected,
+    reload,
     sectionTitle,
     setSectionTitle,
   ]);
