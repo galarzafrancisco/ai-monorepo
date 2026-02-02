@@ -5,14 +5,58 @@ import type { Task } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
 import { CreateTaskDto, AssignTaskDto } from 'shared';
 
-// TODO
-// the websocket gateway sends full entities, not DTOs wich might vary in shape.
-// Tasks seem to be fine but Comments are different.
-// We need to type the websocket events.
-
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
 const TASKS_PAGE_SIZE = 100;
+
+// Wire event names matching backend TaskWireEvents
+const TaskWireEvents = {
+  TASK_CREATED: 'task.created',
+  TASK_UPDATED: 'task.updated',
+  TASK_DELETED: 'task.deleted',
+  TASK_ASSIGNED: 'task.assigned',
+  TASK_STATUS_CHANGED: 'task.status_changed',
+  TASK_COMMENTED: 'task.commented',
+  INPUT_REQUEST_ANSWERED: 'input.request.answered',
+  TASK_ACTIVITY: 'task.activity',
+} as const;
+
+// Event payload structures from backend
+type TaskEvent = {
+  payload: Task;
+  actor: {
+    id: string;
+  };
+};
+
+type TaskDeletedEvent = {
+  payload: {
+    taskId: string;
+  };
+  actor: {
+    id: string;
+  };
+};
+
+type CommentAddedEvent = {
+  payload: {
+    task: {
+      id: string;
+    };
+  };
+  actor: {
+    id: string;
+  };
+};
+
+type InputRequestAnsweredEvent = {
+  payload: {
+    taskId: string;
+  };
+  actor: {
+    id: string;
+  };
+};
 
 
 type TaskActivityEvent = {
@@ -148,42 +192,45 @@ export const useTasks = () => {
       setIsConnected(false);
     });
 
-    newSocket.on('task.created', (task: Task) => {
+    // Handle task created event
+    newSocket.on(TaskWireEvents.TASK_CREATED, (event: TaskEvent) => {
+      console.log('task.created', event);
       setTasks((prev) => {
         // Avoid duplicates - check if task already exists
-        if (prev.some(t => t.id === task.id)) {
+        if (prev.some(t => t.id === event.payload.id)) {
           return prev;
         }
-        return sortTasks([task, ...prev]);
+        return sortTasks([event.payload, ...prev]);
       });
     });
 
-    newSocket.on('task.updated', (task: Task) => {
-      console.log('task.updated');
-      console.log(task);
+    // Handle task updated event
+    newSocket.on(TaskWireEvents.TASK_UPDATED, (event: TaskEvent) => {
+      console.log('task.updated', event);
       setTasks((prev) =>
-        sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
+        sortTasks(prev.map((t) => (t.id === event.payload.id ? event.payload : t)))
       );
     });
 
-    newSocket.on('task.deleted', ({ taskId }: { taskId: string }) => {
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    // Handle task deleted event
+    newSocket.on(TaskWireEvents.TASK_DELETED, (event: TaskDeletedEvent) => {
+      console.log('task.deleted', event);
+      setTasks((prev) => prev.filter((t) => t.id !== event.payload.taskId));
     });
 
-    newSocket.on('task.assigned', (task: Task) => {
+    // Handle task assigned event
+    newSocket.on(TaskWireEvents.TASK_ASSIGNED, (event: TaskEvent) => {
+      console.log('task.assigned', event);
       setTasks((prev) =>
-        sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
+        sortTasks(prev.map((t) => (t.id === event.payload.id ? event.payload : t)))
       );
     });
 
-    newSocket.on('task.commented', async (comment: { task: { id: string } }) => {
-      console.log('task.commented');
-      console.log(comment);
-      console.log(comment.task.id);
+    // Handle comment added event
+    newSocket.on(TaskWireEvents.TASK_COMMENTED, async (event: CommentAddedEvent) => {
+      console.log('task.commented', event);
       try {
-        const updatedTask = await TasksService.tasksControllerGetTask(comment.task.id);
-        console.log(`updatedTask`);
-        console.log(updatedTask);
+        const updatedTask = await TasksService.tasksControllerGetTask(event.payload.task.id);
         setTasks((prev) => {
           const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
           if (existingTaskIndex === -1) {
@@ -196,10 +243,11 @@ export const useTasks = () => {
       }
     });
 
-    newSocket.on('input.request.answered', async (inputRequest: { taskId: string }) => {
-      console.log('input.request.answered');
+    // Handle input request answered event
+    newSocket.on(TaskWireEvents.INPUT_REQUEST_ANSWERED, async (event: InputRequestAnsweredEvent) => {
+      console.log('input.request.answered', event);
       try {
-        const updatedTask = await TasksService.tasksControllerGetTask(inputRequest.taskId);
+        const updatedTask = await TasksService.tasksControllerGetTask(event.payload.taskId);
         setTasks((prev) => {
           const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
           if (existingTaskIndex === -1) {
@@ -212,17 +260,17 @@ export const useTasks = () => {
       }
     });
 
-    newSocket.on('task.status_changed', (task: Task) => {
-      console.log('task.status_changed');
-      console.log(task);
-
+    // Handle task status changed event
+    newSocket.on(TaskWireEvents.TASK_STATUS_CHANGED, (event: TaskEvent) => {
+      console.log('task.status_changed', event);
       setTasks((prev) =>
-        sortTasks(prev.map((t) => (t.id === task.id ? task : t)))
+        sortTasks(prev.map((t) => (t.id === event.payload.id ? event.payload : t)))
       );
     });
 
-    newSocket.on('task.activity', (evt: { taskId: string, message: string }) => {
-      // Need to pipe this to my component
+    // Handle task activity event (ephemeral UI feedback, not persisted)
+    newSocket.on(TaskWireEvents.TASK_ACTIVITY, (evt: TaskActivityEvent) => {
+      console.log('task.activity', evt);
       upsertActivity(evt);
     });
 
