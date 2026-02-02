@@ -53,33 +53,33 @@ export class TasksListener {
 
     // ---- events we care about ----
 
-    this.socket.on("task.created", (task: TaskEntity) => {
+    this.socket.on("task.created", ({ payload: task }: { payload: TaskEntity; actor: { id: string } }) => {
       console.log("[task.created]");
       this.onTask(task, this.postActivity);
     });
 
-    this.socket.on("task.assigned", (task: TaskEntity) => {
+    this.socket.on("task.assigned", ({ payload: task }: { payload: TaskEntity; actor: { id: string } }) => {
       console.log("[task.assigned]");
       this.onTask(task, this.postActivity);
     });
 
-    this.socket.on("task.status_changed", (task: TaskEntity) => {
+    this.socket.on("task.status_changed", ({ payload: task }: { payload: TaskEntity; actor: { id: string } }) => {
       console.log("[task.status_changed]");
       this.onTask(task, this.postActivity);
     });
 
     // ---- events we ignore (for now) ----
 
-    this.socket.on("task.updated", () => {
-      console.log("[task.updated] ignored");
+    this.socket.on("task.updated", ({ payload }: { payload: TaskEntity; actor: { id: string } }) => {
+      console.log("[task.updated] ignored", payload);
     });
 
-    this.socket.on("task.deleted", (payload) => {
+    this.socket.on("task.deleted", ({ payload }: { payload: { taskId: string }; actor: { id: string } }) => {
       console.log("[task.deleted] ignored", payload);
     });
 
-    this.socket.on("task.commented", () => {
-      console.log("[task.commented] ignored");
+    this.socket.on("task.commented", ({ payload }: { payload: any; actor: { id: string } }) => {
+      console.log("[task.commented] ignored", payload);
     });
   }
 

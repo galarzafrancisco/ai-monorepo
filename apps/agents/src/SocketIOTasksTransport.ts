@@ -142,29 +142,26 @@ export class SocketIOTasksTransport implements TasksTransport {
     });
 
     // ----- events we care about -----
-    // this.socket.on("task.created", (task: TaskEntity) => this.emit({ type: "created", task }));
-    // this.socket.on("task.assigned", (task: TaskEntity) => this.emit({ type: "assigned", task }));
-    // this.socket.on("task.status_changed", (task: TaskEntity) => this.emit({ type: "status_changed", task }));
-    // this.socket.on("task.updated", (task: TaskEntity) => this.emit({ type: "updated", task }));
+    // Updated to match new backend event structure: { payload, actor }
+    // Backend emits events with structured payload instead of separate arguments
 
-    this.socket.on("task.created", (task: TaskEntity, actor: EventActor) =>
-      this.emit({ type: "created", actorId: actor.id, task })
+    this.socket.on("task.created", ({ payload, actor }: { payload: TaskEntity; actor: EventActor }) =>
+      this.emit({ type: "created", actorId: actor.id, task: payload })
     );
-    this.socket.on("task.assigned", (task: TaskEntity, actor: EventActor) =>
-      this.emit({ type: "assigned", actorId: actor.id, task })
+    this.socket.on("task.assigned", ({ payload, actor }: { payload: TaskEntity; actor: EventActor }) =>
+      this.emit({ type: "assigned", actorId: actor.id, task: payload })
     );
-    this.socket.on("task.status_changed", (task: TaskEntity, actor: EventActor) =>
-      this.emit({ type: "status_changed", actorId: actor.id, task })
+    this.socket.on("task.status_changed", ({ payload, actor }: { payload: TaskEntity; actor: EventActor }) =>
+      this.emit({ type: "status_changed", actorId: actor.id, task: payload })
     );
-    this.socket.on("task.updated", (task: TaskEntity, actor: EventActor) =>
-      this.emit({ type: "updated", actorId: actor.id, task })
+    this.socket.on("task.updated", ({ payload, actor }: { payload: TaskEntity; actor: EventActor }) =>
+      this.emit({ type: "updated", actorId: actor.id, task: payload })
     );
-    this.socket.on("task.deleted", ({taskId}: {taskId: string}, actor: EventActor) =>
-      this.emit({ type: "deleted", actorId: actor.id, taskId })
+    this.socket.on("task.deleted", ({ payload, actor }: { payload: { taskId: string }; actor: EventActor }) =>
+      this.emit({ type: "deleted", actorId: actor.id, taskId: payload.taskId })
     );
-    this.socket.on("comment.added", (comment: CommentEntity, actor: EventActor) =>
-      this.emit({ type: "commented", actorId: actor.id, comment })
-
+    this.socket.on("task.commented", ({ payload, actor }: { payload: CommentEntity; actor: EventActor }) =>
+      this.emit({ type: "commented", actorId: actor.id, comment: payload })
     );
 
     // Wait until first connect or error so callers can await start()
