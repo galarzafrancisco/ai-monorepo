@@ -136,6 +136,8 @@ export function useContextBlock(id: string) {
   const [block, setBlock] = useState<ContextBlock | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleted, setIsDeleted] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -169,5 +171,56 @@ export function useContextBlock(id: string) {
     };
   }, [id]);
 
-  return { block, isLoading, error };
+  // Setup WebSocket connection for real-time updates
+  useEffect(() => {
+    if (!id) return;
+
+    const newSocket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Connected to context WebSocket (detail page)');
+      newSocket.emit('context.subscribe', {}, (ack: any) => {
+        if (ack.ok) {
+          console.log('Subscribed to context room (detail page):', ack.room);
+        } else {
+          console.error('Failed to subscribe to context room (detail page)');
+        }
+      });
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Context WebSocket disconnected (detail page)');
+    });
+
+    // Handle block updated event - only update if it's the current block
+    newSocket.on(ContextWireEvents.CONTEXT_BLOCK_UPDATED, (event: ContextBlockEvent) => {
+      if (event.payload.id === id) {
+        console.log('context.block.updated (detail page)', event);
+        // Fetch the full block details to get the content
+        ContextService.contextControllerGetBlock(id)
+          .then((data) => setBlock(data))
+          .catch((err) => console.error('Error refreshing block after update:', err));
+      }
+    });
+
+    // Handle block deleted event - mark as deleted if it's the current block
+    newSocket.on(ContextWireEvents.CONTEXT_BLOCK_DELETED, (event: ContextBlockDeletedEvent) => {
+      if (event.payload.blockId === id) {
+        console.log('context.block.deleted (detail page)', event);
+        setIsDeleted(true);
+        setBlock(null);
+      }
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+    };
+  }, [id]);
+
+  return { block, isLoading, error, isDeleted };
 }

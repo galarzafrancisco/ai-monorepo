@@ -10,13 +10,20 @@ export function ContextBlockDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { setSectionTitle } = useContextCtx();
-  const { block, isLoading, error } = useContextBlock(id || '');
+  const { block, isLoading, error, isDeleted } = useContextBlock(id || '');
 
   useEffect(() => {
     if (block) {
       setSectionTitle(block.title);
     }
   }, [block, setSectionTitle]);
+
+  // Redirect to list when block is deleted
+  useEffect(() => {
+    if (isDeleted) {
+      navigate('/context/home');
+    }
+  }, [isDeleted, navigate]);
 
   if (isLoading) {
     return (
