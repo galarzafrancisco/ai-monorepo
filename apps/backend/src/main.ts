@@ -74,9 +74,8 @@ async function bootstrap() {
   SwaggerModule.setup('api/v1/docs', app, document);
 
   // Serve static files from the UI build (in production)
-  // __dirname is dist/apps/backend/src, so we need to go up to dist/public
-  const staticPath = join(__dirname, '..', '..', '..', 'public');
-  const betaStaticPath = join(__dirname, '..', '..', '..', 'public/beta'); // new UI build
+  const staticPath = join(__dirname, 'public');
+  const betaStaticPath = join(__dirname, 'public/beta'); // new UI build
   if (existsSync(staticPath)) {
     app.useStaticAssets(staticPath);
     console.log(`Serving static files from ${staticPath}`);
