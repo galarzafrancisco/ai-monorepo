@@ -6,3 +6,4 @@ export * from '../contracts/types';
 
 // Re-export manual types
 export * from './types/chat-events';
+export * from './types/task-events';

@@ -20,7 +20,17 @@ import {
   TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
-import { TaskWireEvents } from './api/tasks.wire-events';
+import {
+  TaskWireEvents,
+  TaskCreatedWireEvent,
+  TaskUpdatedWireEvent,
+  TaskDeletedWireEvent,
+  TaskAssignedWireEvent,
+  TaskStatusChangedWireEvent,
+  TaskCommentedWireEvent,
+  InputRequestAnsweredWireEvent,
+  TaskActivityWireEvent,
+} from '../../../../packages/shared/src/types/task-events.js';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
 import { InputRequestResponseDto } from './dto/input-request-response.dto';
@@ -102,10 +112,12 @@ export class TasksGateway
   handleTaskCreated(event: TaskCreatedEvent) {
     const dto = TaskResponseDto.fromEntity(event.payload);
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_CREATED, {
+    const wireEvent: TaskCreatedWireEvent = {
       payload: dto,
-      actor: event.actor,
-    });
+      actor: { id: event.actor.id },
+    };
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_CREATED, wireEvent);
 
     this.logger.debug({
       message: 'Task created event emitted',
@@ -118,10 +130,12 @@ export class TasksGateway
   handleTaskUpdated(event: TaskUpdatedEvent) {
     const dto = TaskResponseDto.fromEntity(event.payload);
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_UPDATED, {
+    const wireEvent: TaskUpdatedWireEvent = {
       payload: dto,
-      actor: event.actor,
-    });
+      actor: { id: event.actor.id },
+    };
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_UPDATED, wireEvent);
 
     this.logger.debug({
       message: 'Task updated event emitted',
@@ -132,10 +146,12 @@ export class TasksGateway
 
   @OnEvent(TaskDeletedEvent.INTERNAL)
   handleTaskDeleted(event: TaskDeletedEvent) {
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_DELETED, {
+    const wireEvent: TaskDeletedWireEvent = {
       payload: { taskId: event.taskId },
-      actor: event.actor,
-    });
+      actor: { id: event.actor.id },
+    };
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_DELETED, wireEvent);
 
     this.logger.debug({
       message: 'Task deleted event emitted',
@@ -148,10 +164,12 @@ export class TasksGateway
   handleTaskAssigned(event: TaskAssignedEvent) {
     const dto = TaskResponseDto.fromEntity(event.payload);
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_ASSIGNED, {
+    const wireEvent: TaskAssignedWireEvent = {
       payload: dto,
-      actor: event.actor,
-    });
+      actor: { id: event.actor.id },
+    };
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_ASSIGNED, wireEvent);
 
     this.logger.debug({
       message: 'Task assigned event emitted',
@@ -164,10 +182,12 @@ export class TasksGateway
   handleCommentAdded(event: CommentAddedEvent) {
     const dto = CommentResponseDto.fromEntity(event.payload);
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_COMMENTED, {
+    const wireEvent: TaskCommentedWireEvent = {
       payload: dto,
-      actor: event.actor,
-    });
+      actor: { id: event.actor.id },
+    };
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_COMMENTED, wireEvent);
 
     this.logger.debug({
       message: 'Comment added event emitted',
@@ -181,10 +201,14 @@ export class TasksGateway
   handleStatusChanged(event: TaskStatusChangedEvent) {
     const dto = TaskResponseDto.fromEntity(event.payload);
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_STATUS_CHANGED, {
+    const wireEvent: TaskStatusChangedWireEvent = {
       payload: dto,
-      actor: event.actor,
-    });
+      actor: { id: event.actor.id },
+    };
+
+    this.server
+      .to(TASKS_ROOM)
+      .emit(TaskWireEvents.TASK_STATUS_CHANGED, wireEvent);
 
     this.logger.debug({
       message: 'Task status changed event emitted',
@@ -198,10 +222,14 @@ export class TasksGateway
   handleInputRequestAnswered(event: InputRequestAnsweredEvent) {
     const dto = InputRequestResponseDto.fromEntity(event.payload);
 
-    this.server.to(TASKS_ROOM).emit(TaskWireEvents.INPUT_REQUEST_ANSWERED, {
+    const wireEvent: InputRequestAnsweredWireEvent = {
       payload: dto,
-      actor: event.actor,
-    });
+      actor: { id: event.actor.id },
+    };
+
+    this.server
+      .to(TASKS_ROOM)
+      .emit(TaskWireEvents.INPUT_REQUEST_ANSWERED, wireEvent);
 
     this.logger.debug({
       message: 'Input request answered event emitted',
@@ -220,7 +248,7 @@ export class TasksGateway
     // ultra-MVP "validation"
     if (!body?.taskId) return { ok: false, error: 'taskId required' };
 
-    const event = {
+    const wireEvent: TaskActivityWireEvent = {
       taskId: body.taskId,
       kind: body.kind ?? 'worker.activity',
       message: body.message,
@@ -228,10 +256,10 @@ export class TasksGateway
       by: client.id, // optional: useful for debugging
     };
 
-    this.logger.log(event);
+    this.logger.log(wireEvent);
 
     // broadcast to everyone (including the sender)
-    this.server.to(TASKS_ROOM).emit('task.activity', event);
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_ACTIVITY, wireEvent);
 
     return { ok: true };
   }
