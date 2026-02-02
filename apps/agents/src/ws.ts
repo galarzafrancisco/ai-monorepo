@@ -20,7 +20,7 @@ import {
   TaskUpdatedWireEvent,
   TaskDeletedWireEvent,
   TaskCommentedWireEvent,
-} from "../../../packages/shared/src/types/task-events.js";
+} from "shared/types/task-events";
 
 type TaskHandler = (task: TaskEntity, loopBack: (message: string) => void) => void;
 

@@ -30,7 +30,7 @@ import {
   TaskCommentedWireEvent,
   InputRequestAnsweredWireEvent,
   TaskActivityWireEvent,
-} from '../../../../packages/shared/src/types/task-events.js';
+} from 'shared/types/task-events';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
 import { InputRequestResponseDto } from './dto/input-request-response.dto';

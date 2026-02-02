@@ -14,6 +14,10 @@
       "types": "./dist/src/types/index.d.ts",
       "default": "./dist/src/types/index.js"
     },
+    "./types/task-events": {
+      "types": "./dist/src/types/task-events.d.ts",
+      "default": "./dist/src/types/task-events.js"
+    },
     "./client": {
       "types": "./dist/src/client/index.d.ts",
       "default": "./dist/src/client/index.js"
