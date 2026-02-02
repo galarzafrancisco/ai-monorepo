@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TagEntity } from '../../meta/tag.entity';
 
 export class TagResponseDto {
   @ApiProperty({
@@ -18,4 +19,16 @@ export class TagResponseDto {
     example: '#FF5733',
   })
   color?: string;
+
+  /**
+   * Factory method to create a TagResponseDto from a TagEntity.
+   * Used by the WebSocket gateway to map domain entities to wire DTOs.
+   */
+  static fromEntity(tag: TagEntity): TagResponseDto {
+    return {
+      id: tag.id,
+      name: tag.name,
+      color: tag.color,
+    };
+  }
 }

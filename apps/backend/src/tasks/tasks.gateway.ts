@@ -20,6 +20,10 @@ import {
   TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
+import { TaskWireEvents } from './api/tasks.wire-events';
+import { TaskResponseDto } from './dto/task-response.dto';
+import { CommentResponseDto } from './dto/comment-response.dto';
+import { InputRequestResponseDto } from './dto/input-request-response.dto';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
@@ -36,8 +40,14 @@ type TaskActivityPayload = {
 
 /**
  * WebSocket gateway for Tasks domain.
- * Listens to domain events and broadcasts them via WebSocket.
- * This decouples the service layer from transport concerns.
+ *
+ * Acts as a transport adapter that:
+ * 1. Listens to internal domain events (Symbol-based)
+ * 2. Maps domain entities to DTOs
+ * 3. Emits stable wire events to clients
+ *
+ * This decouples the service layer from transport concerns,
+ * similar to how HTTP controllers map entities to response DTOs.
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(TasksScopes.READ.id)
@@ -83,49 +93,122 @@ export class TasksGateway
 
   // TODO: implement (Tasks.snapshot) to send current state of tasks to the client
 
-  @OnEvent('task.created')
+  /**
+   * Domain event handlers
+   * These listen to internal Symbol-based events and map them to wire events.
+   */
+
+  @OnEvent(TaskCreatedEvent.INTERNAL)
   handleTaskCreated(event: TaskCreatedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.created', event.payload, event.actor);
+    const dto = TaskResponseDto.fromEntity(event.payload);
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_CREATED, {
+      payload: dto,
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Task created event emitted',
+      taskId: event.payload.id,
+      actorId: event.actor.id,
+    });
   }
 
-  @OnEvent('task.updated')
+  @OnEvent(TaskUpdatedEvent.INTERNAL)
   handleTaskUpdated(event: TaskUpdatedEvent) {
-    this.server.to(TASKS_ROOM).emit('task.updated', event.payload, event.actor);
+    const dto = TaskResponseDto.fromEntity(event.payload);
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_UPDATED, {
+      payload: dto,
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Task updated event emitted',
+      taskId: event.payload.id,
+      actorId: event.actor.id,
+    });
   }
 
-  @OnEvent('task.deleted')
+  @OnEvent(TaskDeletedEvent.INTERNAL)
   handleTaskDeleted(event: TaskDeletedEvent) {
-    this.server
-      .to(TASKS_ROOM)
-      .emit('task.deleted', { taskId: event.taskId }, event.actor);
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_DELETED, {
+      payload: { taskId: event.taskId },
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Task deleted event emitted',
+      taskId: event.taskId,
+      actorId: event.actor.id,
+    });
   }
 
-  @OnEvent('task.assigned')
+  @OnEvent(TaskAssignedEvent.INTERNAL)
   handleTaskAssigned(event: TaskAssignedEvent) {
-    this.server
-      .to(TASKS_ROOM)
-      .emit('task.assigned', event.payload, event.actor);
+    const dto = TaskResponseDto.fromEntity(event.payload);
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_ASSIGNED, {
+      payload: dto,
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Task assigned event emitted',
+      taskId: event.payload.id,
+      actorId: event.actor.id,
+    });
   }
 
-  @OnEvent('comment.added')
+  @OnEvent(CommentAddedEvent.INTERNAL)
   handleCommentAdded(event: CommentAddedEvent) {
-    this.server
-      .to(TASKS_ROOM)
-      .emit('task.commented', event.payload, event.actor);
+    const dto = CommentResponseDto.fromEntity(event.payload);
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_COMMENTED, {
+      payload: dto,
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Comment added event emitted',
+      commentId: event.payload.id,
+      taskId: event.payload.taskId,
+      actorId: event.actor.id,
+    });
   }
 
-  @OnEvent('task.statusChanged')
+  @OnEvent(TaskStatusChangedEvent.INTERNAL)
   handleStatusChanged(event: TaskStatusChangedEvent) {
-    this.server
-      .to(TASKS_ROOM)
-      .emit('task.status_changed', event.payload, event.actor);
+    const dto = TaskResponseDto.fromEntity(event.payload);
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_STATUS_CHANGED, {
+      payload: dto,
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Task status changed event emitted',
+      taskId: event.payload.id,
+      status: event.payload.status,
+      actorId: event.actor.id,
+    });
   }
 
-  @OnEvent('input_request.answered')
+  @OnEvent(InputRequestAnsweredEvent.INTERNAL)
   handleInputRequestAnswered(event: InputRequestAnsweredEvent) {
-    this.server
-      .to(TASKS_ROOM)
-      .emit('input.request.answered', event.payload, event.actor);
+    const dto = InputRequestResponseDto.fromEntity(event.payload);
+
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.INPUT_REQUEST_ANSWERED, {
+      payload: dto,
+      actor: event.actor,
+    });
+
+    this.logger.debug({
+      message: 'Input request answered event emitted',
+      inputRequestId: event.payload.id,
+      taskId: event.payload.taskId,
+      actorId: event.actor.id,
+    });
   }
 
   // Listen to incoming messages

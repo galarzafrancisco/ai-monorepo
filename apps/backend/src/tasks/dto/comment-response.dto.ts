@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
+import { CommentEntity } from '../comment.entity';
 
 export class CommentResponseDto {
   @ApiProperty({
@@ -38,4 +39,27 @@ export class CommentResponseDto {
     example: '2025-11-03T10:30:00.000Z',
   })
   createdAt!: string;
+
+  /**
+   * Factory method to create a CommentResponseDto from a CommentEntity.
+   * Used by the WebSocket gateway to map domain entities to wire DTOs.
+   */
+  static fromEntity(comment: CommentEntity): CommentResponseDto {
+    return {
+      id: comment.id,
+      taskId: comment.taskId,
+      commenterName: comment.commenterName,
+      commenterActor: comment.commenterActor
+        ? {
+            id: comment.commenterActor.id,
+            type: comment.commenterActor.type,
+            slug: comment.commenterActor.slug,
+            displayName: comment.commenterActor.displayName,
+            avatarUrl: comment.commenterActor.avatarUrl,
+          }
+        : null,
+      content: comment.content,
+      createdAt: comment.createdAt.toISOString(),
+    };
+  }
 }

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { InputRequestEntity } from '../input-request.entity';
 
 export class InputRequestResponseDto {
   @ApiProperty({
@@ -56,4 +57,26 @@ export class InputRequestResponseDto {
     example: '2025-11-03T12:45:00.000Z',
   })
   updatedAt!: string;
+
+  /**
+   * Factory method to create an InputRequestResponseDto from an InputRequestEntity.
+   * Used by the WebSocket gateway to map domain entities to wire DTOs.
+   */
+  static fromEntity(
+    inputRequest: InputRequestEntity,
+  ): InputRequestResponseDto {
+    return {
+      id: inputRequest.id,
+      taskId: inputRequest.taskId,
+      askedByActorId: inputRequest.askedByActorId,
+      assignedToActorId: inputRequest.assignedToActorId,
+      question: inputRequest.question,
+      answer: inputRequest.answer,
+      resolvedAt: inputRequest.resolvedAt
+        ? inputRequest.resolvedAt.toISOString()
+        : null,
+      createdAt: inputRequest.createdAt.toISOString(),
+      updatedAt: inputRequest.updatedAt.toISOString(),
+    };
+  }
 }

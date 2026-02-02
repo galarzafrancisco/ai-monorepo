@@ -4,6 +4,8 @@ import { CommentResponseDto } from './comment-response.dto';
 import { InputRequestResponseDto } from './input-request-response.dto';
 import { TagResponseDto } from './tag-response.dto';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
+import { TaskEntity } from '../task.entity';
+import { ActorType } from '../../identity-provider/enums/actor-type.enum';
 
 export class TaskResponseDto {
   @ApiProperty({
@@ -94,4 +96,52 @@ export class TaskResponseDto {
     example: '2025-11-03T12:45:00.000Z',
   })
   updatedAt!: string;
+
+  /**
+   * Factory method to create a TaskResponseDto from a TaskEntity.
+   * Used by the WebSocket gateway to map domain entities to wire DTOs.
+   */
+  static fromEntity(task: TaskEntity): TaskResponseDto {
+    return {
+      id: task.id,
+      name: task.name,
+      description: task.description,
+      status: task.status,
+      assignee: task.assignee,
+      assigneeActor: task.assigneeActor
+        ? {
+            id: task.assigneeActor.id,
+            type: task.assigneeActor.type,
+            slug: task.assigneeActor.slug,
+            displayName: task.assigneeActor.displayName,
+            avatarUrl: task.assigneeActor.avatarUrl,
+          }
+        : null,
+      sessionId: task.sessionId ?? '',
+      comments: task.comments?.map((c) => CommentResponseDto.fromEntity(c)) ?? [],
+      inputRequests:
+        task.inputRequests?.map((ir) =>
+          InputRequestResponseDto.fromEntity(ir),
+        ) ?? [],
+      tags: task.tags?.map((t) => TagResponseDto.fromEntity(t)) ?? [],
+      createdByActor: task.createdByActor
+        ? {
+            id: task.createdByActor.id,
+            type: task.createdByActor.type,
+            slug: task.createdByActor.slug,
+            displayName: task.createdByActor.displayName,
+            avatarUrl: task.createdByActor.avatarUrl,
+          }
+        : {
+            id: task.createdByActorId,
+            type: ActorType.AGENT,
+            slug: 'unknown',
+            displayName: 'Unknown',
+            avatarUrl: null,
+          },
+      dependsOnIds: task.dependsOn?.map((t) => t.id) ?? [],
+      createdAt: task.createdAt.toISOString(),
+      updatedAt: task.updatedAt.toISOString(),
+    };
+  }
 }

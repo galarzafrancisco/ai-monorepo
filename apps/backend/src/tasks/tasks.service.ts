@@ -157,7 +157,7 @@ export class TasksService {
     });
 
     this.eventEmitter.emit(
-      'task.created',
+      TaskCreatedEvent.INTERNAL,
       new TaskCreatedEvent(
         { id: taskWithRelations.createdByActorId },
         taskWithRelations,
@@ -333,7 +333,7 @@ export class TasksService {
     });
 
     this.eventEmitter.emit(
-      'task.updated',
+      TaskUpdatedEvent.INTERNAL,
       new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
     );
     return this.mapTaskToResult(taskWithRelations);
@@ -410,7 +410,7 @@ export class TasksService {
     });
 
     this.eventEmitter.emit(
-      'task.assigned',
+      TaskAssignedEvent.INTERNAL,
       new TaskAssignedEvent({ id: actorId }, taskWithRelations!),
     );
     return this.mapTaskToResult(taskWithRelations!);
@@ -436,7 +436,7 @@ export class TasksService {
     });
 
     this.eventEmitter.emit(
-      'task.deleted',
+      TaskDeletedEvent.INTERNAL,
       new TaskDeletedEvent({ id: actorId }, taskId),
     );
   }
@@ -599,7 +599,7 @@ export class TasksService {
     });
 
     this.eventEmitter.emit(
-      'comment.added',
+      CommentAddedEvent.INTERNAL,
       new CommentAddedEvent(
         { id: input.commenterActorId },
         commentWithRelations!,
@@ -692,7 +692,7 @@ export class TasksService {
     });
 
     this.eventEmitter.emit(
-      'task.statusChanged',
+      TaskStatusChangedEvent.INTERNAL,
       new TaskStatusChangedEvent({ id: actorId }, taskWithRelations),
     );
     return this.mapTaskToResult(taskWithRelations);
@@ -759,7 +759,7 @@ export class TasksService {
     }
 
     this.eventEmitter.emit(
-      'task.updated',
+      TaskUpdatedEvent.INTERNAL,
       new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
     );
     return this.mapTaskToResult(taskWithRelations);
@@ -824,7 +824,7 @@ export class TasksService {
     }
 
     this.eventEmitter.emit(
-      'task.updated',
+      TaskUpdatedEvent.INTERNAL,
       new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
     );
     return this.mapTaskToResult(taskWithRelations);
@@ -969,7 +969,7 @@ export class TasksService {
       }
 
       this.eventEmitter.emit(
-        'task.updated',
+        TaskUpdatedEvent.INTERNAL,
         new TaskUpdatedEvent({ id: input.askedByActorId }, taskWithRelations),
       );
       return this.mapInputRequestToResult(savedInputRequest);
@@ -1036,7 +1036,7 @@ export class TasksService {
     });
 
     this.eventEmitter.emit(
-      'input_request.answered',
+      InputRequestAnsweredEvent.INTERNAL,
       new InputRequestAnsweredEvent({ id: actorId }, updatedInputRequest),
     );
 
