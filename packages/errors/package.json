@@ -5,6 +5,8 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "private": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
