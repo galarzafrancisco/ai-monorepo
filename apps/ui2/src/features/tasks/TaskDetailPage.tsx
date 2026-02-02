@@ -11,7 +11,7 @@ import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
-import { InputRequestResponseDto, MetaTagResponseDto } from 'shared';
+import { InputRequestResponseDto, MetaTagResponseDto } from "@taico/client";
 import { TaskActivityItem } from './useTasks';
 import './TaskDetailPage.css';
 

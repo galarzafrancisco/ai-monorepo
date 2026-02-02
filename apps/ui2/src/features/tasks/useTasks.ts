@@ -3,9 +3,11 @@ import { io, Socket } from 'socket.io-client';
 import { TasksService } from './api';
 import type { Task } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
-import {
+import type {
   CreateTaskDto,
   AssignTaskDto,
+} from "@taico/client"
+import {
   TaskWireEvents,
   TaskCreatedWireEvent,
   TaskUpdatedWireEvent,
@@ -15,7 +17,7 @@ import {
   TaskCommentedWireEvent,
   InputRequestAnsweredWireEvent,
   TaskActivityWireEvent,
-} from 'shared';
+} from "@taico/events";
 
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
@@ -66,7 +68,7 @@ export const useTasks = () => {
       return rest;
     });
   };
-  
+
   // Boot
   useEffect(() => {
     loadTasks();

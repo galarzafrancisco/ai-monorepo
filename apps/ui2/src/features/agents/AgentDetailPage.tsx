@@ -5,7 +5,7 @@ import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } fr
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
-import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDto } from 'shared';
+import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDto } from "@taico/client";
 import { AgentTokensService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';

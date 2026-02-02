@@ -15,13 +15,16 @@
     "noEmit": true,
     // Base URL
     "baseUrl": ".",
-    // Imports
+    // Alias
     "paths": {
-      "@shared/*": [
-        "packages/shared/src/*"
+      "@taico/client": [
+        "packages/client/src/index.ts"
       ],
-      "shared": [
-        "packages/shared/src/index.ts"
+      "@taico/events": [
+        "packages/events/src/index.ts"
+      ],
+      "@taico/errors": [
+        "packages/errors/src/index.ts"
       ]
     }
   }

@@ -5,7 +5,7 @@ import { MarkdownPreview } from './MarkdownPreview';
 import { ContextPageForm } from './ContextPageForm';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Breadcrumb } from './Breadcrumb';
-import type { UpdateBlockDto } from 'shared';
+import type { UpdateBlockDto } from "@taico/client";
 import './ContextMobile.css';
 
 export function ContextPageViewMobile() {

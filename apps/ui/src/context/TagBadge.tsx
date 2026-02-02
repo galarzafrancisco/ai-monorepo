@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TagResponseDto } from 'shared';
+import type { TagResponseDto } from "@taico/client";
 
 interface TagBadgeProps {
   tag: TagResponseDto;

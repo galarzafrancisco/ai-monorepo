@@ -4,7 +4,7 @@ import { Avatar, DataRow, Text, DataRowContainer, DataRowTag } from "../../ui/pr
 import { useAgentsCtx } from "./AgentsProvider";
 import { Agent } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
-import { AgentResponseDto } from "shared";
+import { AgentResponseDto } from "@taico/client";
 import { NewAgentPop } from "./NewAgentPop";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import "./AgentsPage.css";

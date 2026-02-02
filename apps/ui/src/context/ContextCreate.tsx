@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useContext } from './useContext';
 import { ContextPageForm } from './ContextPageForm';
-import type { CreateBlockDto } from 'shared';
+import type { CreateBlockDto } from "@taico/client";
 
 export function ContextCreate() {
   const navigate = useNavigate();

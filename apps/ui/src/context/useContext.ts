@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { CreateBlockDto, UpdateBlockDto } from 'shared';
+import type { CreateBlockDto, UpdateBlockDto } from "@taico/client";
 import { ContextService } from './api';
 import { getUIWebSocketUrl } from '../config/api';
 import type { ContextPage, ContextPageSummary, ContextPageTree } from './types';

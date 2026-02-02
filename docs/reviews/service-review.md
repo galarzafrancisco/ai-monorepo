@@ -212,7 +212,7 @@ import { Injectable, BadRequestException, UnauthorizedException, Logger } from '
 Create `apps/backend/src/authorization-server/errors/authorization.errors.ts`:
 
 ```typescript
-import { ErrorCodes } from '../../../../../packages/shared/errors/error-codes';
+import { ErrorCodes } from "@taico/errors";
 
 export const AuthorizationErrorCodes = {
   AUTH_FLOW_NOT_FOUND: ErrorCodes.AUTH_FLOW_NOT_FOUND,

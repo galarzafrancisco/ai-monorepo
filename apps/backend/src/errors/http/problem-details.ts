@@ -1,5 +1,4 @@
-import { ProblemDetails } from '../../../../../packages/shared/errors/problem-details.type';
-import { ErrorCodes } from '../../../../../packages/shared/errors/error-codes';
+import { ErrorCodes, type ProblemDetails } from "@taico/errors";
 
 export const toProblem = (p: Partial<ProblemDetails>): ProblemDetails => ({
   type: p.type ?? '/errors/internal',

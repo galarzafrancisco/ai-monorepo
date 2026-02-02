@@ -5,12 +5,12 @@
   "license": "MIT",
   "scripts": {
     "build": "nest build",
-    "build:prod": "npm run build && node dist/apps/backend/src/main --generate-spec",
+    "build:prod": "npm run build && node dist/main --generate-spec",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/apps/backend/src/main",
+    "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -20,10 +20,12 @@
     "dev": "npm run start:dev",
     "typecheck": "tsc --noEmit",
     "does-it-start": "(nest start & ) && sleep 10 && kill $! || true",
-    "init-test-user": "npm run build && node dist/apps/backend/src/scripts/init-test-user.js",
+    "init-test-user": "npm run build && node dist/scripts/init-test-user.js",
     "create-admin": "npm run build && node dist/apps/backend/src/scripts/create-admin-user.js"
   },
   "dependencies": {
+    "@taico/events": "*",
+    "@taico/errors": "*",
     "@modelcontextprotocol/sdk": "^1.21.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",

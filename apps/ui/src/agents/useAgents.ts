@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AgentService } from './api';
-import type { AgentResponseDto, CreateAgentDto } from 'shared';
+import type { AgentResponseDto, CreateAgentDto } from "@taico/client";
 
 export const useAgents = () => {
   // UI feedback

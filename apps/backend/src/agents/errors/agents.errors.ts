@@ -1,4 +1,4 @@
-import { ErrorCodes } from '../../../../../packages/shared/errors/error-codes';
+import { ErrorCodes } from "@taico/errors";
 
 export const AgentsErrorCodes = {
   AGENT_NOT_FOUND: ErrorCodes.AGENT_NOT_FOUND,

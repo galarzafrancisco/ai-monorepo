@@ -1,7 +1,7 @@
 import { DataRow, Text, Avatar } from '../../ui/primitives';
 import { ContextBlockSummary } from './types';
 import { elapsedTime } from '../../shared/helpers/elapsedTime';
-import { ContextTagResponseDto } from 'shared';
+import { ContextTagResponseDto } from "@taico/client";
 
 export function ContextBlockRow({ blockSummary, onClick }: { blockSummary: ContextBlockSummary; onClick?: () => void }) {
   const tags = blockSummary.tags.map((tag: ContextTagResponseDto) => ({ label: tag.name }));

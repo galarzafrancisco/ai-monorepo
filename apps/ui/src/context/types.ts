@@ -3,7 +3,7 @@ export type {
   BlockResponseDto as ContextPage,
   BlockSummaryDto as ContextPageSummary,
   BlockTreeResponseDto as ContextPageTree,
-} from 'shared';
+} from "@taico/client";
 
 export interface SlashCommand {
   id: string;

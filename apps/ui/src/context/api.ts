@@ -1,4 +1,4 @@
-import { OpenAPI, ContextService } from 'shared';
+import { OpenAPI, ContextService } from "@taico/client";
 import { BFF_BASE_URL } from '../config/api';
 
 // Use centralized API configuration

@@ -4,7 +4,7 @@ import { AuthorizationServerService, OpenAPI, type ConsentDecisionDto } from './
 import { HomeLink } from '../components/HomeLink';
 import { usePageTitle } from '../hooks/usePageTitle';
 import './ConsentScreen.css';
-import { GetConsentMetadataResponseDto } from 'shared';
+import { GetConsentMetadataResponseDto } from "@taico/client";
 
 
 export function ConsentScreen() {

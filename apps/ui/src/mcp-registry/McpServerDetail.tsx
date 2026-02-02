@@ -7,8 +7,8 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import './McpRegistry.css';
 import { useAuthorizationServer } from './useAuthorizationServer';
 import { AuthorizationJourneysService } from './api';
-import type { AuthJourneyResponseDto } from 'shared';
-import { AuthJourneyResponseDto as AuthJourneyTypes, ConnectionFlowResponseDto, McpFlowResponseDto as McpFlowTypes } from 'shared';
+import type { AuthJourneyResponseDto } from "@taico/client";
+import { AuthJourneyResponseDto as AuthJourneyTypes, ConnectionFlowResponseDto, McpFlowResponseDto as McpFlowTypes } from "@taico/client";
 
 type FormType = 'scope' | 'connection' | 'mapping' | 'edit-connection' | 'edit-server' | null;
 

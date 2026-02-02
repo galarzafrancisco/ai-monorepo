@@ -1,6 +1,6 @@
 import { ErrorCatalog } from './error-catalog';
 import { toProblem } from './problem-details';
-import { ErrorCodes } from '../../../../../packages/shared/errors/error-codes';
+import { ErrorCodes } from "@taico/errors";
 
 /**
  * Maps domain errors to RFC 7807 Problem Details

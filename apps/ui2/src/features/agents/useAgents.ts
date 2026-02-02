@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AgentsService } from './api';
 import type { Agent } from './types';
 import type { TaskStatus } from '../../shared/const/taskStatus';
-import type { AgentResponseDto } from 'shared';
+import type { AgentResponseDto } from "@taico/client";
 
 export const useAgents = () => {
   // UI feedback

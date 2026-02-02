@@ -20,8 +20,8 @@ import {
   TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
-import {
-  TaskWireEvents,
+import { TaskWireEvents } from "@taico/events";
+import type {
   TaskCreatedWireEvent,
   TaskUpdatedWireEvent,
   TaskDeletedWireEvent,
@@ -30,7 +30,7 @@ import {
   TaskCommentedWireEvent,
   InputRequestAnsweredWireEvent,
   TaskActivityWireEvent,
-} from 'shared/types/task-events';
+} from '@taico/events';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
 import { InputRequestResponseDto } from './dto/input-request-response.dto';
@@ -68,8 +68,7 @@ type TaskActivityPayload = {
   namespace: '/tasks',
 })
 export class TasksGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 

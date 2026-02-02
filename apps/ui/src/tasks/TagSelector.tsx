@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { MetaTagResponseDto } from 'shared';
-import { MetaService, TaskService } from 'shared';
+import type { MetaTagResponseDto } from "@taico/client";
+import { MetaService, TaskService } from "@taico/client";
 
 interface TagSelectorProps {
   taskId: string;

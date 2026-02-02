@@ -2,5 +2,5 @@
 export type {
   TaskResponseDto as Task,
   CommentResponseDto as Comment
-} from 'shared';
+} from "@taico/client";
 

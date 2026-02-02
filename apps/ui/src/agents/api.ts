@@ -1,4 +1,4 @@
-import { OpenAPI, AgentService } from 'shared';
+import { OpenAPI, AgentService } from "@taico/client";
 import { BFF_BASE_URL } from '../config/api';
 
 // Use centralized API configuration

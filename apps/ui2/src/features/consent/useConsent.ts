@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AuthorizationServerService } from './api';
-import { ConsentDecisionDto, GetConsentMetadataResponseDto, OpenAPI } from 'shared';
+import { ConsentDecisionDto, GetConsentMetadataResponseDto, OpenAPI } from "@taico/client";
 
 export const useConsent = () => {
   console.log('useConsent mounting');

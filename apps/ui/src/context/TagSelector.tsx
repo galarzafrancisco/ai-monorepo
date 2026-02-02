@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import type { MetaTagResponseDto } from 'shared';
-import { MetaService, ContextService } from 'shared';
+import type { MetaTagResponseDto } from "@taico/client";
+import { MetaService, ContextService } from "@taico/client";
 
 interface TagSelectorProps {
   pageId: string;

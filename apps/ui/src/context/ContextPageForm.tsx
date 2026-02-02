@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, useMemo } from 'react';
 import type { ContextPage, ContextPageSummary } from './types';
-import type { CreateBlockDto, UpdateBlockDto } from 'shared';
+import type { CreateBlockDto, UpdateBlockDto } from "@taico/client";
 import { TagInput } from './TagInput';
 import { RichEditor } from './RichEditor';
 

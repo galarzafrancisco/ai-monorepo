@@ -1,4 +1,4 @@
-import { TaskResponseDto } from "shared";
+import { TaskResponseDto } from "@taico/client";
 import { NavegationItem } from "../types/NavegationItem";
 
 export const TaskStatus = TaskResponseDto.status;

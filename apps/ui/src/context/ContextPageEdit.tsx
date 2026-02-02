@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useContext } from './useContext';
 import { ContextPageForm } from './ContextPageForm';
-import type { UpdateBlockDto } from 'shared';
+import type { UpdateBlockDto } from "@taico/client";
 
 export function ContextPageEdit() {
   const { pageId } = useParams<{ pageId: string }>();

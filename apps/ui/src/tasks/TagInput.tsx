@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { MetaTagResponseDto } from 'shared';
-import { MetaService } from 'shared';
+import type { MetaTagResponseDto } from "@taico/client";
+import { MetaService } from "@taico/client";
 
 interface TagInputProps {
   value: string[]; // Array of tag names

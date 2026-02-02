@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Text, Stack, Chip } from '../../ui/primitives';
 import { useContextBlock } from './useContextBlocks';
 import { useContextCtx } from './ContextProvider';
-import { ContextTagResponseDto } from 'shared';
+import { ContextTagResponseDto } from "@taico/client";
 import './ContextBlockDetailPage.css';
 
 export function ContextBlockDetailPage() {

@@ -2,7 +2,7 @@
 export type {
   TaskResponseDto as Task,
   CommentResponseDto as Comment
-} from 'shared'
+} from "@taico/client"
 
-import { TaskResponseDto } from 'shared';
+import { TaskResponseDto } from "@taico/client";
 export const TaskStatus = TaskResponseDto.status

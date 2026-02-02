@@ -1,4 +1,4 @@
-import { OpenAPI, WebAuthenticationService, type UserResponseDto } from 'shared';
+import { OpenAPI, WebAuthenticationService, type UserResponseDto } from "@taico/client";
 import { BFF_BASE_URL } from '../config/api';
 
 // Use centralized API configuration

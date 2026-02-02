@@ -2,7 +2,7 @@ import { Stack, Text, Card, Button, Row } from '../../ui/primitives';
 import { useHomeCtx } from './HomeProvider';
 import { useEffect, useState } from 'react';
 import { ProjectsService } from '../projects/api';
-import type { ProjectResponseDto } from 'shared';
+import type { ProjectResponseDto } from "@taico/client";
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import '../../auth/LoginPage.css';
 

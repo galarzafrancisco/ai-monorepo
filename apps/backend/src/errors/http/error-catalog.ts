@@ -1,4 +1,4 @@
-import { ErrorCodes } from '../../../../../packages/shared/errors/error-codes';
+import { ErrorCodes } from "@taico/errors";
 
 export const ErrorCatalog: Record<
   string,

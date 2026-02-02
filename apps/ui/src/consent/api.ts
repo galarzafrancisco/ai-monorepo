@@ -1,4 +1,4 @@
-import { AuthorizationServerService, OpenAPI, type ConsentDecisionDto } from 'shared';
+import { AuthorizationServerService, OpenAPI, type ConsentDecisionDto } from "@taico/client";
 import { BFF_BASE_URL } from '../config/api';
 
 // Centralized API client configuration for consent flows

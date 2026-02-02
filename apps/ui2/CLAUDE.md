@@ -38,7 +38,7 @@ Each feature in `src/features/` follows this structure:
 
 ```
 features/<name>/
-├── api.ts              # Re-exports auto-generated API client from 'shared'
+├── api.ts              # Re-exports auto-generated API client from "@taico/client"
 ├── types.ts            # Local type definitions
 ├── use<Name>.ts        # Hook: API calls, WebSocket setup, state management
 ├── <Name>Provider.tsx  # Context provider wrapping the hook

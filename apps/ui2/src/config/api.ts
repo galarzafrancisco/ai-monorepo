@@ -9,7 +9,7 @@
  * served from the same origin as the backend.
  */
 
-import { OpenAPI } from 'shared';
+import { OpenAPI } from "@taico/client";
 
 /**
  * Get the base URL for API requests

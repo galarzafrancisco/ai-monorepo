@@ -5,4 +5,4 @@ export type {
   ConnectionResponseDto as ToolClient,
   ServerListResponseDto as ToolListResponse,
   AuthJourneyResponseDto as ToolAuthorization,
-} from 'shared';
+} from "@taico/client";

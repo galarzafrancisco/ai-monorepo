@@ -8,7 +8,7 @@ import { useToast } from '../hooks/useToast';
 import { Toast } from '../components/Toast';
 import { ContextPageForm } from './ContextPageForm';
 import { PageTree } from './PageTree';
-import type { CreateBlockDto } from 'shared';
+import type { CreateBlockDto } from "@taico/client";
 import type { ContextPageTree } from './types';
 
 export function ContextHomePage() {

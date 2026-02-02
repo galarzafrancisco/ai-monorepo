@@ -6,7 +6,7 @@ import { TaskStatus, TASKS_STATUS } from './const';
 import type { Comment } from './types';
 import { Chip, Text, Stack, Row, Button, Divider, Avatar, ErrorText, type ChipProps, DataRow, DataRowContainer } from '../../ui/primitives';
 import './TaskDetailPage.css';
-import { ActorResponseDto } from 'shared';
+import { ActorResponseDto } from "@taico/client";
 import { DataRowTag } from 'src/ui/primitives/DataRow';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 

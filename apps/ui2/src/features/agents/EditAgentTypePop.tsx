@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { AgentResponseDto } from "shared";
+import { AgentResponseDto } from "@taico/client";
 import { Text } from "../../ui/primitives";
 import "./EditAgentTypePop.css";
 

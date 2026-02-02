@@ -1,4 +1,4 @@
-import { ErrorCodes } from '../../../../../../packages/shared/errors/error-codes';
+import { ErrorCodes } from '@taico/errors';
 
 // Module-scoped re-export of error codes used by JWT Service
 export const JWTErrorCodes = {

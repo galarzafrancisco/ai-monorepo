@@ -10,7 +10,7 @@ import { TagBadge } from './TagBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Breadcrumb } from './Breadcrumb';
 import { PageTree } from './PageTree';
-import type { UpdateBlockDto, CreateBlockDto } from 'shared';
+import type { UpdateBlockDto, CreateBlockDto } from "@taico/client";
 import type { ContextPageTree } from './types';
 
 function formatDate(value: string) {

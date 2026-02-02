@@ -1,5 +1,5 @@
 import { Card, Text } from "../../ui/primitives";
-import type { ContextBlockSummaryResponseDto } from "shared";
+import type { ContextBlockSummaryResponseDto } from "@taico/client";
 import "./ThreadContextCard.css";
 
 export function ThreadContextCard({

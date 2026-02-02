@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { TaskActivityItem, useTasks } from "./useTasks"; // your abstraction hook
 import type { Task } from "./types";
 import { TaskStatus } from "./const";
-import { CommentResponseDto, CreateTaskDto, TaskResponseDto, InputRequestResponseDto } from "shared";
+import { CommentResponseDto, CreateTaskDto, TaskResponseDto, InputRequestResponseDto } from "@taico/client";
 
 // Animation state tracked per status (for column-based animations)
 export type AnimationState = {

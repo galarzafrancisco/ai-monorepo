@@ -8,7 +8,7 @@ import {
 import { Response } from 'express';
 import { mapDomainError } from '../errors/http/domain-to-problem.mapper';
 import { toProblem } from '../errors/http/problem-details';
-import { ErrorCodes } from '../../../../packages/shared/errors/error-codes';
+import { ErrorCodes } from '@taico/errors';
 import { getConfig } from 'src/config/env.config';
 
 /**

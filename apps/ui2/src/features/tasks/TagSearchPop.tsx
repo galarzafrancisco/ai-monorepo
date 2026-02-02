@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
 import { Text, DataRowTag } from "../../ui/primitives";
-import { MetaService, MetaTagResponseDto } from 'shared';
+import { MetaService, MetaTagResponseDto } from "@taico/client";
 import "./TagSearchPop.css";
 
 type TagSearchPopProps = {

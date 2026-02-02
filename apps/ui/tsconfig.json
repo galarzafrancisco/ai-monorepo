@@ -22,7 +22,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "shared": [
+      "@taico/client": [
         "../../packages/shared/dist/src/index"
       ],
       "@shared/*": [
