@@ -1,9 +1,12 @@
 // agentApiClient.ts
-import { AgentResponseDto } from "../../backend/src/agents/dto/agent-response.dto.js";
-import { CreateCommentDto } from "../../backend/src/tasks/dto/create-comment.dto.js";
-import { AgentRunResponseDto } from "../../backend/src/agent-runs/dto/agent-run-response.dto.js";
-import { CreateAgentRunDto } from "../../backend/src/agent-runs/dto/create-agent-run.dto.js";
-import { ProjectResponseDto } from "@taico/shared/client";
+import {
+  AgentResponseDto,
+  CreateCommentDto,
+  AgentRunResponseDto,
+  CreateAgentRunDto,
+  ProjectResponseDto,
+  AgentService,
+ } from "@taico/client";
 
 export class Taico {
   constructor(

@@ -5,9 +5,6 @@ Goal: keep Socket.IO specifics here, expose a clean TasksTransport interface.
 */
 
 import { io, Socket } from "socket.io-client";
-import { CommentEntity } from "../../backend/src/tasks/comment.entity.js";
-import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
-import { EventActor } from "../../backend/src/tasks/events/tasks.events.js";
 import {
   TaskWireEvents,
   TaskCreatedWireEvent,
@@ -16,15 +13,17 @@ import {
   TaskUpdatedWireEvent,
   TaskDeletedWireEvent,
   TaskCommentedWireEvent,
-} from "shared/types/task-events";
+  TaskWirePayload,
+  CommentWirePayload,
+} from "@taico/events";
 
 export type TaskEvent =
-  | { type: "created"; actorId: string; task: TaskEntity }
-  | { type: "updated"; actorId: string; task: TaskEntity }
+  | { type: "created"; actorId: string; task: TaskWirePayload }
+  | { type: "updated"; actorId: string; task: TaskWirePayload }
   | { type: "deleted"; actorId: string; taskId: string }
-  | { type: "assigned"; actorId: string; task: TaskEntity }
-  | { type: "status_changed"; actorId: string; task: TaskEntity }
-  | { type: "commented"; actorId: string; comment: CommentEntity };
+  | { type: "assigned"; actorId: string; task: TaskWirePayload }
+  | { type: "status_changed"; actorId: string; task: TaskWirePayload }
+  | { type: "commented"; actorId: string; comment: CommentWirePayload };
 
 export type TaskActivity = {
   taskId: string;
@@ -77,9 +76,9 @@ export class SocketIOTasksTransport implements TasksTransport {
     }
 
     this.socket.emit(
-      "task.activity.post",
+      TaskWireEvents.TASK_ACTIVITY_POST,
       activity,
-      (ack: TasksSocketAck) => this.options?.debug && console.log("[task.activity.post] ack:", ack)
+      (ack: TasksSocketAck) => this.options?.debug && console.log(`[${TaskWireEvents.TASK_ACTIVITY_POST}] ack:`, ack)
     );
   }
 
@@ -151,26 +150,26 @@ export class SocketIOTasksTransport implements TasksTransport {
     });
 
     // ----- events we care about -----
-    // Using shared wire event types from @taico/shared
+    // Using shared wire event types from @taico/events
     // These types ensure consistency between backend emission and frontend/agent reception
 
     this.socket.on(TaskWireEvents.TASK_CREATED, (event: TaskCreatedWireEvent) =>
-      this.emit({ type: "created", actorId: event.actor.id, task: event.payload as TaskEntity })
+      this.emit({ type: "created", actorId: event.actor.id, task: event.payload })
     );
     this.socket.on(TaskWireEvents.TASK_ASSIGNED, (event: TaskAssignedWireEvent) =>
-      this.emit({ type: "assigned", actorId: event.actor.id, task: event.payload as TaskEntity })
+      this.emit({ type: "assigned", actorId: event.actor.id, task: event.payload })
     );
     this.socket.on(TaskWireEvents.TASK_STATUS_CHANGED, (event: TaskStatusChangedWireEvent) =>
-      this.emit({ type: "status_changed", actorId: event.actor.id, task: event.payload as TaskEntity })
+      this.emit({ type: "status_changed", actorId: event.actor.id, task: event.payload })
     );
     this.socket.on(TaskWireEvents.TASK_UPDATED, (event: TaskUpdatedWireEvent) =>
-      this.emit({ type: "updated", actorId: event.actor.id, task: event.payload as TaskEntity })
+      this.emit({ type: "updated", actorId: event.actor.id, task: event.payload })
     );
     this.socket.on(TaskWireEvents.TASK_DELETED, (event: TaskDeletedWireEvent) =>
       this.emit({ type: "deleted", actorId: event.actor.id, taskId: event.payload.taskId })
     );
     this.socket.on(TaskWireEvents.TASK_COMMENTED, (event: TaskCommentedWireEvent) =>
-      this.emit({ type: "commented", actorId: event.actor.id, comment: event.payload as CommentEntity })
+      this.emit({ type: "commented", actorId: event.actor.id, comment: event.payload })
     );
 
     // Wait until first connect or error so callers can await start()

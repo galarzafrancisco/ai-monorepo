@@ -1,5 +1,5 @@
 // Coordinator.ts
-import { TaskEntity } from "../../backend/src/tasks/task.entity.js";
+import { TaskWirePayload } from "@taico/events";
 import { Taico } from "./Taico.js";
 import { ACCESS_TOKEN, AGENT_SLUG, BASE_URL } from "./helpers/config.js";
 import { prepareWorkspace } from "./helpers/prepareWorkspace.js";
@@ -62,7 +62,7 @@ export class Coordinator {
       console.log(`- Actor: ${evt.actorId}`);
       console.log(`- Task status: ${evt.task.status}`);
       const task = evt.task;
-      if (task.assigneeActorId === evt.actorId) {
+      if (task.assignee === evt.actorId) {
         console.log(`- Update caused by assignee. Ignoring as this is a self event. ❌`);
         return;
       }
@@ -70,11 +70,11 @@ export class Coordinator {
     }
   }
 
-  private async handleTask(task: TaskEntity) {
+  private async handleTask(task: TaskWirePayload) {
     // Get the agent
     const actor = task.assigneeActor;
-    if (!actor) {
-      console.log(`- Task ${task.id} not assigned. Skipping. ❌`);
+    if (!actor?.slug) {
+      console.log(`- Task ${task.id} not assigned or missing actor slug. Skipping. ❌`);
       return;
     }
     const agent = await this.client.getAgent(actor.slug);

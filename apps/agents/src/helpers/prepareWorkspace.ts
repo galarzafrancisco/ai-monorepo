@@ -2,7 +2,7 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { ensureRepo } from "./ensureRepo.js";
-import { REPO, WORK_DIR } from "./config.js";
+import { WORK_DIR } from "./config.js";
 
 const BASE_DIR = WORK_DIR;
 
