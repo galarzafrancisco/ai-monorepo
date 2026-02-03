@@ -120,6 +120,7 @@ export class AgentResponseDto {
       introduction: result.introduction,
       systemPrompt: result.systemPrompt,
       statusTriggers: result.statusTriggers,
+      tagTriggers: result.tagTriggers,
       allowedTools: result.allowedTools,
       isActive: result.isActive,
       concurrencyLimit: result.concurrencyLimit,
