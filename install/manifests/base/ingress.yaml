@@ -9,10 +9,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - taico.PLACEHOLDER_DOMAIN
+        - taico.app
       secretName: ai-stack-tls
   rules:
-    - host: taico.PLACEHOLDER_DOMAIN
+    - host: taico.app
       http:
         paths:
           - path: /

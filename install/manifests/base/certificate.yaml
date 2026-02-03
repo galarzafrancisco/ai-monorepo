@@ -5,7 +5,7 @@ metadata:
   namespace: ai-stack
 spec:
   dnsNames:
-    - taico.PLACEHOLDER_DOMAIN
+    - taico.app
   secretName: ai-stack-tls
   issuerRef:
     name: letsencrypt-cluster-issuer
