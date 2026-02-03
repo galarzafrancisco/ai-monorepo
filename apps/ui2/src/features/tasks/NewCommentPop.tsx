@@ -17,6 +17,14 @@ const defaultDraftState: CommentDraftState = {
   content: "",
 };
 
+const resizeTextarea = (el: HTMLTextAreaElement | null) => {
+  if (!el) {
+    return;
+  }
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight}px`;
+};
+
 export function NewCommentPop({ onCancel, onSave, taskId }: NewCommentPopProps) {
   const [draftState, setDraftState, clearDraft] = useDraftState({
     key: `new-comment-draft-${taskId}`,
@@ -31,11 +39,13 @@ export function NewCommentPop({ onCancel, onSave, taskId }: NewCommentPopProps) 
     contentRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    resizeTextarea(contentRef.current);
+  }, [content]);
+
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setDraftState({ ...draftState, content: e.target.value });
-    const el = e.target;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    resizeTextarea(e.target);
   }
 
   async function handleSave(): Promise<boolean> {

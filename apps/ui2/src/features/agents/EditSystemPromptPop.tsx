@@ -8,6 +8,14 @@ type EditSystemPromptPopProps = {
   onSave: (payload: { systemPrompt: string }) => Promise<boolean>;
 };
 
+const resizeTextarea = (el: HTMLTextAreaElement | null) => {
+  if (!el) {
+    return;
+  }
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight}px`;
+};
+
 export function EditSystemPromptPop({ initialValue, onCancel, onSave }: EditSystemPromptPopProps) {
   const [content, setContent] = useState(initialValue);
 
@@ -17,11 +25,13 @@ export function EditSystemPromptPop({ initialValue, onCancel, onSave }: EditSyst
     contentRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    resizeTextarea(contentRef.current);
+  }, [content]);
+
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setContent(e.target.value);
-    const el = e.target;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    resizeTextarea(e.target);
   }
 
   async function handleSave(): Promise<boolean> {
