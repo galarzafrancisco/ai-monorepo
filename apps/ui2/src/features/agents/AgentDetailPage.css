@@ -15,8 +15,6 @@
   background: var(--surface-2);
   padding: var(--space-3);
   border-radius: var(--radius-2);
-  max-height: 300px;
-  overflow-y: auto;
 }
 
 /* Actions */

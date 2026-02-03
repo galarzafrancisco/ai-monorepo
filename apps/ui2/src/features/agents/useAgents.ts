@@ -88,7 +88,15 @@ export const useAgents = () => {
   };
 
   // Update agent
-  const updateAgent = async (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[]; type?: AgentResponseDto.type }): Promise<Agent | null> => {
+  const updateAgent = async (
+    actorId: string,
+    updates: {
+      systemPrompt?: string;
+      statusTriggers?: TaskStatus[];
+      type?: AgentResponseDto.type;
+      introduction?: string;
+    }
+  ): Promise<Agent | null> => {
     setIsLoading(true);
     setError(null);
     try {
