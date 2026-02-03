@@ -9,6 +9,7 @@ import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDt
 import { AgentTokensService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
+import { EditTagTriggersPop } from './EditTagTriggersPop';
 import { EditIntroductionPop } from './EditIntroductionPop';
 import { EditAgentTypePop } from './EditAgentTypePop';
 import { TaskStatus } from '../../shared/const/taskStatus';
@@ -44,6 +45,7 @@ export function AgentDetailPage() {
   // Edit agent state
   const [showEditSystemPromptPop, setShowEditSystemPromptPop] = useState(false);
   const [showEditStatusTriggersPop, setShowEditStatusTriggersPop] = useState(false);
+  const [showEditTagTriggersPop, setShowEditTagTriggersPop] = useState(false);
   const [showEditAgentTypePop, setShowEditAgentTypePop] = useState(false);
   const [showEditIntroductionPop, setShowEditIntroductionPop] = useState(false);
 
@@ -200,6 +202,23 @@ export function AgentDetailPage() {
     }
   };
 
+  // Handle saving tag triggers
+  const handleSaveTagTriggers = async ({ tagTriggers }: { tagTriggers: string[] }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { tagTriggers });
+      if (updated) {
+        setAgent(updated);
+        setShowEditTagTriggersPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update tag triggers:', err);
+      return false;
+    }
+  };
+
   // Handle saving introduction
   const handleSaveIntroduction = async ({ introduction }: { introduction: string }): Promise<boolean> => {
     if (!agent) return false;
@@ -351,6 +370,20 @@ export function AgentDetailPage() {
             )
           ) : (
             <Text tone="muted">No status triggers configured</Text>
+          )}
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
+
+      {/* Tag Triggers */}
+      <DataRowContainer title="Tag Triggers" className="agent-detail-page__section">
+        <DataRow onClick={() => setShowEditTagTriggersPop(true)}>
+          {agent.tagTriggers && agent.tagTriggers.length > 0 ? (
+            <Text tone="muted">
+              {agent.tagTriggers.length} {agent.tagTriggers.length === 1 ? 'tag' : 'tags'} selected
+            </Text>
+          ) : (
+            <Text tone="muted">No tag triggers configured</Text>
           )}
           <Text size="1" tone="muted">tap to edit</Text>
         </DataRow>
@@ -574,6 +607,13 @@ export function AgentDetailPage() {
           initialValue={agent.statusTriggers as TaskStatus[]}
           onCancel={() => setShowEditStatusTriggersPop(false)}
           onSave={handleSaveStatusTriggers}
+        />
+      )}
+      {showEditTagTriggersPop && agent && (
+        <EditTagTriggersPop
+          initialValue={agent.tagTriggers || []}
+          onCancel={() => setShowEditTagTriggersPop(false)}
+          onSave={handleSaveTagTriggers}
         />
       )}
       {showEditAgentTypePop && agent && (

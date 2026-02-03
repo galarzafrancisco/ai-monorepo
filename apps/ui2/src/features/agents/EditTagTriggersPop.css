@@ -1,0 +1,61 @@
+.edit-tag-triggers-pop__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2);
+}
+
+.edit-tag-triggers-pop__description {
+  margin-bottom: var(--space-1);
+}
+
+.edit-tag-triggers-pop__checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.edit-tag-triggers-pop__checklist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background-color: var(--surface);
+  border-radius: var(--radius-2);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-tag-triggers-pop__checklist-item:hover {
+  background-color: var(--surface-hover);
+}
+
+.edit-tag-triggers-pop__checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.edit-tag-triggers-pop__tag-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.edit-tag-triggers-pop__tag-badge {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-2);
+  color: white;
+  font-size: var(--fs-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.edit-tag-triggers-pop__empty {
+  padding: var(--space-4);
+  text-align: center;
+}

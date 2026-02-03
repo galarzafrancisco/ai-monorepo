@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AgentsService } from './api';
 import type { Agent } from './types';
 import type { TaskStatus } from '../../shared/const/taskStatus';
-import type { AgentResponseDto } from "@taico/client";
+import type { AgentResponseDto, PatchAgentDto } from "@taico/client";
 
 export const useAgents = () => {
   // UI feedback
@@ -90,12 +90,7 @@ export const useAgents = () => {
   // Update agent
   const updateAgent = async (
     actorId: string,
-    updates: {
-      systemPrompt?: string;
-      statusTriggers?: TaskStatus[];
-      type?: AgentResponseDto.type;
-      introduction?: string;
-    }
+    updates: PatchAgentDto
   ): Promise<Agent | null> => {
     setIsLoading(true);
     setError(null);
