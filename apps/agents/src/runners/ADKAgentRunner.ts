@@ -42,6 +42,14 @@ export class ADKAgentRunner extends BaseAgentRunner {
             Authorization: `Bearer ${ACCESS_TOKEN}`,
             [RUN_ID_HEADER]: ctx.runId,
           },
+        }),
+        new MCPToolset({
+          type: 'StreamableHTTPConnectionParams',
+          url: `${BASE_URL}/api/v1/context/blocks/mcp`,
+          header: {
+            Authorization: `Bearer ${ACCESS_TOKEN}`,
+            [RUN_ID_HEADER]: ctx.runId,
+          },
         })
       ]
     });
