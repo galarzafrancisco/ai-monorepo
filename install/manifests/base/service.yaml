@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ai-stack
-  namespace: ai-stack
+  name: taico
+  namespace: taico
   labels:
-    app: ai-stack
+    app: taico
 spec:
   type: ClusterIP
   selector:
-    app: ai-stack
+    app: taico
   ports:
     - name: http
       port: 80

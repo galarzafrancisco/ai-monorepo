@@ -14,7 +14,7 @@ export default defineConfig({
     host: true,
     allowedHosts: [
       'air.local',
-      'debug.american-broomstick.com'
+      'debug.taico.app'
     ],
     port: Number(process.env.VITE_PORT) || 1000,
     proxy: {

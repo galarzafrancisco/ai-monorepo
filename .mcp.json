@@ -2,7 +2,7 @@
   "mcpServers": {
     "tasks": {
       "type": "http",
-      "url": "https://taico.american-broomstick.com/api/v1/tasks/tasks/mcp"
+      "url": "https://taico.app/api/v1/tasks/tasks/mcp"
     }
   }
 }
