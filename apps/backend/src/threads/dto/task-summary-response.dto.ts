@@ -66,4 +66,38 @@ export class TaskSummaryResponseDto {
     example: '2024-01-15T10:30:00Z',
   })
   updatedAt!: string;
+
+  /**
+   * Factory method to create a TaskSummaryResponseDto from a TaskSummaryResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: {
+    id: string;
+    name: string;
+    description: string;
+    status: TaskStatus;
+    assigneeActor: any | null;
+    createdByActor: any;
+    tags: any[];
+    commentCount: number;
+    inputRequests: any[];
+    updatedAt: Date;
+  }): TaskSummaryResponseDto {
+    return {
+      id: result.id,
+      name: result.name,
+      description: result.description,
+      status: result.status,
+      assigneeActor: result.assigneeActor
+        ? ActorResponseDto.fromResult(result.assigneeActor)
+        : null,
+      createdByActor: ActorResponseDto.fromResult(result.createdByActor),
+      tags: result.tags.map((t) => TagResponseDto.fromEntity(t)),
+      commentCount: result.commentCount,
+      inputRequests: result.inputRequests.map((ir) =>
+        InputRequestResponseDto.fromEntity(ir),
+      ),
+      updatedAt: result.updatedAt.toISOString(),
+    };
+  }
 }

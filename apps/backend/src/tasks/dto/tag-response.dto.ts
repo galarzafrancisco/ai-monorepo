@@ -31,4 +31,20 @@ export class TagResponseDto {
       color: tag.color,
     };
   }
+
+  /**
+   * Factory method to create a TagResponseDto from a TagResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: {
+    id: string;
+    name: string;
+    color?: string;
+  }): TagResponseDto {
+    return {
+      id: result.id,
+      name: result.name,
+      color: result.color,
+    };
+  }
 }

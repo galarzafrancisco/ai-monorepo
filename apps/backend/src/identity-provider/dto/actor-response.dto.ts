@@ -42,4 +42,26 @@ export class ActorResponseDto {
     nullable: true,
   })
   introduction!: string | null;
+
+  /**
+   * Factory method to create an ActorResponseDto from an ActorResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: {
+    id: string;
+    type: ActorType;
+    slug: string;
+    displayName: string;
+    avatarUrl: string | null;
+    introduction: string | null;
+  }): ActorResponseDto {
+    return {
+      id: result.id,
+      type: result.type,
+      slug: result.slug,
+      displayName: result.displayName,
+      avatarUrl: result.avatarUrl,
+      introduction: result.introduction,
+    };
+  }
 }

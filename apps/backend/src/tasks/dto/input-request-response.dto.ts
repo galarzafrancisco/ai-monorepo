@@ -79,4 +79,32 @@ export class InputRequestResponseDto {
       updatedAt: inputRequest.updatedAt.toISOString(),
     };
   }
+
+  /**
+   * Factory method to create an InputRequestResponseDto from an InputRequestResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: {
+    id: string;
+    taskId: string;
+    askedByActorId: string;
+    assignedToActorId: string;
+    question: string;
+    answer: string | null;
+    resolvedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): InputRequestResponseDto {
+    return {
+      id: result.id,
+      taskId: result.taskId,
+      askedByActorId: result.askedByActorId,
+      assignedToActorId: result.assignedToActorId,
+      question: result.question,
+      answer: result.answer,
+      resolvedAt: result.resolvedAt ? result.resolvedAt.toISOString() : null,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
+    };
+  }
 }

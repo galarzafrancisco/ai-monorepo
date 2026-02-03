@@ -74,4 +74,44 @@ export class AgentRunResponseDto {
     nullable: true,
   })
   lastPing!: string | null;
+
+  /**
+   * Factory method to create an AgentRunResponseDto from an AgentRunResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: {
+    id: string;
+    actorId: string;
+    actor: {
+      id: string;
+      type: any;
+      slug: string;
+      displayName: string;
+      avatarUrl: string | null;
+      introduction: string | null;
+    } | null;
+    parentTaskId: string;
+    parentTask: { id: string; name: string } | null;
+    createdAt: Date;
+    startedAt: Date | null;
+    endedAt: Date | null;
+    lastPing: Date | null;
+  }): AgentRunResponseDto {
+    return {
+      id: result.id,
+      actorId: result.actorId,
+      actor: result.actor ? ActorResponseDto.fromResult(result.actor) : null,
+      parentTaskId: result.parentTaskId,
+      parentTask: result.parentTask
+        ? {
+            id: result.parentTask.id,
+            name: result.parentTask.name,
+          }
+        : null,
+      createdAt: result.createdAt.toISOString(),
+      startedAt: result.startedAt ? result.startedAt.toISOString() : null,
+      endedAt: result.endedAt ? result.endedAt.toISOString() : null,
+      lastPing: result.lastPing ? result.lastPing.toISOString() : null,
+    };
+  }
 }

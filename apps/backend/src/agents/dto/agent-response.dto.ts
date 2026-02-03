@@ -97,4 +97,44 @@ export class AgentResponseDto {
     example: null,
   })
   deletedAt!: string | null;
+
+  /**
+   * Factory method to create an AgentResponseDto from an AgentResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: {
+    actorId: string;
+    slug: string;
+    name: string;
+    type: AgentType;
+    description: string | null;
+    introduction: string | null;
+    systemPrompt: string;
+    statusTriggers: TaskStatus[];
+    allowedTools: string[];
+    isActive: boolean;
+    concurrencyLimit: number | null;
+    rowVersion: number;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: Date | null;
+  }): AgentResponseDto {
+    return {
+      actorId: result.actorId,
+      slug: result.slug,
+      name: result.name,
+      type: result.type,
+      description: result.description,
+      introduction: result.introduction,
+      systemPrompt: result.systemPrompt,
+      statusTriggers: result.statusTriggers,
+      allowedTools: result.allowedTools,
+      isActive: result.isActive,
+      concurrencyLimit: result.concurrencyLimit,
+      rowVersion: result.rowVersion,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
+      deletedAt: result.deletedAt ? result.deletedAt.toISOString() : null,
+    };
+  }
 }

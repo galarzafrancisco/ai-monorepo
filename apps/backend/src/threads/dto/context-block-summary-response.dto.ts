@@ -12,4 +12,18 @@ export class ContextBlockSummaryResponseDto {
     example: 'API Design Documentation',
   })
   title!: string;
+
+  /**
+   * Factory method to create a ContextBlockSummaryResponseDto from a result.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: {
+    id: string;
+    title: string;
+  }): ContextBlockSummaryResponseDto {
+    return {
+      id: result.id,
+      title: result.title,
+    };
+  }
 }

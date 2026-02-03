@@ -147,4 +147,46 @@ export class TaskResponseDto {
       updatedAt: task.updatedAt.toISOString(),
     };
   }
+
+  /**
+   * Factory method to create a TaskResponseDto from a TaskResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: {
+    id: string;
+    name: string;
+    description: string;
+    status: TaskStatus;
+    assignee: string | null;
+    assigneeActor: any | null;
+    sessionId: string | null;
+    comments: any[];
+    inputRequests: any[];
+    tags: any[];
+    createdByActor: any;
+    dependsOnIds: string[];
+    createdAt: Date;
+    updatedAt: Date;
+  }): TaskResponseDto {
+    return {
+      id: result.id,
+      name: result.name,
+      description: result.description,
+      status: result.status,
+      assignee: result.assignee,
+      assigneeActor: result.assigneeActor
+        ? ActorResponseDto.fromResult(result.assigneeActor)
+        : null,
+      sessionId: result.sessionId ?? '',
+      comments: result.comments.map((c) => CommentResponseDto.fromResult(c)),
+      inputRequests: result.inputRequests.map((ir) =>
+        InputRequestResponseDto.fromResult(ir),
+      ),
+      tags: result.tags.map((t) => TagResponseDto.fromResult(t)),
+      createdByActor: ActorResponseDto.fromResult(result.createdByActor),
+      dependsOnIds: result.dependsOnIds,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
+    };
+  }
 }
