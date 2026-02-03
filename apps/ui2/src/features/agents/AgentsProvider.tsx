@@ -13,7 +13,7 @@ export type AgentsContextValue = {
   setSectionTitle: (title: string) => void;
   loadAgentDetails: (slug: string) => Promise<Agent | null>;
   createAgent: (params: { name: string; slug: string }) => Promise<Agent | null>;
-  updateAgent: (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[]; type?: AgentResponseDto.type }) => Promise<Agent | null>;
+  updateAgent: (actorId: string, updates: { systemPrompt?: string; statusTriggers?: TaskStatus[]; type?: AgentResponseDto.type; introduction?: string }) => Promise<Agent | null>;
   deleteAgent: (actorId: string) => Promise<boolean>;
 };
 
