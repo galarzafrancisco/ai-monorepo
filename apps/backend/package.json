@@ -1,8 +1,25 @@
 {
-  "name": "backend",
-  "version": "0.0.1",
-  "private": true,
+  "name": "@taico/taico",
+  "version": "0.0.2",
+  "private": false,
   "license": "MIT",
+  "main": "./dist/main.js",
+  "types": "./dist/main.d.ts",
+  "bin": {
+    "taico": "./dist/main.js"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "exports": {
+    ".": {
+      "main": "./dist/main.js",
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "nest build",
     "build:prod": "npm run build && node dist/main --generate-spec",
