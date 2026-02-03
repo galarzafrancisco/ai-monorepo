@@ -27,7 +27,6 @@ import { AgentListResponseDto } from './dto/agent-list-response.dto';
 import { ListAgentsQueryDto } from './dto/list-agents-query.dto';
 import { AgentParamsDto } from './dto/agent-params.dto';
 import { AgentActorParamsDto } from './dto/agent-actor-params.dto';
-import { AgentResult } from './dto/service/agents.service.types';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { AgentsScopes } from './agents.scopes';
@@ -58,7 +57,7 @@ export class AgentsController {
       isActive: dto.isActive,
       concurrencyLimit: dto.concurrencyLimit,
     });
-    return this.mapResultToResponse(result);
+    return AgentResponseDto.fromResult(result);
   }
 
   @Get()
@@ -76,7 +75,7 @@ export class AgentsController {
     });
 
     return {
-      items: result.items.map((item) => this.mapResultToResponse(item)),
+      items: result.items.map((item) => AgentResponseDto.fromResult(item)),
       total: result.total,
       page: result.page,
       limit: result.limit,
@@ -94,7 +93,7 @@ export class AgentsController {
     const result = await this.agentsService.getAgentBySlug({
       slug: params.slug,
     });
-    return this.mapResultToResponse(result);
+    return AgentResponseDto.fromResult(result);
   }
 
   @Patch(':actorId')
@@ -114,7 +113,7 @@ export class AgentsController {
       type: dto.type,
       introduction: dto.introduction,
     });
-    return this.mapResultToResponse(result);
+    return AgentResponseDto.fromResult(result);
   }
 
   // @Patch(':id')
@@ -145,25 +144,5 @@ export class AgentsController {
   @ApiOperation({ summary: 'Delete an agent' })
   async deleteAgent(@Param() params: AgentActorParamsDto): Promise<void> {
     await this.agentsService.deleteAgent(params.actorId);
-  }
-
-  private mapResultToResponse(result: AgentResult): AgentResponseDto {
-    return {
-      actorId: result.actorId,
-      slug: result.slug,
-      name: result.name,
-      type: result.type,
-      description: result.description,
-      introduction: result.introduction,
-      systemPrompt: result.systemPrompt,
-      statusTriggers: result.statusTriggers,
-      allowedTools: result.allowedTools,
-      isActive: result.isActive,
-      concurrencyLimit: result.concurrencyLimit,
-      rowVersion: result.rowVersion,
-      createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
-      deletedAt: result.deletedAt ? result.deletedAt.toISOString() : null,
-    };
   }
 }

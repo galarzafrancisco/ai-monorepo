@@ -38,17 +38,6 @@ import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { ThreadsScopes } from './threads.scopes';
 import { CreateTagDto } from '../meta/dto/create-tag.dto';
-import {
-  ThreadResult,
-  ActorResult,
-  TagResult,
-  TaskSummaryResult,
-  ContextBlockSummaryResult,
-} from './dto/service/threads.service.types';
-import { ActorResponseDto } from '../identity-provider/dto/actor-response.dto';
-import { MetaTagResponseDto } from '../meta/dto/tag-response.dto';
-import { TaskSummaryResponseDto } from './dto/task-summary-response.dto';
-import { ContextBlockSummaryResponseDto } from './dto/context-block-summary-response.dto';
 
 @ApiTags('Threads')
 @ApiCookieAuth('JWT-Cookie')
@@ -78,7 +67,7 @@ export class ThreadsController {
       contextBlockIds: dto.contextBlockIds,
       participantActorIds: dto.participantActorIds,
     });
-    return this.mapResultToResponse(result);
+    return ThreadResponseDto.fromResult(result);
   }
 
   @Patch(':id')
@@ -102,7 +91,7 @@ export class ThreadsController {
       },
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return ThreadResponseDto.fromResult(result);
   }
 
   @Get()
@@ -136,7 +125,7 @@ export class ThreadsController {
   @ApiNotFoundResponse({ description: 'Thread not found' })
   async getThread(@Param() params: ThreadParamsDto): Promise<ThreadResponseDto> {
     const result = await this.threadsService.getThreadById(params.id);
-    return this.mapResultToResponse(result);
+    return ThreadResponseDto.fromResult(result);
   }
 
   @Post(':id/tasks')
@@ -153,7 +142,7 @@ export class ThreadsController {
     @Body() dto: AttachTaskDto,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.attachTask(params.id, dto.taskId);
-    return this.mapResultToResponse(result);
+    return ThreadResponseDto.fromResult(result);
   }
 
   @Post(':id/context-blocks')
@@ -173,7 +162,7 @@ export class ThreadsController {
       params.id,
       dto.contextBlockId,
     );
-    return this.mapResultToResponse(result);
+    return ThreadResponseDto.fromResult(result);
   }
 
   @Post(':id/tags')
@@ -195,7 +184,7 @@ export class ThreadsController {
       { name: dto.name },
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return ThreadResponseDto.fromResult(result);
   }
 
   @Delete(':id/tags/:tagId')
@@ -216,7 +205,7 @@ export class ThreadsController {
       tagId,
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return ThreadResponseDto.fromResult(result);
   }
 
   @Post(':id/participants')
@@ -236,74 +225,6 @@ export class ThreadsController {
       params.id,
       dto.actorId,
     );
-    return this.mapResultToResponse(result);
-  }
-
-  private mapResultToResponse(result: ThreadResult): ThreadResponseDto {
-    return {
-      id: result.id,
-      title: result.title,
-      createdByActor: this.mapActorResultToResponse(result.createdByActor),
-      tasks: result.tasks.map((t) => this.mapTaskSummaryResultToResponse(t)),
-      referencedContextBlocks: result.referencedContextBlocks.map((b) =>
-        this.mapContextBlockSummaryResultToResponse(b),
-      ),
-      tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
-      participants: result.participants.map((p) =>
-        this.mapActorResultToResponse(p),
-      ),
-      rowVersion: result.rowVersion,
-      createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
-    };
-  }
-
-  private mapActorResultToResponse(result: ActorResult): ActorResponseDto {
-    return {
-      id: result.id,
-      type: result.type,
-      slug: result.slug,
-      displayName: result.displayName,
-      avatarUrl: result.avatarUrl,
-      introduction: result.introduction,
-    };
-  }
-
-  private mapTagResultToResponse(result: TagResult): MetaTagResponseDto {
-    return {
-      id: result.id,
-      name: result.name,
-      color: result.color,
-      createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
-    };
-  }
-
-  private mapTaskSummaryResultToResponse(
-    result: TaskSummaryResult,
-  ): TaskSummaryResponseDto {
-    return {
-      id: result.id,
-      name: result.name,
-      description: result.description,
-      status: result.status,
-      assigneeActor: result.assigneeActor
-        ? this.mapActorResultToResponse(result.assigneeActor)
-        : null,
-      createdByActor: this.mapActorResultToResponse(result.createdByActor),
-      tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
-      commentCount: result.commentCount,
-      inputRequests: result.inputRequests,
-      updatedAt: result.updatedAt.toISOString(),
-    };
-  }
-
-  private mapContextBlockSummaryResultToResponse(
-    result: ContextBlockSummaryResult,
-  ): ContextBlockSummaryResponseDto {
-    return {
-      id: result.id,
-      title: result.title,
-    };
+    return ThreadResponseDto.fromResult(result);
   }
 }

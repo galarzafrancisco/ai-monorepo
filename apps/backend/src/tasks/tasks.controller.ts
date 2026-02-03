@@ -43,14 +43,6 @@ import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { SearchTasksQueryDto } from './dto/search-tasks-query.dto';
 import { TaskSearchResultDto } from './dto/task-search-result.dto';
-import {
-  TaskResult,
-  CommentResult,
-  TagResult,
-  ActorResult,
-  InputRequestResult,
-} from './dto/service/tasks.service.types';
-import { ActorResponseDto } from '../identity-provider/dto/actor-response.dto';
 import { TasksMcpGateway } from './tasks.mcp.gateway';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
@@ -97,7 +89,7 @@ export class TasksController {
       createdByActorId: user.actorId,
       dependsOnIds: dto.dependsOnIds,
     });
-    return this.mapResultToResponse(result);
+    return TaskResponseDto.fromResult(result);
   }
 
   @Patch(':id')
@@ -126,7 +118,7 @@ export class TasksController {
       },
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return TaskResponseDto.fromResult(result);
   }
 
   @Patch(':id/assign')
@@ -151,7 +143,7 @@ export class TasksController {
       },
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return TaskResponseDto.fromResult(result);
   }
 
   @Patch(':id/assign-to-me')
@@ -173,7 +165,7 @@ export class TasksController {
       },
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return TaskResponseDto.fromResult(result);
   }
 
   @Delete(':id')
@@ -209,7 +201,7 @@ export class TasksController {
     });
 
     return {
-      items: result.items.map((item) => this.mapResultToResponse(item)),
+      items: result.items.map((item) => TaskResponseDto.fromResult(item)),
       total: result.total,
       page: result.page,
       limit: result.limit,
@@ -245,7 +237,7 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Task not found' })
   async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
     const result = await this.TasksService.getTaskById(params.id);
-    return this.mapResultToResponse(result);
+    return TaskResponseDto.fromResult(result);
   }
 
   @Post(':id/comments')
@@ -266,7 +258,7 @@ export class TasksController {
       commenterActorId: user.actorId,
       content: dto.content,
     });
-    return this.mapCommentResultToResponse(result);
+    return CommentResponseDto.fromResult(result);
   }
 
   @Patch(':id/status')
@@ -293,7 +285,7 @@ export class TasksController {
       },
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return TaskResponseDto.fromResult(result);
   }
 
   @Post(':id/tags')
@@ -315,7 +307,7 @@ export class TasksController {
       { name: dto.name },
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return TaskResponseDto.fromResult(result);
   }
 
   @Delete(':id/tags/:tagId')
@@ -336,7 +328,7 @@ export class TasksController {
       tagId,
       user.actorId,
     );
-    return this.mapResultToResponse(result);
+    return TaskResponseDto.fromResult(result);
   }
 
   @Post(':id/input-requests')
@@ -359,7 +351,7 @@ export class TasksController {
       assignedToActorId: dto.assignedToActorId,
       question: dto.question,
     });
-    return this.mapInputRequestResultToResponse(result);
+    return InputRequestResponseDto.fromResult(result);
   }
 
   @Post(':id/input-requests/:inputRequestId/answer')
@@ -385,30 +377,7 @@ export class TasksController {
       },
       user.actorId,
     );
-    return this.mapInputRequestResultToResponse(result);
-  }
-
-  private mapResultToResponse(result: TaskResult): TaskResponseDto {
-    return {
-      id: result.id,
-      name: result.name,
-      description: result.description,
-      status: result.status,
-      assignee: result.assignee,
-      assigneeActor: result.assigneeActor
-        ? this.mapActorResultToResponse(result.assigneeActor)
-        : null,
-      sessionId: result.sessionId ?? '',
-      comments: result.comments.map((c) => this.mapCommentResultToResponse(c)),
-      inputRequests: result.inputRequests.map((ir) =>
-        this.mapInputRequestResultToResponse(ir),
-      ),
-      tags: result.tags.map((t) => this.mapTagResultToResponse(t)),
-      createdByActor: this.mapActorResultToResponse(result.createdByActor),
-      dependsOnIds: result.dependsOnIds,
-      createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
-    };
+    return InputRequestResponseDto.fromResult(result);
   }
 
   @All('mcp')
@@ -421,55 +390,5 @@ export class TasksController {
     @Res() res: Response,
   ) {
     await this.gateway.handleRequest(req, res, user, authContext, runId);
-  }
-
-  private mapCommentResultToResponse(
-    result: CommentResult,
-  ): CommentResponseDto {
-    return {
-      id: result.id,
-      taskId: result.taskId,
-      commenterName: result.commenterName,
-      commenterActor: result.commenterActor
-        ? this.mapActorResultToResponse(result.commenterActor)
-        : null,
-      content: result.content,
-      createdAt: result.createdAt.toISOString(),
-    };
-  }
-
-  private mapActorResultToResponse(result: ActorResult): ActorResponseDto {
-    return {
-      id: result.id,
-      type: result.type,
-      slug: result.slug,
-      displayName: result.displayName,
-      avatarUrl: result.avatarUrl,
-      introduction: result.introduction,
-    };
-  }
-
-  private mapTagResultToResponse(result: TagResult): TagResponseDto {
-    return {
-      id: result.id,
-      name: result.name,
-      color: result.color,
-    };
-  }
-
-  private mapInputRequestResultToResponse(
-    result: InputRequestResult,
-  ): InputRequestResponseDto {
-    return {
-      id: result.id,
-      taskId: result.taskId,
-      askedByActorId: result.askedByActorId,
-      assignedToActorId: result.assignedToActorId,
-      question: result.question,
-      answer: result.answer,
-      resolvedAt: result.resolvedAt ? result.resolvedAt.toISOString() : null,
-      createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
-    };
   }
 }
