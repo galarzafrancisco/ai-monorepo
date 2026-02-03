@@ -4479,7 +4479,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Patch an agent (update system prompt, status triggers, and/or type)",
+        "summary": "Patch an agent (update system prompt, status triggers, tag triggers, and/or type)",
         "tags": [
           "Agent"
         ]
@@ -7908,6 +7908,18 @@
               ]
             }
           },
+          "tagTriggers": {
+            "description": "Task tags that will trigger this agent to activate",
+            "example": [
+              "code",
+              "review"
+            ],
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",
             "example": [
@@ -7995,6 +8007,17 @@
               "type": "string"
             }
           },
+          "tagTriggers": {
+            "description": "List of tags that trigger this agent",
+            "example": [
+              "code",
+              "review"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "allowedTools": {
             "description": "List of tool identifiers this agent is allowed to use",
             "example": [
@@ -8045,6 +8068,7 @@
           "type",
           "systemPrompt",
           "statusTriggers",
+          "tagTriggers",
           "allowedTools",
           "isActive",
           "rowVersion",
@@ -8114,6 +8138,17 @@
                 "FOR_REVIEW",
                 "DONE"
               ]
+            }
+          },
+          "tagTriggers": {
+            "description": "Task tags that will trigger this agent to activate",
+            "example": [
+              "code",
+              "review"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           },
           "type": {

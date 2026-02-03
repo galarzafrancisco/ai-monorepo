@@ -33,9 +33,10 @@ import { IdentityProviderService } from 'src/identity-provider/identity-provider
 import { Scope } from 'src/auth/core/types/scope.type';
 import { createCodexDev } from './agent/codex-dev.agent';
 import { createGeminiAssistant } from './agent/gemini-assistant.agent';
+import { createCodeReviewer } from './agent/code-reviewer.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
-import { DEV_PROMPT, ASSISTANT_PROMPT } from './agent/prompts';
+import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './agent/prompts';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -170,6 +171,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createGeminiAssistant);
     } catch (error) {
       this.logger.error('Error ensuring gemini-assistant Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createCodeReviewer);
+    } catch (error) {
+      this.logger.error('Error ensuring code-reviewer Agent exists');
     }
   }
 
@@ -315,6 +321,9 @@ export class AppInitRunner implements OnApplicationBootstrap {
       const assistantPromptExists = existingPages.some(
         (page) => page.title === 'Personal Assistant Prompt',
       );
+      const reviewerPromptExists = existingPages.some(
+        (page) => page.title === 'Code Reviewer Prompt',
+      );
 
       if (!devPromptExists) {
         this.logger.log('Creating developer agent prompt context block');
@@ -336,6 +345,17 @@ export class AppInitRunner implements OnApplicationBootstrap {
           tagNames: ['prompt'],
         });
         this.logger.log('Personal assistant prompt context block created');
+      }
+
+      if (!reviewerPromptExists) {
+        this.logger.log('Creating code reviewer prompt context block');
+        await this.contextService.createBlock({
+          title: 'Code Reviewer Prompt',
+          content: REVIEWER_PROMPT,
+          createdByActorId: 'system',
+          tagNames: ['prompt'],
+        });
+        this.logger.log('Code reviewer prompt context block created');
       }
 
       this.logger.log('Prompt context blocks ensured');

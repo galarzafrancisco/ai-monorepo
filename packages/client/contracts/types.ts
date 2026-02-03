@@ -1271,7 +1271,7 @@ export interface paths {
         delete: operations["AgentsController_deleteAgent"];
         options?: never;
         head?: never;
-        /** Patch an agent (update system prompt, status triggers, and/or type) */
+        /** Patch an agent (update system prompt, status triggers, tag triggers, and/or type) */
         patch: operations["AgentsController_patchAgent"];
         trace?: never;
     };
@@ -3470,6 +3470,15 @@ export interface components {
              */
             statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
             /**
+             * @description Task tags that will trigger this agent to activate
+             * @default []
+             * @example [
+             *       "code",
+             *       "review"
+             *     ]
+             */
+            tagTriggers: string[];
+            /**
              * @description List of tool identifiers this agent is allowed to use
              * @default []
              * @example [
@@ -3536,6 +3545,14 @@ export interface components {
              *     ]
              */
             statusTriggers: string[];
+            /**
+             * @description List of tags that trigger this agent
+             * @example [
+             *       "code",
+             *       "review"
+             *     ]
+             */
+            tagTriggers: string[];
             /**
              * @description List of tool identifiers this agent is allowed to use
              * @example [
@@ -3614,6 +3631,14 @@ export interface components {
              *     ]
              */
             statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /**
+             * @description Task tags that will trigger this agent to activate
+             * @example [
+             *       "code",
+             *       "review"
+             *     ]
+             */
+            tagTriggers?: string[];
             /**
              * @description Type of agent (provider)
              * @example claude

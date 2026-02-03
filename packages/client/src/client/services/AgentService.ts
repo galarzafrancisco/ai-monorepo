@@ -67,7 +67,7 @@ export class AgentService {
         });
     }
     /**
-     * Patch an agent (update system prompt, status triggers, and/or type)
+     * Patch an agent (update system prompt, status triggers, tag triggers, and/or type)
      * @param actorId Agent actor ID
      * @param requestBody
      * @returns AgentResponseDto

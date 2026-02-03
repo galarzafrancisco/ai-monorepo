@@ -9,6 +9,7 @@ export type CreateAgentInput = {
   introduction?: string;
   systemPrompt: string;
   statusTriggers: TaskStatus[];
+  tagTriggers?: string[];
   allowedTools: string[];
   isActive?: boolean;
   concurrencyLimit?: number;
@@ -20,6 +21,7 @@ export type UpdateAgentInput = Partial<CreateAgentInput>;
 export type PatchAgentInput = {
   systemPrompt?: string;
   statusTriggers?: TaskStatus[];
+  tagTriggers?: string[];
   type?: AgentType;
   avatarUrl?: string;
   introduction?: string;
@@ -34,6 +36,7 @@ export type AgentResult = {
   introduction: string | null;
   systemPrompt: string;
   statusTriggers: TaskStatus[];
+  tagTriggers: string[];
   allowedTools: string[];
   isActive: boolean;
   concurrencyLimit: number | null;

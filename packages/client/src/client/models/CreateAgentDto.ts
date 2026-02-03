@@ -32,6 +32,10 @@ export type CreateAgentDto = {
      */
     statusTriggers?: Array<'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'>;
     /**
+     * Task tags that will trigger this agent to activate
+     */
+    tagTriggers?: Array<string>;
+    /**
      * List of tool identifiers this agent is allowed to use
      */
     allowedTools?: Array<string>;

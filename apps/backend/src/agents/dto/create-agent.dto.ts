@@ -77,6 +77,17 @@ export class CreateAgentDto {
   statusTriggers?: TaskStatus[];
 
   @ApiPropertyOptional({
+    description: 'Task tags that will trigger this agent to activate',
+    example: ['code', 'review'],
+    type: [String],
+    default: [],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tagTriggers?: string[];
+
+  @ApiPropertyOptional({
     description: 'List of tool identifiers this agent is allowed to use',
     example: ['tasks.createTask', 'tasks.readTask', 'context.search'],
     type: [String],
