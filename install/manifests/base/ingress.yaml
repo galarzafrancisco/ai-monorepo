@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ai-stack
-  namespace: ai-stack
+  name: taico
+  namespace: taico
   annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
@@ -10,7 +10,7 @@ spec:
   tls:
     - hosts:
         - taico.app
-      secretName: ai-stack-tls
+      secretName: taico-tls
   rules:
     - host: taico.app
       http:
@@ -19,6 +19,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ai-stack
+                name: taico
                 port:
                   number: 80

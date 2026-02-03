@@ -18,7 +18,7 @@ replacements:
     targets:
       - select:
           kind: Certificate
-          name: ai-stack
+          name: taico
         fieldPaths:
           - spec.dnsNames.0
         options:
@@ -26,7 +26,7 @@ replacements:
           index: 1
       - select:
           kind: Ingress
-          name: ai-stack
+          name: taico
         fieldPaths:
           - spec.tls.0.hosts.0
           - spec.rules.0.host
@@ -41,10 +41,10 @@ replacements:
     targets:
       - select:
           kind: Deployment
-          name: ai-stack
+          name: taico
         fieldPaths:
           - spec.template.spec.volumes.[name=data].hostPath.path
-  # Replace ADK_URL in ai-stack-config ConfigMap
+  # Replace ADK_URL in taico-config ConfigMap
   - source:
       kind: ConfigMap
       name: env
@@ -52,10 +52,10 @@ replacements:
     targets:
       - select:
           kind: ConfigMap
-          name: ai-stack-config
+          name: taico-config
         fieldPaths:
           - data.ADK_URL
-  # Replace OLLAMA_URL in ai-stack-config ConfigMap
+  # Replace OLLAMA_URL in taico-config ConfigMap
   - source:
       kind: ConfigMap
       name: env
@@ -63,10 +63,10 @@ replacements:
     targets:
       - select:
           kind: ConfigMap
-          name: ai-stack-config
+          name: taico-config
         fieldPaths:
           - data.OLLAMA_URL
-  # Replace ISSUER_URL in ai-stack-config ConfigMap
+  # Replace ISSUER_URL in taico-config ConfigMap
   - source:
       kind: ConfigMap
       name: env
@@ -74,6 +74,6 @@ replacements:
     targets:
       - select:
           kind: ConfigMap
-          name: ai-stack-config
+          name: taico-config
         fieldPaths:
           - data.ISSUER_URL

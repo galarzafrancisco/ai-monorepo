@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ai-stack
-  namespace: ai-stack
+  name: taico
+  namespace: taico
   labels:
-    app: ai-stack
+    app: taico
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ai-stack
+      app: taico
   template:
     metadata:
       labels:
-        app: ai-stack
+        app: taico
     spec:
       containers:
-      - name: ai-stack
+      - name: taico
         image: ghcr.io/galarzafrancisco/ai-monorepo:main-6a2a84c
         ports:
         - containerPort: 3000
@@ -24,7 +24,7 @@ spec:
           protocol: TCP
         envFrom:
         - configMapRef:
-            name: ai-stack-config
+            name: taico-config
         volumeMounts:
         - name: data
           mountPath: /app/data

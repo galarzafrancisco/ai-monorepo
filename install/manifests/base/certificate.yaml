@@ -1,12 +1,12 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: ai-stack
-  namespace: ai-stack
+  name: taico
+  namespace: taico
 spec:
   dnsNames:
     - taico.app
-  secretName: ai-stack-tls
+  secretName: taico-tls
   issuerRef:
     name: letsencrypt-cluster-issuer
     kind: ClusterIssuer

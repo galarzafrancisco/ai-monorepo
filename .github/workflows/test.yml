@@ -138,14 +138,14 @@ jobs:
       - name: Copy manifests to spark-ops
         run: |
           # Remove old manifests if they exist
-          rm -rf spark-ops/k8s/ai-stack
+          rm -rf spark-ops/k8s/taico
 
           # Copy entire manifests directory
           mkdir -p spark-ops/k8s
-          cp -r ai-monorepo/install/manifests spark-ops/k8s/ai-stack
+          cp -r ai-monorepo/install/manifests spark-ops/k8s/taico
 
           # Update image tag in deployment.yaml
-          cd spark-ops/k8s/ai-stack/base
+          cd spark-ops/k8s/taico/base
 
           # Use kustomize to set image tag
           kustomize edit set image ghcr.io/galarzafrancisco/ai-monorepo=ghcr.io/galarzafrancisco/ai-monorepo:${{ steps.image-tag.outputs.tag }}
@@ -156,18 +156,18 @@ jobs:
           token: ${{ secrets.SPARK_OPS_TOKEN }}
           path: spark-ops
           commit-message: |
-            deploy: update ai-stack manifests and image to ${{ steps.image-tag.outputs.tag }}
+            deploy: update taico manifests and image to ${{ steps.image-tag.outputs.tag }}
 
             Source: ${{ github.repository }}@${{ github.sha }}
             Build: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-          branch: deploy/ai-stack-${{ steps.image-tag.outputs.sha }}
+          branch: deploy/taico-${{ steps.image-tag.outputs.sha }}
           delete-branch: true
-          title: "Deploy ai-stack (${{ steps.image-tag.outputs.tag }})"
+          title: "Deploy taico (${{ steps.image-tag.outputs.tag }})"
           body: |
             ## Deployment Update
 
-            **Service**: ai-stack
+            **Service**: taico
             **Image Tag**: `${{ steps.image-tag.outputs.tag }}`
             **Source Commit**: ${{ github.sha }}
 
@@ -184,4 +184,4 @@ jobs:
 
           labels: |
             automated-deployment
-            ai-stack
+            taico
