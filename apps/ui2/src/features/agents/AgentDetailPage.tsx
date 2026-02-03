@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAgentsCtx } from './AgentsProvider';
-import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
-import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDto } from "@taico/client";
+import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDto, MetaService, MetaTagResponseDto } from "@taico/client";
 import { AgentTokensService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
+import { EditTagTriggersPop } from './EditTagTriggersPop';
 import { EditIntroductionPop } from './EditIntroductionPop';
 import { EditAgentTypePop } from './EditAgentTypePop';
 import { TaskStatus } from '../../shared/const/taskStatus';
@@ -41,9 +42,14 @@ export function AgentDetailPage() {
   const [availableScopes, setAvailableScopes] = useState<ScopeDto[]>([]);
   const [scopesLoading, setScopesLoading] = useState(false);
 
+  // All tags for displaying tag triggers
+  const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
+
   // Edit agent state
   const [showEditSystemPromptPop, setShowEditSystemPromptPop] = useState(false);
   const [showEditStatusTriggersPop, setShowEditStatusTriggersPop] = useState(false);
+  const [showEditTagTriggersPop, setShowEditTagTriggersPop] = useState(false);
   const [showEditAgentTypePop, setShowEditAgentTypePop] = useState(false);
   const [showEditIntroductionPop, setShowEditIntroductionPop] = useState(false);
 
@@ -87,6 +93,19 @@ export function AgentDetailPage() {
     }
   }, []);
 
+  // Load all tags for displaying tag triggers
+  const loadTags = useCallback(async () => {
+    setTagsLoading(true);
+    try {
+      const tags = await MetaService.metaControllerGetAllTags();
+      setAllTags(tags);
+    } catch (err) {
+      console.error('Failed to load tags:', err);
+    } finally {
+      setTagsLoading(false);
+    }
+  }, []);
+
   // Load agent details if not in list
   useEffect(() => {
     if (!agentFromList && slug) {
@@ -107,8 +126,9 @@ export function AgentDetailPage() {
   useEffect(() => {
     if (agent) {
       loadTokens();
+      loadTags();
     }
-  }, [agent, loadTokens]);
+  }, [agent, loadTokens, loadTags]);
 
   // Load available scopes when create form is shown
   useEffect(() => {
@@ -196,6 +216,23 @@ export function AgentDetailPage() {
       return false;
     } catch (err) {
       console.error('Failed to update status triggers:', err);
+      return false;
+    }
+  };
+
+  // Handle saving tag triggers
+  const handleSaveTagTriggers = async ({ tagTriggers }: { tagTriggers: string[] }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { tagTriggers });
+      if (updated) {
+        setAgent(updated);
+        setShowEditTagTriggersPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update tag triggers:', err);
       return false;
     }
   };
@@ -351,6 +388,30 @@ export function AgentDetailPage() {
             )
           ) : (
             <Text tone="muted">No status triggers configured</Text>
+          )}
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
+
+      {/* Tag Triggers */}
+      <DataRowContainer title="Tag Triggers" className="agent-detail-page__section">
+        <DataRow onClick={() => setShowEditTagTriggersPop(true)}>
+          {agent.tagTriggers && agent.tagTriggers.length > 0 ? (
+            <div className="agent-detail-page__tag-triggers">
+              {tagsLoading ? (
+                <Text tone="muted">Loading tags...</Text>
+              ) : (
+                allTags
+                  .filter(tag => agent.tagTriggers.includes(tag.id))
+                  .map(tag => (
+                    <Chip key={tag.id} color={getChipColorFromHex(tag.color)}>
+                      {tag.name}
+                    </Chip>
+                  ))
+              )}
+            </div>
+          ) : (
+            <Text tone="muted">No tag triggers configured</Text>
           )}
           <Text size="1" tone="muted">tap to edit</Text>
         </DataRow>
@@ -576,6 +637,13 @@ export function AgentDetailPage() {
           onSave={handleSaveStatusTriggers}
         />
       )}
+      {showEditTagTriggersPop && agent && (
+        <EditTagTriggersPop
+          initialValue={agent.tagTriggers || []}
+          onCancel={() => setShowEditTagTriggersPop(false)}
+          onSave={handleSaveTagTriggers}
+        />
+      )}
       {showEditAgentTypePop && agent && (
         <EditAgentTypePop
           initialValue={agent.type}
@@ -614,4 +682,46 @@ function getStatusTag(isActive: boolean): DataRowTag {
     label: isActive ? 'active' : 'inactive',
     color: isActive ? 'green' : 'gray',
   };
+}
+
+// Map hex color to Chip color
+function getChipColorFromHex(hex: string | null | undefined): "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple" {
+  if (!hex) return 'gray';
+
+  // Simple color mapping based on common hex values
+  const colorMap: Record<string, "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple"> = {
+    '#6B7280': 'gray',
+    '#3B82F6': 'blue',
+    '#10B981': 'green',
+    '#52B788': 'green',
+    '#F59E0B': 'yellow',
+    '#F97316': 'orange',
+    '#EF4444': 'red',
+    '#8B5CF6': 'purple',
+    '#A855F7': 'purple',
+    '#98D8C8': 'green',
+  };
+
+  // Try exact match first
+  if (colorMap[hex]) return colorMap[hex];
+
+  // Fallback to heuristic based on hex value
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+
+  // Simple heuristic: which channel dominates
+  if (r > g && r > b) {
+    if (g > 100) return 'orange';
+    return 'red';
+  } else if (g > r && g > b) {
+    return 'green';
+  } else if (b > r && b > g) {
+    if (r > 100) return 'purple';
+    return 'blue';
+  } else if (r > 150 && g > 150 && b < 100) {
+    return 'yellow';
+  }
+
+  return 'gray';
 }
