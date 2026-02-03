@@ -409,6 +409,7 @@ export function TaskDetailPage() {
                             </Text>
                           </div>
                           <Text>
+                            <Text as='span' tone='muted'>Asked:</Text>{' '}
                             {inputRequest.question}
                           </Text>
                         </div>
@@ -423,6 +424,7 @@ export function TaskDetailPage() {
                               </Text>
                             </div>
                             <Text>
+                              <Text as='span' tone='muted'>Answered:</Text>{' '}
                               {answerText}
                             </Text>
                           </div>
