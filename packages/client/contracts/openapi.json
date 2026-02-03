@@ -5638,6 +5638,12 @@
             "description": "URL to the actor avatar image",
             "example": "https://example.com/avatar.png",
             "nullable": true
+          },
+          "introduction": {
+            "type": "string",
+            "description": "Short description of what this actor is good at and when to assign them tasks",
+            "example": "Expert in React and TypeScript development. Assign me frontend tasks.",
+            "nullable": true
           }
         },
         "required": [
@@ -7868,6 +7874,11 @@
             "description": "Short description of what this agent does",
             "example": "A helpful assistant agent"
           },
+          "introduction": {
+            "type": "string",
+            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
+            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
+          },
           "systemPrompt": {
             "type": "string",
             "description": "Core instructions/persona for this agent",
@@ -7956,6 +7967,11 @@
             "type": "object",
             "description": "Short description of what this agent does",
             "example": "A helpful assistant agent"
+          },
+          "introduction": {
+            "type": "object",
+            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
+            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
           },
           "systemPrompt": {
             "type": "string",
@@ -8105,6 +8121,11 @@
               "adk",
               "other"
             ]
+          },
+          "introduction": {
+            "type": "string",
+            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
+            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
           }
         }
       },

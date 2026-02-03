@@ -82,13 +82,15 @@ export class IdentityProviderService {
   }
 
   async createUser(createUserInput: CreateUserInput): Promise<User> {
-    const { password, email, displayName, slug } = createUserInput;
+    const { password, email, displayName, slug, introduction } =
+      createUserInput;
     const passwordHash = await this.hashPassword(password);
 
     // Create actor first (use email as slug for users)
     const actor = await this.actorService.createUserActor({
       slug,
       displayName,
+      introduction,
     });
 
     // Create user with actor reference

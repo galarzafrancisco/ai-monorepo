@@ -24,6 +24,10 @@ export type AgentResponseDto = {
      */
     description?: Record<string, any>;
     /**
+     * Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+     */
+    introduction?: Record<string, any>;
+    /**
      * Core instructions/persona for this agent
      */
     systemPrompt: string;

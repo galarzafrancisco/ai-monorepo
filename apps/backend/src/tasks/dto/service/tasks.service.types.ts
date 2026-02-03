@@ -12,6 +12,7 @@ export type ActorResult = {
   slug: string;
   displayName: string;
   avatarUrl: string | null;
+  introduction: string | null;
 };
 
 // Input types (for service methods)

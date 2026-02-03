@@ -6,6 +6,7 @@ export type CreateAgentInput = {
   name: string;
   type?: AgentType;
   description?: string;
+  introduction?: string;
   systemPrompt: string;
   statusTriggers: TaskStatus[];
   allowedTools: string[];
@@ -21,6 +22,7 @@ export type PatchAgentInput = {
   statusTriggers?: TaskStatus[];
   type?: AgentType;
   avatarUrl?: string;
+  introduction?: string;
 };
 
 export type AgentResult = {
@@ -29,6 +31,7 @@ export type AgentResult = {
   name: string;
   type: AgentType;
   description: string | null;
+  introduction: string | null;
   systemPrompt: string;
   statusTriggers: TaskStatus[];
   allowedTools: string[];

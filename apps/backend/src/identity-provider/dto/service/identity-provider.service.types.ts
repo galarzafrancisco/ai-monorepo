@@ -11,6 +11,7 @@ export type CreateUserInput = {
   displayName: string;
   slug: string;
   password: string;
+  introduction?: string;
 };
 
 export type UpdateUserRoleInput = {

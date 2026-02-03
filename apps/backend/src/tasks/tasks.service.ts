@@ -879,6 +879,7 @@ export class TasksService {
       slug: actor.slug,
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
+      introduction: actor.introduction,
     };
   }
 

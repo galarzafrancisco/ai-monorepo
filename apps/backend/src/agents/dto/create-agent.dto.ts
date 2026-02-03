@@ -47,6 +47,15 @@ export class CreateAgentDto {
   @IsOptional()
   description?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks',
+    example: 'I specialize in code review and bug fixing. Assign me tasks related to quality assurance.',
+  })
+  @IsString()
+  @IsOptional()
+  introduction?: string;
+
   @ApiProperty({
     description: 'Core instructions/persona for this agent',
     example: 'You are a helpful assistant that helps users with tasks.',

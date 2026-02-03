@@ -149,6 +149,7 @@ export class AgentRunsController {
       slug: actor.slug,
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
+      introduction: actor.introduction,
     };
   }
 }

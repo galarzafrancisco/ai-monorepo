@@ -34,4 +34,12 @@ export class ActorResponseDto {
     nullable: true,
   })
   avatarUrl!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Short description of what this actor is good at and when to assign them tasks',
+    example: 'Expert in React and TypeScript development. Assign me frontend tasks.',
+    nullable: true,
+  })
+  introduction!: string | null;
 }

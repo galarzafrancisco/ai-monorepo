@@ -56,6 +56,7 @@ export class CommentResponseDto {
             slug: comment.commenterActor.slug,
             displayName: comment.commenterActor.displayName,
             avatarUrl: comment.commenterActor.avatarUrl,
+            introduction: comment.commenterActor.introduction,
           }
         : null,
       content: comment.content,

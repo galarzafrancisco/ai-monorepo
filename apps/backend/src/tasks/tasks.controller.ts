@@ -445,6 +445,7 @@ export class TasksController {
       slug: result.slug,
       displayName: result.displayName,
       avatarUrl: result.avatarUrl,
+      introduction: result.introduction,
     };
   }
 

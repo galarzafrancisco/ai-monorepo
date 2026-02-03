@@ -190,6 +190,7 @@ export class AgentRunsService {
       slug: actor.slug,
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
+      introduction: actor.introduction,
     };
   }
 
