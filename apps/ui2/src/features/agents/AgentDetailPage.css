@@ -123,6 +123,13 @@
   gap: 2px;
 }
 
+/* Tag triggers display */
+.agent-detail-page__tag-triggers {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .agent-detail-page__system-prompt {
