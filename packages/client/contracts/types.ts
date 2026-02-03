@@ -3010,6 +3010,11 @@ export interface components {
             title: string;
             /** @description Actor who created the thread */
             createdByActor: components["schemas"]["ActorResponseDto"];
+            /**
+             * @description Parent task ID that created the thread
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentTaskId?: string | null;
             /** @description Tasks attached to this thread */
             tasks: components["schemas"]["TaskSummaryResponseDto"][];
             /** @description Context blocks referenced in this thread */

@@ -7211,6 +7211,12 @@
               }
             ]
           },
+          "parentTaskId": {
+            "type": "string",
+            "description": "Parent task ID that created the thread",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
           "tasks": {
             "description": "Tasks attached to this thread",
             "type": "array",
