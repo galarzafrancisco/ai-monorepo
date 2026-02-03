@@ -12,6 +12,7 @@ export type ActorResult = {
   slug: string;
   displayName: string;
   avatarUrl: string | null;
+  introduction: string | null;
 };
 
 export type TagResult = {
@@ -68,6 +69,7 @@ export type ThreadResult = {
   id: string;
   title: string;
   createdByActor: ActorResult;
+  parentTaskId: string | null;
   tasks: TaskSummaryResult[];
   referencedContextBlocks: ContextBlockSummaryResult[];
   tags: TagResult[];

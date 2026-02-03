@@ -23,6 +23,10 @@ export type ActorResponseDto = {
      * URL to the actor avatar image
      */
     avatarUrl?: string | null;
+    /**
+     * Short description of what this actor is good at and when to assign them tasks
+     */
+    introduction?: string | null;
 };
 export namespace ActorResponseDto {
     /**

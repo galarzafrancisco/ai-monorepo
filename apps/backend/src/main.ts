@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';

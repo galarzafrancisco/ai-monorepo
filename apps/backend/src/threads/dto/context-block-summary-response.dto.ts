@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ContextBlockSummaryResult } from './service/threads.service.types';
 
 export class ContextBlockSummaryResponseDto {
   @ApiProperty({
@@ -12,4 +13,15 @@ export class ContextBlockSummaryResponseDto {
     example: 'API Design Documentation',
   })
   title!: string;
+
+  /**
+   * Factory method to create a ContextBlockSummaryResponseDto from a result.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: ContextBlockSummaryResult): ContextBlockSummaryResponseDto {
+    return {
+      id: result.id,
+      title: result.title,
+    };
+  }
 }

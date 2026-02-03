@@ -9,6 +9,7 @@ import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDt
 import { AgentTokensService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
+import { EditIntroductionPop } from './EditIntroductionPop';
 import { EditAgentTypePop } from './EditAgentTypePop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import './AgentDetailPage.css';
@@ -44,6 +45,7 @@ export function AgentDetailPage() {
   const [showEditSystemPromptPop, setShowEditSystemPromptPop] = useState(false);
   const [showEditStatusTriggersPop, setShowEditStatusTriggersPop] = useState(false);
   const [showEditAgentTypePop, setShowEditAgentTypePop] = useState(false);
+  const [showEditIntroductionPop, setShowEditIntroductionPop] = useState(false);
 
   // Find actor associated with this agent
   const { actors } = useActorsCtx();
@@ -198,6 +200,23 @@ export function AgentDetailPage() {
     }
   };
 
+  // Handle saving introduction
+  const handleSaveIntroduction = async ({ introduction }: { introduction: string }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { introduction });
+      if (updated) {
+        setAgent(updated);
+        setShowEditIntroductionPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update introduction:', err);
+      return false;
+    }
+  };
+
   // Handle saving agent type
   const handleSaveAgentType = async ({ type }: { type: AgentResponseDto.type }): Promise<boolean> => {
     if (!agent) return false;
@@ -260,6 +279,9 @@ export function AgentDetailPage() {
     );
   }
 
+  const introductionValue = agent.introduction as unknown;
+  const introductionText = typeof introductionValue === 'string' ? introductionValue : '';
+
   return (
     <div className="agent-detail-page">
 
@@ -291,8 +313,18 @@ export function AgentDetailPage() {
       {/* System Prompt */}
       <DataRowContainer title="System Prompt" className="agent-detail-page__section">
         <DataRow onClick={() => setShowEditSystemPromptPop(true)}>
-          <Text size="2" className="agent-detail-page__system-prompst">
+          <Text size="2" className="agent-detail-page__system-prompt">
             {agent.systemPrompt || 'No system prompt configured'}
+          </Text>
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
+
+      {/* Introduction */}
+      <DataRowContainer title="Introduction" className="agent-detail-page__section">
+        <DataRow onClick={() => setShowEditIntroductionPop(true)}>
+          <Text size="2" className="agent-detail-page__system-prompt">
+            {introductionText.trim().length > 0 ? introductionText : 'No introduction configured'}
           </Text>
           <Text size="1" tone="muted">tap to edit</Text>
         </DataRow>
@@ -549,6 +581,13 @@ export function AgentDetailPage() {
           initialValue={agent.type}
           onCancel={() => setShowEditAgentTypePop(false)}
           onSave={handleSaveAgentType}
+        />
+      )}
+      {showEditIntroductionPop && agent && (
+        <EditIntroductionPop
+          initialValue={introductionText}
+          onCancel={() => setShowEditIntroductionPop(false)}
+          onSave={handleSaveIntroduction}
         />
       )}
     </div>

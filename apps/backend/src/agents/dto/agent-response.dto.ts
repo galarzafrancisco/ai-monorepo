@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from 'src/tasks/enums';
 import { AgentType } from '../enums';
+import { AgentResult } from './service/agents.service.types';
 
 export class AgentResponseDto {
   @ApiProperty({
@@ -33,6 +34,13 @@ export class AgentResponseDto {
     example: 'A helpful assistant agent',
   })
   description!: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks',
+    example: 'I specialize in code review and bug fixing. Assign me tasks related to quality assurance.',
+  })
+  introduction!: string | null;
 
   @ApiProperty({
     description: 'Core instructions/persona for this agent',
@@ -97,4 +105,28 @@ export class AgentResponseDto {
     example: null,
   })
   deletedAt!: string | null;
+
+  /**
+   * Factory method to create an AgentResponseDto from an AgentResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: AgentResult): AgentResponseDto {
+    return {
+      actorId: result.actorId,
+      slug: result.slug,
+      name: result.name,
+      type: result.type,
+      description: result.description,
+      introduction: result.introduction,
+      systemPrompt: result.systemPrompt,
+      statusTriggers: result.statusTriggers,
+      allowedTools: result.allowedTools,
+      isActive: result.isActive,
+      concurrencyLimit: result.concurrencyLimit,
+      rowVersion: result.rowVersion,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
+      deletedAt: result.deletedAt ? result.deletedAt.toISOString() : null,
+    };
+  }
 }

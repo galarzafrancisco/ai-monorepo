@@ -326,8 +326,7 @@ export function TaskDetailPage() {
           (() => {
             type TimelineItem =
               | { type: 'comment'; data: typeof task.comments[0]; timestamp: number }
-              | { type: 'inputRequest'; data: InputRequestResponseDto; timestamp: number }
-              | { type: 'inputResponse'; data: InputRequestResponseDto; timestamp: number };
+              | { type: 'inputRequest'; data: InputRequestResponseDto; timestamp: number };
 
             const timeline: TimelineItem[] = [
               ...task.comments.map(comment => ({
@@ -339,11 +338,6 @@ export function TaskDetailPage() {
                 type: 'inputRequest' as const,
                 data: inputRequest,
                 timestamp: new Date(inputRequest.createdAt).getTime(),
-              })),
-              ...task.inputRequests.filter(ir => ir.resolvedAt).map(inputRequest => ({
-                type: 'inputResponse' as const,
-                data: inputRequest,
-                timestamp: new Date(inputRequest.updatedAt).getTime(),
               })),
             ].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -372,61 +366,80 @@ export function TaskDetailPage() {
               } else if (item.type === 'inputRequest') {
                 const inputRequest = item.data;
                 const askedByActor = actors.find(a => a.id === inputRequest.askedByActorId);
+                const assignedToActor = actors.find(a => a.id === inputRequest.assignedToActorId);
                 const name = askedByActor?.displayName || 'Unknown';
                 const slug = askedByActor?.slug || 'unknown';
+                const answerName = assignedToActor?.displayName || 'Unknown';
+                const answerSlug = assignedToActor?.slug || 'unknown';
                 const isResolved = !!inputRequest.resolvedAt;
                 const isAssignedToMe = user && inputRequest.assignedToActorId === user.actorId;
+                const answerText = typeof inputRequest.answer === 'string'
+                  ? inputRequest.answer
+                  : JSON.stringify(inputRequest.answer);
+                const tags = isResolved
+                  ? [
+                    { label: 'resolved question', color: 'gray' as const },
+                    { label: 'answer', color: 'green' as const },
+                  ]
+                  : [{ label: 'question', color: 'orange' as const }];
 
                 return (
                   <DataRow
                     key={`input-request-${inputRequest.id}`}
-                    leading={<Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />}
-                    tags={[{ label: isResolved ? 'resolved question' : 'question', color: isResolved ? 'gray' : 'orange' }]}
+                    leading={isResolved ? (
+                      <div className="task-detail-page__input-request-avatars">
+                        <Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />
+                        <Avatar size={'sm'} name={answerName} src={assignedToActor?.avatarUrl || undefined} />
+                      </div>
+                    ) : (
+                      <Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />
+                    )}
+                    tags={tags}
                     topRight={<Text size='1' tone='muted'>{elapsedTime(inputRequest.createdAt)}</Text>}
                   >
-                    <Text as='span' weight='medium' size='3'>
-                      {name}
-                    </Text>
-                    <Text as='span' weight='normal' tone='muted' size='3'>
-                      {` @${slug}`}
-                    </Text>
-                    <Text>
-                      {inputRequest.question}
-                    </Text>
-                    {!isResolved && isAssignedToMe && (
-                      <Button
-                        size='sm'
-                        variant='primary'
-                        onClick={() => setRespondingToInputRequest(inputRequest)}
-                      >
-                        Respond
-                      </Button>
-                    )}
-                  </DataRow>
-                );
-              } else {
-                // inputResponse
-                const inputRequest = item.data;
-                const assignedToActor = actors.find(a => a.id === inputRequest.assignedToActorId);
-                const name = assignedToActor?.displayName || 'Unknown';
-                const slug = assignedToActor?.slug || 'unknown';
-
-                return (
-                  <DataRow
-                    key={`input-response-${inputRequest.id}`}
-                    leading={<Avatar size={'sm'} name={name} src={assignedToActor?.avatarUrl || undefined} />}
-                    tags={[{ label: 'answer', color: 'green' }]}
-                    topRight={<Text size='1' tone='muted'>{elapsedTime(inputRequest.updatedAt)}</Text>}
-                  >
-                    <Text as='span' weight='medium' size='3'>
-                      {name}
-                    </Text>
-                    <Text as='span' weight='normal' tone='muted' size='3'>
-                      {` @${slug}`}
-                    </Text>
-                    <Text>
-                      {typeof inputRequest.answer === 'string' ? inputRequest.answer : JSON.stringify(inputRequest.answer)}
-                    </Text>
+                    <Stack spacing="2">
+                      <div className="task-detail-page__input-request">
+                        <div className="task-detail-page__input-request-question">
+                          <div className="task-detail-page__input-request-header">
+                            <Text as='span' weight='medium' size='3'>
+                              {name}
+                            </Text>
+                            <Text as='span' weight='normal' tone='muted' size='3'>
+                              {` @${slug}`}
+                            </Text>
+                          </div>
+                          <Text>
+                            <Text as='span' tone='muted'>Asked:</Text>{' '}
+                            {inputRequest.question}
+                          </Text>
+                        </div>
+                        {isResolved ? (
+                          <div className="task-detail-page__input-request-answer">
+                            <div className="task-detail-page__input-request-header">
+                              <Text as='span' weight='medium' size='3'>
+                                {answerName}
+                              </Text>
+                              <Text as='span' weight='normal' tone='muted' size='3'>
+                                {` @${answerSlug}`}
+                              </Text>
+                            </div>
+                            <Text>
+                              <Text as='span' tone='muted'>Answered:</Text>{' '}
+                              {answerText}
+                            </Text>
+                          </div>
+                        ) : null}
+                      </div>
+                      {!isResolved && isAssignedToMe && (
+                        <Button
+                          size='sm'
+                          variant='primary'
+                          onClick={() => setRespondingToInputRequest(inputRequest)}
+                        >
+                          Respond
+                        </Button>
+                      )}
+                    </Stack>
                   </DataRow>
                 );
               }

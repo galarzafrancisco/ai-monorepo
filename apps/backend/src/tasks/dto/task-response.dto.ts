@@ -6,6 +6,7 @@ import { TagResponseDto } from './tag-response.dto';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 import { TaskEntity } from '../task.entity';
 import { ActorType } from '../../identity-provider/enums/actor-type.enum';
+import { TaskResult } from './service/tasks.service.types';
 
 export class TaskResponseDto {
   @ApiProperty({
@@ -115,6 +116,7 @@ export class TaskResponseDto {
             slug: task.assigneeActor.slug,
             displayName: task.assigneeActor.displayName,
             avatarUrl: task.assigneeActor.avatarUrl,
+            introduction: task.assigneeActor.introduction,
           }
         : null,
       sessionId: task.sessionId ?? '',
@@ -131,6 +133,7 @@ export class TaskResponseDto {
             slug: task.createdByActor.slug,
             displayName: task.createdByActor.displayName,
             avatarUrl: task.createdByActor.avatarUrl,
+            introduction: task.createdByActor.introduction,
           }
         : {
             id: task.createdByActorId,
@@ -138,10 +141,38 @@ export class TaskResponseDto {
             slug: 'unknown',
             displayName: 'Unknown',
             avatarUrl: null,
+            introduction: null,
           },
       dependsOnIds: task.dependsOn?.map((t) => t.id) ?? [],
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
+    };
+  }
+
+  /**
+   * Factory method to create a TaskResponseDto from a TaskResult.
+   * Centralizes mapping logic from service layer result to wire DTO.
+   */
+  static fromResult(result: TaskResult): TaskResponseDto {
+    return {
+      id: result.id,
+      name: result.name,
+      description: result.description,
+      status: result.status,
+      assignee: result.assignee,
+      assigneeActor: result.assigneeActor
+        ? ActorResponseDto.fromResult(result.assigneeActor)
+        : null,
+      sessionId: result.sessionId ?? '',
+      comments: result.comments.map((c) => CommentResponseDto.fromResult(c)),
+      inputRequests: result.inputRequests.map((ir) =>
+        InputRequestResponseDto.fromResult(ir),
+      ),
+      tags: result.tags.map((t) => TagResponseDto.fromResult(t)),
+      createdByActor: ActorResponseDto.fromResult(result.createdByActor),
+      dependsOnIds: result.dependsOnIds,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
     };
   }
 }

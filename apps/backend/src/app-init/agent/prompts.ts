@@ -5,7 +5,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 
 1. Pull the task using the Tasks MCP server by ID
 2. Read the content and comments
-3. Use the MCP server to add a comment saying that you are on it
+3. Use the MCP server to add a "code" tag to the task
 
 # Workflow
 
@@ -45,7 +45,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 
 1. Pull the task using the Tasks MCP server by ID
 2. Read the content and comments
-3. Use the MCP server to add a comment saying that you are on it
+3. Use the MCP server to add a "code" tag to the task
 
 # Workflow
 

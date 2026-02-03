@@ -18,6 +18,14 @@ const defaultDraftState: TaskDraftState = {
   description: "",
 };
 
+const resizeTextarea = (el: HTMLTextAreaElement | null) => {
+  if (!el) {
+    return;
+  }
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight}px`;
+};
+
 export function NewTaskPop({ onCancel, onSave }: NewTaskPopProps) {
   const [draftState, setDraftState, clearDraft] = useDraftState({
     key: 'new-task-draft',
@@ -37,11 +45,13 @@ export function NewTaskPop({ onCancel, onSave }: NewTaskPopProps) {
     titleRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    resizeTextarea(descriptionRef.current);
+  }, [description]);
+
   function handleDescriptionChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     updateField('description', e.target.value);
-    const el = e.target;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    resizeTextarea(e.target);
   }
 
   async function handleSave(): Promise<boolean> {

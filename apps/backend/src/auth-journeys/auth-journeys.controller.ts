@@ -63,6 +63,7 @@ export class AuthJourneysController {
             slug: journey.actor.slug,
             displayName: journey.actor.displayName,
             avatarUrl: journey.actor.avatarUrl,
+            introduction: journey.actor.introduction,
           }
         : null,
       mcpAuthorizationFlow: this.mapMcpFlowToResponse(

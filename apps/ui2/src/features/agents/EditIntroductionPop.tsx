@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import "./EditSystemPromptPop.css";
+import "./EditIntroductionPop.css";
 
-type EditSystemPromptPopProps = {
+type EditIntroductionPopProps = {
   initialValue: string;
   onCancel?: () => void;
-  onSave: (payload: { systemPrompt: string }) => Promise<boolean>;
+  onSave: (payload: { introduction: string }) => Promise<boolean>;
 };
 
 const resizeTextarea = (el: HTMLTextAreaElement | null) => {
@@ -16,7 +16,7 @@ const resizeTextarea = (el: HTMLTextAreaElement | null) => {
   el.style.height = `${el.scrollHeight}px`;
 };
 
-export function EditSystemPromptPop({ initialValue, onCancel, onSave }: EditSystemPromptPopProps) {
+export function EditIntroductionPop({ initialValue, onCancel, onSave }: EditIntroductionPopProps) {
   const [content, setContent] = useState(initialValue);
 
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
@@ -35,22 +35,21 @@ export function EditSystemPromptPop({ initialValue, onCancel, onSave }: EditSyst
   }
 
   async function handleSave(): Promise<boolean> {
-    return onSave({ systemPrompt: content });
+    return onSave({ introduction: content });
   }
 
   return (
     <PopShell
-      title="Edit System Prompt"
+      title="Edit Introduction"
       onCancel={onCancel}
       onSave={handleSave}
     >
       <>
-        {/* System Prompt */}
-        <div className="edit-system-prompt-pop__input-content">
+        <div className="edit-introduction-pop__input-content">
           <textarea
-            className="edit-system-prompt-pop__input-content"
+            className="edit-introduction-pop__input-content"
             ref={contentRef}
-            placeholder="Enter system prompt..."
+            placeholder="Enter introduction..."
             value={content}
             onChange={handleContentChange}
           />

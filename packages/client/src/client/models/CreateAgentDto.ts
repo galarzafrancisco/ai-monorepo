@@ -20,6 +20,10 @@ export type CreateAgentDto = {
      */
     description?: string;
     /**
+     * Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+     */
+    introduction?: string;
+    /**
      * Core instructions/persona for this agent
      */
     systemPrompt: string;
