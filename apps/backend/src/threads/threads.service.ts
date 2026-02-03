@@ -5,6 +5,7 @@ import { ThreadEntity } from './thread.entity';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
+import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { MetaService } from '../meta/meta.service';
 import {
   CreateThreadInput,
@@ -38,6 +39,8 @@ export class ThreadsService {
     private readonly contextBlockRepository: Repository<ContextBlockEntity>,
     @InjectRepository(ActorEntity)
     private readonly actorRepository: Repository<ActorEntity>,
+    @InjectRepository(AgentRunEntity)
+    private readonly agentRunRepository: Repository<AgentRunEntity>,
     private readonly metaService: MetaService,
   ) {}
 
@@ -121,7 +124,7 @@ export class ThreadsService {
       title: threadWithRelations.title,
     });
 
-    return this.mapThreadToResult(threadWithRelations);
+    return await this.buildThreadResult(threadWithRelations);
   }
 
   async updateThread(
@@ -149,12 +152,12 @@ export class ThreadsService {
       threadId,
     });
 
-    return this.mapThreadToResult(updatedThread);
+    return await this.buildThreadResult(updatedThread);
   }
 
   async getThreadById(threadId: string): Promise<ThreadResult> {
     const thread = await this.getThreadWithRelations(threadId);
-    return this.mapThreadToResult(thread);
+    return await this.buildThreadResult(thread);
   }
 
   async listThreads(input: ListThreadsInput): Promise<ListThreadsResult> {
@@ -216,7 +219,7 @@ export class ThreadsService {
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    return this.mapThreadToResult(updatedThread);
+    return await this.buildThreadResult(updatedThread);
   }
 
   async referenceContextBlock(
@@ -250,7 +253,7 @@ export class ThreadsService {
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    return this.mapThreadToResult(updatedThread);
+    return await this.buildThreadResult(updatedThread);
   }
 
   async addTagToThread(
@@ -279,7 +282,7 @@ export class ThreadsService {
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    return this.mapThreadToResult(updatedThread);
+    return await this.buildThreadResult(updatedThread);
   }
 
   async removeTagFromThread(
@@ -307,7 +310,7 @@ export class ThreadsService {
     await this.metaService.cleanupOrphanedTag(tagId);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    return this.mapThreadToResult(updatedThread);
+    return await this.buildThreadResult(updatedThread);
   }
 
   async addParticipant(
@@ -341,7 +344,7 @@ export class ThreadsService {
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    return this.mapThreadToResult(updatedThread);
+    return await this.buildThreadResult(updatedThread);
   }
 
   async findThreadByTaskId(taskId: string): Promise<ThreadResult | null> {
@@ -370,7 +373,7 @@ export class ThreadsService {
       return null;
     }
 
-    return this.mapThreadToResult(thread);
+    return await this.buildThreadResult(thread);
   }
 
   private async getThreadWithRelations(threadId: string): Promise<ThreadEntity> {
@@ -401,7 +404,15 @@ export class ThreadsService {
     return `@${actorSlug} created`;
   }
 
-  private mapThreadToResult(thread: ThreadEntity): ThreadResult {
+  private async buildThreadResult(thread: ThreadEntity): Promise<ThreadResult> {
+    const parentTaskId = await this.resolveParentTaskId(thread);
+    return this.mapThreadToResult(thread, parentTaskId);
+  }
+
+  private mapThreadToResult(
+    thread: ThreadEntity,
+    parentTaskId: string | null,
+  ): ThreadResult {
     if (!thread.createdByActor) {
       throw new Error(`Thread ${thread.id} is missing createdByActor relation`);
     }
@@ -410,6 +421,7 @@ export class ThreadsService {
       id: thread.id,
       title: thread.title,
       createdByActor: this.mapActorToResult(thread.createdByActor),
+      parentTaskId,
       tasks: (thread.tasks || []).map((task) => this.mapTaskToSummary(task)),
       referencedContextBlocks: (thread.referencedContextBlocks || []).map(
         (block) => this.mapContextBlockToSummary(block),
@@ -423,6 +435,24 @@ export class ThreadsService {
       updatedAt: thread.updatedAt,
       deletedAt: thread.deletedAt,
     };
+  }
+
+  private async resolveParentTaskId(
+    thread: ThreadEntity,
+  ): Promise<string | null> {
+    const taskIds = (thread.tasks || []).map((task) => task.id);
+    if (taskIds.length === 0) {
+      return null;
+    }
+
+    const parentRun = await this.agentRunRepository
+      .createQueryBuilder('agentRun')
+      .select('agentRun.parentTaskId', 'parentTaskId')
+      .where('agentRun.parentTaskId IN (:...taskIds)', { taskIds })
+      .orderBy('agentRun.createdAt', 'ASC')
+      .getRawOne<{ parentTaskId?: string }>();
+
+    return parentRun?.parentTaskId ?? taskIds[0];
   }
 
   private mapActorToResult(actor: ActorEntity): ActorResult {

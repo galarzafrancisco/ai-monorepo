@@ -20,6 +20,10 @@ export type ThreadResponseDto = {
      */
     createdByActor: ActorResponseDto;
     /**
+     * Parent task ID that created the thread
+     */
+    parentTaskId?: string | null;
+    /**
      * Tasks attached to this thread
      */
     tasks: Array<TaskSummaryResponseDto>;

@@ -7,6 +7,36 @@ import type { Thread } from "./types";
 import "./ThreadDetailPage.css";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
+import { elapsedTime } from "../../shared/helpers/elapsedTime";
+
+type ThreadTask = Thread["tasks"][number];
+
+const formatTaskStatus = (status: string) =>
+  status
+    .toLowerCase()
+    .split("_")
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");
+
+const getParentTask = (thread: Thread): ThreadTask | null => {
+  if (!thread.tasks.length) {
+    return null;
+  }
+
+  if (thread.parentTaskId) {
+    return thread.tasks.find((task) => task.id === thread.parentTaskId) ?? thread.tasks[0];
+  }
+
+  return thread.tasks[0];
+};
+
+const getChildTasks = (thread: Thread, parentTask: ThreadTask | null) => {
+  if (!parentTask) {
+    return thread.tasks;
+  }
+
+  return thread.tasks.filter((task) => task.id !== parentTask.id);
+};
 
 export function ThreadDetailPage() {
   const { id: threadId } = useParams<{ id: string }>();
@@ -82,6 +112,9 @@ export function ThreadDetailPage() {
 }
 
 function ThreadDetailPageDesktop({ thread }: { thread: Thread }) {
+  const parentTask = getParentTask(thread);
+  const childTasks = getChildTasks(thread, parentTask);
+
   return (
     <div className="thread-detail-page thread-detail-page--desktop">
       {/* Main content area */}
@@ -95,11 +128,45 @@ function ThreadDetailPageDesktop({ thread }: { thread: Thread }) {
               #{thread.id.slice(0, 6)}
             </Text>
           </div>
+          {parentTask && (
+            <div className="thread-detail-page__parent-task">
+              <Text size="3" weight="semibold">
+                Parent task
+              </Text>
+              <ParentTaskOverview task={parentTask} />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Right sidebar with context and tasks */}
       <div className="thread-detail-page__sidebar">
+        {/* Parent task section */}
+        {parentTask && (
+          <div className="thread-detail-page__sidebar-section">
+            <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+              Parent task
+            </Text>
+            <div className="thread-detail-page__sidebar-content">
+              <ThreadTaskCard key={parentTask.id} task={parentTask} />
+            </div>
+          </div>
+        )}
+
+        {/* Tasks section */}
+        {childTasks.length > 0 && (
+          <div className="thread-detail-page__sidebar-section">
+            <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+              Tasks ({childTasks.length})
+            </Text>
+            <div className="thread-detail-page__sidebar-content">
+              {childTasks.map((task) => (
+                <ThreadTaskCard key={task.id} task={task} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Context section */}
         {thread.referencedContextBlocks.length > 0 && (
           <div className="thread-detail-page__sidebar-section">
@@ -117,23 +184,10 @@ function ThreadDetailPageDesktop({ thread }: { thread: Thread }) {
           </div>
         )}
 
-        {/* Tasks section */}
-        {thread.tasks.length > 0 && (
-          <div className="thread-detail-page__sidebar-section">
-            <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-              Tasks ({thread.tasks.length})
-            </Text>
-            <div className="thread-detail-page__sidebar-content">
-              {thread.tasks.map((task) => (
-                <ThreadTaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Empty state */}
         {thread.referencedContextBlocks.length === 0 &&
-          thread.tasks.length === 0 && (
+          childTasks.length === 0 &&
+          !parentTask && (
             <div className="thread-detail-page__sidebar-empty">
               <Text size="2" tone="muted">
                 No context or tasks attached
@@ -146,9 +200,52 @@ function ThreadDetailPageDesktop({ thread }: { thread: Thread }) {
 }
 
 function ThreadDetailPageMobile({ thread }: { thread: Thread }) {
+  const parentTask = getParentTask(thread);
+  const childTasks = getChildTasks(thread, parentTask);
+
   return (
     <div className="thread-detail-page thread-detail-page--mobile">
       <div className="thread-detail-page__mobile-content">
+        {parentTask && (
+          <div className="thread-detail-page__mobile-section">
+            <Text size="2" weight="semibold">
+              Parent task
+            </Text>
+            <ParentTaskOverview task={parentTask} />
+          </div>
+        )}
+
+        {/* Tasks section */}
+        {childTasks.length > 0 && (
+          <div className="thread-detail-page__mobile-section">
+            <Text size="2" weight="semibold">
+              Tasks ({childTasks.length})
+            </Text>
+            <div className="thread-detail-page__mobile-list">
+              {childTasks.map((task) => (
+                <ThreadTaskCard key={task.id} task={task} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Context section */}
+        {thread.referencedContextBlocks.length > 0 && (
+          <div className="thread-detail-page__mobile-section">
+            <Text size="2" weight="semibold">
+              Context ({thread.referencedContextBlocks.length})
+            </Text>
+            <div className="thread-detail-page__mobile-list">
+              {thread.referencedContextBlocks.map((contextBlock) => (
+                <ThreadContextCard
+                  key={contextBlock.id}
+                  contextBlock={contextBlock}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Participants section */}
         {thread.participants.length > 0 && (
           <div className="thread-detail-page__mobile-section">
@@ -164,37 +261,65 @@ function ThreadDetailPageMobile({ thread }: { thread: Thread }) {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
 
-        {/* Tasks section */}
-        {thread.tasks.length > 0 && (
-          <div className="thread-detail-page__mobile-section">
-            <Text size="2" weight="semibold">
-              Tasks ({thread.tasks.length})
-            </Text>
-            <div className="thread-detail-page__mobile-list">
-              {thread.tasks.map((task) => (
-                <ThreadTaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          </div>
-        )}
+function ParentTaskOverview({ task }: { task: ThreadTask }) {
+  const openQuestions = task.inputRequests.filter((i) => !i.resolvedAt).length;
 
-        {/* Context section */}
-        {thread.referencedContextBlocks.length > 0 && (
-          <div className="thread-detail-page__mobile-section">
-            <Text size="2" weight="semibold">
-              Context ({thread.referencedContextBlocks.length})
-            </Text>
-            <div className="thread-detail-page__mobile-list">
-              {thread.referencedContextBlocks.map((contextBlock) => (
-                <ThreadContextCard
-                  key={contextBlock.id}
-                  contextBlock={contextBlock}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+  return (
+    <div className="thread-detail-page__parent-card">
+      <div className="thread-detail-page__parent-header">
+        <div>
+          <Text size="4" weight="semibold">
+            {task.name}
+          </Text>
+          <Text size="2" tone="muted">
+            #{task.id.slice(0, 6)}
+          </Text>
+        </div>
+        <Text size="2" tone="muted">
+          {elapsedTime(task.updatedAt)}
+        </Text>
+      </div>
+      <Text size="2" className="thread-detail-page__task-description">
+        {task.description || "No description provided."}
+      </Text>
+      <div className="thread-detail-page__task-meta">
+        <div className="thread-detail-page__task-meta-item">
+          <Text size="1" tone="muted">
+            Status
+          </Text>
+          <Text size="2">{formatTaskStatus(task.status)}</Text>
+        </div>
+        <div className="thread-detail-page__task-meta-item">
+          <Text size="1" tone="muted">
+            Assignee
+          </Text>
+          <Text size="2">
+            {task.assigneeActor ? `@${task.assigneeActor.slug}` : "Unassigned"}
+          </Text>
+        </div>
+        <div className="thread-detail-page__task-meta-item">
+          <Text size="1" tone="muted">
+            Created by
+          </Text>
+          <Text size="2">{task.createdByActor.displayName}</Text>
+        </div>
+        <div className="thread-detail-page__task-meta-item">
+          <Text size="1" tone="muted">
+            Comments
+          </Text>
+          <Text size="2">{task.commentCount}</Text>
+        </div>
+        <div className="thread-detail-page__task-meta-item">
+          <Text size="1" tone="muted">
+            Open questions
+          </Text>
+          <Text size="2">{openQuestions}</Text>
+        </div>
       </div>
     </div>
   );
