@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from 'src/tasks/enums';
 import { AgentType } from '../enums';
+import { AgentResult } from './service/agents.service.types';
 
 export class AgentResponseDto {
   @ApiProperty({
@@ -102,23 +103,7 @@ export class AgentResponseDto {
    * Factory method to create an AgentResponseDto from an AgentResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    actorId: string;
-    slug: string;
-    name: string;
-    type: AgentType;
-    description: string | null;
-    introduction: string | null;
-    systemPrompt: string;
-    statusTriggers: TaskStatus[];
-    allowedTools: string[];
-    isActive: boolean;
-    concurrencyLimit: number | null;
-    rowVersion: number;
-    createdAt: Date;
-    updatedAt: Date;
-    deletedAt: Date | null;
-  }): AgentResponseDto {
+  static fromResult(result: AgentResult): AgentResponseDto {
     return {
       actorId: result.actorId,
       slug: result.slug,

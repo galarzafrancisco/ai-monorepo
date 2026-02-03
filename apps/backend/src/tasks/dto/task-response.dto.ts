@@ -6,6 +6,7 @@ import { TagResponseDto } from './tag-response.dto';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 import { TaskEntity } from '../task.entity';
 import { ActorType } from '../../identity-provider/enums/actor-type.enum';
+import { TaskResult } from './service/tasks.service.types';
 
 export class TaskResponseDto {
   @ApiProperty({
@@ -152,22 +153,7 @@ export class TaskResponseDto {
    * Factory method to create a TaskResponseDto from a TaskResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    id: string;
-    name: string;
-    description: string;
-    status: TaskStatus;
-    assignee: string | null;
-    assigneeActor: any | null;
-    sessionId: string | null;
-    comments: any[];
-    inputRequests: any[];
-    tags: any[];
-    createdByActor: any;
-    dependsOnIds: string[];
-    createdAt: Date;
-    updatedAt: Date;
-  }): TaskResponseDto {
+  static fromResult(result: TaskResult): TaskResponseDto {
     return {
       id: result.id,
       name: result.name,

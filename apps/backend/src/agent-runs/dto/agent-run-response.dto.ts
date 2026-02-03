@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
+import { AgentRunResult } from './service/agent-runs.service.types';
 
 class TaskInfoDto {
   @ApiProperty({
@@ -79,24 +80,7 @@ export class AgentRunResponseDto {
    * Factory method to create an AgentRunResponseDto from an AgentRunResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    id: string;
-    actorId: string;
-    actor: {
-      id: string;
-      type: any;
-      slug: string;
-      displayName: string;
-      avatarUrl: string | null;
-      introduction: string | null;
-    } | null;
-    parentTaskId: string;
-    parentTask: { id: string; name: string } | null;
-    createdAt: Date;
-    startedAt: Date | null;
-    endedAt: Date | null;
-    lastPing: Date | null;
-  }): AgentRunResponseDto {
+  static fromResult(result: AgentRunResult): AgentRunResponseDto {
     return {
       id: result.id,
       actorId: result.actorId,

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 import { CommentEntity } from '../comment.entity';
+import { CommentResult } from './service/tasks.service.types';
 
 export class CommentResponseDto {
   @ApiProperty({
@@ -68,14 +69,7 @@ export class CommentResponseDto {
    * Factory method to create a CommentResponseDto from a CommentResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    id: string;
-    taskId: string;
-    commenterName: string;
-    commenterActor: any | null;
-    content: string;
-    createdAt: Date;
-  }): CommentResponseDto {
+  static fromResult(result: CommentResult): CommentResponseDto {
     return {
       id: result.id,
       taskId: result.taskId,

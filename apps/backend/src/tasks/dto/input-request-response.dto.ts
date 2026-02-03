@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { InputRequestEntity } from '../input-request.entity';
+import { InputRequestResult } from './service/tasks.service.types';
 
 export class InputRequestResponseDto {
   @ApiProperty({
@@ -84,17 +85,7 @@ export class InputRequestResponseDto {
    * Factory method to create an InputRequestResponseDto from an InputRequestResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    id: string;
-    taskId: string;
-    askedByActorId: string;
-    assignedToActorId: string;
-    question: string;
-    answer: string | null;
-    resolvedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-  }): InputRequestResponseDto {
+  static fromResult(result: InputRequestResult): InputRequestResponseDto {
     return {
       id: result.id,
       taskId: result.taskId,

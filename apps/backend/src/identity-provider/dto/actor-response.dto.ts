@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ActorType } from '../enums';
+import { ActorResult } from '../../threads/dto/service/threads.service.types';
 
 export class ActorResponseDto {
   @ApiProperty({
@@ -47,14 +48,7 @@ export class ActorResponseDto {
    * Factory method to create an ActorResponseDto from an ActorResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    id: string;
-    type: ActorType;
-    slug: string;
-    displayName: string;
-    avatarUrl: string | null;
-    introduction: string | null;
-  }): ActorResponseDto {
+  static fromResult(result: ActorResult): ActorResponseDto {
     return {
       id: result.id,
       type: result.type,

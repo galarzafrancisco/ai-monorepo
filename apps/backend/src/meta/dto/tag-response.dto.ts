@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TagResult } from '../../threads/dto/service/threads.service.types';
 
 export class MetaTagResponseDto {
   @ApiProperty({
@@ -35,13 +36,7 @@ export class MetaTagResponseDto {
    * Factory method to create a MetaTagResponseDto from a TagResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    id: string;
-    name: string;
-    color?: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }): MetaTagResponseDto {
+  static fromResult(result: TagResult): MetaTagResponseDto {
     return {
       id: result.id,
       name: result.name,

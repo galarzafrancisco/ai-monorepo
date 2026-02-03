@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TagEntity } from '../../meta/tag.entity';
+import { TagResult } from './service/tasks.service.types';
 
 export class TagResponseDto {
   @ApiProperty({
@@ -36,11 +37,7 @@ export class TagResponseDto {
    * Factory method to create a TagResponseDto from a TagResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    id: string;
-    name: string;
-    color?: string;
-  }): TagResponseDto {
+  static fromResult(result: TagResult): TagResponseDto {
     return {
       id: result.id,
       name: result.name,

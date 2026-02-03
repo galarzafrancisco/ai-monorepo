@@ -3,6 +3,7 @@ import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto
 import { TaskStatus } from '../../tasks/enums';
 import { TagResponseDto } from '../../tasks/dto/tag-response.dto';
 import { InputRequestResponseDto } from '../../tasks/dto/input-request-response.dto';
+import { TaskSummaryResult } from './service/threads.service.types';
 
 export class TaskSummaryResponseDto {
   @ApiProperty({
@@ -71,18 +72,7 @@ export class TaskSummaryResponseDto {
    * Factory method to create a TaskSummaryResponseDto from a TaskSummaryResult.
    * Centralizes mapping logic from service layer result to wire DTO.
    */
-  static fromResult(result: {
-    id: string;
-    name: string;
-    description: string;
-    status: TaskStatus;
-    assigneeActor: any | null;
-    createdByActor: any;
-    tags: any[];
-    commentCount: number;
-    inputRequests: any[];
-    updatedAt: Date;
-  }): TaskSummaryResponseDto {
+  static fromResult(result: TaskSummaryResult): TaskSummaryResponseDto {
     return {
       id: result.id,
       name: result.name,
@@ -92,10 +82,10 @@ export class TaskSummaryResponseDto {
         ? ActorResponseDto.fromResult(result.assigneeActor)
         : null,
       createdByActor: ActorResponseDto.fromResult(result.createdByActor),
-      tags: result.tags.map((t) => TagResponseDto.fromEntity(t)),
+      tags: result.tags.map((t) => TagResponseDto.fromResult(t)),
       commentCount: result.commentCount,
       inputRequests: result.inputRequests.map((ir) =>
-        InputRequestResponseDto.fromEntity(ir),
+        InputRequestResponseDto.fromResult(ir),
       ),
       updatedAt: result.updatedAt.toISOString(),
     };
