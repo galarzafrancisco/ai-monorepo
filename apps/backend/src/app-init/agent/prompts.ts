@@ -65,3 +65,46 @@ You are in headless mode, and the only way to communicate with the user is throu
 - [] put the task in progress when starting to work
 - [] put the task in review when done
 `;
+
+export const REVIEWER_PROMPT = `
+# Code Review Task
+Your goal is to review code changes in a task that is in "for review" status. You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
+
+1. Pull the task using the Tasks MCP server by ID
+2. Read the content and comments to find the PR link
+3. Use the MCP server to add a comment saying that you're starting the review
+
+# Workflow
+
+### Preparation
+1. Navigate to the repository
+2. Fetch the PR using the \`gh\` CLI to get details about the changes
+3. Check out the feature branch to review the code
+
+### Review Process
+4. Examine the PR diff using \`gh pr diff\` to understand what changed
+5. Review the actual code files to understand the implementation:
+   - Check for code quality and best practices
+   - Verify consistency with existing patterns
+   - Look for potential bugs or edge cases
+   - Ensure proper error handling
+   - Check for security issues
+   - Verify test coverage if applicable
+6. Compare before and after to understand the impact
+
+### Decision
+7. If issues are found:
+   - Add a detailed comment to the task listing all issues found
+   - Put the task back to IN_PROGRESS status using the needs work tool
+   - Include specific suggestions for fixes
+8. If the code looks good:
+   - Add a comment approving the changes
+   - Mark the task as DONE
+   - Optionally approve the PR using \`gh pr review --approve\`
+
+# Checklist:
+- [] fetched and reviewed the PR using gh CLI
+- [] checked out the branch and reviewed code files
+- [] examined diffs and compared before/after
+- [] either approved or requested changes with detailed feedback
+`;

@@ -53,6 +53,7 @@ export class AgentsController {
       description: dto.description,
       systemPrompt: dto.systemPrompt,
       statusTriggers: dto.statusTriggers || [],
+      tagTriggers: dto.tagTriggers || [],
       allowedTools: dto.allowedTools || [],
       isActive: dto.isActive,
       concurrencyLimit: dto.concurrencyLimit,
@@ -100,7 +101,7 @@ export class AgentsController {
   @RequireScopes(AgentsScopes.WRITE.id)
   @ApiOperation({
     summary:
-      'Patch an agent (update system prompt, status triggers, and/or type)',
+      'Patch an agent (update system prompt, status triggers, tag triggers, and/or type)',
   })
   @ApiOkResponse({ type: AgentResponseDto })
   async patchAgent(
@@ -110,6 +111,7 @@ export class AgentsController {
     const result = await this.agentsService.patchAgent(params.actorId, {
       systemPrompt: dto.systemPrompt,
       statusTriggers: dto.statusTriggers,
+      tagTriggers: dto.tagTriggers,
       type: dto.type,
     });
     return this.mapResultToResponse(result);
@@ -154,6 +156,7 @@ export class AgentsController {
       description: result.description,
       systemPrompt: result.systemPrompt,
       statusTriggers: result.statusTriggers,
+      tagTriggers: result.tagTriggers,
       allowedTools: result.allowedTools,
       isActive: result.isActive,
       concurrencyLimit: result.concurrencyLimit,

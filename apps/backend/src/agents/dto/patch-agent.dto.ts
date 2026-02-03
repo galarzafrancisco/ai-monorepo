@@ -24,6 +24,16 @@ export class PatchAgentDto {
   statusTriggers?: TaskStatus[];
 
   @ApiPropertyOptional({
+    description: 'Task tags that will trigger this agent to activate',
+    example: ['code', 'review'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tagTriggers?: string[];
+
+  @ApiPropertyOptional({
     description: 'Type of agent (provider)',
     example: 'claude',
     enum: AgentType,

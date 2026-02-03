@@ -32,6 +32,10 @@ export type AgentResponseDto = {
      */
     statusTriggers: Array<string>;
     /**
+     * List of tags that trigger this agent
+     */
+    tagTriggers: Array<string>;
+    /**
      * List of tool identifiers this agent is allowed to use
      */
     allowedTools: Array<string>;

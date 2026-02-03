@@ -43,6 +43,13 @@ export class AgentEntity {
 
   @Column({
     type: 'simple-array',
+    name: 'tag_triggers',
+    default: '',
+  })
+  tagTriggers!: string[];
+
+  @Column({
+    type: 'simple-array',
     name: 'allowed_tools',
   })
   allowedTools!: string[];

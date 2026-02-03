@@ -49,6 +49,13 @@ export class AgentResponseDto {
   statusTriggers!: TaskStatus[];
 
   @ApiProperty({
+    description: 'List of tags that trigger this agent',
+    example: ['code', 'review'],
+    type: [String],
+  })
+  tagTriggers!: string[];
+
+  @ApiProperty({
     description: 'List of tool identifiers this agent is allowed to use',
     example: ['tasks.createTask', 'tasks.readTask', 'context.search'],
     type: [String],

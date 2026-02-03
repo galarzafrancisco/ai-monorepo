@@ -71,6 +71,7 @@ export class AgentsService {
       description: input.description ?? null,
       systemPrompt: input.systemPrompt ?? '',
       statusTriggers: input.statusTriggers ?? [],
+      tagTriggers: input.tagTriggers ?? [],
       allowedTools: input.allowedTools ?? [],
       isActive: input.isActive ?? true,
       concurrencyLimit: input.concurrencyLimit ?? null,
@@ -272,6 +273,9 @@ export class AgentsService {
     if (input.statusTriggers !== undefined) {
       agent.statusTriggers = input.statusTriggers;
     }
+    if (input.tagTriggers !== undefined) {
+      agent.tagTriggers = input.tagTriggers;
+    }
     if (input.type !== undefined) {
       agent.type = input.type;
     }
@@ -307,6 +311,7 @@ export class AgentsService {
       description: agent.description,
       systemPrompt: agent.systemPrompt,
       statusTriggers: agent.statusTriggers,
+      tagTriggers: agent.tagTriggers,
       allowedTools: agent.allowedTools,
       isActive: agent.isActive,
       concurrencyLimit: agent.concurrencyLimit,

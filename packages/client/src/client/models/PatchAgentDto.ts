@@ -12,6 +12,10 @@ export type PatchAgentDto = {
      */
     statusTriggers?: Array<'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'>;
     /**
+     * Task tags that will trigger this agent to activate
+     */
+    tagTriggers?: Array<string>;
+    /**
      * Type of agent (provider)
      */
     type?: PatchAgentDto.type;

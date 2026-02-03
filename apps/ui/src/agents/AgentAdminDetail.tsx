@@ -242,7 +242,7 @@ export function AgentAdminDetail() {
           </div>
 
           <div className="detail-section">
-            <h2>Triggers</h2>
+            <h2>Status Triggers</h2>
             <div className="detail-content">
               {selectedAgent.statusTriggers.length > 0 ? (
                 <div className="tools-list">
@@ -251,7 +251,22 @@ export function AgentAdminDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="empty-text">No triggers configured</p>
+                <p className="empty-text">No status triggers configured</p>
+              )}
+            </div>
+          </div>
+
+          <div className="detail-section">
+            <h2>Tag Triggers</h2>
+            <div className="detail-content">
+              {selectedAgent.tagTriggers.length > 0 ? (
+                <div className="tools-list">
+                  {selectedAgent.tagTriggers.map((tag, index) => (
+                    <span key={index} className="tool-badge">{tag}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-text">No tag triggers configured</p>
               )}
             </div>
           </div>
