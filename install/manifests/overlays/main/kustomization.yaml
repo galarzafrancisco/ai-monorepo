@@ -10,29 +10,6 @@ resources:
 - ../../base
 
 replacements:
-  # Replace DOMAIN in Certificate and Ingress
-  - source:
-      kind: ConfigMap
-      name: env
-      fieldPath: data.DOMAIN
-    targets:
-      - select:
-          kind: Certificate
-          name: taico
-        fieldPaths:
-          - spec.dnsNames.0
-        options:
-          delimiter: "."
-          index: 1
-      - select:
-          kind: Ingress
-          name: taico
-        fieldPaths:
-          - spec.tls.0.hosts.0
-          - spec.rules.0.host
-        options:
-          delimiter: "."
-          index: 1
   # Replace STORAGE_PATH in volume hostPath
   - source:
       kind: ConfigMap
