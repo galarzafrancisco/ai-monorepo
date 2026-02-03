@@ -1973,6 +1973,11 @@ export interface components {
              * @example https://example.com/avatar.png
              */
             avatarUrl?: string | null;
+            /**
+             * @description Short description of what this actor is good at and when to assign them tasks
+             * @example Expert in React and TypeScript development. Assign me frontend tasks.
+             */
+            introduction?: string | null;
         };
         McpFlowResponseDto: {
             /**
@@ -3441,6 +3446,11 @@ export interface components {
              */
             description?: string;
             /**
+             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
+             */
+            introduction?: string;
+            /**
              * @description Core instructions/persona for this agent
              * @example You are a helpful assistant that helps users with tasks.
              */
@@ -3503,6 +3513,11 @@ export interface components {
              * @example A helpful assistant agent
              */
             description?: Record<string, never>;
+            /**
+             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
+             */
+            introduction?: Record<string, never>;
             /**
              * @description Core instructions/persona for this agent
              * @example You are a helpful assistant that helps users with tasks.
@@ -3600,6 +3615,11 @@ export interface components {
              * @enum {string}
              */
             type?: "claude" | "codex" | "opencode" | "adk" | "other";
+            /**
+             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
+             */
+            introduction?: string;
         };
         IssueAccessTokenRequestDto: {
             /**

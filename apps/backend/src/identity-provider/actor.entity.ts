@@ -27,6 +27,9 @@ export class ActorEntity {
   @Column({ type: 'text', nullable: true, name: 'avatar_url' })
   avatarUrl!: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  introduction!: string | null;
+
   @CreateDateColumn({ type: 'datetime', name: 'created_at' })
   createdAt!: Date;
 

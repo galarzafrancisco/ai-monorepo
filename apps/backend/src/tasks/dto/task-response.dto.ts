@@ -115,6 +115,7 @@ export class TaskResponseDto {
             slug: task.assigneeActor.slug,
             displayName: task.assigneeActor.displayName,
             avatarUrl: task.assigneeActor.avatarUrl,
+            introduction: task.assigneeActor.introduction,
           }
         : null,
       sessionId: task.sessionId ?? '',
@@ -131,6 +132,7 @@ export class TaskResponseDto {
             slug: task.createdByActor.slug,
             displayName: task.createdByActor.displayName,
             avatarUrl: task.createdByActor.avatarUrl,
+            introduction: task.createdByActor.introduction,
           }
         : {
             id: task.createdByActorId,
@@ -138,6 +140,7 @@ export class TaskResponseDto {
             slug: 'unknown',
             displayName: 'Unknown',
             avatarUrl: null,
+            introduction: null,
           },
       dependsOnIds: task.dependsOn?.map((t) => t.id) ?? [],
       createdAt: task.createdAt.toISOString(),

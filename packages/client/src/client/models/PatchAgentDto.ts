@@ -15,6 +15,10 @@ export type PatchAgentDto = {
      * Type of agent (provider)
      */
     type?: PatchAgentDto.type;
+    /**
+     * Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+     */
+    introduction?: string;
 };
 export namespace PatchAgentDto {
     /**

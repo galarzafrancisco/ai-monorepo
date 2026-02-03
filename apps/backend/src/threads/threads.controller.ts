@@ -265,6 +265,7 @@ export class ThreadsController {
       slug: result.slug,
       displayName: result.displayName,
       avatarUrl: result.avatarUrl,
+      introduction: result.introduction,
     };
   }
 

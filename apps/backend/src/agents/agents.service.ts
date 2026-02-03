@@ -62,6 +62,7 @@ export class AgentsService {
       slug: input.slug,
       displayName: input.name,
       avatarUrl: avatarUrl,
+      introduction: input.introduction ?? null,
     });
     const savedActor = await this.actorRepository.save(actor);
 
@@ -276,6 +277,12 @@ export class AgentsService {
       agent.type = input.type;
     }
 
+    // Apply updates to actor if introduction is provided
+    if (input.introduction !== undefined) {
+      agent.actor.introduction = input.introduction;
+      await this.actorRepository.save(agent.actor);
+    }
+
     const updatedAgent = await this.agentRepository.save(agent);
 
     // Reload with actor relation
@@ -305,6 +312,7 @@ export class AgentsService {
       name: actor.displayName,
       type: agent.type,
       description: agent.description,
+      introduction: actor.introduction,
       systemPrompt: agent.systemPrompt,
       statusTriggers: agent.statusTriggers,
       allowedTools: agent.allowedTools,

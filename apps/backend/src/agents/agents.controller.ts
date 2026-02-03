@@ -51,6 +51,7 @@ export class AgentsController {
       name: dto.name,
       type: dto.type,
       description: dto.description,
+      introduction: dto.introduction,
       systemPrompt: dto.systemPrompt,
       statusTriggers: dto.statusTriggers || [],
       allowedTools: dto.allowedTools || [],
@@ -111,6 +112,7 @@ export class AgentsController {
       systemPrompt: dto.systemPrompt,
       statusTriggers: dto.statusTriggers,
       type: dto.type,
+      introduction: dto.introduction,
     });
     return this.mapResultToResponse(result);
   }
@@ -152,6 +154,7 @@ export class AgentsController {
       name: result.name,
       type: result.type,
       description: result.description,
+      introduction: result.introduction,
       systemPrompt: result.systemPrompt,
       statusTriggers: result.statusTriggers,
       allowedTools: result.allowedTools,

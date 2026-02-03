@@ -24,6 +24,7 @@ export class ActorService {
     slug,
     displayName,
     avatarUrl,
+    introduction,
   }: CreateActorInput): Promise<ActorEntity> {
     this.logger.log(`Creating user actor with slug: ${slug}`);
 
@@ -32,6 +33,7 @@ export class ActorService {
       slug,
       displayName,
       avatarUrl: avatarUrl ?? null,
+      introduction: introduction ?? null,
     });
 
     return this.actorRepository.save(actor);
@@ -44,6 +46,7 @@ export class ActorService {
     slug,
     displayName,
     avatarUrl,
+    introduction,
   }: CreateActorInput): Promise<ActorEntity> {
     this.logger.log(`Creating agent actor with slug: ${slug}`);
 
@@ -52,6 +55,7 @@ export class ActorService {
       slug,
       displayName,
       avatarUrl: avatarUrl ?? null,
+      introduction: introduction ?? null,
     });
 
     return this.actorRepository.save(actor);
@@ -90,7 +94,11 @@ export class ActorService {
    */
   async updateActor(
     id: string,
-    updates: { displayName?: string; avatarUrl?: string | null },
+    updates: {
+      displayName?: string;
+      avatarUrl?: string | null;
+      introduction?: string | null;
+    },
   ): Promise<ActorEntity | null> {
     const actor = await this.actorRepository.findOne({ where: { id } });
     if (!actor) {
@@ -102,6 +110,9 @@ export class ActorService {
     }
     if (updates.avatarUrl !== undefined) {
       actor.avatarUrl = updates.avatarUrl;
+    }
+    if (updates.introduction !== undefined) {
+      actor.introduction = updates.introduction;
     }
 
     return this.actorRepository.save(actor);
