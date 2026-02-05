@@ -12,6 +12,7 @@ type Theme =
   | 'mono'
   | 'terminal-amber'
   | 'oceanic'
+  | 'sims'
   | 'tribute';
 
 interface ThemeContextValue {

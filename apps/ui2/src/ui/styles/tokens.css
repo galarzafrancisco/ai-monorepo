@@ -531,6 +531,53 @@
   --shadow-3: 0 8px 24px rgba(255, 107, 107, 0.26);
 }
 
+/* ===== SIMS THEME (Playful sky-blue palette) ===== */
+[data-theme='sims'] {
+  /* Theme color values */
+  --theme-bg: #eef6ff;
+  --theme-app-surface: #d6e6ff;
+  --theme-surface: #c6dcfb;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 238, 246, 255;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #1e2d4d;
+  --text-muted: #556d8c;
+  --text-inverse: #ffffff;
+
+  /* Colors - Borders */
+  --border: #b6c9e6;
+  --border-subtle: #d2dff1;
+
+  /* Colors - Interactive */
+  --accent: #4aa3ff;
+  --accent-contrast: #ffffff;
+  --accent-hover: #6ab6ff;
+
+  /* Colors - Semantic */
+  --success: #3fb6ff;
+  --warning: #f5b56a;
+  --danger: #f36f7c;
+
+  /* Colors - Focus */
+  --focus-ring: #4aa3ff;
+
+  /* Typography - Font Families */
+  --font-sans: 'Comic Sans MS', 'Comic Sans', 'Comic Neue', cursive;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(74, 163, 255, 0.2);
+  --shadow-2: 0 4px 8px rgba(74, 163, 255, 0.22);
+  --shadow-3: 0 8px 24px rgba(74, 163, 255, 0.28);
+}
+
 /* ===== TRIBUTE THEME (Inspired by the old UI's dark sidebar) ===== */
 [data-theme='tribute'] {
   /* Theme color values */
