@@ -13,6 +13,7 @@ import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto, MetaTagResponseDto } from "@taico/client";
 import { TaskActivityItem } from './useTasks';
+import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import './TaskDetailPage.css';
 
 export function TaskDetailPage() {
@@ -32,6 +33,9 @@ export function TaskDetailPage() {
 
   // Find task from context (real-time updates)
   const task = tasks.find(t => t.id === taskId);
+
+  // Set document title (browser tab)
+  useDocumentTitle({ task: { name: task?.name } });
 
   // Set section title for IosShell
   useEffect(() => {

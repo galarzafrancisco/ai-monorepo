@@ -4,6 +4,7 @@ import { Avatar, DataRow, Text, DataRowContainer, DataRowTag } from "../../ui/pr
 import { useAgentsCtx } from "./AgentsProvider";
 import { Agent } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { AgentResponseDto } from "@taico/client";
 import { NewAgentPop } from "./NewAgentPop";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
@@ -14,6 +15,9 @@ export function AgentsPage() {
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
   const [showNewAgentPop, setShowNewAgentPop] = useState(false);
+
+  // Set document title (browser tab)
+  useDocumentTitle();
 
   // Set page title
   useEffect(() => {

@@ -2,12 +2,16 @@ import { Stack, Text, Card, Row, Button } from '../../ui/primitives';
 import { useHomeCtx } from './HomeProvider';
 import { useEffect } from 'react';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
+import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 
 export function SettingsPage() {
   const { setSectionTitle } = useHomeCtx();
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
+
+  // Set document title (browser tab)
+  useDocumentTitle();
 
   useEffect(() => {
     setSectionTitle('Settings');

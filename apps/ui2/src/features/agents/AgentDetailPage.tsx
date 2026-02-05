@@ -13,6 +13,7 @@ import { EditTagTriggersPop } from './EditTagTriggersPop';
 import { EditIntroductionPop } from './EditIntroductionPop';
 import { EditAgentTypePop } from './EditAgentTypePop';
 import { TaskStatus } from '../../shared/const/taskStatus';
+import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import './AgentDetailPage.css';
 import { useActorsCtx } from '../actors';
 
@@ -139,6 +140,9 @@ export function AgentDetailPage() {
       setSelectedScopes(new Set(DEFAULT_SCOPES)); // Reset to defaults
     }
   }, [showCreateForm, availableScopes.length, loadScopes]);
+
+  // Set document title (browser tab)
+  useDocumentTitle({ agent: { name: agent?.name } });
 
   // Set section title for IosShell
   useEffect(() => {

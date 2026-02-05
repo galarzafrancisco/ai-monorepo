@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DataRowContainer } from "../../ui/primitives";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useContextCtx } from "./ContextProvider";
 import { ContextBlockRow } from "./ContextBlockRow";
 import "./ContextHome.css";
@@ -11,6 +12,10 @@ export function ContextHome(): JSX.Element {
 
   console.log(`blocks`)
   console.log(blocks)
+
+  // Set document title (browser tab)
+  useDocumentTitle();
+
   // Set page title
   useEffect(() => {
     setSectionTitle("Context Blocks");
