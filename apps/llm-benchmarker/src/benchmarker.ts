@@ -46,11 +46,11 @@ async function runSingleRequest(
     messages: [
       {
         role: 'user',
-        content: 'Write a detailed and engaging story about a group of scientists who discover a hidden underground civilization while drilling for geothermal energy. Include vivid descriptions of the civilization, its culture, technology, and the interactions between the scientists and the inhabitants. Make it at least 2000 words.',
+        content: 'Write a detailed and engaging story about a group of scientists who discover a hidden underground civilization while drilling for geothermal energy. Include vivid descriptions of the civilization, its culture, technology, and the interactions between the scientists and the inhabitants. Make it at least 1000 words.',
       },
     ],
     temperature: 0.7,
-    max_tokens: 20000,
+    max_tokens: 5000,
   });
 
   const endTime = Date.now();
