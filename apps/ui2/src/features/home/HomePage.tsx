@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Card } from "../../ui/primitives";
 import { useHomeCtx } from "./HomeProvider";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 
 function Content(): JSX.Element {
   return (
@@ -21,6 +22,9 @@ function Content(): JSX.Element {
 export function HomePage() {
   console.log('Home page mounting');
   const { message, setSectionTitle, sectionTitle } = useHomeCtx();
+
+  // Set browser tab title
+  useDocumentTitle();
 
   useEffect(() => {
     console.log('Home page useEffect hook triggered');

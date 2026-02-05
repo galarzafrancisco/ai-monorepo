@@ -5,11 +5,13 @@ import './BetaShellDesktop.css';
 import { Stack } from "../../ui/primitives";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { Link, useLocation } from "react-router-dom";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
   console.log('Beta shell');
 
   const location = useLocation();
+  useDocumentTitle();
 
   // Detect destkop / mobile
   const isDesktop = useIsDesktop();
