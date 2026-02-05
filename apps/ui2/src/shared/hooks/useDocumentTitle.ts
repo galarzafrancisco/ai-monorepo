@@ -19,8 +19,12 @@ export function useDocumentTitle(routeData?: RouteData) {
     const path = location.pathname;
     let title = 'taico'; // default
 
+    // Home view
+    if (path.startsWith('/home')) {
+      title = '🏠 taico';
+    }
     // Task detail page
-    if (path.match(/\/tasks\/task\/.+/) && routeData?.task?.name) {
+    else if (path.match(/\/tasks\/task\/.+/) && routeData?.task?.name) {
       const taskName = routeData.task.name;
       // Trim if too long (max 50 chars)
       const trimmedName = taskName.length > 50 ? taskName.substring(0, 50) + '...' : taskName;
@@ -57,10 +61,6 @@ export function useDocumentTitle(routeData?: RouteData) {
     // Threads view
     else if (path.startsWith('/threads')) {
       title = '🧵 threads';
-    }
-    // Home view
-    else if (path.startsWith('/home')) {
-      title = '🏠 taico';
     }
 
     document.title = title;
