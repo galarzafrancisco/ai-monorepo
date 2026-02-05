@@ -14,6 +14,25 @@ function countWords(text: string): number {
 }
 
 /**
+ * Run a warmup request to ensure GPU is ready and model is loaded
+ */
+async function runWarmupRequest(
+  client: OpenAI,
+  modelName: string,
+): Promise<void> {
+  await client.chat.completions.create({
+    model: modelName,
+    messages: [
+      {
+        role: 'user',
+        content: 'Say hello.',
+      },
+    ],
+    max_tokens: 10,
+  });
+}
+
+/**
  * Run a single benchmark request
  */
 async function runSingleRequest(
@@ -27,11 +46,11 @@ async function runSingleRequest(
     messages: [
       {
         role: 'user',
-        content: 'Write a short paragraph about the importance of benchmarking in software development.',
+        content: 'Write a detailed and engaging story about a group of scientists who discover a hidden underground civilization while drilling for geothermal energy. Include vivid descriptions of the civilization, its culture, technology, and the interactions between the scientists and the inhabitants. Make it at least 2000 words.',
       },
     ],
     temperature: 0.7,
-    max_tokens: 500,
+    max_tokens: 20000,
   });
 
   const endTime = Date.now();
@@ -95,6 +114,11 @@ export async function runBenchmark(
     baseURL: config.baseUrl,
     apiKey: config.apiKey || 'dummy-key',
   });
+
+  // Warmup request to load model and warm up GPUs
+  console.log('\nRunning warmup request...');
+  await runWarmupRequest(client, config.modelName);
+  console.log('✓ Warmup complete');
 
   // Single request benchmark
   console.log('\nRunning single request benchmark...');
