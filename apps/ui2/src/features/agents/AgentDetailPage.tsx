@@ -12,6 +12,7 @@ import { EditStatusTriggersPop } from './EditStatusTriggersPop';
 import { EditTagTriggersPop } from './EditTagTriggersPop';
 import { EditIntroductionPop } from './EditIntroductionPop';
 import { EditAgentTypePop } from './EditAgentTypePop';
+import { EditAgentModelPop } from './EditAgentModelPop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import './AgentDetailPage.css';
@@ -53,6 +54,7 @@ export function AgentDetailPage() {
   const [showEditTagTriggersPop, setShowEditTagTriggersPop] = useState(false);
   const [showEditAgentTypePop, setShowEditAgentTypePop] = useState(false);
   const [showEditIntroductionPop, setShowEditIntroductionPop] = useState(false);
+  const [showEditModelPop, setShowEditModelPop] = useState(false);
 
   // Find actor associated with this agent
   const { actors } = useActorsCtx();
@@ -275,6 +277,28 @@ export function AgentDetailPage() {
     }
   };
 
+  const handleSaveModelConfig = async ({
+    providerId,
+    modelId,
+  }: {
+    providerId: string;
+    modelId: string;
+  }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { providerId, modelId });
+      if (updated) {
+        setAgent(updated);
+        setShowEditModelPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update model config:', err);
+      return false;
+    }
+  };
+
   // Handle revoking a token
   const handleRevokeToken = async (tokenId: string) => {
     if (!slug) return;
@@ -322,6 +346,12 @@ export function AgentDetailPage() {
 
   const introductionValue = agent.introduction as unknown;
   const introductionText = typeof introductionValue === 'string' ? introductionValue : '';
+  const providerLabel = agent.providerId && agent.providerId.trim().length > 0
+    ? agent.providerId
+    : 'Default provider';
+  const modelLabel = agent.modelId && agent.modelId.trim().length > 0
+    ? agent.modelId
+    : 'Default model';
 
   return (
     <div className="agent-detail-page">
@@ -377,6 +407,21 @@ export function AgentDetailPage() {
           <Text size="2" tone="muted">
             {agent.type}
           </Text>
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
+
+      {/* Model */}
+      <DataRowContainer title="Model" className="agent-detail-page__section">
+        <DataRow onClick={() => setShowEditModelPop(true)}>
+          <Stack spacing="1">
+            <Text size="2" tone="muted">
+              Provider: {providerLabel}
+            </Text>
+            <Text size="2" tone="muted">
+              Model: {modelLabel}
+            </Text>
+          </Stack>
           <Text size="1" tone="muted">tap to edit</Text>
         </DataRow>
       </DataRowContainer>
@@ -660,6 +705,14 @@ export function AgentDetailPage() {
           initialValue={introductionText}
           onCancel={() => setShowEditIntroductionPop(false)}
           onSave={handleSaveIntroduction}
+        />
+      )}
+      {showEditModelPop && agent && (
+        <EditAgentModelPop
+          initialProviderId={agent.providerId ?? ''}
+          initialModelId={agent.modelId ?? ''}
+          onCancel={() => setShowEditModelPop(false)}
+          onSave={handleSaveModelConfig}
         />
       )}
     </div>

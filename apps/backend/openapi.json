@@ -7890,6 +7890,16 @@
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
           },
+          "providerId": {
+            "type": "string",
+            "description": "Provider ID to select a model runtime",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model ID used by the agent runtime",
+            "example": "gpt-5.2-codex"
+          },
           "statusTriggers": {
             "type": "array",
             "description": "Task statuses that will trigger this agent to activate",
@@ -7995,6 +8005,18 @@
             "type": "string",
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "providerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Provider ID to select a model runtime",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Model ID used by the agent runtime",
+            "example": "gpt-5.2-codex"
           },
           "statusTriggers": {
             "description": "List of status that trigger this agent",
@@ -8122,6 +8144,16 @@
             "type": "string",
             "description": "Core instructions/persona for this agent",
             "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "providerId": {
+            "type": "string",
+            "description": "Provider ID to select a model runtime",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model ID used by the agent runtime",
+            "example": "gpt-5.2-codex"
           },
           "statusTriggers": {
             "type": "array",

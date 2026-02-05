@@ -71,6 +71,8 @@ export class AgentsService {
       type: input.type ?? AgentType.OTHER,
       description: input.description ?? null,
       systemPrompt: input.systemPrompt ?? '',
+      providerId: this.normalizeOptionalId(input.providerId),
+      modelId: this.normalizeOptionalId(input.modelId),
       statusTriggers: input.statusTriggers ?? [],
       tagTriggers: input.tagTriggers ?? [],
       allowedTools: input.allowedTools ?? [],
@@ -271,6 +273,12 @@ export class AgentsService {
     if (input.systemPrompt !== undefined) {
       agent.systemPrompt = input.systemPrompt;
     }
+    if (input.providerId !== undefined) {
+      agent.providerId = this.normalizeOptionalId(input.providerId);
+    }
+    if (input.modelId !== undefined) {
+      agent.modelId = this.normalizeOptionalId(input.modelId);
+    }
     if (input.statusTriggers !== undefined) {
       agent.statusTriggers = input.statusTriggers;
     }
@@ -318,6 +326,8 @@ export class AgentsService {
       description: agent.description,
       introduction: actor.introduction,
       systemPrompt: agent.systemPrompt,
+      providerId: agent.providerId ?? null,
+      modelId: agent.modelId ?? null,
       statusTriggers: agent.statusTriggers,
       tagTriggers: agent.tagTriggers,
       allowedTools: agent.allowedTools,
@@ -328,5 +338,12 @@ export class AgentsService {
       updatedAt: agent.updatedAt,
       deletedAt: agent.deletedAt ?? null,
     };
+  }
+
+  private normalizeOptionalId(value?: string | null): string | null {
+    if (!value?.trim()) {
+      return null;
+    }
+    return value;
   }
 }

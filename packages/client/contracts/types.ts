@@ -3461,6 +3461,16 @@ export interface components {
              */
             systemPrompt: string;
             /**
+             * @description Provider ID to select a model runtime
+             * @example openai
+             */
+            providerId?: string;
+            /**
+             * @description Model ID used by the agent runtime
+             * @example gpt-5.2-codex
+             */
+            modelId?: string;
+            /**
              * @description Task statuses that will trigger this agent to activate
              * @default []
              * @example [
@@ -3537,6 +3547,16 @@ export interface components {
              * @example You are a helpful assistant that helps users with tasks.
              */
             systemPrompt: string;
+            /**
+             * @description Provider ID to select a model runtime
+             * @example openai
+             */
+            providerId?: string | null;
+            /**
+             * @description Model ID used by the agent runtime
+             * @example gpt-5.2-codex
+             */
+            modelId?: string | null;
             /**
              * @description List of status that trigger this agent
              * @example [
@@ -3623,6 +3643,16 @@ export interface components {
              * @example You are a helpful assistant that helps users with tasks.
              */
             systemPrompt?: string;
+            /**
+             * @description Provider ID to select a model runtime
+             * @example openai
+             */
+            providerId?: string;
+            /**
+             * @description Model ID used by the agent runtime
+             * @example gpt-5.2-codex
+             */
+            modelId?: string;
             /**
              * @description Task statuses that will trigger this agent to activate
              * @example [

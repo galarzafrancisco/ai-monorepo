@@ -13,6 +13,22 @@ export class PatchAgentDto {
   systemPrompt?: string;
 
   @ApiPropertyOptional({
+    description: 'Provider ID to select a model runtime',
+    example: 'openai',
+  })
+  @IsString()
+  @IsOptional()
+  providerId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Model ID used by the agent runtime',
+    example: 'gpt-5.2-codex',
+  })
+  @IsString()
+  @IsOptional()
+  modelId?: string;
+
+  @ApiPropertyOptional({
     description: 'Task statuses that will trigger this agent to activate',
     example: ['IN_PROGRESS', 'FOR_REVIEW'],
     type: [String],

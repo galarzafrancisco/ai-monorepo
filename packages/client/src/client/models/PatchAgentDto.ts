@@ -8,6 +8,14 @@ export type PatchAgentDto = {
      */
     systemPrompt?: string;
     /**
+     * Provider ID to select a model runtime
+     */
+    providerId?: string;
+    /**
+     * Model ID used by the agent runtime
+     */
+    modelId?: string;
+    /**
      * Task statuses that will trigger this agent to activate
      */
     statusTriggers?: Array<'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'>;

@@ -32,6 +32,14 @@ export type AgentResponseDto = {
      */
     systemPrompt: string;
     /**
+     * Provider ID to select a model runtime
+     */
+    providerId?: string | null;
+    /**
+     * Model ID used by the agent runtime
+     */
+    modelId?: string | null;
+    /**
      * List of status that trigger this agent
      */
     statusTriggers: Array<string>;
