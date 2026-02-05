@@ -34,6 +34,12 @@ export class AgentEntity {
   @Column({ type: 'text', name: 'system_prompt' })
   systemPrompt!: string;
 
+  @Column({ type: 'text', name: 'provider_id', nullable: true })
+  providerId!: string | null;
+
+  @Column({ type: 'text', name: 'model_id', nullable: true })
+  modelId!: string | null;
+
   @Column({
     type: 'simple-array',
     name: 'status_triggers',

@@ -48,6 +48,22 @@ export class AgentResponseDto {
   })
   systemPrompt!: string;
 
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Provider ID to select a model runtime',
+    example: 'openai',
+  })
+  providerId!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Model ID used by the agent runtime',
+    example: 'gpt-5.2-codex',
+  })
+  modelId!: string | null;
+
   // TODO: refine description and examples and types
   @ApiProperty({
     description: 'List of status that trigger this agent',
@@ -119,6 +135,8 @@ export class AgentResponseDto {
       description: result.description,
       introduction: result.introduction,
       systemPrompt: result.systemPrompt,
+      providerId: result.providerId,
+      modelId: result.modelId,
       statusTriggers: result.statusTriggers,
       tagTriggers: result.tagTriggers,
       allowedTools: result.allowedTools,

@@ -1,0 +1,16 @@
+.edit-agent-model-pop__field {
+  margin-bottom: var(--space-2);
+}
+
+.edit-agent-model-pop__input {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  font-size: var(--fs-3);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+}
+
+.edit-agent-model-pop__input:focus {
+  outline: none;
+}

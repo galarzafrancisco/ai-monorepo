@@ -52,6 +52,8 @@ export class AgentsController {
       description: dto.description,
       introduction: dto.introduction,
       systemPrompt: dto.systemPrompt,
+      providerId: dto.providerId,
+      modelId: dto.modelId,
       statusTriggers: dto.statusTriggers || [],
       tagTriggers: dto.tagTriggers || [],
       allowedTools: dto.allowedTools || [],
@@ -114,6 +116,8 @@ export class AgentsController {
       tagTriggers: dto.tagTriggers,
       type: dto.type,
       introduction: dto.introduction,
+      providerId: dto.providerId,
+      modelId: dto.modelId,
     });
     return AgentResponseDto.fromResult(result);
   }

@@ -63,6 +63,22 @@ export class CreateAgentDto {
   @IsString()
   systemPrompt!: string;
 
+  @ApiPropertyOptional({
+    description: 'Provider ID to select a model runtime',
+    example: 'openai',
+  })
+  @IsString()
+  @IsOptional()
+  providerId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Model ID used by the agent runtime',
+    example: 'gpt-5.2-codex',
+  })
+  @IsString()
+  @IsOptional()
+  modelId?: string;
+
   // TODO: refine description and examples and types
   @ApiPropertyOptional({
     description: 'Task statuses that will trigger this agent to activate',
