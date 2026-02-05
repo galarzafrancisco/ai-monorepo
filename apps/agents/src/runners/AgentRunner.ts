@@ -1,3 +1,8 @@
+export type Model = {
+  providerId: string;
+  modelId: string;
+}
+
 export type AgentRunContext = {
   /** Task / job identity */
   taskId: string;
@@ -16,6 +21,8 @@ export type AgentRunContext = {
 
   /** For backend traceability */
   runId: string;
+
+  model?: Model;
 };
 
 export type AgentRunCallbacks = {

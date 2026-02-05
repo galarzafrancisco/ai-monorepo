@@ -9,6 +9,7 @@ import { SocketIOTasksTransport, TaskEvent } from "./SocketIOTasksTransport.js"
 import { BaseAgentRunner } from "./runners/BaseAgentRunner.js";
 import { OpencodeAgentRunner } from "./runners/OpenCodeAgentRunner.js";
 import { ADKAgentRunner } from "./runners/ADKAgentRunner.js";
+import { Model } from "./runners/AgentRunner.js";
 
 export class Coordinator {
 
@@ -140,10 +141,18 @@ export class Coordinator {
 
     // Create agent runner
     let runner: BaseAgentRunner | null = null;
+    let model: Model | null = null;
     if (agent.type === 'claude') {
       runner = new ClaudeAgentRunner();
     } else if (agent.type === 'opencode') {
       runner = new OpencodeAgentRunner();
+      // hack to hardcode the model for qwen
+      if (agent.slug === 'qwen3-coder-next') {
+        model = {
+          providerId: 'spark-qwen3-coder-next-fp8',
+          modelId: 'Qwen/Qwen3-Coder-Next-FP8',
+        }
+      }
     } else if (agent.type === 'adk') {
       runner = new ADKAgentRunner();
     }

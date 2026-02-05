@@ -4,7 +4,7 @@ import { createOpencode, createOpencodeServer, OpencodeClient, TextPartInput } f
 import { OpencodeMessageFormatter } from "src/formatters/OpencodeMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
 import { RUN_ID_HEADER } from "src/helpers/config.js";
-import { AgentRunContext } from "./AgentRunner.js";
+import { AgentRunContext, Model } from "./AgentRunner.js";
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind = 'opencode';
@@ -86,6 +86,10 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     }
     console.log(`created session ${session.id} in ${session.directory}`);
 
+    const model: Model = ctx.model || {
+      providerId: 'openai',
+      modelId: 'gpt-5.2-codex',
+    };
 
     const prompt: TextPartInput = {
       type: 'text',
@@ -101,8 +105,8 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       },
       body: {
         model: {
-          providerID: "openai",
-          modelID: "gpt-5.2-codex",
+          providerID: model.providerId,
+          modelID: model.modelId,
         },
         parts: [prompt],
       }
