@@ -3,10 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { DataRowContainer } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { ThreadRow } from "./ThreadRow";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 
 export function ThreadsPage() {
   const { threads, setSectionTitle } = useThreadsCtx();
   const navigate = useNavigate();
+
+  // Set browser tab title
+  useDocumentTitle();
 
   // Set page title
   useEffect(() => {

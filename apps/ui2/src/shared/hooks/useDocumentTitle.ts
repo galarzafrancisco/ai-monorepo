@@ -54,6 +54,14 @@ export function useDocumentTitle(routeData?: RouteData) {
     else if (path.startsWith('/tools')) {
       title = '🧰 tools';
     }
+    // Threads view
+    else if (path.startsWith('/threads')) {
+      title = '🧵 threads';
+    }
+    // Home view
+    else if (path.startsWith('/home')) {
+      title = '🏠 taico';
+    }
 
     document.title = title;
   }, [location.pathname, routeData]);
