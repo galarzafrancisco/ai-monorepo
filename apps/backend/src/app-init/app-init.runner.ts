@@ -37,6 +37,7 @@ import { createCodeReviewer } from './agent/code-reviewer.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './agent/prompts';
+import { createQwen3CoderNext } from './agent/qwen3-coder-next';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -176,6 +177,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createCodeReviewer);
     } catch (error) {
       this.logger.error('Error ensuring code-reviewer Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createQwen3CoderNext);
+    } catch (error) {
+      this.logger.error('Error ensuring qwen3-coder-next Agent exists');
     }
   }
 
