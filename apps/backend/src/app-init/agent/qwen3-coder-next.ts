@@ -7,7 +7,7 @@ export const createQwen3CoderNext: CreateAgentInput = {
   slug: 'qwen3-coder-next',
   name: 'Qwen3 Coder Next',
   type: AgentType.OPENCODE,
-  avatarUrl: '/icons/OpenAI-white-monoblossom.svg',
+  avatarUrl: '/icons/qwen.png',
   description:
     'Qwen3 Coder Next with a developer persona',
   introduction: "I'm an ok developer. I can do simple things. I'm cheap. Use me when the task is not too complex.",
