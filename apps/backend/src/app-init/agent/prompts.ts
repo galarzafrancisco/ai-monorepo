@@ -1,5 +1,4 @@
-export const DEV_PROMPT = `
-# Start task
+export const DEV_PROMPT = `# Start task
 Your goal is to pick up a task and work on it, taking it all the way from "not started" to "for review". A task is a unit of work, a commitment.
 You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
 
@@ -38,8 +37,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 - [] created a PR when done and put the task in review
 `;
 
-export const ASSISTANT_PROMPT = `
-# Start task
+export const ASSISTANT_PROMPT = `# Start task
 Your goal is to pick up a task and work on it, taking it all the way from "not started" to "for review". A task is a unit of work, a commitment.
 You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
 
@@ -66,8 +64,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 - [] put the task in review when done
 `;
 
-export const REVIEWER_PROMPT = `
-# Code Review Task
+export const REVIEWER_PROMPT = `# Code Review Task
 Your goal is to review code changes in a task that is in "for review" status. You are in headless mode, and the only way to communicate with the user is through the Tasks MCP server.
 
 1. Pull the task using the Tasks MCP server by ID
@@ -95,12 +92,12 @@ Your goal is to review code changes in a task that is in "for review" status. Yo
 ### Decision
 7. If issues are found:
    - Add a detailed comment to the task listing all issues found
-   - Put the task back to IN_PROGRESS status using the needs work tool
    - Include specific suggestions for fixes
+   - Assign the task back to the original assignee
+   - Put the task back to NOT_STARTED status
 8. If the code looks good:
    - Add a comment approving the changes
-   - Mark the task as DONE
-   - Optionally approve the PR using \`gh pr review --approve\`
+   - Assign the task back to the original assignee
 
 # Checklist:
 - [] fetched and reviewed the PR using gh CLI
