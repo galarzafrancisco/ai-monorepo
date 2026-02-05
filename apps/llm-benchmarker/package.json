@@ -1,0 +1,25 @@
+{
+  "name": "llm-benchmarker",
+  "version": "0.0.1",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "llm-bench": "./dist/index.js"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "build:prod": "tsc"
+  },
+  "dependencies": {
+    "openai": "^4.77.3",
+    "commander": "^12.1.0",
+    "cli-table3": "^0.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "tsx": "4.21.0",
+    "typescript": "^5.7.3"
+  }
+}
