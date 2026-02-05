@@ -531,6 +531,53 @@
   --shadow-3: 0 8px 24px rgba(255, 107, 107, 0.26);
 }
 
+/* ===== SIMS THEME (Playful pastel with comic fonts) ===== */
+[data-theme='sims'] {
+  /* Theme color values */
+  --theme-bg: #f5fff0;
+  --theme-app-surface: #dffae8;
+  --theme-surface: #eefef6;
+  --theme-nav-bar: var(--theme-bg);
+  --theme-nav-bar-rgb: 245, 255, 240;
+
+  /* Colors - Background (applied for desktop) */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: var(--theme-bg);
+
+  /* Colors - Text */
+  --text: #1f3c2c;
+  --text-muted: #4b7a63;
+  --text-inverse: #f5fff0;
+
+  /* Colors - Borders */
+  --border: #bdeccf;
+  --border-subtle: #d5f6e2;
+
+  /* Colors - Interactive */
+  --accent: #00b67a;
+  --accent-contrast: #ffffff;
+  --accent-hover: #00cc85;
+
+  /* Colors - Semantic */
+  --success: #00b67a;
+  --warning: #f2b705;
+  --danger: #ff5f6d;
+
+  /* Colors - Focus */
+  --focus-ring: #00b67a;
+
+  /* Typography - Font Families */
+  --font-sans: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Marker Felt', 'Trebuchet MS', sans-serif;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 3px rgba(0, 182, 122, 0.18);
+  --shadow-2: 0 4px 8px rgba(0, 182, 122, 0.2);
+  --shadow-3: 0 8px 24px rgba(0, 182, 122, 0.26);
+}
+
 /* ===== TRIBUTE THEME (Inspired by the old UI's dark sidebar) ===== */
 [data-theme='tribute'] {
   /* Theme color values */
