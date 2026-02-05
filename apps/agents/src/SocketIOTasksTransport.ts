@@ -46,6 +46,8 @@ export class SocketIOTasksTransport implements TasksTransport {
   private handlers: Array<(evt: TaskEvent) => void> = [];
   private started = false;
   private reconnectAttempts = 0;
+  private subscribeAckTimer?: ReturnType<typeof setTimeout>;
+  private awaitingSubscribeAck = false;
 
   constructor(
     private readonly baseUrl: string,
@@ -60,6 +62,7 @@ export class SocketIOTasksTransport implements TasksTransport {
       reconnectionDelay?: number; // default: 1000ms
       reconnectionDelayMax?: number; // default: 5000ms
       randomizationFactor?: number; // default: 0.5
+      subscribeAckTimeout?: number; // default: 5000ms
     }
   ) { }
 
@@ -120,14 +123,14 @@ export class SocketIOTasksTransport implements TasksTransport {
       this.reconnectAttempts = 0;
 
       if (autoSubscribe) {
-        this.socket?.emit("tasks.subscribe", {}, (ack: TasksSocketAck) => {
-          if (this.options?.debug) console.log("[tasks] subscribed:", ack);
-        });
+        this.requestSubscribeAck();
       }
     });
 
     this.socket.on("disconnect", (reason) => {
       if (this.options?.debug) console.log("[tasks] disconnected:", reason);
+      this.clearSubscribeAckTimer();
+      this.awaitingSubscribeAck = false;
 
       // Only log reconnection info if we're going to try reconnecting
       if (reconnection && reason !== "io client disconnect") {
@@ -139,6 +142,8 @@ export class SocketIOTasksTransport implements TasksTransport {
       this.reconnectAttempts++;
       console.error(`[tasks] connect_error (attempt ${this.reconnectAttempts}):`, err?.message ?? err);
       if (this.options?.debug) console.error(err);
+      this.clearSubscribeAckTimer();
+      this.awaitingSubscribeAck = false;
     });
 
     this.socket.on("reconnect_attempt", (attemptNumber: number) => {
@@ -204,6 +209,45 @@ export class SocketIOTasksTransport implements TasksTransport {
     // remove listeners to avoid leaks if restarted
     s.removeAllListeners();
     s.disconnect();
+    this.clearSubscribeAckTimer();
+    this.awaitingSubscribeAck = false;
+  }
+
+  private requestSubscribeAck() {
+    if (!this.socket) return;
+
+    const timeoutMs = this.options?.subscribeAckTimeout ?? 5000;
+    const socket = this.socket;
+
+    this.clearSubscribeAckTimer();
+    this.awaitingSubscribeAck = true;
+
+    socket.emit("tasks.subscribe", {}, (ack: TasksSocketAck) => {
+      if (this.socket !== socket) return;
+      this.awaitingSubscribeAck = false;
+      this.clearSubscribeAckTimer();
+      if (this.options?.debug) console.log("[tasks] subscribed:", ack);
+    });
+
+    this.subscribeAckTimer = setTimeout(() => {
+      if (!this.socket || this.socket !== socket) return;
+      if (!this.awaitingSubscribeAck) return;
+
+      this.awaitingSubscribeAck = false;
+      if (this.options?.debug) {
+        console.warn("[tasks] subscribe ack timeout; forcing reconnect");
+      }
+
+      this.socket.disconnect();
+      this.socket.connect();
+    }, timeoutMs);
+  }
+
+  private clearSubscribeAckTimer() {
+    if (this.subscribeAckTimer) {
+      clearTimeout(this.subscribeAckTimer);
+      this.subscribeAckTimer = undefined;
+    }
   }
 
   private emit(evt: TaskEvent) {
