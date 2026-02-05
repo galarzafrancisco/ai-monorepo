@@ -2,12 +2,16 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, DataRow, Text, DataRowContainer, DataRowTag } from "../../ui/primitives";
 import { useToolsCtx } from "./ToolsProvider";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Tool } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 
 export function ToolsPage() {
   const { tools, setSectionTitle, isLoading, error } = useToolsCtx();
   const navigate = useNavigate();
+
+  // Set document title (browser tab)
+  useDocumentTitle();
 
   // Set page title
   useEffect(() => {

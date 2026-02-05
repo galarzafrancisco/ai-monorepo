@@ -5,6 +5,7 @@ import { useTasksCtx, AnimationState } from "./TasksProvider"
 import { TaskStatus } from "./const";
 import { TASKS_STATUS } from "./const";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Task } from "./types";
 import './TasksPage.css';
 import { NewTaskPop } from "./NewTaskPop";
@@ -18,6 +19,9 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
   const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks, activityByTaskId } = useTasksCtx();
 
   const navigate = useNavigate();
+
+  // Set document title (browser tab)
+  useDocumentTitle();
 
   // Set page title
   useEffect(() => {

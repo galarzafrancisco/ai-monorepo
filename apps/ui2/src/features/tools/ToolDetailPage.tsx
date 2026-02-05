@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
 import './ToolDetailPage.css';
 
@@ -73,6 +74,9 @@ export function ToolDetailPage() {
       loadToolAuthorizations(toolId).then(setAuthorizations);
     }
   }, [tool, toolId, loadToolScopes, loadToolClients, loadToolAuthorizations]);
+
+  // Set document title (browser tab)
+  useDocumentTitle({ tool: { name: tool?.name } });
 
   // Set section title for IosShell
   useEffect(() => {
