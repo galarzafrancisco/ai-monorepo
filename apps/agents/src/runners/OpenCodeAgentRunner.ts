@@ -16,9 +16,10 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
+    const hasCustomModel = Boolean(modelConfig.providerId && modelConfig.modelId);
     this.model = {
-      providerId: modelConfig.providerId ?? 'openai',
-      modelId: modelConfig.modelId ?? 'gpt-5.2-codex',
+      providerId: hasCustomModel ? modelConfig.providerId! : 'openai',
+      modelId: hasCustomModel ? modelConfig.modelId! : 'gpt-5.2-codex',
     };
   }
 
