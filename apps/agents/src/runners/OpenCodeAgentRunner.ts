@@ -77,23 +77,45 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       throw new Error("Failed to create Opencode client");
     }
 
-    // Create a session for this work
-    const { data: session } = await this.client.session.create({
-      body: {
-        title: `Session ${new Date().toLocaleString()}`,
-      },
-      query: {
-        directory: ctx.cwd,
-      },
+    let session = null;
+    if (ctx.resume) {
+      try {
+        const { data } = await this.client.session.get({
+          path: {
+            id: ctx.resume,
+          },
+          query: {
+            directory: ctx.cwd,
+          },
+        });
+        if (data) {
+          session = data;
+        }
+      } catch {
+        session = null;
+      }
+    }
 
-    });
     if (!session) {
-      // Close the server
+      const { data } = await this.client.session.create({
+        body: {
+          title: `Session ${new Date().toLocaleString()}`,
+        },
+        query: {
+          directory: ctx.cwd,
+        },
+      });
+      session = data ?? null;
+    }
+
+    if (!session) {
       if (this.close) {
         this.close();
       }
       throw new Error("Failed to create Opencode session");
     }
+
+    await setSession(session.id);
     console.log(`created session ${session.id} in ${session.directory}`);
 
     const model = this.model;

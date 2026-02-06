@@ -12,7 +12,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
   private formatter = new ADKMessageFormatter();
   private modelId: string;
 
-  private sessionService = new InMemorySessionService();
+  private static sessionService = new InMemorySessionService();
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
@@ -28,12 +28,26 @@ export class ADKAgentRunner extends BaseAgentRunner {
     
     let finalResult = '';
 
-    // Init a session
-    const session = await this.sessionService.createSession({
-      appName: 'app-123',
-      sessionId: 'session-123',
-      userId: 'user-123',
-    });
+    const appName = 'taico';
+    const userId = 'adk-agent';
+    const sessionService = ADKAgentRunner.sessionService;
+    let session = ctx.resume
+      ? await sessionService.getSession({
+        appName,
+        userId,
+        sessionId: ctx.resume,
+      })
+      : undefined;
+
+    if (!session) {
+      session = await sessionService.createSession({
+        appName,
+        userId,
+        sessionId: ctx.resume,
+      });
+    }
+
+    await setSession(session.id);
 
     const agent = new LlmAgent({
       name: 'agent',
@@ -53,9 +67,9 @@ export class ADKAgentRunner extends BaseAgentRunner {
     });
 
     const runner = new Runner({
-      appName: 'app-123',
+      appName,
       agent: agent,
-      sessionService: this.sessionService,
+      sessionService,
     });
 
     const stream = runner.runAsync({

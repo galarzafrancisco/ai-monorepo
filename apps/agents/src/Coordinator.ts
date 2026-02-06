@@ -166,6 +166,7 @@ export class Coordinator {
           taskId: task.id,
           prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
           cwd: workDir,
+          resume: sessionId ?? undefined,
           runId: run.id,
         },
         {
@@ -180,7 +181,7 @@ export class Coordinator {
             });
           },
           onSession: (sessionId: string) => {
-            if (!sessionId) {
+            if (sessionId) {
               setSession(agent.actorId, task.id, sessionId);
             }
           },

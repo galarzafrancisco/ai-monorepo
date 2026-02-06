@@ -27,7 +27,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
       prompt: ctx.prompt,
       options: {
         cwd: ctx.cwd,
-        // resume: ctx.resume,
+        resume: ctx.resume,
         persistSession: true,
         settingSources: ['user', 'project', 'local'],
         ...(ctx.options ?? {}),
