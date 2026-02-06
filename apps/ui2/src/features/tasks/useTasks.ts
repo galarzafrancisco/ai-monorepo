@@ -24,12 +24,6 @@ const SOCKET_URL = getUIWebSocketUrl('/tasks');
 const TASKS_PAGE_SIZE = 100;
 
 
-export type TaskActivityItem = {
-  message?: string;
-  ts: number;
-};
-
-
 export const useTasks = () => {
   // UI feedback
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +37,7 @@ export const useTasks = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   // Ephemeral UI state: last activity per task
-  const [activityByTaskId, setActivityByTaskId] = useState<Record<string, TaskActivityItem>>({});
+  const [activityByTaskId, setActivityByTaskId] = useState<Record<string, TaskActivityWireEvent>>({});
 
   const upsertActivity = (evt: TaskActivityWireEvent) => {
     // Only store activity if it has a message to display
@@ -53,10 +47,7 @@ export const useTasks = () => {
     }
     setActivityByTaskId(prev => ({
       ...prev,
-      [evt.taskId]: {
-        message: evt.message,
-        ts: evt.ts || Date.now(),
-      }
+      [evt.taskId]: evt
     }));
   };
 
