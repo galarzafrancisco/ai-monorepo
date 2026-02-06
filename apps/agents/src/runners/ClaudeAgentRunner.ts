@@ -4,12 +4,16 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
 import { RUN_ID_HEADER } from "src/helpers/config.js";
-import { AgentRunContext } from "./AgentRunner.js";
+import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
 
   private formatter = new ClaudeMessageFormatter();
+
+  constructor(_modelConfig: AgentModelConfig = {}) {
+    super();
+  }
 
   protected async runInternal(
     ctx: AgentRunContext,
