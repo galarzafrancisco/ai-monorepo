@@ -157,7 +157,8 @@ export function TaskDetailPage() {
   const activity = task ? activityByTaskId[task.id] : null;
 
   useEffect(() => {
-    if (!task || !activity) {
+    // Only show activity if task exists, activity exists, and activity has a message
+    if (!task || !activity || !activity.message) {
       return;
     }
 
@@ -464,7 +465,7 @@ export function TaskDetailPage() {
                 className={`task-detail-page__activity-card ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
               >
                 <Text size='2' className='task-detail-page__activity-message'>
-                  {liveActivity.message.replace(/\s+/g, ' ').trim()}
+                  {liveActivity.message?.replace(/\s+/g, ' ').trim() || 'Activity in progress...'}
                 </Text>
               </div>
             ) : null}

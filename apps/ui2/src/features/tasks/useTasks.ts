@@ -24,14 +24,8 @@ const SOCKET_URL = getUIWebSocketUrl('/tasks');
 const TASKS_PAGE_SIZE = 100;
 
 
-type TaskActivityEvent = {
-  taskId: string;
-  message: string;
-  ts?: string; // optional if server provides
-};
-
 export type TaskActivityItem = {
-  message: string;
+  message?: string;
   ts: number;
 };
 
@@ -51,12 +45,17 @@ export const useTasks = () => {
   // Ephemeral UI state: last activity per task
   const [activityByTaskId, setActivityByTaskId] = useState<Record<string, TaskActivityItem>>({});
 
-  const upsertActivity = (evt: TaskActivityEvent) => {
+  const upsertActivity = (evt: TaskActivityWireEvent) => {
+    // Only store activity if it has a message to display
+    if (!evt.message) {
+      console.warn('Received task activity event without message, skipping', evt);
+      return;
+    }
     setActivityByTaskId(prev => ({
       ...prev,
       [evt.taskId]: {
         message: evt.message,
-        ts: evt.ts ? new Date(evt.ts).getTime() : Date.now(),
+        ts: evt.ts || Date.now(),
       }
     }));
   };
@@ -235,7 +234,7 @@ export const useTasks = () => {
     });
 
     // Handle task activity event (ephemeral UI feedback, not persisted)
-    newSocket.on(TaskWireEvents.TASK_ACTIVITY, (evt: TaskActivityEvent) => {
+    newSocket.on(TaskWireEvents.TASK_ACTIVITY, (evt: TaskActivityWireEvent) => {
       console.log('task.activity', evt);
       upsertActivity(evt);
     });
