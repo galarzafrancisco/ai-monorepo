@@ -14,5 +14,6 @@ export const createCodeReviewer: CreateAgentInput = {
   tagTriggers: ['code'],
   allowedTools: [],
   isActive: true,
+  avatarUrl: '/icons/cockatoo.png',
   concurrencyLimit: 1,
 };
