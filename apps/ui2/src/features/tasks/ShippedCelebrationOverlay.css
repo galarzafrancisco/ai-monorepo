@@ -16,15 +16,35 @@
     radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 55%),
     radial-gradient(circle at 80% 30%, color-mix(in srgb, var(--success) 18%, transparent), transparent 60%),
     linear-gradient(120deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--success) 12%, transparent));
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .shipped-celebration__sweep {
   position: absolute;
   inset: -20% -40%;
-  background: linear-gradient(120deg, transparent 30%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 70%);
+  background: linear-gradient(120deg, transparent 35%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%);
   transform: translateX(-20%);
-  animation: shipped-celebration-sweep 1200ms ease forwards;
+  animation: shipped-celebration-sweep 1100ms ease forwards;
+}
+
+.shipped-celebration__confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.shipped-celebration__confetti-piece {
+  position: absolute;
+  top: -12%;
+  left: var(--confetti-left);
+  width: var(--confetti-size);
+  height: calc(var(--confetti-size) * 1.6);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--confetti-color) 90%, transparent);
+  opacity: 0;
+  transform: translateY(-20%) rotate(0deg);
+  animation: shipped-celebration-confetti var(--confetti-duration) ease-out forwards;
+  animation-delay: var(--confetti-delay);
 }
 
 .shipped-celebration__burst {
@@ -33,8 +53,8 @@
   height: 60vmin;
   border-radius: 50%;
   background: radial-gradient(circle, color-mix(in srgb, var(--success) 20%, transparent) 0%, transparent 70%);
-  opacity: 0.8;
-  animation: shipped-celebration-burst 1200ms ease forwards;
+  opacity: 0.75;
+  animation: shipped-celebration-burst 1100ms ease forwards;
 }
 
 .shipped-celebration__label {
@@ -85,6 +105,20 @@
   }
 }
 
+@keyframes shipped-celebration-confetti {
+  0% {
+    opacity: 0;
+    transform: translateY(-20%) rotate(0deg);
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(140%) translateX(var(--confetti-drift)) rotate(160deg);
+  }
+}
+
 @keyframes shipped-celebration-burst {
   0% {
     opacity: 0;
@@ -121,6 +155,7 @@
 @media (prefers-reduced-motion: reduce) {
   .shipped-celebration,
   .shipped-celebration__sweep,
+  .shipped-celebration__confetti-piece,
   .shipped-celebration__burst,
   .shipped-celebration__label {
     animation-duration: 1ms;

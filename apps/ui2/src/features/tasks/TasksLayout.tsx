@@ -10,8 +10,6 @@ export function TasksLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
   const { sectionTitle, shippedCelebration } = useTasksCtx();
 
-  console.log('Tasks layout mounting');
-
   return (
     <div style={{ minHeight: 0 }}>
       {shippedCelebration && (
