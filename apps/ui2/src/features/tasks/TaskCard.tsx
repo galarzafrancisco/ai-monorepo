@@ -4,6 +4,7 @@ import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import './TaskCard.css';
 
 export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, animation?: BoardCardAnimation, onClick?: () => void, pulseKey?: number }): JSX.Element {
+  const avatarActor = task.assigneeActor ?? task.createdByActor;
   const tags = task.tags.map(tag => ({ label: tag.name }));
   if (task.comments.length) {
     tags.push({
@@ -18,7 +19,7 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
   }
   return (
     <BoardCard
-      leading={<Avatar name={task.createdByActor.displayName} size='md' src={task.createdByActor.avatarUrl || undefined}/>}
+      leading={<Avatar name={avatarActor.displayName} size='md' src={avatarActor.avatarUrl || undefined}/>}
       topRight={elapsedTime(task.updatedAt)}
       tags={tags}
       animation={animation}
