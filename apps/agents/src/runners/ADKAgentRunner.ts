@@ -4,14 +4,20 @@ import { LlmAgent, Runner, InMemorySessionService, MCPToolset } from "@google/ad
 import { ADKMessageFormatter } from "src/formatters/ADKMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
 import { RUN_ID_HEADER } from "src/helpers/config.js";
-import { AgentRunContext } from "./AgentRunner.js";
+import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 
 export class ADKAgentRunner extends BaseAgentRunner {
   readonly kind = 'adk';
 
   private formatter = new ADKMessageFormatter();
-  
+  private modelId: string;
+
   private sessionService = new InMemorySessionService();
+
+  constructor(modelConfig: AgentModelConfig = {}) {
+    super();
+    this.modelId = modelConfig.modelId ?? 'gemini-2.5-flash';
+  }
   
   protected async runInternal(
     ctx: AgentRunContext,
@@ -31,7 +37,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
 
     const agent = new LlmAgent({
       name: 'agent',
-      model: 'gemini-2.5-flash',
+      model: this.modelId,
       description: '',
       instruction: '',
       tools: [

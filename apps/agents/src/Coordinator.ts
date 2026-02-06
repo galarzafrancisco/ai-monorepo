@@ -9,7 +9,7 @@ import { SocketIOTasksTransport, TaskEvent } from "./SocketIOTasksTransport.js"
 import { BaseAgentRunner } from "./runners/BaseAgentRunner.js";
 import { OpencodeAgentRunner } from "./runners/OpenCodeAgentRunner.js";
 import { ADKAgentRunner } from "./runners/ADKAgentRunner.js";
-import { Model } from "./runners/AgentRunner.js";
+import { AgentModelConfig } from "./runners/AgentRunner.js";
 
 export class Coordinator {
 
@@ -141,20 +141,16 @@ export class Coordinator {
 
     // Create agent runner
     let runner: BaseAgentRunner | null = null;
-    let model: Model | null = null;
+    const modelConfig: AgentModelConfig = {
+      providerId: agent.providerId ?? undefined,
+      modelId: agent.modelId ?? undefined,
+    };
     if (agent.type === 'claude') {
-      runner = new ClaudeAgentRunner();
+      runner = new ClaudeAgentRunner(modelConfig);
     } else if (agent.type === 'opencode') {
-      runner = new OpencodeAgentRunner();
-      // hack to hardcode the model for qwen
-      if (agent.slug === 'qwen3-coder-next') {
-        model = {
-          providerId: 'spark-qwen3-coder-next-fp8',
-          modelId: 'Qwen/Qwen3-Coder-Next-FP8',
-        }
-      }
+      runner = new OpencodeAgentRunner(modelConfig);
     } else if (agent.type === 'adk') {
-      runner = new ADKAgentRunner();
+      runner = new ADKAgentRunner(modelConfig);
     }
 
     // This shouldn't happen because we checked first, but let's satisfy TypeScript
@@ -214,4 +210,3 @@ export class Coordinator {
     }
   }
 }
-
