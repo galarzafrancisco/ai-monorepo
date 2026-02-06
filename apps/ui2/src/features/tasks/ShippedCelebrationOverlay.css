@@ -1,0 +1,129 @@
+.shipped-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  animation: shipped-celebration-fade 1400ms ease forwards;
+}
+
+.shipped-celebration__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 55%),
+    radial-gradient(circle at 80% 30%, color-mix(in srgb, var(--success) 18%, transparent), transparent 60%),
+    linear-gradient(120deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--success) 12%, transparent));
+  opacity: 0.9;
+}
+
+.shipped-celebration__sweep {
+  position: absolute;
+  inset: -20% -40%;
+  background: linear-gradient(120deg, transparent 30%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 70%);
+  transform: translateX(-20%);
+  animation: shipped-celebration-sweep 1200ms ease forwards;
+}
+
+.shipped-celebration__burst {
+  position: absolute;
+  width: 60vmin;
+  height: 60vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--success) 20%, transparent) 0%, transparent 70%);
+  opacity: 0.8;
+  animation: shipped-celebration-burst 1200ms ease forwards;
+}
+
+.shipped-celebration__label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  color: var(--text);
+  font-size: var(--fs-4);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-2);
+  backdrop-filter: blur(6px);
+  transform: translateY(6px);
+  opacity: 0;
+  animation: shipped-celebration-label 1400ms ease forwards;
+}
+
+@keyframes shipped-celebration-fade {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes shipped-celebration-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-40%);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(40%);
+  }
+}
+
+@keyframes shipped-celebration-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes shipped-celebration-label {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shipped-celebration,
+  .shipped-celebration__sweep,
+  .shipped-celebration__burst,
+  .shipped-celebration__label {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}

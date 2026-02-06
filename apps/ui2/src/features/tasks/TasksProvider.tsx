@@ -49,11 +49,16 @@ export type TasksContextValue = {
   globalEnteringIds: Set<string>;
   globalExitingTasks: Task[];
   activityByTaskId: Record<string, TaskActivityWireEvent>;
+  shippedCelebration: {
+    taskId: string;
+    triggeredAt: number;
+  } | null;
 };
 
 const TasksContext = createContext<TasksContextValue | null>(null);
 
 const ANIMATION_DURATION_MS = 500;
+const SHIPPED_CELEBRATION_DURATION_MS = 1400;
 
 // Track active animations that haven't expired yet
 type ActiveAnimation = {
@@ -68,10 +73,16 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
   const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasks();
   const [sectionTitle, setSectionTitle] = useState("");
+  const [shippedCelebration, setShippedCelebration] = useState<{
+    taskId: string;
+    triggeredAt: number;
+  } | null>(null);
 
   // Refs for synchronous computation
   const prevTasksRef = useRef<Map<string, Task>>(new Map());
   const activeAnimationsRef = useRef<ActiveAnimation[]>([]);
+  const celebrationTimeoutRef = useRef<number | null>(null);
+  const prevCelebrationTasksRef = useRef<Map<string, Task>>(new Map());
 
   // State to trigger cleanup re-renders
   const [cleanupTrigger, setCleanupTrigger] = useState(0);
@@ -183,6 +194,44 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, [animationByStatus, globalEnteringIds, globalExitingTasks]);
 
+  useEffect(() => {
+    if (tasks.length === 0) {
+      prevCelebrationTasksRef.current = new Map();
+      return;
+    }
+
+    const previousTasks = prevCelebrationTasksRef.current;
+    if (previousTasks.size === 0) {
+      prevCelebrationTasksRef.current = new Map(tasks.map(task => [task.id, task]));
+      return;
+    }
+
+    const shippedTask = tasks.find(task => {
+      const prevTask = previousTasks.get(task.id);
+      return prevTask && prevTask.status !== task.status && task.status === TaskStatus.DONE;
+    });
+
+    if (shippedTask) {
+      setShippedCelebration({ taskId: shippedTask.id, triggeredAt: Date.now() });
+      if (celebrationTimeoutRef.current) {
+        window.clearTimeout(celebrationTimeoutRef.current);
+      }
+      celebrationTimeoutRef.current = window.setTimeout(() => {
+        setShippedCelebration(null);
+      }, SHIPPED_CELEBRATION_DURATION_MS);
+    }
+
+    prevCelebrationTasksRef.current = new Map(tasks.map(task => [task.id, task]));
+  }, [tasks]);
+
+  useEffect(() => {
+    return () => {
+      if (celebrationTimeoutRef.current) {
+        window.clearTimeout(celebrationTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<TasksContextValue>(() => {
     return {
@@ -202,6 +251,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       globalEnteringIds,
       globalExitingTasks,
       activityByTaskId,
+      shippedCelebration,
     };
   }, [
     tasks,
@@ -220,6 +270,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     globalEnteringIds,
     globalExitingTasks,
     activityByTaskId,
+    shippedCelebration,
   ]);
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;

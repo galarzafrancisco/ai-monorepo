@@ -4,15 +4,19 @@ import { DesktopShell } from "../../app/shells/DesktopShell";
 import { IosShell } from "../../app/shells/IosShell";
 import { useTasksCtx } from "./TasksProvider";
 import { TASKS_STATUS_NAV } from "./const";
+import { ShippedCelebrationOverlay } from "./ShippedCelebrationOverlay";
 
 export function TasksLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
-  const { sectionTitle } = useTasksCtx();
+  const { sectionTitle, shippedCelebration } = useTasksCtx();
 
   console.log('Tasks layout mounting');
 
   return (
     <div style={{ minHeight: 0 }}>
+      {shippedCelebration && (
+        <ShippedCelebrationOverlay key={shippedCelebration.triggeredAt} />
+      )}
       {isDesktop ?
         <DesktopShell
           sectionTitle={sectionTitle}
