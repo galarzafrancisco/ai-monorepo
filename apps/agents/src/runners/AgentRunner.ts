@@ -3,6 +3,11 @@ export type Model = {
   modelId: string;
 }
 
+export type AgentModelConfig = {
+  providerId?: string | null;
+  modelId?: string | null;
+}
+
 export type AgentRunContext = {
   /** Task / job identity */
   taskId: string;
