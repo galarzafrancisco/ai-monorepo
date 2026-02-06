@@ -32,11 +32,23 @@ export class ADKAgentRunner extends BaseAgentRunner {
     let finalResult = '';
 
     // Init a session
-    const session = await this.sessionService.createSession({
-      appName: 'taico',
-      sessionId: ctx.resume ?? `session-${ctx.taskId}-${Date.now()}`,
-      userId: `user-${ctx.taskId}`,
-    });
+    const userId = `user-${ctx.taskId}`;
+    const sessionId = ctx.resume ?? `session-${ctx.taskId}-${Date.now()}`;
+    let session = ctx.resume
+      ? await this.sessionService.getSession({
+        appName: 'taico',
+        userId,
+        sessionId,
+      })
+      : undefined;
+
+    if (!session) {
+      session = await this.sessionService.createSession({
+        appName: 'taico',
+        sessionId,
+        userId,
+      });
+    }
     await setSession(session.id);
 
     const agent = new LlmAgent({

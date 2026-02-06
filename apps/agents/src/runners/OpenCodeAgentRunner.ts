@@ -103,7 +103,6 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     if (!sessionId) {
       throw new Error("Failed to resolve Opencode session");
     }
-    await setSession(sessionId);
 
     const model = this.model;
 
@@ -133,9 +132,9 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     let responseResult = await promptSession(sessionId);
     if (!responseResult.data && ctx.resume) {
       sessionId = await createSession();
-      await setSession(sessionId);
       responseResult = await promptSession(sessionId);
     }
+    await setSession(sessionId);
 
     const { data: response } = responseResult;
 
