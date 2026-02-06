@@ -6,6 +6,7 @@ import './TaskRow.css';
 
 export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, animation?: DataRowAnimation, onClick?: () => void, pulseKey?: number }): JSX.Element {
   const [pulse, setPulse] = useState(false);
+  const avatarActor = task.assigneeActor ?? task.createdByActor;
 
   useEffect(() => {
     if (pulseKey == null) return;
@@ -29,7 +30,7 @@ export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, an
 
   return (
     <DataRow
-      leading={<Avatar name={task.createdByActor.displayName} size='lg' src={task.createdByActor.avatarUrl || undefined}/>}
+      leading={<Avatar name={avatarActor.displayName} size='lg' src={avatarActor.avatarUrl || undefined}/>}
       topRight={elapsedTime(task.updatedAt)}
       tags={tags}
       animation={animation}
