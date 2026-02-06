@@ -4,7 +4,7 @@ import { createOpencode, createOpencodeServer, OpencodeClient, TextPartInput } f
 import { OpencodeMessageFormatter } from "src/formatters/OpencodeMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
 import { RUN_ID_HEADER } from "src/helpers/config.js";
-import { AgentRunContext, Model } from "./AgentRunner.js";
+import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind = 'opencode';
@@ -12,6 +12,16 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   private formatter = new OpencodeMessageFormatter();
   private client: OpencodeClient | null = null;
   private close: () => void = () => { };
+  private model: Model;
+
+  constructor(modelConfig: AgentModelConfig = {}) {
+    super();
+    const hasCustomModel = Boolean(modelConfig.providerId && modelConfig.modelId);
+    this.model = {
+      providerId: hasCustomModel ? modelConfig.providerId! : 'openai',
+      modelId: hasCustomModel ? modelConfig.modelId! : 'gpt-5.2-codex',
+    };
+  }
 
   async init({ runId }: { runId: string }) {
     console.log('Starting Opencode client');
@@ -86,10 +96,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     }
     console.log(`created session ${session.id} in ${session.directory}`);
 
-    const model: Model = ctx.model || {
-      providerId: 'openai',
-      modelId: 'gpt-5.2-codex',
-    };
+    const model = this.model;
 
     const prompt: TextPartInput = {
       type: 'text',
