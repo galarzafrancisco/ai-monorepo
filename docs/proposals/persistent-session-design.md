@@ -56,7 +56,7 @@ Currently, each agent run creates a brand new session with zero context from pre
 
 ---
 
-### Option 2: Session Metadata Tracking (Recommended)
+### Option 2: Session Metadata Tracking
 **Scope**: Add proper session tracking and management
 
 **Changes**:
