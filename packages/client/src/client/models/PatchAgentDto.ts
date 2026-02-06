@@ -31,6 +31,10 @@ export type PatchAgentDto = {
      * Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
      */
     introduction?: string;
+    /**
+     * Optional avatar URL for the agent actor
+     */
+    avatarUrl?: string | null;
 };
 export namespace PatchAgentDto {
     /**

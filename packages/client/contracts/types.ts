@@ -3456,6 +3456,11 @@ export interface components {
              */
             introduction?: string;
             /**
+             * @description Optional avatar URL for the agent actor
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: string | null;
+            /**
              * @description Core instructions/persona for this agent
              * @example You are a helpful assistant that helps users with tasks.
              */
@@ -3542,6 +3547,11 @@ export interface components {
              * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
              */
             introduction?: Record<string, never>;
+            /**
+             * @description Optional avatar URL for the agent actor
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: string | null;
             /**
              * @description Core instructions/persona for this agent
              * @example You are a helpful assistant that helps users with tasks.
@@ -3680,6 +3690,11 @@ export interface components {
              * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
              */
             introduction?: string;
+            /**
+             * @description Optional avatar URL for the agent actor
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: string | null;
         };
         IssueAccessTokenRequestDto: {
             /**

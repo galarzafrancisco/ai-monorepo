@@ -56,6 +56,16 @@ export class CreateAgentDto {
   @IsOptional()
   introduction?: string;
 
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Optional avatar URL for the agent actor',
+    example: 'https://example.com/avatar.png',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string | null;
+
   @ApiProperty({
     description: 'Core instructions/persona for this agent',
     example: 'You are a helpful assistant that helps users with tasks.',

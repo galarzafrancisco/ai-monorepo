@@ -292,6 +292,11 @@ export class AgentsService {
     // Apply updates to actor if introduction is provided
     if (input.introduction !== undefined) {
       agent.actor.introduction = input.introduction;
+    }
+    if (input.avatarUrl !== undefined) {
+      agent.actor.avatarUrl = input.avatarUrl;
+    }
+    if (input.introduction !== undefined || input.avatarUrl !== undefined) {
       await this.actorRepository.save(agent.actor);
     }
 
@@ -325,6 +330,7 @@ export class AgentsService {
       type: agent.type,
       description: agent.description,
       introduction: actor.introduction,
+      avatarUrl: actor.avatarUrl,
       systemPrompt: agent.systemPrompt,
       providerId: agent.providerId ?? null,
       modelId: agent.modelId ?? null,

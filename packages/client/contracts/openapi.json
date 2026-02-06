@@ -7885,6 +7885,12 @@
             "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
             "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
           },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Optional avatar URL for the agent actor",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
+          },
           "systemPrompt": {
             "type": "string",
             "description": "Core instructions/persona for this agent",
@@ -8000,6 +8006,12 @@
             "type": "object",
             "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
             "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Optional avatar URL for the agent actor",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
           },
           "systemPrompt": {
             "type": "string",
@@ -8199,6 +8211,12 @@
             "type": "string",
             "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
             "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Optional avatar URL for the agent actor",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
           }
         }
       },

@@ -51,6 +51,7 @@ export class AgentsController {
       type: dto.type,
       description: dto.description,
       introduction: dto.introduction,
+      avatarUrl: dto.avatarUrl,
       systemPrompt: dto.systemPrompt,
       providerId: dto.providerId,
       modelId: dto.modelId,
@@ -116,6 +117,7 @@ export class AgentsController {
       tagTriggers: dto.tagTriggers,
       type: dto.type,
       introduction: dto.introduction,
+      avatarUrl: dto.avatarUrl,
       providerId: dto.providerId,
       modelId: dto.modelId,
     });

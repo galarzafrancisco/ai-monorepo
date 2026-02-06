@@ -42,6 +42,14 @@ export class AgentResponseDto {
   })
   introduction!: string | null;
 
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Optional avatar URL for the agent actor',
+    example: 'https://example.com/avatar.png',
+    nullable: true,
+  })
+  avatarUrl!: string | null;
+
   @ApiProperty({
     description: 'Core instructions/persona for this agent',
     example: 'You are a helpful assistant that helps users with tasks.',
@@ -134,6 +142,7 @@ export class AgentResponseDto {
       type: result.type,
       description: result.description,
       introduction: result.introduction,
+      avatarUrl: result.avatarUrl,
       systemPrompt: result.systemPrompt,
       providerId: result.providerId,
       modelId: result.modelId,
