@@ -45,6 +45,11 @@ export function getSession(agentId: string, taskId: string): string | null {
 
 export function setSession(agentId: string, taskId: string, sessionId: string) {
   const db = loadDB();
-  db.push({ agentId, taskId, sessionId });
+  const existing = db.findIndex((entry) => entry.agentId === agentId && entry.taskId === taskId);
+  if (existing >= 0) {
+    db[existing] = { agentId, taskId, sessionId };
+  } else {
+    db.push({ agentId, taskId, sessionId });
+  }
   writeDB(db);
 }

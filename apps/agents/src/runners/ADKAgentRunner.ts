@@ -4,7 +4,10 @@ import { LlmAgent, Runner, InMemorySessionService, MCPToolset } from "@google/ad
 import { ADKMessageFormatter } from "src/formatters/ADKMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
 import { RUN_ID_HEADER } from "src/helpers/config.js";
+import { setSession } from "src/helpers/sessionStore.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
+
+const sharedSessionService = new InMemorySessionService();
 
 export class ADKAgentRunner extends BaseAgentRunner {
   readonly kind = 'adk';
@@ -12,7 +15,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
   private formatter = new ADKMessageFormatter();
   private modelId: string;
 
-  private sessionService = new InMemorySessionService();
+  private sessionService = sharedSessionService;
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
@@ -30,10 +33,11 @@ export class ADKAgentRunner extends BaseAgentRunner {
 
     // Init a session
     const session = await this.sessionService.createSession({
-      appName: 'app-123',
-      sessionId: 'session-123',
-      userId: 'user-123',
+      appName: 'taico',
+      sessionId: ctx.resume ?? `session-${ctx.taskId}-${Date.now()}`,
+      userId: `user-${ctx.taskId}`,
     });
+    await setSession(session.id);
 
     const agent = new LlmAgent({
       name: 'agent',
@@ -53,7 +57,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
     });
 
     const runner = new Runner({
-      appName: 'app-123',
+      appName: 'taico',
       agent: agent,
       sessionService: this.sessionService,
     });

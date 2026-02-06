@@ -126,7 +126,7 @@ export class Coordinator {
     console.log(`- ✅ Conditions met. @${agent.slug} starting to work on task "${task.name}" 🦄`);
 
     // Load session
-    const sessionId = getSession(agent.actorId, task.id);
+    const sessionId = getSession(agent.actorId, task.id) ?? undefined;
 
     // Prep workspace
     const workDir = await prepareWorkspace(task.id, agent.actorId, repoUrl);
@@ -167,6 +167,7 @@ export class Coordinator {
           prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
           cwd: workDir,
           runId: run.id,
+          resume: sessionId,
         },
         {
           onEvent: (message: string) => {
@@ -180,7 +181,7 @@ export class Coordinator {
             });
           },
           onSession: (sessionId: string) => {
-            if (!sessionId) {
+            if (sessionId) {
               setSession(agent.actorId, task.id, sessionId);
             }
           },

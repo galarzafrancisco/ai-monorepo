@@ -4,6 +4,7 @@ import { createOpencode, createOpencodeServer, OpencodeClient, TextPartInput } f
 import { OpencodeMessageFormatter } from "src/formatters/OpencodeMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
 import { RUN_ID_HEADER } from "src/helpers/config.js";
+import { setSession } from "src/helpers/sessionStore.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
@@ -77,24 +78,32 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       throw new Error("Failed to create Opencode client");
     }
 
-    // Create a session for this work
-    const { data: session } = await this.client.session.create({
-      body: {
-        title: `Session ${new Date().toLocaleString()}`,
-      },
-      query: {
-        directory: ctx.cwd,
-      },
-
-    });
-    if (!session) {
-      // Close the server
-      if (this.close) {
-        this.close();
+    const createSession = async () => {
+      const { data: session } = await this.client!.session.create({
+        body: {
+          title: `Session ${new Date().toLocaleString()}`,
+        },
+        query: {
+          directory: ctx.cwd,
+        },
+      });
+      if (!session) {
+        throw new Error("Failed to create Opencode session");
       }
-      throw new Error("Failed to create Opencode session");
+      console.log(`created session ${session.id} in ${session.directory}`);
+      return session.id;
+    };
+
+    let sessionId = ctx.resume ?? null;
+    if (!sessionId) {
+      sessionId = await createSession();
+    } else {
+      console.log(`reusing session ${sessionId}`);
     }
-    console.log(`created session ${session.id} in ${session.directory}`);
+    if (!sessionId) {
+      throw new Error("Failed to resolve Opencode session");
+    }
+    await setSession(sessionId);
 
     const model = this.model;
 
@@ -103,21 +112,32 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       text: ctx.prompt,
     }
     let finalResult = '';
-    const { data: response } = await this.client.session.prompt({
-      path: {
-        id: session.id,
-      },
-      query: {
-        directory: ctx.cwd,
-      },
-      body: {
-        model: {
-          providerID: model.providerId,
-          modelID: model.modelId,
+    const promptSession = async (id: string) => {
+      return this.client!.session.prompt({
+        path: {
+          id,
         },
-        parts: [prompt],
-      }
-    })
+        query: {
+          directory: ctx.cwd,
+        },
+        body: {
+          model: {
+            providerID: model.providerId,
+            modelID: model.modelId,
+          },
+          parts: [prompt],
+        }
+      });
+    };
+
+    let responseResult = await promptSession(sessionId);
+    if (!responseResult.data && ctx.resume) {
+      sessionId = await createSession();
+      await setSession(sessionId);
+      responseResult = await promptSession(sessionId);
+    }
+
+    const { data: response } = responseResult;
 
 
     if (!response) {
