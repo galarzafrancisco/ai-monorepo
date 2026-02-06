@@ -12,6 +12,8 @@ export type SearchInput<T> = {
   primaryField: keyof T;
   /** Field name to use as the secondary search field (e.g., 'description', 'content') */
   secondaryField?: keyof T;
+  /** Additional fields to include with lower relevance weighting */
+  additionalFields?: Array<keyof T>;
   /** The search query string */
   query: string;
   /** Maximum number of results to return (default: 10) */

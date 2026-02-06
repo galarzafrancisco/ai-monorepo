@@ -157,6 +157,7 @@ export class ActorService {
       items: actors,
       primaryField: 'displayName',
       secondaryField: 'slug',
+      additionalFields: ['introduction'],
       query,
       limit,
       threshold,
