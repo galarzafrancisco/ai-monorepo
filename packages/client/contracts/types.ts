@@ -648,6 +648,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/actors/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search actors by display name or slug */
+        get: operations["ActorController_searchActors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/tasks": {
         parameters: {
             query?: never;
@@ -5352,6 +5369,33 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description List of all actors */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActorResponseDto"][];
+                };
+            };
+        };
+    };
+    ActorController_searchActors: {
+        parameters: {
+            query: {
+                /** @description Search query string */
+                query: string;
+                /** @description Maximum number of results to return */
+                limit?: number;
+                /** @description Minimum score threshold (0-1, higher is stricter) */
+                threshold?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Search results sorted by relevance */
             200: {
                 headers: {
                     [name: string]: unknown;

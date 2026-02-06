@@ -2086,6 +2086,73 @@
         ]
       }
     },
+    "/api/v1/actors/search": {
+      "get": {
+        "operationId": "ActorController_searchActors",
+        "parameters": [
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "description": "Search query string",
+            "schema": {
+              "example": "andrea",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of results to return",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "threshold",
+            "required": false,
+            "in": "query",
+            "description": "Minimum score threshold (0-1, higher is stricter)",
+            "schema": {
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.3,
+              "example": 0.3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results sorted by relevance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActorResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Search actors by display name or slug",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
     "/api/v1/tasks/tasks": {
       "post": {
         "operationId": "TasksController_createTask",

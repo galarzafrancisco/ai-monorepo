@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ActorsService } from "./api";
 import type { Actor } from "./types";
 
@@ -17,11 +17,7 @@ export function ActorsProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch actors on mount
-  useEffect(() => {
-    loadActors();
-  }, []);
-
-  const loadActors = async () => {
+  const loadActors = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -32,18 +28,22 @@ export function ActorsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const refreshActors = async () => {
+  useEffect(() => {
+    loadActors();
+  }, [loadActors]);
+
+  const refreshActors = useCallback(async () => {
     await loadActors();
-  };
+  }, [loadActors]);
 
   const value = useMemo<ActorsContextValue>(() => ({
     actors,
     isLoading,
     error,
     refreshActors,
-  }), [actors, isLoading, error]);
+  }), [actors, isLoading, error, refreshActors]);
 
   return <ActorsContext.Provider value={value}>{children}</ActorsContext.Provider>;
 }
