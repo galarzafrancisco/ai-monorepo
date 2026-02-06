@@ -17,6 +17,7 @@ export class SearchService {
       items,
       primaryField,
       secondaryField,
+      additionalFields,
       query,
       limit = 10,
       threshold = 0.3,
@@ -28,6 +29,7 @@ export class SearchService {
       itemCount: items.length,
       primaryField,
       secondaryField,
+      additionalFields,
       limit,
       threshold,
     });
@@ -45,6 +47,15 @@ export class SearchService {
       keys.push({
         name: secondaryField as string,
         weight: 0.3,
+      });
+    }
+
+    if (additionalFields?.length) {
+      additionalFields.forEach((field) => {
+        keys.push({
+          name: field as string,
+          weight: 0.2,
+        });
       });
     }
 
