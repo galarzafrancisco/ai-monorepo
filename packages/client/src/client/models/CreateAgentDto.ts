@@ -24,6 +24,10 @@ export type CreateAgentDto = {
      */
     introduction?: string;
     /**
+     * Optional avatar URL for the agent actor
+     */
+    avatarUrl?: string | null;
+    /**
      * Core instructions/persona for this agent
      */
     systemPrompt: string;

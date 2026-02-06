@@ -15,7 +15,7 @@ export type CreateAgentInput = {
   allowedTools: string[];
   isActive?: boolean;
   concurrencyLimit?: number;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
 };
 
 export type UpdateAgentInput = Partial<CreateAgentInput>;
@@ -25,7 +25,7 @@ export type PatchAgentInput = {
   statusTriggers?: TaskStatus[];
   tagTriggers?: string[];
   type?: AgentType;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   introduction?: string;
   providerId?: string;
   modelId?: string;
@@ -38,6 +38,7 @@ export type AgentResult = {
   type: AgentType;
   description: string | null;
   introduction: string | null;
+  avatarUrl: string | null;
   systemPrompt: string;
   providerId: string | null;
   modelId: string | null;

@@ -28,6 +28,10 @@ export type AgentResponseDto = {
      */
     introduction?: Record<string, any>;
     /**
+     * Optional avatar URL for the agent actor
+     */
+    avatarUrl?: string | null;
+    /**
      * Core instructions/persona for this agent
      */
     systemPrompt: string;

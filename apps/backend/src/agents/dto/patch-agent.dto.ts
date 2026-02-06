@@ -66,4 +66,14 @@ export class PatchAgentDto {
   @IsString()
   @IsOptional()
   introduction?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Optional avatar URL for the agent actor',
+    example: 'https://example.com/avatar.png',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string | null;
 }
