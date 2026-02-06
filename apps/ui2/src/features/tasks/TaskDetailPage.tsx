@@ -12,7 +12,7 @@ import { TagSearchPop } from './TagSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto, MetaTagResponseDto } from "@taico/client";
-import { TaskActivityItem } from './useTasks';
+import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import './TaskDetailPage.css';
 
@@ -23,7 +23,7 @@ export function TaskDetailPage() {
   const { actors } = useActorsCtx();
   const { user } = useAuth();
 
-  const [liveActivity, setLiveActivity] = useState<TaskActivityItem | null>(null);
+  const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
   const activityHideTimerRef = useRef<number | null>(null);
   const activityExitTimerRef = useRef<number | null>(null);
@@ -157,7 +157,8 @@ export function TaskDetailPage() {
   const activity = task ? activityByTaskId[task.id] : null;
 
   useEffect(() => {
-    if (!task || !activity) {
+    // Only show activity if task exists, activity exists, and activity has a message
+    if (!task || !activity || !activity.message) {
       return;
     }
 
@@ -464,7 +465,7 @@ export function TaskDetailPage() {
                 className={`task-detail-page__activity-card ${activityPhase === 'enter' ? 'is-entering' : ''} ${activityPhase === 'exit' ? 'is-exiting' : ''}`}
               >
                 <Text size='2' className='task-detail-page__activity-message'>
-                  {liveActivity.message.replace(/\s+/g, ' ').trim()}
+                  {liveActivity.message?.replace(/\s+/g, ' ').trim() || 'Activity in progress...'}
                 </Text>
               </div>
             ) : null}

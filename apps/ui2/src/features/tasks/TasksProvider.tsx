@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { TaskActivityItem, useTasks } from "./useTasks"; // your abstraction hook
+import { useTasks } from "./useTasks"; // your abstraction hook
 import type { Task } from "./types";
 import { TaskStatus } from "./const";
 import { CommentResponseDto, CreateTaskDto, TaskResponseDto, InputRequestResponseDto } from "@taico/client";
+import { TaskActivityWireEvent } from "@taico/events";
 
 // Animation state tracked per status (for column-based animations)
 export type AnimationState = {
@@ -47,7 +48,7 @@ export type TasksContextValue = {
   // Global animation state (for mobile "all" view)
   globalEnteringIds: Set<string>;
   globalExitingTasks: Task[];
-  activityByTaskId: Record<string, TaskActivityItem>;
+  activityByTaskId: Record<string, TaskActivityWireEvent>;
 };
 
 const TasksContext = createContext<TasksContextValue | null>(null);
