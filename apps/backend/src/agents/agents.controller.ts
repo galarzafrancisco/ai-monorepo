@@ -93,7 +93,6 @@ export class AgentsController {
   async getAgentBySlug(
     @Param() params: AgentParamsDto,
   ): Promise<AgentResponseDto> {
-    console.log(params);
     const result = await this.agentsService.getAgentBySlug({
       slug: params.slug,
     });

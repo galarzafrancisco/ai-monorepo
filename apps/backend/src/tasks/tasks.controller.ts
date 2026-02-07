@@ -39,6 +39,8 @@ import { AnswerInputRequestDto } from './dto/answer-input-request.dto';
 import { TagResponseDto } from './dto/tag-response.dto';
 import { CreateTagDto } from '../meta/dto/create-tag.dto';
 import { TaskParamsDto } from './dto/task-params.dto';
+import { TaskTagParamsDto } from './dto/task-tag-params.dto';
+import { TaskInputRequestParamsDto } from './dto/task-input-request-params.dto';
 import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
 import { TaskListResponseDto } from './dto/task-list-response.dto';
 import { SearchTasksQueryDto } from './dto/search-tasks-query.dto';
@@ -319,13 +321,12 @@ export class TasksController {
   })
   @ApiNotFoundResponse({ description: 'Task not found' })
   async removeTagFromTask(
-    @Param('id') taskId: string,
-    @Param('tagId') tagId: string,
+    @Param() params: TaskTagParamsDto,
     @CurrentUser() user: UserContext,
   ): Promise<TaskResponseDto> {
     const result = await this.TasksService.removeTagFromTask(
-      taskId,
-      tagId,
+      params.id,
+      params.tagId,
       user.actorId,
     );
     return TaskResponseDto.fromResult(result);
@@ -364,14 +365,13 @@ export class TasksController {
   @ApiNotFoundResponse({ description: 'Input request not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   async answerInputRequest(
-    @Param('id') taskId: string,
-    @Param('inputRequestId') inputRequestId: string,
+    @Param() params: TaskInputRequestParamsDto,
     @Body() dto: AnswerInputRequestDto,
     @CurrentUser() user: UserContext,
   ): Promise<InputRequestResponseDto> {
     const result = await this.TasksService.answerInputRequest(
-      taskId,
-      inputRequestId,
+      params.id,
+      params.inputRequestId,
       {
         answer: dto.answer,
       },

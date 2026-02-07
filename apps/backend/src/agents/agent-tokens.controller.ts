@@ -32,6 +32,8 @@ import { AgentsScopes } from './agents.scopes';
 import { IssueAccessTokenRequestDto } from '../authorization-server/dto/issue-access-token-request.dto';
 import { IssueAccessTokenResponseDto } from '../authorization-server/dto/issue-access-token-response.dto';
 import { IssuedAccessTokenResponseDto } from '../authorization-server/dto/issued-access-token-response.dto';
+import { AgentParamsDto } from './dto/agent-params.dto';
+import { AgentTokenParamsDto } from './dto/agent-token-params.dto';
 
 /**
  * Controller for managing agent access tokens.
@@ -58,7 +60,7 @@ export class AgentTokensController {
   @ApiParam({ name: 'slug', description: 'Agent slug' })
   @ApiCreatedResponse({ type: IssueAccessTokenResponseDto })
   async issueToken(
-    @Param('slug') slug: string,
+    @Param() params: AgentParamsDto,
     @Body() dto: IssueAccessTokenRequestDto,
     @CurrentUser() user: UserContext,
   ): Promise<IssueAccessTokenResponseDto> {
@@ -71,7 +73,9 @@ export class AgentTokensController {
     }
 
     // Get the agent (validates it exists)
-    const agent = await this.agentsService.getAgentBySlug({ slug });
+    const agent = await this.agentsService.getAgentBySlug({
+      slug: params.slug,
+    });
 
     // Get the subject actor (agent's actor)
     const subjectActor = await this.actorService.getActorById(agent.actorId);
@@ -113,10 +117,12 @@ export class AgentTokensController {
   @ApiParam({ name: 'slug', description: 'Agent slug' })
   @ApiOkResponse({ type: [IssuedAccessTokenResponseDto] })
   async listTokens(
-    @Param('slug') slug: string,
+    @Param() params: AgentParamsDto,
   ): Promise<IssuedAccessTokenResponseDto[]> {
     // Get the agent (validates it exists)
-    const agent = await this.agentsService.getAgentBySlug({ slug });
+    const agent = await this.agentsService.getAgentBySlug({
+      slug: params.slug,
+    });
 
     // Get all tokens for this agent
     const tokens = await this.issuedAccessTokenService.listTokensForSubject(
@@ -150,8 +156,7 @@ export class AgentTokensController {
   @ApiParam({ name: 'tokenId', description: 'Token ID to revoke' })
   @ApiOkResponse({ type: IssuedAccessTokenResponseDto })
   async revokeToken(
-    @Param('slug') slug: string,
-    @Param('tokenId') tokenId: string,
+    @Param() params: AgentTokenParamsDto,
     @CurrentUser() user: UserContext,
   ): Promise<IssuedAccessTokenResponseDto> {
     // Only humans can revoke tokens
@@ -160,10 +165,14 @@ export class AgentTokensController {
     }
 
     // Get the agent (validates it exists)
-    const agent = await this.agentsService.getAgentBySlug({ slug });
+    const agent = await this.agentsService.getAgentBySlug({
+      slug: params.slug,
+    });
 
     // Get the token to verify it belongs to this agent
-    const token = await this.issuedAccessTokenService.getTokenById(tokenId);
+    const token = await this.issuedAccessTokenService.getTokenById(
+      params.tokenId,
+    );
     if (!token) {
       throw new NotFoundException('Token not found');
     }
@@ -175,7 +184,7 @@ export class AgentTokensController {
 
     // Revoke the token
     const revokedToken =
-      await this.issuedAccessTokenService.revokeTokenById(tokenId);
+      await this.issuedAccessTokenService.revokeTokenById(params.tokenId);
     if (!revokedToken) {
       throw new NotFoundException('Token not found');
     }

@@ -23,6 +23,7 @@ import { MetaService, TAG_COLOR_PALETTE } from './meta.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { MetaTagResponseDto } from './dto/tag-response.dto';
 import { TagResult } from './dto/service/meta.service.types';
+import { TagParamsDto } from './dto/tag-params.dto';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
@@ -78,8 +79,8 @@ export class MetaController {
   @ApiOperation({ summary: 'Delete a tag from the system' })
   @ApiNoContentResponse({ description: 'Tag deleted successfully' })
   @ApiNotFoundResponse({ description: 'Tag not found' })
-  async deleteTag(@Param('tagId') tagId: string): Promise<void> {
-    await this.metaService.deleteTag(tagId);
+  async deleteTag(@Param() params: TagParamsDto): Promise<void> {
+    await this.metaService.deleteTag(params.tagId);
   }
 
   private mapTagResultToResponse(result: TagResult): MetaTagResponseDto {

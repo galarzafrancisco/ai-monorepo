@@ -64,7 +64,7 @@ export class MetaProjectsService {
     }
     /**
      * Get project by slug
-     * @param slug
+     * @param slug Project slug
      * @returns ProjectResponseDto Project found
      * @throws ApiError
      */
@@ -84,7 +84,7 @@ export class MetaProjectsService {
     }
     /**
      * Get project by ID
-     * @param projectId
+     * @param projectId Project UUID
      * @returns ProjectResponseDto Project found
      * @throws ApiError
      */
@@ -104,7 +104,7 @@ export class MetaProjectsService {
     }
     /**
      * Update project (partial update)
-     * @param projectId
+     * @param projectId Project UUID
      * @param requestBody
      * @returns ProjectResponseDto Project updated successfully
      * @throws ApiError
@@ -129,7 +129,7 @@ export class MetaProjectsService {
     }
     /**
      * Delete a project
-     * @param projectId
+     * @param projectId Project UUID
      * @returns void
      * @throws ApiError
      */

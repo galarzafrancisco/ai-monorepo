@@ -130,7 +130,9 @@
             "name": "tagId",
             "required": true,
             "in": "path",
+            "description": "Tag UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -291,7 +293,9 @@
             "name": "slug",
             "required": true,
             "in": "path",
+            "description": "Project slug",
             "schema": {
+              "example": "taico",
               "type": "string"
             }
           }
@@ -330,7 +334,9 @@
             "name": "projectId",
             "required": true,
             "in": "path",
+            "description": "Project UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -367,7 +373,9 @@
             "name": "projectId",
             "required": true,
             "in": "path",
+            "description": "Project UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -417,7 +425,9 @@
             "name": "projectId",
             "required": true,
             "in": "path",
+            "description": "Project UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -2728,7 +2738,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Task UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           },
@@ -2736,7 +2748,9 @@
             "name": "tagId",
             "required": true,
             "in": "path",
+            "description": "Tag UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174001",
               "type": "string"
             }
           }
@@ -2829,7 +2843,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Task UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           },
@@ -2837,7 +2853,9 @@
             "name": "inputRequestId",
             "required": true,
             "in": "path",
+            "description": "Input request UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174002",
               "type": "string"
             }
           }
@@ -3572,7 +3590,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Thread UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           },
@@ -3580,7 +3600,9 @@
             "name": "tagId",
             "required": true,
             "in": "path",
+            "description": "Tag UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174001",
               "type": "string"
             }
           }
@@ -4093,7 +4115,9 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Block UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           },
@@ -4101,7 +4125,9 @@
             "name": "tagId",
             "required": true,
             "in": "path",
+            "description": "Tag UUID",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174001",
               "type": "string"
             }
           }
@@ -4590,6 +4616,12 @@
             "required": true,
             "in": "path",
             "description": "Agent slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              }
+            },
             "schema": {
               "type": "string"
             }
@@ -4635,6 +4667,12 @@
             "required": true,
             "in": "path",
             "description": "Agent slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              }
+            },
             "schema": {
               "type": "string"
             }
@@ -4676,6 +4714,7 @@
             "in": "path",
             "description": "Agent slug",
             "schema": {
+              "example": "alfred",
               "type": "string"
             }
           },
@@ -4685,6 +4724,7 @@
             "in": "path",
             "description": "Token ID to revoke",
             "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }

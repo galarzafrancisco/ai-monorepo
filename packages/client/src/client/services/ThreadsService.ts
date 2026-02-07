@@ -175,8 +175,8 @@ export class ThreadsService {
     }
     /**
      * Remove a tag from a thread
-     * @param id
-     * @param tagId
+     * @param id Thread UUID
+     * @param tagId Tag UUID
      * @returns ThreadResponseDto Tag removed from thread successfully
      * @throws ApiError
      */

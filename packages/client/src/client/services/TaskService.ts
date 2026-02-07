@@ -277,8 +277,8 @@ export class TaskService {
     }
     /**
      * Remove a tag from a task
-     * @param id
-     * @param tagId
+     * @param id Task UUID
+     * @param tagId Tag UUID
      * @returns TaskResponseDto Tag removed from task successfully
      * @throws ApiError
      */
@@ -325,8 +325,8 @@ export class TaskService {
     }
     /**
      * Answer an input request
-     * @param id
-     * @param inputRequestId
+     * @param id Task UUID
+     * @param inputRequestId Input request UUID
      * @param requestBody
      * @returns InputRequestResponseDto Input request answered successfully
      * @throws ApiError

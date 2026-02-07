@@ -31,6 +31,7 @@ import { BlockResponseDto } from './dto/block-response.dto';
 import { BlockListResponseDto } from './dto/block-list-response.dto';
 import { BlockSummaryDto } from './dto/block-summary.dto';
 import { BlockParamsDto } from './dto/block-params.dto';
+import { BlockTagParamsDto } from './dto/block-tag-params.dto';
 import { UpdateBlockDto } from './dto/update-block.dto';
 import { AppendBlockDto } from './dto/append-block.dto';
 import { CreateTagDto } from '../meta/dto/create-tag.dto';
@@ -265,13 +266,12 @@ export class ContextController {
     description: 'Tag removed from page successfully',
   })
   async removeTagFromBlock(
-    @Param('id') pageId: string,
-    @Param('tagId') tagId: string,
+    @Param() params: BlockTagParamsDto,
     @CurrentUser() user: UserContext,
   ): Promise<BlockResponseDto> {
     const result = await this.contextService.removeTagFromBlock(
-      pageId,
-      tagId,
+      params.id,
+      params.tagId,
       user.actorId,
     );
     return this.mapToResponse(result);

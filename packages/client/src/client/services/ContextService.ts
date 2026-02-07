@@ -212,8 +212,8 @@ export class ContextService {
     }
     /**
      * Remove a tag from a wiki page
-     * @param id
-     * @param tagId
+     * @param id Block UUID
+     * @param tagId Tag UUID
      * @returns BlockResponseDto Tag removed from page successfully
      * @throws ApiError
      */

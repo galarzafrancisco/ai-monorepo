@@ -3944,6 +3944,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Tag UUID */
                 tagId: string;
             };
             cookie?: never;
@@ -4049,6 +4050,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Project slug */
                 slug: string;
             };
             cookie?: never;
@@ -4078,6 +4080,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Project UUID */
                 projectId: string;
             };
             cookie?: never;
@@ -4107,6 +4110,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Project UUID */
                 projectId: string;
             };
             cookie?: never;
@@ -4134,6 +4138,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Project UUID */
                 projectId: string;
             };
             cookie?: never;
@@ -5793,7 +5798,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Task UUID */
                 id: string;
+                /** @description Tag UUID */
                 tagId: string;
             };
             cookie?: never;
@@ -5864,7 +5871,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Task UUID */
                 id: string;
+                /** @description Input request UUID */
                 inputRequestId: string;
             };
             cookie?: never;
@@ -6405,7 +6414,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Thread UUID */
                 id: string;
+                /** @description Tag UUID */
                 tagId: string;
             };
             cookie?: never;
@@ -6750,7 +6761,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description Block UUID */
                 id: string;
+                /** @description Tag UUID */
                 tagId: string;
             };
             cookie?: never;

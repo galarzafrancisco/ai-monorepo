@@ -51,7 +51,7 @@ export class MetaService {
     }
     /**
      * Delete a tag from the system
-     * @param tagId
+     * @param tagId Tag UUID
      * @returns void
      * @throws ApiError
      */

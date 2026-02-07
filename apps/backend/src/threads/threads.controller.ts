@@ -31,6 +31,7 @@ import { ThreadParamsDto } from './dto/thread-params.dto';
 import { ListThreadsQueryDto } from './dto/list-threads-query.dto';
 import { ThreadResponseDto } from './dto/thread-response.dto';
 import { ThreadListResponseDto } from './dto/thread-list-response.dto';
+import { ThreadTagParamsDto } from './dto/thread-tag-params.dto';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
 import type { UserContext } from '../auth/guards/context/auth-context.types';
@@ -196,13 +197,12 @@ export class ThreadsController {
   })
   @ApiNotFoundResponse({ description: 'Thread not found' })
   async removeTagFromThread(
-    @Param('id') threadId: string,
-    @Param('tagId') tagId: string,
+    @Param() params: ThreadTagParamsDto,
     @CurrentUser() user: UserContext,
   ): Promise<ThreadResponseDto> {
     const result = await this.threadsService.removeTagFromThread(
-      threadId,
-      tagId,
+      params.id,
+      params.tagId,
       user.actorId,
     );
     return ThreadResponseDto.fromResult(result);
