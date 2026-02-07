@@ -18,7 +18,15 @@ export interface IosShellProps {
   navItems: NavegationItem[];
 }
 
-function BottomNavContent({ navItems }: { navItems: NavegationItem[] }): JSX.Element {
+function BottomNavContent({
+  navItems,
+  activePath,
+  onActiveItemClick,
+}: {
+  navItems: NavegationItem[];
+  activePath: string;
+  onActiveItemClick: () => void;
+}): JSX.Element {
   console.log('Rendering BottomNavContent with navItems:', navItems);
   if (navItems.length === 0) {
     return <></>;
@@ -26,13 +34,17 @@ function BottomNavContent({ navItems }: { navItems: NavegationItem[] }): JSX.Ele
   return (
     <Row spacing="1" justify="space-between">
       {navItems.map((item, idx) => {
-        const isActive = location.pathname === item.path;
+        const isActive = activePath === item.path;
         return (
           <Link
             key={item.label}
             to={item.path}
             className={`ios-shell__bottom-nav__item ${isActive ? 'ios-shell__bottom-nav__item--active' : ''}`}
-            onClick={console.log}
+            onClick={() => {
+              if (isActive) {
+                onActiveItemClick();
+              }
+            }}
           >
             <span className="ios-shell__bottom-nav__icon">{item.icon}</span>
             <Text size="1" className="ios-shell__bottom-nav-label">
@@ -148,6 +160,13 @@ export function IosShell(props: IosShellProps): JSX.Element {
     )
   }
 
+  const scrollMainToTop = () => {
+    mainRefEl.current?.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
   // Initialize observers after mount (when mainRef is available)
   useEffect(() => {
     // detectSectionTitleVisibility();
@@ -235,7 +254,11 @@ export function IosShell(props: IosShellProps): JSX.Element {
 
       {/* Bottom navigation */}
       <nav className={`ios-shell__bottom-nav ${contentBehindBottomNav ? 'elevated' : ''}`}>
-        <BottomNavContent navItems={props.navItems} />
+        <BottomNavContent
+          navItems={props.navItems}
+          activePath={location.pathname}
+          onActiveItemClick={scrollMainToTop}
+        />
       </nav>
 
     </div>
