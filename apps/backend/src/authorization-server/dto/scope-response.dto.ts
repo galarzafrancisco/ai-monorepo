@@ -24,6 +24,12 @@ export class ScopesResponseDto {
   @ApiProperty({
     description: 'List of all available scopes in the system',
     type: [ScopeDto],
+    example: [
+      {
+        id: 'tasks:read',
+        description: 'Allows users to read tasks, tags, comments, etc from Tasks.',
+      },
+    ],
   })
   scopes!: ScopeDto[];
 }

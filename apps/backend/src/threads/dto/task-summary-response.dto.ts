@@ -34,6 +34,14 @@ export class TaskSummaryResponseDto {
   @ApiPropertyOptional({
     description: 'Assignee actor details',
     type: ActorResponseDto,
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      type: 'agent',
+      slug: 'agent-alpha',
+      displayName: 'Agent Alpha',
+      avatarUrl: 'https://example.com/avatar.png',
+      introduction: 'Task execution agent.',
+    },
     nullable: true,
   })
   assigneeActor!: ActorResponseDto | null;
@@ -41,12 +49,27 @@ export class TaskSummaryResponseDto {
   @ApiProperty({
     description: 'Creator actor details',
     type: ActorResponseDto,
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      type: 'human',
+      slug: 'jane@example.com',
+      displayName: 'Jane Doe',
+      avatarUrl: 'https://example.com/avatar.png',
+      introduction: 'Product lead.',
+    },
   })
   createdByActor!: ActorResponseDto;
 
   @ApiProperty({
     description: 'Tags associated with the task',
     type: [TagResponseDto],
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'bug',
+        color: '#FF5733',
+      },
+    ],
   })
   tags!: TagResponseDto[];
 
@@ -59,6 +82,19 @@ export class TaskSummaryResponseDto {
   @ApiProperty({
     description: 'Input requests associated with the task',
     type: [InputRequestResponseDto],
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        taskId: '123e4567-e89b-12d3-a456-426614174001',
+        askedByActorId: '123e4567-e89b-12d3-a456-426614174002',
+        assignedToActorId: '123e4567-e89b-12d3-a456-426614174003',
+        question: 'Should we use OAuth or JWT for authentication?',
+        answer: 'Use JWT with refresh tokens',
+        resolvedAt: '2025-11-03T12:45:00.000Z',
+        createdAt: '2025-11-03T10:30:00.000Z',
+        updatedAt: '2025-11-03T12:45:00.000Z',
+      },
+    ],
   })
   inputRequests!: InputRequestResponseDto[];
 

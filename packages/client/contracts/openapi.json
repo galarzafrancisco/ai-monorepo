@@ -5198,6 +5198,11 @@
           },
           "server": {
             "description": "MCP server the client is requesting access to",
+            "example": {
+              "providedId": "tasks",
+              "name": "Tasks",
+              "description": "Task management and productivity tool"
+            },
             "allOf": [
               {
                 "$ref": "#/components/schemas/FlowServerDto"
@@ -5206,6 +5211,10 @@
           },
           "client": {
             "description": "Client application requesting authorization",
+            "example": {
+              "clientId": "0bab273987a2e163c3abb40c631ec0a4",
+              "clientName": "Claude Desktop"
+            },
             "allOf": [
               {
                 "$ref": "#/components/schemas/FlowClientDto"
@@ -5562,6 +5571,12 @@
         "properties": {
           "scopes": {
             "description": "List of all available scopes in the system",
+            "example": [
+              {
+                "id": "tasks:read",
+                "description": "Allows users to read tasks, tags, comments, etc from Tasks."
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ScopeDto"
@@ -5637,6 +5652,13 @@
         "properties": {
           "user": {
             "description": "Authenticated user information",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "email": "user@example.com",
+              "displayName": "John Doe",
+              "role": "standard",
+              "actorId": "123e4567-e89b-12d3-a456-426614174000"
+            },
             "allOf": [
               {
                 "$ref": "#/components/schemas/UserResponseDto"
@@ -5888,6 +5910,14 @@
           },
           "actor": {
             "description": "The actor (user) associated with this authorization journey",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "human",
+              "slug": "jane@example.com",
+              "displayName": "Jane Doe",
+              "avatarUrl": "https://example.com/avatar.png",
+              "introduction": "Security-focused product manager."
+            },
             "nullable": true,
             "allOf": [
               {
@@ -5897,6 +5927,19 @@
           },
           "mcpAuthorizationFlow": {
             "description": "The MCP authorization flow for this journey",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "authorizationJourneyId": "123e4567-e89b-12d3-a456-426614174000",
+              "serverId": "123e4567-e89b-12d3-a456-426614174000",
+              "clientId": "123e4567-e89b-12d3-a456-426614174000",
+              "clientName": "My MCP Client",
+              "status": "client_registered",
+              "scope": "tool:read tool:execute",
+              "authorizationCodeExpiresAt": "2025-12-15T09:00:00.000Z",
+              "authorizationCodeUsed": false,
+              "createdAt": "2025-12-15T08:00:00.000Z",
+              "updatedAt": "2025-12-15T09:00:00.000Z"
+            },
             "allOf": [
               {
                 "$ref": "#/components/schemas/McpFlowResponseDto"
@@ -5905,6 +5948,18 @@
           },
           "connectionAuthorizationFlows": {
             "description": "Connection authorization flows for this journey",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "authorizationJourneyId": "123e4567-e89b-12d3-a456-426614174000",
+                "mcpConnectionId": "123e4567-e89b-12d3-a456-426614174000",
+                "connectionName": "GitHub OAuth Connection",
+                "status": "pending",
+                "tokenExpiresAt": "2025-12-15T10:00:00.000Z",
+                "createdAt": "2025-12-15T08:00:00.000Z",
+                "updatedAt": "2025-12-15T09:00:00.000Z"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ConnectionFlowResponseDto"
@@ -6014,6 +6069,17 @@
         "properties": {
           "items": {
             "description": "List of MCP servers",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "providedId": "github-integration",
+                "name": "GitHub Integration",
+                "description": "Provides access to GitHub repositories and issues",
+                "url": "http://localhost:3000/api/v1/tasks/tasks/mcp",
+                "createdAt": "2025-11-05T08:00:00.000Z",
+                "updatedAt": "2025-11-05T08:00:00.000Z"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ServerResponseDto"
@@ -6443,6 +6509,16 @@
         "properties": {
           "keys": {
             "description": "Collection of JSON Web Keys currently valid for signature verification.",
+            "example": [
+              {
+                "kty": "RSA",
+                "use": "sig",
+                "kid": "1234567890abcdef",
+                "alg": "RS256",
+                "n": "xGOr-H7A...",
+                "e": "AQAB"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/JwkResponseDto"
@@ -6524,6 +6600,14 @@
           },
           "commenterActor": {
             "description": "Actor who created this comment",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "human",
+              "slug": "jane@example.com",
+              "displayName": "Jane Doe",
+              "avatarUrl": "https://example.com/avatar.png",
+              "introduction": "Expert in task automation."
+            },
             "nullable": true,
             "allOf": [
               {
@@ -6672,6 +6756,14 @@
           },
           "assigneeActor": {
             "description": "Actor assigned to this task",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "agent",
+              "slug": "agent-alpha",
+              "displayName": "Agent Alpha",
+              "avatarUrl": "https://example.com/avatar.png",
+              "introduction": "Task execution agent."
+            },
             "nullable": true,
             "allOf": [
               {
@@ -6687,6 +6779,23 @@
           },
           "comments": {
             "description": "Comments associated with the task",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174001",
+                "taskId": "123e4567-e89b-12d3-a456-426614174000",
+                "commenterName": "AgentAlpha",
+                "commenterActor": {
+                  "id": "123e4567-e89b-12d3-a456-426614174000",
+                  "type": "agent",
+                  "slug": "agent-alpha",
+                  "displayName": "Agent Alpha",
+                  "avatarUrl": "https://example.com/avatar.png",
+                  "introduction": "Task execution agent."
+                },
+                "content": "Started working on this task",
+                "createdAt": "2025-11-03T10:30:00.000Z"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CommentResponseDto"
@@ -6694,6 +6803,19 @@
           },
           "inputRequests": {
             "description": "Input requests associated with the task",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "taskId": "123e4567-e89b-12d3-a456-426614174001",
+                "askedByActorId": "123e4567-e89b-12d3-a456-426614174002",
+                "assignedToActorId": "123e4567-e89b-12d3-a456-426614174003",
+                "question": "Should we use OAuth or JWT for authentication?",
+                "answer": "Use JWT with refresh tokens",
+                "resolvedAt": "2025-11-03T12:45:00.000Z",
+                "createdAt": "2025-11-03T10:30:00.000Z",
+                "updatedAt": "2025-11-03T12:45:00.000Z"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/InputRequestResponseDto"
@@ -6701,6 +6823,13 @@
           },
           "tags": {
             "description": "Tags associated with the task",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "bug",
+                "color": "#FF5733"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TagResponseDto"
@@ -6708,6 +6837,14 @@
           },
           "createdByActor": {
             "description": "Actor who created this task",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "human",
+              "slug": "jane@example.com",
+              "displayName": "Jane Doe",
+              "avatarUrl": "https://example.com/avatar.png",
+              "introduction": "Product lead."
+            },
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -6817,6 +6954,7 @@
         "properties": {
           "items": {
             "description": "List of tasks",
+            "example": [],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TaskResponseDto"
@@ -6993,6 +7131,14 @@
           },
           "actor": {
             "description": "Actor information",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "human",
+              "slug": "jane@example.com",
+              "displayName": "Jane Doe",
+              "avatarUrl": "https://example.com/avatar.png",
+              "introduction": "Expert in task automation."
+            },
             "nullable": true,
             "allOf": [
               {
@@ -7007,6 +7153,10 @@
           },
           "parentTask": {
             "description": "Parent task information",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174002",
+              "name": "Implement authentication"
+            },
             "nullable": true,
             "allOf": [
               {
@@ -7050,6 +7200,7 @@
         "properties": {
           "items": {
             "description": "List of agent runs",
+            "example": [],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AgentRunResponseDto"
@@ -7186,6 +7337,14 @@
           },
           "assigneeActor": {
             "description": "Assignee actor details",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "agent",
+              "slug": "agent-alpha",
+              "displayName": "Agent Alpha",
+              "avatarUrl": "https://example.com/avatar.png",
+              "introduction": "Task execution agent."
+            },
             "nullable": true,
             "allOf": [
               {
@@ -7195,6 +7354,14 @@
           },
           "createdByActor": {
             "description": "Creator actor details",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "human",
+              "slug": "jane@example.com",
+              "displayName": "Jane Doe",
+              "avatarUrl": "https://example.com/avatar.png",
+              "introduction": "Product lead."
+            },
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -7203,6 +7370,13 @@
           },
           "tags": {
             "description": "Tags associated with the task",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "bug",
+                "color": "#FF5733"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TagResponseDto"
@@ -7215,6 +7389,19 @@
           },
           "inputRequests": {
             "description": "Input requests associated with the task",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "taskId": "123e4567-e89b-12d3-a456-426614174001",
+                "askedByActorId": "123e4567-e89b-12d3-a456-426614174002",
+                "assignedToActorId": "123e4567-e89b-12d3-a456-426614174003",
+                "question": "Should we use OAuth or JWT for authentication?",
+                "answer": "Use JWT with refresh tokens",
+                "resolvedAt": "2025-11-03T12:45:00.000Z",
+                "createdAt": "2025-11-03T10:30:00.000Z",
+                "updatedAt": "2025-11-03T12:45:00.000Z"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/InputRequestResponseDto"
@@ -7272,6 +7459,14 @@
           },
           "createdByActor": {
             "description": "Actor who created the thread",
+            "example": {
+              "id": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "human",
+              "slug": "jane@example.com",
+              "displayName": "Jane Doe",
+              "avatarUrl": "https://example.com/avatar.png",
+              "introduction": "Product lead."
+            },
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -7286,6 +7481,52 @@
           },
           "tasks": {
             "description": "Tasks attached to this thread",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "Implement user authentication",
+                "description": "Add JWT-based authentication to the API",
+                "status": "IN_PROGRESS",
+                "assigneeActor": {
+                  "id": "123e4567-e89b-12d3-a456-426614174000",
+                  "type": "agent",
+                  "slug": "agent-alpha",
+                  "displayName": "Agent Alpha",
+                  "avatarUrl": "https://example.com/avatar.png",
+                  "introduction": "Task execution agent."
+                },
+                "createdByActor": {
+                  "id": "123e4567-e89b-12d3-a456-426614174000",
+                  "type": "human",
+                  "slug": "jane@example.com",
+                  "displayName": "Jane Doe",
+                  "avatarUrl": "https://example.com/avatar.png",
+                  "introduction": "Product lead."
+                },
+                "tags": [
+                  {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "name": "bug",
+                    "color": "#FF5733"
+                  }
+                ],
+                "commentCount": 2,
+                "inputRequests": [
+                  {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "taskId": "123e4567-e89b-12d3-a456-426614174001",
+                    "askedByActorId": "123e4567-e89b-12d3-a456-426614174002",
+                    "assignedToActorId": "123e4567-e89b-12d3-a456-426614174003",
+                    "question": "Should we use OAuth or JWT for authentication?",
+                    "answer": "Use JWT with refresh tokens",
+                    "resolvedAt": "2025-11-03T12:45:00.000Z",
+                    "createdAt": "2025-11-03T10:30:00.000Z",
+                    "updatedAt": "2025-11-03T12:45:00.000Z"
+                  }
+                ],
+                "updatedAt": "2024-01-15T10:30:00Z"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TaskSummaryResponseDto"
@@ -7293,6 +7534,12 @@
           },
           "referencedContextBlocks": {
             "description": "Context blocks referenced in this thread",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "title": "API Design Documentation"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ContextBlockSummaryResponseDto"
@@ -7300,6 +7547,15 @@
           },
           "tags": {
             "description": "Tags associated with this thread",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "bug",
+                "color": "#FF5733",
+                "createdAt": "2024-01-15T10:30:00.000Z",
+                "updatedAt": "2024-01-15T10:30:00.000Z"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MetaTagResponseDto"
@@ -7307,6 +7563,16 @@
           },
           "participants": {
             "description": "Participants in this thread",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "type": "human",
+                "slug": "jane@example.com",
+                "displayName": "Jane Doe",
+                "avatarUrl": "https://example.com/avatar.png",
+                "introduction": "Product lead."
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ActorResponseDto"
@@ -7375,6 +7641,7 @@
         "properties": {
           "items": {
             "description": "Array of thread list items",
+            "example": [],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ThreadListItemResponseDto"
@@ -7668,6 +7935,28 @@
         "properties": {
           "items": {
             "description": "List of context blocks",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "title": "How to onboard new agents",
+                "createdByActorId": "123e4567-e89b-12d3-a456-426614174000",
+                "createdBy": "agent-roo",
+                "tags": [
+                  {
+                    "id": "123",
+                    "name": "project-alpha",
+                    "color": "#FF5733",
+                    "description": "Project Alpha notes",
+                    "createdAt": "2025-01-01T12:00:00.000Z",
+                    "updatedAt": "2025-01-01T12:00:00.000Z"
+                  }
+                ],
+                "parentId": null,
+                "order": 0,
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "updatedAt": "2025-01-02T15:30:00.000Z"
+              }
+            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BlockSummaryDto"
@@ -8182,6 +8471,7 @@
         "properties": {
           "items": {
             "description": "List of agents",
+            "example": [],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AgentResponseDto"

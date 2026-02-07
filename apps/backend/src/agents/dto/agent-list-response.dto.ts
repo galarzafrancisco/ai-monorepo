@@ -7,6 +7,7 @@ export class AgentListResponseDto {
   @ApiProperty({
     description: 'List of agents',
     type: [AgentResponseDto],
+    example: [],
   })
   @ValidateNested({ each: true })
   @Type(() => AgentResponseDto)

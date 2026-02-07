@@ -21,6 +21,14 @@ export class ThreadResponseDto {
   @ApiProperty({
     description: 'Actor who created the thread',
     type: ActorResponseDto,
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      type: 'human',
+      slug: 'jane@example.com',
+      displayName: 'Jane Doe',
+      avatarUrl: 'https://example.com/avatar.png',
+      introduction: 'Product lead.',
+    },
   })
   createdByActor!: ActorResponseDto;
 
@@ -35,24 +43,95 @@ export class ThreadResponseDto {
   @ApiProperty({
     description: 'Tasks attached to this thread',
     type: [TaskSummaryResponseDto],
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Implement user authentication',
+        description: 'Add JWT-based authentication to the API',
+        status: 'IN_PROGRESS',
+        assigneeActor: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          type: 'agent',
+          slug: 'agent-alpha',
+          displayName: 'Agent Alpha',
+          avatarUrl: 'https://example.com/avatar.png',
+          introduction: 'Task execution agent.',
+        },
+        createdByActor: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          type: 'human',
+          slug: 'jane@example.com',
+          displayName: 'Jane Doe',
+          avatarUrl: 'https://example.com/avatar.png',
+          introduction: 'Product lead.',
+        },
+        tags: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'bug',
+            color: '#FF5733',
+          },
+        ],
+        commentCount: 2,
+        inputRequests: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            taskId: '123e4567-e89b-12d3-a456-426614174001',
+            askedByActorId: '123e4567-e89b-12d3-a456-426614174002',
+            assignedToActorId: '123e4567-e89b-12d3-a456-426614174003',
+            question: 'Should we use OAuth or JWT for authentication?',
+            answer: 'Use JWT with refresh tokens',
+            resolvedAt: '2025-11-03T12:45:00.000Z',
+            createdAt: '2025-11-03T10:30:00.000Z',
+            updatedAt: '2025-11-03T12:45:00.000Z',
+          },
+        ],
+        updatedAt: '2024-01-15T10:30:00Z',
+      },
+    ],
   })
   tasks!: TaskSummaryResponseDto[];
 
   @ApiProperty({
     description: 'Context blocks referenced in this thread',
     type: [ContextBlockSummaryResponseDto],
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        title: 'API Design Documentation',
+      },
+    ],
   })
   referencedContextBlocks!: ContextBlockSummaryResponseDto[];
 
   @ApiProperty({
     description: 'Tags associated with this thread',
     type: [MetaTagResponseDto],
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'bug',
+        color: '#FF5733',
+        createdAt: '2024-01-15T10:30:00.000Z',
+        updatedAt: '2024-01-15T10:30:00.000Z',
+      },
+    ],
   })
   tags!: MetaTagResponseDto[];
 
   @ApiProperty({
     description: 'Participants in this thread',
     type: [ActorResponseDto],
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        type: 'human',
+        slug: 'jane@example.com',
+        displayName: 'Jane Doe',
+        avatarUrl: 'https://example.com/avatar.png',
+        introduction: 'Product lead.',
+      },
+    ],
   })
   participants!: ActorResponseDto[];
 

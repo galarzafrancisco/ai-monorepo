@@ -25,6 +25,14 @@ export class CommentResponseDto {
   @ApiPropertyOptional({
     description: 'Actor who created this comment',
     type: () => ActorResponseDto,
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      type: 'human',
+      slug: 'jane@example.com',
+      displayName: 'Jane Doe',
+      avatarUrl: 'https://example.com/avatar.png',
+      introduction: 'Expert in task automation.',
+    },
     nullable: true,
   })
   commenterActor!: ActorResponseDto | null;

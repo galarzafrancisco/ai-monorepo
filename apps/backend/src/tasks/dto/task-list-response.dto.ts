@@ -7,6 +7,7 @@ export class TaskListResponseDto {
   @ApiProperty({
     description: 'List of tasks',
     type: () => [TaskResponseDto],
+    example: [],
   })
   @ValidateNested({ each: true })
   @Type(() => TaskResponseDto)

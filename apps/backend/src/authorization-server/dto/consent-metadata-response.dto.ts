@@ -77,12 +77,21 @@ export class GetConsentMetadataResponseDto {
   @ApiProperty({
     description: 'MCP server the client is requesting access to',
     type: FlowServerDto,
+    example: {
+      providedId: 'tasks',
+      name: 'Tasks',
+      description: 'Task management and productivity tool',
+    },
   })
   server!: FlowServerDto;
 
   @ApiProperty({
     description: 'Client application requesting authorization',
     type: FlowClientDto,
+    example: {
+      clientId: '0bab273987a2e163c3abb40c631ec0a4',
+      clientName: 'Claude Desktop',
+    },
   })
   client!: FlowClientDto;
 

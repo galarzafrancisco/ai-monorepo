@@ -5,6 +5,7 @@ export class ThreadListResponseDto {
   @ApiProperty({
     description: 'Array of thread list items',
     type: [ThreadListItemResponseDto],
+    example: [],
   })
   items!: ThreadListItemResponseDto[];
 

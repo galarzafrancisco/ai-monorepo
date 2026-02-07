@@ -5,6 +5,7 @@ export class AgentRunListResponseDto {
   @ApiProperty({
     description: 'List of agent runs',
     type: [AgentRunResponseDto],
+    example: [],
   })
   items!: AgentRunResponseDto[];
 

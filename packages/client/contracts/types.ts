@@ -1654,9 +1654,22 @@ export interface components {
              * @example http://localhost:4001/
              */
             resource?: string;
-            /** @description MCP server the client is requesting access to */
+            /**
+             * @description MCP server the client is requesting access to
+             * @example {
+             *       "providedId": "tasks",
+             *       "name": "Tasks",
+             *       "description": "Task management and productivity tool"
+             *     }
+             */
             server: components["schemas"]["FlowServerDto"];
-            /** @description Client application requesting authorization */
+            /**
+             * @description Client application requesting authorization
+             * @example {
+             *       "clientId": "0bab273987a2e163c3abb40c631ec0a4",
+             *       "clientName": "Claude Desktop"
+             *     }
+             */
             client: components["schemas"]["FlowClientDto"];
             /**
              * @description Redirect URI provided in the authorization request
@@ -1899,7 +1912,15 @@ export interface components {
             description: string;
         };
         ScopesResponseDto: {
-            /** @description List of all available scopes in the system */
+            /**
+             * @description List of all available scopes in the system
+             * @example [
+             *       {
+             *         "id": "tasks:read",
+             *         "description": "Allows users to read tasks, tags, comments, etc from Tasks."
+             *       }
+             *     ]
+             */
             scopes: components["schemas"]["ScopeDto"][];
         };
         LoginRequestDto: {
@@ -1943,7 +1964,16 @@ export interface components {
             actorId: string;
         };
         LoginResponseDto: {
-            /** @description Authenticated user information */
+            /**
+             * @description Authenticated user information
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "email": "user@example.com",
+             *       "displayName": "John Doe",
+             *       "role": "standard",
+             *       "actorId": "123e4567-e89b-12d3-a456-426614174000"
+             *     }
+             */
             user: components["schemas"]["UserResponseDto"];
             /**
              * @description Access token expiration time in seconds
@@ -2109,11 +2139,50 @@ export interface components {
              * @enum {string}
              */
             status: "not_started" | "USER_CONSENT_REJECTED" | "mcp_auth_flow_started" | "mcp_auth_flow_completed" | "connections_flow_started" | "connections_flow_completed" | "authorization_code_issued" | "authorization_code_exchanged";
-            /** @description The actor (user) associated with this authorization journey */
+            /**
+             * @description The actor (user) associated with this authorization journey
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "type": "human",
+             *       "slug": "jane@example.com",
+             *       "displayName": "Jane Doe",
+             *       "avatarUrl": "https://example.com/avatar.png",
+             *       "introduction": "Security-focused product manager."
+             *     }
+             */
             actor: components["schemas"]["ActorResponseDto"] | null;
-            /** @description The MCP authorization flow for this journey */
+            /**
+             * @description The MCP authorization flow for this journey
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "authorizationJourneyId": "123e4567-e89b-12d3-a456-426614174000",
+             *       "serverId": "123e4567-e89b-12d3-a456-426614174000",
+             *       "clientId": "123e4567-e89b-12d3-a456-426614174000",
+             *       "clientName": "My MCP Client",
+             *       "status": "client_registered",
+             *       "scope": "tool:read tool:execute",
+             *       "authorizationCodeExpiresAt": "2025-12-15T09:00:00.000Z",
+             *       "authorizationCodeUsed": false,
+             *       "createdAt": "2025-12-15T08:00:00.000Z",
+             *       "updatedAt": "2025-12-15T09:00:00.000Z"
+             *     }
+             */
             mcpAuthorizationFlow: components["schemas"]["McpFlowResponseDto"];
-            /** @description Connection authorization flows for this journey */
+            /**
+             * @description Connection authorization flows for this journey
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "authorizationJourneyId": "123e4567-e89b-12d3-a456-426614174000",
+             *         "mcpConnectionId": "123e4567-e89b-12d3-a456-426614174000",
+             *         "connectionName": "GitHub OAuth Connection",
+             *         "status": "pending",
+             *         "tokenExpiresAt": "2025-12-15T10:00:00.000Z",
+             *         "createdAt": "2025-12-15T08:00:00.000Z",
+             *         "updatedAt": "2025-12-15T09:00:00.000Z"
+             *       }
+             *     ]
+             */
             connectionAuthorizationFlows: components["schemas"]["ConnectionFlowResponseDto"][];
             /**
              * @description Timestamp when the journey was created
@@ -2186,7 +2255,20 @@ export interface components {
             updatedAt: string;
         };
         ServerListResponseDto: {
-            /** @description List of MCP servers */
+            /**
+             * @description List of MCP servers
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "providedId": "github-integration",
+             *         "name": "GitHub Integration",
+             *         "description": "Provides access to GitHub repositories and issues",
+             *         "url": "http://localhost:3000/api/v1/tasks/tasks/mcp",
+             *         "createdAt": "2025-11-05T08:00:00.000Z",
+             *         "updatedAt": "2025-11-05T08:00:00.000Z"
+             *       }
+             *     ]
+             */
             items: components["schemas"]["ServerResponseDto"][];
             /**
              * @description Total number of servers
@@ -2501,7 +2583,19 @@ export interface components {
             crv?: string;
         };
         JwksResponseDto: {
-            /** @description Collection of JSON Web Keys currently valid for signature verification. */
+            /**
+             * @description Collection of JSON Web Keys currently valid for signature verification.
+             * @example [
+             *       {
+             *         "kty": "RSA",
+             *         "use": "sig",
+             *         "kid": "1234567890abcdef",
+             *         "alg": "RS256",
+             *         "n": "xGOr-H7A...",
+             *         "e": "AQAB"
+             *       }
+             *     ]
+             */
             keys: components["schemas"]["JwkResponseDto"][];
         };
         CreateTaskDto: {
@@ -2558,7 +2652,17 @@ export interface components {
              * @example AgentAlpha
              */
             commenterName: string;
-            /** @description Actor who created this comment */
+            /**
+             * @description Actor who created this comment
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "type": "human",
+             *       "slug": "jane@example.com",
+             *       "displayName": "Jane Doe",
+             *       "avatarUrl": "https://example.com/avatar.png",
+             *       "introduction": "Expert in task automation."
+             *     }
+             */
             commenterActor?: components["schemas"]["ActorResponseDto"] | null;
             /**
              * @description Content of the comment
@@ -2662,20 +2766,83 @@ export interface components {
              * @example agent-alpha
              */
             assignee?: Record<string, never> | null;
-            /** @description Actor assigned to this task */
+            /**
+             * @description Actor assigned to this task
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "type": "agent",
+             *       "slug": "agent-alpha",
+             *       "displayName": "Agent Alpha",
+             *       "avatarUrl": "https://example.com/avatar.png",
+             *       "introduction": "Task execution agent."
+             *     }
+             */
             assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
             /**
              * @description Session ID for tracking AI agent work
              * @example session-123-abc
              */
             sessionId?: string | null;
-            /** @description Comments associated with the task */
+            /**
+             * @description Comments associated with the task
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174001",
+             *         "taskId": "123e4567-e89b-12d3-a456-426614174000",
+             *         "commenterName": "AgentAlpha",
+             *         "commenterActor": {
+             *           "id": "123e4567-e89b-12d3-a456-426614174000",
+             *           "type": "agent",
+             *           "slug": "agent-alpha",
+             *           "displayName": "Agent Alpha",
+             *           "avatarUrl": "https://example.com/avatar.png",
+             *           "introduction": "Task execution agent."
+             *         },
+             *         "content": "Started working on this task",
+             *         "createdAt": "2025-11-03T10:30:00.000Z"
+             *       }
+             *     ]
+             */
             comments: components["schemas"]["CommentResponseDto"][];
-            /** @description Input requests associated with the task */
+            /**
+             * @description Input requests associated with the task
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "taskId": "123e4567-e89b-12d3-a456-426614174001",
+             *         "askedByActorId": "123e4567-e89b-12d3-a456-426614174002",
+             *         "assignedToActorId": "123e4567-e89b-12d3-a456-426614174003",
+             *         "question": "Should we use OAuth or JWT for authentication?",
+             *         "answer": "Use JWT with refresh tokens",
+             *         "resolvedAt": "2025-11-03T12:45:00.000Z",
+             *         "createdAt": "2025-11-03T10:30:00.000Z",
+             *         "updatedAt": "2025-11-03T12:45:00.000Z"
+             *       }
+             *     ]
+             */
             inputRequests: components["schemas"]["InputRequestResponseDto"][];
-            /** @description Tags associated with the task */
+            /**
+             * @description Tags associated with the task
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "name": "bug",
+             *         "color": "#FF5733"
+             *       }
+             *     ]
+             */
             tags: components["schemas"]["TagResponseDto"][];
-            /** @description Actor who created this task */
+            /**
+             * @description Actor who created this task
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "type": "human",
+             *       "slug": "jane@example.com",
+             *       "displayName": "Jane Doe",
+             *       "avatarUrl": "https://example.com/avatar.png",
+             *       "introduction": "Product lead."
+             *     }
+             */
             createdByActor: components["schemas"]["ActorResponseDto"];
             /**
              * @description Array of task IDs that this task depends on
@@ -2747,7 +2914,10 @@ export interface components {
             sessionId?: string;
         };
         TaskListResponseDto: {
-            /** @description List of tasks */
+            /**
+             * @description List of tasks
+             * @example []
+             */
             items: components["schemas"]["TaskResponseDto"][];
             /**
              * @description Total number of tasks matching the filters
@@ -2856,14 +3026,30 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174001
              */
             actorId: string;
-            /** @description Actor information */
+            /**
+             * @description Actor information
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "type": "human",
+             *       "slug": "jane@example.com",
+             *       "displayName": "Jane Doe",
+             *       "avatarUrl": "https://example.com/avatar.png",
+             *       "introduction": "Expert in task automation."
+             *     }
+             */
             actor?: components["schemas"]["ActorResponseDto"] | null;
             /**
              * @description UUID of the parent task being executed
              * @example 123e4567-e89b-12d3-a456-426614174002
              */
             parentTaskId: string;
-            /** @description Parent task information */
+            /**
+             * @description Parent task information
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174002",
+             *       "name": "Implement authentication"
+             *     }
+             */
             parentTask?: components["schemas"]["TaskInfoDto"] | null;
             /**
              * @description Run creation timestamp
@@ -2887,7 +3073,10 @@ export interface components {
             lastPing?: Record<string, never> | null;
         };
         AgentRunListResponseDto: {
-            /** @description List of agent runs */
+            /**
+             * @description List of agent runs
+             * @example []
+             */
             items: components["schemas"]["AgentRunResponseDto"][];
             /**
              * @description Total count of agent runs
@@ -2983,18 +3172,62 @@ export interface components {
              * @enum {string}
              */
             status: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
-            /** @description Assignee actor details */
+            /**
+             * @description Assignee actor details
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "type": "agent",
+             *       "slug": "agent-alpha",
+             *       "displayName": "Agent Alpha",
+             *       "avatarUrl": "https://example.com/avatar.png",
+             *       "introduction": "Task execution agent."
+             *     }
+             */
             assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
-            /** @description Creator actor details */
+            /**
+             * @description Creator actor details
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "type": "human",
+             *       "slug": "jane@example.com",
+             *       "displayName": "Jane Doe",
+             *       "avatarUrl": "https://example.com/avatar.png",
+             *       "introduction": "Product lead."
+             *     }
+             */
             createdByActor: components["schemas"]["ActorResponseDto"];
-            /** @description Tags associated with the task */
+            /**
+             * @description Tags associated with the task
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "name": "bug",
+             *         "color": "#FF5733"
+             *       }
+             *     ]
+             */
             tags: components["schemas"]["TagResponseDto"][];
             /**
              * @description Number of comments on the task
              * @example 5
              */
             commentCount: number;
-            /** @description Input requests associated with the task */
+            /**
+             * @description Input requests associated with the task
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "taskId": "123e4567-e89b-12d3-a456-426614174001",
+             *         "askedByActorId": "123e4567-e89b-12d3-a456-426614174002",
+             *         "assignedToActorId": "123e4567-e89b-12d3-a456-426614174003",
+             *         "question": "Should we use OAuth or JWT for authentication?",
+             *         "answer": "Use JWT with refresh tokens",
+             *         "resolvedAt": "2025-11-03T12:45:00.000Z",
+             *         "createdAt": "2025-11-03T10:30:00.000Z",
+             *         "updatedAt": "2025-11-03T12:45:00.000Z"
+             *       }
+             *     ]
+             */
             inputRequests: components["schemas"]["InputRequestResponseDto"][];
             /**
              * @description Task last update timestamp
@@ -3025,20 +3258,109 @@ export interface components {
              * @example Implement authentication feature
              */
             title: string;
-            /** @description Actor who created the thread */
+            /**
+             * @description Actor who created the thread
+             * @example {
+             *       "id": "123e4567-e89b-12d3-a456-426614174000",
+             *       "type": "human",
+             *       "slug": "jane@example.com",
+             *       "displayName": "Jane Doe",
+             *       "avatarUrl": "https://example.com/avatar.png",
+             *       "introduction": "Product lead."
+             *     }
+             */
             createdByActor: components["schemas"]["ActorResponseDto"];
             /**
              * @description Parent task ID that created the thread
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             parentTaskId?: string | null;
-            /** @description Tasks attached to this thread */
+            /**
+             * @description Tasks attached to this thread
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "name": "Implement user authentication",
+             *         "description": "Add JWT-based authentication to the API",
+             *         "status": "IN_PROGRESS",
+             *         "assigneeActor": {
+             *           "id": "123e4567-e89b-12d3-a456-426614174000",
+             *           "type": "agent",
+             *           "slug": "agent-alpha",
+             *           "displayName": "Agent Alpha",
+             *           "avatarUrl": "https://example.com/avatar.png",
+             *           "introduction": "Task execution agent."
+             *         },
+             *         "createdByActor": {
+             *           "id": "123e4567-e89b-12d3-a456-426614174000",
+             *           "type": "human",
+             *           "slug": "jane@example.com",
+             *           "displayName": "Jane Doe",
+             *           "avatarUrl": "https://example.com/avatar.png",
+             *           "introduction": "Product lead."
+             *         },
+             *         "tags": [
+             *           {
+             *             "id": "123e4567-e89b-12d3-a456-426614174000",
+             *             "name": "bug",
+             *             "color": "#FF5733"
+             *           }
+             *         ],
+             *         "commentCount": 2,
+             *         "inputRequests": [
+             *           {
+             *             "id": "123e4567-e89b-12d3-a456-426614174000",
+             *             "taskId": "123e4567-e89b-12d3-a456-426614174001",
+             *             "askedByActorId": "123e4567-e89b-12d3-a456-426614174002",
+             *             "assignedToActorId": "123e4567-e89b-12d3-a456-426614174003",
+             *             "question": "Should we use OAuth or JWT for authentication?",
+             *             "answer": "Use JWT with refresh tokens",
+             *             "resolvedAt": "2025-11-03T12:45:00.000Z",
+             *             "createdAt": "2025-11-03T10:30:00.000Z",
+             *             "updatedAt": "2025-11-03T12:45:00.000Z"
+             *           }
+             *         ],
+             *         "updatedAt": "2024-01-15T10:30:00Z"
+             *       }
+             *     ]
+             */
             tasks: components["schemas"]["TaskSummaryResponseDto"][];
-            /** @description Context blocks referenced in this thread */
+            /**
+             * @description Context blocks referenced in this thread
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "title": "API Design Documentation"
+             *       }
+             *     ]
+             */
             referencedContextBlocks: components["schemas"]["ContextBlockSummaryResponseDto"][];
-            /** @description Tags associated with this thread */
+            /**
+             * @description Tags associated with this thread
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "name": "bug",
+             *         "color": "#FF5733",
+             *         "createdAt": "2024-01-15T10:30:00.000Z",
+             *         "updatedAt": "2024-01-15T10:30:00.000Z"
+             *       }
+             *     ]
+             */
             tags: components["schemas"]["MetaTagResponseDto"][];
-            /** @description Participants in this thread */
+            /**
+             * @description Participants in this thread
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "type": "human",
+             *         "slug": "jane@example.com",
+             *         "displayName": "Jane Doe",
+             *         "avatarUrl": "https://example.com/avatar.png",
+             *         "introduction": "Product lead."
+             *       }
+             *     ]
+             */
             participants: components["schemas"]["ActorResponseDto"][];
             /**
              * @description Row version for optimistic locking
@@ -3076,7 +3398,10 @@ export interface components {
             title: string;
         };
         ThreadListResponseDto: {
-            /** @description Array of thread list items */
+            /**
+             * @description Array of thread list items
+             * @example []
+             */
             items: components["schemas"]["ThreadListItemResponseDto"][];
             /**
              * @description Total number of threads
@@ -3281,7 +3606,31 @@ export interface components {
             updatedAt: string;
         };
         BlockListResponseDto: {
-            /** @description List of context blocks */
+            /**
+             * @description List of context blocks
+             * @example [
+             *       {
+             *         "id": "123e4567-e89b-12d3-a456-426614174000",
+             *         "title": "How to onboard new agents",
+             *         "createdByActorId": "123e4567-e89b-12d3-a456-426614174000",
+             *         "createdBy": "agent-roo",
+             *         "tags": [
+             *           {
+             *             "id": "123",
+             *             "name": "project-alpha",
+             *             "color": "#FF5733",
+             *             "description": "Project Alpha notes",
+             *             "createdAt": "2025-01-01T12:00:00.000Z",
+             *             "updatedAt": "2025-01-01T12:00:00.000Z"
+             *           }
+             *         ],
+             *         "parentId": null,
+             *         "order": 0,
+             *         "createdAt": "2025-01-01T12:00:00.000Z",
+             *         "updatedAt": "2025-01-02T15:30:00.000Z"
+             *       }
+             *     ]
+             */
             items: components["schemas"]["BlockSummaryDto"][];
         };
         BlockTreeResponseDto: {
@@ -3641,7 +3990,10 @@ export interface components {
             deletedAt?: Record<string, never>;
         };
         AgentListResponseDto: {
-            /** @description List of agents */
+            /**
+             * @description List of agents
+             * @example []
+             */
             items: components["schemas"]["AgentResponseDto"][];
             /**
              * @description Total number of agents matching the query

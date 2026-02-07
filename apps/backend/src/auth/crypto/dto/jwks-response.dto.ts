@@ -61,6 +61,16 @@ export class JwksResponseDto {
     description:
       'Collection of JSON Web Keys currently valid for signature verification.',
     type: [JwkResponseDto],
+    example: [
+      {
+        kty: 'RSA',
+        use: 'sig',
+        kid: '1234567890abcdef',
+        alg: 'RS256',
+        n: 'xGOr-H7A...',
+        e: 'AQAB',
+      },
+    ],
   })
   keys!: JwkResponseDto[];
 }

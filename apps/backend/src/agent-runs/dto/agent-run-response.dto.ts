@@ -32,6 +32,14 @@ export class AgentRunResponseDto {
   @ApiPropertyOptional({
     description: 'Actor information',
     type: () => ActorResponseDto,
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      type: 'human',
+      slug: 'jane@example.com',
+      displayName: 'Jane Doe',
+      avatarUrl: 'https://example.com/avatar.png',
+      introduction: 'Expert in task automation.',
+    },
     nullable: true,
   })
   actor!: ActorResponseDto | null;
@@ -45,6 +53,10 @@ export class AgentRunResponseDto {
   @ApiPropertyOptional({
     description: 'Parent task information',
     type: () => TaskInfoDto,
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174002',
+      name: 'Implement authentication',
+    },
     nullable: true,
   })
   parentTask!: TaskInfoDto | null;

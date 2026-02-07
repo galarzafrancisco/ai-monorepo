@@ -21,6 +21,14 @@ export class AuthJourneyResponseDto {
   @ApiProperty({
     description: 'The actor (user) associated with this authorization journey',
     type: ActorResponseDto,
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      type: 'human',
+      slug: 'jane@example.com',
+      displayName: 'Jane Doe',
+      avatarUrl: 'https://example.com/avatar.png',
+      introduction: 'Security-focused product manager.',
+    },
     nullable: true,
   })
   actor!: ActorResponseDto | null;
@@ -28,12 +36,37 @@ export class AuthJourneyResponseDto {
   @ApiProperty({
     description: 'The MCP authorization flow for this journey',
     type: McpFlowResponseDto,
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      authorizationJourneyId: '123e4567-e89b-12d3-a456-426614174000',
+      serverId: '123e4567-e89b-12d3-a456-426614174000',
+      clientId: '123e4567-e89b-12d3-a456-426614174000',
+      clientName: 'My MCP Client',
+      status: 'client_registered',
+      scope: 'tool:read tool:execute',
+      authorizationCodeExpiresAt: '2025-12-15T09:00:00.000Z',
+      authorizationCodeUsed: false,
+      createdAt: '2025-12-15T08:00:00.000Z',
+      updatedAt: '2025-12-15T09:00:00.000Z',
+    },
   })
   mcpAuthorizationFlow!: McpFlowResponseDto;
 
   @ApiProperty({
     description: 'Connection authorization flows for this journey',
     type: [ConnectionFlowResponseDto],
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        authorizationJourneyId: '123e4567-e89b-12d3-a456-426614174000',
+        mcpConnectionId: '123e4567-e89b-12d3-a456-426614174000',
+        connectionName: 'GitHub OAuth Connection',
+        status: 'pending',
+        tokenExpiresAt: '2025-12-15T10:00:00.000Z',
+        createdAt: '2025-12-15T08:00:00.000Z',
+        updatedAt: '2025-12-15T09:00:00.000Z',
+      },
+    ],
   })
   connectionAuthorizationFlows!: ConnectionFlowResponseDto[];
 
