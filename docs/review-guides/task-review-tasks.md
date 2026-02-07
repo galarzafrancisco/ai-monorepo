@@ -12,3 +12,7 @@ against the review guides in `docs/review-guides/`.
 - Best-practice docs -> `docs/review-guides/best-practice.md`
 - How-to guides -> `docs/review-guides/how-to-guide.md`
 - Review guides -> `docs/review-guides/review-guide.md`
+
+## Activity log
+
+- 2026-02-07: Retried qwen review tasks after repo path clarification.
