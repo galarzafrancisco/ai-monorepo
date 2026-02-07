@@ -16,10 +16,13 @@ import {
 import { isUUID } from 'class-validator';
 import { getConfig } from '../config/env.config';
 import { AuthorizationServerMetadataDto } from './dto/authorization-server-metadata.dto';
+import { ProtectedResourceMetadataResponseDto } from './dto/protected-resource-metadata-response.dto';
 import { GetAuthorizationServerMetadataParamsDto } from './dto/get-authorization-server-metadata-params.dto';
 import { DiscoveryService } from './discovery.service';
-import { GetProtectedResourceMetadataParamsDto } from './dto/get-protected-resource-metadata-params.dto';
-import { ProtectedResourceMetadataResult } from './dto/service/discovery.service.types';
+import {
+  AuthorizationServerMetadataResult,
+  ProtectedResourceMetadataResult,
+} from './dto/service/discovery.service.types';
 
 @ApiTags('Discovery')
 @Controller('.well-known')
@@ -72,12 +75,16 @@ export class DiscoveryController {
     const issuer = config.issuerUrl;
     const lookupBy = isUUID(params.mcpServerId) ? 'id' : 'providedId';
 
-    return this.discoveryService.getAuthorizationServerMetadata({
-      serverIdentifier: params.mcpServerId,
-      version: params.version,
-      issuer,
-      lookupBy,
-    });
+    const metadata = await this.discoveryService.getAuthorizationServerMetadata(
+      {
+        serverIdentifier: params.mcpServerId,
+        version: params.version,
+        issuer,
+        lookupBy,
+      },
+    );
+
+    return this.mapAuthorizationServerMetadataToResponse(metadata);
   }
 
   // @Get('oauth-protected-resource/:resource')
@@ -94,9 +101,13 @@ export class DiscoveryController {
   // }
 
   @Get('oauth-protected-resource/*path')
+  @ApiOkResponse({
+    description: 'Protected resource metadata retrieved successfully',
+    type: ProtectedResourceMetadataResponseDto,
+  })
   async all(
     @Param('path') path: string[],
-  ): Promise<ProtectedResourceMetadataResult> {
+  ): Promise<ProtectedResourceMetadataResponseDto> {
     /*
     MCP Clients should fetch protected resource metadata form the endpoint present in the WWW-Authenticate header, but they don't.
     Instead they default to finding it under ./well-known/oauth-protected-resource/{path-of-the-original-resource}.
@@ -106,6 +117,35 @@ export class DiscoveryController {
     if (!meta) {
       throw new NotFoundException();
     }
-    return meta;
+    return this.mapProtectedResourceMetadataToResponse(meta);
+  }
+
+  private mapAuthorizationServerMetadataToResponse(
+    metadata: AuthorizationServerMetadataResult,
+  ): AuthorizationServerMetadataDto {
+    return {
+      issuer: metadata.issuer,
+      authorization_endpoint: metadata.authorization_endpoint,
+      token_endpoint: metadata.token_endpoint,
+      registration_endpoint: metadata.registration_endpoint,
+      scopes_supported: metadata.scopes_supported,
+      response_types_supported: metadata.response_types_supported,
+      grant_types_supported: metadata.grant_types_supported,
+      token_endpoint_auth_methods_supported:
+        metadata.token_endpoint_auth_methods_supported,
+      code_challenge_methods_supported: metadata.code_challenge_methods_supported,
+    };
+  }
+
+  private mapProtectedResourceMetadataToResponse(
+    metadata: ProtectedResourceMetadataResult,
+  ): ProtectedResourceMetadataResponseDto {
+    return {
+      resource: metadata.resource,
+      authorization_servers: metadata.authorization_servers,
+      scopes_supported: metadata.scopes_supported,
+      bearer_methods_supported: metadata.bearer_methods_supported,
+      resource_name: metadata.resource_name,
+    };
   }
 }

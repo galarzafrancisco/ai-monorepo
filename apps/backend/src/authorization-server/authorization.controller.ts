@@ -38,6 +38,7 @@ import { CallbackRequestDto } from './dto/callback-request.dto';
 import { GetConsentMetadataParamsDto } from './dto/consent-metadata-params.dto';
 import { GetConsentMetadataResponseDto } from './dto/consent-metadata-response.dto';
 import { ScopesResponseDto } from './dto/scope-response.dto';
+import { ConsentMetadata } from './dto/service/authorization.service.types';
 import { getFrontendPath } from '../config/frontend.config';
 import { ALL_API_SCOPES } from '../auth/core/scopes/all-api.scopes';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
@@ -180,7 +181,7 @@ export class AuthorizationController {
       await this.authorizationService.getConsentMetadataFromFlowId(
         params.flowId,
       );
-    return consentMetadata;
+    return this.mapConsentMetadataToResponse(consentMetadata);
   }
 
   @Post('token/mcp/:serverIdentifier/:version')
@@ -310,5 +311,20 @@ export class AuthorizationController {
   async getScopes(): Promise<ScopesResponseDto> {
     const scopes = await this.authorizationService.getAllAPIScopes();
     return { scopes };
+  }
+
+  private mapConsentMetadataToResponse(
+    consentMetadata: ConsentMetadata,
+  ): GetConsentMetadataResponseDto {
+    return {
+      id: consentMetadata.id,
+      status: consentMetadata.status,
+      scopes: consentMetadata.scopes,
+      resource: consentMetadata.resource,
+      server: consentMetadata.server,
+      client: consentMetadata.client,
+      redirectUri: consentMetadata.redirectUri,
+      createdAt: consentMetadata.createdAt.toISOString(),
+    };
   }
 }

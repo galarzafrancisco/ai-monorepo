@@ -4358,7 +4358,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Protected resource metadata retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtectedResourceMetadataResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5218,7 +5225,6 @@
             "example": "http://localhost:4001/callback"
           },
           "createdAt": {
-            "format": "date-time",
             "type": "string",
             "description": "Timestamp when the flow was created",
             "example": "2024-01-15T10:30:00.000Z"
@@ -7914,6 +7920,59 @@
           "grant_types_supported",
           "token_endpoint_auth_methods_supported",
           "code_challenge_methods_supported"
+        ]
+      },
+      "ProtectedResourceMetadataResponseDto": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string",
+            "description": "Resource URL associated with the protected resource metadata",
+            "example": "https://api.example.com"
+          },
+          "authorization_servers": {
+            "description": "Authorization servers that can be used to access this resource",
+            "example": [
+              "https://auth.example.com/mcp/tasks/0.0.0"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes_supported": {
+            "description": "Scopes supported by this protected resource",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bearer_methods_supported": {
+            "description": "Bearer token transport methods supported by this resource",
+            "example": [
+              "header"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resource_name": {
+            "type": "string",
+            "description": "Human-readable name of the resource",
+            "example": "Tasks MCP API"
+          }
+        },
+        "required": [
+          "resource",
+          "authorization_servers",
+          "scopes_supported",
+          "bearer_methods_supported",
+          "resource_name"
         ]
       },
       "CreateAgentDto": {

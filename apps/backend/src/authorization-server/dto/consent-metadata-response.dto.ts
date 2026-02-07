@@ -96,5 +96,5 @@ export class GetConsentMetadataResponseDto {
     description: 'Timestamp when the flow was created',
     example: '2024-01-15T10:30:00.000Z',
   })
-  createdAt!: Date;
+  createdAt!: string;
 }
