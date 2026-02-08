@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AuthorizationServerMetadataDto } from '../models/AuthorizationServerMetadataDto.js';
+import type { ProtectedResourceMetadataResponseDto } from '../models/ProtectedResourceMetadataResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
@@ -44,12 +45,12 @@ export class DiscoveryService {
     }
     /**
      * @param path
-     * @returns any
+     * @returns ProtectedResourceMetadataResponseDto Protected resource metadata retrieved successfully
      * @throws ApiError
      */
     public static discoveryControllerAll(
         path: Array<string>,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<ProtectedResourceMetadataResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/.well-known/oauth-protected-resource/{path}',

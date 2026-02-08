@@ -1664,7 +1664,6 @@ export interface components {
              */
             redirectUri: string;
             /**
-             * Format: date-time
              * @description Timestamp when the flow was created
              * @example 2024-01-15T10:30:00.000Z
              */
@@ -3443,6 +3442,40 @@ export interface components {
              *     ]
              */
             code_challenge_methods_supported: string[];
+        };
+        ProtectedResourceMetadataResponseDto: {
+            /**
+             * @description Resource URL associated with the protected resource metadata
+             * @example https://api.example.com
+             */
+            resource: string;
+            /**
+             * @description Authorization servers that can be used to access this resource
+             * @example [
+             *       "https://auth.example.com/mcp/tasks/0.0.0"
+             *     ]
+             */
+            authorization_servers: string[];
+            /**
+             * @description Scopes supported by this protected resource
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes_supported: string[];
+            /**
+             * @description Bearer token transport methods supported by this resource
+             * @example [
+             *       "header"
+             *     ]
+             */
+            bearer_methods_supported: string[];
+            /**
+             * @description Human-readable name of the resource
+             * @example Tasks MCP API
+             */
+            resource_name: string;
         };
         CreateAgentDto: {
             /**
@@ -6946,11 +6979,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Protected resource metadata retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProtectedResourceMetadataResponseDto"];
+                };
             };
         };
     };
