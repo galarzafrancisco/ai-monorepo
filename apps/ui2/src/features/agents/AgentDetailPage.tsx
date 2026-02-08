@@ -519,10 +519,6 @@ export function AgentDetailPage() {
         }
       >
         {/* Create Token Form */}
-        {/*
-        This looks like shit but it's functional, so I'm shipping it now. 
-        TODO: Make it more consistent with the iOS theme.
-        */}
         {showCreateForm && (
           <DataRow>
             <Stack spacing="3">
