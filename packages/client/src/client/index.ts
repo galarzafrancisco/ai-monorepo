@@ -69,6 +69,7 @@ export type { MoveBlockDto } from './models/MoveBlockDto.js';
 export { PatchAgentDto } from './models/PatchAgentDto.js';
 export type { PatchProjectDto } from './models/PatchProjectDto.js';
 export type { ProjectResponseDto } from './models/ProjectResponseDto.js';
+export type { ProtectedResourceMetadataResponseDto } from './models/ProtectedResourceMetadataResponseDto.js';
 export type { ReferenceContextBlockDto } from './models/ReferenceContextBlockDto.js';
 export { RegisterClientDto } from './models/RegisterClientDto.js';
 export type { ReorderBlockDto } from './models/ReorderBlockDto.js';
