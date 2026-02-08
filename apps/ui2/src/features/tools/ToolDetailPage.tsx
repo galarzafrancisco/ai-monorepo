@@ -5,6 +5,7 @@ import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chi
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
+import { TasksAppPreview } from './TasksAppPreview';
 import './ToolDetailPage.css';
 
 // Helper to get status color and label
@@ -119,6 +120,8 @@ export function ToolDetailPage() {
     tags.push({ label: 'remote', color: 'green' });
   }
 
+  const isTasksTool = tool.providedId === 'tasks';
+
   return (
     <div className="tool-detail-page">
 
@@ -214,6 +217,17 @@ export function ToolDetailPage() {
           </DataRowContainer>
         )
       }
+
+      {isTasksTool ? (
+        <DataRowContainer title="App Preview" className="tool-detail-page__section">
+          <Stack spacing="3">
+            <Text size="2" tone="muted">
+              Proof of concept: Tasks MCP server rendered as interactive cards.
+            </Text>
+            <TasksAppPreview />
+          </Stack>
+        </DataRowContainer>
+      ) : null}
 
       {/* Scopes (Permissions) */}
       {

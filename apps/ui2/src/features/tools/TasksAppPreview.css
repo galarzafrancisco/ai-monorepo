@@ -1,0 +1,16 @@
+.tasks-app-preview {
+  width: 100%;
+}
+
+.tasks-app-preview__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+.tasks-app-preview__empty {
+  padding: var(--space-3);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--r-3);
+  background: var(--surface);
+}
