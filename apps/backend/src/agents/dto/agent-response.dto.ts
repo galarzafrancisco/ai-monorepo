@@ -72,25 +72,27 @@ export class AgentResponseDto {
   })
   modelId!: string | null;
 
-  // TODO: refine description and examples and types
   @ApiProperty({
-    description: 'List of status that trigger this agent',
-    example: ['NOT_STARTED', 'IN_PROGRESS'],
-    type: [String],
+    description: 'Task statuses that trigger this agent to activate',
+    example: [TaskStatus.NOT_STARTED, TaskStatus.IN_PROGRESS],
+    enum: TaskStatus,
+    isArray: true,
   })
   statusTriggers!: TaskStatus[];
 
   @ApiProperty({
-    description: 'List of tags that trigger this agent',
+    description: 'Task tags that trigger this agent to activate',
     example: ['code', 'review'],
-    type: [String],
+    type: String,
+    isArray: true,
   })
   tagTriggers!: string[];
 
   @ApiProperty({
-    description: 'List of tool identifiers this agent is allowed to use',
+    description: 'List of MCP tool identifiers this agent is allowed to use',
     example: ['tasks.createTask', 'tasks.readTask', 'context.search'],
-    type: [String],
+    type: String,
+    isArray: true,
   })
   allowedTools!: string[];
 

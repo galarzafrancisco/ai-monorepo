@@ -44,15 +44,15 @@ export type AgentResponseDto = {
      */
     modelId?: string | null;
     /**
-     * List of status that trigger this agent
+     * Task statuses that trigger this agent to activate
      */
-    statusTriggers: Array<string>;
+    statusTriggers: Array<'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'>;
     /**
-     * List of tags that trigger this agent
+     * Task tags that trigger this agent to activate
      */
     tagTriggers: Array<string>;
     /**
-     * List of tool identifiers this agent is allowed to use
+     * List of MCP tool identifiers this agent is allowed to use
      */
     allowedTools: Array<string>;
     /**

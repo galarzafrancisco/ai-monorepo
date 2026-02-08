@@ -3618,15 +3618,15 @@ export interface components {
              */
             modelId?: string | null;
             /**
-             * @description List of status that trigger this agent
+             * @description Task statuses that trigger this agent to activate
              * @example [
              *       "NOT_STARTED",
              *       "IN_PROGRESS"
              *     ]
              */
-            statusTriggers: string[];
+            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
             /**
-             * @description List of tags that trigger this agent
+             * @description Task tags that trigger this agent to activate
              * @example [
              *       "code",
              *       "review"
@@ -3634,7 +3634,7 @@ export interface components {
              */
             tagTriggers: string[];
             /**
-             * @description List of tool identifiers this agent is allowed to use
+             * @description List of MCP tool identifiers this agent is allowed to use
              * @example [
              *       "tasks.createTask",
              *       "tasks.readTask",
