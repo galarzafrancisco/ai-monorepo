@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { AgentEntity } from './agent.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { ActorType } from '../identity-provider/enums';
@@ -40,67 +40,68 @@ export class AgentsService {
   async createAgent(input: CreateAgentInput): Promise<AgentResult> {
     this.logger.log(`Creating agent with slug: ${input.slug}`);
 
-    // Check for slug conflict using actor repository
-    const existingActor = await this.actorRepository.findOne({
-      where: { slug: input.slug },
-    });
+    try {
+      // Create actor first
+      let avatarUrl: string | null = null;
+      if (input.avatarUrl !== undefined) {
+        avatarUrl = input.avatarUrl;
+      } else if (input.type !== undefined) {
+        avatarUrl = DEFAULT_AGENT_AVATAR[input.type];
+      }
+      const actor = this.actorRepository.create({
+        type: ActorType.AGENT,
+        slug: input.slug,
+        displayName: input.name,
+        avatarUrl: avatarUrl,
+        introduction: input.introduction ?? null,
+      });
+      const savedActor = await this.actorRepository.save(actor);
 
-    // TODO: not really needed hey. DB should throw on write because slug is unique.
-    if (existingActor) {
-      throw new AgentSlugConflictError(input.slug);
+      const agent = this.agentRepository.create({
+        actorId: savedActor.id,
+        type: input.type ?? AgentType.OTHER,
+        description: input.description ?? null,
+        systemPrompt: input.systemPrompt ?? '',
+        providerId: this.normalizeOptionalId(input.providerId),
+        modelId: this.normalizeOptionalId(input.modelId),
+        statusTriggers: input.statusTriggers ?? [],
+        tagTriggers: input.tagTriggers ?? [],
+        allowedTools: input.allowedTools ?? [],
+        isActive: input.isActive ?? true,
+        concurrencyLimit: input.concurrencyLimit ?? null,
+      });
+
+      const savedAgent = await this.agentRepository.save(agent);
+
+      // Load with actor relation
+      const agentWithRelations = await this.agentRepository.findOne({
+        where: { id: savedAgent.id },
+        relations: ['actor'],
+      });
+
+      if (!agentWithRelations) {
+        throw new AgentNotFoundError(savedAgent.id);
+      }
+      if (!agentWithRelations.actor) {
+        throw new AgentNotFoundError(savedAgent.id);
+      }
+
+      this.eventEmitter.emit(
+        'agent.created',
+        new AgentCreatedEvent(agentWithRelations),
+      );
+
+      return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
+    } catch (error) {
+      // Convert DB unique constraint violation to domain error
+      if (
+        error instanceof QueryFailedError &&
+        (error as { code?: string }).code === 'SQLITE_CONSTRAINT'
+      ) {
+        throw new AgentSlugConflictError(input.slug);
+      }
+      throw error;
     }
-
-    // Create actor first
-    let avatarUrl: string | null = null;
-    if (input.avatarUrl !== undefined) {
-      avatarUrl = input.avatarUrl;
-    } else if (input.type !== undefined) {
-      avatarUrl = DEFAULT_AGENT_AVATAR[input.type];
-    }
-    const actor = this.actorRepository.create({
-      type: ActorType.AGENT,
-      slug: input.slug,
-      displayName: input.name,
-      avatarUrl: avatarUrl,
-      introduction: input.introduction ?? null,
-    });
-    const savedActor = await this.actorRepository.save(actor);
-
-    const agent = this.agentRepository.create({
-      actorId: savedActor.id,
-      type: input.type ?? AgentType.OTHER,
-      description: input.description ?? null,
-      systemPrompt: input.systemPrompt ?? '',
-      providerId: this.normalizeOptionalId(input.providerId),
-      modelId: this.normalizeOptionalId(input.modelId),
-      statusTriggers: input.statusTriggers ?? [],
-      tagTriggers: input.tagTriggers ?? [],
-      allowedTools: input.allowedTools ?? [],
-      isActive: input.isActive ?? true,
-      concurrencyLimit: input.concurrencyLimit ?? null,
-    });
-
-    const savedAgent = await this.agentRepository.save(agent);
-
-    // Load with actor relation
-    const agentWithRelations = await this.agentRepository.findOne({
-      where: { id: savedAgent.id },
-      relations: ['actor'],
-    });
-
-    if (!agentWithRelations) {
-      throw new AgentNotFoundError(savedAgent.id);
-    }
-    if (!agentWithRelations.actor) {
-      throw new AgentNotFoundError(savedAgent.id);
-    }
-
-    this.eventEmitter.emit(
-      'agent.created',
-      new AgentCreatedEvent(agentWithRelations),
-    );
-
-    return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
   }
 
   async listAgents(input: ListAgentsInput): Promise<ListAgentsResult> {
