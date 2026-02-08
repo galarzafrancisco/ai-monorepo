@@ -8034,10 +8034,9 @@
           },
           "statusTriggers": {
             "type": "array",
-            "description": "Task statuses that will trigger this agent to activate",
+            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
             "example": [
-              "IN_PROGRESS",
-              "FOR_REVIEW"
+              "NOT_STARTED"
             ],
             "default": [],
             "items": {
@@ -8051,10 +8050,9 @@
             }
           },
           "tagTriggers": {
-            "description": "Task tags that will trigger this agent to activate",
+            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
             "example": [
-              "code",
-              "review"
+              "code"
             ],
             "default": [],
             "type": "array",
@@ -8157,21 +8155,25 @@
             "example": "gpt-5.2-codex"
           },
           "statusTriggers": {
-            "description": "List of status that trigger this agent",
-            "example": [
-              "NOT_STARTED",
-              "IN_PROGRESS"
-            ],
             "type": "array",
+            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
+            "example": [
+              "NOT_STARTED"
+            ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
             }
           },
           "tagTriggers": {
-            "description": "List of tags that trigger this agent",
+            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
             "example": [
-              "code",
-              "review"
+              "code"
             ],
             "type": "array",
             "items": {
@@ -8295,10 +8297,9 @@
           },
           "statusTriggers": {
             "type": "array",
-            "description": "Task statuses that will trigger this agent to activate",
+            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
             "example": [
-              "IN_PROGRESS",
-              "FOR_REVIEW"
+              "NOT_STARTED"
             ],
             "items": {
               "type": "string",
@@ -8311,10 +8312,9 @@
             }
           },
           "tagTriggers": {
-            "description": "Task tags that will trigger this agent to activate",
+            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
             "example": [
-              "code",
-              "review"
+              "code"
             ],
             "type": "array",
             "items": {

@@ -44,11 +44,11 @@ export type AgentResponseDto = {
      */
     modelId?: string | null;
     /**
-     * List of status that trigger this agent
+     * Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.
      */
-    statusTriggers: Array<string>;
+    statusTriggers: Array<'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'>;
     /**
-     * List of tags that trigger this agent
+     * Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
      */
     tagTriggers: Array<string>;
     /**
