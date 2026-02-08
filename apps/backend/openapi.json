@@ -8157,18 +8157,24 @@
             "example": "gpt-5.2-codex"
           },
           "statusTriggers": {
-            "description": "List of status that trigger this agent",
+            "type": "array",
+            "description": "Task statuses that trigger this agent to activate",
             "example": [
               "NOT_STARTED",
               "IN_PROGRESS"
             ],
-            "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
             }
           },
           "tagTriggers": {
-            "description": "List of tags that trigger this agent",
+            "description": "Task tags that trigger this agent to activate",
             "example": [
               "code",
               "review"
@@ -8179,7 +8185,7 @@
             }
           },
           "allowedTools": {
-            "description": "List of tool identifiers this agent is allowed to use",
+            "description": "List of MCP tool identifiers this agent is allowed to use",
             "example": [
               "tasks.createTask",
               "tasks.readTask",
