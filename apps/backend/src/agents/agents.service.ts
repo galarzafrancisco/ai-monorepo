@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { AgentEntity } from './agent.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { ActorType } from '../identity-provider/enums';
@@ -40,16 +40,6 @@ export class AgentsService {
   async createAgent(input: CreateAgentInput): Promise<AgentResult> {
     this.logger.log(`Creating agent with slug: ${input.slug}`);
 
-    // Check for slug conflict using actor repository
-    const existingActor = await this.actorRepository.findOne({
-      where: { slug: input.slug },
-    });
-
-    // TODO: not really needed hey. DB should throw on write because slug is unique.
-    if (existingActor) {
-      throw new AgentSlugConflictError(input.slug);
-    }
-
     // Create actor first
     let avatarUrl: string | null = null;
     if (input.avatarUrl !== undefined) {
@@ -64,7 +54,25 @@ export class AgentsService {
       avatarUrl: avatarUrl,
       introduction: input.introduction ?? null,
     });
-    const savedActor = await this.actorRepository.save(actor);
+
+    // Save actor with slug uniqueness check
+    let savedActor: ActorEntity;
+    try {
+      savedActor = await this.actorRepository.save(actor);
+    } catch (error) {
+      // Convert DB unique constraint violation on actor.slug to domain error
+      if (error instanceof QueryFailedError) {
+        const driverError = (error as any).driverError;
+        // Check for SQLite UNIQUE constraint on actor.slug
+        if (
+          driverError?.code === 'SQLITE_CONSTRAINT' &&
+          driverError?.message?.includes('actor.slug')
+        ) {
+          throw new AgentSlugConflictError(input.slug);
+        }
+      }
+      throw error;
+    }
 
     const agent = this.agentRepository.create({
       actorId: savedActor.id,
