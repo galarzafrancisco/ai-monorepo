@@ -40,68 +40,75 @@ export class AgentsService {
   async createAgent(input: CreateAgentInput): Promise<AgentResult> {
     this.logger.log(`Creating agent with slug: ${input.slug}`);
 
+    // Create actor first
+    let avatarUrl: string | null = null;
+    if (input.avatarUrl !== undefined) {
+      avatarUrl = input.avatarUrl;
+    } else if (input.type !== undefined) {
+      avatarUrl = DEFAULT_AGENT_AVATAR[input.type];
+    }
+    const actor = this.actorRepository.create({
+      type: ActorType.AGENT,
+      slug: input.slug,
+      displayName: input.name,
+      avatarUrl: avatarUrl,
+      introduction: input.introduction ?? null,
+    });
+
+    // Save actor with slug uniqueness check
+    let savedActor: ActorEntity;
     try {
-      // Create actor first
-      let avatarUrl: string | null = null;
-      if (input.avatarUrl !== undefined) {
-        avatarUrl = input.avatarUrl;
-      } else if (input.type !== undefined) {
-        avatarUrl = DEFAULT_AGENT_AVATAR[input.type];
-      }
-      const actor = this.actorRepository.create({
-        type: ActorType.AGENT,
-        slug: input.slug,
-        displayName: input.name,
-        avatarUrl: avatarUrl,
-        introduction: input.introduction ?? null,
-      });
-      const savedActor = await this.actorRepository.save(actor);
-
-      const agent = this.agentRepository.create({
-        actorId: savedActor.id,
-        type: input.type ?? AgentType.OTHER,
-        description: input.description ?? null,
-        systemPrompt: input.systemPrompt ?? '',
-        providerId: this.normalizeOptionalId(input.providerId),
-        modelId: this.normalizeOptionalId(input.modelId),
-        statusTriggers: input.statusTriggers ?? [],
-        tagTriggers: input.tagTriggers ?? [],
-        allowedTools: input.allowedTools ?? [],
-        isActive: input.isActive ?? true,
-        concurrencyLimit: input.concurrencyLimit ?? null,
-      });
-
-      const savedAgent = await this.agentRepository.save(agent);
-
-      // Load with actor relation
-      const agentWithRelations = await this.agentRepository.findOne({
-        where: { id: savedAgent.id },
-        relations: ['actor'],
-      });
-
-      if (!agentWithRelations) {
-        throw new AgentNotFoundError(savedAgent.id);
-      }
-      if (!agentWithRelations.actor) {
-        throw new AgentNotFoundError(savedAgent.id);
-      }
-
-      this.eventEmitter.emit(
-        'agent.created',
-        new AgentCreatedEvent(agentWithRelations),
-      );
-
-      return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
+      savedActor = await this.actorRepository.save(actor);
     } catch (error) {
-      // Convert DB unique constraint violation to domain error
-      if (
-        error instanceof QueryFailedError &&
-        (error as { code?: string }).code === 'SQLITE_CONSTRAINT'
-      ) {
-        throw new AgentSlugConflictError(input.slug);
+      // Convert DB unique constraint violation on actor.slug to domain error
+      if (error instanceof QueryFailedError) {
+        const driverError = (error as any).driverError;
+        // Check for SQLite UNIQUE constraint on actor.slug
+        if (
+          driverError?.code === 'SQLITE_CONSTRAINT' &&
+          driverError?.message?.includes('actor.slug')
+        ) {
+          throw new AgentSlugConflictError(input.slug);
+        }
       }
       throw error;
     }
+
+    const agent = this.agentRepository.create({
+      actorId: savedActor.id,
+      type: input.type ?? AgentType.OTHER,
+      description: input.description ?? null,
+      systemPrompt: input.systemPrompt ?? '',
+      providerId: this.normalizeOptionalId(input.providerId),
+      modelId: this.normalizeOptionalId(input.modelId),
+      statusTriggers: input.statusTriggers ?? [],
+      tagTriggers: input.tagTriggers ?? [],
+      allowedTools: input.allowedTools ?? [],
+      isActive: input.isActive ?? true,
+      concurrencyLimit: input.concurrencyLimit ?? null,
+    });
+
+    const savedAgent = await this.agentRepository.save(agent);
+
+    // Load with actor relation
+    const agentWithRelations = await this.agentRepository.findOne({
+      where: { id: savedAgent.id },
+      relations: ['actor'],
+    });
+
+    if (!agentWithRelations) {
+      throw new AgentNotFoundError(savedAgent.id);
+    }
+    if (!agentWithRelations.actor) {
+      throw new AgentNotFoundError(savedAgent.id);
+    }
+
+    this.eventEmitter.emit(
+      'agent.created',
+      new AgentCreatedEvent(agentWithRelations),
+    );
+
+    return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
   }
 
   async listAgents(input: ListAgentsInput): Promise<ListAgentsResult> {
