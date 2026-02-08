@@ -222,8 +222,12 @@ export class AppInitRunner implements OnApplicationBootstrap {
         agent = await this.agentsService.getAgentBySlug({
           slug: agentConfig.slug,
         });
-        // TODO: rework the update method
-        // agent = await this.agentsService.updateAgent(agent.id, createClaudeDev);
+        if (this.shouldUpdateAgent(agent, agentConfig)) {
+          agent = await this.agentsService.updateAgent(
+            agent.actorId,
+            agentConfig,
+          );
+        }
       } else {
         throw error;
       }
@@ -368,5 +372,70 @@ export class AppInitRunner implements OnApplicationBootstrap {
     } catch (error) {
       this.logger.error('Error ensuring prompt context blocks exist');
     }
+  }
+
+  private shouldUpdateAgent(
+    agent: AgentResult,
+    config: CreateAgentInput,
+  ): boolean {
+    if (agent.slug !== config.slug) return true;
+    if (agent.name !== config.name) return true;
+    if (agent.systemPrompt !== config.systemPrompt) return true;
+    if (!this.areArraysEqual(agent.statusTriggers, config.statusTriggers)) {
+      return true;
+    }
+    if (!this.areArraysEqual(agent.allowedTools, config.allowedTools)) {
+      return true;
+    }
+
+    if (config.type !== undefined && agent.type !== config.type) return true;
+    if (
+      config.description !== undefined &&
+      agent.description !== config.description
+    ) {
+      return true;
+    }
+    if (
+      config.introduction !== undefined &&
+      agent.introduction !== config.introduction
+    ) {
+      return true;
+    }
+    if (config.providerId !== undefined && agent.providerId !== config.providerId) {
+      return true;
+    }
+    if (config.modelId !== undefined && agent.modelId !== config.modelId) {
+      return true;
+    }
+    if (
+      config.tagTriggers !== undefined &&
+      !this.areArraysEqual(agent.tagTriggers, config.tagTriggers)
+    ) {
+      return true;
+    }
+    if (
+      config.isActive !== undefined &&
+      agent.isActive !== config.isActive
+    ) {
+      return true;
+    }
+    if (
+      config.concurrencyLimit !== undefined &&
+      agent.concurrencyLimit !== config.concurrencyLimit
+    ) {
+      return true;
+    }
+    if (config.avatarUrl !== undefined && agent.avatarUrl !== config.avatarUrl) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private areArraysEqual<T>(left: T[], right: T[]): boolean {
+    if (left.length !== right.length) {
+      return false;
+    }
+    return left.every((value, index) => value === right[index]);
   }
 }
