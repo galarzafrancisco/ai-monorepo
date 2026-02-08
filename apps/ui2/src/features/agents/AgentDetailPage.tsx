@@ -359,8 +359,13 @@ export function AgentDetailPage() {
       {/* Meta */}
       <DataRowContainer className="agent-detail-page__section">
         <DataRow
-          // TODO: this agent doesn't come with Actor, so I can't get the avatar.
-          leading={<Avatar size="sm" name={agent.name} src={actor?.avatarUrl || undefined} />}
+          leading={(
+            <Avatar
+              size="sm"
+              name={agent.name}
+              src={actor?.avatarUrl || agent.avatarUrl || undefined}
+            />
+          )}
           tags={[
             getTypeTag(agent.type),
             getStatusTag(agent.isActive),
