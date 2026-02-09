@@ -2987,7 +2987,7 @@ export interface components {
              */
             title?: string;
             /**
-             * @description ID of the parent task that this thread belongs to
+             * @description Parent task ID that owns the thread
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             parentTaskId: string;
@@ -3094,7 +3094,7 @@ export interface components {
              * @description Parent task ID that created the thread
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            parentTaskId?: string | null;
+            parentTaskId: string;
             /** @description Tasks attached to this thread */
             tasks: components["schemas"]["TaskSummaryResponseDto"][];
             /** @description Context blocks referenced in this thread */

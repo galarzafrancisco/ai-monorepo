@@ -226,7 +226,7 @@ export class TasksService {
       });
       thread = await this.threadsService.createThread({
         createdByActorId: input.createdByActorId,
-        parentTaskId: parentTaskId,
+        parentTaskId,
         taskIds: [parentTaskId, task.id],
       });
     }

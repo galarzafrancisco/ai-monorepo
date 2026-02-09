@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 import { MetaTagResponseDto } from '../../meta/dto/tag-response.dto';
 import { TaskSummaryResponseDto } from './task-summary-response.dto';
@@ -24,13 +24,12 @@ export class ThreadResponseDto {
   })
   createdByActor!: ActorResponseDto;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Parent task ID that created the thread',
     example: '123e4567-e89b-12d3-a456-426614174000',
     type: String,
-    nullable: true,
   })
-  parentTaskId!: string | null;
+  parentTaskId!: string;
 
   @ApiProperty({
     description: 'Tasks attached to this thread',

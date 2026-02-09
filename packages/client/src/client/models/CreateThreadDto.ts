@@ -8,7 +8,7 @@ export type CreateThreadDto = {
      */
     title?: string;
     /**
-     * ID of the parent task that this thread belongs to
+     * Parent task ID that owns the thread
      */
     parentTaskId: string;
     /**
@@ -28,4 +28,3 @@ export type CreateThreadDto = {
      */
     participantActorIds?: Array<string>;
 };
-

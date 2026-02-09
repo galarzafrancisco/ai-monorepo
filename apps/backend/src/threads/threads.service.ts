@@ -56,16 +56,15 @@ export class ThreadsService {
       throw new ActorNotFoundForThreadError(input.createdByActorId);
     }
 
-    // Verify parent task exists
+    // Generate title if not provided
+    const title = input.title || this.inferTitle(createdByActor.slug);
+
     const parentTask = await this.taskRepository.findOne({
       where: { id: input.parentTaskId },
     });
     if (!parentTask) {
       throw new TaskNotFoundForThreadError(input.parentTaskId);
     }
-
-    // Generate title if not provided
-    const title = input.title || this.inferTitle(createdByActor.slug);
 
     const thread = this.threadRepository.create({
       title,
@@ -84,21 +83,17 @@ export class ThreadsService {
       await this.threadRepository.save(savedThread);
     }
 
-    // Handle tasks if provided
-    // Ensure parent task is always included in tasks
-    const taskIdsToAttach = new Set(input.taskIds || []);
-    taskIdsToAttach.add(input.parentTaskId);
-
-    if (taskIdsToAttach.size > 0) {
-      const tasks = await this.taskRepository.findBy({
-        id: In(Array.from(taskIdsToAttach)),
-      });
-      if (tasks.length !== taskIdsToAttach.size) {
-        throw new TaskNotFoundForThreadError('One or more tasks not found');
-      }
-      savedThread.tasks = tasks;
-      await this.threadRepository.save(savedThread);
+    const taskIds = Array.from(
+      new Set([input.parentTaskId, ...(input.taskIds ?? [])]),
+    );
+    const tasks = await this.taskRepository.findBy({
+      id: In(taskIds),
+    });
+    if (tasks.length !== taskIds.length) {
+      throw new TaskNotFoundForThreadError('One or more tasks not found');
     }
+    savedThread.tasks = tasks;
+    await this.threadRepository.save(savedThread);
 
     // Handle context blocks if provided
     if (input.contextBlockIds && input.contextBlockIds.length > 0) {

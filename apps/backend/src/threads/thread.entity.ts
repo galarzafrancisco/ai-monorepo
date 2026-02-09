@@ -46,6 +46,13 @@ export class ThreadEntity {
   })
   tasks!: TaskEntity[];
 
+  @Column({ type: 'uuid', nullable: false, name: 'parent_task_id' })
+  parentTaskId!: string;
+
+  @ManyToOne(() => TaskEntity)
+  @JoinColumn({ name: 'parent_task_id' })
+  parentTask?: TaskEntity;
+
   @ManyToMany(() => ContextBlockEntity)
   @JoinTable({
     name: 'thread_context_blocks',

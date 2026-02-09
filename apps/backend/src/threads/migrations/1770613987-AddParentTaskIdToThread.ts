@@ -2,36 +2,64 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddParentTaskIdToThread1770613987 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Step 1: Add parent_task_id column (initially nullable to allow backfill)
-    await queryRunner.query(`
-      ALTER TABLE threads ADD COLUMN parent_task_id TEXT
-    `);
+    await queryRunner.query(
+      `ALTER TABLE threads ADD COLUMN parent_task_id TEXT`,
+    );
 
-    // Step 2: Backfill parent_task_id using the existing resolveParentTaskId logic
-    // Find the earliest agent run whose parentTaskId is in the thread's tasks
     await queryRunner.query(`
-      UPDATE threads
-      SET parent_task_id = (
-        SELECT COALESCE(
-          (
-            SELECT ar.parent_task_id
-            FROM agent_runs ar
-            INNER JOIN thread_tasks tt ON tt.task_id = ar.parent_task_id
-            WHERE tt.thread_id = threads.id
-            ORDER BY ar.created_at ASC
-            LIMIT 1
-          ),
-          (
-            SELECT tt.task_id
-            FROM thread_tasks tt
-            WHERE tt.thread_id = threads.id
-            LIMIT 1
-          )
-        )
+      DELETE FROM thread_context_blocks
+      WHERE thread_id IN (
+        SELECT id FROM threads
+        WHERE id NOT IN (SELECT DISTINCT thread_id FROM thread_tasks)
       )
     `);
 
-    // Step 3: Make the column NOT NULL
+    await queryRunner.query(`
+      DELETE FROM thread_tags
+      WHERE thread_id IN (
+        SELECT id FROM threads
+        WHERE id NOT IN (SELECT DISTINCT thread_id FROM thread_tasks)
+      )
+    `);
+
+    await queryRunner.query(`
+      DELETE FROM thread_participants
+      WHERE thread_id IN (
+        SELECT id FROM threads
+        WHERE id NOT IN (SELECT DISTINCT thread_id FROM thread_tasks)
+      )
+    `);
+
+    await queryRunner.query(`
+      DELETE FROM threads
+      WHERE id NOT IN (SELECT DISTINCT thread_id FROM thread_tasks)
+    `);
+
+    await queryRunner.query(`
+      UPDATE threads
+      SET parent_task_id = COALESCE(
+        (
+          SELECT ar.parent_task_id
+          FROM agent_runs ar
+          WHERE ar.parent_task_id IN (
+            SELECT tt.task_id FROM thread_tasks tt WHERE tt.thread_id = threads.id
+          )
+          ORDER BY ar.created_at ASC
+          LIMIT 1
+        ),
+        (
+          SELECT tt.task_id
+          FROM thread_tasks tt
+          WHERE tt.thread_id = threads.id
+          ORDER BY tt.rowid ASC
+          LIMIT 1
+        )
+      )
+      WHERE parent_task_id IS NULL
+    `);
+
+    await queryRunner.query('PRAGMA foreign_keys=OFF');
+
     await queryRunner.query(`
       CREATE TABLE threads_new (
         id TEXT PRIMARY KEY,
@@ -42,36 +70,46 @@ export class AddParentTaskIdToThread1770613987 implements MigrationInterface {
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
         deleted_at DATETIME,
-        FOREIGN KEY (created_by_actor_id) REFERENCES actors(id),
-        FOREIGN KEY (parent_task_id) REFERENCES tasks(id) ON DELETE RESTRICT
+        FOREIGN KEY(parent_task_id) REFERENCES tasks(id) ON DELETE RESTRICT
       )
     `);
 
-    // Copy data to new table
     await queryRunner.query(`
-      INSERT INTO threads_new (id, title, created_by_actor_id, parent_task_id, row_version, created_at, updated_at, deleted_at)
-      SELECT id, title, created_by_actor_id, parent_task_id, row_version, created_at, updated_at, deleted_at
+      INSERT INTO threads_new (
+        id,
+        title,
+        created_by_actor_id,
+        parent_task_id,
+        row_version,
+        created_at,
+        updated_at,
+        deleted_at
+      )
+      SELECT
+        id,
+        title,
+        created_by_actor_id,
+        parent_task_id,
+        row_version,
+        created_at,
+        updated_at,
+        deleted_at
       FROM threads
     `);
 
-    // Drop old table
     await queryRunner.query(`DROP TABLE threads`);
-
-    // Rename new table
     await queryRunner.query(`ALTER TABLE threads_new RENAME TO threads`);
 
-    // Recreate indexes
-    await queryRunner.query(`
-      CREATE INDEX idx_threads_created_by_actor_id ON threads(created_by_actor_id)
-    `);
+    await queryRunner.query(
+      `CREATE INDEX idx_threads_parent_task_id ON threads(parent_task_id)`,
+    );
 
-    await queryRunner.query(`
-      CREATE INDEX idx_threads_parent_task_id ON threads(parent_task_id)
-    `);
+    await queryRunner.query('PRAGMA foreign_keys=ON');
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Recreate table without parent_task_id
+    await queryRunner.query('PRAGMA foreign_keys=OFF');
+
     await queryRunner.query(`
       CREATE TABLE threads_old (
         id TEXT PRIMARY KEY,
@@ -80,27 +118,33 @@ export class AddParentTaskIdToThread1770613987 implements MigrationInterface {
         row_version INTEGER NOT NULL,
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
-        deleted_at DATETIME,
-        FOREIGN KEY (created_by_actor_id) REFERENCES actors(id)
+        deleted_at DATETIME
       )
     `);
 
-    // Copy data back (excluding parent_task_id)
     await queryRunner.query(`
-      INSERT INTO threads_old (id, title, created_by_actor_id, row_version, created_at, updated_at, deleted_at)
-      SELECT id, title, created_by_actor_id, row_version, created_at, updated_at, deleted_at
+      INSERT INTO threads_old (
+        id,
+        title,
+        created_by_actor_id,
+        row_version,
+        created_at,
+        updated_at,
+        deleted_at
+      )
+      SELECT
+        id,
+        title,
+        created_by_actor_id,
+        row_version,
+        created_at,
+        updated_at,
+        deleted_at
       FROM threads
     `);
 
-    // Drop new table
     await queryRunner.query(`DROP TABLE threads`);
-
-    // Rename old table back
     await queryRunner.query(`ALTER TABLE threads_old RENAME TO threads`);
-
-    // Recreate index
-    await queryRunner.query(`
-      CREATE INDEX idx_threads_created_by_actor_id ON threads(created_by_actor_id)
-    `);
+    await queryRunner.query('PRAGMA foreign_keys=ON');
   }
 }

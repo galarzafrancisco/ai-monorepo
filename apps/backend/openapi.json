@@ -7267,7 +7267,7 @@
           },
           "parentTaskId": {
             "type": "string",
-            "description": "ID of the parent task that this thread belongs to",
+            "description": "Parent task ID that owns the thread",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "tagNames": {
@@ -7445,8 +7445,7 @@
           "parentTaskId": {
             "type": "string",
             "description": "Parent task ID that created the thread",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "tasks": {
             "description": "Tasks attached to this thread",
@@ -7496,6 +7495,7 @@
           "id",
           "title",
           "createdByActor",
+          "parentTaskId",
           "tasks",
           "referencedContextBlocks",
           "tags",
