@@ -55,12 +55,24 @@ export function PopShell({
     }
   }
 
+  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key !== "Enter") return;
+    if (!event.metaKey && !event.ctrlKey) return;
+
+    event.preventDefault();
+    save();
+  }
+
 
 
   return (
     <div className={`pop-shell__overlay ${open ? "pop-shell__overlay--open" : ""}`}>
       <div className="pop-shell__space" onClick={close} />
-      <div className={`pop-shell__main-panel ${open ? "pop-shell__main-panel--open" : ""}`}>
+      <div
+        className={`pop-shell__main-panel ${open ? "pop-shell__main-panel--open" : ""}`}
+        onKeyDown={handleKeyDown}
+      >
         <div className="pop-shell__main-title">
           {headerLeft ?? (
             <div onClick={close}>
