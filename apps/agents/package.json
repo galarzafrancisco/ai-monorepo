@@ -11,7 +11,8 @@
     "start:reviewer": "dotenv -e .env.reviewer npm run start",
     "start:qwen": "dotenv -e .env.qwen npm run start",
     "start:gemini": "dotenv -e .env.gemini npm run start",
-    "start:all": "concurrently -n claude,codex,reviewer,qwen,gemini -c auto \"npm run start:claude\" \"npm run start:codex\" \"npm run start:reviewer\" \"npm run start:qwen\" \"npm run start:gemini\""
+    "start:all": "concurrently -n claude,codex,reviewer,qwen,gemini -c auto \"npm run start:claude\" \"npm run start:codex\" \"npm run start:reviewer\" \"npm run start:qwen\" \"npm run start:gemini\"",
+    "dev": "dotenv -e .env.gemini tsx src/dev.ts"
   },
   "dependencies": {
     "@taico/client": "*",
