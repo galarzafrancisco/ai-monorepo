@@ -131,7 +131,6 @@ export class AuthorizationService {
 
   /**
    * Get authorization flow details for the consent screen
-   * TODO: The return type has to be a pure type (we are in a service)
    */
   async getConsentMetadataFromFlowId(flowId: string): Promise<ConsentMetadata> {
     const mcpAuthFlow = await this.authJourneysService.findMcpAuthFlowById(
