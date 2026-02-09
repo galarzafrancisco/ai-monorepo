@@ -38,6 +38,8 @@ import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './agent/prompts';
 import { createQwen3CoderNext } from './agent/qwen3-coder-next';
+import { ThreadEntity } from 'src/threads/thread.entity';
+import { AgentRunEntity } from 'src/agent-runs/agent-run.entity';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -56,6 +58,10 @@ export class AppInitRunner implements OnApplicationBootstrap {
     private readonly actorRepository: Repository<ActorEntity>,
     @InjectRepository(AgentEntity)
     private readonly agentRepository: Repository<AgentEntity>,
+    @InjectRepository(ThreadEntity)
+    private readonly threadRepository: Repository<ThreadEntity>,
+    @InjectRepository(AgentRunEntity)
+    private readonly agentRunRepository: Repository<AgentRunEntity>,
   ) {}
 
   async onApplicationBootstrap() {
@@ -63,6 +69,9 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
     // Run actor migration first (before ensuring users/agents)
     await this.ensureActorMigration();
+
+    // Run thread parent task ID backfill
+    await this.ensureThreadParentTaskIds();
 
     await this.ensureAgents();
     await this.ensureMcpServers();
@@ -154,6 +163,69 @@ export class AppInitRunner implements OnApplicationBootstrap {
     }
 
     this.logger.log('Actor migration check completed.');
+  }
+
+  /**
+   * Backfill parentTaskId for existing threads without it.
+   * This is idempotent - safe to run on every container startup.
+   */
+  async ensureThreadParentTaskIds() {
+    this.logger.log('Starting thread parent task ID backfill check...');
+
+    // Find all threads without a parent task ID
+    const threadsWithoutParent = await this.threadRepository.find({
+      where: { parentTaskId: IsNull() },
+      relations: ['tasks'],
+    });
+
+    if (threadsWithoutParent.length > 0) {
+      this.logger.log(
+        `Found ${threadsWithoutParent.length} threads without parent task ID, backfilling...`,
+      );
+
+      for (const thread of threadsWithoutParent) {
+        try {
+          let parentTaskId: string | null = null;
+
+          // Get task IDs from the thread
+          const taskIds = thread.tasks.map((task) => task.id);
+
+          if (taskIds.length === 0) {
+            this.logger.warn(
+              `Thread ${thread.id} has no tasks, skipping backfill`,
+            );
+            continue;
+          }
+
+          // Try to find the earliest agent run whose parentTaskId is in the thread's tasks
+          const earliestRun = await this.agentRunRepository.findOne({
+            where: taskIds.map((taskId) => ({ parentTaskId: taskId })),
+            order: { createdAt: 'ASC' },
+          });
+
+          if (earliestRun && earliestRun.parentTaskId) {
+            parentTaskId = earliestRun.parentTaskId;
+          } else {
+            // Fallback: use the first task in the thread
+            parentTaskId = taskIds[0];
+          }
+
+          // Update the thread
+          thread.parentTaskId = parentTaskId;
+          await this.threadRepository.save(thread);
+          this.logger.log(
+            `Backfilled parent task ID for thread ${thread.id}: ${parentTaskId}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Failed to backfill parent task ID for thread ${thread.id}`,
+            error,
+          );
+        }
+      }
+    }
+
+    this.logger.log('Thread parent task ID backfill check completed.');
   }
 
   async ensureAgents() {

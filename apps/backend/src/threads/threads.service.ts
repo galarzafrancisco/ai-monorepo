@@ -423,6 +423,10 @@ export class ThreadsService {
       throw new Error(`Thread ${thread.id} is missing createdByActor relation`);
     }
 
+    if (!thread.parentTaskId) {
+      throw new Error(`Thread ${thread.id} is missing parentTaskId - backfill may not have run`);
+    }
+
     return {
       id: thread.id,
       title: thread.title,

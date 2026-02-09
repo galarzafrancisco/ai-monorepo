@@ -31,8 +31,8 @@ export class ThreadEntity {
   @JoinColumn({ name: 'created_by_actor_id' })
   createdByActor?: ActorEntity;
 
-  @Column({ type: 'uuid', nullable: false, name: 'parent_task_id' })
-  parentTaskId!: string;
+  @Column({ type: 'uuid', nullable: true, name: 'parent_task_id' })
+  parentTaskId?: string;
 
   @ManyToOne(() => TaskEntity)
   @JoinColumn({ name: 'parent_task_id' })
