@@ -13,6 +13,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { CommentEntity } from './comment.entity';
+import { ArtefactEntity } from './artefact.entity';
 import { InputRequestEntity } from './input-request.entity';
 import { TagEntity } from '../meta/tag.entity';
 import { TaskStatus } from './enums';
@@ -66,6 +67,9 @@ export class TaskEntity {
 
   @OneToMany(() => CommentEntity, (comment) => comment.task, { cascade: true })
   comments!: CommentEntity[];
+
+  @OneToMany(() => ArtefactEntity, (artefact) => artefact.task, { cascade: true })
+  artefacts!: ArtefactEntity[];
 
   @OneToMany(() => InputRequestEntity, (inputRequest) => inputRequest.task, {
     cascade: true,

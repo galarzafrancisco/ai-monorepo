@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ActorResponseDto } from './ActorResponseDto.js';
+import type { ArtefactResponseDto } from './ArtefactResponseDto.js';
 import type { CommentResponseDto } from './CommentResponseDto.js';
 import type { InputRequestResponseDto } from './InputRequestResponseDto.js';
 import type { TagResponseDto } from './TagResponseDto.js';
@@ -39,6 +40,10 @@ export type TaskResponseDto = {
      * Comments associated with the task
      */
     comments: Array<CommentResponseDto>;
+    /**
+     * Artefacts associated with the task
+     */
+    artefacts: Array<ArtefactResponseDto>;
     /**
      * Input requests associated with the task
      */

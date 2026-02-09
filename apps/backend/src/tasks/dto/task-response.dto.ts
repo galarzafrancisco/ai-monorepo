@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from '../enums';
 import { CommentResponseDto } from './comment-response.dto';
+import { ArtefactResponseDto } from './artefact-response.dto';
 import { InputRequestResponseDto } from './input-request-response.dto';
 import { TagResponseDto } from './tag-response.dto';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
@@ -62,6 +63,12 @@ export class TaskResponseDto {
   comments!: CommentResponseDto[];
 
   @ApiProperty({
+    description: 'Artefacts associated with the task',
+    type: () => [ArtefactResponseDto],
+  })
+  artefacts!: ArtefactResponseDto[];
+
+  @ApiProperty({
     description: 'Input requests associated with the task',
     type: () => [InputRequestResponseDto],
   })
@@ -121,6 +128,7 @@ export class TaskResponseDto {
         : null,
       sessionId: task.sessionId ?? '',
       comments: task.comments?.map((c) => CommentResponseDto.fromEntity(c)) ?? [],
+      artefacts: task.artefacts?.map((a) => ArtefactResponseDto.fromEntity(a)) ?? [],
       inputRequests:
         task.inputRequests?.map((ir) =>
           InputRequestResponseDto.fromEntity(ir),
@@ -165,6 +173,7 @@ export class TaskResponseDto {
         : null,
       sessionId: result.sessionId ?? '',
       comments: result.comments.map((c) => CommentResponseDto.fromResult(c)),
+      artefacts: result.artefacts.map((a) => ArtefactResponseDto.fromResult(a)),
       inputRequests: result.inputRequests.map((ir) =>
         InputRequestResponseDto.fromResult(ir),
       ),

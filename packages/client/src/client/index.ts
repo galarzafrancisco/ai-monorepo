@@ -15,6 +15,7 @@ export type { AgentRunListResponseDto } from './models/AgentRunListResponseDto.j
 export type { AgentRunResponseDto } from './models/AgentRunResponseDto.js';
 export type { AnswerInputRequestDto } from './models/AnswerInputRequestDto.js';
 export type { AppendBlockDto } from './models/AppendBlockDto.js';
+export type { ArtefactResponseDto } from './models/ArtefactResponseDto.js';
 export type { AssignTaskDto } from './models/AssignTaskDto.js';
 export type { AttachTaskDto } from './models/AttachTaskDto.js';
 export { AuthJourneyResponseDto } from './models/AuthJourneyResponseDto.js';
@@ -34,6 +35,7 @@ export type { ContextBlockSummaryResponseDto } from './models/ContextBlockSummar
 export type { ContextTagResponseDto } from './models/ContextTagResponseDto.js';
 export { CreateAgentDto } from './models/CreateAgentDto.js';
 export type { CreateAgentRunDto } from './models/CreateAgentRunDto.js';
+export type { CreateArtefactDto } from './models/CreateArtefactDto.js';
 export type { CreateBlockDto } from './models/CreateBlockDto.js';
 export type { CreateCommentDto } from './models/CreateCommentDto.js';
 export type { CreateConnectionDto } from './models/CreateConnectionDto.js';
