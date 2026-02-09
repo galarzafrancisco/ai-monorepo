@@ -1,4 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
+import { randomUUID } from 'crypto';
 
 export class AddStateContextBlockToThread1739071200
   implements MigrationInterface
@@ -13,12 +14,11 @@ export class AddStateContextBlockToThread1739071200
     const threads = await queryRunner.query(`
       SELECT id, title, created_by_actor_id, created_at
       FROM threads
-      WHERE deleted_at IS NULL
     `);
 
     for (const thread of threads) {
       // Generate a UUID for the context block
-      const contextBlockId = this.generateUuid();
+      const contextBlockId = randomUUID();
 
       // Create the state context block
       await queryRunner.query(
@@ -135,17 +135,5 @@ export class AddStateContextBlockToThread1739071200
     await queryRunner.query(`
       CREATE INDEX idx_threads_created_by_actor ON threads(created_by_actor_id)
     `);
-  }
-
-  private generateUuid(): string {
-    // Simple UUID v4 generator
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-      /[xy]/g,
-      function (c) {
-        const r = (Math.random() * 16) | 0;
-        const v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-      },
-    );
   }
 }

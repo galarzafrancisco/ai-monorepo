@@ -63,10 +63,22 @@ export class ThreadsService {
     // Generate title if not provided
     const title = input.title || this.inferTitle(createdByActor.slug);
 
+    // Resolve parent task if provided
+    let parentTask: TaskEntity | null = null;
+    if (input.taskIds && input.taskIds.length > 0) {
+      parentTask = await this.taskRepository.findOne({
+        where: { id: input.taskIds[0] },
+      });
+    }
+
     // Create state context block for the thread
+    const stateBlockContent = parentTask
+      ? `This thread was created to achieve task ${parentTask.name} (id ${parentTask.id}).`
+      : `This thread was created to track work related to "${title}".`;
+
     const stateBlock = await this.contextService.createBlock({
       title: `State: ${title}`,
-      content: `This thread was created to track work related to "${title}".`,
+      content: stateBlockContent,
       createdByActorId: input.createdByActorId,
     });
 
