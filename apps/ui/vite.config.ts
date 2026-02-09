@@ -3,6 +3,12 @@ import react from "@vitejs/plugin-react";
 
 // If you prefer no plugin, you can omit react() and rely on default.
 // The plugin adds fast refresh and sensible defaults.
+const uiPort = process.env.VITE_UI_PORT
+  ? Number(process.env.VITE_UI_PORT)
+  : process.env.VITE_PORT
+    ? Number(process.env.VITE_PORT) + 1
+    : 5174;
+
 export default defineConfig({
   plugins: [react()],
   base: '/beta/',
@@ -11,7 +17,7 @@ export default defineConfig({
     allowedHosts: [
       'air.local'
     ],
-    port: Number(process.env.VITE_PORT) || 5173,
+    port: uiPort,
     proxy: {
       "/api": {
         target: `http://localhost:${process.env.VITE_BACKEND_PORT || 3000}`,
