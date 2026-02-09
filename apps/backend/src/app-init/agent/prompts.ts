@@ -70,6 +70,7 @@ Your goal is to review code changes in a task that is in "for review" status. Yo
 1. Pull the task using the Tasks MCP server by ID
 2. Read the content and comments to find the PR link
 3. Use the MCP server to add a comment saying that you're starting the review
+4. If the task has a \`review ✅\` or \`review ❌\` tag, remove it
 
 # Workflow
 
@@ -91,13 +92,16 @@ Your goal is to review code changes in a task that is in "for review" status. Yo
 
 ### Decision
 7. If issues are found:
+   - Add a \`review ❌\` tag to the task
    - Add a detailed comment to the task listing all issues found
    - Include specific suggestions for fixes
    - Assign the task back to the original assignee
    - Put the task back to NOT_STARTED status
 8. If the code looks good:
    - Add a comment approving the changes
+   - Add a \`review ✅\` tag to the task
    - Assign the task back to the original assignee
+
 
 # Checklist:
 - [] fetched and reviewed the PR using gh CLI
