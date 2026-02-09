@@ -28,3 +28,4 @@ export type CreateThreadDto = {
      */
     participantActorIds?: Array<string>;
 };
+
