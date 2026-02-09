@@ -6,8 +6,10 @@ import { McpAuthorizationFlowEntity } from '../auth-journeys/entities';
 import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
-import { IntrospectTokenRequestDto } from './dto/introspect-token-request.dto';
-import { IntrospectTokenResponseDto } from './dto/introspect-token-response.dto';
+import {
+  IntrospectTokenInput,
+  IntrospectTokenResult,
+} from './dto/service/token.service.types';
 import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
 import { McpAuthorizationFlowStatus } from '../auth-journeys/enums/mcp-authorization-flow-status.enum';
@@ -382,33 +384,32 @@ export class TokenService {
    * Introspect a token to validate and return its metadata
    * Implements OAuth 2.0 Token Introspection (RFC 7662)
    */
-  // TODO: this is a service. Should not have DTOs with HTTP concerns as interfaces. Fix!
   async introspectToken(
-    request: IntrospectTokenRequestDto,
-  ): Promise<IntrospectTokenResponseDto> {
+    input: IntrospectTokenInput,
+  ): Promise<IntrospectTokenResult> {
     this.logger.debug(
-      `Introspecting token${request.client_id ? ` for client: ${request.client_id}` : ''}`,
+      `Introspecting token${input.client_id ? ` for client: ${input.client_id}` : ''}`,
     );
 
     let claims: AccessTokenClaims;
     try {
-      claims = await this.tokenVerifierService.verifyAndDecode(request.token);
+      claims = await this.tokenVerifierService.verifyAndDecode(input.token);
     } catch (error) {
       this.logger.warn(
         `Token introspection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
-      return { active: false } as IntrospectTokenResponseDto;
+      return { active: false };
     }
 
-    // If client_id was provided in the request, validate it matches the token (optional additional security)
+    // If client_id was provided in the input, validate it matches the token (optional additional security)
     // Per RFC 7662, client_id is not required in the request - it's extracted from the token
-    if (request.client_id && claims.client_id !== request.client_id) {
+    if (input.client_id && claims.client_id !== input.client_id) {
       this.logger.warn('Client ID mismatch during introspection');
-      return { active: false } as IntrospectTokenResponseDto;
+      return { active: false };
     }
 
-    // Token is valid - build the introspection response
-    const response: IntrospectTokenResponseDto = {
+    // Token is valid - build the introspection result
+    const result: IntrospectTokenResult = {
       active: true,
       token_type: TokenType.BEARER,
       client_id: claims.client_id,
@@ -427,6 +428,6 @@ export class TokenService {
     this.logger.log(
       `Token introspection successful for client: ${claims.client_id}`,
     );
-    return response;
+    return result;
   }
 }
