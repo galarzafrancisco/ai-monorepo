@@ -3454,6 +3454,38 @@
         "tags": [
           "Threads"
         ]
+      },
+      "delete": {
+        "operationId": "ThreadsController_deleteThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Thread deleted successfully"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a thread",
+        "tags": [
+          "Threads"
+        ]
       }
     },
     "/api/v1/threads/{id}/tasks": {

@@ -10,12 +10,13 @@ export type ThreadsContextValue = {
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
   getThread: (id: string) => Promise<Thread>;
+  deleteThread: (id: string) => Promise<void>;
 };
 
 const ThreadsContext = createContext<ThreadsContextValue | null>(null);
 
 export function ThreadsProvider({ children }: { children: React.ReactNode }) {
-  const { threads, isLoading, error, getThread } = useThreads();
+  const { threads, isLoading, error, getThread, deleteThread } = useThreads();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Provide a stable reference to avoid pointless rerenders.
@@ -27,6 +28,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       sectionTitle,
       setSectionTitle,
       getThread,
+      deleteThread,
     };
   }, [
     threads,
@@ -35,6 +37,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     sectionTitle,
     setSectionTitle,
     getThread,
+    deleteThread,
   ]);
 
   return <ThreadsContext.Provider value={value}>{children}</ThreadsContext.Provider>;
