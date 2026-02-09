@@ -3622,6 +3622,7 @@ export interface components {
              *     ]
              */
             statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
             /**
              * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
              * @example [
@@ -3630,7 +3631,7 @@ export interface components {
              */
             tagTriggers: string[];
             /**
-             * @description List of tool identifiers this agent is allowed to use
+             * @description List of MCP tool identifiers this agent is allowed to use
              * @example [
              *       "tasks.createTask",
              *       "tasks.readTask",
