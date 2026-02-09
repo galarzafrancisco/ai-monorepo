@@ -74,11 +74,6 @@ export type AppendThreadStateInput = {
   actorId?: string;
 };
 
-export type ThreadStateResult = {
-  id: string;
-  content: string;
-};
-
 // Result types (from service methods)
 export type ThreadResult = {
   id: string;
