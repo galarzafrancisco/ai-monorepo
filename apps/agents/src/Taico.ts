@@ -8,7 +8,10 @@ import {
   AgentRunService,
   type AgentResponseDto,
   type AgentRunResponseDto,
+  type AgentListResponseDto,
   type ProjectResponseDto,
+  type TaskListResponseDto,
+  type TaskResponseDto,
 } from "@taico/client";
 
 function isApiError(error: unknown): error is ApiError {
@@ -34,6 +37,10 @@ export class Taico {
       }
       throw error;
     }
+  }
+
+  async listAgents(isActive?: boolean): Promise<AgentListResponseDto> {
+    return AgentService.agentsControllerListAgents(isActive, 1, 100);
   }
 
   async getAgentPrompt(agentSlug: string): Promise<string> {
@@ -67,6 +74,21 @@ export class Taico {
       await TaskService.tasksControllerAddComment(taskId, { content: comment });
     } catch (error) {
       console.error(`Failed to post comment to task ${taskId}:`, error);
+    }
+  }
+
+  async listTasks(page: number = 1, limit: number = 20): Promise<TaskListResponseDto> {
+    return TaskService.tasksControllerListTasks(undefined, undefined, undefined, page, limit);
+  }
+
+  async getTask(taskId: string): Promise<TaskResponseDto | null> {
+    try {
+      return await TaskService.tasksControllerGetTask(taskId);
+    } catch (error: unknown) {
+      if (isApiError(error) && error.status === 404) {
+        return null;
+      }
+      throw error;
     }
   }
 
