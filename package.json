@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
+    "dev": "node scripts/dev.mjs",
     "build": "npm run build:prod",
     "start": "npm -w apps/backend run start:prod",
     "postinstall": "echo 'Skipping agent-api setup in postinstall'",
