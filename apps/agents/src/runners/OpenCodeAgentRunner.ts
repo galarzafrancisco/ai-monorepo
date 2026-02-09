@@ -28,7 +28,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
     let lastError: unknown;
     const PORT_START = 4000;
-    const PORT_END = 4010;
+    const PORT_END = 4100;
 
     for (let port = PORT_START; port < PORT_END; port++) {
       try {
