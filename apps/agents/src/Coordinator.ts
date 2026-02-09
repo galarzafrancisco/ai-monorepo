@@ -4,7 +4,7 @@ import type { AgentResponseDto, InputRequestResponseDto, TaskResponseDto } from 
 import { Taico } from "./Taico.js";
 import { ACCESS_TOKEN, AGENT_SLUG, BASE_URL } from "./helpers/config.js";
 import { prepareWorkspace } from "./helpers/prepareWorkspace.js";
-import { getSession, setSession } from "./helpers/sessionStore.js";
+import { setSession } from "./helpers/sessionStore.js";
 import { ClaudeAgentRunner } from "./runners/ClaudeAgentRunner.js";
 import { SocketIOTasksTransport, TaskEvent } from "./SocketIOTasksTransport.js"
 import { BaseAgentRunner } from "./runners/BaseAgentRunner.js";
@@ -121,82 +121,79 @@ export class Coordinator {
       console.log(`- Task ${taskId} already in progress. Skipping. ⏳`);
       return;
     }
-
-    const hydratedTask = await this.hydrateTask(task, tasksById);
-    if (!hydratedTask) {
-      console.log(`- Task ${taskId} no longer available. Skipping. ❌`);
-      return;
-    }
-
-    const dependencyBlocked = await this.hasPendingDependencies(hydratedTask, tasksById);
-    if (dependencyBlocked) {
-      console.log(`- Task ${taskId} has pending dependencies. Skipping. ❌`);
-      return;
-    }
-
-    const pendingInputRequests = this.getPendingInputRequests(hydratedTask);
-    if (pendingInputRequests.length > 0) {
-      await this.triggerInputRequests(hydratedTask, pendingInputRequests, agentsByActorId);
-      console.log(`- Task ${taskId} has pending input requests. Skipping. ❌`);
-      return;
-    }
-
-    // Get the agent
-    const actor = hydratedTask.assigneeActor;
-    if (!actor?.slug) {
-      console.log(`- Task ${taskId} not assigned or missing actor slug. Skipping. ❌`);
-      return;
-    }
-    const agent = agentsByActorId?.get(actor.id) ?? await this.client.getAgent(actor.slug);
-    if (!agent) {
-      console.log(`- Agent @${actor.slug} not found. Skipping. ❌`);
-      return;
-    }
-    console.log(`- Agent: @${agent.slug}`);
-    if (agent.slug != AGENT_SLUG) {
-      console.log(`- We only react to @${AGENT_SLUG}. Skipping. ❌`);
-      return;
-    }
-
-    // Do we have runners for this agent?
-    if (agent.type !== "claude" && agent.type !== "opencode" && agent.type !== "adk") {
-      console.log(`- Agent @${actor.slug} of type "${agent.type}" not supported. Skipping. ❌`);
-      return;
-    }
-
-    // Does the agent respond to this status?
-    if (!agent.statusTriggers.includes(hydratedTask.status)) {
-      console.log(`- Agent @${agent.slug} doesn't react to status '${hydratedTask.status}'. Skip. ❌`);
-      return;
-    }
-
-    if (agent.tagTriggers.length > 0) {
-      const taskTags = new Set(hydratedTask.tags?.map((tag) => tag.name));
-      const hasMatchingTag = agent.tagTriggers.some((tag) => taskTags.has(tag));
-      if (!hasMatchingTag) {
-        console.log(`- Agent @${agent.slug} requires tag triggers. Skip. ❌`);
-        return;
-      }
-    }
-
-    if (!this.concurrencyStore.canRun(agent.actorId, this.getConcurrencyLimit(agent))) {
-      console.log(`- Agent @${agent.slug} at concurrency limit. Skip. ❌`);
-      return;
-    }
-
-    // Extract project slug from tags and get project repo URL
-    let repoUrl: string | null = null;
-    repoUrl = await this.resolveRepoUrl(hydratedTask);
-
-    console.log(`- ✅ Conditions met. @${agent.slug} starting to work on task "${task.name}" 🦄`);
-
-    // Load session
-    const sessionId = getSession(agent.actorId, taskId);
-
     this.inFlightTaskIds.add(taskId);
     let runStarted = false;
+    let runActorId: string | null = null;
 
     try {
+      const hydratedTask = await this.hydrateTask(task, tasksById);
+      if (!hydratedTask) {
+        console.log(`- Task ${taskId} no longer available. Skipping. ❌`);
+        return;
+      }
+
+      const dependencyBlocked = await this.hasPendingDependencies(hydratedTask, tasksById);
+      if (dependencyBlocked) {
+        console.log(`- Task ${taskId} has pending dependencies. Skipping. ❌`);
+        return;
+      }
+
+      const pendingInputRequests = this.getPendingInputRequests(hydratedTask);
+      if (pendingInputRequests.length > 0) {
+        await this.triggerInputRequests(hydratedTask, pendingInputRequests, agentsByActorId);
+        console.log(`- Task ${taskId} has pending input requests. Skipping. ❌`);
+        return;
+      }
+
+      // Get the agent
+      const actor = hydratedTask.assigneeActor;
+      if (!actor?.slug) {
+        console.log(`- Task ${taskId} not assigned or missing actor slug. Skipping. ❌`);
+        return;
+      }
+      const agent = agentsByActorId?.get(actor.id) ?? await this.client.getAgent(actor.slug);
+      if (!agent) {
+        console.log(`- Agent @${actor.slug} not found. Skipping. ❌`);
+        return;
+      }
+      console.log(`- Agent: @${agent.slug}`);
+      if (agent.slug != AGENT_SLUG) {
+        console.log(`- We only react to @${AGENT_SLUG}. Skipping. ❌`);
+        return;
+      }
+
+      // Do we have runners for this agent?
+      if (agent.type !== "claude" && agent.type !== "opencode" && agent.type !== "adk") {
+        console.log(`- Agent @${actor.slug} of type "${agent.type}" not supported. Skipping. ❌`);
+        return;
+      }
+
+      // Does the agent respond to this status?
+      if (!agent.statusTriggers.includes(hydratedTask.status)) {
+        console.log(`- Agent @${agent.slug} doesn't react to status '${hydratedTask.status}'. Skip. ❌`);
+        return;
+      }
+
+      if (agent.tagTriggers.length > 0) {
+        const taskTags = new Set(hydratedTask.tags?.map((tag) => tag.name));
+        const hasMatchingTag = agent.tagTriggers.some((tag) => taskTags.has(tag));
+        if (!hasMatchingTag) {
+          console.log(`- Agent @${agent.slug} requires tag triggers. Skip. ❌`);
+          return;
+        }
+      }
+
+      if (!this.concurrencyStore.canRun(agent.actorId, this.getConcurrencyLimit(agent))) {
+        console.log(`- Agent @${agent.slug} at concurrency limit. Skip. ❌`);
+        return;
+      }
+
+      // Extract project slug from tags and get project repo URL
+      let repoUrl: string | null = null;
+      repoUrl = await this.resolveRepoUrl(hydratedTask);
+
+      console.log(`- ✅ Conditions met. @${agent.slug} starting to work on task "${task.name}" 🦄`);
+
       // Prep workspace
       const workDir = await prepareWorkspace(taskId, agent.actorId, repoUrl);
       console.log(`- workspace prepped`);
@@ -216,6 +213,7 @@ export class Coordinator {
 
       this.concurrencyStore.increment(agent.actorId);
       runStarted = true;
+      runActorId = agent.actorId;
 
       const results = await runner.run(
         {
@@ -236,7 +234,7 @@ export class Coordinator {
             });
           },
           onSession: (sessionId: string) => {
-            if (!sessionId) {
+            if (sessionId) {
               setSession(agent.actorId, taskId, sessionId);
             }
           },
@@ -264,8 +262,8 @@ export class Coordinator {
       // Force a comment
       this.client.addComment(taskId, `❌ Something went wrong ❌\n\n${error}`);
     } finally {
-      if (runStarted) {
-        this.concurrencyStore.decrement(agent.actorId);
+      if (runStarted && runActorId) {
+        this.concurrencyStore.decrement(runActorId);
       }
       this.inFlightTaskIds.delete(taskId);
     }
@@ -297,7 +295,7 @@ export class Coordinator {
     return null;
   }
 
-  private getPendingInputRequests(task: TaskResponseDto | TaskWirePayload): InputRequestResponseDto[] {
+  private getPendingInputRequests(task: TaskResponseDto): InputRequestResponseDto[] {
     const inputRequests = task.inputRequests ?? [];
     return inputRequests.filter((request) => !request.answer && !request.resolvedAt);
   }
@@ -388,7 +386,7 @@ export class Coordinator {
             });
           },
           onSession: (newSessionId: string) => {
-            if (!newSessionId) {
+            if (newSessionId) {
               setSession(agent.actorId, taskId, newSessionId);
             }
           },
@@ -438,13 +436,13 @@ export class Coordinator {
     task: TaskWirePayload | TaskResponseDto,
     tasksById?: Map<string, TaskResponseDto>
   ): Promise<TaskResponseDto | null> {
-    if ("inputRequests" in task && "dependsOnIds" in task) {
-      return task as TaskResponseDto;
-    }
-
     const cached = tasksById?.get(task.id);
     if (cached) {
       return cached;
+    }
+
+    if (this.isTaskResponseDto(task)) {
+      return task;
     }
 
     try {
@@ -453,6 +451,17 @@ export class Coordinator {
       console.error("Failed to hydrate task", error);
       return null;
     }
+  }
+
+  private isTaskResponseDto(task: TaskWirePayload | TaskResponseDto): task is TaskResponseDto {
+    if (task.assignee && typeof task.assignee === "object") {
+      return true;
+    }
+
+    const inputRequests = task.inputRequests ?? [];
+    return inputRequests.some(
+      (request) => request.answer !== null && typeof request.answer === "object"
+    );
   }
 
   private async hasPendingDependencies(
