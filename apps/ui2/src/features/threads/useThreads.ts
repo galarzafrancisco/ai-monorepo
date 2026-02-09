@@ -34,6 +34,11 @@ export const useThreads = () => {
     return await ThreadsService.getThread(id);
   }, []);
 
+  const deleteThread = useCallback(async (id: string) => {
+    await ThreadsService.deleteThread(id);
+    setThreads((prev) => prev.filter((thread) => thread.id !== id));
+  }, []);
+
   return {
     // UI feedback
     isLoading,
@@ -43,5 +48,6 @@ export const useThreads = () => {
     threads,
     loadThreads,
     getThread,
+    deleteThread,
   };
 };
