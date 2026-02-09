@@ -2987,6 +2987,11 @@ export interface components {
              */
             title?: string;
             /**
+             * @description ID of the parent task that this thread belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentTaskId: string;
+            /**
              * @description Array of tag names to associate with the thread
              * @example [
              *       "bug",

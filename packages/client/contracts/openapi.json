@@ -7265,6 +7265,11 @@
             "description": "Title of the thread. If not provided, will be auto-generated.",
             "example": "Implement authentication feature"
           },
+          "parentTaskId": {
+            "type": "string",
+            "description": "ID of the parent task that this thread belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
           "tagNames": {
             "description": "Array of tag names to associate with the thread",
             "example": [
@@ -7309,7 +7314,10 @@
               "type": "string"
             }
           }
-        }
+        },
+        "required": [
+          "parentTaskId"
+        ]
       },
       "TaskSummaryResponseDto": {
         "type": "object",
