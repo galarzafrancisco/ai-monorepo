@@ -3616,17 +3616,18 @@ export interface components {
              */
             modelId?: string | null;
             /**
-             * @description Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.
+             * @description Task statuses that trigger this agent to activate
              * @example [
-             *       "NOT_STARTED"
+             *       "NOT_STARTED",
+             *       "IN_PROGRESS"
              *     ]
              */
             statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
-            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
             /**
-             * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
+             * @description Task tags that trigger this agent to activate
              * @example [
-             *       "code"
+             *       "code",
+             *       "review"
              *     ]
              */
             tagTriggers: string[];
