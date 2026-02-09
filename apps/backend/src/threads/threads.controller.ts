@@ -128,6 +128,19 @@ export class ThreadsController {
     return ThreadResponseDto.fromResult(result);
   }
 
+  @Delete(':id')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a thread' })
+  @ApiNoContentResponse({ description: 'Thread deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async deleteThread(
+    @Param() params: ThreadParamsDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<void> {
+    await this.threadsService.deleteThread(params.id, user.actorId);
+  }
+
   @Post(':id/tasks')
   @RequireScopes(ThreadsScopes.WRITE.id)
   @ApiOperation({ summary: 'Attach a task to the thread' })

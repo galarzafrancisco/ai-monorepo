@@ -11,4 +11,8 @@ export class ThreadsService {
   static async getThread(id: string): Promise<Thread> {
     return await GeneratedThreadsService.threadsControllerGetThread(id);
   }
+
+  static async deleteThread(id: string): Promise<void> {
+    await GeneratedThreadsService.threadsControllerDeleteThread(id);
+  }
 }
