@@ -304,25 +304,26 @@ export function TaskDetailPage() {
       {/* Artefacts */}
       {task.artefacts && task.artefacts.length > 0 && (
         <DataRowContainer className='task-detail-page__section'>
-          <div className="task-detail-page__artefacts">
-            <Text size='2' weight='medium'>Artefacts</Text>
-            <div className="task-detail-page__artefacts-list">
-              {task.artefacts.map(artefact => (
+          {task.artefacts.map(artefact => (
+            <DataRow
+              key={artefact.id}
+              tags={[{ label: 'link', color: 'blue' as const }]}
+            >
+              <Text as='span' weight='medium' size='3'>
+                {artefact.name}
+              </Text>
+              <Text as='div' size='2'>
                 <a
-                  key={artefact.id}
                   href={artefact.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="task-detail-page__artefact"
+                  style={{ color: 'var(--accent)', textDecoration: 'underline' }}
                 >
-                  <Text size='2' weight='medium'>{artefact.name}</Text>
-                  <Text size='1' tone='muted' className="task-detail-page__artefact-link">
-                    {artefact.link.length > 60 ? artefact.link.substring(0, 60) + '...' : artefact.link}
-                  </Text>
+                  {artefact.link}
                 </a>
-              ))}
-            </div>
-          </div>
+              </Text>
+            </DataRow>
+          ))}
         </DataRowContainer>
       )}
 

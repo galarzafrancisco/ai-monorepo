@@ -280,42 +280,6 @@
   margin-left: var(--space-1);
 }
 
-/* Artefacts section */
-.task-detail-page__artefacts {
-  padding: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.task-detail-page__artefacts-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.task-detail-page__artefact {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-2);
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-subtle);
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s ease;
-}
-
-.task-detail-page__artefact:hover {
-  background: var(--surface-hover);
-  border-color: var(--accent);
-}
-
-.task-detail-page__artefact-link {
-  word-break: break-all;
-}
-
 /* Floating action button (FAB) for comments */
 .task-detail-fab {
   position: fixed;
