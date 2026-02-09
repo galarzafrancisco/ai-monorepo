@@ -27,7 +27,7 @@ npm run dev
 
 #### Running Multiple Stacks in Parallel
 
-To run multiple development stacks simultaneously (useful for testing or comparing branches), configure different ports using environment variables:
+To run multiple development stacks simultaneously (useful for testing or comparing branches), configure different ports using environment variables. In development, the backend will try the next available port if the requested one is in use.
 
 **Stack 1 (default ports):**
 ```bash
@@ -38,7 +38,7 @@ npm run dev
 
 **Stack 2 (custom ports):**
 ```bash
-PORT=3001 VITE_PORT=5174 npm run dev
+PORT=3001 VITE_PORT=5174 VITE_BACKEND_PORT=3001 npm run dev
 # Backend: http://localhost:3001
 # Frontend: http://localhost:5174
 ```
@@ -51,6 +51,7 @@ VITE_PORT=5173
 
 # .env.stack2
 PORT=3001
+VITE_BACKEND_PORT=3001
 VITE_PORT=5174
 ```
 

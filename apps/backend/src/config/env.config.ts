@@ -53,9 +53,12 @@ export interface AppConfig {
  * This should be called once at application startup
  */
 export function loadConfig(): AppConfig {
+  const backendPortValue =
+    process.env.BACKEND_PORT || process.env.PORT || '3000';
+
   const config: AppConfig = {
     // Server Configuration
-    port: parseInt(process.env.BACKEND_PORT || '3000', 10),
+    port: parseInt(backendPortValue, 10),
     nodeEnv: getEnv(),
 
     // Authorization Server URLs
