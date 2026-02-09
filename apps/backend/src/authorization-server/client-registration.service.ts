@@ -14,6 +14,7 @@ import { randomBytes } from 'crypto';
 import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { getConfig } from 'src/config/env.config';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ClientRegistrationService {
@@ -64,7 +65,7 @@ export class ClientRegistrationService {
     }
     const client = this.clientRepository.create({
       clientId,
-      clientSecret: clientSecret ? this.hashSecret(clientSecret) : null,
+      clientSecret: clientSecret ? await this.hashSecret(clientSecret) : null,
       clientName: dto.client_name,
       redirectUris: dto.redirect_uris,
       grantTypes: dto.grant_types,
@@ -176,10 +177,25 @@ export class ClientRegistrationService {
     return randomBytes(config.clientSecretLength).toString('base64url');
   }
 
-  private hashSecret(secret: string): string {
-    // In a production system, use bcrypt or similar
-    // For now, we'll store it directly (NOT RECOMMENDED FOR PRODUCTION)
-    // TODO: Implement proper secret hashing with bcrypt
-    return secret;
+  /**
+   * Hash a client secret using bcrypt
+   * Uses 12 salt rounds for security (consistent with password hashing)
+   */
+  private async hashSecret(secret: string): Promise<string> {
+    const saltRounds = 12;
+    return bcrypt.hash(secret, saltRounds);
+  }
+
+  /**
+   * Verify a plaintext client secret against a hashed secret
+   * @param plaintext - The plaintext secret to verify
+   * @param hash - The hashed secret to compare against
+   * @returns True if the secret matches, false otherwise
+   */
+  async verifyClientSecret(
+    plaintext: string,
+    hash: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(plaintext, hash);
   }
 }
