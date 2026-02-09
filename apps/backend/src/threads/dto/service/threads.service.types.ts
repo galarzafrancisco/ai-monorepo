@@ -96,6 +96,13 @@ export type ThreadResult = {
   deletedAt: Date | null | undefined;
 };
 
+export type ThreadStateResult = {
+  threadId: string;
+  stateContextBlockId: string;
+  content: string;
+  updatedAt: Date;
+};
+
 export type ThreadListItemResult = {
   id: string;
   title: string;

@@ -4,7 +4,7 @@
 /* eslint-disable */
 export type UpdateThreadStateDto = {
     /**
-     * New content for the thread state
+     * New thread state content
      */
     content: string;
 };

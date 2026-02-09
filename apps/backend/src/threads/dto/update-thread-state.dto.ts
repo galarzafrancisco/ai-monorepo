@@ -1,10 +1,10 @@
-import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class UpdateThreadStateDto {
   @ApiProperty({
-    description: 'New content for the thread state',
-    example: 'Updated thread state with current progress',
+    description: 'New thread state content',
+    example: 'Work in progress on task execution flow.',
   })
   @IsString()
   @IsNotEmpty()

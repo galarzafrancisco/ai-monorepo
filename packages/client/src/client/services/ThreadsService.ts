@@ -122,6 +122,76 @@ export class ThreadsService {
         });
     }
     /**
+     * Get thread state
+     * @param id Thread UUID
+     * @returns ThreadStateResponseDto Thread state retrieved successfully
+     * @throws ApiError
+     */
+    public static threadsControllerGetThreadState(
+        id: string,
+    ): CancelablePromise<ThreadStateResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/threads/{id}/state',
+            path: {
+                'id': id,
+            },
+            errors: {
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Replace thread state
+     * @param id Thread UUID
+     * @param requestBody
+     * @returns ThreadStateResponseDto Thread state updated successfully
+     * @throws ApiError
+     */
+    public static threadsControllerUpdateThreadState(
+        id: string,
+        requestBody: UpdateThreadStateDto,
+    ): CancelablePromise<ThreadStateResponseDto> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/threads/{id}/state',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Append to thread state
+     * @param id Thread UUID
+     * @param requestBody
+     * @returns ThreadStateResponseDto Thread state appended successfully
+     * @throws ApiError
+     */
+    public static threadsControllerAppendThreadState(
+        id: string,
+        requestBody: AppendThreadStateDto,
+    ): CancelablePromise<ThreadStateResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/threads/{id}/state/append',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
      * Attach a task to the thread
      * @param id Thread UUID
      * @param requestBody

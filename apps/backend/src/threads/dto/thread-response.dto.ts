@@ -33,7 +33,7 @@ export class ThreadResponseDto {
   parentTaskId!: string | null;
 
   @ApiProperty({
-    description: 'State context block ID for this thread',
+    description: 'Context block ID for thread state tracking',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   stateContextBlockId!: string;

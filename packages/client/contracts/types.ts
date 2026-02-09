@@ -961,6 +961,41 @@ export interface paths {
         patch: operations["ThreadsController_updateThread"];
         trace?: never;
     };
+    "/api/v1/threads/{id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get thread state */
+        get: operations["ThreadsController_getThreadState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Replace thread state */
+        patch: operations["ThreadsController_updateThreadState"];
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/state/append": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Append to thread state */
+        post: operations["ThreadsController_appendThreadState"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/tasks": {
         parameters: {
             query?: never;
@@ -1040,41 +1075,6 @@ export interface paths {
         put?: never;
         /** Add a participant to the thread */
         post: operations["ThreadsController_addParticipant"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/threads/{id}/state": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the state of a thread */
-        get: operations["ThreadsController_getThreadState"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update the state of a thread */
-        patch: operations["ThreadsController_updateThreadState"];
-        trace?: never;
-    };
-    "/api/v1/threads/{id}/state/append": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Append content to the thread state */
-        post: operations["ThreadsController_appendThreadState"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3126,7 +3126,7 @@ export interface components {
              */
             parentTaskId?: string | null;
             /**
-             * @description State context block ID for this thread
+             * @description Context block ID for thread state tracking
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             stateContextBlockId: string;
@@ -3197,6 +3197,42 @@ export interface components {
              */
             totalPages: number;
         };
+        ThreadStateResponseDto: {
+            /**
+             * @description Thread ID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            threadId: string;
+            /**
+             * @description Context block ID for thread state
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            stateContextBlockId: string;
+            /**
+             * @description Current thread state content
+             * @example This thread was created to track work.
+             */
+            content: string;
+            /**
+             * @description When the thread state was last updated
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdateThreadStateDto: {
+            /**
+             * @description New thread state content
+             * @example Work in progress on task execution flow.
+             */
+            content: string;
+        };
+        AppendThreadStateDto: {
+            /**
+             * @description Content to append to the thread state
+             * @example Added more detail about current execution status.
+             */
+            content: string;
+        };
         AttachTaskDto: {
             /**
              * @description Task UUID to attach to the thread
@@ -3217,32 +3253,6 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             actorId: string;
-        };
-        ThreadStateResponseDto: {
-            /**
-             * @description State context block ID
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Current state content
-             * @example This thread was created to achieve task Implementation (id 123).
-             */
-            content: string;
-        };
-        UpdateThreadStateDto: {
-            /**
-             * @description New content for the thread state
-             * @example Updated thread state with current progress
-             */
-            content: string;
-        };
-        AppendThreadStateDto: {
-            /**
-             * @description Content to append to the thread state
-             * @example Additional progress notes
-             */
-            content: string;
         };
         CreateBlockDto: {
             /**
@@ -6500,6 +6510,118 @@ export interface operations {
             };
         };
     };
+    ThreadsController_getThreadState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread state retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadStateResponseDto"];
+                };
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_updateThreadState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateThreadStateDto"];
+            };
+        };
+        responses: {
+            /** @description Thread state updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadStateResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_appendThreadState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppendThreadStateDto"];
+            };
+        };
+        responses: {
+            /** @description Thread state appended successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadStateResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ThreadsController_attachTask: {
         parameters: {
             query?: never;
@@ -6686,118 +6808,6 @@ export interface operations {
                 content?: never;
             };
             /** @description Thread or actor not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ThreadsController_getThreadState: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Thread UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Thread state retrieved successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThreadStateResponseDto"];
-                };
-            };
-            /** @description Thread not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ThreadsController_updateThreadState: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Thread UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateThreadStateDto"];
-            };
-        };
-        responses: {
-            /** @description Thread state updated successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThreadStateResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Thread not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ThreadsController_appendThreadState: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Thread UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AppendThreadStateDto"];
-            };
-        };
-        responses: {
-            /** @description Content appended to thread state successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThreadStateResponseDto"];
-                };
-            };
-            /** @description Invalid input data */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Thread not found */
             404: {
                 headers: {
                     [name: string]: unknown;

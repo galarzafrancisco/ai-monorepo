@@ -54,6 +54,13 @@ export class ThreadEntity {
   })
   referencedContextBlocks!: ContextBlockEntity[];
 
+  @Column({ type: 'uuid', nullable: false, name: 'state_context_block_id' })
+  stateContextBlockId!: string;
+
+  @ManyToOne(() => ContextBlockEntity, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'state_context_block_id' })
+  stateContextBlock?: ContextBlockEntity;
+
   @ManyToMany(() => TagEntity, (tag) => tag.threads)
   @JoinTable({
     name: 'thread_tags',

@@ -14,6 +14,7 @@ import {
   ListThreadsInput,
   ThreadResult,
   ListThreadsResult,
+  ThreadStateResult,
   ActorResult,
   TagResult,
   TaskSummaryResult,
@@ -139,9 +140,23 @@ export class ThreadsService {
       await this.threadRepository.save(savedThread);
     }
 
+    const threadForState = await this.getThreadWithRelations(savedThread.id);
+    const initialStateContent = await this.buildInitialThreadStateContent(
+      threadForState,
+    );
+    const stateBlock = this.contextBlockRepository.create({
+      title: 'Thread state',
+      content: initialStateContent,
+      createdByActorId: input.createdByActorId,
+    });
+    const savedStateBlock = await this.contextBlockRepository.save(stateBlock);
+    threadForState.stateContextBlockId = savedStateBlock.id;
+    threadForState.stateContextBlock = savedStateBlock;
+    await this.threadRepository.save(threadForState);
+
     // Reload with relations
     const threadWithRelations = await this.getThreadWithRelations(
-      savedThread.id,
+      threadForState.id,
     );
 
     this.logger.log({
@@ -207,6 +222,55 @@ export class ThreadsService {
   async getThreadById(threadId: string): Promise<ThreadResult> {
     const thread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(thread);
+  }
+
+  async getThreadState(threadId: string): Promise<ThreadStateResult> {
+    this.logger.log({ message: 'Fetching thread state', threadId });
+
+    const { thread, block } = await this.getThreadStateBlock(threadId);
+
+    return {
+      threadId: thread.id,
+      stateContextBlockId: block.id,
+      content: block.content,
+      updatedAt: block.updatedAt,
+    };
+  }
+
+  async updateThreadState(
+    threadId: string,
+    content: string,
+  ): Promise<ThreadStateResult> {
+    this.logger.log({ message: 'Updating thread state', threadId });
+
+    const { thread, block } = await this.getThreadStateBlock(threadId);
+    block.content = content;
+    const savedBlock = await this.contextBlockRepository.save(block);
+
+    return {
+      threadId: thread.id,
+      stateContextBlockId: savedBlock.id,
+      content: savedBlock.content,
+      updatedAt: savedBlock.updatedAt,
+    };
+  }
+
+  async appendThreadState(
+    threadId: string,
+    content: string,
+  ): Promise<ThreadStateResult> {
+    this.logger.log({ message: 'Appending thread state', threadId });
+
+    const { thread, block } = await this.getThreadStateBlock(threadId);
+    block.content = `${block.content}\n${content}`;
+    const savedBlock = await this.contextBlockRepository.save(block);
+
+    return {
+      threadId: thread.id,
+      stateContextBlockId: savedBlock.id,
+      content: savedBlock.content,
+      updatedAt: savedBlock.updatedAt,
+    };
   }
 
   async listThreads(input: ListThreadsInput): Promise<ListThreadsResult> {
@@ -413,6 +477,7 @@ export class ThreadsService {
       .leftJoinAndSelect('tasks.comments', 'taskComments')
       .leftJoinAndSelect('tasks.inputRequests', 'taskInputRequests')
       .leftJoinAndSelect('thread.referencedContextBlocks', 'referencedContextBlocks')
+      .leftJoinAndSelect('thread.stateContextBlock', 'stateContextBlock')
       .leftJoinAndSelect('thread.tags', 'tags')
       .leftJoinAndSelect('thread.participants', 'participants')
       .innerJoin('thread.tasks', 'filterTask')
@@ -439,6 +504,7 @@ export class ThreadsService {
         'tasks.comments',
         'tasks.inputRequests',
         'referencedContextBlocks',
+        'stateContextBlock',
         'tags',
         'participants',
       ],
@@ -505,6 +571,47 @@ export class ThreadsService {
       .getRawOne<{ parentTaskId?: string }>();
 
     return parentRun?.parentTaskId ?? taskIds[0];
+  }
+
+  private async getThreadStateBlock(threadId: string): Promise<{
+    thread: ThreadEntity;
+    block: ContextBlockEntity;
+  }> {
+    const thread = await this.threadRepository.findOne({
+      where: { id: threadId },
+      relations: ['stateContextBlock'],
+    });
+
+    if (!thread) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    if (!thread.stateContextBlock) {
+      throw new ContextBlockNotFoundError(
+        thread.stateContextBlockId ?? 'unknown',
+      );
+    }
+
+    return { thread, block: thread.stateContextBlock };
+  }
+
+  private async buildInitialThreadStateContent(
+    thread: ThreadEntity,
+  ): Promise<string> {
+    const parentTaskId = await this.resolveParentTaskId(thread);
+    if (!parentTaskId) {
+      return 'This thread was created to track work.';
+    }
+
+    const parentTask = await this.taskRepository.findOne({
+      where: { id: parentTaskId },
+    });
+
+    if (!parentTask) {
+      return 'This thread was created to track work.';
+    }
+
+    return `This thread was created to achieve task ${parentTask.name} (id ${parentTask.id}).`;
   }
 
   private mapActorToResult(actor: ActorEntity): ActorResult {
