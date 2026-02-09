@@ -1,7 +1,7 @@
 // ClaudeAgentRunner.ts
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
-import { createOpencode, createOpencodeServer, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
-import { OpencodeMessageFormatter } from "src/formatters/OpencodeMessageFormatter.js";
+import { createOpencode, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
+import { OpencodeAsyncMessageFormatter, opencodePartToText } from "src/formatters/OpencodeMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
 import { RUN_ID_HEADER } from "src/helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
@@ -9,9 +9,14 @@ import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind = 'opencode';
 
-  private formatter = new OpencodeMessageFormatter();
+  // Mutex for process.chdir: serializes all instances so only one
+  // changes the working directory at a time.
+  private static chdirLock: Promise<void> = Promise.resolve();
+
+  private formatter = new OpencodeAsyncMessageFormatter();
   private client: OpencodeClient | null = null;
-  private close: () => void = () => { };
+  private abortController: AbortController = new AbortController();
+  private close: () => void = () => {};
   private model: Model;
 
   constructor(modelConfig: AgentModelConfig = {}) {
@@ -23,7 +28,53 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     };
   }
 
+  private static readonly CHDIR_TIMEOUT_MS = 60_000; // 1 min — if we wait longer, something is stuck
+
+  async initBullshit({ runId, cwd }: { runId: string, cwd: string }) {
+    // Disgusting hack to start the server in the working directory
+    // because Opencode has a bug where running a session in a different
+    // folder breaks realtime events (???)
+    //
+    // We serialize via a promise chain so parallel runners don't stomp
+    // on each other's cwd. A timeout prevents waiting forever if a
+    // previous init hangs.
+
+    let release!: () => void;
+    const acquired = new Promise<void>(resolve => { release = resolve; });
+
+    const prev = OpencodeAgentRunner.chdirLock;
+    OpencodeAgentRunner.chdirLock = acquired;
+
+    // Wait for the previous holder, but not forever.
+    await Promise.race([
+      prev,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(
+          `initBullshit: timed out after ${OpencodeAgentRunner.CHDIR_TIMEOUT_MS}ms waiting for chdir lock — a previous init is likely stuck`
+        )), OpencodeAgentRunner.CHDIR_TIMEOUT_MS),
+      ),
+    ]);
+
+    const originalCwd = process.cwd();
+    process.chdir(cwd);
+    try {
+      await this.init({ runId });
+    } finally {
+      process.chdir(originalCwd);
+      release();
+    }
+  }
+
+  private shutdown() {
+    // Belt and suspenders: abort signal + close().
+    // close() alone is broken (https://github.com/anomalyco/opencode/issues/3841)
+    // but we keep it for when they fix it.
+    this.abortController.abort();
+    this.close();
+  }
+
   async init({ runId }: { runId: string }) {
+
     console.log('Starting Opencode client');
 
     let lastError: unknown;
@@ -34,9 +85,11 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       try {
         console.log(`Trying port ${port}...`);
 
+        this.abortController = new AbortController();
         const opencode = await createOpencode({
           port,
           timeout: 20 * 3600,
+          signal: this.abortController.signal,
           config: {
             mcp: {
               tasks: {
@@ -72,7 +125,9 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
     // Start client
-    await this.init({ runId: ctx.runId });
+    await this.initBullshit({ runId: ctx.runId, cwd: ctx.cwd });
+    // await this.init({ runId: ctx.runId });
+    
     if (!this.client) {
       throw new Error("Failed to create Opencode client");
     }
@@ -88,60 +143,56 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
     });
     if (!session) {
-      // Close the server
-      if (this.close) {
-        this.close();
-      }
+      this.shutdown();
       throw new Error("Failed to create Opencode session");
     }
     console.log(`created session ${session.id} in ${session.directory}`);
+    // Session is created in the right dir ✅
 
-    const model = this.model;
+    const events = await this.client.event.subscribe(); // SSE stream
 
     const prompt: TextPartInput = {
       type: 'text',
       text: ctx.prompt,
     }
     let finalResult = '';
-    const { data: response } = await this.client.session.prompt({
+    this.client.session.promptAsync({
       path: {
         id: session.id,
       },
-      query: {
-        directory: ctx.cwd,
-      },
+      // NOTE: adding a directory breaks realtime events 🤷🏻‍♂️: https://github.com/anomalyco/opencode/issues/11522
+      // NOTE: Good news is we don't need it because the session carries the dir.
+      // NOTE: Acutally we need to. I've implemented a horrible hack to CD before starting the server.
+      // query: {
+      //   directory: ctx.cwd,
+      // },
       body: {
         model: {
-          providerID: model.providerId,
-          modelID: model.modelId,
+          providerID: this.model.providerId,
+          modelID: this.model.modelId,
         },
         parts: [prompt],
       }
     })
 
+    try {
+      for await (const event of events.stream) {
+        // Detect end of session
+        if (event.type == 'session.idle') {
+          console.log('session.idle');
+          break;
+        }
 
-    if (!response) {
-      // Close the server
-      if (this.close) {
-        this.close();
+        const message = this.formatter.format(event);
+        if (message) {
+          emit(message);
+        }
       }
-      return "No response";
+    } catch (error) {
+      console.error(error);
     }
 
-    const messages = this.formatter.format(response.info, response.parts);
-    messages.forEach(emit);
-
-
-    console.log("---------- FINAL RESULT ----------");
-    finalResult = this.formatter.format(response.info, [])[0];
-    console.log(finalResult);
-
-    emit(finalResult);
-
-    // Close the server
-    if (this.close) {
-      this.close();
-    }
+    this.shutdown();
 
     return finalResult;
   }
