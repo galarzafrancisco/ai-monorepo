@@ -111,11 +111,7 @@ export function ThreadDetailPage() {
   }
 }
 
-function ThreadDetailPageDesktop({
-  thread,
-}: {
-  thread: Thread;
-}) {
+function ThreadDetailPageDesktop({ thread }: { thread: Thread }) {
   const parentTask = getParentTask(thread);
   const childTasks = getChildTasks(thread, parentTask);
 
@@ -203,11 +199,7 @@ function ThreadDetailPageDesktop({
   );
 }
 
-function ThreadDetailPageMobile({
-  thread,
-}: {
-  thread: Thread;
-}) {
+function ThreadDetailPageMobile({ thread }: { thread: Thread }) {
   const parentTask = getParentTask(thread);
   const childTasks = getChildTasks(thread, parentTask);
 
