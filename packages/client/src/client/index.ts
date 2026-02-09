@@ -15,6 +15,7 @@ export type { AgentRunListResponseDto } from './models/AgentRunListResponseDto.j
 export type { AgentRunResponseDto } from './models/AgentRunResponseDto.js';
 export type { AnswerInputRequestDto } from './models/AnswerInputRequestDto.js';
 export type { AppendBlockDto } from './models/AppendBlockDto.js';
+export type { AppendThreadStateDto } from './models/AppendThreadStateDto.js';
 export type { ArtefactResponseDto } from './models/ArtefactResponseDto.js';
 export type { AssignTaskDto } from './models/AssignTaskDto.js';
 export type { AttachTaskDto } from './models/AttachTaskDto.js';
@@ -89,6 +90,7 @@ export { TaskSummaryResponseDto } from './models/TaskSummaryResponseDto.js';
 export type { ThreadListItemResponseDto } from './models/ThreadListItemResponseDto.js';
 export type { ThreadListResponseDto } from './models/ThreadListResponseDto.js';
 export type { ThreadResponseDto } from './models/ThreadResponseDto.js';
+export type { ThreadStateResponseDto } from './models/ThreadStateResponseDto.js';
 export { TokenExchangeRequestDto } from './models/TokenExchangeRequestDto.js';
 export type { TokenExchangeResponseDto } from './models/TokenExchangeResponseDto.js';
 export { TokenRequestDto } from './models/TokenRequestDto.js';
@@ -99,6 +101,7 @@ export type { UpdateConnectionDto } from './models/UpdateConnectionDto.js';
 export type { UpdateServerDto } from './models/UpdateServerDto.js';
 export type { UpdateTaskDto } from './models/UpdateTaskDto.js';
 export type { UpdateThreadDto } from './models/UpdateThreadDto.js';
+export type { UpdateThreadStateDto } from './models/UpdateThreadStateDto.js';
 export { UserResponseDto } from './models/UserResponseDto.js';
 
 export { ActorsService } from './services/ActorsService.js';

@@ -38,6 +38,9 @@ import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { ThreadsScopes } from './threads.scopes';
 import { CreateTagDto } from '../meta/dto/create-tag.dto';
+import { UpdateThreadStateDto } from './dto/update-thread-state.dto';
+import { AppendThreadStateDto } from './dto/append-thread-state.dto';
+import { ThreadStateResponseDto } from './dto/thread-state-response.dto';
 
 @ApiTags('Threads')
 @ApiCookieAuth('JWT-Cookie')
@@ -226,5 +229,59 @@ export class ThreadsController {
       dto.actorId,
     );
     return ThreadResponseDto.fromResult(result);
+  }
+
+  @Get(':id/state')
+  @ApiOperation({ summary: 'Get the state of a thread' })
+  @ApiOkResponse({
+    type: ThreadStateResponseDto,
+    description: 'Thread state retrieved successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async getThreadState(
+    @Param() params: ThreadParamsDto,
+  ): Promise<ThreadStateResponseDto> {
+    const result = await this.threadsService.getThreadState(params.id);
+    return result;
+  }
+
+  @Patch(':id/state')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @ApiOperation({ summary: 'Update the state of a thread (replace content)' })
+  @ApiOkResponse({
+    type: ThreadStateResponseDto,
+    description: 'Thread state updated successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async updateThreadState(
+    @Param() params: ThreadParamsDto,
+    @Body() dto: UpdateThreadStateDto,
+  ): Promise<ThreadStateResponseDto> {
+    const result = await this.threadsService.updateThreadState(
+      params.id,
+      dto.content,
+    );
+    return result;
+  }
+
+  @Post(':id/state/append')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @ApiOperation({ summary: 'Append content to the thread state' })
+  @ApiOkResponse({
+    type: ThreadStateResponseDto,
+    description: 'Content appended to thread state successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async appendThreadState(
+    @Param() params: ThreadParamsDto,
+    @Body() dto: AppendThreadStateDto,
+  ): Promise<ThreadStateResponseDto> {
+    const result = await this.threadsService.appendThreadState(
+      params.id,
+      dto.content,
+    );
+    return result;
   }
 }

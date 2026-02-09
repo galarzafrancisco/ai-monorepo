@@ -70,6 +70,7 @@ export type ThreadResult = {
   title: string;
   createdByActor: ActorResult;
   parentTaskId: string | null;
+  stateContextBlockId: string;
   tasks: TaskSummaryResult[];
   referencedContextBlocks: ContextBlockSummaryResult[];
   tags: TagResult[];

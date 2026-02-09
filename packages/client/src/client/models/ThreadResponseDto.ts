@@ -24,6 +24,10 @@ export type ThreadResponseDto = {
      */
     parentTaskId?: string | null;
     /**
+     * State context block ID for this thread
+     */
+    stateContextBlockId: string;
+    /**
      * Tasks attached to this thread
      */
     tasks: Array<TaskSummaryResponseDto>;

@@ -33,6 +33,12 @@ export class ThreadResponseDto {
   parentTaskId!: string | null;
 
   @ApiProperty({
+    description: 'State context block ID for this thread',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  stateContextBlockId!: string;
+
+  @ApiProperty({
     description: 'Tasks attached to this thread',
     type: [TaskSummaryResponseDto],
   })
@@ -84,6 +90,7 @@ export class ThreadResponseDto {
       title: result.title,
       createdByActor: ActorResponseDto.fromResult(result.createdByActor),
       parentTaskId: result.parentTaskId,
+      stateContextBlockId: result.stateContextBlockId,
       tasks: result.tasks.map((t) => TaskSummaryResponseDto.fromResult(t)),
       referencedContextBlocks: result.referencedContextBlocks.map((b) =>
         ContextBlockSummaryResponseDto.fromResult(b),

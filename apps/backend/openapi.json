@@ -3719,6 +3719,153 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/state": {
+      "get": {
+        "operationId": "ThreadsController_getThreadState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thread state retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadStateResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get the state of a thread",
+        "tags": [
+          "Threads"
+        ]
+      },
+      "patch": {
+        "operationId": "ThreadsController_updateThreadState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateThreadStateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread state updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadStateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update the state of a thread (replace content)",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/state/append": {
+      "post": {
+        "operationId": "ThreadsController_appendThreadState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendThreadStateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Content appended to thread state successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadStateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Append content to the thread state",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/context/blocks": {
       "post": {
         "operationId": "ContextController_createBlock",
@@ -7408,6 +7555,11 @@
             "example": "123e4567-e89b-12d3-a456-426614174000",
             "nullable": true
           },
+          "stateContextBlockId": {
+            "type": "string",
+            "description": "State context block ID for this thread",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
           "tasks": {
             "description": "Tasks attached to this thread",
             "type": "array",
@@ -7456,6 +7608,7 @@
           "id",
           "title",
           "createdByActor",
+          "stateContextBlockId",
           "tasks",
           "referencedContextBlocks",
           "tags",
@@ -7570,6 +7723,57 @@
         },
         "required": [
           "actorId"
+        ]
+      },
+      "ThreadStateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Thread ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "stateContextBlockId": {
+            "type": "string",
+            "description": "State context block ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "content": {
+            "type": "string",
+            "description": "Current state content",
+            "example": "This thread is tracking the implementation of feature X."
+          }
+        },
+        "required": [
+          "id",
+          "stateContextBlockId",
+          "content"
+        ]
+      },
+      "UpdateThreadStateDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "New content for the thread state",
+            "example": "Updated thread state with new information."
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "AppendThreadStateDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Content to append to the thread state",
+            "example": "Additional information to add to the state."
+          }
+        },
+        "required": [
+          "content"
         ]
       },
       "CreateBlockDto": {
