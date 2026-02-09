@@ -1,5 +1,6 @@
 import { TaskEntity } from '../task.entity';
 import { CommentEntity } from '../comment.entity';
+import { ArtefactEntity } from '../artefact.entity';
 import { InputRequestEntity } from '../input-request.entity';
 
 /**
@@ -71,6 +72,14 @@ export class CommentAddedEvent extends TaskDomainEvent<CommentEntity> {
 
   constructor(actor: EventActor, comment: CommentEntity) {
     super(actor, comment);
+  }
+}
+
+export class ArtefactAddedEvent extends TaskDomainEvent<ArtefactEntity> {
+  static readonly INTERNAL = Symbol('tasks.ArtefactAddedEvent');
+
+  constructor(actor: EventActor, artefact: ArtefactEntity) {
+    super(actor, artefact);
   }
 }
 

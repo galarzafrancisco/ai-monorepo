@@ -2570,6 +2570,33 @@ export interface components {
              */
             createdAt: string;
         };
+        ArtefactResponseDto: {
+            /**
+             * @description Unique identifier for the artefact
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            id: string;
+            /**
+             * @description ID of the task this artefact belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            taskId: string;
+            /**
+             * @description Name of the artefact
+             * @example Pull Request
+             */
+            name: string;
+            /**
+             * @description Link to the artefact
+             * @example https://github.com/owner/repo/pull/123
+             */
+            link: string;
+            /**
+             * @description Artefact creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+        };
         InputRequestResponseDto: {
             /**
              * @description Unique identifier for the input request
@@ -2670,6 +2697,8 @@ export interface components {
             sessionId?: string | null;
             /** @description Comments associated with the task */
             comments: components["schemas"]["CommentResponseDto"][];
+            /** @description Artefacts associated with the task */
+            artefacts: components["schemas"]["ArtefactResponseDto"][];
             /** @description Input requests associated with the task */
             inputRequests: components["schemas"]["InputRequestResponseDto"][];
             /** @description Tags associated with the task */

@@ -47,6 +47,11 @@ export type CreateCommentInput = {
   content: string;
 };
 
+export type CreateArtefactInput = {
+  name: string;
+  link: string;
+};
+
 export type ListTasksInput = {
   assignee?: string;
   sessionId?: string;
@@ -88,6 +93,7 @@ export type TaskResult = {
   assigneeActor: ActorResult | null;
   sessionId: string | null;
   comments: CommentResult[];
+  artefacts: ArtefactResult[];
   inputRequests: InputRequestResult[];
   tags: TagResult[];
   createdByActor: ActorResult;
@@ -104,6 +110,14 @@ export type CommentResult = {
   commenterName: string;
   commenterActor: ActorResult | null;
   content: string;
+  createdAt: Date;
+};
+
+export type ArtefactResult = {
+  id: string;
+  taskId: string;
+  name: string;
+  link: string;
   createdAt: Date;
 };
 

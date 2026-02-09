@@ -15,6 +15,7 @@ export type { AgentRunListResponseDto } from './models/AgentRunListResponseDto.j
 export type { AgentRunResponseDto } from './models/AgentRunResponseDto.js';
 export type { AnswerInputRequestDto } from './models/AnswerInputRequestDto.js';
 export type { AppendBlockDto } from './models/AppendBlockDto.js';
+export type { ArtefactResponseDto } from './models/ArtefactResponseDto.js';
 export type { AssignTaskDto } from './models/AssignTaskDto.js';
 export type { AttachTaskDto } from './models/AttachTaskDto.js';
 export { AuthJourneyResponseDto } from './models/AuthJourneyResponseDto.js';
