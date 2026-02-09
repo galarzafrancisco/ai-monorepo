@@ -31,6 +31,13 @@
   gap: var(--space-3);
 }
 
+.thread-detail-page__actions {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
 .thread-detail-page__parent-card {
   background-color: var(--card-bg);
   border: 1px solid var(--border);
