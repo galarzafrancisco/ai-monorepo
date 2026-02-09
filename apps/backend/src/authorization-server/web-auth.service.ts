@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import { SignJWT, importPKCS8 } from 'jose';
 import { RefreshTokenEntity } from './entities/refresh-token.entity';
@@ -20,6 +15,10 @@ import { User } from 'src/identity-provider/user.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { ALL_WEB_SCOPES } from 'src/auth/core/scopes/all-web.scopes';
 import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
+import {
+  RefreshTokenActorMissingError,
+  RefreshTokenUserMissingError,
+} from './errors/web-auth.errors';
 
 @Injectable()
 export class WebAuthService {
@@ -219,16 +218,14 @@ export class WebAuthService {
       this.logger.error(
         'User not found for refresh token. This should not happen',
       );
-      // TODO: this is an HTTP exception. Should be service error.
-      throw new InternalServerErrorException('Failed to retrieve user');
+      throw new RefreshTokenUserMissingError(storedToken.id);
     }
     const actor = storedToken.user.actor;
     if (!actor) {
       this.logger.error(
         'Actor not found for refresh token. This should not happen',
       );
-      // TODO: this is an HTTP exception. Should be service error.
-      throw new InternalServerErrorException('Failed to retrieve actor');
+      throw new RefreshTokenActorMissingError(storedToken.id);
     }
 
     const refreshConfig = getConfig();
