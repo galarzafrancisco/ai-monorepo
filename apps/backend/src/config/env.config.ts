@@ -134,7 +134,8 @@ function getEnv(): NodeEnv {
 function getIssuerUrl(): string {
   const issuerUrl = process.env.ISSUER_URL;
   if (issuerUrl) {
-    return issuerUrl;
+    // Normalize by removing trailing slash to ensure consistent issuer claim validation
+    return issuerUrl.replace(/\/$/, '');
   }
   if (getEnv() === 'production') {
     logger.error('ISSUER_URL is not set in production environment');
