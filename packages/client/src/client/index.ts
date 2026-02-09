@@ -35,6 +35,7 @@ export type { ContextBlockSummaryResponseDto } from './models/ContextBlockSummar
 export type { ContextTagResponseDto } from './models/ContextTagResponseDto.js';
 export { CreateAgentDto } from './models/CreateAgentDto.js';
 export type { CreateAgentRunDto } from './models/CreateAgentRunDto.js';
+export type { CreateArtefactDto } from './models/CreateArtefactDto.js';
 export type { CreateBlockDto } from './models/CreateBlockDto.js';
 export type { CreateCommentDto } from './models/CreateCommentDto.js';
 export type { CreateConnectionDto } from './models/CreateConnectionDto.js';

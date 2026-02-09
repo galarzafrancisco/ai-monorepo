@@ -22,14 +22,12 @@ export class ArtefactEntity {
   @Column('text')
   link!: string;
 
+  @Column({ type: 'uuid', name: 'task_id' })
+  taskId!: string;
+
   @ManyToOne(() => TaskEntity, (task) => task.artefacts, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'task_id' })
   task!: TaskEntity;
-
-  // Computed property to access task ID easily
-  get taskId(): string {
-    return this.task?.id;
-  }
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

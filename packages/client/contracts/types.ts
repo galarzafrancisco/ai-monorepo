@@ -770,6 +770,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tasks/tasks/{id}/artefacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an artefact to a task */
+        post: operations["TasksController_addArtefact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks/tasks/{id}/status": {
         parameters: {
             query?: never;
@@ -2821,6 +2838,18 @@ export interface components {
              * @example Task completed successfully. All tests passing.
              */
             content: string;
+        };
+        CreateArtefactDto: {
+            /**
+             * @description Name of the artefact
+             * @example Pull Request #123
+             */
+            name: string;
+            /**
+             * @description Link to the artefact
+             * @example https://github.com/owner/repo/pull/123
+             */
+            link: string;
         };
         ChangeTaskStatusDto: {
             /**
@@ -5746,6 +5775,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommentResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_addArtefact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateArtefactDto"];
+            };
+        };
+        responses: {
+            /** @description Artefact added successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtefactResponseDto"];
                 };
             };
             /** @description Invalid input data */

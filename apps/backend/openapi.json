@@ -2612,6 +2612,60 @@
         ]
       }
     },
+    "/api/v1/tasks/tasks/{id}/artefacts": {
+      "post": {
+        "operationId": "TasksController_addArtefact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateArtefactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Artefact added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtefactResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Add an artefact to a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/tasks/tasks/{id}/status": {
       "patch": {
         "operationId": "TasksController_changeStatus",
@@ -6940,6 +6994,25 @@
         },
         "required": [
           "content"
+        ]
+      },
+      "CreateArtefactDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the artefact",
+            "example": "Pull Request #123"
+          },
+          "link": {
+            "type": "string",
+            "description": "Link to the artefact",
+            "example": "https://github.com/owner/repo/pull/123"
+          }
+        },
+        "required": [
+          "name",
+          "link"
         ]
       },
       "ChangeTaskStatusDto": {

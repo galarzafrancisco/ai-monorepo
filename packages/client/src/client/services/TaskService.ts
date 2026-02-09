@@ -3,9 +3,11 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AnswerInputRequestDto } from '../models/AnswerInputRequestDto.js';
+import type { ArtefactResponseDto } from '../models/ArtefactResponseDto.js';
 import type { AssignTaskDto } from '../models/AssignTaskDto.js';
 import type { ChangeTaskStatusDto } from '../models/ChangeTaskStatusDto.js';
 import type { CommentResponseDto } from '../models/CommentResponseDto.js';
+import type { CreateArtefactDto } from '../models/CreateArtefactDto.js';
 import type { CreateCommentDto } from '../models/CreateCommentDto.js';
 import type { CreateInputRequestDto } from '../models/CreateInputRequestDto.js';
 import type { CreateTagDto } from '../models/CreateTagDto.js';
@@ -214,6 +216,31 @@ export class TaskService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/tasks/tasks/{id}/comments',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Task not found`,
+            },
+        });
+    }
+    /**
+     * Add an artefact to a task
+     * @param id Task UUID
+     * @param requestBody
+     * @returns ArtefactResponseDto Artefact added successfully
+     * @throws ApiError
+     */
+    public static tasksControllerAddArtefact(
+        id: string,
+        requestBody: CreateArtefactDto,
+    ): CancelablePromise<ArtefactResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/tasks/tasks/{id}/artefacts',
             path: {
                 'id': id,
             },
