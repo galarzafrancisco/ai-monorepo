@@ -16,7 +16,6 @@ async function listenWithFallback(
   app: NestExpressApplication,
   basePort: number,
   maxAttempts: number,
-  allowFallback: boolean,
 ): Promise<number> {
   let port = basePort;
 
@@ -25,7 +24,7 @@ async function listenWithFallback(
       await app.listen(port);
       return port;
     } catch (error) {
-      if (!allowFallback || !isAddressInUseError(error)) {
+      if (!isAddressInUseError(error)) {
         throw error;
       }
       logger.warn(`Port ${port} is in use, trying ${port + 1}.`);
@@ -142,13 +141,13 @@ async function bootstrap() {
     process.env.BACKEND_PORT_SEARCH_LIMIT || '20',
     10,
   );
-  const allowFallback = config.nodeEnv !== 'production';
-  const port = await listenWithFallback(
-    app,
-    config.port,
-    portSearchLimit,
-    allowFallback,
-  );
+  let port = config.port;
+
+  if (config.nodeEnv === 'production') {
+    await app.listen(port);
+  } else {
+    port = await listenWithFallback(app, config.port, portSearchLimit);
+  }
   logger.log(`Application is running on: http://localhost:${port}`);
 }
 bootstrap();
