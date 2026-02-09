@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Text, Stack, Button } from "../../ui/primitives";
-import { DeleteWithConfirmation } from "../../ui/components";
 import type { Thread } from "./types";
 import "./ThreadDetailPage.css";
 import { ThreadContextCard } from "./ThreadContextCard";
@@ -42,7 +41,7 @@ const getChildTasks = (thread: Thread, parentTask: ThreadTask | null) => {
 export function ThreadDetailPage() {
   const { id: threadId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { setSectionTitle, getThread, deleteThread } = useThreadsCtx();
+  const { setSectionTitle, getThread } = useThreadsCtx();
   const isDesktop = useIsDesktop();
 
   const [thread, setThread] = useState<Thread | null>(null);
@@ -105,25 +104,14 @@ export function ThreadDetailPage() {
     );
   }
 
-  const handleDelete = async () => {
-    await deleteThread(thread.id);
-    navigate("/threads");
-  };
-
   if (isDesktop) {
-    return <ThreadDetailPageDesktop thread={thread} onDelete={handleDelete} />;
+    return <ThreadDetailPageDesktop thread={thread} />;
   } else {
-    return <ThreadDetailPageMobile thread={thread} onDelete={handleDelete} />;
+    return <ThreadDetailPageMobile thread={thread} />;
   }
 }
 
-function ThreadDetailPageDesktop({
-  thread,
-  onDelete,
-}: {
-  thread: Thread;
-  onDelete: () => Promise<void>;
-}) {
+function ThreadDetailPageDesktop({ thread }: { thread: Thread }) {
   const parentTask = getParentTask(thread);
   const childTasks = getChildTasks(thread, parentTask);
 
@@ -149,10 +137,6 @@ function ThreadDetailPageDesktop({
             </div>
           )}
 
-          <DeleteWithConfirmation
-            className="thread-detail-page__actions"
-            onDelete={onDelete}
-          />
         </div>
       </div>
 
@@ -216,13 +200,7 @@ function ThreadDetailPageDesktop({
   );
 }
 
-function ThreadDetailPageMobile({
-  thread,
-  onDelete,
-}: {
-  thread: Thread;
-  onDelete: () => Promise<void>;
-}) {
+function ThreadDetailPageMobile({ thread }: { thread: Thread }) {
   const parentTask = getParentTask(thread);
   const childTasks = getChildTasks(thread, parentTask);
 
@@ -285,10 +263,6 @@ function ThreadDetailPageMobile({
           </div>
         )}
 
-        <DeleteWithConfirmation
-          className="thread-detail-page__actions"
-          onDelete={onDelete}
-        />
       </div>
     </div>
   );

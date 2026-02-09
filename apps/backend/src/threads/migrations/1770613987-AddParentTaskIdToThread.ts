@@ -70,6 +70,7 @@ export class AddParentTaskIdToThread1770613987 implements MigrationInterface {
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
         deleted_at DATETIME,
+        FOREIGN KEY(created_by_actor_id) REFERENCES actors(id) ON DELETE RESTRICT,
         FOREIGN KEY(parent_task_id) REFERENCES tasks(id) ON DELETE RESTRICT
       )
     `);
@@ -118,7 +119,8 @@ export class AddParentTaskIdToThread1770613987 implements MigrationInterface {
         row_version INTEGER NOT NULL,
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
-        deleted_at DATETIME
+        deleted_at DATETIME,
+        FOREIGN KEY(created_by_actor_id) REFERENCES actors(id) ON DELETE RESTRICT
       )
     `);
 

@@ -7,8 +7,6 @@ import {
   Body,
   Param,
   Query,
-  HttpCode,
-  HttpStatus,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -16,7 +14,6 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
-  ApiNoContentResponse,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiCookieAuth,
@@ -127,19 +124,6 @@ export class ThreadsController {
   async getThread(@Param() params: ThreadParamsDto): Promise<ThreadResponseDto> {
     const result = await this.threadsService.getThreadById(params.id);
     return ThreadResponseDto.fromResult(result);
-  }
-
-  @Delete(':id')
-  @RequireScopes(ThreadsScopes.WRITE.id)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a thread' })
-  @ApiNoContentResponse({ description: 'Thread deleted successfully' })
-  @ApiNotFoundResponse({ description: 'Thread not found' })
-  async deleteThread(
-    @Param() params: ThreadParamsDto,
-    @CurrentUser() user: UserContext,
-  ): Promise<void> {
-    await this.threadsService.deleteThread(params.id, user.actorId);
   }
 
   @Post(':id/tasks')
