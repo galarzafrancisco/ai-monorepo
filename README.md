@@ -38,7 +38,7 @@ npm run dev
 
 **Stack 2 (custom ports):**
 ```bash
-PORT=3001 VITE_PORT=5174 npm run dev
+BACKEND_PORT=3001 VITE_PORT=5174 npm run dev
 # Backend: http://localhost:3001
 # Frontend: http://localhost:5174
 ```
@@ -46,11 +46,11 @@ PORT=3001 VITE_PORT=5174 npm run dev
 You can also create `.env` files for each stack:
 ```bash
 # .env.stack1
-PORT=3000
+BACKEND_PORT=3000
 VITE_PORT=5173
 
 # .env.stack2
-PORT=3001
+BACKEND_PORT=3001
 VITE_PORT=5174
 ```
 
