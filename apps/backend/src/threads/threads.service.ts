@@ -205,29 +205,6 @@ export class ThreadsService {
     return await this.buildThreadResult(updatedThread);
   }
 
-  async deleteThread(threadId: string, actorId: string): Promise<void> {
-    this.logger.log({
-      message: 'Deleting thread',
-      threadId,
-      actorId,
-    });
-
-    const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
-    });
-
-    if (!thread) {
-      throw new ThreadNotFoundError(threadId);
-    }
-
-    await this.threadRepository.softRemove(thread);
-
-    this.logger.log({
-      message: 'Thread deleted',
-      threadId,
-    });
-  }
-
   async getThreadById(threadId: string): Promise<ThreadResult> {
     const thread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(thread);
@@ -486,7 +463,6 @@ export class ThreadsService {
       .leftJoinAndSelect('tasks.comments', 'taskComments')
       .leftJoinAndSelect('tasks.inputRequests', 'taskInputRequests')
       .leftJoinAndSelect('thread.referencedContextBlocks', 'referencedContextBlocks')
-      .leftJoinAndSelect('thread.stateContextBlock', 'stateContextBlock')
       .leftJoinAndSelect('thread.tags', 'tags')
       .leftJoinAndSelect('thread.participants', 'participants')
       .innerJoin('thread.tasks', 'filterTask')
@@ -513,7 +489,6 @@ export class ThreadsService {
         'tasks.comments',
         'tasks.inputRequests',
         'referencedContextBlocks',
-        'stateContextBlock',
         'tags',
         'participants',
       ],

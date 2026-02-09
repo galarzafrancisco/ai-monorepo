@@ -102,26 +102,6 @@ export class ThreadsService {
         });
     }
     /**
-     * Delete a thread
-     * @param id Thread UUID
-     * @returns void
-     * @throws ApiError
-     */
-    public static threadsControllerDeleteThread(
-        id: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/v1/threads/{id}',
-            path: {
-                'id': id,
-            },
-            errors: {
-                404: `Thread not found`,
-            },
-        });
-    }
-    /**
      * Get thread state
      * @param id Thread UUID
      * @returns ThreadStateResponseDto Thread state retrieved successfully

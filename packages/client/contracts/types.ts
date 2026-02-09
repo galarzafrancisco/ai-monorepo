@@ -953,8 +953,7 @@ export interface paths {
         get: operations["ThreadsController_getThread"];
         put?: never;
         post?: never;
-        /** Delete a thread */
-        delete: operations["ThreadsController_deleteThread"];
+        delete?: never;
         options?: never;
         head?: never;
         /** Update thread title */
@@ -6431,34 +6430,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ThreadResponseDto"];
                 };
-            };
-            /** @description Thread not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ThreadsController_deleteThread: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Thread UUID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Thread deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Thread not found */
             404: {
