@@ -22,7 +22,7 @@ export type ThreadResponseDto = {
     /**
      * Parent task ID that created the thread
      */
-    parentTaskId?: string | null;
+    parentTaskId: string;
     /**
      * Tasks attached to this thread
      */

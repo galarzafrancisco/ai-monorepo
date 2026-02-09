@@ -8,7 +8,6 @@ import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { MetaModule } from '../meta/meta.module';
-import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 
 @Module({
   imports: [
@@ -17,7 +16,6 @@ import { AgentRunEntity } from '../agent-runs/agent-run.entity';
       TaskEntity,
       ContextBlockEntity,
       ActorEntity,
-      AgentRunEntity,
     ]),
     AuthGuardsModule,
     MetaModule,
