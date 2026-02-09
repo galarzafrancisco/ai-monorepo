@@ -21,6 +21,11 @@ export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, an
       label: `💬 ${task.comments.length}`
     })
   }
+  if (task.artefacts.length) {
+    tags.push({
+      label: `🔗 ${task.artefacts.length}`
+    })
+  }
   const openQuestions = task.inputRequests.filter(i => !i.resolvedAt).length;
   if (openQuestions) {
     tags.push({

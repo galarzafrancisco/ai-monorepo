@@ -17,6 +17,7 @@ import {
   TaskAssignedEvent,
   TaskDeletedEvent,
   CommentAddedEvent,
+  ArtefactAddedEvent,
   TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
@@ -28,11 +29,13 @@ import type {
   TaskAssignedWireEvent,
   TaskStatusChangedWireEvent,
   TaskCommentedWireEvent,
+  TaskArtefactAddedWireEvent,
   InputRequestAnsweredWireEvent,
   TaskActivityWireEvent,
 } from '@taico/events';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
+import { ArtefactResponseDto } from './dto/artefact-response.dto';
 import { InputRequestResponseDto } from './dto/input-request-response.dto';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
@@ -191,6 +194,27 @@ export class TasksGateway
     this.logger.debug({
       message: 'Comment added event emitted',
       commentId: event.payload.id,
+      taskId: event.payload.taskId,
+      actorId: event.actor.id,
+    });
+  }
+
+  @OnEvent(ArtefactAddedEvent.INTERNAL)
+  handleArtefactAdded(event: ArtefactAddedEvent) {
+    const dto = ArtefactResponseDto.fromEntity(event.payload);
+
+    const wireEvent: TaskArtefactAddedWireEvent = {
+      payload: dto,
+      actor: { id: event.actor.id },
+    };
+
+    this.server
+      .to(TASKS_ROOM)
+      .emit(TaskWireEvents.TASK_ARTEFACT_ADDED, wireEvent);
+
+    this.logger.debug({
+      message: 'Artefact added event emitted',
+      artefactId: event.payload.id,
       taskId: event.payload.taskId,
       actorId: event.actor.id,
     });

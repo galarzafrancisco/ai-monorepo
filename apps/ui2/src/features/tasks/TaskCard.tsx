@@ -17,9 +17,14 @@ export function TaskCard({ task, animation, onClick, pulseKey }: { task: Task, a
       label: `✋ ${openQuestions}`
     })
   }
+  if (task.artefacts.length) {
+    tags.push({
+      label: `🔗 ${task.artefacts.length}`
+    })
+  }
   return (
     <BoardCard
-      leading={<Avatar name={avatarActor.displayName} size='md' src={avatarActor.avatarUrl || undefined}/>}
+      leading={<Avatar name={avatarActor.displayName} size='md' src={avatarActor.avatarUrl || undefined} />}
       topRight={elapsedTime(task.updatedAt)}
       tags={tags}
       animation={animation}

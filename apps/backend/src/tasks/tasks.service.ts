@@ -5,6 +5,7 @@ import { Repository, In } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
+import { ArtefactEntity } from './artefact.entity';
 import { InputRequestEntity } from './input-request.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import {
@@ -14,12 +15,14 @@ import {
   AssignTaskInput,
   ChangeStatusInput,
   CreateCommentInput,
+  CreateArtefactInput,
   ListTasksInput,
   AddTagInput,
   CreateInputRequestInput,
   AnswerInputRequestInput,
   TaskResult,
   CommentResult,
+  ArtefactResult,
   ListTasksResult,
   TagResult,
   ActorResult,
@@ -39,6 +42,7 @@ import {
   TaskAssignedEvent,
   TaskDeletedEvent,
   CommentAddedEvent,
+  ArtefactAddedEvent,
   TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
@@ -58,6 +62,8 @@ export class TasksService {
     private readonly taskRepository: Repository<TaskEntity>,
     @InjectRepository(CommentEntity)
     private readonly commentRepository: Repository<CommentEntity>,
+    @InjectRepository(ArtefactEntity)
+    private readonly artefactRepository: Repository<ArtefactEntity>,
     @InjectRepository(InputRequestEntity)
     private readonly inputRequestRepository: Repository<InputRequestEntity>,
     @InjectRepository(ActorEntity)
@@ -138,6 +144,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -248,6 +255,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -315,6 +323,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -357,6 +366,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -393,6 +403,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -461,6 +472,7 @@ export class TasksService {
         .createQueryBuilder('task')
         .leftJoinAndSelect('task.comments', 'comments')
         .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
+        .leftJoinAndSelect('task.artefacts', 'artefacts')
         .leftJoinAndSelect('task.inputRequests', 'inputRequests')
         .leftJoinAndSelect('task.tags', 'tags')
         .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
@@ -506,6 +518,7 @@ export class TasksService {
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.comments', 'comments')
       .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
+      .leftJoinAndSelect('task.artefacts', 'artefacts')
       .leftJoinAndSelect('task.inputRequests', 'inputRequests')
       .leftJoinAndSelect('task.tags', 'tags')
       .leftJoinAndSelect('task.dependsOn', 'dependsOn')
@@ -548,6 +561,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -608,6 +622,49 @@ export class TasksService {
     return this.mapCommentToResult(commentWithRelations!);
   }
 
+  async addArtefact(
+    taskId: string,
+    input: CreateArtefactInput,
+    actorId: string,
+  ): Promise<ArtefactResult> {
+    this.logger.log({
+      message: 'Adding artefact',
+      taskId,
+    });
+
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+
+    if (!task) {
+      throw new TaskNotFoundError(taskId);
+    }
+
+    const artefact = this.artefactRepository.create({
+      task,
+      name: input.name,
+      link: input.link,
+    });
+
+    const savedArtefact = await this.artefactRepository.save(artefact);
+
+    // Reload with task relation
+    const artefactWithRelations = await this.artefactRepository.findOne({
+      where: { id: savedArtefact.id },
+      relations: ['task'],
+    });
+
+    this.logger.log({
+      message: 'Artefact added',
+      artefactId: savedArtefact.id,
+      taskId,
+    });
+
+    this.eventEmitter.emit(
+      ArtefactAddedEvent.INTERNAL,
+      new ArtefactAddedEvent({ id: actorId }, artefactWithRelations!),
+    );
+    return this.mapArtefactToResult(artefactWithRelations!);
+  }
+
   async changeStatus(
     taskId: string,
     input: ChangeStatusInput,
@@ -624,6 +681,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -673,6 +731,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -714,6 +773,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -746,6 +806,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -781,6 +842,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -811,6 +873,7 @@ export class TasksService {
       relations: [
         'comments',
         'comments.commenterActor',
+        'artefacts',
         'inputRequests',
         'tags',
         'dependsOn',
@@ -846,6 +909,7 @@ export class TasksService {
         : null,
       sessionId: task.sessionId,
       comments: task.comments.map((c) => this.mapCommentToResult(c)),
+      artefacts: (task.artefacts || []).map((a) => this.mapArtefactToResult(a)),
       inputRequests: (task.inputRequests || []).map((ir) =>
         this.mapInputRequestToResult(ir),
       ),
@@ -869,6 +933,16 @@ export class TasksService {
         : null,
       content: comment.content,
       createdAt: comment.createdAt,
+    };
+  }
+
+  private mapArtefactToResult(artefact: ArtefactEntity): ArtefactResult {
+    return {
+      id: artefact.id,
+      taskId: artefact.taskId,
+      name: artefact.name,
+      link: artefact.link,
+      createdAt: artefact.createdAt,
     };
   }
 

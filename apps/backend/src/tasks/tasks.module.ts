@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskEntity } from './task.entity';
 import { CommentEntity } from './comment.entity';
+import { ArtefactEntity } from './artefact.entity';
 import { InputRequestEntity } from './input-request.entity';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
@@ -17,7 +18,7 @@ import { ThreadsModule } from '../threads/threads.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TaskEntity, CommentEntity, InputRequestEntity]),
+    TypeOrmModule.forFeature([TaskEntity, CommentEntity, ArtefactEntity, InputRequestEntity]),
     AuthorizationServerModule,
     AuthGuardsModule,
     IdentityProviderModule,
