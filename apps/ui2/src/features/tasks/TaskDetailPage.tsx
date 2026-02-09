@@ -307,12 +307,12 @@ export function TaskDetailPage() {
           {task.artefacts.map(artefact => (
             <DataRow
               key={artefact.id}
-              tags={[{ label: 'link', color: 'blue' as const }]}
+              
             >
               <Text as='span' weight='medium' size='3'>
-                {artefact.name}
+                {`${artefact.name}: `}
               </Text>
-              <Text as='div' size='2'>
+              <Text as='span'>
                 <a
                   href={artefact.link}
                   target="_blank"
