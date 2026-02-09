@@ -64,12 +64,28 @@ export type ListThreadsInput = {
   limit: number;
 };
 
+export type UpdateThreadStateInput = {
+  content: string;
+  actorId?: string;
+};
+
+export type AppendThreadStateInput = {
+  content: string;
+  actorId?: string;
+};
+
+export type ThreadStateResult = {
+  id: string;
+  content: string;
+};
+
 // Result types (from service methods)
 export type ThreadResult = {
   id: string;
   title: string;
   createdByActor: ActorResult;
   parentTaskId: string | null;
+  stateContextBlockId: string;
   tasks: TaskSummaryResult[];
   referencedContextBlocks: ContextBlockSummaryResult[];
   tags: TagResult[];

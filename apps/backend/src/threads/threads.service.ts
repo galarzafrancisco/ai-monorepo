@@ -18,6 +18,9 @@ import {
   TagResult,
   TaskSummaryResult,
   ContextBlockSummaryResult,
+  UpdateThreadStateInput,
+  AppendThreadStateInput,
+  ThreadStateResult,
 } from './dto/service/threads.service.types';
 import {
   ThreadNotFoundError,
@@ -61,9 +64,32 @@ export class ThreadsService {
     // Generate title if not provided
     const title = input.title || this.inferTitle(createdByActor.slug);
 
+    // Create state context block for the thread
+    let stateContent = 'This thread was created to track work.';
+
+    // If tasks are provided, try to get the first task's info for the state message
+    if (input.taskIds && input.taskIds.length > 0) {
+      const firstTask = await this.taskRepository.findOne({
+        where: { id: input.taskIds[0] },
+      });
+      if (firstTask) {
+        stateContent = `This thread was created to achieve task ${firstTask.name} (id ${firstTask.id}).`;
+      }
+    }
+
+    const stateBlock = this.contextBlockRepository.create({
+      title: `${title} - State`,
+      content: stateContent,
+      createdByActorId: input.createdByActorId,
+      order: 0,
+    });
+
+    const savedStateBlock = await this.contextBlockRepository.save(stateBlock);
+
     const thread = this.threadRepository.create({
       title,
       createdByActorId: input.createdByActorId,
+      stateContextBlockId: savedStateBlock.id,
     });
 
     const savedThread = await this.threadRepository.save(thread);
@@ -356,6 +382,7 @@ export class ThreadsService {
     const thread = await this.threadRepository
       .createQueryBuilder('thread')
       .leftJoinAndSelect('thread.createdByActor', 'createdByActor')
+      .leftJoinAndSelect('thread.stateContextBlock', 'stateContextBlock')
       .leftJoinAndSelect('thread.tasks', 'tasks')
       .leftJoinAndSelect('tasks.assigneeActor', 'taskAssigneeActor')
       .leftJoinAndSelect('tasks.createdByActor', 'taskCreatedByActor')
@@ -381,6 +408,7 @@ export class ThreadsService {
       where: { id: threadId },
       relations: [
         'createdByActor',
+        'stateContextBlock',
         'tasks',
         'tasks.assigneeActor',
         'tasks.createdByActor',
@@ -422,6 +450,7 @@ export class ThreadsService {
       title: thread.title,
       createdByActor: this.mapActorToResult(thread.createdByActor),
       parentTaskId,
+      stateContextBlockId: thread.stateContextBlockId,
       tasks: (thread.tasks || []).map((task) => this.mapTaskToSummary(task)),
       referencedContextBlocks: (thread.referencedContextBlocks || []).map(
         (block) => this.mapContextBlockToSummary(block),
@@ -501,6 +530,109 @@ export class ThreadsService {
     return {
       id: block.id,
       title: block.title,
+    };
+  }
+
+  async getThreadState(threadId: string): Promise<ThreadStateResult> {
+    this.logger.log({
+      message: 'Getting thread state',
+      threadId,
+    });
+
+    const thread = await this.threadRepository.findOne({
+      where: { id: threadId },
+      relations: ['stateContextBlock'],
+    });
+
+    if (!thread) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    if (!thread.stateContextBlock) {
+      throw new Error(`Thread ${threadId} is missing stateContextBlock relation`);
+    }
+
+    return {
+      id: thread.stateContextBlock.id,
+      content: thread.stateContextBlock.content,
+    };
+  }
+
+  async updateThreadState(
+    threadId: string,
+    input: UpdateThreadStateInput,
+  ): Promise<ThreadStateResult> {
+    this.logger.log({
+      message: 'Updating thread state',
+      threadId,
+    });
+
+    const thread = await this.threadRepository.findOne({
+      where: { id: threadId },
+      relations: ['stateContextBlock'],
+    });
+
+    if (!thread) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    if (!thread.stateContextBlock) {
+      throw new Error(`Thread ${threadId} is missing stateContextBlock relation`);
+    }
+
+    thread.stateContextBlock.content = input.content;
+    const savedBlock = await this.contextBlockRepository.save(
+      thread.stateContextBlock,
+    );
+
+    this.logger.log({
+      message: 'Thread state updated',
+      threadId,
+      blockId: savedBlock.id,
+    });
+
+    return {
+      id: savedBlock.id,
+      content: savedBlock.content,
+    };
+  }
+
+  async appendThreadState(
+    threadId: string,
+    input: AppendThreadStateInput,
+  ): Promise<ThreadStateResult> {
+    this.logger.log({
+      message: 'Appending to thread state',
+      threadId,
+    });
+
+    const thread = await this.threadRepository.findOne({
+      where: { id: threadId },
+      relations: ['stateContextBlock'],
+    });
+
+    if (!thread) {
+      throw new ThreadNotFoundError(threadId);
+    }
+
+    if (!thread.stateContextBlock) {
+      throw new Error(`Thread ${threadId} is missing stateContextBlock relation`);
+    }
+
+    thread.stateContextBlock.content = `${thread.stateContextBlock.content}\n${input.content}`;
+    const savedBlock = await this.contextBlockRepository.save(
+      thread.stateContextBlock,
+    );
+
+    this.logger.log({
+      message: 'Thread state appended',
+      threadId,
+      blockId: savedBlock.id,
+    });
+
+    return {
+      id: savedBlock.id,
+      content: savedBlock.content,
     };
   }
 }
