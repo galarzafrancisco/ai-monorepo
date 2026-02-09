@@ -9,7 +9,9 @@ import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind = 'opencode';
 
-  private initting: boolean = false;
+  // Mutex for process.chdir: serializes all instances so only one
+  // changes the working directory at a time.
+  private static chdirLock: Promise<void> = Promise.resolve();
 
   private formatter = new OpencodeAsyncMessageFormatter();
   private client: OpencodeClient | null = null;
@@ -27,16 +29,40 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     };
   }
 
+  private static readonly CHDIR_TIMEOUT_MS = 60_000; // 1 min — if we wait longer, something is stuck
+
   async initBullshit({ runId, cwd }: { runId: string, cwd: string }) {
     // Disgusting hack to start the server in the working directory
     // because Opencode has a bug where running a session in a different
     // folder breaks realtime events (???)
-    const prev = process.cwd();
+    //
+    // We serialize via a promise chain so parallel runners don't stomp
+    // on each other's cwd. A timeout prevents waiting forever if a
+    // previous init hangs.
+
+    let release!: () => void;
+    const acquired = new Promise<void>(resolve => { release = resolve; });
+
+    const prev = OpencodeAgentRunner.chdirLock;
+    OpencodeAgentRunner.chdirLock = acquired;
+
+    // Wait for the previous holder, but not forever.
+    await Promise.race([
+      prev,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(
+          `initBullshit: timed out after ${OpencodeAgentRunner.CHDIR_TIMEOUT_MS}ms waiting for chdir lock — a previous init is likely stuck`
+        )), OpencodeAgentRunner.CHDIR_TIMEOUT_MS),
+      ),
+    ]);
+
+    const originalCwd = process.cwd();
     process.chdir(cwd);
     try {
       await this.init({ runId });
     } finally {
-      process.chdir(prev);
+      process.chdir(originalCwd);
+      release();
     }
   }
 
