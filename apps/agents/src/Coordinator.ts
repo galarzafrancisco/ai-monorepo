@@ -324,39 +324,40 @@ export class Coordinator {
       return;
     }
 
-    const actorId = inputRequest.assignedToActorId;
-    const agent = await this.getAgentByActorId(actorId, agentsByActorId);
-    if (!agent) {
-      console.log(`- Input request assignee ${actorId} not found. Skipping. ❌`);
-      return;
-    }
-
-    if (!this.concurrencyStore.canRun(agent.actorId, this.getConcurrencyLimit(agent))) {
-      console.log(`- Input request agent @${agent.slug} at concurrency limit. Skip. ❌`);
-      return;
-    }
-
-    const runner = this.createRunner(agent);
-    if (!runner) {
-      console.log(`- Input request agent @${agent.slug} not supported. Skip. ❌`);
-      return;
-    }
-
-    const repoUrl = await this.resolveRepoUrl(task);
-    const taskId = task.id;
-    const prompt = [
-      `You were asked to answer an input request for task "${taskId}".`,
-      `Input request id: ${inputRequest.id}`,
-      `Question: ${inputRequest.question}`,
-      "Respond to the input request. You do not need to complete the task or go through the normal flow, just answer the question.",
-      "",
-      agent.systemPrompt,
-    ].join("\n");
-
     this.inFlightInputRequests.add(inputRequestId);
     let runStarted = false;
+    let runActorId: string | null = null;
+    let taskId = task.id;
 
     try {
+      const actorId = inputRequest.assignedToActorId;
+      const agent = await this.getAgentByActorId(actorId, agentsByActorId);
+      if (!agent) {
+        console.log(`- Input request assignee ${actorId} not found. Skipping. ❌`);
+        return;
+      }
+
+      if (!this.concurrencyStore.canRun(agent.actorId, this.getConcurrencyLimit(agent))) {
+        console.log(`- Input request agent @${agent.slug} at concurrency limit. Skip. ❌`);
+        return;
+      }
+
+      const runner = this.createRunner(agent);
+      if (!runner) {
+        console.log(`- Input request agent @${agent.slug} not supported. Skip. ❌`);
+        return;
+      }
+
+      const repoUrl = await this.resolveRepoUrl(task);
+      const prompt = [
+        `You were asked to answer an input request for task "${taskId}".`,
+        `Input request id: ${inputRequest.id}`,
+        `Question: ${inputRequest.question}`,
+        "Respond to the input request. You do not need to complete the task or go through the normal flow, just answer the question.",
+        "",
+        agent.systemPrompt,
+      ].join("\n");
+
       const workDir = await prepareWorkspace(taskId, agent.actorId, repoUrl);
       const run = await this.client.startRun(taskId);
       if (!run) {
@@ -366,6 +367,7 @@ export class Coordinator {
 
       this.concurrencyStore.increment(agent.actorId);
       runStarted = true;
+      runActorId = agent.actorId;
 
       await runner.run(
         {
@@ -407,8 +409,8 @@ export class Coordinator {
       console.error(error);
       this.client.addComment(taskId, `❌ Something went wrong ❌\n\n${error}`);
     } finally {
-      if (runStarted) {
-        this.concurrencyStore.decrement(agent.actorId);
+      if (runStarted && runActorId) {
+        this.concurrencyStore.decrement(runActorId);
       }
       this.inFlightInputRequests.delete(inputRequestId);
     }
