@@ -15,9 +15,8 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
   private formatter = new OpencodeAsyncMessageFormatter();
   private client: OpencodeClient | null = null;
-  private close: () => void = () => {
-    console.log('This is the closing placeholder. If you see this, something is wrong. This should have been overwritten by Opencode.');
-  };
+  private abortController: AbortController = new AbortController();
+  private close: () => void = () => {};
   private model: Model;
 
   constructor(modelConfig: AgentModelConfig = {}) {
@@ -66,6 +65,14 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     }
   }
 
+  private shutdown() {
+    // Belt and suspenders: abort signal + close().
+    // close() alone is broken (https://github.com/anomalyco/opencode/issues/3841)
+    // but we keep it for when they fix it.
+    this.abortController.abort();
+    this.close();
+  }
+
   async init({ runId }: { runId: string }) {
 
     console.log('Starting Opencode client');
@@ -78,10 +85,11 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       try {
         console.log(`Trying port ${port}...`);
 
+        this.abortController = new AbortController();
         const opencode = await createOpencode({
           port,
           timeout: 20 * 3600,
-          // signal: ,
+          signal: this.abortController.signal,
           config: {
             mcp: {
               tasks: {
@@ -135,10 +143,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
     });
     if (!session) {
-      // Close the server
-      if (this.close) {
-        this.close();
-      }
+      this.shutdown();
       throw new Error("Failed to create Opencode session");
     }
     console.log(`created session ${session.id} in ${session.directory}`);
@@ -187,12 +192,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       console.error(error);
     }
 
-    // Close the server
-    // NOTE: There is a known bug where the server just doesn't close https://github.com/anomalyco/opencode/issues/3841
-    // TODO: we need to find a way to force kill it 😈
-    if (this.close) {
-      this.close();
-    }
+    this.shutdown();
 
     return finalResult;
   }
