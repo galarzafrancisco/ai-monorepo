@@ -2612,6 +2612,60 @@
         ]
       }
     },
+    "/api/v1/tasks/tasks/{id}/artefacts": {
+      "post": {
+        "operationId": "TasksController_addArtefact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateArtefactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Artefact added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtefactResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Add an artefact to a task",
+        "tags": [
+          "Task"
+        ]
+      }
+    },
     "/api/v1/tasks/tasks/{id}/status": {
       "patch": {
         "operationId": "TasksController_changeStatus",
@@ -6556,6 +6610,43 @@
           "createdAt"
         ]
       },
+      "ArtefactResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the artefact",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "ID of the task this artefact belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the artefact",
+            "example": "Pull Request"
+          },
+          "link": {
+            "type": "string",
+            "description": "Link to the artefact",
+            "example": "https://github.com/owner/repo/pull/123"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Artefact creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "name",
+          "link",
+          "createdAt"
+        ]
+      },
       "InputRequestResponseDto": {
         "type": "object",
         "properties": {
@@ -6698,6 +6789,13 @@
               "$ref": "#/components/schemas/CommentResponseDto"
             }
           },
+          "artefacts": {
+            "description": "Artefacts associated with the task",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtefactResponseDto"
+            }
+          },
           "inputRequests": {
             "description": "Input requests associated with the task",
             "type": "array",
@@ -6748,6 +6846,7 @@
           "description",
           "status",
           "comments",
+          "artefacts",
           "inputRequests",
           "tags",
           "createdByActor",
@@ -6895,6 +6994,25 @@
         },
         "required": [
           "content"
+        ]
+      },
+      "CreateArtefactDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the artefact",
+            "example": "Pull Request #123"
+          },
+          "link": {
+            "type": "string",
+            "description": "Link to the artefact",
+            "example": "https://github.com/owner/repo/pull/123"
+          }
+        },
+        "required": [
+          "name",
+          "link"
         ]
       },
       "ChangeTaskStatusDto": {

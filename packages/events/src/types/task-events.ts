@@ -20,6 +20,7 @@ export const TaskWireEvents = {
   TASK_ASSIGNED: 'task.assigned',
   TASK_STATUS_CHANGED: 'task.status_changed',
   TASK_COMMENTED: 'task.commented',
+  TASK_ARTEFACT_ADDED: 'task.artefact_added',
   INPUT_REQUEST_ANSWERED: 'input.request.answered',
   TASK_ACTIVITY: 'task.activity',
   TASK_ACTIVITY_POST: 'task.activity.post',
@@ -59,6 +60,7 @@ export interface TaskWirePayload {
   assigneeActor: EventActor | null;
   sessionId: string;
   comments: CommentWirePayload[];
+  artefacts: ArtefactWirePayload[];
   inputRequests: InputRequestWirePayload[];
   tags: TagWirePayload[];
   createdByActor: EventActor;
@@ -77,6 +79,18 @@ export interface CommentWirePayload {
   commenterName: string;
   commenterActor: EventActor | null;
   content: string;
+  createdAt: string;
+}
+
+/**
+ * Artefact structure as sent over the wire
+ * Matches ArtefactResponseDto from backend
+ */
+export interface ArtefactWirePayload {
+  id: string;
+  taskId: string;
+  name: string;
+  link: string;
   createdAt: string;
 }
 
@@ -163,6 +177,15 @@ export interface TaskCommentedWireEvent {
 }
 
 /**
+ * Artefact added event
+ * Emitted when an artefact is added to a task
+ */
+export interface TaskArtefactAddedWireEvent {
+  payload: ArtefactWirePayload;
+  actor: MinimalEventActor;
+}
+
+/**
  * Input request answered event
  * Emitted when an input request is answered
  */
@@ -193,6 +216,7 @@ export type TaskWireEvent =
   | TaskAssignedWireEvent
   | TaskStatusChangedWireEvent
   | TaskCommentedWireEvent
+  | TaskArtefactAddedWireEvent
   | InputRequestAnsweredWireEvent;
 
 /**

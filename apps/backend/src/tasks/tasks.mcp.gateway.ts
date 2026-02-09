@@ -265,6 +265,38 @@ export class TasksMcpGateway {
 
     canWrite &&
       server.registerTool(
+        'add_artefact',
+        {
+          title: 'Add artefact to task',
+          description: 'Add an artefact (like a PR link) to a task',
+          inputSchema: {
+            taskId: z.string(),
+            name: z.string(),
+            link: z.string(),
+          },
+        },
+        async ({ taskId, name, link }) => {
+          await this.tasksService.addArtefact(
+            taskId,
+            {
+              name,
+              link,
+            },
+            user.actorId,
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
+    canWrite &&
+      server.registerTool(
         'mark_task_in_progress',
         {
           title: 'Start working on task',
@@ -317,7 +349,7 @@ export class TasksMcpGateway {
         'mark_task_for_review',
         {
           title: 'Submit task for review',
-          description: 'Set status to FOR_REVIEW and add PR link comment',
+          description: 'Set status to FOR_REVIEW and add PR link as artefact',
           inputSchema: {
             taskId: z.string(),
             prLink: z.string(),
@@ -333,7 +365,17 @@ export class TasksMcpGateway {
             user.actorId,
           );
 
-          // Add comment with PR link
+          // Add artefact with PR link
+          await this.tasksService.addArtefact(
+            taskId,
+            {
+              name: 'Pull Request',
+              link: prLink,
+            },
+            user.actorId,
+          );
+
+          // Add comment
           await this.tasksService.addComment(taskId, {
             commenterActorId: user.actorId,
             content: `Opened PR for review: ${prLink}`,

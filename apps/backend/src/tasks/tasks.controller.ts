@@ -30,9 +30,11 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { AssignTaskDto } from './dto/assign-task.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateArtefactDto } from './dto/create-artefact.dto';
 import { ChangeTaskStatusDto } from './dto/change-task-status.dto';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
+import { ArtefactResponseDto } from './dto/artefact-response.dto';
 import { InputRequestResponseDto } from './dto/input-request-response.dto';
 import { CreateInputRequestDto } from './dto/create-input-request.dto';
 import { AnswerInputRequestDto } from './dto/answer-input-request.dto';
@@ -259,6 +261,31 @@ export class TasksController {
       content: dto.content,
     });
     return CommentResponseDto.fromResult(result);
+  }
+
+  @Post(':id/artefacts')
+  @RequireScopes(TasksScopes.WRITE.id)
+  @ApiOperation({ summary: 'Add an artefact to a task' })
+  @ApiCreatedResponse({
+    type: ArtefactResponseDto,
+    description: 'Artefact added successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async addArtefact(
+    @Param() params: TaskParamsDto,
+    @Body() dto: CreateArtefactDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<ArtefactResponseDto> {
+    const result = await this.TasksService.addArtefact(
+      params.id,
+      {
+        name: dto.name,
+        link: dto.link,
+      },
+      user.actorId,
+    );
+    return ArtefactResponseDto.fromResult(result);
   }
 
   @Patch(':id/status')
