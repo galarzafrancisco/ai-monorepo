@@ -7,6 +7,7 @@ export const TasksErrorCodes = {
   INVALID_STATUS_TRANSITION: ErrorCodes.INVALID_STATUS_TRANSITION,
   COMMENT_REQUIRED: ErrorCodes.COMMENT_REQUIRED,
   AGENT_NOT_FOUND: ErrorCodes.AGENT_NOT_FOUND,
+  TASK_IS_THREAD_PARENT: ErrorCodes.TASK_IS_THREAD_PARENT,
 } as const;
 
 type TasksErrorCode = (typeof TasksErrorCodes)[keyof typeof TasksErrorCodes];
@@ -64,5 +65,15 @@ export class CommentRequiredError extends TasksDomainError {
 export class ActorNotFoundError extends TasksDomainError {
   constructor(actorId: string) {
     super('Actor not found.', TasksErrorCodes.AGENT_NOT_FOUND, { actorId });
+  }
+}
+
+export class TaskIsThreadParentError extends TasksDomainError {
+  constructor(taskId: string, threadCount: number) {
+    super(
+      `Cannot delete task because it is the parent of ${threadCount} thread${threadCount > 1 ? 's' : ''}.`,
+      TasksErrorCodes.TASK_IS_THREAD_PARENT,
+      { taskId, threadCount },
+    );
   }
 }

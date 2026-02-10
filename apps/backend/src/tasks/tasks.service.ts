@@ -35,6 +35,7 @@ import {
   InvalidStatusTransitionError,
   CommentRequiredError,
   ActorNotFoundError,
+  TaskIsThreadParentError,
 } from './errors/tasks.errors';
 import {
   TaskCreatedEvent,
@@ -226,7 +227,8 @@ export class TasksService {
       });
       thread = await this.threadsService.createThread({
         createdByActorId: input.createdByActorId,
-        taskIds: [parentTaskId, task.id],
+        parentTaskId: parentTaskId,
+        taskIds: [task.id],
       });
     }
 
@@ -437,6 +439,12 @@ export class TasksService {
 
     if (!task) {
       throw new TaskNotFoundError(taskId);
+    }
+
+    // Check if task is a parent of any threads
+    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(taskId);
+    if (threadsWithParent.length > 0) {
+      throw new TaskIsThreadParentError(taskId, threadsWithParent.length);
     }
 
     await this.taskRepository.softRemove(task);

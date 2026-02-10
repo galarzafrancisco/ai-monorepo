@@ -33,6 +33,12 @@ export const ErrorCatalog: Record<
     type: '/errors/tasks/comment-required',
     retryable: false,
   },
+  [ErrorCodes.TASK_IS_THREAD_PARENT]: {
+    status: 400,
+    title: 'Task is thread parent',
+    type: '/errors/tasks/is-thread-parent',
+    retryable: false,
+  },
   [ErrorCodes.PAGE_NOT_FOUND]: {
     status: 404,
     title: 'Context page not found',
