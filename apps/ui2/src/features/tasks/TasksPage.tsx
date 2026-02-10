@@ -7,6 +7,7 @@ import { TASKS_STATUS } from "./const";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Task } from "./types";
+import { useToast } from "../../shared/context/ToastContext";
 import './TasksPage.css';
 import { NewTaskPop } from "./NewTaskPop";
 import { TasksToRows } from "./TasksToRows";
@@ -17,6 +18,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
   const isDesktop = useIsDesktop();
   const statusFilter = isDesktop ? undefined : status;
   const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks, activityByTaskId } = useTasksCtx();
+  const { showError } = useToast();
 
   const navigate = useNavigate();
 
@@ -80,6 +82,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
     } catch (error) {
       console.error('Error saving task');
       console.error(error);
+      showError(error);
       return false;
     }
   }
