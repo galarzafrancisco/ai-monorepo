@@ -109,7 +109,7 @@ export function loadConfig(): AppConfig {
     mcpClientPruneRetentionHours: parseFloat(process.env.MCP_CLIENT_PRUNE_RETENTION_HOURS || '0.75'),
 
     // Development Configuration
-    vitePort: process.env.VITE_PORT || '5173',
+    vitePort: process.env.VITE_PORT || '2000',
   };
 
   // Log configuration (excluding sensitive data)
@@ -145,7 +145,7 @@ function getIssuerUrl(): string {
   }
   // Default for development
   logger.warn('Using default ISSUER_URL for development');
-  return 'http://localhost:5173';
+  return 'http://localhost:2000';
 }
 
 function getCallbackUrl(): string {

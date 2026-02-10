@@ -16,7 +16,7 @@ export default defineConfig({
       'air.local',
       'debug.taico.app'
     ],
-    port: Number(process.env.VITE_PORT) || 5173,
+    port: Number(process.env.VITE_PORT) || 2000,
     proxy: {
       "/api": {
         target: `http://localhost:${process.env.VITE_BACKEND_PORT || 3000}`,
