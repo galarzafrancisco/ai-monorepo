@@ -394,4 +394,72 @@ describe('Threads E2E Tests - Parent Task ID', () => {
       );
     });
   });
+
+  describe('State Context Block Deletion Validation', () => {
+    let stateBlockTaskId: string;
+    let stateBlockThreadId: string;
+    let stateBlockId: string;
+
+    beforeAll(async () => {
+      // Create a parent task
+      const taskResponse = await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .send({
+          name: 'State Block Deletion Test Parent Task',
+          description: 'Task for testing state block deletion validation',
+        })
+        .expect(201);
+
+      stateBlockTaskId = taskResponse.body.id;
+
+      // Create a thread (which creates a state block)
+      const threadResponse = await request(httpServer)
+        .post('/api/v1/threads')
+        .set('Cookie', authCookies)
+        .send({
+          title: 'State Block Deletion Test Thread',
+          parentTaskId: stateBlockTaskId,
+        })
+        .expect(201);
+
+      stateBlockThreadId = threadResponse.body.id;
+      stateBlockId = threadResponse.body.stateContextBlockId;
+    });
+
+    it('should fail to delete state context block when thread exists (business logic validation)', async () => {
+      // Attempting to delete a context block that is a thread's state block should fail
+      // This is similar to how we prevent deleting a task that is a thread's parent
+
+      const response = await request(httpServer)
+        .delete(`/api/v1/context/blocks/${stateBlockId}`)
+        .set('Cookie', authCookies)
+        .expect(400); // Bad Request due to business rule violation
+
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body.detail).toContain('Cannot delete context block');
+      expect(response.body.detail).toContain('state block');
+      expect(response.body.detail).toContain('thread');
+    });
+
+    it('should be able to delete state block after thread is deleted', async () => {
+      // First, delete the thread
+      await request(httpServer)
+        .delete(`/api/v1/threads/${stateBlockThreadId}`)
+        .set('Cookie', authCookies)
+        .expect(204);
+
+      // Now the state block should be deletable since no threads reference it
+      await request(httpServer)
+        .delete(`/api/v1/context/blocks/${stateBlockId}`)
+        .set('Cookie', authCookies)
+        .expect(204);
+
+      // Verify the block is deleted
+      await request(httpServer)
+        .get(`/api/v1/context/blocks/${stateBlockId}`)
+        .set('Cookie', authCookies)
+        .expect(404);
+    });
+  });
 });

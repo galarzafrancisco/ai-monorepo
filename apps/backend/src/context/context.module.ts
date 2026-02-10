@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ContextService } from './context.service';
 import { ContextController } from './context.controller';
@@ -10,6 +10,7 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { MetaModule } from '../meta/meta.module';
 import { IdentityProviderModule } from 'src/identity-provider/identity-provider.module';
 import { SearchModule } from 'src/search/search.module';
+import { ThreadsModule } from '../threads/threads.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { SearchModule } from 'src/search/search.module';
     IdentityProviderModule,
     MetaModule,
     SearchModule,
+    forwardRef(() => ThreadsModule),
   ],
   controllers: [ContextController],
   providers: [ContextService, ContextMcpGateway, ContextGateway],
