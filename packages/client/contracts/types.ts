@@ -1046,6 +1046,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/{id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the state of a thread */
+        get: operations["ThreadsController_getThreadState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update the state of a thread */
+        patch: operations["ThreadsController_updateThreadState"];
+        trace?: never;
+    };
+    "/api/v1/threads/{id}/state/append": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Append content to the state of a thread */
+        post: operations["ThreadsController_appendThreadState"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/context/blocks": {
         parameters: {
             query?: never;
@@ -3095,6 +3130,11 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             parentTaskId: string;
+            /**
+             * @description State context block ID that tracks the evolving state of this thread
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            stateContextBlockId: string;
             /** @description Tasks attached to this thread */
             tasks: components["schemas"]["TaskSummaryResponseDto"][];
             /** @description Context blocks referenced in this thread */
@@ -3182,6 +3222,28 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             actorId: string;
+        };
+        ThreadStateResponseDto: {
+            /**
+             * @description Current state content of the thread
+             * @example This thread was created to achieve task Implement authentication (id 123).
+             *     Decision: Using JWT for authentication.
+             */
+            content: string;
+        };
+        UpdateThreadStateDto: {
+            /**
+             * @description New content for the thread state
+             * @example This thread is now focused on implementing the authentication feature.
+             */
+            content: string;
+        };
+        AppendThreadStateDto: {
+            /**
+             * @description Content to append to the thread state
+             * @example Decision: Using JWT for authentication.
+             */
+            content: string;
         };
         CreateBlockDto: {
             /**
@@ -6625,6 +6687,118 @@ export interface operations {
                 content?: never;
             };
             /** @description Thread or actor not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_getThreadState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread state retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadStateResponseDto"];
+                };
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_updateThreadState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateThreadStateDto"];
+            };
+        };
+        responses: {
+            /** @description Thread state updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadStateResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_appendThreadState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppendThreadStateDto"];
+            };
+        };
+        responses: {
+            /** @description Content appended to thread state successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadStateResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
             404: {
                 headers: {
                     [name: string]: unknown;

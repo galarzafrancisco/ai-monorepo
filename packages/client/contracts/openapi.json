@@ -3751,6 +3751,153 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/state": {
+      "get": {
+        "operationId": "ThreadsController_getThreadState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thread state retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadStateResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get the state of a thread",
+        "tags": [
+          "Threads"
+        ]
+      },
+      "patch": {
+        "operationId": "ThreadsController_updateThreadState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateThreadStateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread state updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadStateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update the state of a thread",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
+    "/api/v1/threads/{id}/state/append": {
+      "post": {
+        "operationId": "ThreadsController_appendThreadState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendThreadStateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Content appended to thread state successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadStateResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Append content to the state of a thread",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/context/blocks": {
       "post": {
         "operationId": "ContextController_createBlock",
@@ -7447,6 +7594,11 @@
             "description": "Parent task ID that this thread belongs to",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
+          "stateContextBlockId": {
+            "type": "string",
+            "description": "State context block ID that tracks the evolving state of this thread",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
           "tasks": {
             "description": "Tasks attached to this thread",
             "type": "array",
@@ -7496,6 +7648,7 @@
           "title",
           "createdByActor",
           "parentTaskId",
+          "stateContextBlockId",
           "tasks",
           "referencedContextBlocks",
           "tags",
@@ -7610,6 +7763,45 @@
         },
         "required": [
           "actorId"
+        ]
+      },
+      "ThreadStateResponseDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Current state content of the thread",
+            "example": "This thread was created to achieve task Implement authentication (id 123).\nDecision: Using JWT for authentication."
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "UpdateThreadStateDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "New content for the thread state",
+            "example": "This thread is now focused on implementing the authentication feature."
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "AppendThreadStateDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Content to append to the thread state",
+            "example": "\nDecision: Using JWT for authentication."
+          }
+        },
+        "required": [
+          "content"
         ]
       },
       "CreateBlockDto": {
