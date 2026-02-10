@@ -1,0 +1,111 @@
+.home-page {
+  min-height: 100%;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  background:
+    radial-gradient(1200px 500px at 0% 0%, var(--surface), var(--bg) 55%),
+    linear-gradient(180deg, var(--bg), var(--app-surface));
+}
+
+.home-page__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+.home-page__hero-actions {
+  flex-wrap: wrap;
+}
+
+.home-page__hero-card {
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1);
+  background: linear-gradient(135deg, var(--card-bg), var(--surface));
+}
+
+.home-page__status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+
+.home-status-card {
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-status-card__inner {
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.home-status-card:hover .home-status-card__inner {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+}
+
+.home-status-card:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--r-3);
+}
+
+.home-page__notice {
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1);
+}
+
+.home-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.home-panel {
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1);
+}
+
+.home-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.home-list-row {
+  width: 100%;
+}
+
+.home-list-row__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.home-list-row__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .home-page {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .home-page__hero {
+    grid-template-columns: 1fr;
+  }
+}
