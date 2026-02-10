@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsArray, IsUUID } from 'class-validator';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
 export class CreateThreadDto {
   @ApiPropertyOptional({
@@ -9,6 +9,13 @@ export class CreateThreadDto {
   @IsString()
   @IsOptional()
   title?: string;
+
+  @ApiProperty({
+    description: 'Parent task ID - the task that this thread belongs to',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  parentTaskId!: string;
 
   @ApiPropertyOptional({
     description: 'Array of tag names to associate with the thread',

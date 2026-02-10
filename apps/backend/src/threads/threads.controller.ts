@@ -62,6 +62,7 @@ export class ThreadsController {
     const result = await this.threadsService.createThread({
       title: dto.title,
       createdByActorId: user.actorId,
+      parentTaskId: dto.parentTaskId,
       tagNames: dto.tagNames,
       taskIds: dto.taskIds,
       contextBlockIds: dto.contextBlockIds,

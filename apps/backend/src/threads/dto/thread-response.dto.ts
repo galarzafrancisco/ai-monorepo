@@ -24,13 +24,11 @@ export class ThreadResponseDto {
   })
   createdByActor!: ActorResponseDto;
 
-  @ApiPropertyOptional({
-    description: 'Parent task ID that created the thread',
+  @ApiProperty({
+    description: 'Parent task ID that this thread belongs to',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    type: String,
-    nullable: true,
   })
-  parentTaskId!: string | null;
+  parentTaskId!: string;
 
   @ApiProperty({
     description: 'Tasks attached to this thread',
