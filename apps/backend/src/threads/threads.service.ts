@@ -451,6 +451,32 @@ export class ThreadsService {
     return threads.map((thread) => this.mapThreadToResult(thread));
   }
 
+  async findThreadsByStateBlockId(stateBlockId: string): Promise<ThreadResult[]> {
+    this.logger.log({
+      message: 'Finding threads by state block ID',
+      stateBlockId,
+    });
+
+    const threads = await this.threadRepository.find({
+      where: { stateContextBlockId: stateBlockId },
+      relations: [
+        'createdByActor',
+        'tasks',
+        'tasks.assigneeActor',
+        'tasks.createdByActor',
+        'tasks.tags',
+        'tasks.comments',
+        'tasks.inputRequests',
+        'referencedContextBlocks',
+        'tags',
+        'participants',
+      ],
+      withDeleted: true, // Include soft-deleted threads because FK constraint still applies
+    });
+
+    return threads.map((thread) => this.mapThreadToResult(thread));
+  }
+
   async getThreadState(threadId: string): Promise<string> {
     this.logger.log({
       message: 'Getting thread state',

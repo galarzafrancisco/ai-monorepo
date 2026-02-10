@@ -63,6 +63,12 @@ export const ErrorCatalog: Record<
     type: '/errors/wiki/circular-reference',
     retryable: false,
   },
+  [ErrorCodes.BLOCK_IS_THREAD_STATE]: {
+    status: 400,
+    title: 'Context block is thread state',
+    type: '/errors/context/block-is-thread-state',
+    retryable: false,
+  },
   [ErrorCodes.AGENT_NOT_FOUND]: {
     status: 404,
     title: 'Agent not found',
