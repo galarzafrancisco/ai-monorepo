@@ -2987,6 +2987,11 @@ export interface components {
              */
             title?: string;
             /**
+             * @description Parent task ID - the task that this thread belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            parentTaskId: string;
+            /**
              * @description Array of tag names to associate with the thread
              * @example [
              *       "bug",
@@ -3086,10 +3091,10 @@ export interface components {
             /** @description Actor who created the thread */
             createdByActor: components["schemas"]["ActorResponseDto"];
             /**
-             * @description Parent task ID that created the thread
+             * @description Parent task ID that this thread belongs to
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            parentTaskId?: string | null;
+            parentTaskId: string;
             /** @description Tasks attached to this thread */
             tasks: components["schemas"]["TaskSummaryResponseDto"][];
             /** @description Context blocks referenced in this thread */

@@ -8,6 +8,10 @@ export type CreateThreadDto = {
      */
     title?: string;
     /**
+     * Parent task ID - the task that this thread belongs to
+     */
+    parentTaskId: string;
+    /**
      * Array of tag names to associate with the thread
      */
     tagNames?: Array<string>;

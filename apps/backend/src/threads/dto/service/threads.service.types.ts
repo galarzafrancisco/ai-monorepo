@@ -45,6 +45,7 @@ export type ContextBlockSummaryResult = {
 export type CreateThreadInput = {
   title?: string;
   createdByActorId: string;
+  parentTaskId: string;
   tagNames?: string[];
   taskIds?: string[];
   contextBlockIds?: string[];
@@ -69,7 +70,7 @@ export type ThreadResult = {
   id: string;
   title: string;
   createdByActor: ActorResult;
-  parentTaskId: string | null;
+  parentTaskId: string;
   tasks: TaskSummaryResult[];
   referencedContextBlocks: ContextBlockSummaryResult[];
   tags: TagResult[];
