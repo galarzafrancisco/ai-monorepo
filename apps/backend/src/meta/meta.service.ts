@@ -65,7 +65,15 @@ export class MetaService {
     });
 
     // Check if tag already exists (case-insensitive due to NOCASE collation)
-    let tag = await this.tagRepository.findOne({ where: { name: input.name } });
+    let tag = await this.tagRepository.findOne({
+      where: { name: input.name },
+      withDeleted: true,
+    });
+
+    if (tag?.deletedAt) {
+      await this.tagRepository.delete(tag.id);
+      tag = null;
+    }
 
     if (!tag) {
       // Create new tag with provided color or random color
@@ -167,7 +175,7 @@ export class MetaService {
       tagId,
     });
 
-    const result = await this.tagRepository.softDelete(tagId);
+    const result = await this.tagRepository.delete(tagId);
 
     if (result.affected === 0) {
       this.logger.warn({
@@ -197,7 +205,13 @@ export class MetaService {
       // Try to find existing tag (case-insensitive due to NOCASE collation)
       let tag = await this.tagRepository.findOne({
         where: { name: normalizedName },
+        withDeleted: true,
       });
+
+      if (tag?.deletedAt) {
+        await this.tagRepository.delete(tag.id);
+        tag = null;
+      }
 
       if (!tag) {
         // Create new tag with normalized name and random color
@@ -240,7 +254,13 @@ export class MetaService {
 
       let tag = await this.tagRepository.findOne({
         where: { name: normalizedName },
+        withDeleted: true,
       });
+
+      if (tag?.deletedAt) {
+        await this.tagRepository.delete(tag.id);
+        tag = null;
+      }
 
       if (!tag) {
         tag = this.tagRepository.create({
@@ -278,7 +298,13 @@ export class MetaService {
 
     let tag = await this.tagRepository.findOne({
       where: { name: normalizedName },
+      withDeleted: true,
     });
+
+    if (tag?.deletedAt) {
+      await this.tagRepository.delete(tag.id);
+      tag = null;
+    }
 
     if (!tag) {
       tag = this.tagRepository.create({
@@ -335,7 +361,7 @@ export class MetaService {
         tagName: tagWithRelations.name,
       });
 
-      await this.tagRepository.softDelete(tagId);
+      await this.tagRepository.delete(tagId);
 
       this.logger.log({
         message: 'Orphaned tag cleaned up',
