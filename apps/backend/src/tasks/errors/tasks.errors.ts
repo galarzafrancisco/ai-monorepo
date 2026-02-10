@@ -8,6 +8,7 @@ export const TasksErrorCodes = {
   COMMENT_REQUIRED: ErrorCodes.COMMENT_REQUIRED,
   AGENT_NOT_FOUND: ErrorCodes.AGENT_NOT_FOUND,
   TASK_IS_THREAD_PARENT: ErrorCodes.TASK_IS_THREAD_PARENT,
+  INPUT_REQUEST_SELF_ASSIGNMENT: ErrorCodes.INPUT_REQUEST_SELF_ASSIGNMENT,
 } as const;
 
 type TasksErrorCode = (typeof TasksErrorCodes)[keyof typeof TasksErrorCodes];
@@ -74,6 +75,16 @@ export class TaskIsThreadParentError extends TasksDomainError {
       `Cannot delete task because it is the parent of ${threadCount} thread${threadCount > 1 ? 's' : ''}.`,
       TasksErrorCodes.TASK_IS_THREAD_PARENT,
       { taskId, threadCount },
+    );
+  }
+}
+
+export class InputRequestSelfAssignmentError extends TasksDomainError {
+  constructor(askedByActorId: string, assignedToActorId: string) {
+    super(
+      'Input request cannot be assigned to the asking actor.',
+      TasksErrorCodes.INPUT_REQUEST_SELF_ASSIGNMENT,
+      { askedByActorId, assignedToActorId },
     );
   }
 }
