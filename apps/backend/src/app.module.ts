@@ -18,6 +18,7 @@ import { MetaModule } from './meta/meta.module';
 import { AgentRunsModule } from './agent-runs/agent-runs.module';
 import { getConfig } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
+import { BaselineSchema1700000000000 } from './migrations/1700000000000-BaselineSchema';
 
 @Module({
   imports: [
@@ -25,7 +26,9 @@ import { AppInitModule } from './app-init/app-init.module';
       type: 'sqlite',
       database: getConfig().databasePath,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+      synchronize: false,
+      migrationsRun: true,
+      migrations: [BaselineSchema1700000000000],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
