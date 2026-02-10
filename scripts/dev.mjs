@@ -53,11 +53,11 @@ function startFrontends(port) {
   console.log(`Starting UI processes with backend port ${port}.`);
   const env = { ...process.env, VITE_BACKEND_PORT: port };
 
-  const ui = spawn(npmCommand, uiArgs, { env, stdio: 'inherit' });
-  trackProcess(ui, 'ui');
-
   const ui2 = spawn(npmCommand, ui2Args, { env, stdio: 'inherit' });
   trackProcess(ui2, 'ui2');
+
+  const ui = spawn(npmCommand, uiArgs, { env, stdio: 'inherit' });
+  trackProcess(ui, 'ui');
 }
 
 function trackProcess(child, name) {
