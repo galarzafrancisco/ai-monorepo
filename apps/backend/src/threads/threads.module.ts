@@ -9,6 +9,7 @@ import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { MetaModule } from '../meta/meta.module';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
+import { ContextModule } from '../context/context.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AgentRunEntity } from '../agent-runs/agent-run.entity';
     ]),
     AuthGuardsModule,
     MetaModule,
+    ContextModule,
   ],
   controllers: [ThreadsController],
   providers: [ThreadsService],

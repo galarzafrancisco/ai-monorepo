@@ -38,6 +38,13 @@ export class ThreadEntity {
   @JoinColumn({ name: 'parent_task_id' })
   parentTask?: TaskEntity;
 
+  @Column({ type: 'uuid', nullable: false, name: 'state_context_block_id' })
+  stateContextBlockId!: string;
+
+  @ManyToOne(() => ContextBlockEntity, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'state_context_block_id' })
+  stateContextBlock?: ContextBlockEntity;
+
   @ManyToMany(() => TaskEntity)
   @JoinTable({
     name: 'thread_tasks',
