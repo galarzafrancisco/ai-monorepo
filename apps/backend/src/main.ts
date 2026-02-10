@@ -12,39 +12,6 @@ import { getConfig } from './config/env.config';
 
 const logger = new Logger('Bootstrap');
 
-async function listenWithFallback(
-  app: NestExpressApplication,
-  basePort: number,
-  maxAttempts: number,
-): Promise<number> {
-  let port = basePort;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    try {
-      await app.listen(port);
-      return port;
-    } catch (error) {
-      if (!isAddressInUseError(error)) {
-        throw error;
-      }
-      logger.warn(`Port ${port} is in use, trying ${port + 1}.`);
-      port += 1;
-    }
-  }
-
-  throw new Error(
-    `Unable to find an open port starting at ${basePort} after ${maxAttempts} attempts.`,
-  );
-}
-
-function isAddressInUseError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    (error as { code?: string }).code === 'EADDRINUSE'
-  );
-}
-
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
@@ -137,17 +104,8 @@ async function bootstrap() {
   }
 
   const config = getConfig();
-  const portSearchLimit = parseInt(
-    process.env.BACKEND_PORT_SEARCH_LIMIT || '20',
-    10,
-  );
-  let port = config.port;
-
-  if (config.nodeEnv === 'production') {
-    await app.listen(port);
-  } else {
-    port = await listenWithFallback(app, config.port, portSearchLimit);
-  }
+  const port = config.port;
+  await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
 }
 bootstrap();

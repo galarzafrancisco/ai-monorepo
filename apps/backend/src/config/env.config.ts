@@ -143,9 +143,9 @@ function getIssuerUrl(): string {
     logger.error('ISSUER_URL is not set in production environment');
     throw new Error('ISSUER_URL must be set in production');
   }
-  // Default for development
+  // Default for development (ui2)
   logger.warn('Using default ISSUER_URL for development');
-  return 'http://localhost:5173';
+  return 'http://localhost:2000';
 }
 
 function getCallbackUrl(): string {
