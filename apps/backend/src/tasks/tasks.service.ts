@@ -36,6 +36,7 @@ import {
   CommentRequiredError,
   ActorNotFoundError,
   TaskIsThreadParentError,
+  InputRequestSelfError,
 } from './errors/tasks.errors';
 import {
   TaskCreatedEvent,
@@ -1012,6 +1013,10 @@ export class TasksService {
 
     // Default to task creator if assignedToActorId is not provided
     const assignedToActorId = input.assignedToActorId ?? task.createdByActorId;
+
+    if (assignedToActorId === input.askedByActorId) {
+      throw new InputRequestSelfError(input.askedByActorId);
+    }
 
     const inputRequest = this.inputRequestRepository.create({
       taskId: input.taskId,
