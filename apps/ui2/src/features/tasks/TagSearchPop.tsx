@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { Text, DataRowTag } from "../../ui/primitives";
+import { Text, Chip } from "../../ui/primitives";
 import { MetaService, MetaTagResponseDto } from "@taico/client";
 import "./TagSearchPop.css";
 
@@ -173,9 +173,15 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
         {/* Search input or selected tag display */}
         {selectedTag ? (
           <div className="tag-search-pop__selected" onClick={handleClearSelection}>
-            <div className="tag-search-pop__tag-badge" style={{ backgroundColor: selectedTag.color || '#999' }}>
-              {selectedTag.name}
-            </div>
+            <Chip>
+              <span className="tag-search-pop__chip">
+                <span
+                  className="tag-search-pop__chip-dot"
+                  style={{ backgroundColor: selectedTag.color || 'var(--border)' }}
+                />
+                <span>{selectedTag.name}</span>
+              </span>
+            </Chip>
             <Text tone="muted" size="2" className="tag-search-pop__clear">tap to change</Text>
           </div>
         ) : (
@@ -209,9 +215,15 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
                       onClick={() => handleSelectTag(tag)}
                       onMouseEnter={() => setHighlightedIndex(index)}
                     >
-                      <div className="tag-search-pop__tag-badge" style={{ backgroundColor: tag.color || '#999' }}>
-                        {tag.name}
-                      </div>
+                      <Chip>
+                        <span className="tag-search-pop__chip">
+                          <span
+                            className="tag-search-pop__chip-dot"
+                            style={{ backgroundColor: tag.color || 'var(--border)' }}
+                          />
+                          <span>{tag.name}</span>
+                        </span>
+                      </Chip>
                     </div>
                   ))}
                   {canCreateNew && (
@@ -221,9 +233,12 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
                       onMouseEnter={() => setHighlightedIndex(filteredTags.length)}
                     >
                       <Text size="2" tone="muted">Create new tag:</Text>
-                      <div className="tag-search-pop__tag-badge" style={{ backgroundColor: '#999' }}>
-                        {query.trim()}
-                      </div>
+                      <Chip>
+                        <span className="tag-search-pop__chip">
+                          <span className="tag-search-pop__chip-dot" />
+                          <span>{query.trim()}</span>
+                        </span>
+                      </Chip>
                     </div>
                   )}
                 </>

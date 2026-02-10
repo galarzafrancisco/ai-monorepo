@@ -249,6 +249,13 @@
   gap: var(--space-2);
 }
 
+.task-detail-page__tags-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 .task-detail-page__tags-list {
   display: flex;
   flex-wrap: wrap;
@@ -256,28 +263,46 @@
   align-items: center;
 }
 
-.task-detail-page__tag {
+.task-detail-page__tag-item {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-1);
-  font-size: var(--fs-2);
-  font-weight: 500;
-  color: white;
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
 }
 
-.task-detail-page__tag:hover {
-  opacity: 0.8;
+.task-detail-page__tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.task-detail-page__tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border-subtle);
 }
 
 .task-detail-page__tag-remove {
-  font-size: var(--fs-3);
-  font-weight: bold;
-  margin-left: var(--space-1);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.task-detail-page__tag-remove:hover {
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* Floating action button (FAB) for comments */

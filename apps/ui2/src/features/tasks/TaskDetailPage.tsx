@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
-import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
@@ -268,24 +268,8 @@ export function TaskDetailPage() {
       {/* Tags */}
       <DataRowContainer className='task-detail-page__section'>
         <div className="task-detail-page__tags">
-          <Text size='2' weight='medium'>Tags</Text>
-          <div className="task-detail-page__tags-list">
-            {task.tags.length === 0 ? (
-              <Text size='2' tone='muted'>No tags</Text>
-            ) : (
-              task.tags.map(tag => (
-                <button
-                  key={tag.id}
-                  className="task-detail-page__tag"
-                  style={{ backgroundColor: tag.color || '#999' }}
-                  onClick={() => removeTag(tag.id)}
-                  title="Click to remove"
-                >
-                  {tag.name}
-                  <span className="task-detail-page__tag-remove">×</span>
-                </button>
-              ))
-            )}
+          <div className="task-detail-page__tags-header">
+            <Text size='2' weight='medium'>Tags</Text>
             <Button
               size='sm'
               variant='secondary'
@@ -293,6 +277,36 @@ export function TaskDetailPage() {
             >
               + Add Tag
             </Button>
+          </div>
+          <div className="task-detail-page__tags-list">
+            {task.tags.length === 0 ? (
+              <Text size='2' tone='muted'>No tags</Text>
+            ) : (
+              task.tags.map(tag => (
+                <div
+                  key={tag.id}
+                  className="task-detail-page__tag-item"
+                >
+                  <Chip>
+                    <span className="task-detail-page__tag-chip">
+                      <span
+                        className="task-detail-page__tag-dot"
+                        style={{ backgroundColor: tag.color || 'var(--border)' }}
+                      />
+                      <span>{tag.name}</span>
+                    </span>
+                  </Chip>
+                  <button
+                    className="task-detail-page__tag-remove"
+                    onClick={() => removeTag(tag.id)}
+                    title={`Remove ${tag.name}`}
+                    aria-label={`Remove ${tag.name} tag`}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </DataRowContainer>

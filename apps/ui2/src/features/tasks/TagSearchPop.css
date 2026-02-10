@@ -71,12 +71,16 @@
   margin-left: auto;
 }
 
-.tag-search-pop__tag-badge {
-  display: inline-block;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-1);
-  font-size: var(--fs-2);
-  font-weight: 500;
-  color: white;
-  white-space: nowrap;
+.tag-search-pop__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.tag-search-pop__chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  box-shadow: 0 0 0 1px var(--border-subtle);
 }
