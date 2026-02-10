@@ -413,6 +413,31 @@ export class ThreadsService {
     return await this.buildThreadResult(thread);
   }
 
+  async findThreadsByParentTaskId(parentTaskId: string): Promise<ThreadResult[]> {
+    this.logger.log({
+      message: 'Finding threads by parent task ID',
+      parentTaskId,
+    });
+
+    const threads = await this.threadRepository.find({
+      where: { parentTaskId },
+      relations: [
+        'createdByActor',
+        'tasks',
+        'tasks.assigneeActor',
+        'tasks.createdByActor',
+        'tasks.tags',
+        'tasks.comments',
+        'tasks.inputRequests',
+        'referencedContextBlocks',
+        'tags',
+        'participants',
+      ],
+    });
+
+    return threads.map((thread) => this.mapThreadToResult(thread));
+  }
+
   private async getThreadWithRelations(threadId: string): Promise<ThreadEntity> {
     const thread = await this.threadRepository.findOne({
       where: { id: threadId },

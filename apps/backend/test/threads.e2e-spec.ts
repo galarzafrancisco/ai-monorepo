@@ -134,18 +134,18 @@ describe('Threads E2E Tests - Parent Task ID', () => {
     });
   });
 
-  describe('Foreign Key Constraint - Parent Task Deletion', () => {
+  describe('Parent Task Deletion Validation', () => {
     let isolatedParentTaskId: string;
     let isolatedThreadId: string;
 
     beforeAll(async () => {
-      // Create a dedicated parent task for FK constraint tests
+      // Create a dedicated parent task for deletion tests
       const taskResponse = await request(httpServer)
         .post('/api/v1/tasks/tasks')
         .set('Cookie', authCookies)
         .send({
-          name: 'FK Test Parent Task',
-          description: 'Task for testing FK constraint on deletion',
+          name: 'Deletion Test Parent Task',
+          description: 'Task for testing parent task deletion validation',
         })
         .expect(201);
 
@@ -156,7 +156,7 @@ describe('Threads E2E Tests - Parent Task ID', () => {
         .post('/api/v1/threads')
         .set('Cookie', authCookies)
         .send({
-          title: 'FK Test Thread',
+          title: 'Deletion Test Thread',
           parentTaskId: isolatedParentTaskId,
         })
         .expect(201);
@@ -164,30 +164,40 @@ describe('Threads E2E Tests - Parent Task ID', () => {
       isolatedThreadId = threadResponse.body.id;
     });
 
-    it('should soft-delete parent task even when thread exists (FK constraint only applies to hard deletes)', async () => {
-      // Note: Tasks use soft delete (softRemove), which only sets deletedAt timestamp.
-      // The FK constraint (ON DELETE RESTRICT) only applies to hard deletes (DELETE FROM).
-      // Therefore, soft-deleting a parent task will succeed even if threads reference it.
-      // The constraint prevents accidental hard deletion but allows soft deletion for recovery.
+    it('should fail to delete parent task when thread exists (business logic validation)', async () => {
+      // The requirement states: "Attempting to delete a task that is the parent of a thread must fail with an appropriate error"
+      // This is enforced at the business logic level (not just DB FK constraint)
+      // TasksService.deleteTask checks if task is a thread parent before allowing deletion
 
-      await request(httpServer)
+      const response = await request(httpServer)
         .delete(`/api/v1/tasks/tasks/${isolatedParentTaskId}`)
         .set('Cookie', authCookies)
-        .expect(204); // Soft delete succeeds
+        .expect(400); // Bad Request due to business rule violation
 
-      // Verify the task is soft-deleted (would return 404 for normal queries)
-      await request(httpServer)
-        .get(`/api/v1/tasks/tasks/${isolatedParentTaskId}`)
-        .set('Cookie', authCookies)
-        .expect(404);
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body.detail).toContain('Cannot delete task');
+      expect(response.body.detail).toContain('parent');
+      expect(response.body.detail).toContain('thread');
     });
 
-    it('should still be able to delete thread after parent task is soft-deleted', async () => {
-      // Thread deletion should work regardless of parent task soft-delete status
+    it('should be able to delete task after thread is deleted', async () => {
+      // First, delete the thread
       await request(httpServer)
         .delete(`/api/v1/threads/${isolatedThreadId}`)
         .set('Cookie', authCookies)
         .expect(204);
+
+      // Now the parent task should be deletable since no threads reference it
+      await request(httpServer)
+        .delete(`/api/v1/tasks/tasks/${isolatedParentTaskId}`)
+        .set('Cookie', authCookies)
+        .expect(204);
+
+      // Verify the task is deleted (soft delete)
+      await request(httpServer)
+        .get(`/api/v1/tasks/tasks/${isolatedParentTaskId}`)
+        .set('Cookie', authCookies)
+        .expect(404);
     });
   });
 
