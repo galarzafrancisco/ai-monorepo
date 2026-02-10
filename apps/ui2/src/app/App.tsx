@@ -13,6 +13,8 @@ import { ThreadsRoutes } from '../features/threads/ThreadsRoutes';
 import { ToolsRoutes } from '../features/tools/ToolsRoutes';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
 import { ActorsProvider } from '../features/actors';
+import { ToastProvider } from '../shared/context/ToastContext';
+import { ToastContainer } from '../ui/components';
 
 function BetaAppRoutes() {
   return (
@@ -41,23 +43,26 @@ export function App() {
   return (
     <BrowserRouter basename={BASE_PATH}>
       <ThemeProvider>
-        <AuthProvider>
-          <ActorsProvider>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route
-                path='*'
-                element={
-                  <ProtectedRoute>
-                    <BetaShell>
-                      <BetaAppRoutes />
-                    </BetaShell>
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </ActorsProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <ActorsProvider>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route
+                  path='*'
+                  element={
+                    <ProtectedRoute>
+                      <BetaShell>
+                        <BetaAppRoutes />
+                      </BetaShell>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+              <ToastContainer />
+            </ActorsProvider>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>
   )

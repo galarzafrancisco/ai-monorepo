@@ -14,6 +14,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto, MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
+import { useToast } from '../../shared/context/ToastContext';
 import './TaskDetailPage.css';
 
 export function TaskDetailPage() {
@@ -22,6 +23,7 @@ export function TaskDetailPage() {
   const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasksCtx();
   const { actors } = useActorsCtx();
   const { user } = useAuth();
+  const { showError } = useToast();
 
   const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
@@ -147,10 +149,7 @@ export function TaskDetailPage() {
     try {
       await TasksService.tasksControllerRemoveTagFromTask(task.id, tagId);
     } catch (err: unknown) {
-      const errorMessage = (err as { body?: { detail?: string }; message?: string })?.body?.detail
-        || (err as { message?: string })?.message
-        || 'Failed to remove tag';
-      setError(errorMessage);
+      showError(err);
     }
   }
 
@@ -201,10 +200,7 @@ export function TaskDetailPage() {
       await TasksService.tasksControllerChangeStatus(task.id, { status: newStatus });
       setError(null);
     } catch (err: unknown) {
-      const errorMessage = (err as { body?: { detail?: string }; message?: string })?.body?.detail
-        || (err as { message?: string })?.message
-        || 'Failed to change status';
-      setError(errorMessage);
+      showError(err);
     } finally {
       setIsLoading(false);
     }
@@ -552,8 +548,12 @@ export function TaskDetailPage() {
       <DeleteWithConfirmation
         className='task-detail-page__comment-buttons'
         onDelete={async () => {
-          await deleteTask({ taskId: task.id });
-          navigate('/tasks');
+          try {
+            await deleteTask({ taskId: task.id });
+            navigate('/tasks');
+          } catch (err: unknown) {
+            showError(err);
+          }
         }}
       />
 
