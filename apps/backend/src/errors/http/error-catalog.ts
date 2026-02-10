@@ -39,6 +39,12 @@ export const ErrorCatalog: Record<
     type: '/errors/tasks/is-thread-parent',
     retryable: false,
   },
+  [ErrorCodes.INPUT_REQUEST_SELF_ASSIGNMENT]: {
+    status: 400,
+    title: 'Input request cannot target asker',
+    type: '/errors/tasks/input-request-self-assignment',
+    retryable: false,
+  },
   [ErrorCodes.PAGE_NOT_FOUND]: {
     status: 404,
     title: 'Context page not found',
