@@ -8,6 +8,7 @@ import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { MetaService } from '../meta/meta.service';
+import { ContextService } from '../context/context.service';
 import {
   ThreadNotFoundError,
   TaskNotFoundForThreadError,
@@ -22,6 +23,7 @@ describe('ThreadsService - Parent Task ID', () => {
   let taskRepository: jest.Mocked<Repository<TaskEntity>>;
   let actorRepository: jest.Mocked<Repository<ActorEntity>>;
   let metaService: jest.Mocked<MetaService>;
+  let contextService: jest.Mocked<ContextService>;
 
   const mockActor: ActorEntity = {
     id: 'actor-uuid',
@@ -62,6 +64,7 @@ describe('ThreadsService - Parent Task ID', () => {
     title: 'Test Thread',
     createdByActorId: 'actor-uuid',
     parentTaskId: 'parent-task-uuid',
+    stateContextBlockId: 'state-block-uuid',
     tasks: [mockParentTask],
     referencedContextBlocks: [],
     tags: [],
@@ -124,6 +127,16 @@ describe('ThreadsService - Parent Task ID', () => {
             cleanupOrphanedTag: jest.fn(),
           },
         },
+        {
+          provide: ContextService,
+          useValue: {
+            createBlock: jest.fn(),
+            getBlockById: jest.fn(),
+            updateBlock: jest.fn(),
+            appendToBlock: jest.fn(),
+            deleteBlock: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -132,7 +145,23 @@ describe('ThreadsService - Parent Task ID', () => {
     taskRepository = module.get(getRepositoryToken(TaskEntity));
     actorRepository = module.get(getRepositoryToken(ActorEntity));
     metaService = module.get(MetaService);
+    contextService = module.get(ContextService);
   });
+
+  const mockStateBlock = {
+    id: 'state-block-uuid',
+    title: 'Thread State: Test Thread',
+    content: 'This thread was created to achieve task Parent Task (id parent-task-uuid).',
+    createdByActorId: 'actor-uuid',
+    createdBy: 'test-user',
+    assigneeActorId: null,
+    assignee: null,
+    parentId: null,
+    order: 0,
+    tags: [{ id: 'tag-uuid', name: 'thread:state', color: '#000000', createdAt: new Date(), updatedAt: new Date() }],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -149,6 +178,7 @@ describe('ThreadsService - Parent Task ID', () => {
 
         actorRepository.findOne.mockResolvedValue(mockActor);
         taskRepository.findOne.mockResolvedValue(mockParentTask);
+        contextService.createBlock.mockResolvedValue(mockStateBlock);
         threadRepository.create.mockReturnValue(mockThread);
         threadRepository.save.mockResolvedValue(mockThread);
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
@@ -164,6 +194,7 @@ describe('ThreadsService - Parent Task ID', () => {
           title: 'Test Thread',
           createdByActorId: 'actor-uuid',
           parentTaskId: 'parent-task-uuid',
+          stateContextBlockId: 'state-block-uuid',
         });
       });
     });
@@ -197,6 +228,7 @@ describe('ThreadsService - Parent Task ID', () => {
 
         actorRepository.findOne.mockResolvedValue(mockActor);
         taskRepository.findOne.mockResolvedValue(mockParentTask);
+        contextService.createBlock.mockResolvedValue(mockStateBlock);
         threadRepository.create.mockReturnValue(mockThread);
         threadRepository.save.mockResolvedValue(mockThread);
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
@@ -231,6 +263,7 @@ describe('ThreadsService - Parent Task ID', () => {
 
         actorRepository.findOne.mockResolvedValue(mockActor);
         taskRepository.findOne.mockResolvedValue(mockParentTask);
+        contextService.createBlock.mockResolvedValue(mockStateBlock);
         threadRepository.create.mockReturnValue(mockThread);
         threadRepository.save.mockResolvedValue(mockThread);
         taskRepository.findBy.mockResolvedValue([
@@ -375,6 +408,7 @@ describe('ThreadsService - Parent Task ID', () => {
         actorRepository.findOne.mockResolvedValue(mockActor);
         taskRepository.findOne.mockResolvedValue(mockParentTask);
         taskRepository.findBy.mockResolvedValue([mockParentTask]);
+        contextService.createBlock.mockResolvedValue(mockStateBlock);
 
         const thread1 = { ...mockThread, id: 'thread-1-uuid', title: 'Thread 1' };
         const thread2 = { ...mockThread, id: 'thread-2-uuid', title: 'Thread 2' };
