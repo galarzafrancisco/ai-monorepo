@@ -494,7 +494,7 @@ describe('ThreadsService - Parent Task ID', () => {
   });
 
   describe('findThreadsByStateBlockId', () => {
-    it('should find threads by state block ID', async () => {
+    it('should find threads by state block ID including soft-deleted', async () => {
       threadRepository.find.mockResolvedValue([mockThread]);
 
       const result = await service.findThreadsByStateBlockId('state-block-uuid');
@@ -504,6 +504,7 @@ describe('ThreadsService - Parent Task ID', () => {
       expect(threadRepository.find).toHaveBeenCalledWith({
         where: { stateContextBlockId: 'state-block-uuid' },
         relations: expect.any(Array),
+        withDeleted: true, // Verify that soft-deleted threads are included
       });
     });
 
@@ -516,6 +517,7 @@ describe('ThreadsService - Parent Task ID', () => {
       expect(threadRepository.find).toHaveBeenCalledWith({
         where: { stateContextBlockId: 'non-existent-state-block' },
         relations: expect.any(Array),
+        withDeleted: true, // Verify that soft-deleted threads are included
       });
     });
   });

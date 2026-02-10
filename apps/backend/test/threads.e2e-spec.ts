@@ -444,24 +444,25 @@ describe('Threads E2E Tests - Parent Task ID', () => {
       expect(response.body.detail).toContain('thread');
     });
 
-    it('should be able to delete state block after thread is deleted', async () => {
-      // First, delete the thread
+    it('should still fail to delete state block after thread is soft-deleted', async () => {
+      // First, delete the thread (soft delete)
       await request(httpServer)
         .delete(`/api/v1/threads/${stateBlockThreadId}`)
         .set('Cookie', authCookies)
         .expect(204);
 
-      // Now the state block should be deletable since no threads reference it
-      await request(httpServer)
+      // The state block should still NOT be deletable because:
+      // 1. Soft-deleted threads still exist in the database
+      // 2. The FK constraint (onDelete: 'RESTRICT') still applies to soft-deleted rows
+      // 3. Our guard correctly checks for threads including soft-deleted ones
+      const response = await request(httpServer)
         .delete(`/api/v1/context/blocks/${stateBlockId}`)
         .set('Cookie', authCookies)
-        .expect(204);
+        .expect(400);
 
-      // Verify the block is deleted
-      await request(httpServer)
-        .get(`/api/v1/context/blocks/${stateBlockId}`)
-        .set('Cookie', authCookies)
-        .expect(404);
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body).toHaveProperty('type', '/errors/context/block-is-thread-state');
+      expect(response.body.detail).toContain('Cannot delete context block');
     });
   });
 });

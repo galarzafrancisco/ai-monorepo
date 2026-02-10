@@ -471,6 +471,7 @@ export class ThreadsService {
         'tags',
         'participants',
       ],
+      withDeleted: true, // Include soft-deleted threads because FK constraint still applies
     });
 
     return threads.map((thread) => this.mapThreadToResult(thread));
