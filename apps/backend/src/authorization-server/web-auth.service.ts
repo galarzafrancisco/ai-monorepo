@@ -185,7 +185,6 @@ export class WebAuthService {
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
 
     // Find the refresh token in database with user and actor relations
-    // TODO: should throw if user is gone?
     const storedToken = await this.refreshTokenRepository.findOne({
       where: { tokenHash },
       relations: ['user', 'user.actor'],
@@ -193,6 +192,15 @@ export class WebAuthService {
 
     if (!storedToken) {
       this.logger.warn('Refresh token not found');
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (!storedToken.user) {
+      this.logger.warn('Refresh token user missing');
+      if (!storedToken.revokedAt) {
+        storedToken.revokedAt = new Date();
+        await this.refreshTokenRepository.save(storedToken);
+      }
       throw new UnauthorizedException('Invalid refresh token');
     }
 
