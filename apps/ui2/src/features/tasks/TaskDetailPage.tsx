@@ -80,7 +80,8 @@ export function TaskDetailPage() {
         comment: content,
       });
       return true;
-    } catch {
+    } catch (err: unknown) {
+      showError(err);
       return false;
     }
   }
@@ -98,7 +99,8 @@ export function TaskDetailPage() {
         assigneeActorId: actor.id,
       });
       return true;
-    } catch {
+    } catch (err: unknown) {
+      showError(err);
       return false;
     }
   }
@@ -117,7 +119,8 @@ export function TaskDetailPage() {
         answer,
       });
       return true;
-    } catch {
+    } catch (err: unknown) {
+      showError(err);
       return false;
     }
   }
@@ -134,7 +137,8 @@ export function TaskDetailPage() {
         name: tag.name,
       });
       return true;
-    } catch {
+    } catch (err: unknown) {
+      showError(err);
       return false;
     }
   }

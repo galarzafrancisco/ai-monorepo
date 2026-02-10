@@ -15,6 +15,7 @@ import { EditAgentTypePop } from './EditAgentTypePop';
 import { EditAgentModelPop } from './EditAgentModelPop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
+import { useToast } from '../../shared/context/ToastContext';
 import './AgentDetailPage.css';
 import { useActorsCtx } from '../actors';
 
@@ -24,6 +25,7 @@ export function AgentDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { agents, setSectionTitle, loadAgentDetails, updateAgent, deleteAgent } = useAgentsCtx();
+  const { showError } = useToast();
 
   // Find agent from context first (for quick load)
   const agentFromList = agents.find(a => a.slug === slug);
@@ -205,6 +207,7 @@ export function AgentDetailPage() {
       return false;
     } catch (err) {
       console.error('Failed to update system prompt:', err);
+      showError(err);
       return false;
     }
   };
@@ -222,6 +225,7 @@ export function AgentDetailPage() {
       return false;
     } catch (err) {
       console.error('Failed to update status triggers:', err);
+      showError(err);
       return false;
     }
   };
@@ -239,6 +243,7 @@ export function AgentDetailPage() {
       return false;
     } catch (err) {
       console.error('Failed to update tag triggers:', err);
+      showError(err);
       return false;
     }
   };
@@ -256,6 +261,7 @@ export function AgentDetailPage() {
       return false;
     } catch (err) {
       console.error('Failed to update introduction:', err);
+      showError(err);
       return false;
     }
   };
@@ -273,6 +279,7 @@ export function AgentDetailPage() {
       return false;
     } catch (err) {
       console.error('Failed to update agent type:', err);
+      showError(err);
       return false;
     }
   };
@@ -295,6 +302,7 @@ export function AgentDetailPage() {
       return false;
     } catch (err) {
       console.error('Failed to update model config:', err);
+      showError(err);
       return false;
     }
   };
