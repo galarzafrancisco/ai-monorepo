@@ -437,6 +437,8 @@ describe('Threads E2E Tests - Parent Task ID', () => {
         .expect(400); // Bad Request due to business rule violation
 
       expect(response.body).toHaveProperty('status', 400);
+      expect(response.body).toHaveProperty('type', '/errors/context/block-is-thread-state');
+      expect(response.body).toHaveProperty('title', 'Context block is thread state');
       expect(response.body.detail).toContain('Cannot delete context block');
       expect(response.body.detail).toContain('state block');
       expect(response.body.detail).toContain('thread');
