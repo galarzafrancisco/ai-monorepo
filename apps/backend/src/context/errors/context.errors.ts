@@ -4,6 +4,7 @@ export const ContextErrorCodes = {
   BLOCK_NOT_FOUND: ErrorCodes.PAGE_NOT_FOUND,
   PARENT_BLOCK_NOT_FOUND: ErrorCodes.PARENT_PAGE_NOT_FOUND,
   CIRCULAR_REFERENCE: ErrorCodes.CIRCULAR_REFERENCE,
+  BLOCK_IS_THREAD_STATE: ErrorCodes.BLOCK_IS_THREAD_STATE,
 } as const;
 
 type ContextErrorCode =
@@ -43,6 +44,16 @@ export class CircularReferenceError extends ContextDomainError {
     super(
       'Cannot create circular parent-child relationship',
       ContextErrorCodes.CIRCULAR_REFERENCE,
+    );
+  }
+}
+
+export class BlockIsThreadStateError extends ContextDomainError {
+  constructor(blockId: string, threadCount: number) {
+    super(
+      `Cannot delete context block because it is the state block of ${threadCount} thread${threadCount > 1 ? 's' : ''}.`,
+      ContextErrorCodes.BLOCK_IS_THREAD_STATE,
+      { blockId, threadCount },
     );
   }
 }

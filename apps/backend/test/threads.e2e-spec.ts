@@ -394,4 +394,75 @@ describe('Threads E2E Tests - Parent Task ID', () => {
       );
     });
   });
+
+  describe('State Context Block Deletion Validation', () => {
+    let stateBlockTaskId: string;
+    let stateBlockThreadId: string;
+    let stateBlockId: string;
+
+    beforeAll(async () => {
+      // Create a parent task
+      const taskResponse = await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .send({
+          name: 'State Block Deletion Test Parent Task',
+          description: 'Task for testing state block deletion validation',
+        })
+        .expect(201);
+
+      stateBlockTaskId = taskResponse.body.id;
+
+      // Create a thread (which creates a state block)
+      const threadResponse = await request(httpServer)
+        .post('/api/v1/threads')
+        .set('Cookie', authCookies)
+        .send({
+          title: 'State Block Deletion Test Thread',
+          parentTaskId: stateBlockTaskId,
+        })
+        .expect(201);
+
+      stateBlockThreadId = threadResponse.body.id;
+      stateBlockId = threadResponse.body.stateContextBlockId;
+    });
+
+    it('should fail to delete state context block when thread exists (business logic validation)', async () => {
+      // Attempting to delete a context block that is a thread's state block should fail
+      // This is similar to how we prevent deleting a task that is a thread's parent
+
+      const response = await request(httpServer)
+        .delete(`/api/v1/context/blocks/${stateBlockId}`)
+        .set('Cookie', authCookies)
+        .expect(400); // Bad Request due to business rule violation
+
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body).toHaveProperty('type', '/errors/context/block-is-thread-state');
+      expect(response.body).toHaveProperty('title', 'Context block is thread state');
+      expect(response.body.detail).toContain('Cannot delete context block');
+      expect(response.body.detail).toContain('state block');
+      expect(response.body.detail).toContain('thread');
+    });
+
+    it('should still fail to delete state block after thread is soft-deleted', async () => {
+      // First, delete the thread (soft delete)
+      await request(httpServer)
+        .delete(`/api/v1/threads/${stateBlockThreadId}`)
+        .set('Cookie', authCookies)
+        .expect(204);
+
+      // The state block should still NOT be deletable because:
+      // 1. Soft-deleted threads still exist in the database
+      // 2. The FK constraint (onDelete: 'RESTRICT') still applies to soft-deleted rows
+      // 3. Our guard correctly checks for threads including soft-deleted ones
+      const response = await request(httpServer)
+        .delete(`/api/v1/context/blocks/${stateBlockId}`)
+        .set('Cookie', authCookies)
+        .expect(400);
+
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body).toHaveProperty('type', '/errors/context/block-is-thread-state');
+      expect(response.body.detail).toContain('Cannot delete context block');
+    });
+  });
 });

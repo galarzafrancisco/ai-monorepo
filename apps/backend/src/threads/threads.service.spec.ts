@@ -492,4 +492,33 @@ describe('ThreadsService - Parent Task ID', () => {
       expect(result.limit).toBe(20);
     });
   });
+
+  describe('findThreadsByStateBlockId', () => {
+    it('should find threads by state block ID including soft-deleted', async () => {
+      threadRepository.find.mockResolvedValue([mockThread]);
+
+      const result = await service.findThreadsByStateBlockId('state-block-uuid');
+
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('thread-uuid');
+      expect(threadRepository.find).toHaveBeenCalledWith({
+        where: { stateContextBlockId: 'state-block-uuid' },
+        relations: expect.any(Array),
+        withDeleted: true, // Verify that soft-deleted threads are included
+      });
+    });
+
+    it('should return empty array when no threads use the state block', async () => {
+      threadRepository.find.mockResolvedValue([]);
+
+      const result = await service.findThreadsByStateBlockId('non-existent-state-block');
+
+      expect(result.length).toBe(0);
+      expect(threadRepository.find).toHaveBeenCalledWith({
+        where: { stateContextBlockId: 'non-existent-state-block' },
+        relations: expect.any(Array),
+        withDeleted: true, // Verify that soft-deleted threads are included
+      });
+    });
+  });
 });

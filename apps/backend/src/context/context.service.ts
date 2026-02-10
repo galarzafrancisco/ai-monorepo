@@ -1,10 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ContextBlockEntity } from './block.entity';
 import { MetaService } from '../meta/meta.service';
 import { TagEntity } from '../meta/tag.entity';
+import { ThreadsService } from '../threads/threads.service';
 
 import {
   AddTagInput,
@@ -21,6 +22,7 @@ import {
   BlockNotFoundError,
   ParentBlockNotFoundError,
   CircularReferenceError,
+  BlockIsThreadStateError,
 } from './errors/context.errors';
 import {
   BlockCreatedEvent,
@@ -37,6 +39,8 @@ export class ContextService {
     private readonly blockRepository: Repository<ContextBlockEntity>,
     private readonly eventEmitter: EventEmitter2,
     private readonly metaService: MetaService,
+    @Inject(forwardRef(() => ThreadsService))
+    private readonly threadsService: ThreadsService,
   ) {}
 
   async createBlock(input: CreateBlockInput): Promise<BlockResult> {
@@ -281,6 +285,12 @@ export class ContextService {
 
     if (!block) {
       throw new BlockNotFoundError(blockId);
+    }
+
+    // Check if block is a state block for any threads
+    const threadsWithState = await this.threadsService.findThreadsByStateBlockId(blockId);
+    if (threadsWithState.length > 0) {
+      throw new BlockIsThreadStateError(blockId, threadsWithState.length);
     }
 
     const result = await this.blockRepository.delete(blockId);
