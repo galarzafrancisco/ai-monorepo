@@ -10,6 +10,7 @@ import {
   ManyToOne,
   JoinTable,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { TaskEntity } from '../tasks/task.entity';
@@ -17,6 +18,7 @@ import { ContextBlockEntity } from '../context/block.entity';
 import { TagEntity } from '../meta/tag.entity';
 
 @Entity({ name: 'threads' })
+@Index(['parentTaskId'], { unique: true })
 export class ThreadEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, In } from 'typeorm';
+import { Repository, In, QueryFailedError } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
@@ -226,11 +226,23 @@ export class TasksService {
         parentTaskId,
         newTaskId: task.id,
       });
-      thread = await this.threadsService.createThread({
-        createdByActorId: input.createdByActorId,
-        parentTaskId: parentTaskId,
-        taskIds: [task.id],
-      });
+      try {
+        thread = await this.threadsService.createThread({
+          createdByActorId: input.createdByActorId,
+          parentTaskId: parentTaskId,
+          taskIds: [task.id],
+        });
+      } catch (error) {
+        if (this.isThreadParentUniqueConstraintError(error)) {
+          thread = await this.threadsService.findThreadByTaskId(parentTaskId);
+          if (!thread) {
+            throw error;
+          }
+          await this.threadsService.attachTask(thread.id, task.id);
+        } else {
+          throw error;
+        }
+      }
     }
 
     this.logger.log({
@@ -349,6 +361,17 @@ export class TasksService {
       new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
     );
     return this.mapTaskToResult(taskWithRelations);
+  }
+
+  private isThreadParentUniqueConstraintError(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+    const driverError = (error as any).driverError;
+    if (driverError?.code !== 'SQLITE_CONSTRAINT') {
+      return false;
+    }
+    return driverError?.message?.includes('threads.parent_task_id') === true;
   }
 
   async assignTask(
