@@ -3620,7 +3620,7 @@ export interface components {
              * @example claude
              * @enum {string}
              */
-            type: "claude" | "codex" | "opencode" | "adk" | "other";
+            type: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
             /**
              * @description Short description of what this agent does
              * @example A helpful assistant agent
@@ -3710,7 +3710,7 @@ export interface components {
              * @example claude
              * @enum {string}
              */
-            type: "claude" | "codex" | "opencode" | "adk" | "other";
+            type: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
             /**
              * @description Short description of what this agent does
              * @example A helpful assistant agent
@@ -3856,7 +3856,7 @@ export interface components {
              * @example claude
              * @enum {string}
              */
-            type?: "claude" | "codex" | "opencode" | "adk" | "other";
+            type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
             /**
              * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
              * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.

@@ -69,6 +69,7 @@ export namespace CreateAgentDto {
         CODEX = 'codex',
         OPENCODE = 'opencode',
         ADK = 'adk',
+        GITHUBCOPILOT = 'githubcopilot',
         OTHER = 'other',
     }
 }

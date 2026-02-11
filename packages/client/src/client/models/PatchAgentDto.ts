@@ -45,6 +45,7 @@ export namespace PatchAgentDto {
         CODEX = 'codex',
         OPENCODE = 'opencode',
         ADK = 'adk',
+        GITHUBCOPILOT = 'githubcopilot',
         OTHER = 'other',
     }
 }
