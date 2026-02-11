@@ -1,164 +1,159 @@
 .shipped-celebration {
   position: fixed;
   inset: 0;
-  z-index: 5000;
+  z-index: 9998;
   pointer-events: none;
-  display: grid;
-  place-items: center;
   overflow: hidden;
-  animation: shipped-celebration-fade 1400ms ease forwards;
 }
 
-.shipped-celebration__backdrop {
+.shipped-celebration__veil {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 55%),
-    radial-gradient(circle at 80% 30%, color-mix(in srgb, var(--success) 18%, transparent), transparent 60%),
-    linear-gradient(120deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--success) 12%, transparent));
-  opacity: 0.85;
-}
-
-.shipped-celebration__sweep {
-  position: absolute;
-  inset: -20% -40%;
-  background: linear-gradient(120deg, transparent 35%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%);
-  transform: translateX(-20%);
-  animation: shipped-celebration-sweep 1100ms ease forwards;
-}
-
-.shipped-celebration__confetti {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.shipped-celebration__confetti-piece {
-  position: absolute;
-  top: -12%;
-  left: var(--confetti-left);
-  width: var(--confetti-size);
-  height: calc(var(--confetti-size) * 1.6);
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--confetti-color) 90%, transparent);
+    radial-gradient(
+      60% 60% at 20% 75%,
+      color-mix(in srgb, var(--accent) 26%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      55% 55% at 75% 25%,
+      color-mix(in srgb, var(--success) 24%, transparent) 0%,
+      transparent 65%
+    );
   opacity: 0;
-  transform: translateY(-20%) rotate(0deg);
-  animation: shipped-celebration-confetti var(--confetti-duration) ease-out forwards;
-  animation-delay: var(--confetti-delay);
+  animation: shipped-celebration-fade 1600ms ease-out forwards;
 }
 
-.shipped-celebration__burst {
+.shipped-celebration__rocket {
   position: absolute;
-  width: 60vmin;
-  height: 60vmin;
-  border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--success) 20%, transparent) 0%, transparent 70%);
-  opacity: 0.75;
-  animation: shipped-celebration-burst 1100ms ease forwards;
+  left: 6vw;
+  bottom: 12vh;
+  font-size: calc(var(--fs-6) + 10px);
+  transform-origin: center;
+  animation: shipped-rocket-flight 1500ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  filter: drop-shadow(0 6px 18px color-mix(in srgb, var(--accent) 45%, transparent));
 }
 
-.shipped-celebration__label {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
+.shipped-celebration__rocket-emoji {
+  display: block;
+  transform: rotate(10deg);
+}
+
+.shipped-celebration__trail {
+  position: absolute;
+  left: -120px;
+  top: 50%;
+  width: 110px;
+  height: 3px;
+  transform: translateY(-50%) rotate(-6deg);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
-  color: var(--text);
-  font-size: var(--fs-4);
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0.02em;
-  box-shadow: var(--shadow-2);
-  backdrop-filter: blur(6px);
-  transform: translateY(6px);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 60%, transparent),
+    transparent
+  );
+  opacity: 0.7;
+  animation: shipped-trail 1500ms ease-out forwards;
+}
+
+.shipped-celebration__spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 70%, transparent);
   opacity: 0;
-  animation: shipped-celebration-label 1400ms ease forwards;
+  animation: shipped-spark 1200ms ease-out forwards;
+}
+
+.shipped-celebration__spark--1 {
+  left: 30vw;
+  top: 55vh;
+  animation-delay: 200ms;
+}
+
+.shipped-celebration__spark--2 {
+  left: 55vw;
+  top: 40vh;
+  animation-delay: 350ms;
+}
+
+.shipped-celebration__spark--3 {
+  left: 68vw;
+  top: 28vh;
+  animation-delay: 500ms;
 }
 
 @keyframes shipped-celebration-fade {
   0% {
     opacity: 0;
   }
-  12% {
-    opacity: 1;
+  20% {
+    opacity: 0.9;
   }
   80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes shipped-celebration-sweep {
-  0% {
-    opacity: 0;
-    transform: translateX(-40%);
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(40%);
-  }
-}
-
-@keyframes shipped-celebration-confetti {
-  0% {
-    opacity: 0;
-    transform: translateY(-20%) rotate(0deg);
-  }
-  15% {
     opacity: 0.9;
   }
   100% {
     opacity: 0;
-    transform: translateY(140%) translateX(var(--confetti-drift)) rotate(160deg);
   }
 }
 
-@keyframes shipped-celebration-burst {
+@keyframes shipped-rocket-flight {
+  0% {
+    transform: translate(0, 0) rotate(12deg) scale(0.96);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(36vw, -26vh) rotate(42deg) scale(1);
+  }
+  80% {
+    transform: translate(58vw, -46vh) rotate(24deg) scale(1.02);
+  }
+  100% {
+    transform: translate(72vw, -58vh) rotate(10deg) scale(1.02);
+    opacity: 0;
+  }
+}
+
+@keyframes shipped-trail {
   0% {
     opacity: 0;
+  }
+  20% {
+    opacity: 0.65;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes shipped-spark {
+  0% {
     transform: scale(0.6);
+    opacity: 0;
   }
   40% {
-    opacity: 0.9;
-    transform: scale(1);
+    opacity: 0.85;
   }
   100% {
+    transform: scale(1.6);
     opacity: 0;
-    transform: scale(1.2);
-  }
-}
-
-@keyframes shipped-celebration-label {
-  0% {
-    opacity: 0;
-    transform: translateY(14px) scale(0.98);
-  }
-  20% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-6px) scale(1.02);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shipped-celebration,
-  .shipped-celebration__sweep,
-  .shipped-celebration__confetti-piece,
-  .shipped-celebration__burst,
-  .shipped-celebration__label {
+  .shipped-celebration__veil,
+  .shipped-celebration__rocket,
+  .shipped-celebration__trail,
+  .shipped-celebration__spark {
     animation-duration: 1ms;
-    animation-delay: 0ms;
+    animation-iteration-count: 1;
   }
 }
