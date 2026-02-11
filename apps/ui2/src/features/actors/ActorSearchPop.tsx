@@ -100,6 +100,8 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (displayActors.length === 0) return;
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) return;
+    if (e.key === "Escape") return;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -118,14 +120,8 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
           setSelectedActor(displayActors[highlightedIndex]);
         }
         break;
-      case 'Escape':
-        e.preventDefault();
-        if (selectedActor) {
-          setSelectedActor(null);
-        }
-        break;
     }
-  }, [displayActors, highlightedIndex, selectedActor]);
+  }, [displayActors, highlightedIndex]);
 
   const handleSelectActor = (actor: Actor) => {
     setSelectedActor(actor);

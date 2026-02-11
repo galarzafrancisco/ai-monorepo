@@ -100,6 +100,8 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
     if (totalItems === 0) return;
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) return;
+    if (e.key === "Escape") return;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -127,14 +129,8 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
           });
         }
         break;
-      case 'Escape':
-        e.preventDefault();
-        if (selectedTag) {
-          setSelectedTag(null);
-        }
-        break;
     }
-  }, [filteredTags, highlightedIndex, canCreateNew, selectedTag, query]);
+  }, [filteredTags, highlightedIndex, canCreateNew, query]);
 
   const handleSelectTag = (tag: MetaTagResponseDto) => {
     setSelectedTag(tag);

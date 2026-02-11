@@ -126,6 +126,8 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
     if (totalItems === 0) return;
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) return;
+    if (e.key === "Escape") return;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -148,14 +150,8 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
           handleCreateNewTag();
         }
         break;
-      case 'Escape':
-        e.preventDefault();
-        if (query) {
-          setQuery("");
-        }
-        break;
     }
-  }, [filteredTags, highlightedIndex, canCreateNew, query]);
+  }, [filteredTags, highlightedIndex, canCreateNew]);
 
   async function handleSave(): Promise<boolean> {
     return onSave({ tagTriggers: Array.from(selectedTagIds) });

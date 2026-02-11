@@ -78,7 +78,7 @@ export function NewTaskPop({ onCancel, onSave }: NewTaskPopProps) {
             value={title}
             onChange={(e) => updateField('title', e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && !e.metaKey && !e.ctrlKey) {
                 e.preventDefault();
                 descriptionRef.current?.focus();
               }
