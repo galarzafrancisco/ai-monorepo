@@ -57,11 +57,20 @@ export function PopShell({
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.nativeEvent.isComposing) return;
-    if (event.key !== "Enter") return;
-    if (!event.metaKey && !event.ctrlKey) return;
 
-    event.preventDefault();
-    save();
+    // Handle Escape to cancel/close
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+      return;
+    }
+
+    // Handle CMD/Ctrl+Enter to save
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      save();
+      return;
+    }
   }
 
 

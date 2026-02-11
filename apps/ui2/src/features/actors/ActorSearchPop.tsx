@@ -99,6 +99,21 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
   }, [highlightedIndex]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow CMD/Ctrl+Enter to bubble up to PopShell for save
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      return;
+    }
+
+    // Allow Escape to bubble up to PopShell for cancel (unless we have a selection to clear)
+    if (e.key === 'Escape' && selectedActor) {
+      e.preventDefault();
+      setSelectedActor(null);
+      return;
+    }
+    if (e.key === 'Escape') {
+      return; // Let it bubble to PopShell
+    }
+
     if (displayActors.length === 0) return;
 
     switch (e.key) {
@@ -116,12 +131,6 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
         e.preventDefault();
         if (displayActors[highlightedIndex]) {
           setSelectedActor(displayActors[highlightedIndex]);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        if (selectedActor) {
-          setSelectedActor(null);
         }
         break;
     }

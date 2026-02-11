@@ -98,6 +98,21 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
   }, [highlightedIndex, filteredTags.length, canCreateNew]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow CMD/Ctrl+Enter to bubble up to PopShell for save
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      return;
+    }
+
+    // Allow Escape to bubble up to PopShell for cancel (unless we have a selection to clear)
+    if (e.key === 'Escape' && selectedTag) {
+      e.preventDefault();
+      setSelectedTag(null);
+      return;
+    }
+    if (e.key === 'Escape') {
+      return; // Let it bubble to PopShell
+    }
+
     const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
     if (totalItems === 0) return;
 
@@ -125,12 +140,6 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
             createdAt: '',
             updatedAt: '',
           });
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        if (selectedTag) {
-          setSelectedTag(null);
         }
         break;
     }

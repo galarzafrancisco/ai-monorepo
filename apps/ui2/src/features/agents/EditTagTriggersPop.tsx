@@ -124,6 +124,21 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
   };
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow CMD/Ctrl+Enter to bubble up to PopShell for save
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      return;
+    }
+
+    // Allow Escape to bubble up to PopShell for cancel (unless we have a query to clear)
+    if (e.key === 'Escape' && query) {
+      e.preventDefault();
+      setQuery("");
+      return;
+    }
+    if (e.key === 'Escape') {
+      return; // Let it bubble to PopShell
+    }
+
     const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
     if (totalItems === 0) return;
 
@@ -146,12 +161,6 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
         } else if (canCreateNew && highlightedIndex === filteredTags.length) {
           // Create new tag
           handleCreateNewTag();
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        if (query) {
-          setQuery("");
         }
         break;
     }
