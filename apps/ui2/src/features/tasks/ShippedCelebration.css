@@ -1,0 +1,109 @@
+.shipped-celebration {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  overflow: hidden;
+}
+
+.shipped-celebration__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 40% at 20% 85%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%),
+    radial-gradient(45% 35% at 80% 20%, color-mix(in srgb, var(--success) 12%, transparent), transparent 70%);
+  animation: shipped-veil var(--celebration-duration) ease-out forwards;
+}
+
+.shipped-celebration__rocket {
+  position: absolute;
+  left: -12vw;
+  bottom: -12vh;
+  font-size: clamp(28px, 6vw, 56px);
+  filter: drop-shadow(0 8px 18px color-mix(in srgb, var(--accent) 35%, transparent));
+  animation: shipped-rocket var(--celebration-duration) cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+.shipped-celebration__spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
+  filter: blur(0.4px);
+  opacity: 0;
+  animation: shipped-spark var(--celebration-duration) ease-out forwards;
+}
+
+.shipped-celebration__spark--one {
+  left: 25vw;
+  bottom: 30vh;
+  animation-delay: 120ms;
+}
+
+.shipped-celebration__spark--two {
+  left: 55vw;
+  bottom: 55vh;
+  animation-delay: 240ms;
+}
+
+.shipped-celebration__spark--three {
+  left: 78vw;
+  bottom: 70vh;
+  animation-delay: 320ms;
+}
+
+@keyframes shipped-rocket {
+  0% {
+    transform: translate(0, 0) rotate(-20deg) scale(0.95);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  55% {
+    transform: translate(55vw, -45vh) rotate(10deg) scale(1.02);
+  }
+  100% {
+    transform: translate(115vw, -85vh) rotate(28deg) scale(1.08);
+    opacity: 0;
+  }
+}
+
+@keyframes shipped-veil {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes shipped-spark {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shipped-celebration__rocket,
+  .shipped-celebration__veil,
+  .shipped-celebration__spark {
+    animation: none;
+  }
+
+  .shipped-celebration__veil {
+    opacity: 0.12;
+  }
+}
