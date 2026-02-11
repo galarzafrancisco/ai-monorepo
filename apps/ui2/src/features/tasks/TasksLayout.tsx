@@ -9,6 +9,7 @@ import { ShippedCelebrationOverlay } from "./ShippedCelebrationOverlay";
 export function TasksLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
   const { sectionTitle, shippedCelebration } = useTasksCtx();
+
   return (
     <div style={{ minHeight: 0 }}>
       {shippedCelebration ? (
