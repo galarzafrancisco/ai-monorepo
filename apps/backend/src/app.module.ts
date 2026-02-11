@@ -19,6 +19,7 @@ import { AgentRunsModule } from './agent-runs/agent-runs.module';
 import { getConfig } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
 import { BaselineSchema1700000000000 } from './migrations/1700000000000-BaselineSchema';
+import { AddUniqueIndexThreadsParentTask2026021100001 } from './migrations/2026021100001-AddUniqueIndexThreadsParentTask';
 
 @Module({
   imports: [
@@ -28,7 +29,10 @@ import { BaselineSchema1700000000000 } from './migrations/1700000000000-Baseline
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: false,
       migrationsRun: true,
-      migrations: [BaselineSchema1700000000000],
+      migrations: [
+        BaselineSchema1700000000000,
+        AddUniqueIndexThreadsParentTask2026021100001,
+      ],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),

@@ -209,7 +209,7 @@ export class TasksService {
     });
 
     // Try to find a thread where the parent task is
-    let thread = await this.threadsService.findThreadByTaskId(parentTaskId);
+    let thread = await this.threadsService.findThreadByParentTaskId(parentTaskId);
 
     if (thread) {
       // Thread exists, attach the task to it
@@ -234,7 +234,9 @@ export class TasksService {
         });
       } catch (error) {
         if (this.isThreadParentUniqueConstraintError(error)) {
-          thread = await this.threadsService.findThreadByTaskId(parentTaskId);
+          thread = await this.threadsService.findThreadByParentTaskId(
+            parentTaskId,
+          );
           if (!thread) {
             throw error;
           }
