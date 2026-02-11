@@ -43,7 +43,7 @@ export function EditAgentModelPop({
             value={providerId}
             onChange={(e) => setProviderId(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && !e.metaKey && !e.ctrlKey) {
                 e.preventDefault();
                 modelRef.current?.focus();
               }
