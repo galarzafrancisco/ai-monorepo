@@ -51,18 +51,21 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
 
         console.log(`created session ${session.sessionId} in ${session.workspacePath}`);
 
+        let lastAssistantMessage = '';
+
         // Subscribe to events
         session.on('session.idle', async () => {
           console.log('session.idle');
           if (this.client) {
             await this.client.stop();
           }
-          resolve('');
+          resolve(lastAssistantMessage);
         });
         session.on('assistant.reasoning', (reasoning) => {
           void emit(`💬 Thinking... ${reasoning.data.content}`);
         });
         session.on('assistant.message', (message) => {
+          lastAssistantMessage = message.data.content ?? '';
           void emit(`💬 Assistant: ${message.data.content}`);
         });
         session.on('tool.execution_start', (toolCall) => {
