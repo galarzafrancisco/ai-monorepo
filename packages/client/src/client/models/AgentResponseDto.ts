@@ -89,6 +89,7 @@ export namespace AgentResponseDto {
         CODEX = 'codex',
         OPENCODE = 'opencode',
         ADK = 'adk',
+        GITHUBCOPILOT = 'githubcopilot',
         OTHER = 'other',
     }
 }

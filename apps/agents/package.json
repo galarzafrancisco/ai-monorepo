@@ -14,11 +14,15 @@
     "start:all": "concurrently -n claude,codex,reviewer,qwen,gemini -c auto \"npm run start:claude\" \"npm run start:codex\" \"npm run start:reviewer\" \"npm run start:qwen\" \"npm run start:gemini\"",
     "dev": "dotenv -e .env.gemini tsx src/dev.ts"
   },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "dependencies": {
-    "@taico/client": "*",
     "@anthropic-ai/claude-agent-sdk": "^0.1.76",
+    "@github/copilot-sdk": "0.1.22",
     "@google/adk": "^0.2.4",
-    "@opencode-ai/sdk": "^1.1.28"
+    "@opencode-ai/sdk": "^1.1.28",
+    "@taico/client": "*"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",

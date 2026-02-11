@@ -15,6 +15,7 @@ const AGENT_TYPES = [
   { value: AgentResponseDto.type.CODEX, label: "Codex", description: "OpenAI's Codex" },
   { value: AgentResponseDto.type.OPENCODE, label: "OpenCode", description: "OpenCode agent" },
   { value: AgentResponseDto.type.ADK, label: "ADK", description: "Agent Development Kit" },
+  { value: AgentResponseDto.type.GITHUBCOPILOT, label: "GitHub Copilot", description: "GitHub Copilot agent" },
   { value: AgentResponseDto.type.OTHER, label: "Other", description: "Other agent type" },
 ];
 
