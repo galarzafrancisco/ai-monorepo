@@ -18,6 +18,27 @@ The worker is intentionally decoupled from the backend. You can run workers anyw
 
 The worker has access to whatever the host machine has access to. If you have Claude Code installed and authenticated, the Claude runner can use it. Same for OpenCode and GitHub Copilot.
 
+## Design Constraints (Aspirational)
+
+These are the intended design constraints for the worker runtime. They are not implemented yet.
+Today the worker just runs a Claude Code, OpenCode, or GitHub Copilot process on your machine and can do whatever that process can do.
+This early version requires you to be authenticated to tools, which means you are exposing keys to the LLM. Treat it with caution.
+
+1. The shell is disposable.
+The agent may destroy its own environment and nothing outside it is affected.
+
+2. The shell has zero ambient authority.
+No credentials, no identities, no implicit cloud access, no inherited power.
+
+3. Authority is external.
+All cost-bearing or state-changing actions are mediated by a trusted service.
+
+4. The agent cannot gain power by exploration.
+Scanning the filesystem, env, or network must not reveal new capabilities.
+
+5. Capabilities are explicit and task-scoped.
+If a task needs power, it must be declared up front and granted narrowly.
+
 ## Setup
 
 ### 1. Create an Agent
