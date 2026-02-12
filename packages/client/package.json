@@ -2,30 +2,24 @@
   "name": "@taico/client",
   "version": "0.0.1",
   "type": "module",
+  "private": false,
   "license": "MIT",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist",
+    "package.json"
+  ],
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
-    "./types": {
-      "types": "./src/types/index.ts",
-      "default": "./src/types/index.ts"
-    },
-    "./types/task-events": {
-      "types": "./dist/src/types/task-events.d.ts",
-      "default": "./dist/src/types/task-events.js"
-    },
-    "./client": {
-      "types": "./src/client/index.ts",
-      "default": "./src/client/index.ts"
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
     },
     "./contracts": {
-      "types": "./contracts/types.ts",
-      "default": "./contracts/types.ts"
+      "types": "./dist/contracts/types.d.ts",
+      "import": "./dist/contracts/types.js",
+      "default": "./dist/contracts/types.js"
     },
     "./package.json": "./package.json"
   },
@@ -38,7 +32,9 @@
     "copy:contracts": "mkdir -p contracts && cp ../../apps/backend/openapi.json contracts/openapi.json",
     "generate:types": "openapi-typescript contracts/openapi.json -o contracts/types.ts",
     "generate:client": "openapi --input contracts/openapi.json --output src/client --client fetch && npm run fix:esm-imports",
-    "fix:esm-imports": "node scripts/fix-esm-imports.js"
+    "fix:esm-imports": "node scripts/fix-esm-imports.js",
+    "pack": "npm run build:prod && npm pack",
+    "release": "npm run build:prod && npm publish --access public"
   },
   "devDependencies": {
     "openapi-typescript": "^7.10.1",

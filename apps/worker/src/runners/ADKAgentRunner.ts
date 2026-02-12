@@ -1,9 +1,8 @@
 // ADKAgentRunner.ts
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { LlmAgent, Runner, InMemorySessionService, MCPToolset } from "@google/adk";
-import { ADKMessageFormatter } from "src/formatters/ADKMessageFormatter.js";
-import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
-import { RUN_ID_HEADER } from "src/helpers/config.js";
+import { ADKMessageFormatter } from "../formatters/ADKMessageFormatter.js";
+import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 
 export class ADKAgentRunner extends BaseAgentRunner {

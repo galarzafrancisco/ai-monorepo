@@ -1,5 +1,5 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
-import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "src/helpers/config.js";
+import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 import { CopilotClient, MCPRemoteServerConfig } from "@github/copilot-sdk";
 

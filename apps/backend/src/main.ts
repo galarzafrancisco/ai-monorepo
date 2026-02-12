@@ -117,8 +117,11 @@ async function bootstrap() {
     console.log(`Serving static files from ${staticPath}`);
 
     // SPA fallback: serve index.html for all non-API, non-asset routes
-    // This allows client-side routing to work
-    app.use((req, res, next) => {
+    // This allows client-side routing to work.
+    // Registered on the underlying HTTP adapter so it runs after NestJS
+    // controllers (which handle /api/* routes) but catches everything else.
+    const httpAdapter = app.getHttpAdapter();
+    httpAdapter.getInstance().use((req, res, next) => {
       // Don't intercept API routes, static assets, or well-known routes
       if (
         req.path.startsWith('/api/') ||
@@ -127,12 +130,12 @@ async function bootstrap() {
       ) {
         return next();
       }
-      // Serve Beta
+      // Serve Beta UI
       if (req.path.startsWith('/beta')) {
-        res.sendFile(join(betaStaticPath, 'index.html'));
+        return res.sendFile(join(betaStaticPath, 'index.html'));
       }
-      // Serve index.html for all other routes
-      res.sendFile(join(staticPath, 'index.html'));
+      // Serve legacy UI for all other routes
+      return res.sendFile(join(staticPath, 'index.html'));
     });
   }
 
