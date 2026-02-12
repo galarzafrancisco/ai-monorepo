@@ -72,10 +72,14 @@ function startBackendOnPort(port) {
         return;
       }
       settled = true;
-      cleanup();
+      cleanupStartup();
       child.kill('SIGINT');
       reject(new Error('Backend startup timed out.'));
     }, backendStartupTimeoutMs);
+
+    // Keep piping output after startup
+    const pipeStdout = (chunk) => process.stdout.write(chunk);
+    const pipeStderr = (chunk) => process.stderr.write(chunk);
 
     const handleOutput = (chunk, stream) => {
       const text = chunk.toString();
@@ -84,7 +88,7 @@ function startBackendOnPort(port) {
       if (addressInUsePattern.test(text)) {
         if (!settled) {
           settled = true;
-          cleanup();
+          cleanupStartup();
           child.kill('SIGINT');
           reject(new Error('Address already in use.'));
         }
@@ -94,7 +98,10 @@ function startBackendOnPort(port) {
       const match = text.match(portPattern);
       if (match && !settled) {
         settled = true;
-        cleanup();
+        cleanupStartup();
+        // Keep piping logs after successful startup
+        child.stdout.on('data', pipeStdout);
+        child.stderr.on('data', pipeStderr);
         resolve({ child, port: Number(match[1]) });
       }
     };
@@ -107,7 +114,7 @@ function startBackendOnPort(port) {
         return;
       }
       settled = true;
-      cleanup();
+      cleanupStartup();
       reject(
         new Error(
           `Backend exited before ready (code ${code ?? 'null'}, signal ${signal ?? 'null'}).`,
@@ -120,7 +127,7 @@ function startBackendOnPort(port) {
         return;
       }
       settled = true;
-      cleanup();
+      cleanupStartup();
       reject(error);
     };
 
@@ -129,7 +136,7 @@ function startBackendOnPort(port) {
     child.on('exit', handleExit);
     child.on('error', handleError);
 
-    function cleanup() {
+    function cleanupStartup() {
       clearTimeout(startupTimeout);
       child.stdout.off('data', handleStdout);
       child.stderr.off('data', handleStderr);
