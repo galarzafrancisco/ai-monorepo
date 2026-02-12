@@ -56,7 +56,7 @@ apps/
 ├── backend/     # NestJS 11 API server (SQLite + TypeORM)
 ├── ui2/         # React 19 + Vite frontend (active development)
 ├── ui/          # DEPRECATED — only needs to compile
-└── agents/      # AI agent workers (see apps/agents/README.md)
+└── worker/      # AI agent workers (see apps/worker/README.md)
 packages/
 └── shared/      # Auto-generated types and API client from OpenAPI
 ```

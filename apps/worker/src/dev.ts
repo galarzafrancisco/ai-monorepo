@@ -15,7 +15,7 @@ async function dev() {
   const ctx: AgentRunContext = {
     taskId,
     prompt: "Run pwd and tell me what you see",
-    cwd: `/Users/franciscogalarza/github/ai-monorepo/apps/agents/temp/asds`,
+    cwd: `/Users/franciscogalarza/github/ai-monorepo/apps/worker/temp/asds`,
     runId,
   };
   

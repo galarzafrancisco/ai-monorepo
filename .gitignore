@@ -1,5 +1,6 @@
 .ai
 .reference
+.DS_Store
 
 # Logs
 logs

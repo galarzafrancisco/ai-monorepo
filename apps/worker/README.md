@@ -44,7 +44,7 @@ WORK_DIR="/absolute/path/to/workspace"       # Folder where work happens (absolu
 ### 4. Start the Worker
 
 ```bash
-npm -w apps/agents run start
+npm -w apps/worker run start
 ```
 
 To run multiple agents, create separate `.env` files (e.g., `.env.claude`, `.env.reviewer`) and start each worker with the appropriate env file loaded.

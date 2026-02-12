@@ -2,6 +2,57 @@
 
 This guide covers operating a Taico instance — user management, running agent workers, and system configuration.
 
+## Quick Start via npx
+
+The fastest way to get Taico running. No cloning required — just npm packages.
+
+### 1. Start the server
+
+```bash
+npx -y @taico/taico
+```
+
+By default the server runs in **development mode**, which seeds the database with test users (see [Environments](#environments) below). This is convenient for getting started, but development mode assumes the backend is being proxied by Vite on a separate port. Since there's no Vite proxy when running via npx, you need to tell the server its own URL explicitly:
+
+```bash
+BACKEND_PORT=3000 ISSUER_URL=http://localhost:3000 npx -y @taico/taico
+```
+
+`BACKEND_PORT` and `ISSUER_URL` must be consistent — the issuer URL is the base URL that the OAuth/OIDC server advertises, and it must match the port the server is actually listening on. If they don't match, login will fail.
+
+Open `http://localhost:3000` in your browser.
+
+### 2. Start a worker
+
+Workers connect to the server and run AI agents on tasks. Each worker represents one agent.
+
+Create the agent in the UI and generate an access token (Agents > your agent > Create Token). The token needs scopes: `task:*`, `meta:*`, `context:*`, `agents:read`, `mcp:use`.
+
+Create a `.env` file:
+
+```env
+AGENT_SLUG=claude
+BASE_URL=http://localhost:3000
+ACCESS_TOKEN=your-token-here
+WORK_DIR=/absolute/path/to/workdir
+```
+
+Then start the worker:
+
+```bash
+npx -y @taico/worker
+```
+
+To run multiple agents, create a `.env` file per agent and start each in its own terminal:
+
+```bash
+# Terminal 1
+env $(cat .env.claude | xargs) npx -y @taico/worker
+
+# Terminal 2
+env $(cat .env.reviewer | xargs) npx -y @taico/worker
+```
+
 ## Environments
 
 Taico has two modes, controlled by the `NODE_ENV` environment variable:
@@ -17,9 +68,11 @@ Set `NODE_ENV=development` (the default). The database is seeded with two test u
 
 These are for testing only. Do not use them in production.
 
+> **Note:** In development mode, the server assumes it's behind a Vite dev proxy and sets the OAuth issuer URL to `http://localhost:<UI_PORT>` (default 2000). When running standalone (e.g., via `npx`), you must set `ISSUER_URL` to match the actual server URL (e.g., `http://localhost:3000`). See [Quick Start via npx](#quick-start-via-npx).
+
 ### Production
 
-Set `NODE_ENV=production`. No users are seeded. You must create the first admin user manually.
+Set `NODE_ENV=production`. No users are seeded. You must create the first admin user manually. `ISSUER_URL` is required.
 
 ## User Management
 
@@ -30,7 +83,7 @@ There is no self-service user creation yet. To create an admin user:
 kubectl -n taico exec -it deployment/taico -- node apps/backend/dist/scripts/create-admin-user.js
 ```
 
-**Running locally:**
+**Running locally (from the monorepo):**
 ```bash
 npm -w apps/backend run create-admin
 ```
@@ -45,20 +98,22 @@ You can run workers on the same machine as the backend, on a different server, o
 
 ### Worker Setup
 
-Full instructions are in [apps/agents/README.md](../apps/agents/README.md). The short version:
+If you're using the npm packages, see [Quick Start via npx](#quick-start-via-npx) above.
+
+If you're running from the monorepo, full instructions are in [apps/worker/README.md](../apps/worker/README.md). The short version:
 
 1. **Create an agent** in the UI (or use a pre-populated one). Configure its system prompt, agent type, and triggers.
 2. **Create an access token** from the agent's page. The token needs scopes: `task:*`, `meta:*`, `context:*`, `agents:read`, `mcp:use`.
 3. **Configure a `.env` file** for the worker:
    ```env
    AGENT_SLUG="claude"
-   BASE_URL="http://localhost:2000"
+   BASE_URL="http://localhost:3000"
    ACCESS_TOKEN="your-token-here"
    WORK_DIR="/absolute/path/to/workspace"
    ```
 4. **Start the worker:**
    ```bash
-   npm -w apps/agents run start
+   npm -w apps/worker run start
    ```
 
 ### Running Multiple Workers

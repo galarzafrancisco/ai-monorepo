@@ -1,9 +1,8 @@
 // ClaudeAgentRunner.ts
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { createOpencode, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
-import { OpencodeAsyncMessageFormatter, opencodePartToText } from "src/formatters/OpencodeMessageFormatter.js";
-import { ACCESS_TOKEN, BASE_URL } from "src/helpers/config.js";
-import { RUN_ID_HEADER } from "src/helpers/config.js";
+import { OpencodeAsyncMessageFormatter, opencodePartToText } from "../formatters/OpencodeMessageFormatter.js";
+import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 
 export class OpencodeAgentRunner extends BaseAgentRunner {

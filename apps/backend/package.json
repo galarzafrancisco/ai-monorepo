@@ -1,6 +1,6 @@
 {
   "name": "@taico/taico",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "private": false,
   "license": "MIT",
   "main": "./dist/main.js",
@@ -38,11 +38,13 @@
     "typecheck": "tsc --noEmit",
     "does-it-start": "(nest start & ) && sleep 10 && kill $! || true",
     "init-test-user": "npm run build && node dist/scripts/init-test-user.js",
-    "create-admin": "npm run build && node dist/scripts/create-admin-user.js"
+    "create-admin": "npm run build && node dist/scripts/create-admin-user.js",
+    "pack": "npm pack",
+    "release": "npm publish --access public"
   },
   "dependencies": {
-    "@taico/events": "*",
-    "@taico/errors": "*",
+    "@taico/events": "^0.0.2",
+    "@taico/errors": "^0.0.2",
     "@modelcontextprotocol/sdk": "^1.21.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
