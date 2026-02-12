@@ -38,7 +38,7 @@
     "typecheck": "tsc --noEmit",
     "does-it-start": "(nest start & ) && sleep 10 && kill $! || true",
     "init-test-user": "npm run build && node dist/scripts/init-test-user.js",
-    "create-admin": "npm run build && node dist/apps/backend/src/scripts/create-admin-user.js"
+    "create-admin": "npm run build && node dist/scripts/create-admin-user.js"
   },
   "dependencies": {
     "@taico/events": "*",
