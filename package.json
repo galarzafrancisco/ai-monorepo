@@ -7,7 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "dev": "concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
+    "dev:1": "dotenv -e stack1.env -- concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
+    "dev:2": "dotenv -e stack2.env -- concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
+    "dev:3": "dotenv -e stack3.env -- concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
+    "dev:4": "dotenv -e stack4.env -- concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
+    "dev:5": "dotenv -e stack5.env -- concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
     "build": "npm run build:prod",
     "start": "npm -w apps/backend run start:prod",
     "postinstall": "echo 'Skipping agent-api setup in postinstall'",
@@ -26,6 +31,7 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
     "concurrently": "^9.0.0",
+    "dotenv-cli": "^11.0.0",
     "tsc-alias": "^1.8.16"
   },
   "repository": {

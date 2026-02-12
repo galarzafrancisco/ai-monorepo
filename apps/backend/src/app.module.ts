@@ -13,7 +13,6 @@ import { AuthJourneysModule } from './auth-journeys/auth-journeys.module';
 import { AgentsModule } from './agents/agents.module';
 import { ThreadsModule } from './threads/threads.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
-import { LlmHelperModule } from './llm-helper/llm-helper.module';
 import { MetaModule } from './meta/meta.module';
 import { AgentRunsModule } from './agent-runs/agent-runs.module';
 import { getConfig } from './config/env.config';
@@ -43,7 +42,6 @@ import { BaselineSchema1700000000000 } from './migrations/1700000000000-Baseline
     AgentRunsModule,
     ThreadsModule,
     IdentityProviderModule,
-    LlmHelperModule,
     AppInitModule,
   ],
   controllers: [AppController],

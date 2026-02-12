@@ -16,20 +16,20 @@ export default defineConfig({
       'air.local',
       'debug.taico.app'
     ],
-    port: Number(process.env.VITE_PORT) || 5173,
+    port: Number(process.env.UI_PORT) || 2000,
     proxy: {
       "/api": {
-        target: `http://localhost:${process.env.VITE_BACKEND_PORT || 3000}`,
+        target: `http://localhost:${process.env.BACKEND_PORT || 3000}`,
         changeOrigin: true,
         secure: false,
       },
       "/.well-known": {
-        target: `http://localhost:${process.env.VITE_BACKEND_PORT || 3000}`,
+        target: `http://localhost:${process.env.BACKEND_PORT || 3000}`,
         changeOrigin: true,
         secure: false,
       },
       "/socket.io": {
-        target: `http://localhost:${process.env.VITE_BACKEND_PORT || 3000}`,
+        target: `http://localhost:${process.env.BACKEND_PORT || 3000}`,
         changeOrigin: true,
         secure: false,
         ws: true,

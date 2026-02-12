@@ -26,10 +26,6 @@ export interface AppConfig {
   // Database Configuration
   databasePath: string;
 
-  // External Services
-  adkUrl: string;
-  ollamaUrl: string;
-
   // Security Configuration
   clientSecretLength: number;
   jwksKeySigningTtlHours: number;
@@ -54,7 +50,8 @@ export interface AppConfig {
  */
 export function loadConfig(): AppConfig {
   const backendPortValue =
-    process.env.BACKEND_PORT || process.env.PORT || '3000';
+    process.env.BACKEND_PORT || '3000';
+  const uiPort = getUiPort();
 
   const config: AppConfig = {
     // Server Configuration
@@ -67,10 +64,6 @@ export function loadConfig(): AppConfig {
 
     // Database Configuration
     databasePath: process.env.DATABASE_PATH || 'data/database.sqlite',
-
-    // External Services
-    adkUrl: getADKUrl(),
-    ollamaUrl: getOllamaUrl(),
 
     // Security Configuration
     clientSecretLength: parseInt(process.env.CLIENT_SECRET_LENGTH || '32', 10),
@@ -109,7 +102,7 @@ export function loadConfig(): AppConfig {
     mcpClientPruneRetentionHours: parseFloat(process.env.MCP_CLIENT_PRUNE_RETENTION_HOURS || '0.75'),
 
     // Development Configuration
-    vitePort: process.env.VITE_PORT || '5173',
+    vitePort: uiPort,
   };
 
   // Log configuration (excluding sensitive data)
@@ -119,8 +112,6 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Issuer URL: ${config.issuerUrl}`);
   logger.log(`  - Callback URL: ${config.callbackUrl}`);
   logger.log(`  - Database Path: ${config.databasePath}`);
-  logger.log(`  - ADK URL: ${config.adkUrl}`);
-  logger.log(`  - Ollama URL: ${config.ollamaUrl}`);
   logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
 
   return config;
@@ -134,6 +125,10 @@ function getEnv(): NodeEnv {
   return 'development';
 }
 
+function getUiPort(): string {
+  return process.env.UI_PORT || '2000';
+}
+
 function getIssuerUrl(): string {
   const issuerUrl = process.env.ISSUER_URL;
   if (issuerUrl) {
@@ -145,7 +140,7 @@ function getIssuerUrl(): string {
   }
   // Default for development
   logger.warn('Using default ISSUER_URL for development');
-  return 'http://localhost:5173';
+  return `http://localhost:${getUiPort()}`;
 }
 
 function getCallbackUrl(): string {
@@ -153,33 +148,6 @@ function getCallbackUrl(): string {
   return `${issuerUrl}/api/v1/auth/callback`;
 }
 
-function getADKUrl(): string {
-  const adkUrl = process.env.ADK_URL;
-  if (adkUrl) {
-    return adkUrl;
-  }
-  if (getEnv() === 'production') {
-    logger.error('ADK_URL is not set in production environment');
-    throw new Error('ADK_URL must be set in production');
-  }
-  // Default for development
-  logger.warn('Using default ADK_URL for development');
-  return 'http://localhost:8000';
-}
-
-function getOllamaUrl(): string {
-  const ollamaUrl = process.env.OLLAMA_URL;
-  if (ollamaUrl) {
-    return ollamaUrl;
-  }
-  if (getEnv() === 'production') {
-    logger.error('OLLAMA_URL is not set in production environment');
-    throw new Error('OLLAMA_URL must be set in production');
-  }
-  // Default for development
-  logger.warn('Using default OLLAMA_URL for development');
-  return 'http://localhost:11434';
-}
 
 /**
  * Singleton instance of configuration

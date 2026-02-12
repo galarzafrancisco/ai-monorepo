@@ -17,14 +17,20 @@ Three doors into the system: REST API, WebSocket (real-time events), MCP. All ac
 
 Full details: `docs/PRIMITIVES.md`
 
-## Commands
+## Development
 
 ```bash
-npm run dev           # Development with hot reload
-npm run zero-to-prod  # Full build (generates API types, builds all packages)
+npm run zero-to-prod  # Install deps, generate API types, build all packages
+npm run dev           # Start backend + both frontends with hot reload
 ```
 
-Run `npm run zero-to-prod` to verify everything compiles after making changes.
+If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a different stack (each has pre-configured ports and its own database via `stack[1-5].env`), or set `UI_PORT`, `LEGACY_UI_PORT`, and `BACKEND_PORT` env vars directly.
+
+## After Making Changes
+
+1. `npm run zero-to-prod` — verify everything compiles
+2. `npm run test:e2e` — run end-to-end tests
+3. `npm run dev` — verify the app starts and works
 
 ## Architecture
 
