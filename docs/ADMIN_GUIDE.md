@@ -45,7 +45,7 @@ You can run workers on the same machine as the backend, on a different server, o
 
 ### Worker Setup
 
-Full instructions are in [apps/agents/README.md](../apps/agents/README.md). The short version:
+Full instructions are in [apps/worker/README.md](../apps/worker/README.md). The short version:
 
 1. **Create an agent** in the UI (or use a pre-populated one). Configure its system prompt, agent type, and triggers.
 2. **Create an access token** from the agent's page. The token needs scopes: `task:*`, `meta:*`, `context:*`, `agents:read`, `mcp:use`.
@@ -58,7 +58,7 @@ Full instructions are in [apps/agents/README.md](../apps/agents/README.md). The 
    ```
 4. **Start the worker:**
    ```bash
-   npm -w apps/agents run start
+   npm -w apps/worker run start
    ```
 
 ### Running Multiple Workers

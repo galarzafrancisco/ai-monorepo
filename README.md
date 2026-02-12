@@ -35,7 +35,7 @@ npm run dev            # Start backend + frontend with hot reload
 - **[Getting Started](docs/GETTING_STARTED.md)** — Create tasks, configure agents, and build workflows.
 - **[Admin Guide](docs/ADMIN_GUIDE.md)** — User management, running workers, and system configuration.
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** — Development setup, architecture, API generation, and contributing.
-- **[Agents Worker](apps/agents/README.md)** — How to run agent workers that execute tasks.
+- **[Agents Worker](apps/worker/README.md)** — How to run agent workers that execute tasks.
 
 ## Architecture at a Glance
 
@@ -44,7 +44,7 @@ apps/
 ├── backend/     # NestJS API server (SQLite + TypeORM)
 ├── ui2/         # React 19 + Vite frontend
 ├── ui/          # Deprecated — only needs to compile
-└── agents/      # Agent worker processes
+└── worker/      # Agent worker processes
 packages/
 └── shared/      # Auto-generated types and API client from OpenAPI
 ```
