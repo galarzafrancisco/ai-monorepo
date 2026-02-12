@@ -51,6 +51,7 @@ export interface AppConfig {
 export function loadConfig(): AppConfig {
   const backendPortValue =
     process.env.BACKEND_PORT || '3000';
+  const uiPort = getUiPort();
 
   const config: AppConfig = {
     // Server Configuration
@@ -101,7 +102,7 @@ export function loadConfig(): AppConfig {
     mcpClientPruneRetentionHours: parseFloat(process.env.MCP_CLIENT_PRUNE_RETENTION_HOURS || '0.75'),
 
     // Development Configuration
-    vitePort: process.env.UI_PORT || '2000',
+    vitePort: uiPort,
   };
 
   // Log configuration (excluding sensitive data)
@@ -124,6 +125,10 @@ function getEnv(): NodeEnv {
   return 'development';
 }
 
+function getUiPort(): string {
+  return process.env.UI_PORT || '2000';
+}
+
 function getIssuerUrl(): string {
   const issuerUrl = process.env.ISSUER_URL;
   if (issuerUrl) {
@@ -135,7 +140,7 @@ function getIssuerUrl(): string {
   }
   // Default for development
   logger.warn('Using default ISSUER_URL for development');
-  return 'http://localhost:2000';
+  return `http://localhost:${getUiPort()}`;
 }
 
 function getCallbackUrl(): string {
