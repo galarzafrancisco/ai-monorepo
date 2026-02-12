@@ -137,17 +137,9 @@ async function bootstrap() {
   }
 
   const config = getConfig();
-  const portSearchLimit = parseInt(
-    process.env.BACKEND_PORT_SEARCH_LIMIT || '20',
-    10,
-  );
   let port = config.port;
 
-  if (config.nodeEnv === 'production') {
-    await app.listen(port);
-  } else {
-    port = await listenWithFallback(app, config.port, portSearchLimit);
-  }
+  await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
 }
 bootstrap();
