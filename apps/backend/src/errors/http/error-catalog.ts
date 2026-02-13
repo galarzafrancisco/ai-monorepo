@@ -45,6 +45,24 @@ export const ErrorCatalog: Record<
     type: '/errors/tasks/input-request-self-assignment',
     retryable: false,
   },
+  [ErrorCodes.TASK_BLUEPRINT_NOT_FOUND]: {
+    status: 404,
+    title: 'Task blueprint not found',
+    type: '/errors/task-blueprints/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.SCHEDULED_TASK_NOT_FOUND]: {
+    status: 404,
+    title: 'Scheduled task not found',
+    type: '/errors/scheduled-tasks/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.INVALID_CRON_EXPRESSION]: {
+    status: 400,
+    title: 'Invalid cron expression',
+    type: '/errors/scheduled-tasks/invalid-cron',
+    retryable: false,
+  },
   [ErrorCodes.PAGE_NOT_FOUND]: {
     status: 404,
     title: 'Context page not found',

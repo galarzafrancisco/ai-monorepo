@@ -17,8 +17,10 @@ import { MetaModule } from './meta/meta.module';
 import { AgentRunsModule } from './agent-runs/agent-runs.module';
 import { getConfig } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
+import { TaskBlueprintsModule } from './task-blueprints/task-blueprints.module';
 import { BaselineSchema1700000000000 } from './migrations/1700000000000-BaselineSchema';
 import { AlignConnectionAuthFlowColumns1700000000001 } from './migrations/1700000000001-AlignConnectionAuthFlowColumns';
+import { AddTaskBlueprintsAndScheduledTasks1739500000000 } from './migrations/1739500000000-AddTaskBlueprintsAndScheduledTasks';
 
 @Module({
   imports: [
@@ -31,12 +33,14 @@ import { AlignConnectionAuthFlowColumns1700000000001 } from './migrations/170000
       migrations: [
         BaselineSchema1700000000000,
         AlignConnectionAuthFlowColumns1700000000001,
+        AddTaskBlueprintsAndScheduledTasks1739500000000,
       ],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     MetaModule,
     TasksModule,
+    TaskBlueprintsModule,
     ContextModule,
     McpRegistryModule,
     AuthJourneysModule,
