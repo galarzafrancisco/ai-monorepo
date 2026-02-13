@@ -202,9 +202,6 @@ export class Coordinator {
       )
 
       console.log(results);
-
-      // Force a comment
-      this.client.addComment(task.id, `Finished.\n\n${results.result}`);
     } catch (error) {
       console.error(`Error running task`);
       console.error(error);
