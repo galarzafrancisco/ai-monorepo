@@ -202,7 +202,7 @@ export function ToolDetailPage() {
               </Text>
             </DataRow>
             {/* Claude Code Command */}
-            <DataRow onClick={() => copyToClipboard(`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`)}>
+            <DataRow onClick={() => copyToClipboard(`claude mcp add ${tool.providedId} --transport http ${tool.url}`)}>
               <Text weight="medium" size="3">
                 Claude Code
               </Text>
