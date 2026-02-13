@@ -284,7 +284,11 @@ export class TaskBlueprintsService {
     return task;
   }
 
-  private mapBlueprintToResult(
+  /**
+   * Maps a TaskBlueprintEntity to TaskBlueprintResult.
+   * Public to allow reuse by ScheduledTasksService.
+   */
+  mapBlueprintToResult(
     blueprint: TaskBlueprintEntity,
   ): TaskBlueprintResult {
     if (!blueprint.createdByActor) {

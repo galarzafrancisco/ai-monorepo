@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import CronExpressionParser from 'cron-parser';
+import { CronExpressionParser } from 'cron-parser';
 import { ScheduledTaskEntity } from './scheduled-task.entity';
 import { TaskBlueprintEntity } from './task-blueprint.entity';
 import { TaskBlueprintsService } from './task-blueprints.service';
@@ -273,7 +273,7 @@ export class ScheduledTasksService {
       id: scheduledTask.id,
       taskBlueprintId: scheduledTask.taskBlueprintId,
       taskBlueprint: scheduledTask.taskBlueprint
-        ? this.taskBlueprintsService['mapBlueprintToResult'](scheduledTask.taskBlueprint)
+        ? this.taskBlueprintsService.mapBlueprintToResult(scheduledTask.taskBlueprint)
         : undefined,
       cronExpression: scheduledTask.cronExpression,
       enabled: scheduledTask.enabled,
