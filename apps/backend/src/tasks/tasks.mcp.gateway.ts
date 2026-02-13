@@ -157,7 +157,6 @@ export class TasksMcpGateway {
             name: z.string(),
             description: z.string(),
             assigneeActorId: z.string().optional(),
-            sessionId: z.string().optional(),
             dependsOnIds: z.array(z.string()).optional(),
           },
         },
@@ -165,7 +164,6 @@ export class TasksMcpGateway {
           name,
           description,
           assigneeActorId,
-          sessionId,
           dependsOnIds,
         }) => {
           let task;
@@ -176,7 +174,6 @@ export class TasksMcpGateway {
               name,
               description,
               assigneeActorId,
-              sessionId,
               createdByActorId: user.actorId,
               dependsOnIds,
               runId,
@@ -187,7 +184,6 @@ export class TasksMcpGateway {
               name,
               description,
               assigneeActorId,
-              sessionId,
               createdByActorId: user.actorId,
               dependsOnIds,
             });
@@ -209,19 +205,17 @@ export class TasksMcpGateway {
         'assign_task',
         {
           title: 'Assign task',
-          description: 'Assign task to someone, optionally with session',
+          description: 'Assign task to someone',
           inputSchema: {
             taskId: z.string(),
             assigneeActorId: z.string(),
-            sessionId: z.string().optional(),
           },
         },
-        async ({ taskId, assigneeActorId, sessionId }) => {
+        async ({ taskId, assigneeActorId }) => {
           const task = await this.tasksService.assignTask(
             taskId,
             {
               assigneeActorId,
-              sessionId,
             },
             user.actorId,
           );
@@ -304,17 +298,16 @@ export class TasksMcpGateway {
             'Assign task to yourself, set status to IN_PROGRESS, add comment with branch info',
           inputSchema: {
             taskId: z.string(),
-            sessionId: z.string(),
             branchName: z.string(),
           },
         },
-        async ({ taskId, sessionId, branchName }) => {
+        async ({ taskId, branchName }) => {
           // Assign task
           // TODO: Should this be a feature of the Backend itself? You can't start a task if it's not assigned to you?
           // And if the task has no assignee and you start it, it gets assigned to you?
           await this.tasksService.assignTask(
             taskId,
-            { assigneeActorId: user.actorId, sessionId },
+            { assigneeActorId: user.actorId },
             user.actorId,
           );
 
