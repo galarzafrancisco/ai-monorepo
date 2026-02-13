@@ -32,6 +32,36 @@ If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a differen
 2. `npm run test:e2e` — run end-to-end tests
 3. `npm run dev` — verify the app starts and works
 
+## Database Migrations
+
+**CRITICAL:** When creating or modifying TypeORM migrations, you MUST complete ALL steps:
+
+1. **Create the migration file** in `apps/backend/src/migrations/`
+   - Name format: `TIMESTAMP-DescriptiveName.ts`
+   - Include both `up()` and `down()` methods
+   - Make it idempotent (safe to run multiple times)
+
+2. **Register it in `apps/backend/src/app.module.ts`:**
+   - Import the migration class at the top of the file
+   - Add it to the `migrations` array in timestamp order
+   - **This is the most commonly missed step!**
+
+3. **Verify registration** before creating PR:
+   ```bash
+   grep -r "YourMigrationClassName" apps/backend/src/app.module.ts
+   ```
+   If this returns nothing, the migration is NOT registered and will NOT run in production.
+
+4. **Test the migration:**
+   ```bash
+   npm run zero-to-prod  # Verify it compiles
+   npm run dev           # Verify it runs at startup (check logs for "migration" output)
+   ```
+
+⚠️ **Common Critical Mistake:** Creating a migration file but forgetting to register it in `app.module.ts`. This causes silent failure - the migration never runs, but CI passes. When entity code deploys expecting columns that don't exist, production breaks. This happened in February 2026 and took down Context MCP for 49 minutes. See `docs/incident-reports/2026-02-13-context-mcp-migration-incident.md` for the full post-mortem.
+
+**Schema Drift Note:** Production DB was created with `synchronize: true` (camelCase columns), while fresh dev DBs use migrations (snake_case columns). When working with existing tables, check the actual production schema before assuming column names.
+
 ## Architecture
 
 ### Package Structure
