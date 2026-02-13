@@ -42,16 +42,16 @@ export class ConnectionAuthorizationFlowEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   state?: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true, name: 'authorization_code' })
   authorizationCode?: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, name: 'access_token' })
   accessToken?: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, name: 'refresh_token' })
   refreshToken?: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'datetime', nullable: true, name: 'token_expires_at' })
   tokenExpiresAt?: Date;
 
   @Column({ type: 'varchar', length: 50, default: 'pending' })
