@@ -43,9 +43,10 @@ A database migration intended to fix a development environment issue broke produ
 | 01:56 | PR #590 created with properly registered migration |
 | 01:57 | PR #590 CI passed |
 | 01:58 | Code review approves PR #590 |
-| 02:01 | Incident resolved |
+| 02:30 | PR #590 deployed to production (estimated) |
+| 02:30 | Incident resolved |
 
-**Total Outage Duration:** ~49 minutes (01:41 - ~02:30 estimated deployment)
+**Total Outage Duration:** ~49 minutes (01:41 production break - 02:30 fix deployed)
 
 ## Root Cause Analysis
 

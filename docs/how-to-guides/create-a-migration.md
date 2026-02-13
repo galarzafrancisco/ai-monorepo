@@ -35,6 +35,7 @@ export class AddUserEmailColumn1700000000001 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Revert your schema changes here
+    // Note: DROP COLUMN requires SQLite 3.35.0+ (March 2021)
     await queryRunner.query(`
       ALTER TABLE users DROP COLUMN email
     `);
@@ -208,6 +209,15 @@ Adds email column to users table for email notifications feature.
 
 ## SQLite-Specific Notes
 
+### SQLite Version Requirements
+
+This project uses SQLite 3.x. Be aware of version-specific features:
+
+- **DROP COLUMN**: Requires SQLite 3.35.0+ (March 2021)
+- **RENAME COLUMN**: Requires SQLite 3.25.0+ (September 2018)
+
+For older SQLite versions, use the table rebuild approach (see below).
+
 ### Column Renaming (SQLite 3.25+)
 
 ```typescript
@@ -215,6 +225,28 @@ await queryRunner.query(`
   ALTER TABLE table_name RENAME COLUMN old_name TO new_name
 `);
 ```
+
+### Column Dropping (SQLite 3.35+)
+
+```typescript
+await queryRunner.query(`
+  ALTER TABLE table_name DROP COLUMN column_name
+`);
+```
+
+### Table Rebuild Approach (Older SQLite Versions)
+
+If your SQLite version doesn't support DROP COLUMN or RENAME COLUMN, use the table rebuild pattern:
+
+```typescript
+public async down(queryRunner: QueryRunner): Promise<void> {
+  // For older SQLite: rebuild table without the column
+  await queryRunner.query(`
+    CREATE TABLE users_backup AS SELECT id, name FROM users
+  `);
+  await queryRunner.query(`DROP TABLE users`);
+  await queryRunner.query(`ALTER TABLE users_backup RENAME TO users`);
+}
 
 ### Checking Column Existence
 
@@ -236,14 +268,20 @@ const tableExists = tables.length > 0;
 
 ## Rollback
 
-To rollback a migration:
+To rollback the most recently executed migration in development:
 
 ```bash
-# Manual rollback (not recommended for production)
-npm run migration:revert
+# From the apps/backend directory
+cd apps/backend
+npx typeorm migration:revert
 ```
 
-**Better approach:** Create a new forward migration that undoes the changes.
+**Important Notes:**
+- This reverts only the last executed migration (calls its `down()` method)
+- Not recommended for production - use forward migrations instead
+- Requires a properly implemented `down()` method
+
+**Better approach for production:** Create a new forward migration that undoes the changes. This maintains a complete audit trail and is safer for production environments.
 
 ## Production Deployment Checklist
 
