@@ -144,7 +144,7 @@ When creating your PR, include:
 
 **Example PR description:**
 
-```markdown
+````markdown
 ## Summary
 
 Adds email column to users table for email notifications feature.
@@ -159,11 +159,12 @@ Adds email column to users table for email notifications feature.
 
 ✅ `npm run zero-to-prod` - Build successful
 ✅ `npm run dev` - Migration ran successfully:
+
 ```
 [TypeORM] Running migrations: [AddUserEmailColumn1700000000001]
 [TypeORM] Migration AddUserEmailColumn1700000000001 has been executed successfully
 ```
-```
+````
 
 ## Common Mistakes
 
@@ -247,6 +248,7 @@ public async down(queryRunner: QueryRunner): Promise<void> {
   await queryRunner.query(`DROP TABLE users`);
   await queryRunner.query(`ALTER TABLE users_backup RENAME TO users`);
 }
+```
 
 ### Checking Column Existence
 
@@ -266,22 +268,17 @@ const tables: Array<{ name: string }> = await queryRunner.query(`
 const tableExists = tables.length > 0;
 ```
 
-## Rollback
+## Rollback Strategy
 
-To rollback the most recently executed migration in development:
+**This repo does not have TypeORM CLI configured.** Migrations run automatically at application startup via the TypeORM module configuration in `app.module.ts`.
 
-```bash
-# From the apps/backend directory
-cd apps/backend
-npx typeorm migration:revert
-```
+**For production:** Always use forward migrations to undo changes. Create a new migration that reverses the changes from the previous one. This approach:
+- Maintains a complete audit trail
+- Is safer for production environments
+- Doesn't require direct database access
+- Works consistently across all environments
 
-**Important Notes:**
-- This reverts only the last executed migration (calls its `down()` method)
-- Not recommended for production - use forward migrations instead
-- Requires a properly implemented `down()` method
-
-**Better approach for production:** Create a new forward migration that undoes the changes. This maintains a complete audit trail and is safer for production environments.
+**Example:** If you need to remove a column you just added, create a new migration with a `down()`-like implementation in its `up()` method.
 
 ## Production Deployment Checklist
 
