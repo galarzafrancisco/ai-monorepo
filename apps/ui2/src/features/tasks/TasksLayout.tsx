@@ -38,8 +38,6 @@ export function TasksLayout(): JSX.Element {
     };
   }, []);
 
-  console.log('Tasks layout mounting');
-
   return (
     <div style={{ minHeight: 0 }}>
       <ShippedCelebration trigger={shippedCelebrationTrigger} />

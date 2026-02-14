@@ -1,14 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Card, Text } from '../../ui/primitives';
+import { Button, DataRow, DataRowContainer, Text } from '../../ui/primitives';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import { useScheduledTasksCtx } from './ScheduledTasksProvider';
-import { ScheduleConfigPop } from './ScheduleConfigPop';
-import { formatScheduleSummary, getNextOccurrences, parseCronExpression } from './scheduleUtils';
+import {
+  buildCronExpression,
+  formatScheduleSummary,
+  parseCronExpression,
+  type SchedulePreset,
+} from './scheduleUtils';
 import type { TaskBlueprint } from './types';
 import { useTasksCtx } from '../tasks/TasksProvider';
 import './ScheduledTaskDetailPage.css';
+
+const DAY_LABELS: { value: number; label: string }[] = [
+  { value: 0, label: 'Sun' },
+  { value: 1, label: 'Mon' },
+  { value: 2, label: 'Tue' },
+  { value: 3, label: 'Wed' },
+  { value: 4, label: 'Thu' },
+  { value: 5, label: 'Fri' },
+  { value: 6, label: 'Sat' },
+];
 
 export function ScheduledTaskDetailPage() {
   const { scheduleId } = useParams<{ scheduleId: string }>();
@@ -23,28 +37,27 @@ export function ScheduledTaskDetailPage() {
   const { setSectionTitle } = useTasksCtx();
   const { showError } = useToast();
 
-  const [localScheduledTaskId, setLocalScheduledTaskId] = useState(scheduleId ?? '');
-  const [showScheduleEdit, setShowScheduleEdit] = useState(false);
+  const [preset, setPreset] = useState<SchedulePreset>('daily');
+  const [time, setTime] = useState('09:00');
+  const [days, setDays] = useState<number[]>([1]);
+  const [dayOfMonth, setDayOfMonth] = useState(1);
+  const [customCron, setCustomCron] = useState('0 9 * * *');
+  const [enabled, setEnabled] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const scheduledTask = scheduledTasks.find((item) => item.id === localScheduledTaskId);
+  const scheduledTask = scheduledTasks.find((item) => item.id === scheduleId);
   const blueprint: TaskBlueprint | undefined = scheduledTask?.taskBlueprint || (scheduledTask ? blueprintsById[scheduledTask.taskBlueprintId] : undefined);
 
   useDocumentTitle();
 
   useEffect(() => {
-    if (scheduleId) {
-      setLocalScheduledTaskId(scheduleId);
-    }
-  }, [scheduleId]);
-
-  useEffect(() => {
-    if (!localScheduledTaskId) {
+    if (!scheduleId) {
       return;
     }
     if (!scheduledTask) {
-      loadScheduledTask(localScheduledTaskId).catch(showError);
+      loadScheduledTask(scheduleId).catch(showError);
     }
-  }, [localScheduledTaskId, scheduledTask, loadScheduledTask, showError]);
+  }, [scheduleId, scheduledTask, loadScheduledTask, showError]);
 
   useEffect(() => {
     if (scheduledTask && !scheduledTask.taskBlueprint) {
@@ -56,161 +69,197 @@ export function ScheduledTaskDetailPage() {
     if (blueprint?.name) {
       setSectionTitle(blueprint.name);
     } else {
-      setSectionTitle('Scheduled Task');
+      setSectionTitle('Schedule');
     }
   }, [blueprint, setSectionTitle]);
 
-  const scheduleConfig = useMemo(() => {
+  useEffect(() => {
     if (!scheduledTask) {
-      return null;
+      return;
     }
-    return parseCronExpression(scheduledTask.cronExpression);
+    const parsed = parseCronExpression(scheduledTask.cronExpression);
+    setPreset(parsed.preset);
+    setTime(parsed.time);
+    setDays(parsed.days.length ? parsed.days : [1]);
+    setDayOfMonth(parsed.dayOfMonth || 1);
+    setCustomCron(parsed.cronExpression || scheduledTask.cronExpression);
+    setEnabled(scheduledTask.enabled);
   }, [scheduledTask]);
 
-  const preview = useMemo(() => {
-    if (!scheduleConfig || !scheduledTask) {
-      return [];
-    }
-    return getNextOccurrences({ ...scheduleConfig, cronExpression: scheduledTask.cronExpression });
-  }, [scheduleConfig, scheduledTask]);
+  const cronExpression = useMemo(() => buildCronExpression({
+    preset,
+    time,
+    days,
+    dayOfMonth,
+    cronExpression: customCron,
+  }), [preset, time, days, dayOfMonth, customCron]);
 
-    if (!scheduledTask) {
-      return (
-        <div className="scheduled-task-detail-page">
-          <Text tone="muted">Scheduled task not found.</Text>
-          <Button variant="secondary" onClick={() => navigate('/tasks/schedule')}>Back to schedules</Button>
-        </div>
-      );
-    }
+  if (!scheduledTask) {
+    return (
+      <div className="scheduled-task-detail-page">
+        <Text tone="muted">Scheduled task not found.</Text>
+        <Button variant="secondary" onClick={() => navigate('/tasks/schedule')}>Back to schedules</Button>
+      </div>
+    );
+  }
 
-  const summary = scheduleConfig
-    ? formatScheduleSummary({ ...scheduleConfig, cronExpression: scheduledTask.cronExpression })
-    : scheduledTask.cronExpression;
+  const summary = formatScheduleSummary({
+    preset,
+    time,
+    days,
+    dayOfMonth,
+    cronExpression,
+  });
+
+  const toggleDay = (day: number) => {
+    setDays((prev) => {
+      if (prev.includes(day)) {
+        const next = prev.filter((value) => value !== day);
+        return next.length ? next : prev;
+      }
+      return [...prev, day].sort((a, b) => a - b);
+    });
+  };
+
+  const saveSchedule = async () => {
+    setIsSaving(true);
+    try {
+      await updateScheduledTask(scheduledTask.id, {
+        cronExpression,
+        enabled,
+      });
+    } catch (err) {
+      showError(err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="scheduled-task-detail-page">
-      <Card className="scheduled-task-detail-page__card">
-        <div className="scheduled-task-detail-page__section">
-          <div>
-            <Text weight="bold" size="3">Blueprint</Text>
-            <Text tone="muted" size="2">Task definition used for each run.</Text>
-          </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              if (scheduledTask.taskBlueprintId) {
-                navigate(`/tasks/blueprints/${scheduledTask.taskBlueprintId}`);
-              }
-            }}
-          >
-            Open blueprint
-          </Button>
-        </div>
-        <div className="scheduled-task-detail-page__blueprint">
-          <Text size="3" weight="medium">{blueprint?.name || 'Untitled blueprint'}</Text>
-          <Text tone="muted">{blueprint?.description || 'No description provided.'}</Text>
-          <div className="scheduled-task-detail-page__meta">
-            <div>
-              <Text size="2" weight="medium">Assignee</Text>
-              <Text size="2" tone="muted">
-                {blueprint?.assigneeActor ? `${blueprint.assigneeActor.displayName} (@${blueprint.assigneeActor.slug})` : 'Unassigned'}
-              </Text>
-            </div>
-            <div>
-              <Text size="2" weight="medium">Tags</Text>
-              <div className="scheduled-task-detail-page__tags">
-                {blueprint?.tags?.length ? (
-                  blueprint.tags.map((tag) => (
-                    <span key={tag.id} className="scheduled-task-detail-page__tag" style={{ backgroundColor: tag.color || 'var(--border)' }}>
-                      {tag.name}
-                    </span>
-                  ))
-                ) : (
-                  <Text size="2" tone="muted">No tags</Text>
-                )}
+      <DataRowContainer title="Task" className="scheduled-task-detail-page__section">
+        <DataRow
+          onClick={() => navigate(`/tasks/blueprints/${scheduledTask.taskBlueprintId}`)}
+          tags={[{ label: 'blueprint', color: 'blue' }]}
+          trailing={<Text size="2" tone="muted">Open</Text>}
+        >
+          <Text as="span" weight="medium" size="3">{blueprint?.name || 'Untitled blueprint'}</Text>
+          <Text as="span" tone="muted" size="2">{` ${blueprint?.description || 'No description'}`}</Text>
+        </DataRow>
+      </DataRowContainer>
+
+      <DataRowContainer title="Schedule" className="scheduled-task-detail-page__section">
+        <div className="scheduled-task-detail-page__controls">
+          <label className="scheduled-task-detail-page__label">
+            <Text size="2" tone="muted">Frequency</Text>
+            <select
+              className="scheduled-task-detail-page__select"
+              value={preset}
+              onChange={(event) => setPreset(event.target.value as SchedulePreset)}
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="custom">Custom (cron)</option>
+            </select>
+          </label>
+
+          {preset !== 'custom' ? (
+            <label className="scheduled-task-detail-page__label">
+              <Text size="2" tone="muted">Time</Text>
+              <input
+                className="scheduled-task-detail-page__input"
+                type="time"
+                value={time}
+                onChange={(event) => setTime(event.target.value)}
+              />
+            </label>
+          ) : null}
+
+          {preset === 'weekly' ? (
+            <div className="scheduled-task-detail-page__label">
+              <Text size="2" tone="muted">Days</Text>
+              <div className="scheduled-task-detail-page__day-grid">
+                {DAY_LABELS.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    className={`scheduled-task-detail-page__day ${days.includes(day.value) ? 'is-selected' : ''}`}
+                    onClick={() => toggleDay(day.value)}
+                  >
+                    {day.label}
+                  </button>
+                ))}
               </div>
             </div>
-            <div>
-              <Text size="2" weight="medium">Dependencies</Text>
-              <Text size="2" tone="muted">
-                {blueprint?.dependsOnIds?.length ? blueprint.dependsOnIds.join(', ') : 'None'}
-              </Text>
+          ) : null}
+
+          {preset === 'monthly' ? (
+            <label className="scheduled-task-detail-page__label">
+              <Text size="2" tone="muted">Date</Text>
+              <input
+                className="scheduled-task-detail-page__input"
+                type="date"
+                value={`2026-01-${String(Math.min(Math.max(dayOfMonth, 1), 28)).padStart(2, '0')}`}
+                onChange={(event) => {
+                  const day = new Date(`${event.target.value}T00:00:00`).getDate();
+                  if (Number.isFinite(day)) {
+                    setDayOfMonth(Math.min(Math.max(day, 1), 28));
+                  }
+                }}
+              />
+            </label>
+          ) : null}
+
+          {preset === 'custom' ? (
+            <label className="scheduled-task-detail-page__label">
+              <Text size="2" tone="muted">Cron expression</Text>
+              <input
+                className="scheduled-task-detail-page__input"
+                value={customCron}
+                onChange={(event) => setCustomCron(event.target.value)}
+                placeholder="0 9 * * 1-5"
+              />
+            </label>
+          ) : null}
+
+          <div className="scheduled-task-detail-page__toggle-row">
+            <Text size="2" tone="muted">Status</Text>
+            <div className="scheduled-task-detail-page__toggle-buttons">
+              <Button
+                size="sm"
+                variant={enabled ? 'primary' : 'secondary'}
+                onClick={() => setEnabled(true)}
+              >
+                On
+              </Button>
+              <Button
+                size="sm"
+                variant={!enabled ? 'primary' : 'secondary'}
+                onClick={() => setEnabled(false)}
+              >
+                Off
+              </Button>
             </div>
           </div>
         </div>
-      </Card>
 
-      <Card className="scheduled-task-detail-page__card">
-        <div className="scheduled-task-detail-page__section">
-          <div>
-            <Text weight="bold" size="3">Schedule</Text>
-            <Text tone="muted" size="2">When tasks are created.</Text>
-          </div>
-          <div className="scheduled-task-detail-page__actions">
-            <Button size="sm" variant="ghost" onClick={() => setShowScheduleEdit(true)}>
-              Edit schedule
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                updateScheduledTask(scheduledTask.id, { enabled: !scheduledTask.enabled }).catch(showError);
-              }}
-            >
-              {scheduledTask.enabled ? 'Disable' : 'Enable'}
-            </Button>
-          </div>
-        </div>
-        <div className="scheduled-task-detail-page__schedule">
-          <Text size="2">{summary}</Text>
-          <Text size="2" tone="muted">Next run: {new Date(scheduledTask.nextRunAt).toLocaleString()}</Text>
-          <Text size="2" tone="muted">Cron: {scheduledTask.cronExpression}</Text>
-          <div className="scheduled-task-detail-page__preview">
-            <Text size="2" weight="medium">Next 5 occurrences</Text>
-            {scheduleConfig?.preset === 'custom' ? (
-              <Text size="2" tone="muted">Preview unavailable for custom cron.</Text>
-            ) : (
-              <ul>
-                {preview.map((date) => (
-                  <li key={date.toISOString()}>{date.toLocaleString()}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </Card>
+        <DataRow topRight={<Text size="1" tone="muted">Next: {new Date(scheduledTask.nextRunAt).toLocaleString()}</Text>}>
+          <Text as="span" size="2">{summary}</Text>
+        </DataRow>
+        <DataRow>
+          <Text as="span" size="2" style="mono">{cronExpression}</Text>
+        </DataRow>
+      </DataRowContainer>
 
-      <Card className="scheduled-task-detail-page__card">
-        <div className="scheduled-task-detail-page__section">
-          <Text weight="bold" size="3">History</Text>
-          <Text tone="muted" size="2">Task run history will appear here.</Text>
-        </div>
-        <Text size="2" tone="muted">No run history yet.</Text>
-      </Card>
-
-      <Button variant="secondary" onClick={() => navigate('/tasks/schedule')}>
-        Back to schedules
-      </Button>
-
-      {showScheduleEdit ? (
-        <ScheduleConfigPop
-          title="Edit Schedule"
-          initialCronExpression={scheduledTask.cronExpression}
-          initialEnabled={scheduledTask.enabled}
-          onCancel={() => setShowScheduleEdit(false)}
-          onSave={async (payload) => {
-            try {
-              await updateScheduledTask(scheduledTask.id, payload);
-              setShowScheduleEdit(false);
-              return true;
-            } catch (err) {
-              showError(err);
-              return false;
-            }
-          }}
-        />
-      ) : null}
+      <DataRowContainer className="scheduled-task-detail-page__actions">
+        <Button size="lg" variant="primary" onClick={saveSchedule} disabled={isSaving}>
+          {isSaving ? 'Saving...' : 'Save schedule'}
+        </Button>
+        <Button size="lg" variant="secondary" onClick={() => navigate('/tasks/schedule')}>
+          Back to schedules
+        </Button>
+      </DataRowContainer>
     </div>
   );
 }

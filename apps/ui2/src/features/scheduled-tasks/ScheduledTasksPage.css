@@ -10,23 +10,11 @@
   gap: var(--space-3);
 }
 
-.scheduled-tasks-page__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
 .scheduled-tasks-page__header-actions {
   display: flex;
   gap: var(--space-2);
   align-items: center;
-}
-
-.scheduled-tasks-page__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
 .scheduled-tasks-page__blueprints-board {
@@ -35,65 +23,9 @@
   gap: var(--space-3);
 }
 
-.scheduled-tasks-page__card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.scheduled-tasks-page__card-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  cursor: pointer;
-}
-
-.scheduled-tasks-page__meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-1);
-  font-size: var(--fs-1);
-}
-
-.scheduled-tasks-page__status {
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--r-2);
-  font-size: var(--fs-1);
-  border: 1px solid var(--border);
-}
-
-.scheduled-tasks-page__status.is-enabled {
-  color: var(--success);
-  border-color: var(--success);
-}
-
-.scheduled-tasks-page__status.is-disabled {
-  color: var(--text-muted);
-  border-color: var(--border);
-}
-
-.scheduled-tasks-page__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
 .scheduled-tasks-page__empty {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   text-align: center;
-}
-
-@media (max-width: 720px) {
-  .scheduled-tasks-page__card-main {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .scheduled-tasks-page__meta {
-    align-items: flex-start;
-  }
 }
