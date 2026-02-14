@@ -26,7 +26,10 @@ import {
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
 const TASKS_PAGE_SIZE = 100;
 const PROJECT_QUERY_PARAM = 'project';
-const PROJECT_STORAGE_KEY = 'tasks:selected-project-id';
+const PROJECT_STORAGE_KEY = 'tasks:selected-project-slug';
+const LEGACY_PROJECT_STORAGE_KEY = 'tasks:selected-project-id';
+const UUID_V4_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const useTasks = () => {
   const location = useLocation();
@@ -42,14 +45,26 @@ export const useTasks = () => {
   const [projectsError, setProjectsError] = useState<string | null>(null);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
 
-  const selectedProjectIdFromUrl = searchParams.get(PROJECT_QUERY_PARAM);
+  const selectedProjectParamFromUrl = searchParams.get(PROJECT_QUERY_PARAM);
 
   const selectedProject = useMemo(
-    () => projects.find((project) => project.id === selectedProjectIdFromUrl) ?? null,
-    [projects, selectedProjectIdFromUrl],
+    () =>
+      projects.find(
+        (project) =>
+          project.slug === selectedProjectParamFromUrl || project.id === selectedProjectParamFromUrl,
+      ) ?? null,
+    [projects, selectedProjectParamFromUrl],
   );
 
-  const selectedProjectTagName = selectedProject?.tagName;
+  const selectedProjectTagName = useMemo(() => {
+    if (selectedProject?.tagName) {
+      return selectedProject.tagName;
+    }
+    if (!selectedProjectParamFromUrl || UUID_V4_PATTERN.test(selectedProjectParamFromUrl)) {
+      return undefined;
+    }
+    return `project:${selectedProjectParamFromUrl}`;
+  }, [selectedProject, selectedProjectParamFromUrl]);
   const tasksRef = useRef<Task[]>([]);
 
   const sortTasks = (items: Task[]): Task[] => {
@@ -71,14 +86,16 @@ export const useTasks = () => {
   );
 
   const setSelectedProjectId = useCallback(
-    (projectId: string | null, options?: { replace?: boolean }) => {
+    (projectSlug: string | null, options?: { replace?: boolean }) => {
       const next = new URLSearchParams(location.search);
-      if (projectId) {
-        next.set(PROJECT_QUERY_PARAM, projectId);
-        window.localStorage.setItem(PROJECT_STORAGE_KEY, projectId);
+      if (projectSlug) {
+        next.set(PROJECT_QUERY_PARAM, projectSlug);
+        window.localStorage.setItem(PROJECT_STORAGE_KEY, projectSlug);
+        window.localStorage.removeItem(LEGACY_PROJECT_STORAGE_KEY);
       } else {
         next.delete(PROJECT_QUERY_PARAM);
         window.localStorage.removeItem(PROJECT_STORAGE_KEY);
+        window.localStorage.removeItem(LEGACY_PROJECT_STORAGE_KEY);
       }
       setSearchParams(next, { replace: options?.replace ?? false });
     },
@@ -275,29 +292,45 @@ export const useTasks = () => {
     const projectFromUrl = new URLSearchParams(location.search).get(PROJECT_QUERY_PARAM);
     if (projectFromUrl) {
       window.localStorage.setItem(PROJECT_STORAGE_KEY, projectFromUrl);
+      window.localStorage.removeItem(LEGACY_PROJECT_STORAGE_KEY);
       return;
     }
 
-    const storedProjectId = window.localStorage.getItem(PROJECT_STORAGE_KEY);
-    if (!storedProjectId) {
+    const storedProjectSlug =
+      window.localStorage.getItem(PROJECT_STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_PROJECT_STORAGE_KEY);
+    if (!storedProjectSlug) {
       return;
     }
 
     const next = new URLSearchParams(location.search);
-    next.set(PROJECT_QUERY_PARAM, storedProjectId);
+    next.set(PROJECT_QUERY_PARAM, storedProjectSlug);
     setSearchParams(next, { replace: true });
   }, [location.search, setSearchParams]);
 
   useEffect(() => {
-    if (!projectsLoaded || !selectedProjectIdFromUrl) {
+    if (!projectsLoaded || !selectedProjectParamFromUrl) {
       return;
     }
 
-    const exists = projects.some((project) => project.id === selectedProjectIdFromUrl);
-    if (!exists) {
+    if (selectedProject) {
+      if (selectedProject.slug !== selectedProjectParamFromUrl) {
+        setSelectedProjectId(selectedProject.slug, { replace: true });
+      }
+      return;
+    }
+
+    const existsAsSlug = projects.some((project) => project.slug === selectedProjectParamFromUrl);
+    if (!existsAsSlug) {
       setSelectedProjectId(null, { replace: true });
     }
-  }, [projects, projectsLoaded, selectedProjectIdFromUrl, setSelectedProjectId]);
+  }, [
+    projects,
+    projectsLoaded,
+    selectedProject,
+    selectedProjectParamFromUrl,
+    setSelectedProjectId,
+  ]);
 
   useEffect(() => {
     setActivityByTaskId({});
@@ -319,7 +352,7 @@ export const useTasks = () => {
     answerInputRequest,
     isConnected,
     projects,
-    selectedProjectId: selectedProjectIdFromUrl,
+    selectedProjectId: selectedProject?.slug ?? selectedProjectParamFromUrl,
     selectedProject,
     setSelectedProjectId,
     isLoadingProjects,

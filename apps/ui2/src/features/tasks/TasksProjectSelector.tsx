@@ -30,7 +30,7 @@ export function TasksProjectSelector({ compact = false }: TasksProjectSelectorPr
       >
         <option value="">All projects</option>
         {sortedProjects.map((project) => (
-          <option key={project.id} value={project.id}>
+          <option key={project.id} value={project.slug}>
             {project.slug}
           </option>
         ))}
