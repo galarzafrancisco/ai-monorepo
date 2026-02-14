@@ -37,11 +37,22 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           tools: ["*"],
         };
 
+        const contextMcpServer: MCPRemoteServerConfig = {
+          type: "http",
+          url: `${BASE_URL}/api/v1/context/blocks/mcp`,
+          headers: {
+            Authorization: `Bearer ${ACCESS_TOKEN}`,
+            [RUN_ID_HEADER]: ctx.runId,
+          },
+          tools: ["*"],
+        };
+
         // Create a session for this work
         const session = await this.client.createSession({
           model: this.model,
           mcpServers: {
             tasks: taskMcpServer,
+            context: contextMcpServer,
           },
         });
 

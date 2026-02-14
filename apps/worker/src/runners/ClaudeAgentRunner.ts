@@ -38,6 +38,14 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
               Authorization: `Bearer ${ACCESS_TOKEN}`,
               [RUN_ID_HEADER]: ctx.runId,
             },
+          },
+          context: {
+            type: "http",
+            url: `${BASE_URL}/api/v1/context/blocks/mcp`,
+            headers: {
+              Authorization: `Bearer ${ACCESS_TOKEN}`,
+              [RUN_ID_HEADER]: ctx.runId,
+            },
           }
         },
         allowedTools: [
