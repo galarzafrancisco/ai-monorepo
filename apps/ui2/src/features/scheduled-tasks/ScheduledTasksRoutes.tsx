@@ -10,7 +10,7 @@ export function ScheduledTasksRoutes() {
       <Routes>
         <Route element={<ScheduledTasksLayout />}>
           <Route index element={<ScheduledTasksPage />} />
-          <Route path=":id" element={<ScheduledTaskDetailPage />} />
+          <Route path=":scheduleId" element={<ScheduledTaskDetailPage />} />
         </Route>
       </Routes>
     </ScheduledTasksProvider>
