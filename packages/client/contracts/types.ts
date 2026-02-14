@@ -7660,6 +7660,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Task blueprint has active schedules */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     TaskBlueprintsController_updateTaskBlueprint: {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, DataRow, DataRowContainer, Text } from '../../ui/primitives';
+import { Button, DataRow, DataRowContainer, ErrorText, Text } from '../../ui/primitives';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import { useScheduledTasksCtx } from './ScheduledTasksProvider';
@@ -8,6 +8,7 @@ import {
   buildCronExpression,
   formatScheduleSummary,
   parseCronExpression,
+  validateCronExpressionInput,
   type SchedulePreset,
 } from './scheduleUtils';
 import type { TaskBlueprint } from './types';
@@ -35,7 +36,7 @@ export function ScheduledTaskDetailPage() {
     updateScheduledTask,
   } = useScheduledTasksCtx();
   const { setSectionTitle } = useTasksCtx();
-  const { showError } = useToast();
+  const { showError, showToast } = useToast();
 
   const [preset, setPreset] = useState<SchedulePreset>('daily');
   const [time, setTime] = useState('09:00');
@@ -44,6 +45,7 @@ export function ScheduledTaskDetailPage() {
   const [customCron, setCustomCron] = useState('0 9 * * *');
   const [enabled, setEnabled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [cronValidationError, setCronValidationError] = useState<string | null>(null);
 
   const scheduledTask = scheduledTasks.find((item) => item.id === scheduleId);
   const blueprint: TaskBlueprint | undefined = scheduledTask?.taskBlueprint || (scheduledTask ? blueprintsById[scheduledTask.taskBlueprintId] : undefined);
@@ -122,12 +124,22 @@ export function ScheduledTaskDetailPage() {
   };
 
   const saveSchedule = async () => {
+    if (preset === 'custom') {
+      const validationError = validateCronExpressionInput(cronExpression);
+      if (validationError) {
+        setCronValidationError(validationError);
+        return;
+      }
+    }
+
+    setCronValidationError(null);
     setIsSaving(true);
     try {
       await updateScheduledTask(scheduledTask.id, {
         cronExpression,
         enabled,
       });
+      showToast('Schedule saved', 'success');
     } catch (err) {
       showError(err);
     } finally {
@@ -217,11 +229,21 @@ export function ScheduledTaskDetailPage() {
               <input
                 className="scheduled-task-detail-page__input"
                 value={customCron}
-                onChange={(event) => setCustomCron(event.target.value)}
+                onChange={(event) => {
+                  setCustomCron(event.target.value);
+                  if (cronValidationError) {
+                    setCronValidationError(null);
+                  }
+                }}
                 placeholder="0 9 * * 1-5"
               />
+              <Text size="1" tone="muted">Use 5 fields: minute hour day-of-month month day-of-week.</Text>
             </label>
           ) : null}
+
+          <Text size="1" tone="muted">Schedules run using the server timezone.</Text>
+
+          {cronValidationError ? <ErrorText size="1">{cronValidationError}</ErrorText> : null}
 
           <div className="scheduled-task-detail-page__toggle-row">
             <Text size="2" tone="muted">Status</Text>

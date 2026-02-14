@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository, In } from 'typeorm';
 import { TaskBlueprintEntity } from './task-blueprint.entity';
+import { ScheduledTaskEntity } from './scheduled-task.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { MetaService } from '../meta/meta.service';
 import { ActorService } from '../identity-provider/actor.service';
@@ -16,6 +17,7 @@ import {
 } from './dto/service/task-blueprints.service.types';
 import {
   TaskBlueprintNotFoundError,
+  TaskBlueprintHasActiveSchedulesError,
 } from './errors/task-blueprints.errors';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorResult, TagResult, TaskResult } from '../tasks/dto/service/tasks.service.types';
@@ -29,6 +31,8 @@ export class TaskBlueprintsService {
     private readonly taskBlueprintRepository: Repository<TaskBlueprintEntity>,
     @InjectRepository(ActorEntity)
     private readonly actorRepository: Repository<ActorEntity>,
+    @InjectRepository(ScheduledTaskEntity)
+    private readonly scheduledTaskRepository: Repository<ScheduledTaskEntity>,
     private readonly metaService: MetaService,
     private readonly actorService: ActorService,
     private readonly tasksService: TasksService,
@@ -193,6 +197,17 @@ export class TaskBlueprintsService {
 
     if (!blueprint) {
       throw new TaskBlueprintNotFoundError(blueprintId);
+    }
+
+    const activeSchedules = await this.scheduledTaskRepository.count({
+      where: {
+        taskBlueprintId: blueprintId,
+        enabled: true,
+      },
+    });
+
+    if (activeSchedules > 0) {
+      throw new TaskBlueprintHasActiveSchedulesError(blueprintId);
     }
 
     await this.taskBlueprintRepository.softRemove(blueprint);

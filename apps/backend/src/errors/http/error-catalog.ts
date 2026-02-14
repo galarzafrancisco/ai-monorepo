@@ -51,6 +51,12 @@ export const ErrorCatalog: Record<
     type: '/errors/task-blueprints/not-found',
     retryable: false,
   },
+  [ErrorCodes.TASK_BLUEPRINT_HAS_ACTIVE_SCHEDULES]: {
+    status: 409,
+    title: 'Task blueprint has active schedules',
+    type: '/errors/task-blueprints/has-active-schedules',
+    retryable: false,
+  },
   [ErrorCodes.SCHEDULED_TASK_NOT_FOUND]: {
     status: 404,
     title: 'Scheduled task not found',

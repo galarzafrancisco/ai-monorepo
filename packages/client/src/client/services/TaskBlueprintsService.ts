@@ -112,6 +112,7 @@ export class TaskBlueprintsService {
             },
             errors: {
                 404: `Task blueprint not found`,
+                409: `Task blueprint has active schedules`,
             },
         });
     }

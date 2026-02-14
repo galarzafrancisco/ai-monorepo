@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, Repository } from 'typeorm';
 import { CronExpressionParser } from 'cron-parser';
 import { ScheduledTaskEntity } from './scheduled-task.entity';
 import { TaskBlueprintEntity } from './task-blueprint.entity';
@@ -200,17 +200,16 @@ export class ScheduledTasksService {
   async getDueScheduledTasks(): Promise<ScheduledTaskResult[]> {
     const now = new Date();
 
-    const scheduledTasks = await this.scheduledTaskRepository.find({
+    const dueTasks = await this.scheduledTaskRepository.find({
       where: {
         enabled: true,
+        nextRunAt: LessThanOrEqual(now),
       },
       relations: ['taskBlueprint', 'taskBlueprint.tags', 'taskBlueprint.assigneeActor', 'taskBlueprint.createdByActor'],
+      order: {
+        nextRunAt: 'ASC',
+      },
     });
-
-    // Filter tasks that are due (nextRunAt <= now)
-    const dueTasks = scheduledTasks.filter(
-      (task) => task.nextRunAt <= now,
-    );
 
     return dueTasks.map((task) => this.mapScheduledTaskToResult(task));
   }
