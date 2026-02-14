@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Text } from "../../ui/primitives";
 import { useTasksCtx, AnimationState } from "./TasksProvider"
 import { TaskStatus } from "./const";
@@ -12,6 +12,7 @@ import './TasksPage.css';
 import { NewTaskPop } from "./NewTaskPop";
 import { TasksToRows } from "./TasksToRows";
 import { TasksToCards } from "./TasksToCards";
+import { TasksProjectSelector } from "./TasksProjectSelector";
 
 export function TasksPage({ status }: { status?: TaskStatus }) {
 
@@ -21,6 +22,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
   const { showError } = useToast();
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Set document title (browser tab)
   useDocumentTitle();
@@ -74,7 +76,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
       });
       if (task) {
         setNewTask(task);
-        navigate(`/tasks/task/${task.id}`);
+        navigate({ pathname: `/tasks/task/${task.id}`, search: location.search });
         return true;
       } else {
         return false;
@@ -91,6 +93,9 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
     <div className={`${isDesktop ? 'full-height' : ''}`}>
       {!isDesktop ?
         <>
+          <div className="tasks-mobile-project-filter">
+            <TasksProjectSelector />
+          </div>
           <TasksToRows
             tasks={filteredTasks}
             enteringIds={mobileAnimationState.enteringIds}

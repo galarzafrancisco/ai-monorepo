@@ -1,0 +1,37 @@
+.tasks-project-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tasks-project-selector__label {
+  font-size: var(--fs-2);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tasks-project-selector__select {
+  min-width: 140px;
+  max-width: 180px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-2);
+  padding: var(--space-1) var(--space-2);
+}
+
+.tasks-project-selector--compact .tasks-project-selector__label {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .tasks-project-selector {
+    width: 100%;
+  }
+
+  .tasks-project-selector__select {
+    width: 100%;
+    max-width: none;
+  }
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { ActorsService, TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
@@ -15,6 +15,7 @@ type EditingField = 'title' | 'description' | 'assignee' | null;
 export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { tasks, setSectionTitle } = useTasksCtx();
 
   // Find task from context (real-time updates)
@@ -71,7 +72,7 @@ export function TaskDetailPage() {
       <div className="task-detail-page">
         <Stack spacing="4" align="center">
           <Text size="3" tone="muted">Task not found</Text>
-          <Button variant="secondary" onClick={() => navigate('/tasks')}>
+          <Button variant="secondary" onClick={() => navigate({ pathname: '/tasks', search: location.search })}>
             Back to tasks
           </Button>
         </Stack>

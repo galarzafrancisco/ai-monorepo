@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { TasksService } from './api';
+import { ProjectsService } from '../projects/api';
 import type { Task } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
 import type {
   CreateTaskDto,
   AssignTaskDto,
-} from "@taico/client"
+  ProjectResponseDto,
+} from '@taico/client';
 import {
   TaskWireEvents,
   TaskCreatedWireEvent,
@@ -17,233 +21,295 @@ import {
   TaskCommentedWireEvent,
   InputRequestAnsweredWireEvent,
   TaskActivityWireEvent,
-} from "@taico/events";
+} from '@taico/events';
 
-// Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
 const TASKS_PAGE_SIZE = 100;
-
+const PROJECT_QUERY_PARAM = 'project';
+const PROJECT_STORAGE_KEY = 'tasks:selected-project-id';
 
 export const useTasks = () => {
-  // UI feedback
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Data store
   const [tasks, setTasks] = useState<Task[]>([]);
-
-  // Transport
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-
-  // Ephemeral UI state: last activity per task
   const [activityByTaskId, setActivityByTaskId] = useState<Record<string, TaskActivityWireEvent>>({});
+  const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
+
+  const selectedProjectIdFromUrl = searchParams.get(PROJECT_QUERY_PARAM);
+
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === selectedProjectIdFromUrl) ?? null,
+    [projects, selectedProjectIdFromUrl],
+  );
+
+  const selectedProjectTagName = selectedProject?.tagName;
+  const tasksRef = useRef<Task[]>([]);
+
+  const sortTasks = (items: Task[]): Task[] => {
+    return [...items].sort((a, b) => {
+      const dateA = new Date(a.updatedAt).getTime();
+      const dateB = new Date(b.updatedAt).getTime();
+      return dateB - dateA;
+    });
+  };
+
+  const taskMatchesSelectedProject = useCallback(
+    (task: { tags?: { name: string }[] }) => {
+      if (!selectedProjectTagName) {
+        return true;
+      }
+      return task.tags?.some((tag) => tag.name === selectedProjectTagName) ?? false;
+    },
+    [selectedProjectTagName],
+  );
+
+  const setSelectedProjectId = useCallback(
+    (projectId: string | null, options?: { replace?: boolean }) => {
+      const next = new URLSearchParams(location.search);
+      if (projectId) {
+        next.set(PROJECT_QUERY_PARAM, projectId);
+        window.localStorage.setItem(PROJECT_STORAGE_KEY, projectId);
+      } else {
+        next.delete(PROJECT_QUERY_PARAM);
+        window.localStorage.removeItem(PROJECT_STORAGE_KEY);
+      }
+      setSearchParams(next, { replace: options?.replace ?? false });
+    },
+    [location.search, setSearchParams],
+  );
 
   const upsertActivity = (evt: TaskActivityWireEvent) => {
-    // Only store activity if it has a message to display
     if (!evt.message) {
-      console.warn('Received task activity event without message, skipping', evt);
       return;
     }
-    setActivityByTaskId(prev => ({
+    setActivityByTaskId((prev) => ({
       ...prev,
-      [evt.taskId]: evt
+      [evt.taskId]: evt,
     }));
   };
 
-  // Optional: clear activity when task changes / gets refreshed
-  const clearActivity = (taskId: string) => {
-    setActivityByTaskId(prev => {
-      const { [taskId]: _, ...rest } = prev;
-      return rest;
-    });
-  };
-
-  // Boot
-  useEffect(() => {
-    loadTasks();
-    const cleanup = setupWebsocket();
-    return cleanup;
-  }, []);
-
-  // Sort tasks by updatedAt (newest first)
-  const sortTasks = (tasks: Task[]): Task[] => {
-    return [...tasks].sort((a, b) => {
-      const dateA = new Date(a.updatedAt).getTime();
-      const dateB = new Date(b.updatedAt).getTime();
-      return dateB - dateA; // Descending order (newest first)
-    });
-  };
-
-  // Create task
   const createTask = async (task: CreateTaskDto) => {
-    return await TasksService.tasksControllerCreateTask(task);
-  }
+    const tagNames = new Set(task.tagNames ?? []);
+    if (selectedProjectTagName) {
+      tagNames.add(selectedProjectTagName);
+    }
 
-  // Delete tasl
+    return await TasksService.tasksControllerCreateTask({
+      ...task,
+      tagNames: tagNames.size > 0 ? Array.from(tagNames) : undefined,
+    });
+  };
+
   const deleteTask = async ({ taskId }: { taskId: string }) => {
     return await TasksService.tasksControllerDeleteTask(taskId);
-  }
+  };
 
-  // Add comment
-  const addComment = async ({ taskId, comment }: { taskId: string, comment: string }) => {
+  const addComment = async ({ taskId, comment }: { taskId: string; comment: string }) => {
     return await TasksService.tasksControllerAddComment(taskId, { content: comment });
-  }
+  };
 
-  // Assign task
-  const assignTask = async ({ taskId, assigneeActorId }: { taskId: string, assigneeActorId: string }) => {
+  const assignTask = async ({ taskId, assigneeActorId }: { taskId: string; assigneeActorId: string }) => {
     const dto: AssignTaskDto = { assigneeActorId };
     return await TasksService.tasksControllerAssignTask(taskId, dto);
-  }
+  };
 
-  // Assign task to me
   const assignTaskToMe = async ({ taskId }: { taskId: string }) => {
     return await TasksService.tasksControllerAssignTaskToMe(taskId);
-  }
+  };
 
-  // Answer input request
-  const answerInputRequest = async ({ taskId, inputRequestId, answer }: { taskId: string, inputRequestId: string, answer: string }) => {
+  const answerInputRequest = async ({
+    taskId,
+    inputRequestId,
+    answer,
+  }: {
+    taskId: string;
+    inputRequestId: string;
+    answer: string;
+  }) => {
     return await TasksService.tasksControllerAnswerInputRequest(taskId, inputRequestId, { answer });
-  }
+  };
 
-  // Load tasks
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await TasksService.tasksControllerListTasks(undefined, undefined, undefined, 1, TASKS_PAGE_SIZE);
+      const response = await TasksService.tasksControllerListTasks(
+        undefined,
+        undefined,
+        selectedProjectTagName,
+        1,
+        TASKS_PAGE_SIZE,
+      );
       setTasks(sortTasks(response.items));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedProjectTagName]);
 
-  // Setup websocket
-  const setupWebsocket = () => {
-    const newSocket = io(SOCKET_URL, {
+  const loadProjects = useCallback(async () => {
+    setIsLoadingProjects(true);
+    setProjectsError(null);
+    try {
+      const allProjects = await ProjectsService.projectsControllerGetAllProjects();
+      setProjects(allProjects);
+    } catch (err: any) {
+      setProjectsError(err?.body?.detail ?? 'Failed to load projects');
+    } finally {
+      setProjectsLoaded(true);
+      setIsLoadingProjects(false);
+    }
+  }, []);
+
+  const setupWebsocket = useCallback(() => {
+    const newSocket: Socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
     });
 
-    newSocket.on('connect', () => {
-      console.log('Connected to websocket');
-      newSocket.emit('tasks.subscribe', {}, (ack: any) => {
-        if (ack.ok) {
-          console.log(ack);
-          console.log('Subscribed to room:', ack.room);
-          setIsConnected(true);
-        } else {
-          console.error('Failed to subscribe to room');
-          setIsConnected(false);
+    const upsertOrRemoveTask = (task: Task) => {
+      setTasks((prev) => {
+        if (!taskMatchesSelectedProject(task)) {
+          return prev.filter((existingTask) => existingTask.id !== task.id);
         }
+        const exists = prev.some((existingTask) => existingTask.id === task.id);
+        if (!exists) {
+          return sortTasks([task, ...prev]);
+        }
+        return sortTasks(prev.map((existingTask) => (existingTask.id === task.id ? task : existingTask)));
+      });
+    };
+
+    newSocket.on('connect', () => {
+      newSocket.emit('tasks.subscribe', {}, (ack: any) => {
+        setIsConnected(Boolean(ack?.ok));
       });
       loadTasks();
     });
 
     newSocket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
       setIsConnected(false);
     });
 
-    // Handle task created event
     newSocket.on(TaskWireEvents.TASK_CREATED, (event: TaskCreatedWireEvent) => {
-      console.log('task.created', event);
+      const task = event.payload as Task;
+      if (!taskMatchesSelectedProject(task)) {
+        return;
+      }
       setTasks((prev) => {
-        // Avoid duplicates - check if task already exists
-        if (prev.some(t => t.id === event.payload.id)) {
+        if (prev.some((existingTask) => existingTask.id === task.id)) {
           return prev;
         }
-        return sortTasks([event.payload as Task, ...prev]);
+        return sortTasks([task, ...prev]);
       });
     });
 
-    // Handle task updated event
     newSocket.on(TaskWireEvents.TASK_UPDATED, (event: TaskUpdatedWireEvent) => {
-      console.log('task.updated', event);
-      setTasks((prev) =>
-        sortTasks(prev.map((t) => (t.id === event.payload.id ? event.payload as Task : t)))
-      );
+      upsertOrRemoveTask(event.payload as Task);
     });
 
-    // Handle task deleted event
     newSocket.on(TaskWireEvents.TASK_DELETED, (event: TaskDeletedWireEvent) => {
-      console.log('task.deleted', event);
-      setTasks((prev) => prev.filter((t) => t.id !== event.payload.taskId));
+      setTasks((prev) => prev.filter((task) => task.id !== event.payload.taskId));
+      setActivityByTaskId((prev) => {
+        const { [event.payload.taskId]: _, ...rest } = prev;
+        return rest;
+      });
     });
 
-    // Handle task assigned event
     newSocket.on(TaskWireEvents.TASK_ASSIGNED, (event: TaskAssignedWireEvent) => {
-      console.log('task.assigned', event);
-      setTasks((prev) =>
-        sortTasks(prev.map((t) => (t.id === event.payload.id ? event.payload as Task : t)))
-      );
+      upsertOrRemoveTask(event.payload as Task);
     });
 
-    // Handle comment added event
     newSocket.on(TaskWireEvents.TASK_COMMENTED, async (event: TaskCommentedWireEvent) => {
-      console.log('task.commented', event);
       try {
-        // event.payload is CommentWirePayload with taskId
         const updatedTask = await TasksService.tasksControllerGetTask(event.payload.taskId);
-        setTasks((prev) => {
-          const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
-          if (existingTaskIndex === -1) {
-            return sortTasks([updatedTask, ...prev]);
-          }
-          return sortTasks(prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
-        });
-      } catch (err) {
-        console.error('Failed to refresh task after comment', err);
+        upsertOrRemoveTask(updatedTask);
+      } catch {
+        // Ignore refresh errors from transient fetches.
       }
     });
 
-    // Handle input request answered event
     newSocket.on(TaskWireEvents.INPUT_REQUEST_ANSWERED, async (event: InputRequestAnsweredWireEvent) => {
-      console.log('input.request.answered', event);
       try {
         const updatedTask = await TasksService.tasksControllerGetTask(event.payload.taskId);
-        setTasks((prev) => {
-          const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
-          if (existingTaskIndex === -1) {
-            return sortTasks([updatedTask, ...prev]);
-          }
-          return sortTasks(prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
-        });
-      } catch (err) {
-        console.error('Failed to refresh task after input request answer', err);
+        upsertOrRemoveTask(updatedTask);
+      } catch {
+        // Ignore refresh errors from transient fetches.
       }
     });
 
-    // Handle task status changed event
     newSocket.on(TaskWireEvents.TASK_STATUS_CHANGED, (event: TaskStatusChangedWireEvent) => {
-      console.log('task.status_changed', event);
-      setTasks((prev) =>
-        sortTasks(prev.map((t) => (t.id === event.payload.id ? event.payload as Task : t)))
-      );
+      upsertOrRemoveTask(event.payload as Task);
     });
 
-    // Handle task activity event (ephemeral UI feedback, not persisted)
     newSocket.on(TaskWireEvents.TASK_ACTIVITY, (evt: TaskActivityWireEvent) => {
-      console.log('task.activity', evt);
+      const shouldKeepEvent = tasksRef.current.some((task) => task.id === evt.taskId);
+      if (!shouldKeepEvent) {
+        return;
+      }
       upsertActivity(evt);
     });
-
-    setSocket(newSocket);
 
     return () => {
       newSocket.close();
     };
-  };
+  }, [loadTasks, taskMatchesSelectedProject]);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  useEffect(() => {
+    const projectFromUrl = new URLSearchParams(location.search).get(PROJECT_QUERY_PARAM);
+    if (projectFromUrl) {
+      window.localStorage.setItem(PROJECT_STORAGE_KEY, projectFromUrl);
+      return;
+    }
+
+    const storedProjectId = window.localStorage.getItem(PROJECT_STORAGE_KEY);
+    if (!storedProjectId) {
+      return;
+    }
+
+    const next = new URLSearchParams(location.search);
+    next.set(PROJECT_QUERY_PARAM, storedProjectId);
+    setSearchParams(next, { replace: true });
+  }, [location.search, setSearchParams]);
+
+  useEffect(() => {
+    if (!projectsLoaded || !selectedProjectIdFromUrl) {
+      return;
+    }
+
+    const exists = projects.some((project) => project.id === selectedProjectIdFromUrl);
+    if (!exists) {
+      setSelectedProjectId(null, { replace: true });
+    }
+  }, [projects, projectsLoaded, selectedProjectIdFromUrl, setSelectedProjectId]);
+
+  useEffect(() => {
+    setActivityByTaskId({});
+    loadTasks();
+    const cleanup = setupWebsocket();
+    return cleanup;
+  }, [loadTasks, setupWebsocket]);
 
   return {
-    // UI feedback
     isLoading,
     error,
     activityByTaskId,
-
-    // Data
     tasks,
     createTask,
     deleteTask,
@@ -251,9 +317,12 @@ export const useTasks = () => {
     assignTask,
     assignTaskToMe,
     answerInputRequest,
-
-
-    // Transport
     isConnected,
+    projects,
+    selectedProjectId: selectedProjectIdFromUrl,
+    selectedProject,
+    setSelectedProjectId,
+    isLoadingProjects,
+    projectsError,
   };
 };
