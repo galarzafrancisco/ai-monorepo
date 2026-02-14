@@ -216,6 +216,62 @@ export class ScheduledTasksService {
   }
 
   /**
+   * Atomically claims a due scheduled task execution by advancing nextRunAt.
+   * Returns the claimed nextRunAt value when successful, otherwise null.
+   */
+  async claimDueTaskExecution(
+    scheduledTaskId: string,
+    expectedNextRunAt: Date,
+    cronExpression: string,
+  ): Promise<Date | null> {
+    const claimedNextRunAt = this.calculateNextRun(cronExpression, new Date());
+
+    const result = await this.scheduledTaskRepository
+      .createQueryBuilder()
+      .update(ScheduledTaskEntity)
+      .set({ nextRunAt: claimedNextRunAt })
+      .where('id = :scheduledTaskId', { scheduledTaskId })
+      .andWhere('enabled = :enabled', { enabled: true })
+      .andWhere('next_run_at = :expectedNextRunAt', { expectedNextRunAt })
+      .execute();
+
+    if ((result.affected ?? 0) === 0) {
+      return null;
+    }
+
+    return claimedNextRunAt;
+  }
+
+  /**
+   * Completes an already-claimed execution by setting lastRunAt.
+   */
+  async completeClaimedExecution(scheduledTaskId: string): Promise<void> {
+    await this.scheduledTaskRepository
+      .createQueryBuilder()
+      .update(ScheduledTaskEntity)
+      .set({ lastRunAt: new Date() })
+      .where('id = :scheduledTaskId', { scheduledTaskId })
+      .execute();
+  }
+
+  /**
+   * Restores a claim if task creation fails so execution can be retried.
+   */
+  async rollbackExecutionClaim(
+    scheduledTaskId: string,
+    claimedNextRunAt: Date,
+    originalNextRunAt: Date,
+  ): Promise<void> {
+    await this.scheduledTaskRepository
+      .createQueryBuilder()
+      .update(ScheduledTaskEntity)
+      .set({ nextRunAt: originalNextRunAt })
+      .where('id = :scheduledTaskId', { scheduledTaskId })
+      .andWhere('next_run_at = :claimedNextRunAt', { claimedNextRunAt })
+      .execute();
+  }
+
+  /**
    * Marks a scheduled task as executed and calculates next run time
    */
   async markAsExecuted(scheduledTaskId: string): Promise<void> {

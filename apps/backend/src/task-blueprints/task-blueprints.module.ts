@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ScheduleModule } from '@nestjs/schedule';
 import { TaskBlueprintEntity } from './task-blueprint.entity';
 import { ScheduledTaskEntity } from './scheduled-task.entity';
 import { TaskBlueprintsService } from './task-blueprints.service';
@@ -16,7 +15,6 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([TaskBlueprintEntity, ScheduledTaskEntity]),
-    ScheduleModule.forRoot(),
     TasksModule,
     MetaModule,
     IdentityProviderModule,

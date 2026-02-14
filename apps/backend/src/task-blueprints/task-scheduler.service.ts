@@ -37,23 +37,56 @@ export class TaskSchedulerService {
       });
 
       for (const scheduledTask of dueTasks) {
+        const claimedNextRunAt =
+          await this.scheduledTasksService.claimDueTaskExecution(
+            scheduledTask.id,
+            scheduledTask.nextRunAt,
+            scheduledTask.cronExpression,
+          );
+
+        if (!claimedNextRunAt) {
+          this.logger.debug({
+            message: 'Skipping scheduled task because it was already claimed',
+            scheduledTaskId: scheduledTask.id,
+          });
+          continue;
+        }
+
         try {
           // Create task from blueprint
           const task = await this.taskBlueprintsService.createTaskFromBlueprint(
             scheduledTask.taskBlueprintId,
           );
 
-          // Mark scheduled task as executed
-          await this.scheduledTasksService.markAsExecuted(scheduledTask.id);
+          await this.scheduledTasksService.completeClaimedExecution(
+            scheduledTask.id,
+          );
 
           this.logger.log({
             message: 'Task created from scheduled blueprint',
             scheduledTaskId: scheduledTask.id,
             blueprintId: scheduledTask.taskBlueprintId,
             taskId: task.id,
-            nextRunAt: scheduledTask.nextRunAt,
+            nextRunAt: claimedNextRunAt,
           });
         } catch (error) {
+          try {
+            await this.scheduledTasksService.rollbackExecutionClaim(
+              scheduledTask.id,
+              claimedNextRunAt,
+              scheduledTask.nextRunAt,
+            );
+          } catch (rollbackError) {
+            this.logger.error({
+              message: 'Failed to rollback scheduled task claim',
+              scheduledTaskId: scheduledTask.id,
+              error:
+                rollbackError instanceof Error
+                  ? rollbackError.message
+                  : String(rollbackError),
+            });
+          }
+
           this.logger.error({
             message: 'Failed to execute scheduled task',
             scheduledTaskId: scheduledTask.id,
