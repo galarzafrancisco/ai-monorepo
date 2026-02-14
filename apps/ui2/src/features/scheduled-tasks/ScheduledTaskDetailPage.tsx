@@ -4,28 +4,26 @@ import { Button, Card, Text } from '../../ui/primitives';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import { useScheduledTasksCtx } from './ScheduledTasksProvider';
-import { NewBlueprintPop } from './NewBlueprintPop';
 import { ScheduleConfigPop } from './ScheduleConfigPop';
 import { formatScheduleSummary, getNextOccurrences, parseCronExpression } from './scheduleUtils';
 import type { TaskBlueprint } from './types';
+import { useTasksCtx } from '../tasks/TasksProvider';
 import './ScheduledTaskDetailPage.css';
 
 export function ScheduledTaskDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { scheduleId } = useParams<{ scheduleId: string }>();
   const navigate = useNavigate();
   const {
     scheduledTasks,
     blueprintsById,
-    setSectionTitle,
     loadScheduledTask,
     loadBlueprint,
-    updateBlueprint,
     updateScheduledTask,
   } = useScheduledTasksCtx();
+  const { setSectionTitle } = useTasksCtx();
   const { showError } = useToast();
 
-  const [localScheduledTaskId, setLocalScheduledTaskId] = useState(id ?? '');
-  const [showBlueprintEdit, setShowBlueprintEdit] = useState(false);
+  const [localScheduledTaskId, setLocalScheduledTaskId] = useState(scheduleId ?? '');
   const [showScheduleEdit, setShowScheduleEdit] = useState(false);
 
   const scheduledTask = scheduledTasks.find((item) => item.id === localScheduledTaskId);
@@ -34,10 +32,10 @@ export function ScheduledTaskDetailPage() {
   useDocumentTitle();
 
   useEffect(() => {
-    if (id) {
-      setLocalScheduledTaskId(id);
+    if (scheduleId) {
+      setLocalScheduledTaskId(scheduleId);
     }
-  }, [id]);
+  }, [scheduleId]);
 
   useEffect(() => {
     if (!localScheduledTaskId) {
@@ -76,14 +74,14 @@ export function ScheduledTaskDetailPage() {
     return getNextOccurrences({ ...scheduleConfig, cronExpression: scheduledTask.cronExpression });
   }, [scheduleConfig, scheduledTask]);
 
-  if (!scheduledTask) {
-    return (
-      <div className="scheduled-task-detail-page">
-        <Text tone="muted">Scheduled task not found.</Text>
-        <Button variant="secondary" onClick={() => navigate('/scheduled-tasks')}>Back to schedules</Button>
-      </div>
-    );
-  }
+    if (!scheduledTask) {
+      return (
+        <div className="scheduled-task-detail-page">
+          <Text tone="muted">Scheduled task not found.</Text>
+          <Button variant="secondary" onClick={() => navigate('/tasks/schedule')}>Back to schedules</Button>
+        </div>
+      );
+    }
 
   const summary = scheduleConfig
     ? formatScheduleSummary({ ...scheduleConfig, cronExpression: scheduledTask.cronExpression })
@@ -97,8 +95,16 @@ export function ScheduledTaskDetailPage() {
             <Text weight="bold" size="3">Blueprint</Text>
             <Text tone="muted" size="2">Task definition used for each run.</Text>
           </div>
-          <Button size="sm" variant="secondary" onClick={() => setShowBlueprintEdit(true)}>
-            Edit blueprint
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              if (scheduledTask.taskBlueprintId) {
+                navigate(`/tasks/blueprints/${scheduledTask.taskBlueprintId}`);
+              }
+            }}
+          >
+            Open blueprint
           </Button>
         </div>
         <div className="scheduled-task-detail-page__blueprint">
@@ -183,45 +189,9 @@ export function ScheduledTaskDetailPage() {
         <Text size="2" tone="muted">No run history yet.</Text>
       </Card>
 
-      <Button variant="secondary" onClick={() => navigate('/scheduled-tasks')}>
+      <Button variant="secondary" onClick={() => navigate('/tasks/schedule')}>
         Back to schedules
       </Button>
-
-      {showBlueprintEdit ? (
-        <NewBlueprintPop
-          title="Edit Blueprint"
-          initialValues={{
-            name: blueprint?.name,
-            description: blueprint?.description,
-            assigneeActor: blueprint?.assigneeActor || null,
-            tags: blueprint?.tags || [],
-            dependsOnIds: blueprint?.dependsOnIds || [],
-          }}
-          onCancel={() => setShowBlueprintEdit(false)}
-          onSave={async (payload) => {
-            if (!blueprint) {
-              return false;
-            }
-            try {
-              const assigneeActorId = payload.assigneeActorId
-                ? (payload.assigneeActorId as unknown as Record<string, any>)
-                : null;
-              await updateBlueprint(blueprint.id, {
-                name: payload.name,
-                description: payload.description,
-                assigneeActorId,
-                tagNames: payload.tagNames ?? [],
-                dependsOnIds: payload.dependsOnIds ?? [],
-              });
-              setShowBlueprintEdit(false);
-              return true;
-            } catch (err) {
-              showError(err);
-              return false;
-            }
-          }}
-        />
-      ) : null}
 
       {showScheduleEdit ? (
         <ScheduleConfigPop

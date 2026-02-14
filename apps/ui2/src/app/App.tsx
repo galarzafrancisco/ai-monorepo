@@ -6,7 +6,6 @@ import { HomeRoutes } from '../features/home/HomeRoutes';
 import { BASE_PATH } from '../shared/const/base';
 import './App.css';
 import { TasksRoutes } from '../features/tasks/TasksRoutes';
-import { ScheduledTasksRoutes } from '../features/scheduled-tasks/ScheduledTasksRoutes';
 import { LogoutPage } from './routes/LogoutPage';
 import { ContextRoutes } from '../features/context/ContextRoutes';
 import { AgentsRoutes } from '../features/agents/AgentsRoutes';
@@ -30,7 +29,6 @@ function BetaAppRoutes() {
 
       {/* Tasks with nested routes */}
       <Route path="/tasks/*" element={<TasksRoutes />} />
-      <Route path="/scheduled-tasks/*" element={<ScheduledTasksRoutes />} />
 
       <Route path="/context/*" element={<ContextRoutes />} />
       <Route path="/agents/*" element={<AgentsRoutes />} />

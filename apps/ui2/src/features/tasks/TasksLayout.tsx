@@ -51,7 +51,7 @@ export function TasksLayout(): JSX.Element {
               size="sm"
               variant="ghost"
               className="tasks-layout__schedule-button"
-              onClick={() => navigate('/scheduled-tasks')}
+              onClick={() => navigate('/tasks/schedule')}
             >
               <span className="tasks-layout__schedule-icon">🗓</span>
               Schedule

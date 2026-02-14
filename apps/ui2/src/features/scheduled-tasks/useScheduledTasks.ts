@@ -13,6 +13,7 @@ const PAGE_SIZE = 100;
 export const useScheduledTasks = () => {
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([]);
   const [blueprintsById, setBlueprintsById] = useState<Record<string, TaskBlueprint>>({});
+  const [blueprints, setBlueprints] = useState<TaskBlueprint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +22,13 @@ export const useScheduledTasks = () => {
       ...prev,
       [blueprint.id]: blueprint,
     }));
+    setBlueprints((prev) => {
+      const exists = prev.some((item) => item.id === blueprint.id);
+      if (exists) {
+        return prev.map((item) => (item.id === blueprint.id ? blueprint : item));
+      }
+      return [blueprint, ...prev];
+    });
   }, []);
 
   const upsertScheduledTask = useCallback((task: ScheduledTask) => {
@@ -66,6 +74,17 @@ export const useScheduledTasks = () => {
     return blueprint;
   }, [upsertBlueprint]);
 
+  const loadBlueprints = useCallback(async () => {
+    setError(null);
+    try {
+      const response = await TaskBlueprintsService.taskBlueprintsControllerListTaskBlueprints(1, PAGE_SIZE);
+      setBlueprints(response.items);
+      response.items.forEach((item) => upsertBlueprint(item));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load task blueprints');
+    }
+  }, [upsertBlueprint]);
+
   const createBlueprint = useCallback(async (payload: CreateTaskBlueprintDto) => {
     const blueprint = await TaskBlueprintsService.taskBlueprintsControllerCreateTaskBlueprint(payload);
     upsertBlueprint(blueprint);
@@ -101,6 +120,16 @@ export const useScheduledTasks = () => {
     setScheduledTasks((prev) => prev.filter((task) => task.id !== id));
   }, []);
 
+  const deleteBlueprint = useCallback(async (id: string) => {
+    await TaskBlueprintsService.taskBlueprintsControllerDeleteTaskBlueprint(id);
+    setBlueprints((prev) => prev.filter((item) => item.id !== id));
+    setBlueprintsById((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     loadScheduledTasks();
   }, [loadScheduledTasks]);
@@ -108,15 +137,18 @@ export const useScheduledTasks = () => {
   return {
     scheduledTasks,
     blueprintsById,
+    blueprints,
     isLoading,
     error,
     loadScheduledTasks,
     loadScheduledTask,
     loadBlueprint,
+    loadBlueprints,
     createBlueprint,
     updateBlueprint,
     createScheduledTask,
     updateScheduledTask,
     deleteScheduledTask,
+    deleteBlueprint,
   };
 };

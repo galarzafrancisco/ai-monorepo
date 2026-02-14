@@ -7,7 +7,7 @@ import { NavegationItem } from '../../shared/types/NavegationItem';
 
 const SCHEDULED_TASKS_NAV: NavegationItem[] = [
   { path: '/tasks', label: 'Tasks', icon: '🧩' },
-  { path: '/scheduled-tasks', label: 'Schedules', icon: '🗓' },
+  { path: '/tasks/schedule', label: 'Schedules', icon: '🗓' },
 ];
 
 export function ScheduledTasksLayout(): JSX.Element {

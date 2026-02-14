@@ -16,6 +16,10 @@ type ScheduleConfigPopProps = {
   initialCronExpression?: string;
   initialEnabled?: boolean;
   title?: string;
+  blueprints?: { id: string; name: string }[];
+  selectedBlueprintId?: string;
+  onSelectBlueprint?: (id: string) => void;
+  onRequestNewBlueprint?: () => void;
 };
 
 const DAY_LABELS: { value: number; label: string }[] = [
@@ -42,6 +46,10 @@ export function ScheduleConfigPop({
   initialCronExpression,
   initialEnabled = true,
   title = 'Schedule Task',
+  blueprints,
+  selectedBlueprintId,
+  onSelectBlueprint,
+  onRequestNewBlueprint,
 }: ScheduleConfigPopProps) {
   const initialConfig = initialCronExpression
     ? parseCronExpression(initialCronExpression)
@@ -83,6 +91,34 @@ export function ScheduleConfigPop({
   return (
     <PopShell title={title} onCancel={onCancel} onSave={handleSave}>
       <div className="schedule-config-pop">
+        {blueprints && onSelectBlueprint ? (
+          <div className="schedule-config-pop__row">
+            <div className="schedule-config-pop__label-row">
+              <label className="schedule-config-pop__label">Blueprint</label>
+              {onRequestNewBlueprint ? (
+                <button
+                  type="button"
+                  className="schedule-config-pop__link"
+                  onClick={onRequestNewBlueprint}
+                >
+                  + New blueprint
+                </button>
+              ) : null}
+            </div>
+            <select
+              className="schedule-config-pop__select"
+              value={selectedBlueprintId || ''}
+              onChange={(event) => onSelectBlueprint(event.target.value)}
+            >
+              <option value="" disabled>Choose a blueprint</option>
+              {blueprints.map((blueprint) => (
+                <option key={blueprint.id} value={blueprint.id}>
+                  {blueprint.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         <div className="schedule-config-pop__row">
           <label className="schedule-config-pop__label">Schedule type</label>
           <select
