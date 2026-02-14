@@ -1,0 +1,55 @@
+.markdown {
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.markdown :where(h1,h2,h3,h4) {
+  margin: 1.2em 0 0.5em;
+  line-height: 1.2;
+}
+
+.markdown :where(p,ul,ol,blockquote,pre,table) {
+  margin: 0.8em 0;
+}
+
+.markdown :where(code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.95em;
+}
+
+.markdown :where(pre) {
+  overflow: auto;
+  padding: 0.9em;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.04);
+}
+
+.markdown :where(blockquote) {
+  padding-left: 1em;
+  border-left: 3px solid rgba(0,0,0,0.2);
+  opacity: 0.9;
+}
+
+.markdown :where(table) {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: auto;
+  display: block;
+}
+
+.markdown :where(th, td) {
+  border: 1px solid rgba(0,0,0,0.12);
+  padding: 0.5em 0.6em;
+}
+
+.markdown :where(a) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown :where(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+}

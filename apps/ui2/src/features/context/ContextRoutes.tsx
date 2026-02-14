@@ -4,6 +4,7 @@ import { ContextHome } from "./ContextHome";
 import { ContextBlockDetailPage } from "./ContextBlockDetailPage";
 import { ContextProvider } from "./ContextProvider";
 import { BlockEditor } from "./BlockEditor";
+import { BlockViewer } from "./BlockViewer";
 
 export function ContextRoutes() {
   return (
@@ -14,6 +15,7 @@ export function ContextRoutes() {
           <Route path="home" element={<ContextHome />} />
           <Route path="block/:id" element={<ContextBlockDetailPage />} />
           <Route path="new" element={<BlockEditor />} />
+          <Route path="view" element={<BlockViewer />} />
         </Route>
       </Routes >
     </ContextProvider>

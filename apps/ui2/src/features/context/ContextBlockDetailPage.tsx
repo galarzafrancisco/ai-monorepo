@@ -4,6 +4,9 @@ import { Button, Text, Stack, Chip } from '../../ui/primitives';
 import { useContextBlock } from './useContextBlocks';
 import { useContextCtx } from './ContextProvider';
 import { ContextTagResponseDto } from "@taico/client";
+import { MDXEditor, headingsPlugin } from '@mdxeditor/editor'
+import '@mdxeditor/editor/style.css'
+
 import './ContextBlockDetailPage.css';
 
 export function ContextBlockDetailPage() {
@@ -71,8 +74,8 @@ export function ContextBlockDetailPage() {
         </div>
       </Stack>
 
-      <div className="context-block-detail__content">
-        <pre>{block.content}</pre>
+      <div className="context-block-detail__csontent">
+        <MDXEditor markdown={block.content} plugins={[headingsPlugin()]} />
       </div>
     </div>
   );
