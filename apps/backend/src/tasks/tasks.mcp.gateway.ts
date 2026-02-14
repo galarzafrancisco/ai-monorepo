@@ -232,6 +232,29 @@ export class TasksMcpGateway {
 
     canWrite &&
       server.registerTool(
+        'delete_task',
+        {
+          title: 'Delete task',
+          description: 'Delete a task by ID',
+          inputSchema: {
+            taskId: z.string(),
+          },
+        },
+        async ({ taskId }) => {
+          await this.tasksService.deleteTask(taskId, user.actorId);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
+    canWrite &&
+      server.registerTool(
         'add_comment',
         {
           title: 'Add comment to task',
