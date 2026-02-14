@@ -1,7 +1,13 @@
 .scheduled-tasks-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
+}
+
+.scheduled-tasks-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .scheduled-tasks-page__header {
@@ -20,6 +26,12 @@
 .scheduled-tasks-page__list {
   display: flex;
   flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scheduled-tasks-page__blueprints-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-3);
 }
 

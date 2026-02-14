@@ -10,6 +10,22 @@
   gap: var(--space-2);
 }
 
+.schedule-config-pop__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.schedule-config-pop__link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: var(--fs-1);
+  cursor: pointer;
+  padding: 0;
+}
+
 .schedule-config-pop__label {
   font-size: var(--fs-2);
   font-weight: var(--fw-medium);

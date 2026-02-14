@@ -10,6 +10,7 @@ import type {
 
 export type ScheduledTasksContextValue = {
   scheduledTasks: ScheduledTask[];
+  blueprints: TaskBlueprint[];
   blueprintsById: Record<string, TaskBlueprint>;
   isLoading: boolean;
   error: string | null;
@@ -18,11 +19,13 @@ export type ScheduledTasksContextValue = {
   loadScheduledTasks: () => Promise<void>;
   loadScheduledTask: (id: string) => Promise<ScheduledTask>;
   loadBlueprint: (id: string) => Promise<TaskBlueprint>;
+  loadBlueprints: () => Promise<void>;
   createBlueprint: (payload: CreateTaskBlueprintDto) => Promise<TaskBlueprint>;
   updateBlueprint: (id: string, payload: UpdateTaskBlueprintDto) => Promise<TaskBlueprint>;
   createScheduledTask: (payload: CreateScheduledTaskDto) => Promise<ScheduledTask>;
   updateScheduledTask: (id: string, payload: UpdateScheduledTaskDto) => Promise<ScheduledTask>;
   deleteScheduledTask: (id: string) => Promise<void>;
+  deleteBlueprint: (id: string) => Promise<void>;
 };
 
 const ScheduledTasksContext = createContext<ScheduledTasksContextValue | null>(null);
@@ -30,23 +33,27 @@ const ScheduledTasksContext = createContext<ScheduledTasksContextValue | null>(n
 export function ScheduledTasksProvider({ children }: { children: React.ReactNode }) {
   const {
     scheduledTasks,
+    blueprints,
     blueprintsById,
     isLoading,
     error,
     loadScheduledTasks,
     loadScheduledTask,
     loadBlueprint,
+    loadBlueprints,
     createBlueprint,
     updateBlueprint,
     createScheduledTask,
     updateScheduledTask,
     deleteScheduledTask,
+    deleteBlueprint,
   } = useScheduledTasks();
 
   const [sectionTitle, setSectionTitle] = useState('');
 
   const value = useMemo<ScheduledTasksContextValue>(() => ({
     scheduledTasks,
+    blueprints,
     blueprintsById,
     isLoading,
     error,
@@ -55,13 +62,16 @@ export function ScheduledTasksProvider({ children }: { children: React.ReactNode
     loadScheduledTasks,
     loadScheduledTask,
     loadBlueprint,
+    loadBlueprints,
     createBlueprint,
     updateBlueprint,
     createScheduledTask,
     updateScheduledTask,
     deleteScheduledTask,
+    deleteBlueprint,
   }), [
     scheduledTasks,
+    blueprints,
     blueprintsById,
     isLoading,
     error,
@@ -69,11 +79,13 @@ export function ScheduledTasksProvider({ children }: { children: React.ReactNode
     loadScheduledTasks,
     loadScheduledTask,
     loadBlueprint,
+    loadBlueprints,
     createBlueprint,
     updateBlueprint,
     createScheduledTask,
     updateScheduledTask,
     deleteScheduledTask,
+    deleteBlueprint,
   ]);
 
   return (
