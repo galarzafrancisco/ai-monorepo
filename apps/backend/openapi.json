@@ -4500,6 +4500,483 @@
         ]
       }
     },
+    "/api/v1/task-blueprints": {
+      "post": {
+        "operationId": "TaskBlueprintsController_createTaskBlueprint",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskBlueprintDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task blueprint created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskBlueprintResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new task blueprint",
+        "tags": [
+          "Task Blueprints"
+        ]
+      },
+      "get": {
+        "operationId": "TaskBlueprintsController_listTaskBlueprints",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task blueprints retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskBlueprintListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all task blueprints",
+        "tags": [
+          "Task Blueprints"
+        ]
+      }
+    },
+    "/api/v1/task-blueprints/{id}": {
+      "get": {
+        "operationId": "TaskBlueprintsController_getTaskBlueprint",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task blueprint ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task blueprint retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskBlueprintResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task blueprint not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a task blueprint by ID",
+        "tags": [
+          "Task Blueprints"
+        ]
+      },
+      "patch": {
+        "operationId": "TaskBlueprintsController_updateTaskBlueprint",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task blueprint ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskBlueprintDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task blueprint updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskBlueprintResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Task blueprint not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update a task blueprint",
+        "tags": [
+          "Task Blueprints"
+        ]
+      },
+      "delete": {
+        "operationId": "TaskBlueprintsController_deleteTaskBlueprint",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task blueprint ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Task blueprint deleted successfully"
+          },
+          "404": {
+            "description": "Task blueprint not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a task blueprint",
+        "tags": [
+          "Task Blueprints"
+        ]
+      }
+    },
+    "/api/v1/task-blueprints/{id}/create-task": {
+      "post": {
+        "operationId": "TaskBlueprintsController_createTaskFromBlueprint",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Task blueprint ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Task created from blueprint successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task blueprint not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a task from a blueprint",
+        "tags": [
+          "Task Blueprints"
+        ]
+      }
+    },
+    "/api/v1/scheduled-tasks": {
+      "post": {
+        "operationId": "ScheduledTasksController_createScheduledTask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScheduledTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Scheduled task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledTaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new scheduled task",
+        "tags": [
+          "Scheduled Tasks"
+        ]
+      },
+      "get": {
+        "operationId": "ScheduledTasksController_listScheduledTasks",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "description": "Filter by enabled status",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scheduled tasks retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledTaskListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all scheduled tasks",
+        "tags": [
+          "Scheduled Tasks"
+        ]
+      }
+    },
+    "/api/v1/scheduled-tasks/{id}": {
+      "get": {
+        "operationId": "ScheduledTasksController_getScheduledTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Scheduled task ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scheduled task retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledTaskResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scheduled task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a scheduled task by ID",
+        "tags": [
+          "Scheduled Tasks"
+        ]
+      },
+      "patch": {
+        "operationId": "ScheduledTasksController_updateScheduledTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Scheduled task ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateScheduledTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scheduled task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduledTaskResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Scheduled task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update a scheduled task",
+        "tags": [
+          "Scheduled Tasks"
+        ]
+      },
+      "delete": {
+        "operationId": "ScheduledTasksController_deleteScheduledTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Scheduled task ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Scheduled task deleted successfully"
+          },
+          "404": {
+            "description": "Scheduled task not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a scheduled task",
+        "tags": [
+          "Scheduled Tasks"
+        ]
+      }
+    },
     "/.well-known/oauth-authorization-server/mcp/issuer": {
       "get": {
         "description": "Returns the configured authorization server issuer URL from environment configuration",
@@ -8176,6 +8653,357 @@
         "required": [
           "newParentId"
         ]
+      },
+      "CreateTaskBlueprintDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the task blueprint",
+            "example": "Daily standup task"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the task blueprint",
+            "example": "Create a task for the daily standup meeting"
+          },
+          "assigneeActorId": {
+            "type": "string",
+            "description": "ID or slug of the default assignee for tasks created from this blueprint",
+            "example": "agent-alpha"
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with tasks created from this blueprint",
+            "example": [
+              "daily",
+              "standup"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that tasks created from this blueprint should depend on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ]
+      },
+      "TaskBlueprintResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the task blueprint",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the task blueprint",
+            "example": "Daily standup task"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the task blueprint",
+            "example": "Create a task for the daily standup meeting"
+          },
+          "assigneeActorId": {
+            "type": "object",
+            "description": "ID of the default assignee for tasks created from this blueprint",
+            "example": "111-222-333",
+            "nullable": true
+          },
+          "assigneeActor": {
+            "description": "Actor assigned to tasks created from this blueprint",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "tags": {
+            "description": "Tags associated with tasks created from this blueprint",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagResponseDto"
+            }
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that tasks created from this blueprint should depend on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdByActor": {
+            "description": "Actor who created this task blueprint",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Blueprint creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Blueprint last update timestamp",
+            "example": "2025-11-03T12:45:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "tags",
+          "dependsOnIds",
+          "createdByActor",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TaskBlueprintListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of task blueprints",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskBlueprintResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of task blueprints",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "UpdateTaskBlueprintDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the task blueprint",
+            "example": "Daily standup task"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the task blueprint",
+            "example": "Create a task for the daily standup meeting"
+          },
+          "assigneeActorId": {
+            "type": "object",
+            "description": "ID or slug of the default assignee for tasks created from this blueprint",
+            "example": "agent-alpha",
+            "nullable": true
+          },
+          "tagNames": {
+            "description": "Array of tag names to associate with tasks created from this blueprint",
+            "example": [
+              "daily",
+              "standup"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dependsOnIds": {
+            "description": "Array of task IDs that tasks created from this blueprint should depend on",
+            "example": [
+              "uuid-1",
+              "uuid-2"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CreateScheduledTaskDto": {
+        "type": "object",
+        "properties": {
+          "taskBlueprintId": {
+            "type": "string",
+            "description": "ID of the task blueprint to schedule",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "cronExpression": {
+            "type": "string",
+            "description": "Cron expression for scheduling (e.g., \"0 9 * * 1-5\" for weekdays at 9am)",
+            "example": "0 9 * * *"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the scheduled task is enabled",
+            "example": true,
+            "default": true
+          }
+        },
+        "required": [
+          "taskBlueprintId",
+          "cronExpression"
+        ]
+      },
+      "ScheduledTaskResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the scheduled task",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "taskBlueprintId": {
+            "type": "string",
+            "description": "ID of the task blueprint",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "taskBlueprint": {
+            "description": "The task blueprint details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TaskBlueprintResponseDto"
+              }
+            ]
+          },
+          "cronExpression": {
+            "type": "string",
+            "description": "Cron expression for scheduling",
+            "example": "0 9 * * *"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the scheduled task is enabled",
+            "example": true
+          },
+          "lastRunAt": {
+            "type": "object",
+            "description": "Last execution timestamp",
+            "example": "2025-11-03T09:00:00.000Z",
+            "nullable": true
+          },
+          "nextRunAt": {
+            "type": "string",
+            "description": "Next scheduled execution timestamp",
+            "example": "2025-11-04T09:00:00.000Z"
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Scheduled task creation timestamp",
+            "example": "2025-11-03T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Scheduled task last update timestamp",
+            "example": "2025-11-03T12:45:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "taskBlueprintId",
+          "cronExpression",
+          "enabled",
+          "nextRunAt",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ScheduledTaskListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of scheduled tasks",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduledTaskResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of scheduled tasks",
+            "example": 10
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "UpdateScheduledTaskDto": {
+        "type": "object",
+        "properties": {
+          "cronExpression": {
+            "type": "string",
+            "description": "Cron expression for scheduling (e.g., \"0 9 * * 1-5\" for weekdays at 9am)",
+            "example": "0 9 * * *"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the scheduled task is enabled",
+            "example": true
+          }
+        }
       },
       "AuthorizationServerMetadataDto": {
         "type": "object",

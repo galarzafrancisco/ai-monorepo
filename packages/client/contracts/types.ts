@@ -1236,6 +1236,97 @@ export interface paths {
         patch: operations["ContextController_handleMcp_patch"];
         trace?: never;
     };
+    "/api/v1/task-blueprints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all task blueprints */
+        get: operations["TaskBlueprintsController_listTaskBlueprints"];
+        put?: never;
+        /** Create a new task blueprint */
+        post: operations["TaskBlueprintsController_createTaskBlueprint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/task-blueprints/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a task blueprint by ID */
+        get: operations["TaskBlueprintsController_getTaskBlueprint"];
+        put?: never;
+        post?: never;
+        /** Delete a task blueprint */
+        delete: operations["TaskBlueprintsController_deleteTaskBlueprint"];
+        options?: never;
+        head?: never;
+        /** Update a task blueprint */
+        patch: operations["TaskBlueprintsController_updateTaskBlueprint"];
+        trace?: never;
+    };
+    "/api/v1/task-blueprints/{id}/create-task": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a task from a blueprint */
+        post: operations["TaskBlueprintsController_createTaskFromBlueprint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduled-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all scheduled tasks */
+        get: operations["ScheduledTasksController_listScheduledTasks"];
+        put?: never;
+        /** Create a new scheduled task */
+        post: operations["ScheduledTasksController_createScheduledTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduled-tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a scheduled task by ID */
+        get: operations["ScheduledTasksController_getScheduledTask"];
+        put?: never;
+        post?: never;
+        /** Delete a scheduled task */
+        delete: operations["ScheduledTasksController_deleteScheduledTask"];
+        options?: never;
+        head?: never;
+        /** Update a scheduled task */
+        patch: operations["ScheduledTasksController_updateScheduledTask"];
+        trace?: never;
+    };
     "/.well-known/oauth-authorization-server/mcp/issuer": {
         parameters: {
             query?: never;
@@ -3506,6 +3597,240 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             newParentId: Record<string, never> | null;
+        };
+        CreateTaskBlueprintDto: {
+            /**
+             * @description Name of the task blueprint
+             * @example Daily standup task
+             */
+            name: string;
+            /**
+             * @description Detailed description of the task blueprint
+             * @example Create a task for the daily standup meeting
+             */
+            description: string;
+            /**
+             * @description ID or slug of the default assignee for tasks created from this blueprint
+             * @example agent-alpha
+             */
+            assigneeActorId?: string;
+            /**
+             * @description Array of tag names to associate with tasks created from this blueprint
+             * @example [
+             *       "daily",
+             *       "standup"
+             *     ]
+             */
+            tagNames?: string[];
+            /**
+             * @description Array of task IDs that tasks created from this blueprint should depend on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds?: string[];
+        };
+        TaskBlueprintResponseDto: {
+            /**
+             * @description Unique identifier for the task blueprint
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the task blueprint
+             * @example Daily standup task
+             */
+            name: string;
+            /**
+             * @description Detailed description of the task blueprint
+             * @example Create a task for the daily standup meeting
+             */
+            description: string;
+            /**
+             * @description ID of the default assignee for tasks created from this blueprint
+             * @example 111-222-333
+             */
+            assigneeActorId?: Record<string, never> | null;
+            /** @description Actor assigned to tasks created from this blueprint */
+            assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
+            /** @description Tags associated with tasks created from this blueprint */
+            tags: components["schemas"]["TagResponseDto"][];
+            /**
+             * @description Array of task IDs that tasks created from this blueprint should depend on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds: string[];
+            /** @description Actor who created this task blueprint */
+            createdByActor: components["schemas"]["ActorResponseDto"];
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description Blueprint creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Blueprint last update timestamp
+             * @example 2025-11-03T12:45:00.000Z
+             */
+            updatedAt: string;
+        };
+        TaskBlueprintListResponseDto: {
+            /** @description List of task blueprints */
+            items: components["schemas"]["TaskBlueprintResponseDto"][];
+            /**
+             * @description Total number of task blueprints
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
+        };
+        UpdateTaskBlueprintDto: {
+            /**
+             * @description Name of the task blueprint
+             * @example Daily standup task
+             */
+            name?: string;
+            /**
+             * @description Detailed description of the task blueprint
+             * @example Create a task for the daily standup meeting
+             */
+            description?: string;
+            /**
+             * @description ID or slug of the default assignee for tasks created from this blueprint
+             * @example agent-alpha
+             */
+            assigneeActorId?: Record<string, never> | null;
+            /**
+             * @description Array of tag names to associate with tasks created from this blueprint
+             * @example [
+             *       "daily",
+             *       "standup"
+             *     ]
+             */
+            tagNames?: string[];
+            /**
+             * @description Array of task IDs that tasks created from this blueprint should depend on
+             * @example [
+             *       "uuid-1",
+             *       "uuid-2"
+             *     ]
+             */
+            dependsOnIds?: string[];
+        };
+        CreateScheduledTaskDto: {
+            /**
+             * @description ID of the task blueprint to schedule
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            taskBlueprintId: string;
+            /**
+             * @description Cron expression for scheduling (e.g., "0 9 * * 1-5" for weekdays at 9am)
+             * @example 0 9 * * *
+             */
+            cronExpression: string;
+            /**
+             * @description Whether the scheduled task is enabled
+             * @default true
+             * @example true
+             */
+            enabled: boolean;
+        };
+        ScheduledTaskResponseDto: {
+            /**
+             * @description Unique identifier for the scheduled task
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description ID of the task blueprint
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            taskBlueprintId: string;
+            /** @description The task blueprint details */
+            taskBlueprint?: components["schemas"]["TaskBlueprintResponseDto"];
+            /**
+             * @description Cron expression for scheduling
+             * @example 0 9 * * *
+             */
+            cronExpression: string;
+            /**
+             * @description Whether the scheduled task is enabled
+             * @example true
+             */
+            enabled: boolean;
+            /**
+             * @description Last execution timestamp
+             * @example 2025-11-03T09:00:00.000Z
+             */
+            lastRunAt?: Record<string, never> | null;
+            /**
+             * @description Next scheduled execution timestamp
+             * @example 2025-11-04T09:00:00.000Z
+             */
+            nextRunAt: string;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description Scheduled task creation timestamp
+             * @example 2025-11-03T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Scheduled task last update timestamp
+             * @example 2025-11-03T12:45:00.000Z
+             */
+            updatedAt: string;
+        };
+        ScheduledTaskListResponseDto: {
+            /** @description List of scheduled tasks */
+            items: components["schemas"]["ScheduledTaskResponseDto"][];
+            /**
+             * @description Total number of scheduled tasks
+             * @example 10
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
+        };
+        UpdateScheduledTaskDto: {
+            /**
+             * @description Cron expression for scheduling (e.g., "0 9 * * 1-5" for weekdays at 9am)
+             * @example 0 9 * * *
+             */
+            cronExpression?: string;
+            /**
+             * @description Whether the scheduled task is enabled
+             * @example true
+             */
+            enabled?: boolean;
         };
         AuthorizationServerMetadataDto: {
             /**
@@ -7216,6 +7541,348 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskBlueprintsController_listTaskBlueprints: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task blueprints retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskBlueprintListResponseDto"];
+                };
+            };
+        };
+    };
+    TaskBlueprintsController_createTaskBlueprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskBlueprintDto"];
+            };
+        };
+        responses: {
+            /** @description Task blueprint created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskBlueprintResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskBlueprintsController_getTaskBlueprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task blueprint ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task blueprint retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskBlueprintResponseDto"];
+                };
+            };
+            /** @description Task blueprint not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskBlueprintsController_deleteTaskBlueprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task blueprint ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task blueprint deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task blueprint not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskBlueprintsController_updateTaskBlueprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task blueprint ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskBlueprintDto"];
+            };
+        };
+        responses: {
+            /** @description Task blueprint updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskBlueprintResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Task blueprint not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TaskBlueprintsController_createTaskFromBlueprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task blueprint ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Task created from blueprint successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+            /** @description Task blueprint not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScheduledTasksController_listScheduledTasks: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+                /** @description Filter by enabled status */
+                enabled?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scheduled tasks retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledTaskListResponseDto"];
+                };
+            };
+        };
+    };
+    ScheduledTasksController_createScheduledTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateScheduledTaskDto"];
+            };
+        };
+        responses: {
+            /** @description Scheduled task created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledTaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScheduledTasksController_getScheduledTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Scheduled task ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scheduled task retrieved successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledTaskResponseDto"];
+                };
+            };
+            /** @description Scheduled task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScheduledTasksController_deleteScheduledTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Scheduled task ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scheduled task deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scheduled task not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ScheduledTasksController_updateScheduledTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Scheduled task ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateScheduledTaskDto"];
+            };
+        };
+        responses: {
+            /** @description Scheduled task updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledTaskResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Scheduled task not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
