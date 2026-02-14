@@ -15,12 +15,30 @@ import { InputRequestResponseDto, MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
+import type { Task } from './types';
 import './TaskDetailPage.css';
 
-export function TaskDetailPage() {
-  const { d: taskId } = useParams<{ d: string }>();
+type TaskDetailHandlers = {
+  addComment: (payload: { taskId: string; comment: string }) => Promise<unknown>;
+  deleteTask: (payload: { taskId: string }) => Promise<unknown>;
+  assignTask: (payload: { taskId: string; assigneeActorId: string }) => Promise<unknown>;
+  assignTaskToMe: (payload: { taskId: string }) => Promise<unknown>;
+  answerInputRequest: (payload: { taskId: string; inputRequestId: string; answer: string }) => Promise<unknown>;
+  changeStatus: (payload: { taskId: string; status: TaskStatus }) => Promise<unknown>;
+  addTag: (payload: { taskId: string; tag: MetaTagResponseDto }) => Promise<unknown>;
+  removeTag: (payload: { taskId: string; tagId: string }) => Promise<unknown>;
+};
+
+export type TaskDetailViewProps = {
+  task?: Task;
+  backPath: string;
+  setSectionTitle: (title: string) => void;
+  activityByTaskId?: Record<string, TaskActivityWireEvent>;
+  handlers: TaskDetailHandlers;
+};
+
+export function TaskDetailView({ task, backPath, setSectionTitle, activityByTaskId = {}, handlers }: TaskDetailViewProps) {
   const navigate = useNavigate();
-  const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasksCtx();
   const { actors } = useActorsCtx();
   const { user } = useAuth();
   const { showError } = useToast();
@@ -33,15 +51,9 @@ export function TaskDetailPage() {
   const ACTIVITY_VISIBLE_MS = 3500;
   const ACTIVITY_EXIT_MS = 220;
 
-  // Find task from context (real-time updates)
-  const task = tasks.find(t => t.id === taskId);
-
-  // Set document title (browser tab)
   useDocumentTitle({ task: { name: task?.name } });
 
-  // Set section title for IosShell
   useEffect(() => {
-    // If title is short, use that
     if (!task) {
       setSectionTitle('Task');
       return
@@ -60,11 +72,9 @@ export function TaskDetailPage() {
     };
   }, []);
 
-  // Loading / error state
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handlers for buttons
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
   const [showTagPop, setShowTagPop] = useState(false);
@@ -75,7 +85,7 @@ export function TaskDetailPage() {
       return false;
     }
     try {
-      await addComment({
+      await handlers.addComment({
         taskId: task.id,
         comment: content,
       });
@@ -94,7 +104,7 @@ export function TaskDetailPage() {
       return false;
     }
     try {
-      await assignTask({
+      await handlers.assignTask({
         taskId: task.id,
         assigneeActorId: actor.id,
       });
@@ -113,7 +123,7 @@ export function TaskDetailPage() {
       return false;
     }
     try {
-      await answerInputRequest({
+      await handlers.answerInputRequest({
         taskId: task.id,
         inputRequestId: respondingToInputRequest.id,
         answer,
@@ -133,8 +143,9 @@ export function TaskDetailPage() {
       return false;
     }
     try {
-      await TasksService.tasksControllerAddTagToTask(task.id, {
-        name: tag.name,
+      await handlers.addTag({
+        taskId: task.id,
+        tag,
       });
       return true;
     } catch (err: unknown) {
@@ -151,7 +162,7 @@ export function TaskDetailPage() {
       return;
     }
     try {
-      await TasksService.tasksControllerRemoveTagFromTask(task.id, tagId);
+      await handlers.removeTag({ taskId: task.id, tagId });
     } catch (err: unknown) {
       showError(err);
     }
@@ -160,7 +171,6 @@ export function TaskDetailPage() {
   const activity = task ? activityByTaskId[task.id] : null;
 
   useEffect(() => {
-    // Only show activity if task exists, activity exists, and activity has a message
     if (!task || !activity || !activity.message) {
       return;
     }
@@ -184,13 +194,12 @@ export function TaskDetailPage() {
     }, ACTIVITY_VISIBLE_MS);
   }, [activity, task, ACTIVITY_EXIT_MS, ACTIVITY_VISIBLE_MS]);
 
-  // If task not found in context, could be loading or invalid
   if (!task) {
     return (
       <div className="task-detail-page">
         <Stack spacing="4" align="center">
           <Text size="3" tone="muted">Task not found</Text>
-          <Button variant="secondary" onClick={() => navigate('/tasks')}>
+          <Button variant="secondary" onClick={() => navigate(backPath)}>
             Back to tasks
           </Button>
         </Stack>
@@ -201,7 +210,7 @@ export function TaskDetailPage() {
   const handleChangeStatus = async (newStatus: TaskStatus) => {
     setIsLoading(true);
     try {
-      await TasksService.tasksControllerChangeStatus(task.id, { status: newStatus });
+      await handlers.changeStatus({ taskId: task.id, status: newStatus });
       setError(null);
     } catch (err: unknown) {
       showError(err);
@@ -213,7 +222,6 @@ export function TaskDetailPage() {
   return (
     <div className="task-detail-page">
 
-      {/* Error banner */}
       {error && (
         <ErrorText>
           <button onClick={() => setError(null)} className="task-detail-page__error-close">×</button>
@@ -221,9 +229,7 @@ export function TaskDetailPage() {
         </ErrorText>
       )}
 
-      {/* Meta */}
       <DataRowContainer className='task-detail-page__section'>
-        {/* Creator */}
         <DataRow
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
@@ -250,7 +256,6 @@ export function TaskDetailPage() {
           )}
         </DataRow>
 
-        {/* Assignee */}
         {task.assigneeActor ? (
           <DataRow
             leading={<Avatar size={'sm'} name={task.assigneeActor.displayName} src={task.assigneeActor.avatarUrl || undefined} />}
@@ -269,7 +274,6 @@ export function TaskDetailPage() {
         )}
       </DataRowContainer >
 
-      {/* Tags */}
       <DataRowContainer className='task-detail-page__section'>
         <div className="task-detail-page__tags">
           <Text size='2' weight='medium'>Tags</Text>
@@ -301,7 +305,6 @@ export function TaskDetailPage() {
         </div>
       </DataRowContainer>
 
-      {/* Artefacts */}
       {task.artefacts && task.artefacts.length > 0 && (
         <DataRowContainer className='task-detail-page__section'>
           {task.artefacts.map(artefact => (
@@ -327,7 +330,6 @@ export function TaskDetailPage() {
         </DataRowContainer>
       )}
 
-      {/* Description */}
       <DataRowContainer className='task-detail-page__section' >
         <DataRow
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
@@ -350,10 +352,8 @@ export function TaskDetailPage() {
         </DataRow>
       </DataRowContainer >
 
-      {/* Comments and Input Requests Timeline */}
       <DataRowContainer className='task-detail-page__section' >
         {
-          // Combine comments and input requests, sorted by timestamp
           (() => {
             type TimelineItem =
               | { type: 'comment'; data: typeof task.comments[0]; timestamp: number }
@@ -372,7 +372,7 @@ export function TaskDetailPage() {
               })),
             ].sort((a, b) => a.timestamp - b.timestamp);
 
-            return timeline.map((item, index) => {
+            return timeline.map((item) => {
               if (item.type === 'comment') {
                 const comment = item.data;
                 const name = comment.commenterActor?.displayName || 'unknown';
@@ -479,7 +479,6 @@ export function TaskDetailPage() {
         }
       </DataRowContainer>
 
-      {/* Live activity */}
       <DataRowContainer className='task-detail-page__section'>
         <div className="task-detail-page__activity">
           <div className={`task-detail-page__activity-slot ${liveActivity ? 'task-detail-page__activity-slot--active' : ''}`}>
@@ -499,7 +498,6 @@ export function TaskDetailPage() {
         </div>
       </DataRowContainer>
 
-      {/* Status */}
       <DataRowContainer className='task-detail-page__status-buttons'>
         {Object.entries(TASKS_STATUS).map(([status, info]) => (
           <Button
@@ -517,7 +515,6 @@ export function TaskDetailPage() {
         ))}
       </DataRowContainer>
 
-      {/* Floating comment button */}
       <Button
         className="task-detail-fab"
         onClick={() => setShowNewCommentPop(true)}
@@ -527,7 +524,6 @@ export function TaskDetailPage() {
         Add Comment
       </Button>
 
-      {/* Assign */}
       {!task.assigneeActor && (
         <DataRowContainer className='task-detail-page__comment-buttons'>
           <Button
@@ -540,7 +536,7 @@ export function TaskDetailPage() {
             size='lg'
             variant='primary'
             onClick={async () => {
-              await assignTaskToMe({ taskId: task.id });
+              await handlers.assignTaskToMe({ taskId: task.id });
             }}
           >
             Assign to Me
@@ -548,31 +544,28 @@ export function TaskDetailPage() {
         </DataRowContainer>
       )}
 
-      {/* Delete */}
       <DeleteWithConfirmation
         className='task-detail-page__comment-buttons'
         onDelete={async () => {
           try {
-            await deleteTask({ taskId: task.id });
-            navigate('/tasks');
+            await handlers.deleteTask({ taskId: task.id });
+            navigate(backPath);
           } catch (err: unknown) {
             showError(err);
           }
         }}
       />
 
-      {/* Back button */}
       <DataRowContainer className='task-detail-page__actions'>
         <Button
           size='lg'
           variant='secondary'
-          onClick={() => navigate('/tasks')}
+          onClick={() => navigate(backPath)}
         >
           Back to Tasks
         </Button>
       </DataRowContainer>
 
-      {/* Pops */}
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
       {showTagPop ? <TagSearchPop onCancel={cancelTag} onSave={saveTag} existingTags={task.tags} /> : null}
@@ -586,6 +579,34 @@ export function TaskDetailPage() {
         />
       ) : null}
     </div >
+  );
+}
+
+export function TaskDetailPage() {
+  const { d: taskId } = useParams<{ d: string }>();
+  const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasksCtx();
+
+  const task = tasks.find(t => t.id === taskId);
+
+  const handlers: TaskDetailHandlers = {
+    addComment: ({ taskId, comment }) => addComment({ taskId, comment }),
+    deleteTask: ({ taskId }) => deleteTask({ taskId }),
+    assignTask: ({ taskId, assigneeActorId }) => assignTask({ taskId, assigneeActorId }),
+    assignTaskToMe: ({ taskId }) => assignTaskToMe({ taskId }),
+    answerInputRequest: ({ taskId, inputRequestId, answer }) => answerInputRequest({ taskId, inputRequestId, answer }),
+    changeStatus: ({ taskId, status }) => TasksService.tasksControllerChangeStatus(taskId, { status }),
+    addTag: ({ taskId, tag }) => TasksService.tasksControllerAddTagToTask(taskId, { name: tag.name }),
+    removeTag: ({ taskId, tagId }) => TasksService.tasksControllerRemoveTagFromTask(taskId, tagId),
+  };
+
+  return (
+    <TaskDetailView
+      task={task}
+      backPath="/tasks"
+      setSectionTitle={setSectionTitle}
+      activityByTaskId={activityByTaskId}
+      handlers={handlers}
+    />
   );
 }
 

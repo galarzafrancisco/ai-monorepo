@@ -1,0 +1,19 @@
+.tasks-layout__schedule-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.tasks-layout__schedule-icon {
+  font-size: var(--fs-3);
+}
+
+.tasks-layout__schedule-badge {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-radius: var(--r-4);
+  padding: 0 var(--space-2);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+  margin-left: var(--space-1);
+}

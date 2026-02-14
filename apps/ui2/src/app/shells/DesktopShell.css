@@ -8,6 +8,10 @@
 .desktop-shell__header {
   flex-shrink: 0;
   padding-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .desktop-shell__title {
@@ -16,6 +20,12 @@
   line-height: var(--lh-tight);
   margin: 0;
   color: var(--text);
+}
+
+.desktop-shell__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .desktop-shell__content {

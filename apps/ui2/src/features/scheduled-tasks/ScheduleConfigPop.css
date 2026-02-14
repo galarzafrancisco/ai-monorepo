@@ -1,0 +1,108 @@
+.schedule-config-pop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.schedule-config-pop__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.schedule-config-pop__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.schedule-config-pop__link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: var(--fs-1);
+  cursor: pointer;
+  padding: 0;
+}
+
+.schedule-config-pop__label {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+.schedule-config-pop__select,
+.schedule-config-pop__input {
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-2);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.schedule-config-pop__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.schedule-config-pop__day {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--card-bg);
+  font-size: var(--fs-1);
+}
+
+.schedule-config-pop__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-2);
+  color: var(--text);
+}
+
+.schedule-config-pop__preview {
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  padding: var(--space-3);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.schedule-config-pop__preview-title {
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-2);
+  color: var(--text);
+}
+
+.schedule-config-pop__summary {
+  font-size: var(--fs-2);
+  color: var(--text);
+}
+
+.schedule-config-pop__list {
+  padding-left: var(--space-4);
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-1);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.schedule-config-pop__helper {
+  font-size: var(--fs-1);
+  color: var(--text-muted);
+}
+
+.schedule-config-pop__cron {
+  font-size: var(--fs-1);
+  color: var(--text-muted);
+}

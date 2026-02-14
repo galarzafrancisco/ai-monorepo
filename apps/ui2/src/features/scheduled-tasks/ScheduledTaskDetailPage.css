@@ -1,0 +1,88 @@
+.scheduled-task-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.scheduled-task-detail-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scheduled-task-detail-page__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scheduled-task-detail-page__label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.scheduled-task-detail-page__select,
+.scheduled-task-detail-page__input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  color: var(--text);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-3);
+}
+
+.scheduled-task-detail-page__select:focus,
+.scheduled-task-detail-page__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.scheduled-task-detail-page__day-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.scheduled-task-detail-page__day {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  color: var(--text);
+  padding: var(--space-2);
+  font-size: var(--fs-2);
+}
+
+.scheduled-task-detail-page__day.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+
+.scheduled-task-detail-page__toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.scheduled-task-detail-page__toggle-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.scheduled-task-detail-page__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+@media (min-width: 860px) {
+  .scheduled-task-detail-page__actions {
+    flex-direction: row;
+  }
+
+  .scheduled-task-detail-page__day-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,70 @@
+.new-schedule-pop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.new-schedule-pop__input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  color: var(--text);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-3);
+}
+
+.new-schedule-pop__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.new-schedule-pop__list {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+}
+
+.new-schedule-pop__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+.new-schedule-pop__item:hover,
+.new-schedule-pop__item--highlighted {
+  background: var(--surface-2);
+}
+
+.new-schedule-pop__item-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.new-schedule-pop__selected {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface);
+  padding: var(--space-3);
+  cursor: pointer;
+}
+
+.new-schedule-pop__selected-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.new-schedule-pop__empty {
+  padding: var(--space-4);
+  text-align: center;
+}
