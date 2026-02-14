@@ -21,6 +21,7 @@ import {
   TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
+import { TasksService } from './tasks.service';
 import { TaskWireEvents } from "@taico/events";
 import type {
   TaskCreatedWireEvent,
@@ -77,6 +78,8 @@ export class TasksGateway
 
   private logger = new Logger(TasksGateway.name);
 
+  constructor(private readonly tasksService: TasksService) {}
+
   afterInit() {
     this.logger.log('Tasks WebSocket Gateway initialized');
   }
@@ -103,7 +106,16 @@ export class TasksGateway
     return { ok: true };
   }
 
-  // TODO: implement (Tasks.snapshot) to send current state of tasks to the client
+  @SubscribeMessage(TaskWireEvents.TASKS_SNAPSHOT)
+  async handleSnapshot(@ConnectedSocket() client: Socket) {
+    const tasks = await this.tasksService.listTasks({ page: 1, limit: 1000 });
+    const wireEvent = {
+      payload: tasks.items,
+      actor: { id: client.id },
+    };
+    client.emit(TaskWireEvents.TASKS_SNAPSHOT, wireEvent);
+    return { ok: true };
+  }
 
   /**
    * Domain event handlers
