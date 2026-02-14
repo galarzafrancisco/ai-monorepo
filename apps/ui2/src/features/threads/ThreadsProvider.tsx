@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useThreads } from "./useThreads";
 import type { ThreadListItem, Thread } from "./types";
+import { NavegationItem } from "src/shared/types/NavegationItem";
 
 // Shape this to match what pages/layout need.
 export type ThreadsContextValue = {
@@ -9,6 +10,8 @@ export type ThreadsContextValue = {
   error: string | null;
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
+  navItems: NavegationItem[];
+  setNavItems: (navItems: NavegationItem[]) => void;
   getThread: (id: string) => Promise<Thread>;
   deleteThread: (id: string) => Promise<void>;
 };
@@ -18,6 +21,7 @@ const ThreadsContext = createContext<ThreadsContextValue | null>(null);
 export function ThreadsProvider({ children }: { children: React.ReactNode }) {
   const { threads, isLoading, error, getThread, deleteThread } = useThreads();
   const [sectionTitle, setSectionTitle] = useState("");
+  const [navItems, setNavItems] = useState<NavegationItem[]>([]);
 
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<ThreadsContextValue>(() => {
@@ -27,6 +31,8 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       error,
       sectionTitle,
       setSectionTitle,
+      navItems,
+      setNavItems,
       getThread,
       deleteThread,
     };
@@ -36,6 +42,8 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     error,
     sectionTitle,
     setSectionTitle,
+    navItems,
+    setNavItems,
     getThread,
     deleteThread,
   ]);

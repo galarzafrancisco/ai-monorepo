@@ -11,6 +11,9 @@ export function ThreadsRoutes() {
         <Route element={<ThreadsLayout />}>
           <Route index element={<ThreadsPage />} />
           <Route path="/:id" element={<ThreadDetailPage />} />
+          <Route path="/:id/dashboard" element={<ThreadDetailPage />} />
+          <Route path="/:id/tasks" element={<ThreadDetailPage />} />
+          <Route path="/:id/context" element={<ThreadDetailPage />} />
         </Route>
       </Routes>
     </ThreadsProvider>

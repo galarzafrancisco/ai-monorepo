@@ -10,6 +10,7 @@ import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
 import { ThreadTaskRow } from "./ThreadTaskRow";
 import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
+import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 
 type ThreadTask = Thread["tasks"][number];
 
@@ -85,9 +86,12 @@ export function ThreadDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { setNavItems } = useThreadsCtx();
+
   // Load thread details
   useEffect(() => {
     if (!threadId) return;
+    setNavItems(ThreadNavItemsForThreadId(threadId));
 
     const loadThread = async () => {
       setIsLoading(true);
@@ -245,10 +249,7 @@ function ThreadDetailPageMobile({
         {/* Tasks grouped by status using TaskRow */}
         {taskGroups.map((group) => (
           <div key={group.status} className="thread-detail-page__mobile-section">
-            <Text size="2" weight="semibold">
-              {group.label} ({group.tasks.length})
-            </Text>
-            <DataRowContainer>
+            <DataRowContainer title={group.label}>
               {group.tasks.map((task) => (
                 <ThreadTaskRow
                   key={task.id}
