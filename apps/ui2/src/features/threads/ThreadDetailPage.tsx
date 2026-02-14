@@ -2,41 +2,78 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { Text, Stack, Button } from "../../ui/primitives";
+import { Text, Stack, Button, DataRowContainer } from "../../ui/primitives";
 import { DeleteWithConfirmation } from "../../ui/components";
 import type { Thread } from "./types";
 import "./ThreadDetailPage.css";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { ThreadTaskRow } from "./ThreadTaskRow";
+import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
+import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 
 type ThreadTask = Thread["tasks"][number];
 
-const formatTaskStatus = (status: string) =>
-  status
-    .toLowerCase()
-    .split("_")
-    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
-    .join(" ");
+// Define the desired status order
+const STATUS_ORDER = [
+  TaskStatus.DONE,
+  TaskStatus.FOR_REVIEW,
+  TaskStatus.IN_PROGRESS,
+  TaskStatus.NOT_STARTED,
+] as const;
 
-const getParentTask = (thread: Thread): ThreadTask | null => {
-  if (!thread.tasks.length) {
-    return null;
+// Group tasks by status, with parent task first
+const groupTasksByStatus = (thread: Thread) => {
+  const parentTaskId = thread.parentTaskId;
+  const parentTask = parentTaskId
+    ? thread.tasks.find((task) => task.id === parentTaskId)
+    : null;
+
+  const groups: Array<{
+    status: TaskStatus | "parent";
+    label: string;
+    tasks: ThreadTask[];
+  }> = [];
+
+  // Add parent task group if it exists
+  if (parentTask) {
+    groups.push({
+      status: "parent",
+      label: "Parent Task",
+      tasks: [parentTask],
+    });
   }
 
-  if (thread.parentTaskId) {
-    return thread.tasks.find((task) => task.id === thread.parentTaskId) ?? thread.tasks[0];
-  }
+  // Group remaining tasks by status
+  const tasksByStatus: Record<TaskStatus, ThreadTask[]> = {
+    [TaskStatus.DONE]: [],
+    [TaskStatus.FOR_REVIEW]: [],
+    [TaskStatus.IN_PROGRESS]: [],
+    [TaskStatus.NOT_STARTED]: [],
+  };
 
-  return thread.tasks[0];
-};
+  thread.tasks.forEach((task) => {
+    // Skip parent task as it's already added
+    if (task.id === parentTaskId) return;
 
-const getChildTasks = (thread: Thread, parentTask: ThreadTask | null) => {
-  if (!parentTask) {
-    return thread.tasks;
-  }
+    const status = task.status as TaskStatus;
+    if (tasksByStatus[status]) {
+      tasksByStatus[status].push(task);
+    }
+  });
 
-  return thread.tasks.filter((task) => task.id !== parentTask.id);
+  // Add status groups in the desired order
+  STATUS_ORDER.forEach((status) => {
+    if (tasksByStatus[status].length > 0) {
+      groups.push({
+        status,
+        label: TASKS_STATUS[status].label,
+        tasks: tasksByStatus[status],
+      });
+    }
+  });
+
+  return groups;
 };
 
 export function ThreadDetailPage() {
@@ -49,9 +86,12 @@ export function ThreadDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { setNavItems } = useThreadsCtx();
+
   // Load thread details
   useEffect(() => {
     if (!threadId) return;
+    setNavItems(ThreadNavItemsForThreadId(threadId));
 
     const loadThread = async () => {
       setIsLoading(true);
@@ -124,8 +164,7 @@ function ThreadDetailPageDesktop({
   thread: Thread;
   onDelete: () => Promise<void>;
 }) {
-  const parentTask = getParentTask(thread);
-  const childTasks = getChildTasks(thread, parentTask);
+  const taskGroups = groupTasksByStatus(thread);
 
   return (
     <div className="thread-detail-page thread-detail-page--desktop">
@@ -140,14 +179,6 @@ function ThreadDetailPageDesktop({
               #{thread.id.slice(0, 6)}
             </Text>
           </div>
-          {parentTask && (
-            <div className="thread-detail-page__parent-task">
-              <Text size="3" weight="semibold">
-                Parent task
-              </Text>
-              <ParentTaskOverview task={parentTask} />
-            </div>
-          )}
 
           <DeleteWithConfirmation
             className="thread-detail-page__actions"
@@ -158,31 +189,19 @@ function ThreadDetailPageDesktop({
 
       {/* Right sidebar with context and tasks */}
       <div className="thread-detail-page__sidebar">
-        {/* Parent task section */}
-        {parentTask && (
-          <div className="thread-detail-page__sidebar-section">
+        {/* Tasks grouped by status */}
+        {taskGroups.map((group) => (
+          <div key={group.status} className="thread-detail-page__sidebar-section">
             <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-              Parent task
+              {group.label} ({group.tasks.length})
             </Text>
             <div className="thread-detail-page__sidebar-content">
-              <ThreadTaskCard key={parentTask.id} task={parentTask} />
-            </div>
-          </div>
-        )}
-
-        {/* Tasks section */}
-        {childTasks.length > 0 && (
-          <div className="thread-detail-page__sidebar-section">
-            <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-              Tasks ({childTasks.length})
-            </Text>
-            <div className="thread-detail-page__sidebar-content">
-              {childTasks.map((task) => (
+              {group.tasks.map((task) => (
                 <ThreadTaskCard key={task.id} task={task} />
               ))}
             </div>
           </div>
-        )}
+        ))}
 
         {/* Context section */}
         {thread.referencedContextBlocks.length > 0 && (
@@ -202,15 +221,13 @@ function ThreadDetailPageDesktop({
         )}
 
         {/* Empty state */}
-        {thread.referencedContextBlocks.length === 0 &&
-          childTasks.length === 0 &&
-          !parentTask && (
-            <div className="thread-detail-page__sidebar-empty">
-              <Text size="2" tone="muted">
-                No context or tasks attached
-              </Text>
-            </div>
-          )}
+        {thread.tasks.length === 0 && thread.referencedContextBlocks.length === 0 && (
+          <div className="thread-detail-page__sidebar-empty">
+            <Text size="2" tone="muted">
+              No context or tasks attached
+            </Text>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -223,34 +240,26 @@ function ThreadDetailPageMobile({
   thread: Thread;
   onDelete: () => Promise<void>;
 }) {
-  const parentTask = getParentTask(thread);
-  const childTasks = getChildTasks(thread, parentTask);
+  const navigate = useNavigate();
+  const taskGroups = groupTasksByStatus(thread);
 
   return (
     <div className="thread-detail-page thread-detail-page--mobile">
       <div className="thread-detail-page__mobile-content">
-        {parentTask && (
-          <div className="thread-detail-page__mobile-section">
-            <Text size="2" weight="semibold">
-              Parent task
-            </Text>
-            <ParentTaskOverview task={parentTask} />
-          </div>
-        )}
-
-        {/* Tasks section */}
-        {childTasks.length > 0 && (
-          <div className="thread-detail-page__mobile-section">
-            <Text size="2" weight="semibold">
-              Tasks ({childTasks.length})
-            </Text>
-            <div className="thread-detail-page__mobile-list">
-              {childTasks.map((task) => (
-                <ThreadTaskCard key={task.id} task={task} />
+        {/* Tasks grouped by status using TaskRow */}
+        {taskGroups.map((group) => (
+          <div key={group.status} className="thread-detail-page__mobile-section">
+            <DataRowContainer title={group.label}>
+              {group.tasks.map((task) => (
+                <ThreadTaskRow
+                  key={task.id}
+                  task={task}
+                  onClick={() => navigate(`/tasks/task/${task.id}`)}
+                />
               ))}
-            </div>
+            </DataRowContainer>
           </div>
-        )}
+        ))}
 
         {/* Context section */}
         {thread.referencedContextBlocks.length > 0 && (
@@ -289,65 +298,6 @@ function ThreadDetailPageMobile({
           className="thread-detail-page__actions"
           onDelete={onDelete}
         />
-      </div>
-    </div>
-  );
-}
-
-function ParentTaskOverview({ task }: { task: ThreadTask }) {
-  const openQuestions = task.inputRequests.filter((i) => !i.resolvedAt).length;
-
-  return (
-    <div className="thread-detail-page__parent-card">
-      <div className="thread-detail-page__parent-header">
-        <div>
-          <Text size="4" weight="semibold">
-            {task.name}
-          </Text>
-          <Text size="2" tone="muted">
-            #{task.id.slice(0, 6)}
-          </Text>
-        </div>
-        <Text size="2" tone="muted">
-          {elapsedTime(task.updatedAt)}
-        </Text>
-      </div>
-      <Text size="2" className="thread-detail-page__task-description">
-        {task.description || "No description provided."}
-      </Text>
-      <div className="thread-detail-page__task-meta">
-        <div className="thread-detail-page__task-meta-item">
-          <Text size="1" tone="muted">
-            Status
-          </Text>
-          <Text size="2">{formatTaskStatus(task.status)}</Text>
-        </div>
-        <div className="thread-detail-page__task-meta-item">
-          <Text size="1" tone="muted">
-            Assignee
-          </Text>
-          <Text size="2">
-            {task.assigneeActor ? `@${task.assigneeActor.slug}` : "Unassigned"}
-          </Text>
-        </div>
-        <div className="thread-detail-page__task-meta-item">
-          <Text size="1" tone="muted">
-            Created by
-          </Text>
-          <Text size="2">{task.createdByActor.displayName}</Text>
-        </div>
-        <div className="thread-detail-page__task-meta-item">
-          <Text size="1" tone="muted">
-            Comments
-          </Text>
-          <Text size="2">{task.commentCount}</Text>
-        </div>
-        <div className="thread-detail-page__task-meta-item">
-          <Text size="1" tone="muted">
-            Open questions
-          </Text>
-          <Text size="2">{openQuestions}</Text>
-        </div>
       </div>
     </div>
   );
