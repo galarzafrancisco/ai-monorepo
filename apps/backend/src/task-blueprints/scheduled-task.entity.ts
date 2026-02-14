@@ -8,6 +8,7 @@ import {
   VersionColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { TaskBlueprintEntity } from './task-blueprint.entity';
 
@@ -16,6 +17,8 @@ import { TaskBlueprintEntity } from './task-blueprint.entity';
  * It contains cron expression for scheduling and tracks execution times.
  */
 @Entity({ name: 'scheduled_tasks' })
+@Index('idx_scheduled_tasks_enabled_next_run_at', ['enabled', 'nextRunAt'])
+@Index('idx_scheduled_tasks_task_blueprint_id', ['taskBlueprintId'])
 export class ScheduledTaskEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

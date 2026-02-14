@@ -5,6 +5,7 @@ import {
   formatScheduleSummary,
   getNextOccurrences,
   parseCronExpression,
+  validateCronExpressionInput,
   type ScheduleConfig,
   type SchedulePreset,
 } from './scheduleUtils';
@@ -61,6 +62,7 @@ export function ScheduleConfigPop({
   const [dayOfMonth, setDayOfMonth] = useState(initialConfig.dayOfMonth || 1);
   const [customCron, setCustomCron] = useState(initialConfig.cronExpression || '');
   const [enabled, setEnabled] = useState(initialEnabled);
+  const [cronValidationError, setCronValidationError] = useState<string | null>(null);
 
   const scheduleConfig: ScheduleConfig = useMemo(() => ({
     preset,
@@ -85,6 +87,14 @@ export function ScheduleConfigPop({
   };
 
   const handleSave = async () => {
+    if (preset === 'custom') {
+      const validationError = validateCronExpressionInput(cronExpression);
+      if (validationError) {
+        setCronValidationError(validationError);
+        return false;
+      }
+    }
+    setCronValidationError(null);
     return onSave({ cronExpression, enabled });
   };
 
@@ -185,9 +195,19 @@ export function ScheduleConfigPop({
               className="schedule-config-pop__input"
               placeholder="0 9 * * 1-5"
               value={customCron}
-              onChange={(event) => setCustomCron(event.target.value)}
+              onChange={(event) => {
+                setCustomCron(event.target.value);
+                if (cronValidationError) {
+                  setCronValidationError(null);
+                }
+              }}
             />
+            <div className="schedule-config-pop__helper">Use 5 fields: minute hour day-of-month month day-of-week.</div>
           </div>
+        ) : null}
+
+        {cronValidationError ? (
+          <div className="schedule-config-pop__helper">{cronValidationError}</div>
         ) : null}
 
         <div className="schedule-config-pop__row">
@@ -219,6 +239,8 @@ export function ScheduleConfigPop({
             </ul>
           )}
         </div>
+
+        <div className="schedule-config-pop__helper">Schedules run using the server timezone.</div>
 
         <div className="schedule-config-pop__cron">Cron: {cronExpression || '—'}</div>
       </div>

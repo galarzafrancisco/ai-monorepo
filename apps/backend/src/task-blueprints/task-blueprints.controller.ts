@@ -19,6 +19,7 @@ import {
   ApiNoContentResponse,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
+  ApiConflictResponse,
   ApiCookieAuth,
 } from '@nestjs/swagger';
 import { TaskBlueprintsService } from './task-blueprints.service';
@@ -131,6 +132,7 @@ export class TaskBlueprintsController {
   @ApiOperation({ summary: 'Delete a task blueprint' })
   @ApiNoContentResponse({ description: 'Task blueprint deleted successfully' })
   @ApiNotFoundResponse({ description: 'Task blueprint not found' })
+  @ApiConflictResponse({ description: 'Task blueprint has active schedules' })
   async deleteTaskBlueprint(
     @Param() params: TaskBlueprintParamsDto,
   ): Promise<void> {

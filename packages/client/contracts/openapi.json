@@ -4700,6 +4700,9 @@
           },
           "404": {
             "description": "Task blueprint not found"
+          },
+          "409": {
+            "description": "Task blueprint has active schedules"
           }
         },
         "security": [

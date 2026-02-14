@@ -202,3 +202,16 @@ export const formatScheduleSummary = (config: ScheduleConfig) => {
   }
   return `Monthly on day ${config.dayOfMonth} at ${config.time}`;
 };
+
+const SIMPLE_CRON_FIELD_PATTERN = /^[\d*/,\-]+$/;
+
+export const validateCronExpressionInput = (cronExpression: string): string | null => {
+  const parts = cronExpression.trim().split(/\s+/);
+  if (parts.length !== 5) {
+    return 'Cron must have 5 fields: minute hour day-of-month month day-of-week.';
+  }
+  if (parts.some((part) => !part || !SIMPLE_CRON_FIELD_PATTERN.test(part))) {
+    return 'Cron can only include digits, *, /, -, and commas.';
+  }
+  return null;
+};
