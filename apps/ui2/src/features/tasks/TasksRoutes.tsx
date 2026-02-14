@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { TasksPage } from "./TasksPage";
 import { TasksLayout } from "./TasksLayout";
 import { TasksProvider } from "./TasksProvider";
@@ -10,7 +10,7 @@ export function TasksRoutes() {
     <TasksProvider>
       <Routes>
         <Route element={<TasksLayout />}>
-          <Route index element={<Navigate to="/tasks/not-started" replace />} />
+          <Route index element={<TasksIndexRedirect />} />
           {/* <Route path="/" element={<TasksPage />} /> */}
           <Route path="/not-started" element={<TasksPage status={TaskStatus.NOT_STARTED} />} />
           <Route path="/in-progress" element={<TasksPage status={TaskStatus.IN_PROGRESS} />} />
@@ -21,4 +21,9 @@ export function TasksRoutes() {
       </Routes>
     </TasksProvider>
   );
+}
+
+function TasksIndexRedirect(): JSX.Element {
+  const location = useLocation();
+  return <Navigate to={{ pathname: "/tasks/not-started", search: location.search }} replace />;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
@@ -20,10 +20,15 @@ import './TaskDetailPage.css';
 export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasksCtx();
   const { actors } = useActorsCtx();
   const { user } = useAuth();
   const { showError } = useToast();
+
+  const navigateToTasksList = () => {
+    navigate({ pathname: '/tasks', search: location.search });
+  };
 
   const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
@@ -190,7 +195,7 @@ export function TaskDetailPage() {
       <div className="task-detail-page">
         <Stack spacing="4" align="center">
           <Text size="3" tone="muted">Task not found</Text>
-          <Button variant="secondary" onClick={() => navigate('/tasks')}>
+          <Button variant="secondary" onClick={navigateToTasksList}>
             Back to tasks
           </Button>
         </Stack>
@@ -554,7 +559,7 @@ export function TaskDetailPage() {
         onDelete={async () => {
           try {
             await deleteTask({ taskId: task.id });
-            navigate('/tasks');
+            navigateToTasksList();
           } catch (err: unknown) {
             showError(err);
           }
@@ -566,7 +571,7 @@ export function TaskDetailPage() {
         <Button
           size='lg'
           variant='secondary'
-          onClick={() => navigate('/tasks')}
+          onClick={navigateToTasksList}
         >
           Back to Tasks
         </Button>

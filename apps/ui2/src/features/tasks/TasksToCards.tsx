@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BoardCardAnimation } from "../../ui/primitives";
 import { useTasksCtx } from "./TasksProvider"
 import { Task } from "./types";
@@ -9,8 +9,13 @@ import { groupTasksByDay } from "./taskGrouping";
 
 export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = false }: { tasks: Task[], enteringIds: Set<string>, exitingTasks: Task[], groupByDay?: boolean }): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const { activityByTaskId } = useTasksCtx();
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+
+  const navigateToTask = (taskId: string) => {
+    navigate({ pathname: `/tasks/task/${taskId}`, search: location.search });
+  };
 
   // Merge tasks and exitingTasks, sorted by updatedAt (descending) to maintain original order
   const exitingIdSet = new Set(exitingTasks.map(t => t.id));
@@ -38,7 +43,7 @@ export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = fa
               key={isExiting ? `exiting-${task.id}` : task.id}
               task={task}
               animation={animation}
-              onClick={() => navigate(`/tasks/task/${task.id}`)}
+              onClick={() => navigateToTask(task.id)}
               pulseKey={activity?.ts}
             />
           );
@@ -81,7 +86,7 @@ export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = fa
             key={isExiting ? `exiting-${task.id}` : task.id}
             task={task}
             animation={animation}
-            onClick={() => navigate(`/tasks/task/${task.id}`)}
+            onClick={() => navigateToTask(task.id)}
             pulseKey={activity?.ts}
           />
         );
@@ -120,7 +125,7 @@ export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = fa
             key={isExiting ? `exiting-${task.id}` : task.id}
             task={task}
             animation={animation}
-            onClick={() => navigate(`/tasks/task/${task.id}`)}
+            onClick={() => navigateToTask(task.id)}
             pulseKey={activity?.ts}
           />
         );
@@ -133,4 +138,3 @@ export function TasksToCards({ tasks, enteringIds, exitingTasks, groupByDay = fa
     {elements}
   </>
 }
-

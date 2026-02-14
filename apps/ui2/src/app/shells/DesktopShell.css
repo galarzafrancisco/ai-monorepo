@@ -8,6 +8,10 @@
 .desktop-shell__header {
   flex-shrink: 0;
   padding-bottom: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .desktop-shell__title {
@@ -28,4 +32,8 @@
 .desktop-shell__content > * {
   flex: 1;
   min-height: 0;
+}
+
+.desktop-shell__header-right {
+  flex-shrink: 0;
 }

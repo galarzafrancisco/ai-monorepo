@@ -7,6 +7,10 @@
   display: flex;
 }
 
+.tasks-mobile-project-filter {
+  padding: 0 var(--space-3) var(--space-2);
+}
+
 .tasks-board-view {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -157,5 +161,4 @@
   font-weight: 600;
   white-space: nowrap;
 }
-
 
