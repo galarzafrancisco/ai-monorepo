@@ -8,9 +8,8 @@ import type { Thread } from "./types";
 import "./ThreadDetailPage.css";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
-import { TaskRow } from "../tasks/TaskRow";
+import { ThreadTaskRow } from "./ThreadTaskRow";
 import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
-import type { Task } from "../tasks/types";
 
 type ThreadTask = Thread["tasks"][number];
 
@@ -251,9 +250,9 @@ function ThreadDetailPageMobile({
             </Text>
             <DataRowContainer>
               {group.tasks.map((task) => (
-                <TaskRow
+                <ThreadTaskRow
                   key={task.id}
-                  task={task as unknown as Task}
+                  task={task}
                   onClick={() => navigate(`/tasks/task/${task.id}`)}
                 />
               ))}
@@ -302,4 +301,3 @@ function ThreadDetailPageMobile({
     </div>
   );
 }
-
