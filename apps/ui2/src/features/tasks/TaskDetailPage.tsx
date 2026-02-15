@@ -80,6 +80,42 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
   const [showTagPop, setShowTagPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!task || event.defaultPrevented) {
+        return;
+      }
+
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      if (showNewCommentPop || showAssignPop || showTagPop || respondingToInputRequest) {
+        return;
+      }
+
+      if (isTextInputTarget(event.target)) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+
+      if (key === 'a') {
+        event.preventDefault();
+        setShowAssignPop(true);
+      } else if (key === 'c') {
+        event.preventDefault();
+        setShowNewCommentPop(true);
+      } else if (key === 't') {
+        event.preventDefault();
+        setShowTagPop(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [task, showNewCommentPop, showAssignPop, showTagPop, respondingToInputRequest]);
+
   const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
       return false;
@@ -630,4 +666,21 @@ function StatusTag({ status }: { status: TaskStatus }): DataRowTag {
     label,
     color,
   }
+}
+
+function isTextInputTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  const tagName = target.tagName.toLowerCase();
+  if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+    return true;
+  }
+
+  return Boolean(target.closest('[contenteditable="true"], input, textarea, select'));
 }
