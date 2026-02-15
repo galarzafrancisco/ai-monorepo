@@ -5,7 +5,7 @@ import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chi
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
-import { ActorResponseDto, AgentResponseDto, AuthorizationServerService, ScopeDto, MetaService, MetaTagResponseDto } from "@taico/client";
+import { AgentResponseDto, AuthorizationServerService, ScopeDto, MetaService, MetaTagResponseDto } from "@taico/client";
 import { AgentTokensService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
@@ -17,7 +17,6 @@ import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import './AgentDetailPage.css';
-import { useActorsCtx } from '../actors';
 
 const DEFAULT_SCOPES = ['meta:read'];
 
@@ -57,19 +56,6 @@ export function AgentDetailPage() {
   const [showEditAgentTypePop, setShowEditAgentTypePop] = useState(false);
   const [showEditIntroductionPop, setShowEditIntroductionPop] = useState(false);
   const [showEditModelPop, setShowEditModelPop] = useState(false);
-
-  // Find actor associated with this agent
-  const { actors } = useActorsCtx();
-  const [actor, setActor] = useState<ActorResponseDto | null>(null);
-  useEffect(() => {
-    if (!agent || !actors) {
-      return;
-    }
-    const actor = actors.find(actor => actor.id === agent.actorId)
-    if (actor) {
-      setActor(actor);
-    }
-  }, [agent, actors]);
 
   // Load tokens for this agent
   const loadTokens = useCallback(async () => {
@@ -367,8 +353,7 @@ export function AgentDetailPage() {
       {/* Meta */}
       <DataRowContainer className="agent-detail-page__section">
         <DataRow
-          // TODO: this agent doesn't come with Actor, so I can't get the avatar.
-          leading={<Avatar size="sm" name={agent.name} src={actor?.avatarUrl || undefined} />}
+          leading={<Avatar size="sm" name={agent.name} src={agent.avatarUrl || undefined} />}
           tags={[
             getTypeTag(agent.type),
             getStatusTag(agent.isActive),
