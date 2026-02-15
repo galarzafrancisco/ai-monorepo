@@ -110,16 +110,25 @@ export class ContextMcpGateway {
           title: z.string().optional(),
           content: z.string().optional(),
           author: z.string().optional(),
-          parentId: z.string().nullable().optional(),
+          parentId: z.string().optional(),
+          clearParent: z.boolean().optional(),
           tagNames: z.array(z.string()).optional(),
         },
       },
-      async ({ blockId, title, content, author, parentId, tagNames }) => {
+      async ({ blockId, title, content, author, parentId, clearParent, tagNames }) => {
+        if (clearParent && parentId !== undefined) {
+          throw new Error(
+            'Provide either parentId or clearParent=true, not both.',
+          );
+        }
+
+        const nextParentId = clearParent === true ? null : parentId;
+
         if (
           title === undefined &&
           content === undefined &&
           author === undefined &&
-          parentId === undefined &&
+          nextParentId === undefined &&
           tagNames === undefined
         ) {
           throw new Error(
@@ -130,7 +139,7 @@ export class ContextMcpGateway {
         const block = await this.contextService.updateBlock(blockId, {
           title,
           content,
-          parentId,
+          parentId: nextParentId,
           tagNames,
           actorId: user.actorId,
         });
@@ -272,13 +281,13 @@ export class ContextMcpGateway {
       {
         title: 'Get child blocks',
         description:
-          'Get all child blocks for a given parent block ID (or null for root blocks)',
+          'Get all child blocks for a given parent block ID (omit parentId for root blocks)',
         inputSchema: {
-          parentId: z.string().nullable(),
+          parentId: z.string().optional(),
         },
       },
       async ({ parentId }) => {
-        const children = await this.contextService.getChildBlocks(parentId);
+        const children = await this.contextService.getChildBlocks(parentId ?? null);
         return {
           content: [
             {
