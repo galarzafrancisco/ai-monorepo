@@ -33,7 +33,7 @@ jobs:
 
       - name: Run E2E tests
         id: tests
-        run: npm run test:e2e
+        run: cd apps/backend && npm exec jest -- --config ./test/jest-e2e.json --runInBand
 
       - name: Upload test results
         if: always()
