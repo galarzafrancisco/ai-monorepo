@@ -57,6 +57,13 @@ export function PopShell({
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.nativeEvent.isComposing) return;
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+      return;
+    }
+
     if (event.key !== "Enter") return;
     if (!event.metaKey && !event.ctrlKey) return;
 
