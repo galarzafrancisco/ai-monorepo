@@ -56,6 +56,8 @@ export type ListTasksInput = {
   assignee?: string;
   sessionId?: string;
   tag?: string;
+  status?: TaskStatus;
+  updatedAfter?: Date;
   page: number;
   limit: number;
 };
