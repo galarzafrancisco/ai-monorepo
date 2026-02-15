@@ -46,7 +46,7 @@ export function EditSystemPromptPop({ initialValue, onCancel, onSave }: EditSyst
     >
       <>
         {/* System Prompt */}
-        <div className="edit-system-prompt-pop__input-content">
+        <div className="edit-system-prompt-pop__input-wrapper">
           <textarea
             className="edit-system-prompt-pop__input-content"
             ref={contentRef}
