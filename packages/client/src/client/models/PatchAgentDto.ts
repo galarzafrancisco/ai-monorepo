@@ -4,6 +4,14 @@
 /* eslint-disable */
 export type PatchAgentDto = {
     /**
+     * Updated actor slug for the agent
+     */
+    slug?: string;
+    /**
+     * Updated actor display name for the agent
+     */
+    name?: string;
+    /**
      * Core instructions/persona for this agent
      */
     systemPrompt?: string;
@@ -28,13 +36,29 @@ export type PatchAgentDto = {
      */
     type?: PatchAgentDto.type;
     /**
+     * Short description of what this agent does
+     */
+    description?: string | null;
+    /**
      * Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
      */
-    introduction?: string;
+    introduction?: string | null;
     /**
      * Optional avatar URL for the agent actor
      */
     avatarUrl?: string | null;
+    /**
+     * List of tool identifiers this agent is allowed to use
+     */
+    allowedTools?: Array<string>;
+    /**
+     * Whether this agent is available for assignment
+     */
+    isActive?: boolean;
+    /**
+     * Max number of tasks this agent can process in parallel
+     */
+    concurrencyLimit?: number | null;
 };
 export namespace PatchAgentDto {
     /**

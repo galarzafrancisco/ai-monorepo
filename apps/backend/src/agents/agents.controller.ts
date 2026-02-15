@@ -20,7 +20,6 @@ import {
 } from '@nestjs/swagger';
 import { AgentsService } from './agents.service';
 import { CreateAgentDto } from './dto/create-agent.dto';
-import { UpdateAgentDto } from './dto/update-agent.dto';
 import { PatchAgentDto } from './dto/patch-agent.dto';
 import { AgentResponseDto } from './dto/agent-response.dto';
 import { AgentListResponseDto } from './dto/agent-list-response.dto';
@@ -103,8 +102,7 @@ export class AgentsController {
   @Patch(':actorId')
   @RequireScopes(AgentsScopes.WRITE.id)
   @ApiOperation({
-    summary:
-      'Patch an agent (update system prompt, status triggers, tag triggers, and/or type)',
+    summary: 'Patch an agent and its linked actor fields',
   })
   @ApiOkResponse({ type: AgentResponseDto })
   async patchAgent(
@@ -112,14 +110,20 @@ export class AgentsController {
     @Body() dto: PatchAgentDto,
   ): Promise<AgentResponseDto> {
     const result = await this.agentsService.patchAgent(params.actorId, {
+      slug: dto.slug,
+      name: dto.name,
       systemPrompt: dto.systemPrompt,
       statusTriggers: dto.statusTriggers,
       tagTriggers: dto.tagTriggers,
       type: dto.type,
+      description: dto.description,
       introduction: dto.introduction,
       avatarUrl: dto.avatarUrl,
       providerId: dto.providerId,
       modelId: dto.modelId,
+      allowedTools: dto.allowedTools,
+      isActive: dto.isActive,
+      concurrencyLimit: dto.concurrencyLimit,
     });
     return AgentResponseDto.fromResult(result);
   }

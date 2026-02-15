@@ -1,9 +1,37 @@
-import { IsString, IsOptional, IsArray, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsEnum,
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from 'src/tasks/enums';
 import { AgentType } from '../enums';
 
 export class PatchAgentDto {
+  @ApiPropertyOptional({
+    description: 'Updated actor slug for the agent',
+    example: 'code-reviewer',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  slug?: string;
+
+  @ApiPropertyOptional({
+    description: 'Updated actor display name for the agent',
+    example: 'Code Reviewer',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  name?: string;
+
   @ApiPropertyOptional({
     description: 'Core instructions/persona for this agent',
     example: 'You are a helpful assistant that helps users with tasks.',
@@ -61,13 +89,25 @@ export class PatchAgentDto {
   type?: AgentType;
 
   @ApiPropertyOptional({
-    description:
-      'Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks',
-    example: 'I specialize in code review and bug fixing. Assign me tasks related to quality assurance.',
+    type: String,
+    description: 'Short description of what this agent does',
+    example: 'A helpful assistant agent',
+    nullable: true,
   })
   @IsString()
   @IsOptional()
-  introduction?: string;
+  description?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description:
+      'Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks',
+    example: 'I specialize in code review and bug fixing. Assign me tasks related to quality assurance.',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  introduction?: string | null;
 
   @ApiPropertyOptional({
     type: String,
@@ -78,4 +118,34 @@ export class PatchAgentDto {
   @IsString()
   @IsOptional()
   avatarUrl?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'List of tool identifiers this agent is allowed to use',
+    example: ['tasks.createTask', 'tasks.readTask', 'context.search'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  allowedTools?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Whether this agent is available for assignment',
+    example: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({
+    type: Number,
+    description: 'Max number of tasks this agent can process in parallel',
+    example: 5,
+    nullable: true,
+  })
+  @ValidateIf((_, value) => value !== null)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  concurrencyLimit?: number | null;
 }

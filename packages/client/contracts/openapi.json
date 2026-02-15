@@ -5266,7 +5266,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Patch an agent (update system prompt, status triggers, tag triggers, and/or type)",
+        "summary": "Patch an agent and its linked actor fields",
         "tags": [
           "Agent"
         ]
@@ -9454,6 +9454,16 @@
       "PatchAgentDto": {
         "type": "object",
         "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Updated actor slug for the agent",
+            "example": "code-reviewer"
+          },
+          "name": {
+            "type": "string",
+            "description": "Updated actor display name for the agent",
+            "example": "Code Reviewer"
+          },
           "systemPrompt": {
             "type": "string",
             "description": "Core instructions/persona for this agent",
@@ -9508,15 +9518,45 @@
               "other"
             ]
           },
+          "description": {
+            "type": "string",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent",
+            "nullable": true
+          },
           "introduction": {
             "type": "string",
             "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
-            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
+            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance.",
+            "nullable": true
           },
           "avatarUrl": {
             "type": "string",
             "description": "Optional avatar URL for the agent actor",
             "example": "https://example.com/avatar.png",
+            "nullable": true
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "tasks.createTask",
+              "tasks.readTask",
+              "context.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5,
             "nullable": true
           }
         }
