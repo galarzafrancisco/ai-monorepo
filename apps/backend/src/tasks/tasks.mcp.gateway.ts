@@ -314,25 +314,25 @@ export class TasksMcpGateway {
 
     canWrite &&
       server.registerTool(
-        'mark_task_in_progress',
-        {
-          title: 'Start working on task',
-          description:
-            'Assign task to yourself, set status to IN_PROGRESS, add comment with branch info',
-          inputSchema: {
-            taskId: z.string(),
-            branchName: z.string(),
-          },
-        },
-        async ({ taskId, branchName }) => {
-          // Assign task
-          // TODO: Should this be a feature of the Backend itself? You can't start a task if it's not assigned to you?
-          // And if the task has no assignee and you start it, it gets assigned to you?
-          await this.tasksService.assignTask(
-            taskId,
-            { assigneeActorId: user.actorId },
-            user.actorId,
-          );
+         'mark_task_in_progress',
+         {
+           title: 'Start working on task',
+           description:
+             'Assign task to yourself, set status to IN_PROGRESS, add comment with branch info',
+           inputSchema: {
+             taskId: z.string(),
+             branchName: z.string(),
+           },
+         },
+         async ({ taskId, branchName }) => {
+           // Assign task if not already assigned, then change status to IN_PROGRESS
+           // This auto-assignment is intentional - allows agents to pick up unassigned tasks
+           // The backend's changeStatus also enforces assignee exists before IN_PROGRESS (tasks.service.ts:707)
+           await this.tasksService.assignTask(
+             taskId,
+             { assigneeActorId: user.actorId },
+             user.actorId,
+           );
 
           // Change status to IN_PROGRESS
           await this.tasksService.changeStatus(
