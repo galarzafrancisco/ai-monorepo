@@ -1,9 +1,65 @@
 // ADKAgentRunner.ts
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
-import { LlmAgent, Runner, InMemorySessionService, MCPToolset } from "@google/adk";
+import {
+  LlmAgent,
+  Runner,
+  InMemorySessionService,
+  MCPToolset,
+  BaseTool,
+} from "@google/adk";
 import { ADKMessageFormatter } from "../formatters/ADKMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
+
+class NamespacedTool extends BaseTool {
+  constructor(
+    private readonly wrappedTool: BaseTool,
+    private readonly namespacedName: string,
+  ) {
+    super({
+      name: namespacedName,
+      description: wrappedTool.description,
+      isLongRunning: wrappedTool.isLongRunning,
+    });
+  }
+
+  override _getDeclaration() {
+    const declaration = this.wrappedTool._getDeclaration();
+
+    if (!declaration) {
+      return declaration;
+    }
+
+    return {
+      ...declaration,
+      name: this.namespacedName,
+    };
+  }
+
+  override async runAsync(request: Parameters<BaseTool["runAsync"]>[0]) {
+    return this.wrappedTool.runAsync(request);
+  }
+}
+
+class NamespacedMCPToolset extends MCPToolset {
+  constructor(
+    connectionParams: ConstructorParameters<typeof MCPToolset>[0],
+    private readonly serverName: string,
+  ) {
+    super(connectionParams);
+  }
+
+  override async getTools(context?: Parameters<MCPToolset["getTools"]>[0]) {
+    const tools = await super.getTools(context);
+    return tools.map(
+      (tool) =>
+        new NamespacedTool(
+          tool,
+          `mcp__${this.serverName}__${tool.name}`,
+        ),
+    );
+  }
+}
 
 export class ADKAgentRunner extends BaseAgentRunner {
   readonly kind = 'adk';
@@ -40,14 +96,22 @@ export class ADKAgentRunner extends BaseAgentRunner {
       description: '',
       instruction: '',
       tools: [
-        new MCPToolset({
+        new NamespacedMCPToolset({
           type: 'StreamableHTTPConnectionParams',
           url: `${BASE_URL}/api/v1/tasks/tasks/mcp`,
           header: {
             Authorization: `Bearer ${ACCESS_TOKEN}`,
             [RUN_ID_HEADER]: ctx.runId,
           },
-        })
+        }, 'tasks'),
+        new NamespacedMCPToolset({
+          type: 'StreamableHTTPConnectionParams',
+          url: `${BASE_URL}/api/v1/context/blocks/mcp`,
+          header: {
+            Authorization: `Bearer ${ACCESS_TOKEN}`,
+            [RUN_ID_HEADER]: ctx.runId,
+          },
+        }, 'context')
       ]
     });
 

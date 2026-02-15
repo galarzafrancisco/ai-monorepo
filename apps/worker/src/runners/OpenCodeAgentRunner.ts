@@ -99,6 +99,15 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
                   [RUN_ID_HEADER]: runId,
                 },
                 enabled: true,
+              },
+              context: {
+                type: "remote",
+                url: `${BASE_URL}/api/v1/context/blocks/mcp`,
+                headers: {
+                  Authorization: `Bearer ${ACCESS_TOKEN}`,
+                  [RUN_ID_HEADER]: runId,
+                },
+                enabled: true,
               }
             }
           }
