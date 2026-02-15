@@ -681,6 +681,37 @@ export class TasksMcpGateway {
         },
       );
 
+    canWrite &&
+      server.registerTool(
+        'answer_input_request',
+        {
+          title: 'Answer an input request',
+          description:
+            'Use this tool to answer a pending input request. Provide taskId, inputRequestId, and the answer.',
+          inputSchema: {
+            taskId: z.string(),
+            inputRequestId: z.string(),
+            answer: z.string(),
+          },
+        },
+        async ({ taskId, inputRequestId, answer }) => {
+          const inputRequest = await this.tasksService.answerInputRequest(
+            taskId,
+            inputRequestId,
+            { answer },
+            user.actorId,
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(inputRequest),
+              },
+            ],
+          };
+        },
+      );
+
     return server;
   }
 
