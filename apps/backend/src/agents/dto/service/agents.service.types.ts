@@ -21,14 +21,20 @@ export type CreateAgentInput = {
 export type UpdateAgentInput = Partial<CreateAgentInput>;
 
 export type PatchAgentInput = {
+  slug?: string;
+  name?: string;
   systemPrompt?: string;
   statusTriggers?: TaskStatus[];
   tagTriggers?: string[];
   type?: AgentType;
   avatarUrl?: string | null;
-  introduction?: string;
+  introduction?: string | null;
+  description?: string | null;
   providerId?: string;
   modelId?: string;
+  allowedTools?: string[];
+  isActive?: boolean;
+  concurrencyLimit?: number | null;
 };
 
 export type AgentResult = {

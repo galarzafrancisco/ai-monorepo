@@ -1432,7 +1432,7 @@ export interface paths {
         delete: operations["AgentsController_deleteAgent"];
         options?: never;
         head?: never;
-        /** Patch an agent (update system prompt, status triggers, tag triggers, and/or type) */
+        /** Patch an agent and its linked actor fields */
         patch: operations["AgentsController_patchAgent"];
         trace?: never;
     };
@@ -4148,6 +4148,16 @@ export interface components {
         };
         PatchAgentDto: {
             /**
+             * @description Updated actor slug for the agent
+             * @example code-reviewer
+             */
+            slug?: string;
+            /**
+             * @description Updated actor display name for the agent
+             * @example Code Reviewer
+             */
+            name?: string;
+            /**
              * @description Core instructions/persona for this agent
              * @example You are a helpful assistant that helps users with tasks.
              */
@@ -4183,15 +4193,39 @@ export interface components {
              */
             type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
             /**
+             * @description Short description of what this agent does
+             * @example A helpful assistant agent
+             */
+            description?: string | null;
+            /**
              * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
              * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
              */
-            introduction?: string;
+            introduction?: string | null;
             /**
              * @description Optional avatar URL for the agent actor
              * @example https://example.com/avatar.png
              */
             avatarUrl?: string | null;
+            /**
+             * @description List of tool identifiers this agent is allowed to use
+             * @example [
+             *       "tasks.createTask",
+             *       "tasks.readTask",
+             *       "context.search"
+             *     ]
+             */
+            allowedTools?: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @example true
+             */
+            isActive?: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: number | null;
         };
         IssueAccessTokenRequestDto: {
             /**

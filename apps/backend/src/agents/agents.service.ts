@@ -8,7 +8,6 @@ import { ActorType } from '../identity-provider/enums';
 import { AgentType } from './enums';
 import {
   CreateAgentInput,
-  UpdateAgentInput,
   PatchAgentInput,
   AgentResult,
   ListAgentsInput,
@@ -277,6 +276,16 @@ export class AgentsService {
       throw new AgentNotFoundError(actorId);
     }
 
+    if (input.slug !== undefined && input.slug !== agent.actor.slug) {
+      const existingActor = await this.actorRepository.findOne({
+        where: { slug: input.slug },
+      });
+
+      if (existingActor && existingActor.id !== agent.actorId) {
+        throw new AgentSlugConflictError(input.slug);
+      }
+    }
+
     // Apply partial updates to agent
     if (input.systemPrompt !== undefined) {
       agent.systemPrompt = input.systemPrompt;
@@ -296,16 +305,54 @@ export class AgentsService {
     if (input.type !== undefined) {
       agent.type = input.type;
     }
+    if (input.description !== undefined) {
+      agent.description = input.description;
+    }
+    if (input.allowedTools !== undefined) {
+      agent.allowedTools = input.allowedTools;
+    }
+    if (input.isActive !== undefined) {
+      agent.isActive = input.isActive;
+    }
+    if (input.concurrencyLimit !== undefined) {
+      agent.concurrencyLimit = input.concurrencyLimit;
+    }
 
-    // Apply updates to actor if introduction is provided
+    // Apply updates to actor fields
+    if (input.name !== undefined) {
+      agent.actor.displayName = input.name;
+    }
+    if (input.slug !== undefined) {
+      agent.actor.slug = input.slug;
+    }
     if (input.introduction !== undefined) {
       agent.actor.introduction = input.introduction;
     }
     if (input.avatarUrl !== undefined) {
       agent.actor.avatarUrl = input.avatarUrl;
     }
-    if (input.introduction !== undefined || input.avatarUrl !== undefined) {
-      await this.actorRepository.save(agent.actor);
+
+    const isActorUpdateRequested =
+      input.name !== undefined ||
+      input.slug !== undefined ||
+      input.introduction !== undefined ||
+      input.avatarUrl !== undefined;
+
+    if (isActorUpdateRequested) {
+      try {
+        await this.actorRepository.save(agent.actor);
+      } catch (error) {
+        if (error instanceof QueryFailedError) {
+          const driverError = (error as any).driverError;
+          if (
+            driverError?.code === 'SQLITE_CONSTRAINT' &&
+            driverError?.message?.includes('actor.slug')
+          ) {
+            throw new AgentSlugConflictError(agent.actor.slug);
+          }
+        }
+        throw error;
+      }
     }
 
     const updatedAgent = await this.agentRepository.save(agent);
