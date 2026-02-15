@@ -227,7 +227,40 @@ export class AuthorizationController {
     @Param('serverIdentifier') serverIdentifier: string,
     @Param('version') version: string,
   ): Promise<IntrospectTokenResponseDto> {
-    return this.tokenService.introspectToken(introspectRequest);
+    // Map HTTP DTO to service input
+    const serviceInput = {
+      token: introspectRequest.token,
+      token_type_hint: introspectRequest.token_type_hint,
+      client_id: introspectRequest.client_id,
+      client_secret: introspectRequest.client_secret,
+    };
+
+    // Call service with transport-agnostic types
+    const result = await this.tokenService.introspectToken(serviceInput);
+
+    // Short-circuit for inactive tokens - per RFC 7662, only 'active: false' is returned
+    if (!result.active) {
+      return { active: false };
+    }
+
+    // Map service result to HTTP DTO (TypeScript now knows all fields are present)
+    const response: IntrospectTokenResponseDto = {
+      active: result.active,
+      token_type: result.token_type,
+      client_id: result.client_id,
+      sub: result.sub,
+      aud: result.aud,
+      iss: result.iss,
+      jti: result.jti,
+      exp: result.exp,
+      iat: result.iat,
+      scope: result.scope,
+      mcp_server_identifier: result.mcp_server_identifier,
+      resource: result.resource,
+      version: result.version,
+    };
+
+    return response;
   }
 
   @Post('token-exchange/mcp/:serverIdentifier/:version')

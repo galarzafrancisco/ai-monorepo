@@ -1915,43 +1915,43 @@ export interface components {
              */
             active: boolean;
             /**
-             * @description Token type, always Bearer for MCP clients
+             * @description Token type, always Bearer for MCP clients. Only present when active is true.
              * @example Bearer
              * @enum {string}
              */
-            token_type: "Bearer";
+            token_type?: "Bearer";
             /**
-             * @description Client identifier associated with the token
+             * @description Client identifier associated with the token. Only present when active is true.
              * @example 0bab273987a2e163c3abb40c631ec0a4
              */
-            client_id: string;
+            client_id?: string;
             /**
-             * @description Subject of the token (resource owner or actor)
+             * @description Subject of the token (resource owner or actor). Only present when active is true.
              * @example journey:1234
              */
-            sub: Record<string, never>;
-            /** @description Audience that should accept this token */
-            aud: string | string[];
+            sub?: Record<string, never>;
+            /** @description Audience that should accept this token. Only present when active is true. */
+            aud?: string | string[];
             /**
-             * @description Issuer that minted the token
+             * @description Issuer that minted the token. Only present when active is true.
              * @example https://auth.tasks.local/auth
              */
-            iss: Record<string, never>;
+            iss?: Record<string, never>;
             /**
-             * @description Unique token identifier for replay detection
+             * @description Unique token identifier for replay detection. Only present when active is true.
              * @example b15e8a76-5b6d-4bde-9a3b-26fdbaab5b4c
              */
-            jti: Record<string, never>;
+            jti?: Record<string, never>;
             /**
-             * @description Expiration timestamp (seconds since Unix epoch)
+             * @description Expiration timestamp (seconds since Unix epoch). Only present when active is true.
              * @example 1731145219
              */
-            exp: Record<string, never>;
+            exp?: Record<string, never>;
             /**
-             * @description Issued-at timestamp (seconds since Unix epoch)
+             * @description Issued-at timestamp (seconds since Unix epoch). Only present when active is true.
              * @example 1731141619
              */
-            iat: Record<string, never>;
+            iat?: Record<string, never>;
             /**
              * @description Granted scopes (space-delimited) for display purposes
              * @example tasks:read tasks:write
@@ -1961,17 +1961,17 @@ export interface components {
              * @description MCP server identifier the token is scoped to
              * @example tasks
              */
-            mcp_server_identifier: Record<string, never>;
+            mcp_server_identifier?: Record<string, never>;
             /**
-             * @description Resource URL that was used during authorization
+             * @description Resource URL that was used during authorization. Only present when active is true.
              * @example http://localhost:4001/
              */
-            resource: Record<string, never>;
+            resource?: Record<string, never>;
             /**
-             * @description Version of the MCP server contract
+             * @description Version of the MCP server contract. Only present when active is true.
              * @example 1.0.0
              */
-            version: Record<string, never>;
+            version?: Record<string, never>;
         };
         TokenExchangeRequestDto: {
             /**
