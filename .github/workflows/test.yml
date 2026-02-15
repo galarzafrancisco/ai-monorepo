@@ -31,16 +31,13 @@ jobs:
       - name: Build everything
         run: npm run zero-to-prod
 
-      - name: Debug node_modules
-        run: |
-          echo "Root node_modules/.bin contents:"
-          ls -la node_modules/.bin | grep jest || echo "No jest found"
-          echo "Backend node_modules exists:"
-          ls apps/backend/node_modules 2>/dev/null || echo "No backend node_modules"
+      - name: Install jest globally for tests
+        run: npm install -g jest@29 ts-jest@29
 
       - name: Run E2E tests
         id: tests
-        run: npm -w apps/backend run test:e2e
+        working-directory: apps/backend
+        run: jest --config ./test/jest-e2e.json --runInBand
 
       - name: Upload test results
         if: always()
