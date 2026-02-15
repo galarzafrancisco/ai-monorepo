@@ -2,6 +2,8 @@ export const ACCESS_TOKEN = process.env.ACCESS_TOKEN || '';
 export const BASE_URL = process.env.BASE_URL || '';
 export const WORK_DIR = process.env.WORK_DIR || '';
 export const AGENT_SLUG = process.env.AGENT_SLUG || '';
+export const HEARTBEAT_INTERVAL_MS = Number(process.env.HEARTBEAT_INTERVAL_MS || 60_000);
+export const HEARTBEAT_TASK_LIMIT = Number(process.env.HEARTBEAT_TASK_LIMIT || 100);
 
 export const RUN_ID_HEADER = 'x-taico-run-id';
 
