@@ -26,7 +26,7 @@ Adding support for a new runner is trivial — implement the runner interface an
 ## Quick Start
 
 ```bash
-npm run zero-to-prod   # Install deps, generate API types, build everything
+npm run zero-to-prod   # Install deps, generate API types, build apps (+ worker on Node 24+)
 npm run dev            # Start backend + frontend with hot reload
 ```
 

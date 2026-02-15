@@ -4,7 +4,7 @@ This guide covers setting up the development environment, understanding the arch
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 20+ (Node 24+ required for worker package build validation)
 - npm 10+
 
 ## Getting Started
@@ -15,7 +15,7 @@ This guide covers setting up the development environment, understanding the arch
 npm run zero-to-prod
 ```
 
-This installs dependencies, generates API clients from the OpenAPI spec, and builds all packages in the correct order. Run this whenever you pull new changes.
+This installs dependencies, generates API clients from the OpenAPI spec, and builds all packages in the correct order. On Node 24+, it also validates the worker package build. On Node 20-23, worker build validation is skipped to keep the setup path compatible with the documented baseline.
 
 ### Development Mode
 
