@@ -1,6 +1,6 @@
 {
   "name": "@taico/worker",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "private": false,
   "license": "MIT",
