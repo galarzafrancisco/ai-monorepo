@@ -46,8 +46,6 @@
   },
   "homepage": "https://github.com/galarzafrancisco/ai-monorepo#readme",
   "dependencies": {
-    "jest": "^29.7.0",
-    "jose": "^6.1.0",
-    "ts-jest": "^29.4.6"
+    "jose": "^6.1.0"
   }
 }
