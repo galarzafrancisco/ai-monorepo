@@ -4,7 +4,7 @@ This guide covers setting up the development environment, understanding the arch
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - npm 10+
 
 ## Getting Started
@@ -15,7 +15,7 @@ This guide covers setting up the development environment, understanding the arch
 npm run zero-to-prod
 ```
 
-This installs dependencies, generates API clients from the OpenAPI spec, and builds all packages in the correct order. Run this whenever you pull new changes.
+This installs dependencies, generates API clients from the OpenAPI spec, and builds all packages including the worker in the correct order.
 
 ### Development Mode
 

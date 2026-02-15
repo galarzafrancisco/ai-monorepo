@@ -25,7 +25,8 @@
     "docker:logs": "docker-compose logs -f",
     "docker:rebuild": "docker-compose down && docker-compose build && docker-compose up -d",
     "build:packages": "npm -w packages/events run build && npm -w packages/errors run build",
-    "build:prod": "npm run build:packages && npm -w apps/backend run build:prod && npm -w packages/client run build:prod && npm -w apps/ui2 run build:prod && npm -w apps/ui run build:prod",
+    "build:worker": "npm -w apps/worker run build",
+    "build:prod": "npm run build:packages && npm -w apps/backend run build:prod && npm -w packages/client run build:prod && npm -w apps/ui2 run build:prod && npm -w apps/ui run build:prod && npm run build:worker",
     "zero-to-prod": "npm ci && npm run build:prod",
     "release:backend": "npm run zero-to-prod && npm -w apps/backend run release"
   },
