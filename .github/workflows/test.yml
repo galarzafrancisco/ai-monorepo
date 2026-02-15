@@ -33,7 +33,7 @@ jobs:
 
       - name: Run E2E tests
         id: tests
-        run: npm run test:e2e --prefix apps/backend
+        run: npm run test:e2e
 
       - name: Upload test results
         if: always()
