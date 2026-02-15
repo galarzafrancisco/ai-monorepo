@@ -8,9 +8,10 @@ The worker is a Node.js process that:
 
 1. Connects to the backend via REST API and WebSocket.
 2. Listens for task events that match the agent's status and tag triggers.
-3. When a matching task appears, it clones the project's git repo (if configured) into a clean workspace.
-4. Spins up the appropriate agent harness (Claude, OpenCode, ADK, or GitHub Copilot).
-5. The agent works on the task, posting comments and status updates back to the backend.
+3. Runs a heartbeat reconcile loop that polls recent tasks and re-evaluates readiness.
+4. When a matching task appears, it clones the project's git repo (if configured) into a clean workspace.
+5. Spins up the appropriate agent harness (Claude, OpenCode, ADK, or GitHub Copilot).
+6. The agent works on the task, posting comments and status updates back to the backend.
 
 ## Architecture
 
@@ -60,6 +61,8 @@ AGENT_SLUG="claude"                          # Which agent this worker represent
 BASE_URL="http://localhost:2000"             # URL where the backend is running
 ACCESS_TOKEN="your-token-here"               # Token created in step 2
 WORK_DIR="/absolute/path/to/workspace"       # Folder where work happens (absolute path)
+HEARTBEAT_INTERVAL_MS="60000"                # Optional: heartbeat interval (ms)
+HEARTBEAT_TASK_LIMIT="100"                   # Optional: tasks reconciled per heartbeat
 ```
 
 ### 4. Start the Worker

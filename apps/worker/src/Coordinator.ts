@@ -1,22 +1,48 @@
 // Coordinator.ts
 import { TaskWirePayload } from "@taico/events";
+import {
+  type AgentResponseDto,
+  type TaskResponseDto,
+} from "@taico/client";
 import { Taico } from "./Taico.js";
-import { ACCESS_TOKEN, AGENT_SLUG, BASE_URL } from "./helpers/config.js";
+import {
+  ACCESS_TOKEN,
+  AGENT_SLUG,
+  BASE_URL,
+  HEARTBEAT_INTERVAL_MS,
+  HEARTBEAT_TASK_LIMIT,
+} from "./helpers/config.js";
 import { prepareWorkspace } from "./helpers/prepareWorkspace.js";
 import { getSession, setSession } from "./helpers/sessionStore.js";
 import { ClaudeAgentRunner } from "./runners/ClaudeAgentRunner.js";
-import { SocketIOTasksTransport, TaskEvent } from "./SocketIOTasksTransport.js"
+import { SocketIOTasksTransport, TaskEvent } from "./SocketIOTasksTransport.js";
 import { BaseAgentRunner } from "./runners/BaseAgentRunner.js";
 import { OpencodeAgentRunner } from "./runners/OpenCodeAgentRunner.js";
 import { ADKAgentRunner } from "./runners/ADKAgentRunner.js";
 import { GitHubCopilotAgentRunner } from "./runners/GitHubCopilotAgentRunner.js";
 import { AgentModelConfig } from "./runners/AgentRunner.js";
+import { AgentConcurrencyStore } from "./helpers/AgentConcurrencyStore.js";
+
+type WorkerTask = TaskWirePayload | TaskResponseDto;
+
+type InputRequestLike = {
+  id: string;
+  question: unknown;
+  answer?: unknown;
+  assignedToActorId: string;
+};
+
+type RunMode = "normal" | "input_request";
 
 export class Coordinator {
 
   private ready: boolean = false;
   private transport: SocketIOTasksTransport;
   private client: Taico;
+  private heartbeatTimer?: ReturnType<typeof setInterval>;
+  private readonly concurrencyStore = new AgentConcurrencyStore();
+  private readonly activeTaskIds = new Set<string>();
+  private currentAgent?: AgentResponseDto;
 
   // Make transport
   constructor() {
@@ -51,12 +77,20 @@ export class Coordinator {
     // Listen
     this.transport.onTaskEvent(this.handleEvent);
 
+    const heartbeatMs = Number.isFinite(HEARTBEAT_INTERVAL_MS) && HEARTBEAT_INTERVAL_MS > 0
+      ? HEARTBEAT_INTERVAL_MS
+      : 60_000;
+    this.heartbeatTimer = setInterval(() => {
+      void this.runHeartbeat();
+    }, heartbeatMs);
+    void this.runHeartbeat();
+
     return true;
   }
 
   private handleEvent = async (evt: TaskEvent) => {
     // For now just look at create and assign and status change
-    if (evt.type === 'created' || evt.type === 'assigned' || evt.type === 'status_changed') {
+    if (evt.type === 'created' || evt.type === 'assigned' || evt.type === 'status_changed' || evt.type === 'updated') {
       console.log('--------------------------------------------------------');
       console.log('Event received');
       console.log(`- Type: ${evt.type}`);
@@ -69,11 +103,27 @@ export class Coordinator {
         console.log(`- Update caused by assignee. Ignoring as this is a self event. ❌`);
         return;
       }
-      this.handleTask(task);
+      await this.maybeHandleInputRequest(task);
+      await this.handleTask(task);
+    }
+  };
+
+  private async runHeartbeat() {
+    try {
+      const limit = Number.isFinite(HEARTBEAT_TASK_LIMIT) && HEARTBEAT_TASK_LIMIT > 0
+        ? Math.floor(HEARTBEAT_TASK_LIMIT)
+        : 100;
+      const tasks = await this.client.listTasks(1, limit);
+      for (const task of tasks) {
+        await this.maybeHandleInputRequest(task);
+        await this.handleTask(task);
+      }
+    } catch (error) {
+      console.error('[heartbeat] failed to reconcile tasks', error);
     }
   }
 
-  private async handleTask(task: TaskWirePayload) {
+  private async handleTask(task: WorkerTask) {
     // Get the agent
     const actor = task.assigneeActor;
     if (!actor?.slug) {
@@ -91,6 +141,19 @@ export class Coordinator {
       return;
     }
 
+    if (!(await this.canRunTaskNormally(task))) {
+      return;
+    }
+
+    if (Array.isArray(agent.tagTriggers) && agent.tagTriggers.length > 0) {
+      const taskTagNames = new Set((task.tags ?? []).map((tag) => tag.name));
+      const matchesTagTrigger = agent.tagTriggers.some((tagTrigger) => taskTagNames.has(tagTrigger));
+      if (!matchesTagTrigger) {
+        console.log(`- Agent @${agent.slug} requires tag trigger and task has none. Skip. ❌`);
+        return;
+      }
+    }
+
     // Do we have runners for this agent?
     if (agent.type !== "claude" && agent.type !== "opencode" && agent.type !== "adk" && agent.type !== "githubcopilot") {
       console.log(`- Agent @${actor.slug} of type "${agent.type}" not supported. Skipping. ❌`);
@@ -103,110 +166,231 @@ export class Coordinator {
       return;
     }
 
-    // Extract project slug from tags and get project repo URL
-    let repoUrl: string | null = null;
-    const projectTag = task.tags?.find((tag) => tag.name.startsWith('project:'));
-    if (projectTag) {
-      const projectSlug = projectTag.name.replace('project:', '');
-      console.log(`- Found project tag: ${projectTag.name}, slug: ${projectSlug}`);
+    await this.executeTask(task, agent, 'normal');
+  }
 
-      const project = await this.client.getProjectBySlug(projectSlug);
-      if (project) {
-        console.log(`- Project found: ${project.slug}`);
-        repoUrl = project.repoUrl ?? null;
-        if (repoUrl) {
-          console.log(`- Using project repo: ${repoUrl}`);
-        } else {
-          console.log(`- Project has no repoUrl, using default`);
-        }
-      } else {
-        console.log(`- Project not found for slug: ${projectSlug}`);
+  private async maybeHandleInputRequest(task: WorkerTask): Promise<void> {
+    const agent = await this.getCurrentAgent();
+    if (!agent) {
+      return;
+    }
+
+    const unansweredForMe = task.inputRequests.find((inputRequest) => {
+      if (inputRequest.answer != null) {
+        return false;
+      }
+      if (inputRequest.assignedToActorId !== agent.actorId) {
+        return false;
+      }
+      return task.assigneeActor?.id !== agent.actorId;
+    });
+
+    if (!unansweredForMe) {
+      return;
+    }
+
+    console.log(`- Unanswered input request ${unansweredForMe.id} assigned to @${agent.slug}. Triggering response flow.`);
+    await this.executeTask(task, agent, 'input_request', unansweredForMe);
+  }
+
+  private async canRunTaskNormally(task: WorkerTask): Promise<boolean> {
+    if (!(await this.dependenciesAreDone(task))) {
+      return false;
+    }
+
+    const unresolvedInputRequests = task.inputRequests.filter((inputRequest) => inputRequest.answer == null);
+    if (unresolvedInputRequests.length > 0) {
+      console.log(`- Task ${task.id} has unresolved input requests. Skip until answered. ❌`);
+      return false;
+    }
+
+    return true;
+  }
+
+  private async dependenciesAreDone(task: WorkerTask): Promise<boolean> {
+    if (!Array.isArray(task.dependsOnIds) || task.dependsOnIds.length === 0) {
+      return true;
+    }
+
+    for (const dependencyId of task.dependsOnIds) {
+      const dependencyTask = await this.client.getTask(dependencyId);
+      if (!dependencyTask) {
+        console.log(`- Dependency task ${dependencyId} not found. Skip. ❌`);
+        return false;
+      }
+
+      if (dependencyTask.status !== 'DONE') {
+        console.log(`- Dependency task ${dependencyId} is ${dependencyTask.status}. Skip. ❌`);
+        return false;
       }
     }
 
-    console.log(`- ✅ Conditions met. @${agent.slug} starting to work on task "${task.name}" 🦄`);
+    return true;
+  }
 
-    // Load session
-    const sessionId = getSession(agent.actorId, task.id);
+  private async getCurrentAgent(): Promise<AgentResponseDto | null> {
+    if (this.currentAgent) {
+      return this.currentAgent;
+    }
 
-    // Prep workspace
-    const workDir = await prepareWorkspace(task.id, agent.actorId, repoUrl);
-    console.log(`- workspace prepped`);
+    const agent = await this.client.getAgent(AGENT_SLUG);
+    if (!agent) {
+      console.log(`- Agent @${AGENT_SLUG} not found. ❌`);
+      return null;
+    }
 
-    const run = await this.client.startRun(task.id);
-    if (!run) {
-      console.error(`Failed to create a run ❌`);
+    this.currentAgent = agent;
+    return this.currentAgent;
+  }
+
+  private getConcurrencyLimit(agent: AgentResponseDto): number | null {
+    if (typeof agent.concurrencyLimit === 'number' && Number.isFinite(agent.concurrencyLimit) && agent.concurrencyLimit > 0) {
+      return Math.floor(agent.concurrencyLimit);
+    }
+
+    return null;
+  }
+
+  private buildPrompt(task: WorkerTask, agent: AgentResponseDto, mode: RunMode, inputRequest?: InputRequestLike) {
+    if (mode === 'input_request' && inputRequest) {
+      return [
+        `You got triggered by an unanswered input request in task "${task.id}".`,
+        'You were asked a question and only need to answer that question.',
+        'Do not go through the normal flow and do not complete the task unless explicitly requested.',
+        '',
+        `Input request id: ${inputRequest.id}`,
+        `Question: ${String(inputRequest.question ?? '')}`,
+        '',
+        'Fetch the task, answer the input request assigned to you, and stop there.',
+      ].join('\n');
+    }
+
+    return `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`;
+  }
+
+  private async executeTask(task: WorkerTask, agent: AgentResponseDto, mode: RunMode, inputRequest?: InputRequestLike) {
+    if (this.activeTaskIds.has(task.id)) {
+      console.log(`- Task ${task.id} is already running in this worker. Skip. ❌`);
       return;
     }
-    console.log(`Started Agent Run ID ${run.id}`);
 
-    // Create agent runner
-    let runner: BaseAgentRunner | null = null;
-    const modelConfig: AgentModelConfig = {
-      providerId: agent.providerId ?? undefined,
-      modelId: agent.modelId ?? undefined,
-    };
-    if (agent.type === 'claude') {
-      runner = new ClaudeAgentRunner(modelConfig);
-    } else if (agent.type === 'opencode') {
-      runner = new OpencodeAgentRunner(modelConfig);
-    } else if (agent.type === 'adk') {
-      runner = new ADKAgentRunner(modelConfig);
-    } else if (agent.type === 'githubcopilot') {
-      runner = new GitHubCopilotAgentRunner(modelConfig);
-    }
-
-    // This shouldn't happen because we checked first, but let's satisfy TypeScript
-    if (!runner) {
-      console.log(`- Agent @${actor.slug} of type "${agent.type}" not supported. Skipping. ❌`);
+    const concurrencyLimit = this.getConcurrencyLimit(agent);
+    if (!this.concurrencyStore.tryAcquire(agent.actorId, concurrencyLimit)) {
+      console.log(`- Agent @${agent.slug} reached concurrency limit (${concurrencyLimit ?? 'unlimited'}). Skip. ❌`);
       return;
     }
 
+    this.activeTaskIds.add(task.id);
     try {
-      
-      const results = await runner.run(
-        {
-          taskId: task.id,
-          prompt: `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`,
-          cwd: workDir,
-          runId: run.id,
-        },
-        {
-          onEvent: (message: string) => {
-            console.log(`[agent message] ⤵️`);
-            console.log(message);
-            console.log('[end of agent message] ⤴️')
-            this.transport.publishActivity({
-              taskId: task.id,
-              message,
-              ts: Date.now(),
-            });
-          },
-          onSession: (sessionId: string) => {
-            if (!sessionId) {
-              setSession(agent.actorId, task.id, sessionId);
-            }
-          },
-          onError: (error: { message: string; rawMessage?: any }) => {
-            console.log('Error detected');
-            console.log('error message:', error.message);
-            console.log('raw message', error.rawMessage);
+      // Extract project slug from tags and get project repo URL
+      let repoUrl: string | null = null;
+      const projectTag = task.tags?.find((tag) => tag.name.startsWith('project:'));
+      if (projectTag) {
+        const projectSlug = projectTag.name.replace('project:', '');
+        console.log(`- Found project tag: ${projectTag.name}, slug: ${projectSlug}`);
 
-            // Post error to task as a comment
-            this.client.addComment(
-              task.id,
-              `⚠️ Error Detected ⚠️\n\n${error.message}\n\n\`\`\`json\nraw message\n${JSON.stringify(error.rawMessage, null, 2)}\n\`\`\``
-            );
+        const project = await this.client.getProjectBySlug(projectSlug);
+        if (project) {
+          console.log(`- Project found: ${project.slug}`);
+          repoUrl = project.repoUrl ?? null;
+          if (repoUrl) {
+            console.log(`- Using project repo: ${repoUrl}`);
+          } else {
+            console.log(`- Project has no repoUrl, using default`);
           }
+        } else {
+          console.log(`- Project not found for slug: ${projectSlug}`);
         }
-      )
+      }
 
-      console.log(results);
-    } catch (error) {
-      console.error(`Error running task`);
-      console.error(error);
-      // Force a comment
-      this.client.addComment(task.id, `❌ Something went wrong ❌\n\n${error}`);
+      console.log(`- ✅ Conditions met. @${agent.slug} starting to work on task "${task.name}" 🦄`);
+
+      // Load session
+      const sessionId = getSession(agent.actorId, task.id);
+
+      // Prep workspace
+      const workDir = await prepareWorkspace(task.id, agent.actorId, repoUrl);
+      console.log(`- workspace prepped`);
+
+      const run = await this.client.startRun(task.id);
+      if (!run) {
+        console.error(`Failed to create a run ❌`);
+        return;
+      }
+      console.log(`Started Agent Run ID ${run.id}`);
+
+      // Create agent runner
+      let runner: BaseAgentRunner | null = null;
+      const modelConfig: AgentModelConfig = {
+        providerId: agent.providerId ?? undefined,
+        modelId: agent.modelId ?? undefined,
+      };
+      if (agent.type === 'claude') {
+        runner = new ClaudeAgentRunner(modelConfig);
+      } else if (agent.type === 'opencode') {
+        runner = new OpencodeAgentRunner(modelConfig);
+      } else if (agent.type === 'adk') {
+        runner = new ADKAgentRunner(modelConfig);
+      } else if (agent.type === 'githubcopilot') {
+        runner = new GitHubCopilotAgentRunner(modelConfig);
+      }
+
+      // This shouldn't happen because we checked first, but let's satisfy TypeScript
+      if (!runner) {
+        console.log(`- Agent @${agent.slug} of type "${agent.type}" not supported. Skipping. ❌`);
+        return;
+      }
+
+      try {
+
+        const results = await runner.run(
+          {
+            taskId: task.id,
+            prompt: this.buildPrompt(task, agent, mode, inputRequest),
+            cwd: workDir,
+            runId: run.id,
+            resume: sessionId ?? undefined,
+          },
+          {
+            onEvent: (message: string) => {
+              console.log(`[agent message] ⤵️`);
+              console.log(message);
+              console.log('[end of agent message] ⤴️');
+              this.transport.publishActivity({
+                taskId: task.id,
+                message,
+                ts: Date.now(),
+              });
+            },
+            onSession: (runnerSessionId: string) => {
+              if (runnerSessionId) {
+                setSession(agent.actorId, task.id, runnerSessionId);
+              }
+            },
+            onError: (error: { message: string; rawMessage?: any }) => {
+              console.log('Error detected');
+              console.log('error message:', error.message);
+              console.log('raw message', error.rawMessage);
+
+              // Post error to task as a comment
+              this.client.addComment(
+                task.id,
+                `⚠️ Error Detected ⚠️\n\n${error.message}\n\n\`\`\`json\nraw message\n${JSON.stringify(error.rawMessage, null, 2)}\n\`\`\``
+              );
+            }
+          }
+        );
+
+        console.log(results);
+      } catch (error) {
+        console.error(`Error running task`);
+        console.error(error);
+        // Force a comment
+        this.client.addComment(task.id, `❌ Something went wrong ❌\n\n${error}`);
+      }
+    } finally {
+      this.activeTaskIds.delete(task.id);
+      this.concurrencyStore.release(agent.actorId);
     }
   }
 }
