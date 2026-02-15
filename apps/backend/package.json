@@ -82,7 +82,7 @@
     "@types/cookie": "^0.6.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^22.10.7",
+    "@types/node": "^24.10.1",
     "@types/supertest": "^6.0.2",
     "@types/swagger-ui-express": "^4.1.8",
     "eslint": "^9.18.0",
