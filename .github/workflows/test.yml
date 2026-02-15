@@ -28,12 +28,12 @@ jobs:
             package-lock.json
             packages/shared/package-lock.json
 
-      - name: Build packages and frontend
-        run: npm ci && npm run build:packages && npm -w packages/client run build:prod && npm -w apps/ui2 run build:prod && npm -w apps/ui run build:prod
+      - name: Build everything
+        run: npm run zero-to-prod
 
       - name: Run E2E tests
         id: tests
-        run: npm run test:e2e
+        run: npm -w apps/backend run test:e2e
 
       - name: Upload test results
         if: always()
