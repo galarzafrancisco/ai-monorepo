@@ -47,9 +47,58 @@ export class TasksMcpGateway {
       async ({ tag }) => {
         const tasks = await this.tasksService.listTasks({
           tag,
-          page: 0,
+          page: 1,
           limit: 20,
         });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                tasks.items.map((t) => {
+                  return {
+                    name: t.name,
+                    assignee: t.assignee,
+                    status: t.status,
+                    id: t.id,
+                  };
+                }),
+              ),
+            },
+          ],
+        };
+      },
+    );
+
+    server.registerTool(
+      'list_tasks_filtered',
+      {
+        title: 'List tasks with filters',
+        description:
+          'List tasks by status and recency with a configurable limit.',
+        inputSchema: {
+          status: z.nativeEnum(TaskStatus).optional(),
+          assignee: z.string().optional(),
+          tag: z.string().optional(),
+          updatedWithinHours: z.number().positive().optional(),
+          limit: z.number().int().positive().max(500).optional(),
+        },
+      },
+      async ({ status, assignee, tag, updatedWithinHours, limit }) => {
+        const updatedAfter =
+          updatedWithinHours !== undefined
+            ? new Date(Date.now() - updatedWithinHours * 60 * 60 * 1000)
+            : undefined;
+
+        const tasks = await this.tasksService.listTasks({
+          status,
+          assignee,
+          tag,
+          updatedAfter,
+          page: 1,
+          limit: limit ?? 100,
+        });
+
         return {
           content: [
             {

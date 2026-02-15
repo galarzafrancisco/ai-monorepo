@@ -468,6 +468,8 @@ export class TasksService {
         assignee: input.assignee,
         sessionId: input.sessionId,
         tag: input.tag,
+        status: input.status,
+        updatedAfter: input.updatedAfter,
       },
       page: input.page,
       limit: input.limit,
@@ -492,6 +494,16 @@ export class TasksService {
       if (input.assignee) {
         queryBuilder.andWhere('assigneeActor.slug = :assignee', {
           assignee: input.assignee,
+        });
+      }
+      if (input.status) {
+        queryBuilder.andWhere('task.status = :status', {
+          status: input.status,
+        });
+      }
+      if (input.updatedAfter) {
+        queryBuilder.andWhere('task.updatedAt >= :updatedAfter', {
+          updatedAfter: input.updatedAfter,
         });
       }
       if (input.sessionId) {
@@ -537,6 +549,16 @@ export class TasksService {
     if (input.assignee) {
       queryBuilder.andWhere('assigneeActor.slug = :assignee', {
         assignee: input.assignee,
+      });
+    }
+    if (input.status) {
+      queryBuilder.andWhere('task.status = :status', {
+        status: input.status,
+      });
+    }
+    if (input.updatedAfter) {
+      queryBuilder.andWhere('task.updatedAt >= :updatedAfter', {
+        updatedAfter: input.updatedAfter,
       });
     }
     if (input.sessionId) {
