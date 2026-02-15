@@ -13,6 +13,7 @@ import { EditTagTriggersPop } from './EditTagTriggersPop';
 import { EditIntroductionPop } from './EditIntroductionPop';
 import { EditAgentTypePop } from './EditAgentTypePop';
 import { EditAgentModelPop } from './EditAgentModelPop';
+import { EditConcurrencyLimitPop } from './EditConcurrencyLimitPop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
@@ -56,6 +57,7 @@ export function AgentDetailPage() {
   const [showEditAgentTypePop, setShowEditAgentTypePop] = useState(false);
   const [showEditIntroductionPop, setShowEditIntroductionPop] = useState(false);
   const [showEditModelPop, setShowEditModelPop] = useState(false);
+  const [showEditConcurrencyLimitPop, setShowEditConcurrencyLimitPop] = useState(false);
 
   // Load tokens for this agent
   const loadTokens = useCallback(async () => {
@@ -293,6 +295,27 @@ export function AgentDetailPage() {
     }
   };
 
+  const handleSaveConcurrencyLimit = async ({
+    concurrencyLimit,
+  }: {
+    concurrencyLimit: number | null;
+  }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { concurrencyLimit });
+      if (updated) {
+        setAgent(updated);
+        setShowEditConcurrencyLimitPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update concurrency limit:', err);
+      showError(err);
+      return false;
+    }
+  };
+
   // Handle revoking a token
   const handleRevokeToken = async (tokenId: string) => {
     if (!slug) return;
@@ -346,6 +369,10 @@ export function AgentDetailPage() {
   const modelLabel = agent.modelId && agent.modelId.trim().length > 0
     ? agent.modelId
     : 'Default model';
+  const concurrencyValue = agent.concurrencyLimit as unknown;
+  const concurrencyLimit = typeof concurrencyValue === 'number' && Number.isFinite(concurrencyValue) && concurrencyValue > 0
+    ? Math.floor(concurrencyValue)
+    : null;
 
   return (
     <div className="agent-detail-page">
@@ -415,6 +442,16 @@ export function AgentDetailPage() {
               Model: {modelLabel}
             </Text>
           </Stack>
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
+
+      {/* Concurrency */}
+      <DataRowContainer title="Concurrency" className="agent-detail-page__section">
+        <DataRow onClick={() => setShowEditConcurrencyLimitPop(true)}>
+          <Text size="2" tone="muted">
+            {concurrencyLimit === null ? 'Unlimited parallel tasks' : `${concurrencyLimit} parallel ${concurrencyLimit === 1 ? 'task' : 'tasks'}`}
+          </Text>
           <Text size="1" tone="muted">tap to edit</Text>
         </DataRow>
       </DataRowContainer>
@@ -706,6 +743,13 @@ export function AgentDetailPage() {
           initialModelId={agent.modelId ?? ''}
           onCancel={() => setShowEditModelPop(false)}
           onSave={handleSaveModelConfig}
+        />
+      )}
+      {showEditConcurrencyLimitPop && agent && (
+        <EditConcurrencyLimitPop
+          initialValue={concurrencyLimit}
+          onCancel={() => setShowEditConcurrencyLimitPop(false)}
+          onSave={handleSaveConcurrencyLimit}
         />
       )}
     </div>

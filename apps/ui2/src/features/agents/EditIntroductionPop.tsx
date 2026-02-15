@@ -45,7 +45,7 @@ export function EditIntroductionPop({ initialValue, onCancel, onSave }: EditIntr
       onSave={handleSave}
     >
       <>
-        <div className="edit-introduction-pop__input-content">
+        <div className="edit-introduction-pop__input-wrapper">
           <textarea
             className="edit-introduction-pop__input-content"
             ref={contentRef}
