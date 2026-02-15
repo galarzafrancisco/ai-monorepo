@@ -19,19 +19,24 @@ export type IntrospectTokenInput = {
 
 /**
  * Result of token introspection operation
+ * Discriminated union based on token validity
  */
-export type IntrospectTokenResult = {
-  active: boolean;
-  token_type?: TokenType;
-  client_id?: string;
-  sub?: AccessTokenClaims['sub'];
-  aud?: AccessTokenClaims['aud'];
-  iss?: AccessTokenClaims['iss'];
-  jti?: AccessTokenClaims['jti'];
-  exp?: AccessTokenClaims['exp'];
-  iat?: AccessTokenClaims['iat'];
-  scope?: string;
-  mcp_server_identifier?: AccessTokenClaims['mcp_server_identifier'];
-  resource?: AccessTokenClaims['resource'];
-  version?: AccessTokenClaims['version'];
-};
+export type IntrospectTokenResult =
+  | {
+      active: false;
+    }
+  | {
+      active: true;
+      token_type: TokenType;
+      client_id: string;
+      sub: AccessTokenClaims['sub'];
+      aud: AccessTokenClaims['aud'];
+      iss: AccessTokenClaims['iss'];
+      jti: AccessTokenClaims['jti'];
+      exp: AccessTokenClaims['exp'];
+      iat: AccessTokenClaims['iat'];
+      scope?: string;
+      mcp_server_identifier?: AccessTokenClaims['mcp_server_identifier'];
+      resource: AccessTokenClaims['resource'];
+      version: AccessTokenClaims['version'];
+    };
