@@ -12,19 +12,64 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Fuzzy search/filter commands
+  // Calculate match score for a command
+  // Higher score = better match
+  function calculateMatchScore(cmd: Command, searchTerm: string): number {
+    const labelLower = cmd.label.toLowerCase();
+    const descLower = cmd.description?.toLowerCase() || '';
+
+    // Check label match
+    const labelIndex = labelLower.indexOf(searchTerm);
+    if (labelIndex !== -1) {
+      // Exact match gets highest score
+      if (labelLower === searchTerm) return 1000;
+      // Start of label match gets high score
+      if (labelIndex === 0) return 500;
+      // Middle of label match
+      return 300;
+    }
+
+    // Check alias matches
+    if (cmd.aliases) {
+      for (const alias of cmd.aliases) {
+        const aliasLower = alias.toLowerCase();
+        const aliasIndex = aliasLower.indexOf(searchTerm);
+        if (aliasIndex !== -1) {
+          // Exact alias match
+          if (aliasLower === searchTerm) return 800;
+          // Start of alias match
+          if (aliasIndex === 0) return 400;
+          // Middle of alias match
+          return 200;
+        }
+      }
+    }
+
+    // Check description match (lowest priority)
+    if (descLower.includes(searchTerm)) {
+      return 100;
+    }
+
+    return 0;
+  }
+
+  // Fuzzy search/filter commands with scoring
   const searchTerm = input.toLowerCase().trim();
-  const filteredCommands = commands.filter((cmd) => {
-    if (!searchTerm) return false;
-
-    const labelMatch = cmd.label.toLowerCase().includes(searchTerm);
-    const aliasMatch = cmd.aliases?.some((alias) =>
-      alias.toLowerCase().includes(searchTerm)
-    );
-    const descMatch = cmd.description?.toLowerCase().includes(searchTerm);
-
-    return labelMatch || aliasMatch || descMatch;
-  });
+  const filteredCommands = commands
+    .map((cmd) => ({
+      command: cmd,
+      score: searchTerm ? calculateMatchScore(cmd, searchTerm) : 0,
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => {
+      // Sort by score descending
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      // If scores are equal, maintain original order
+      return 0;
+    })
+    .map((item) => item.command);
 
   function highlightMatch(text: string): React.ReactNode {
     if (!searchTerm) return text;
