@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Text } from "../../ui/primitives";
 import { useTasksCtx, AnimationState } from "./TasksProvider"
 import { TaskStatus } from "./const";
@@ -53,8 +53,16 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
     };
   }, [statusFilter, animationByStatus, globalEnteringIds, globalExitingTasks]);
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [newTask, setNewTask] = useState<Partial<Task> | null>(null);
   const [showNewTaskPop, setShowNewTaskPop] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setShowNewTaskPop(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleNewTaskCancel = () => {
     console.log('cancel');

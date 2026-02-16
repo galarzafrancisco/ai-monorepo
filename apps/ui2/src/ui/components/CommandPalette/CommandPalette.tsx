@@ -1,16 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCommandPalette } from './CommandPaletteProvider';
+import type { Command } from './CommandPaletteProvider';
 import './CommandPalette.css';
 
-export interface Command {
-  id: string;
-  label: string;
-  aliases?: string[];
-  action: () => void;
-}
-
 export function CommandPalette() {
-  const navigate = useNavigate();
+  const { commands } = useCommandPalette();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -18,64 +12,32 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Define navigation commands
-  const commands: Command[] = [
-    {
-      id: 'tasks',
-      label: 'Tasks',
-      aliases: ['task'],
-      action: () => navigate('/tasks'),
-    },
-    {
-      id: 'context',
-      label: 'Context',
-      aliases: ['blocks', 'block'],
-      action: () => navigate('/context'),
-    },
-    {
-      id: 'agents',
-      label: 'Agents',
-      aliases: ['agent'],
-      action: () => navigate('/agents'),
-    },
-    {
-      id: 'threads',
-      label: 'Threads',
-      aliases: ['thread'],
-      action: () => navigate('/threads'),
-    },
-    {
-      id: 'tools',
-      label: 'Tools',
-      aliases: ['mcp', 'tool'],
-      action: () => navigate('/tools'),
-    },
-    {
-      id: 'schedule',
-      label: 'Schedule',
-      aliases: ['cron', 'schedules'],
-      action: () => navigate('/tasks/schedule'),
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      aliases: ['setting', 'config'],
-      action: () => navigate('/settings'),
-    },
-  ];
-
   // Fuzzy search/filter commands
+  const searchTerm = input.toLowerCase().trim();
   const filteredCommands = commands.filter((cmd) => {
-    const searchTerm = input.toLowerCase().trim();
-    if (!searchTerm) return true;
+    if (!searchTerm) return false;
 
     const labelMatch = cmd.label.toLowerCase().includes(searchTerm);
     const aliasMatch = cmd.aliases?.some((alias) =>
       alias.toLowerCase().includes(searchTerm)
     );
+    const descMatch = cmd.description?.toLowerCase().includes(searchTerm);
 
-    return labelMatch || aliasMatch;
+    return labelMatch || aliasMatch || descMatch;
   });
+
+  function highlightMatch(text: string): React.ReactNode {
+    if (!searchTerm) return text;
+    const idx = text.toLowerCase().indexOf(searchTerm);
+    if (idx === -1) return text;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark>{text.slice(idx, idx + searchTerm.length)}</mark>
+        {text.slice(idx + searchTerm.length)}
+      </>
+    );
+  }
 
   // Reset selected index when filtered commands change
   useEffect(() => {
@@ -124,7 +86,7 @@ export function CommandPalette() {
   }
 
   function executeCommand(command: Command) {
-    command.action();
+    command.onSelect();
     closeAndReset();
   }
 
@@ -198,11 +160,9 @@ export function CommandPalette() {
                 onClick={() => executeCommand(cmd)}
                 onMouseEnter={() => setSelectedIndex(index)}
               >
-                <span className="command-palette-item-label">{cmd.label}</span>
-                {cmd.aliases && cmd.aliases.length > 0 && (
-                  <span className="command-palette-item-aliases">
-                    {cmd.aliases.join(', ')}
-                  </span>
+                <span className="command-palette-item-label">{highlightMatch(cmd.label)}</span>
+                {cmd.description && (
+                  <span className="command-palette-item-description">{cmd.description}</span>
                 )}
               </div>
             ))}
