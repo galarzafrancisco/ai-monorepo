@@ -80,6 +80,13 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
       aliases: ['setting', 'config'],
       onSelect: () => navigate('/settings'),
     },
+    {
+      id: 'new-task',
+      label: 'New Task',
+      description: 'Create a new task',
+      aliases: ['create', 'add task'],
+      onSelect: () => navigate('/tasks?new=1'),
+    },
   ], [navigate]);
 
   const registerCommands = useCallback((commands: Command[]) => {
@@ -100,7 +107,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
 
   const commands = useMemo(() => {
     const pageCommands = Array.from(registeredMap.values()).flat();
-    return [...globalCommands, ...pageCommands];
+    return [...pageCommands, ...globalCommands];
   }, [globalCommands, registeredMap]);
 
   const value = useMemo(() => ({ commands, registerCommands }), [commands, registerCommands]);
