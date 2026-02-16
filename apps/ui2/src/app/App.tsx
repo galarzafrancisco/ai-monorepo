@@ -14,7 +14,7 @@ import { ToolsRoutes } from '../features/tools/ToolsRoutes';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
 import { ActorsProvider } from '../features/actors';
 import { ToastProvider } from '../shared/context/ToastContext';
-import { ToastContainer, CommandPalette } from '../ui/components';
+import { ToastContainer, CommandPaletteProvider } from '../ui/components';
 
 function BetaAppRoutes() {
   return (
@@ -46,21 +46,22 @@ export function App() {
         <ToastProvider>
           <AuthProvider>
             <ActorsProvider>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                  path='*'
-                  element={
-                    <ProtectedRoute>
-                      <BetaShell>
-                        <BetaAppRoutes />
-                      </BetaShell>
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-              <ToastContainer />
-              <CommandPalette />
+              <CommandPaletteProvider>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route
+                    path='*'
+                    element={
+                      <ProtectedRoute>
+                        <BetaShell>
+                          <BetaAppRoutes />
+                        </BetaShell>
+                      </ProtectedRoute>
+                    }
+                  />
+                </Routes>
+                <ToastContainer />
+              </CommandPaletteProvider>
             </ActorsProvider>
           </AuthProvider>
         </ToastProvider>

@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
 import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer } from '../../ui/primitives';
-import { DeleteWithConfirmation } from '../../ui/components';
+import { DeleteWithConfirmation, useCommandPalette } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
@@ -42,6 +42,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
   const { actors } = useActorsCtx();
   const { user } = useAuth();
   const { showError } = useToast();
+  const { registerCommands } = useCommandPalette();
 
   const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
@@ -52,6 +53,61 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
   const ACTIVITY_EXIT_MS = 220;
 
   useDocumentTitle({ task: { name: task?.name } });
+
+  const handleChangeStatusForPalette = useCallback(async (status: TaskStatus) => {
+    if (!task) return;
+    try {
+      await handlers.changeStatus({ taskId: task.id, status });
+    } catch (err: unknown) {
+      showError(err);
+    }
+  }, [task, handlers, showError]);
+
+  useEffect(() => {
+    if (!task) return;
+
+    const statusCommands = Object.entries(TASKS_STATUS).map(([status, info]) => ({
+      id: `task-status-${status}`,
+      label: info.label,
+      description: `Mark task as ${info.label.toLowerCase()}`,
+      onSelect: () => handleChangeStatusForPalette(status as TaskStatus),
+    }));
+
+    const actionCommands = [
+      {
+        id: 'task-add-comment',
+        label: 'Add Comment',
+        description: 'Add a comment to this task',
+        aliases: ['comment', 'note'],
+        onSelect: () => setShowNewCommentPop(true),
+      },
+      {
+        id: 'task-assign',
+        label: 'Assign',
+        description: 'Assign this task to someone',
+        aliases: ['reassign', 'assignee'],
+        onSelect: () => setShowAssignPop(true),
+      },
+      {
+        id: 'task-assign-to-me',
+        label: 'Assign to Me',
+        description: 'Assign this task to yourself',
+        aliases: ['claim', 'take'],
+        onSelect: () => {
+          handlers.assignTaskToMe({ taskId: task.id }).catch(showError);
+        },
+      },
+      {
+        id: 'task-add-tag',
+        label: 'Add Tag',
+        description: 'Add a tag to this task',
+        aliases: ['tag', 'label'],
+        onSelect: () => setShowTagPop(true),
+      },
+    ];
+
+    return registerCommands([...statusCommands, ...actionCommands]);
+  }, [task, registerCommands, handleChangeStatusForPalette, handlers, showError]);
 
   useEffect(() => {
     if (!task) {
