@@ -31,6 +31,9 @@ jobs:
       - name: Build everything
         run: npm run zero-to-prod
 
+      - name: Install dev dependencies (for testing)
+        run: npm run install:dev
+
       - name: Run E2E tests
         id: tests
         run: cd apps/backend && npx jest --config ./test/jest-e2e.json tasks.e2e-spec.ts
