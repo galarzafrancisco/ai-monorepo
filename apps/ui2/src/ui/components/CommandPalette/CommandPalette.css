@@ -1,0 +1,57 @@
+/*
+ * Command Palette Component
+ * Alfred/Spotlight-like command interface
+ */
+
+.command-palette-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: var(--space-4);
+}
+
+.command-palette-container {
+  width: 100%;
+  max-width: 600px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+
+.command-palette-input {
+  width: 100%;
+  padding: var(--space-5);
+  font-size: var(--fs-4);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-normal);
+  color: var(--text);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.command-palette-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .command-palette-backdrop {
+    padding: var(--space-3);
+  }
+
+  .command-palette-input {
+    /* Use mobile-safe font size to prevent zoom on iOS */
+    font-size: var(--fs-input-mobile-safe);
+    padding: var(--space-4);
+  }
+}

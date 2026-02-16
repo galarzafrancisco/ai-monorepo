@@ -14,7 +14,7 @@ import { ToolsRoutes } from '../features/tools/ToolsRoutes';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
 import { ActorsProvider } from '../features/actors';
 import { ToastProvider } from '../shared/context/ToastContext';
-import { ToastContainer } from '../ui/components';
+import { ToastContainer, CommandPalette } from '../ui/components';
 
 function BetaAppRoutes() {
   return (
@@ -60,6 +60,7 @@ export function App() {
                 />
               </Routes>
               <ToastContainer />
+              <CommandPalette />
             </ActorsProvider>
           </AuthProvider>
         </ToastProvider>
