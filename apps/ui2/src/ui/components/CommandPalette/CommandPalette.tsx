@@ -65,9 +65,9 @@ export function CommandPalette() {
   ];
 
   // Fuzzy search/filter commands
+  const searchTerm = input.toLowerCase().trim();
   const filteredCommands = commands.filter((cmd) => {
-    const searchTerm = input.toLowerCase().trim();
-    if (!searchTerm) return true;
+    if (!searchTerm) return false;
 
     const labelMatch = cmd.label.toLowerCase().includes(searchTerm);
     const aliasMatch = cmd.aliases?.some((alias) =>
@@ -76,6 +76,19 @@ export function CommandPalette() {
 
     return labelMatch || aliasMatch;
   });
+
+  function highlightMatch(text: string): React.ReactNode {
+    if (!searchTerm) return text;
+    const idx = text.toLowerCase().indexOf(searchTerm);
+    if (idx === -1) return text;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark>{text.slice(idx, idx + searchTerm.length)}</mark>
+        {text.slice(idx + searchTerm.length)}
+      </>
+    );
+  }
 
   // Reset selected index when filtered commands change
   useEffect(() => {
@@ -198,12 +211,7 @@ export function CommandPalette() {
                 onClick={() => executeCommand(cmd)}
                 onMouseEnter={() => setSelectedIndex(index)}
               >
-                <span className="command-palette-item-label">{cmd.label}</span>
-                {cmd.aliases && cmd.aliases.length > 0 && (
-                  <span className="command-palette-item-aliases">
-                    {cmd.aliases.join(', ')}
-                  </span>
-                )}
+                <span className="command-palette-item-label">{highlightMatch(cmd.label)}</span>
               </div>
             ))}
           </div>
