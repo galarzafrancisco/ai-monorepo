@@ -31,8 +31,8 @@ jobs:
       - name: Build everything
         run: npm run zero-to-prod
 
-      - name: Install test dependencies
-        run: npm -w apps/backend install
+      - name: Install dev dependencies (for testing)
+        run: npm run install:dev
 
       - name: Run E2E tests
         id: tests

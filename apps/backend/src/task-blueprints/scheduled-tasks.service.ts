@@ -304,22 +304,24 @@ export class ScheduledTasksService {
     });
   }
 
-  /**
-   * Validates cron expression and calculates the next run time
-   */
-  private calculateNextRun(cronExpression: string, from?: Date): Date {
-    try {
-      const interval = CronExpressionParser.parse(cronExpression, {
-        currentDate: from || new Date(),
-      });
-      return interval.next().toDate();
-    } catch (error) {
-      throw new InvalidCronExpressionError(
-        cronExpression,
-        error instanceof Error ? error.message : undefined,
-      );
-    }
-  }
+   /**
+    * Validates cron expression and calculates the next run time
+    * Uses Australia/Sydney timezone for all cron calculations
+    */
+   private calculateNextRun(cronExpression: string, from?: Date): Date {
+     try {
+       const interval = CronExpressionParser.parse(cronExpression, {
+         currentDate: from || new Date(),
+         tz: 'Australia/Sydney',
+       });
+       return interval.next().toDate();
+     } catch (error) {
+       throw new InvalidCronExpressionError(
+         cronExpression,
+         error instanceof Error ? error.message : undefined,
+       );
+     }
+   }
 
   private mapScheduledTaskToResult(
     scheduledTask: ScheduledTaskEntity,
