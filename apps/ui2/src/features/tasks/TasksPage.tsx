@@ -8,6 +8,7 @@ import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Task } from "./types";
 import { useToast } from "../../shared/context/ToastContext";
+import { useCommandPalette } from "../../ui/components";
 import './TasksPage.css';
 import { NewTaskPop } from "./NewTaskPop";
 import { TasksToRows } from "./TasksToRows";
@@ -19,6 +20,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
   const statusFilter = isDesktop ? undefined : status;
   const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks, activityByTaskId } = useTasksCtx();
   const { showError } = useToast();
+  const { registerCommands } = useCommandPalette();
 
   const navigate = useNavigate();
 
@@ -33,6 +35,21 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
     }
     setSectionTitle(TASKS_STATUS[statusFilter].label);
   }, [statusFilter, setSectionTitle]);
+
+  // Register page-specific commands
+  useEffect(() => {
+    const commands = [
+      {
+        id: 'new-task',
+        label: 'New Task',
+        description: 'Create a new task',
+        aliases: ['create', 'add task'],
+        onSelect: () => setShowNewTaskPop(true),
+      },
+    ];
+
+    return registerCommands(commands);
+  }, [registerCommands]);
 
   // Filter tasks by status
   const filteredTasks = useMemo(() => {
