@@ -33,7 +33,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "NODE_PATH=../../node_modules ../../node_modules/.bin/jest --config ./test/jest-e2e.json --runInBand",
+    "test:e2e": "npx --no-install jest --config ./test/jest-e2e.json --runInBand",
     "dev": "npm run start:dev",
     "typecheck": "tsc --noEmit",
     "does-it-start": "(nest start & ) && sleep 10 && kill $! || true",
