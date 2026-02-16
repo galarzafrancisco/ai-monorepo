@@ -31,12 +31,8 @@ jobs:
       - name: Build everything
         run: npm run zero-to-prod
 
-      - name: Debug - Check jest location
-        run: |
-          echo "Checking jest binary location:"
-          ls -la node_modules/.bin/jest || echo "Jest not found in root node_modules/.bin"
-          which jest || echo "Jest not in PATH"
-          find . -name "jest" -type f 2>/dev/null | head -10 || echo "No jest files found"
+      - name: Install test dependencies
+        run: npm -w apps/backend install
 
       - name: Run E2E tests
         id: tests
