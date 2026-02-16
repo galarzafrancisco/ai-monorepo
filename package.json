@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
+    "dev:ui2-backend": "concurrently -n backend,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui2 run dev\"",
     "dev:1": "dotenv -e stack1.env -- concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
     "dev:2": "dotenv -e stack2.env -- concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",
     "dev:3": "dotenv -e stack3.env -- concurrently -n backend,ui,ui2 -c auto \"npm -w apps/backend run dev\" \"npm -w apps/ui run dev\"  \"npm -w apps/ui2 run dev\"",

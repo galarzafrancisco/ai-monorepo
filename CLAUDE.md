@@ -22,9 +22,12 @@ Full details: `docs/PRIMITIVES.md`
 ```bash
 npm run zero-to-prod  # Install deps, generate API types, build all packages
 npm run dev           # Start backend + both frontends with hot reload
+npm run dev:ui2-backend # Start backend + ui2 only (agent/headless-friendly)
 ```
 
 If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a different stack (each has pre-configured ports and its own database via `stack[1-5].env`), or set `UI_PORT`, `LEGACY_UI_PORT`, and `BACKEND_PORT` env vars directly.
+
+If you hit Vite watcher `ENOSPC` limits in constrained environments, prefer `npm run dev:ui2-backend` for startup validation (it skips the deprecated `apps/ui` watcher). If worker files were changed, also run `npm -w apps/worker run build` to catch worker-specific TypeScript issues.
 
 ## After Making Changes
 
