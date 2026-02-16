@@ -3,6 +3,10 @@
     "tasks": {
       "type": "http",
       "url": "https://taico.app/api/v1/tasks/tasks/mcp"
+    },
+    "context": {
+      "type": "http",
+      "url": "https://taico.app/api/v1/context/blocks/mcp"
     }
   }
 }
