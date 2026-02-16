@@ -1,0 +1,134 @@
+/*
+ * Command Palette Component
+ * Alfred/Spotlight-like command interface
+ */
+
+.command-palette-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: var(--space-4);
+}
+
+.command-palette-container {
+  width: 100%;
+  max-width: 600px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+
+.command-palette-container--shake {
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+.command-palette-input {
+  width: 100%;
+  padding: var(--space-5);
+  font-size: var(--fs-4);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-normal);
+  color: var(--text);
+  background: transparent;
+  border: none;
+  outline: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.command-palette-input::placeholder {
+  color: var(--text-muted);
+}
+
+.command-palette-results {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.command-palette-item {
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.command-palette-item:last-child {
+  border-bottom: none;
+}
+
+.command-palette-item:hover,
+.command-palette-item--selected {
+  background: var(--bg-hover);
+}
+
+.command-palette-item-label {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.command-palette-item-aliases {
+  font-size: var(--fs-2);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.command-palette-no-results {
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--fs-3);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .command-palette-backdrop {
+    padding: var(--space-3);
+  }
+
+  .command-palette-input {
+    /* Use mobile-safe font size to prevent zoom on iOS */
+    font-size: var(--fs-input-mobile-safe);
+    padding: var(--space-4);
+  }
+
+  .command-palette-item {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .command-palette-item-label {
+    font-size: var(--fs-2);
+  }
+
+  .command-palette-item-aliases {
+    font-size: var(--fs-1);
+  }
+
+  .command-palette-results {
+    max-height: 300px;
+  }
+}
