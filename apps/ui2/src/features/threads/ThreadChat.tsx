@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Text, Button } from "../../ui/primitives";
+import { Text, Button, Avatar } from "../../ui/primitives";
 import { useThread } from "./useThread";
+import { useAuth } from "../../auth";
 import "./ThreadChat.css";
 
 interface ThreadChatProps {
@@ -10,8 +11,9 @@ interface ThreadChatProps {
 export function ThreadChat({ threadId }: ThreadChatProps) {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
-  const { messages, sendMessage, chatIsSending, chatIsLoading } = useThread(threadId);
+  const { messages, sendMessage, chatIsSending, chatIsLoading, chatError, chatSendError } = useThread(threadId);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -22,11 +24,21 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
     e.preventDefault();
     if (!newMessage.trim() || chatIsSending) return;
     try {
-      const message = await sendMessage(newMessage);
+      await sendMessage(newMessage);
       setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
     }
+  };
+
+  const formatMessageTime = (date: string) => {
+    const messageDate = new Date(date);
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(messageDate);
   };
 
   // TODO: optimistic UI. Show the message we just sent. Right now we only show it if the websocket plays it back which I guess it's ok but slow
@@ -44,46 +56,86 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   return (
     <div className="thread-chat">
       <div className="thread-chat__messages">
+        {chatError && (
+          <div className="thread-chat__status thread-chat__status--error">
+            <Text size="2">{chatError}</Text>
+          </div>
+        )}
+
         {messages.length === 0 ? (
-          <Text size="2" tone="muted">
-            No messages yet. Start the conversation!
-          </Text>
+          <div className="thread-chat__empty-state">
+            <Text size="2" tone="muted">
+              No messages yet. Start the conversation.
+            </Text>
+          </div>
         ) : (
-          messages.map((message) => (
-            <div key={message.id} className="thread-chat__message">
-              <div className="thread-chat__message-header">
-                <Text size="1" weight="semibold">
-                  {message.createdByActor?.displayName || "Anonymous"}
-                </Text>
-                <Text size="1" tone="muted">
-                  {new Date(message.createdAt).toLocaleString()}
-                </Text>
+          messages.map((message) => {
+            const author = message.createdByActor;
+            const isOwnMessage = Boolean(user?.actorId && user.actorId === message.createdByActorId);
+            const authorName = author?.displayName || "Anonymous";
+            const authorSlug = author?.slug;
+
+            return (
+              <div
+                key={message.id}
+                className={`thread-chat__message ${isOwnMessage ? "thread-chat__message--mine" : ""}`}
+              >
+                <div className="thread-chat__message-header">
+                  <div className="thread-chat__author">
+                    <Avatar name={authorName} src={author?.avatarUrl || undefined} size="xs" />
+                    <Text size="1" weight="semibold">
+                      {authorName}
+                    </Text>
+                    {authorSlug && (
+                      <Text size="1" tone="muted">
+                        @{authorSlug}
+                      </Text>
+                    )}
+                  </div>
+
+                  <Text size="1" tone="muted">
+                    {formatMessageTime(message.createdAt)}
+                  </Text>
+                </div>
+
+                <Text size="2">{message.content}</Text>
               </div>
-              <Text size="2">{message.content}</Text>
-            </div>
-          ))
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>
 
       <form className="thread-chat__input-form" onSubmit={handleSendMessage}>
-        <textarea
-          className="thread-chat__input"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          rows={3}
-          disabled={chatIsSending}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage(e);
-            }
-          }}
-        />
-        <Button type="submit" disabled={!newMessage.trim() || chatIsSending}>
-          {chatIsSending ? "Sending..." : "Send"}
-        </Button>
+        <div className="thread-chat__composer-row">
+          <textarea
+            className="thread-chat__input"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Write a message to this thread..."
+            rows={3}
+            disabled={chatIsSending}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(e);
+              }
+            }}
+          />
+          <Button
+            type="submit"
+            variant="secondary"
+            className="thread-chat__send-btn"
+            disabled={!newMessage.trim() || chatIsSending}
+          >
+            {chatIsSending ? "sending..." : "send"}
+          </Button>
+        </div>
+        {chatSendError && (
+          <div className="thread-chat__status thread-chat__status--error">
+            <Text size="1">{chatSendError}</Text>
+          </div>
+        )}
       </form>
     </div>
   );

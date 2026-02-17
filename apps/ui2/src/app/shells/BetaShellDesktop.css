@@ -34,6 +34,13 @@
   /* prevents horizontal overflow weirdness */
 }
 
+/* Thread detail needs the right rail pinned to the real app edge (ignore shell right padding). */
+.beta-shell__desktop__main:has(.thread-detail-page--desktop) {
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
 /* All pages automatically expand horizontally */
 .beta-shell__desktop__main>* {
   flex: 1;
