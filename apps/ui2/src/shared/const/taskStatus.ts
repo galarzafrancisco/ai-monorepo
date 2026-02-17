@@ -9,10 +9,10 @@ export type TaskStatusNavItem = NavegationItem & {
 };
 
 export const TASKS_STATUS = {
-  [TaskStatus.NOT_STARTED]: { path: '/tasks/not-started', label: 'Not Started', icon: '📋' },
-  [TaskStatus.IN_PROGRESS]: { path: '/tasks/in-progress', label: 'In Progress', icon: '👨🏻‍💻' },
-  [TaskStatus.FOR_REVIEW]: { path: '/tasks/in-review', label: 'For Review', icon: '👀' },
-  [TaskStatus.DONE]: { path: '/tasks/done', label: 'Done', icon: '🚀' },
+  [TaskStatus.NOT_STARTED]: { path: '/tasks/not-started', label: 'Queued', icon: '📋' },
+  [TaskStatus.IN_PROGRESS]: { path: '/tasks/in-progress', label: 'Building', icon: '👨🏻‍💻' },
+  [TaskStatus.FOR_REVIEW]: { path: '/tasks/in-review', label: 'Review', icon: '👀' },
+  [TaskStatus.DONE]: { path: '/tasks/done', label: 'Shipped', icon: '🚀' },
 } as const satisfies Record<string, NavegationItem>;
 
 export const TASKS_STATUS_NAV: NavegationItem[] = [
