@@ -8391,16 +8391,6 @@
       "CreateThreadMessageDto": {
         "type": "object",
         "properties": {
-          "role": {
-            "type": "string",
-            "description": "Role of the message sender",
-            "enum": [
-              "user",
-              "assistant",
-              "system"
-            ],
-            "example": "user"
-          },
           "content": {
             "type": "string",
             "description": "Content of the message",
@@ -8408,12 +8398,11 @@
           },
           "createdByActorId": {
             "type": "string",
-            "description": "Actor ID who created the message (optional for system messages)",
+            "description": "Actor ID who created the message",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
         "required": [
-          "role",
           "content"
         ]
       },
@@ -8430,23 +8419,13 @@
             "description": "Thread ID this message belongs to",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
-          "role": {
-            "type": "string",
-            "description": "Role of the message sender",
-            "enum": [
-              "user",
-              "assistant",
-              "system"
-            ],
-            "example": "user"
-          },
           "content": {
             "type": "string",
             "description": "Content of the message",
             "example": "What is the status of this feature?"
           },
           "createdByActor": {
-            "description": "Actor who created the message (null for system messages)",
+            "description": "Actor who created the message",
             "nullable": true,
             "allOf": [
               {
@@ -8463,7 +8442,6 @@
         "required": [
           "id",
           "threadId",
-          "role",
           "content",
           "createdAt"
         ]

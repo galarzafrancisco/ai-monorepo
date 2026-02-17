@@ -3356,18 +3356,12 @@ export interface components {
         };
         CreateThreadMessageDto: {
             /**
-             * @description Role of the message sender
-             * @example user
-             * @enum {string}
-             */
-            role: "user" | "assistant" | "system";
-            /**
              * @description Content of the message
              * @example What is the status of this feature?
              */
             content: string;
             /**
-             * @description Actor ID who created the message (optional for system messages)
+             * @description Actor ID who created the message
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             createdByActorId?: string;
@@ -3384,17 +3378,11 @@ export interface components {
              */
             threadId: string;
             /**
-             * @description Role of the message sender
-             * @example user
-             * @enum {string}
-             */
-            role: "user" | "assistant" | "system";
-            /**
              * @description Content of the message
              * @example What is the status of this feature?
              */
             content: string;
-            /** @description Actor who created the message (null for system messages) */
+            /** @description Actor who created the message */
             createdByActor?: components["schemas"]["ActorResponseDto"] | null;
             /**
              * @description When the message was created
