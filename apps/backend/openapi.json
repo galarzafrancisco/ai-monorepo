@@ -8395,11 +8395,6 @@
             "type": "string",
             "description": "Content of the message",
             "example": "What is the status of this feature?"
-          },
-          "createdByActorId": {
-            "type": "string",
-            "description": "Actor ID who created the message",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
         "required": [
@@ -8425,7 +8420,7 @@
             "example": "What is the status of this feature?"
           },
           "createdByActorId": {
-            "type": "object",
+            "type": "string",
             "description": "Actor ID who created the message",
             "example": "123e4567-e89b-12d3-a456-426614174000",
             "nullable": true

@@ -26,12 +26,13 @@ export class ThreadMessageResponseDto {
     description: 'Actor ID who created the message',
     example: '123e4567-e89b-12d3-a456-426614174000',
     nullable: true,
+    type: String,
   })
   createdByActorId!: string | null;
 
   @ApiPropertyOptional({
     description: 'Actor who created the message',
-    type: ActorResponseDto,
+    type: () => ActorResponseDto,
     nullable: true,
   })
   createdByActor!: ActorResponseDto | null;

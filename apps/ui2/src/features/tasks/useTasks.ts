@@ -155,6 +155,7 @@ export const useTasks = () => {
         if (prev.some(t => t.id === event.payload.id)) {
           return prev;
         }
+        // TODO: this type assertion is to hide a type mismatch!
         return sortTasks([event.payload as Task, ...prev]);
       });
     });

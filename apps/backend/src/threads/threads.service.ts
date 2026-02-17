@@ -710,7 +710,7 @@ export class ThreadsService {
     const message = this.threadMessageRepository.create({
       threadId: input.threadId,
       content: input.content,
-      createdByActorId: input.createdByActorId || null,
+      createdByActorId: input.createdByActorId,
     });
 
     const savedMessage = await this.threadMessageRepository.save(message);
@@ -735,7 +735,7 @@ export class ThreadsService {
     this.eventEmitter.emit(
       MessageCreatedEvent.INTERNAL,
       new MessageCreatedEvent(
-        { id: input.createdByActorId || 'system' },
+        { id: input.createdByActorId },
         messageWithRelations,
       ),
     );
@@ -793,7 +793,7 @@ export class ThreadsService {
       id: message.id,
       threadId: message.threadId,
       content: message.content,
-      createdByActorId: message.createdByActorId || null,
+      createdByActorId: message.createdByActorId,
       createdByActor: message.createdByActor
         ? this.mapActorToResult(message.createdByActor)
         : null,

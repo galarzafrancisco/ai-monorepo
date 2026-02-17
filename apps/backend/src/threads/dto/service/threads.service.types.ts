@@ -98,7 +98,7 @@ export type ListThreadsResult = {
 export type CreateThreadMessageInput = {
   threadId: string;
   content: string;
-  createdByActorId?: string;
+  createdByActorId: string;
 };
 
 export type ThreadMessageResult = {

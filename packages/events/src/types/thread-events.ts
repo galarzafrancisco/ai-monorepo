@@ -9,7 +9,7 @@
  * to ensure type safety across the wire protocol.
  */
 
-import type { EventActor, MinimalEventActor, TagWirePayload } from './task-events.js';
+import type { MinimalEventActor, TagWirePayload } from './task-events.js';
 
 /**
  * Wire event names for Threads domain
@@ -42,6 +42,19 @@ export interface ContextBlockSummaryWirePayload {
   title: string;
 }
 
+export enum ActorType {
+  HUMAN = 'human',
+  AGENT = 'agent',
+}
+export interface Actor {
+  id: string;
+  type: ActorType;
+  slug: string;
+  displayName: string;
+  avatarUrl: string | null;
+  introduction: string | null;
+}
+
 /**
  * Thread structure as sent over the wire
  * Matches ThreadResponseDto from backend
@@ -50,7 +63,7 @@ export interface ThreadWirePayload {
   id: string;
   title: string;
   createdByActorId: string;
-  createdByActor: EventActor;
+  createdByActor: Actor;
   parentTaskId: string | null;
   parentTask: TaskSummaryWirePayload | null;
   stateBlockId: string;
@@ -59,7 +72,7 @@ export interface ThreadWirePayload {
   tasks: TaskSummaryWirePayload[];
   contextBlocks: ContextBlockSummaryWirePayload[];
   participantActorIds: string[];
-  participants: EventActor[];
+  participants: Actor[];
   rowVersion: number;
   createdAt: string;
   updatedAt: string;
@@ -74,7 +87,7 @@ export interface ThreadMessageWirePayload {
   threadId: string;
   content: string;
   createdByActorId: string | null;
-  createdByActor: EventActor | null;
+  createdByActor: Actor | null;
   createdAt: string;
   updatedAt: string;
 }

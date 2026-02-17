@@ -12,7 +12,7 @@ import { Logger, UseGuards } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { MessageCreatedEvent } from './events/threads.events';
 import { ThreadWireEvents } from '@taico/events';
-import type { MessageCreatedWireEvent } from '@taico/events';
+import { Actor, MessageCreatedWireEvent } from '@taico/events';
 import { ThreadMessageResponseDto } from './dto/thread-message-response.dto';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';

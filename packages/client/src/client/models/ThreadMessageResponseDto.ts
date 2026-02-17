@@ -17,6 +17,10 @@ export type ThreadMessageResponseDto = {
      */
     content: string;
     /**
+     * Actor ID who created the message
+     */
+    createdByActorId?: string | null;
+    /**
      * Actor who created the message
      */
     createdByActor?: ActorResponseDto | null;
@@ -24,5 +28,9 @@ export type ThreadMessageResponseDto = {
      * When the message was created
      */
     createdAt: string;
+    /**
+     * When the message was last updated
+     */
+    updatedAt: string;
 };
 

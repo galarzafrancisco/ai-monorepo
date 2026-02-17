@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Text, Stack, Button } from "../../ui/primitives";
-import { ThreadsService } from "./api";
-import type { ThreadMessageResponseDto } from "@taico/client";
+import { Text, Button } from "../../ui/primitives";
+import { useThread } from "./useThread";
 import "./ThreadChat.css";
 
 interface ThreadChatProps {
@@ -9,28 +8,10 @@ interface ThreadChatProps {
 }
 
 export function ThreadChat({ threadId }: ThreadChatProps) {
-  const [messages, setMessages] = useState<ThreadMessageResponseDto[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load messages on mount
-  useEffect(() => {
-    const loadMessages = async () => {
-      setIsLoading(true);
-      try {
-        const response = await ThreadsService.listMessages(threadId);
-        setMessages(response.items);
-      } catch (error) {
-        console.error("Failed to load messages:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMessages();
-  }, [threadId]);
+  const { messages, sendMessage, chatIsSending, chatIsLoading } = useThread(threadId);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -39,21 +20,18 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || isSending) return;
-
-    setIsSending(true);
+    if (!newMessage.trim() || chatIsSending) return;
     try {
-      const message = await ThreadsService.createMessage(threadId, newMessage);
-      setMessages((prev) => [...prev, message]);
+      const message = await sendMessage(newMessage);
       setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
-    } finally {
-      setIsSending(false);
     }
   };
 
-  if (isLoading) {
+  // TODO: optimistic UI. Show the message we just sent. Right now we only show it if the websocket plays it back which I guess it's ok but slow
+  
+  if (chatIsLoading) {
     return (
       <div className="thread-chat">
         <Text size="2" tone="muted">
@@ -95,7 +73,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
           rows={3}
-          disabled={isSending}
+          disabled={chatIsSending}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -103,8 +81,8 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
             }
           }}
         />
-        <Button type="submit" disabled={!newMessage.trim() || isSending}>
-          {isSending ? "Sending..." : "Send"}
+        <Button type="submit" disabled={!newMessage.trim() || chatIsSending}>
+          {chatIsSending ? "Sending..." : "Send"}
         </Button>
       </form>
     </div>

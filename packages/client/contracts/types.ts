@@ -3360,11 +3360,6 @@ export interface components {
              * @example What is the status of this feature?
              */
             content: string;
-            /**
-             * @description Actor ID who created the message
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            createdByActorId?: string;
         };
         ThreadMessageResponseDto: {
             /**
@@ -3382,6 +3377,11 @@ export interface components {
              * @example What is the status of this feature?
              */
             content: string;
+            /**
+             * @description Actor ID who created the message
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            createdByActorId?: string | null;
             /** @description Actor who created the message */
             createdByActor?: components["schemas"]["ActorResponseDto"] | null;
             /**
@@ -3389,6 +3389,11 @@ export interface components {
              * @example 2024-01-15T10:30:00.000Z
              */
             createdAt: string;
+            /**
+             * @description When the message was last updated
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            updatedAt: string;
         };
         ListThreadMessagesResponseDto: {
             /** @description List of messages */
