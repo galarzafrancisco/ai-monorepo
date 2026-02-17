@@ -1489,6 +1489,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all secrets - values not included */
+        get: operations["SecretsController_listSecrets"];
+        put?: never;
+        /** Create a new secret */
+        post: operations["SecretsController_createSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/secrets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get secret metadata by ID - value not included */
+        get: operations["SecretsController_getSecret"];
+        put?: never;
+        post?: never;
+        /** Delete a secret */
+        delete: operations["SecretsController_deleteSecret"];
+        options?: never;
+        head?: never;
+        /** Update a secret */
+        patch: operations["SecretsController_updateSecret"];
+        trace?: never;
+    };
+    "/api/v1/secrets/{id}/value": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get decrypted secret value */
+        get: operations["SecretsController_getSecretValue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4430,6 +4484,99 @@ export interface components {
              * @example true
              */
             isValid: boolean;
+        };
+        CreateSecretDto: {
+            /**
+             * @description Unique name for the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description Human-readable description of the secret
+             * @example OpenAI API key for agent completions
+             */
+            description?: string;
+            /**
+             * @description The secret value (will be encrypted at rest)
+             * @example sk-...
+             */
+            value: string;
+        };
+        SecretResponseDto: {
+            /**
+             * @description Secret identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description Human-readable description
+             * @example OpenAI API key for agent completions
+             */
+            description?: string | null;
+            /**
+             * @description ID of the actor who created this secret
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            createdByActorId: string;
+            /**
+             * @description Slug of the actor who created this secret
+             * @example fran
+             */
+            createdBy?: string | null;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description ISO timestamp when the secret was created
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description ISO timestamp when the secret was last updated
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        SecretValueResponseDto: {
+            /**
+             * @description Secret identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description The decrypted secret value
+             * @example sk-...
+             */
+            value: string;
+        };
+        UpdateSecretDto: {
+            /**
+             * @description New name for the secret
+             * @example OPENAI_API_KEY_V2
+             */
+            name?: string;
+            /**
+             * @description New description for the secret
+             * @example Updated OpenAI API key
+             */
+            description?: string | null;
+            /**
+             * @description New secret value (will be encrypted at rest)
+             * @example sk-...
+             */
+            value?: string;
         };
     };
     responses: never;
@@ -8341,6 +8488,172 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["IssuedAccessTokenResponseDto"];
                 };
+            };
+        };
+    };
+    SecretsController_listSecrets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of secrets (no values) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"][];
+                };
+            };
+        };
+    };
+    SecretsController_createSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSecretDto"];
+            };
+        };
+        responses: {
+            /** @description Secret created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+        };
+    };
+    SecretsController_getSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_deleteSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_updateSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSecretDto"];
+            };
+        };
+        responses: {
+            /** @description Secret updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_getSecretValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Decrypted secret value */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretValueResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -5549,6 +5549,234 @@
           "Agent Tokens"
         ]
       }
+    },
+    "/api/v1/secrets": {
+      "post": {
+        "operationId": "SecretsController_createSecret",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSecretDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Secret created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new secret",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "get": {
+        "operationId": "SecretsController_listSecrets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of secrets (no values)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SecretResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all secrets - values not included",
+        "tags": [
+          "Secrets"
+        ]
+      }
+    },
+    "/api/v1/secrets/{id}": {
+      "get": {
+        "operationId": "SecretsController_getSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Secret metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get secret metadata by ID - value not included",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "patch": {
+        "operationId": "SecretsController_updateSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecretDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Secret updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update a secret",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "delete": {
+        "operationId": "SecretsController_deleteSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Secret deleted successfully"
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a secret",
+        "tags": [
+          "Secrets"
+        ]
+      }
+    },
+    "/api/v1/secrets/{id}/value": {
+      "get": {
+        "operationId": "SecretsController_getSecretValue",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Decrypted secret value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretValueResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get decrypted secret value",
+        "tags": [
+          "Secrets"
+        ]
+      }
     }
   },
   "info": {
@@ -9948,6 +10176,131 @@
           "createdAt",
           "isValid"
         ]
+      },
+      "CreateSecretDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique name for the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the secret",
+            "example": "OpenAI API key for agent completions"
+          },
+          "value": {
+            "type": "string",
+            "description": "The secret value (will be encrypted at rest)",
+            "example": "sk-..."
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
+      "SecretResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Secret identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description",
+            "example": "OpenAI API key for agent completions",
+            "nullable": true
+          },
+          "createdByActorId": {
+            "type": "string",
+            "description": "ID of the actor who created this secret",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "Slug of the actor who created this secret",
+            "example": "fran",
+            "nullable": true
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO timestamp when the secret was created",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the secret was last updated",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdByActorId",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SecretValueResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Secret identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "value": {
+            "type": "string",
+            "description": "The decrypted secret value",
+            "example": "sk-..."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "value"
+        ]
+      },
+      "UpdateSecretDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "New name for the secret",
+            "example": "OPENAI_API_KEY_V2"
+          },
+          "description": {
+            "type": "string",
+            "description": "New description for the secret",
+            "example": "Updated OpenAI API key",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "description": "New secret value (will be encrypted at rest)",
+            "example": "sk-..."
+          }
+        }
       }
     }
   }
