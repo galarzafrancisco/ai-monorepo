@@ -3,6 +3,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: var(--bg);
 }
 
 /* Desktop layout: main content + right sidebar */
@@ -20,8 +21,9 @@
 }
 
 .thread-detail-page__content {
-  padding: var(--space-5);
-  max-width: 800px;
+  padding: var(--space-4);
+  width: 100%;
+  max-width: none;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -30,6 +32,23 @@
 
 .thread-detail-page__header {
   flex-shrink: 0;
+  padding: 0 0 var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.thread-detail-page__header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.thread-detail-page__meta-row {
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .thread-detail-page__chat {
@@ -40,10 +59,10 @@
 }
 
 .thread-detail-page__actions {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
-  margin-top: var(--space-4);
 }
 
 /* Right sidebar with independent scrolling */
@@ -57,15 +76,21 @@
   flex-direction: column;
 }
 
+.thread-detail-page--desktop-no-sidebar .thread-detail-page__main {
+  width: 100%;
+}
+
 .thread-detail-page__sidebar-section {
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-3);
 }
 
 .thread-detail-page__sidebar-header {
-  padding: var(--space-4) var(--space-4) var(--space-2) var(--space-4);
+  padding: var(--space-4) var(--space-4) var(--space-3) var(--space-4);
   color: var(--text);
+  letter-spacing: 0.01em;
 }
 
 .thread-detail-page__sidebar-content {
@@ -75,9 +100,34 @@
   padding: 0 var(--space-3) var(--space-4) var(--space-3);
 }
 
+.thread-detail-page__participants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+}
+
+.thread-detail-page__participant {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  padding: var(--space-2);
+}
+
+.thread-detail-page__participant-text {
+  min-width: 0;
+}
+
 .thread-detail-page__sidebar-empty {
   padding: var(--space-5);
   text-align: center;
+}
+
+.thread-detail-page__sidebar-danger {
+  margin-top: auto;
 }
 
 /* Mobile layout */
@@ -90,7 +140,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  /* padding: var(--space-4); */
+  padding: var(--space-4) 0;
 }
 
 .thread-detail-page__mobile-section {

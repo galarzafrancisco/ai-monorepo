@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { Text, Stack, Button, DataRowContainer } from "../../ui/primitives";
+import { Text, Stack, Button, DataRowContainer, Chip, Avatar } from "../../ui/primitives";
 import { DeleteWithConfirmation } from "../../ui/components";
 import type { Thread } from "./types";
 import "./ThreadDetailPage.css";
@@ -14,6 +14,11 @@ import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 
 type ThreadTask = Thread["tasks"][number];
+type DisplayContextBlock = {
+  id: string;
+  title: string;
+  isStateMemory: boolean;
+};
 
 // Define the desired status order
 const STATUS_ORDER = [
@@ -75,6 +80,29 @@ const groupTasksByStatus = (thread: Thread) => {
   });
 
   return groups;
+};
+
+const getContextBlocksForDisplay = (thread: Thread): DisplayContextBlock[] => {
+  const allBlocks: DisplayContextBlock[] = [
+    {
+      id: thread.stateContextBlockId,
+      title: "Thread state memory",
+      isStateMemory: true,
+    },
+  ];
+
+  thread.referencedContextBlocks.forEach((contextBlock) => {
+    if (contextBlock.id === thread.stateContextBlockId) {
+      return;
+    }
+    allBlocks.push({
+      id: contextBlock.id,
+      title: contextBlock.title,
+      isStateMemory: false,
+    });
+  });
+
+  return allBlocks;
 };
 
 export function ThreadDetailPage() {
@@ -165,27 +193,41 @@ function ThreadDetailPageDesktop({
   thread: Thread;
   onDelete: () => Promise<void>;
 }) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const taskGroups = groupTasksByStatus(thread);
+  const contextBlocks = getContextBlocksForDisplay(thread);
 
   return (
-    <div className="thread-detail-page thread-detail-page--desktop">
+    <div
+      className={`thread-detail-page thread-detail-page--desktop ${!isSidebarOpen ? "thread-detail-page--desktop-no-sidebar" : ""}`}
+    >
       {/* Main content area */}
       <div className="thread-detail-page__main">
         <div className="thread-detail-page__content">
           <div className="thread-detail-page__header">
-            <Text size="5" weight="bold">
-              {thread.title}
-            </Text>
-            <div style={{ marginTop: "var(--space-2)" }}>
-              <Text size="2" tone="muted">
-                #{thread.id.slice(0, 6)}
-              </Text>
-            </div>
+            <div className="thread-detail-page__header-top">
+              <div>
+                <Text size="5" weight="bold">
+                  {thread.title}
+                </Text>
+                <div className="thread-detail-page__meta-row">
+                  <Chip color="gray">#{thread.id.slice(0, 6)}</Chip>
+                  <Text size="1" tone="muted">
+                    {thread.participants.length} participants
+                  </Text>
+                </div>
+              </div>
 
-            <DeleteWithConfirmation
-              className="thread-detail-page__actions"
-              onDelete={onDelete}
-            />
+              <div className="thread-detail-page__actions">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsSidebarOpen((current) => !current)}
+                >
+                  {isSidebarOpen ? "Hide panel" : "Show panel"}
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="thread-detail-page__chat">
@@ -195,7 +237,34 @@ function ThreadDetailPageDesktop({
       </div>
 
       {/* Right sidebar with context and tasks */}
-      <div className="thread-detail-page__sidebar">
+      {isSidebarOpen && <div className="thread-detail-page__sidebar">
+        {thread.participants.length > 0 && (
+          <div className="thread-detail-page__sidebar-section">
+            <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+              Participants ({thread.participants.length})
+            </Text>
+            <div className="thread-detail-page__participants">
+              {thread.participants.map((participant) => (
+                <div key={participant.id} className="thread-detail-page__participant">
+                  <Avatar
+                    name={participant.displayName}
+                    size="sm"
+                    src={participant.avatarUrl || undefined}
+                  />
+                  <div className="thread-detail-page__participant-text">
+                    <Text size="2" weight="medium">
+                      {participant.displayName}
+                    </Text>
+                    <Text size="1" tone="muted">
+                      @{participant.slug}
+                    </Text>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Tasks grouped by status */}
         {taskGroups.map((group) => (
           <div key={group.status} className="thread-detail-page__sidebar-section">
@@ -211,16 +280,17 @@ function ThreadDetailPageDesktop({
         ))}
 
         {/* Context section */}
-        {thread.referencedContextBlocks.length > 0 && (
+        {contextBlocks.length > 0 && (
           <div className="thread-detail-page__sidebar-section">
             <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
-              Context ({thread.referencedContextBlocks.length})
+              Context ({contextBlocks.length})
             </Text>
             <div className="thread-detail-page__sidebar-content">
-              {thread.referencedContextBlocks.map((contextBlock) => (
+              {contextBlocks.map((contextBlock) => (
                 <ThreadContextCard
-                  key={contextBlock.id}
+                  key={`${contextBlock.id}-${contextBlock.isStateMemory ? "state" : "reference"}`}
                   contextBlock={contextBlock}
+                  isStateMemory={contextBlock.isStateMemory}
                 />
               ))}
             </div>
@@ -228,14 +298,28 @@ function ThreadDetailPageDesktop({
         )}
 
         {/* Empty state */}
-        {thread.tasks.length === 0 && thread.referencedContextBlocks.length === 0 && (
+        {thread.tasks.length === 0 && contextBlocks.length === 0 && (
           <div className="thread-detail-page__sidebar-empty">
             <Text size="2" tone="muted">
               No context or tasks attached
             </Text>
           </div>
         )}
-      </div>
+        <div className="thread-detail-page__sidebar-section thread-detail-page__sidebar-danger">
+          <Text size="1" tone="muted" className="thread-detail-page__sidebar-header">
+            Danger zone
+          </Text>
+          <div className="thread-detail-page__sidebar-content">
+            <DeleteWithConfirmation
+              className="thread-detail-page__actions"
+              onDelete={onDelete}
+              size="sm"
+              deleteLabel="Delete thread"
+              confirmLabel="Delete forever"
+            />
+          </div>
+        </div>
+      </div>}
     </div>
   );
 }
@@ -249,6 +333,7 @@ function ThreadDetailPageMobile({
 }) {
   const navigate = useNavigate();
   const taskGroups = groupTasksByStatus(thread);
+  const contextBlocks = getContextBlocksForDisplay(thread);
 
   return (
     <div className="thread-detail-page thread-detail-page--mobile">
@@ -269,16 +354,17 @@ function ThreadDetailPageMobile({
         ))}
 
         {/* Context section */}
-        {thread.referencedContextBlocks.length > 0 && (
+        {contextBlocks.length > 0 && (
           <div className="thread-detail-page__mobile-section">
             <Text size="2" weight="semibold">
-              Context ({thread.referencedContextBlocks.length})
+              Context ({contextBlocks.length})
             </Text>
             <div className="thread-detail-page__mobile-list">
-              {thread.referencedContextBlocks.map((contextBlock) => (
+              {contextBlocks.map((contextBlock) => (
                 <ThreadContextCard
-                  key={contextBlock.id}
+                  key={`${contextBlock.id}-${contextBlock.isStateMemory ? "state" : "reference"}`}
                   contextBlock={contextBlock}
+                  isStateMemory={contextBlock.isStateMemory}
                 />
               ))}
             </div>
@@ -304,6 +390,9 @@ function ThreadDetailPageMobile({
         <DeleteWithConfirmation
           className="thread-detail-page__actions"
           onDelete={onDelete}
+          size="sm"
+          deleteLabel="Delete thread"
+          confirmLabel="Delete forever"
         />
       </div>
     </div>
