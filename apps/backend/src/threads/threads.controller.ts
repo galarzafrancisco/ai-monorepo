@@ -41,6 +41,10 @@ import { CreateTagDto } from '../meta/dto/create-tag.dto';
 import { UpdateThreadStateDto } from './dto/update-thread-state.dto';
 import { AppendThreadStateDto } from './dto/append-thread-state.dto';
 import { ThreadStateResponseDto } from './dto/thread-state-response.dto';
+import { CreateThreadMessageDto } from './dto/create-thread-message.dto';
+import { ThreadMessageResponseDto } from './dto/thread-message-response.dto';
+import { ListThreadMessagesQueryDto } from './dto/list-thread-messages-query.dto';
+import { ListThreadMessagesResponseDto } from './dto/list-thread-messages-response.dto';
 
 @ApiTags('Threads')
 @ApiCookieAuth('JWT-Cookie')
@@ -297,5 +301,46 @@ export class ThreadsController {
       dto.content,
     );
     return { content };
+  }
+
+  @Post(':id/messages')
+  @RequireScopes(ThreadsScopes.WRITE.id)
+  @ApiOperation({ summary: 'Create a message in the thread' })
+  @ApiCreatedResponse({
+    type: ThreadMessageResponseDto,
+    description: 'Message created successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  async createMessage(
+    @Param() params: ThreadParamsDto,
+    @Body() dto: CreateThreadMessageDto,
+    @CurrentUser() user: UserContext,
+  ): Promise<ThreadMessageResponseDto> {
+    const result = await this.threadsService.createMessage({
+      threadId: params.id,
+      content: dto.content,
+      createdByActorId: dto.createdByActorId || user.actorId,
+    });
+    return ThreadMessageResponseDto.fromResult(result);
+  }
+
+  @Get(':id/messages')
+  @ApiOperation({ summary: 'List messages in a thread' })
+  @ApiOkResponse({
+    type: ListThreadMessagesResponseDto,
+    description: 'Paginated list of thread messages',
+  })
+  @ApiNotFoundResponse({ description: 'Thread not found' })
+  async listMessages(
+    @Param() params: ThreadParamsDto,
+    @Query() query: ListThreadMessagesQueryDto,
+  ): Promise<ListThreadMessagesResponseDto> {
+    const result = await this.threadsService.listMessages({
+      threadId: params.id,
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+    });
+    return ListThreadMessagesResponseDto.fromResult(result);
   }
 }

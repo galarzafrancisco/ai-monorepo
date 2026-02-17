@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { ThreadEntity } from './thread.entity';
+import { ThreadMessageEntity } from './thread-message.entity';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -19,6 +20,10 @@ import {
   TagResult,
   TaskSummaryResult,
   ContextBlockSummaryResult,
+  CreateThreadMessageInput,
+  ThreadMessageResult,
+  ListThreadMessagesInput,
+  ListThreadMessagesResult,
 } from './dto/service/threads.service.types';
 import {
   ThreadNotFoundError,
@@ -34,6 +39,8 @@ export class ThreadsService {
   constructor(
     @InjectRepository(ThreadEntity)
     private readonly threadRepository: Repository<ThreadEntity>,
+    @InjectRepository(ThreadMessageEntity)
+    private readonly threadMessageRepository: Repository<ThreadMessageEntity>,
     @InjectRepository(TaskEntity)
     private readonly taskRepository: Repository<TaskEntity>,
     @InjectRepository(ContextBlockEntity)
@@ -61,19 +68,24 @@ export class ThreadsService {
       throw new ActorNotFoundForThreadError(input.createdByActorId);
     }
 
-    // Verify parent task exists
-    const parentTask = await this.taskRepository.findOne({
-      where: { id: input.parentTaskId },
-    });
-    if (!parentTask) {
-      throw new TaskNotFoundForThreadError(input.parentTaskId);
+    // Verify parent task exists if provided
+    let parentTask: TaskEntity | null = null;
+    if (input.parentTaskId) {
+      parentTask = await this.taskRepository.findOne({
+        where: { id: input.parentTaskId },
+      });
+      if (!parentTask) {
+        throw new TaskNotFoundForThreadError(input.parentTaskId);
+      }
     }
 
     // Generate title if not provided
     const title = input.title || this.inferTitle(createdByActor.slug);
 
     // Create state context block for the thread
-    const stateBlockContent = `This thread was created to achieve task ${parentTask.name} (id ${parentTask.id}).`;
+    const stateBlockContent = parentTask
+      ? `This thread was created to achieve task ${parentTask.name} (id ${parentTask.id}).`
+      : `This thread was created by @${createdByActor.slug}.`;
     const stateBlock = await this.contextService.createBlock({
       title: `Thread State: ${title}`,
       content: stateBlockContent,
@@ -85,7 +97,7 @@ export class ThreadsService {
     const thread = this.threadRepository.create({
       title,
       createdByActorId: input.createdByActorId,
-      parentTaskId: input.parentTaskId,
+      parentTaskId: input.parentTaskId || null,
       stateContextBlockId: stateBlock.id,
     });
 
@@ -101,9 +113,11 @@ export class ThreadsService {
     }
 
     // Handle tasks if provided
-    // Always include parent task in the tasks relation
+    // Include parent task in the tasks relation if it exists
     const taskIdsToAttach = new Set(input.taskIds || []);
-    taskIdsToAttach.add(input.parentTaskId);
+    if (input.parentTaskId) {
+      taskIdsToAttach.add(input.parentTaskId);
+    }
 
     if (taskIdsToAttach.size > 0) {
       const tasks = await this.taskRepository.findBy({
@@ -597,7 +611,7 @@ export class ThreadsService {
       id: thread.id,
       title: thread.title,
       createdByActor: this.mapActorToResult(thread.createdByActor),
-      parentTaskId: thread.parentTaskId,
+      parentTaskId: thread.parentTaskId || null,
       stateContextBlockId: thread.stateContextBlockId,
       tasks: (thread.tasks || []).map((task) => this.mapTaskToSummary(task)),
       referencedContextBlocks: (thread.referencedContextBlocks || []).map(
@@ -660,6 +674,117 @@ export class ThreadsService {
     return {
       id: block.id,
       title: block.title,
+    };
+  }
+
+  // Thread message methods
+  async createMessage(
+    input: CreateThreadMessageInput,
+  ): Promise<ThreadMessageResult> {
+    this.logger.log({
+      message: 'Creating thread message',
+      threadId: input.threadId,
+    });
+
+    // Verify thread exists
+    const thread = await this.threadRepository.findOne({
+      where: { id: input.threadId },
+    });
+    if (!thread) {
+      throw new ThreadNotFoundError(input.threadId);
+    }
+
+    // Verify actor exists if provided
+    if (input.createdByActorId) {
+      const actor = await this.actorRepository.findOne({
+        where: { id: input.createdByActorId },
+      });
+      if (!actor) {
+        throw new ActorNotFoundForThreadError(input.createdByActorId);
+      }
+    }
+
+    const message = this.threadMessageRepository.create({
+      threadId: input.threadId,
+      content: input.content,
+      createdByActorId: input.createdByActorId || null,
+    });
+
+    const savedMessage = await this.threadMessageRepository.save(message);
+
+    // Reload with relations
+    const messageWithRelations = await this.threadMessageRepository.findOne({
+      where: { id: savedMessage.id },
+      relations: ['createdByActor'],
+    });
+
+    if (!messageWithRelations) {
+      throw new Error('Failed to reload message after creation');
+    }
+
+    this.logger.log({
+      message: 'Thread message created',
+      messageId: savedMessage.id,
+      threadId: input.threadId,
+    });
+
+    return this.mapThreadMessageToResult(messageWithRelations);
+  }
+
+  async listMessages(
+    input: ListThreadMessagesInput,
+  ): Promise<ListThreadMessagesResult> {
+    this.logger.log({
+      message: 'Listing thread messages',
+      threadId: input.threadId,
+      page: input.page,
+      limit: input.limit,
+    });
+
+    // Verify thread exists
+    const thread = await this.threadRepository.findOne({
+      where: { id: input.threadId },
+    });
+    if (!thread) {
+      throw new ThreadNotFoundError(input.threadId);
+    }
+
+    const skip = (input.page - 1) * input.limit;
+
+    const [messages, total] = await this.threadMessageRepository.findAndCount({
+      where: { threadId: input.threadId },
+      relations: ['createdByActor'],
+      order: { createdAt: 'ASC' },
+      skip,
+      take: input.limit,
+    });
+
+    this.logger.log({
+      message: 'Thread messages listed',
+      threadId: input.threadId,
+      count: messages.length,
+      total,
+    });
+
+    return {
+      items: messages.map((msg) => this.mapThreadMessageToResult(msg)),
+      total,
+      page: input.page,
+      limit: input.limit,
+    };
+  }
+
+  private mapThreadMessageToResult(
+    message: ThreadMessageEntity,
+  ): ThreadMessageResult {
+    return {
+      id: message.id,
+      threadId: message.threadId,
+      content: message.content,
+      createdByActor: message.createdByActor
+        ? this.mapActorToResult(message.createdByActor)
+        : null,
+      createdAt: message.createdAt,
     };
   }
 }

@@ -45,7 +45,7 @@ export type ContextBlockSummaryResult = {
 export type CreateThreadInput = {
   title?: string;
   createdByActorId: string;
-  parentTaskId: string;
+  parentTaskId?: string;
   tagNames?: string[];
   taskIds?: string[];
   contextBlockIds?: string[];
@@ -70,7 +70,7 @@ export type ThreadResult = {
   id: string;
   title: string;
   createdByActor: ActorResult;
-  parentTaskId: string;
+  parentTaskId: string | null;
   stateContextBlockId: string;
   tasks: TaskSummaryResult[];
   referencedContextBlocks: ContextBlockSummaryResult[];
@@ -89,6 +89,34 @@ export type ThreadListItemResult = {
 
 export type ListThreadsResult = {
   items: ThreadListItemResult[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+// Thread message types
+export type CreateThreadMessageInput = {
+  threadId: string;
+  content: string;
+  createdByActorId?: string;
+};
+
+export type ThreadMessageResult = {
+  id: string;
+  threadId: string;
+  content: string;
+  createdByActor: ActorResult | null;
+  createdAt: Date;
+};
+
+export type ListThreadMessagesInput = {
+  threadId: string;
+  page: number;
+  limit: number;
+};
+
+export type ListThreadMessagesResult = {
+  items: ThreadMessageResult[];
   total: number;
   page: number;
   limit: number;

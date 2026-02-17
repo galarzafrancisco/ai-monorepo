@@ -10,12 +10,13 @@ export class CreateThreadDto {
   @IsOptional()
   title?: string;
 
-  @ApiProperty({
-    description: 'Parent task ID - the task that this thread belongs to',
+  @ApiPropertyOptional({
+    description: 'Parent task ID - the task that this thread belongs to (optional for headless threads)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsUUID()
-  parentTaskId!: string;
+  @IsOptional()
+  parentTaskId?: string;
 
   @ApiPropertyOptional({
     description: 'Array of tag names to associate with the thread',

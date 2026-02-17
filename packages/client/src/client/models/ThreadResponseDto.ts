@@ -20,9 +20,9 @@ export type ThreadResponseDto = {
      */
     createdByActor: ActorResponseDto;
     /**
-     * Parent task ID that this thread belongs to
+     * Parent task ID that this thread belongs to (null for headless threads)
      */
-    parentTaskId: string;
+    parentTaskId?: string | null;
     /**
      * State context block ID that tracks the evolving state of this thread
      */

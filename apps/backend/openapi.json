@@ -3898,6 +3898,124 @@
         ]
       }
     },
+    "/api/v1/threads/{id}/messages": {
+      "post": {
+        "operationId": "ThreadsController_createMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateThreadMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadMessageResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a message in the thread",
+        "tags": [
+          "Threads"
+        ]
+      },
+      "get": {
+        "operationId": "ThreadsController_listMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Thread UUID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of thread messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListThreadMessagesResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Thread not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List messages in a thread",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/context/blocks": {
       "post": {
         "operationId": "ContextController_createBlock",
@@ -7883,7 +8001,7 @@
           },
           "parentTaskId": {
             "type": "string",
-            "description": "Parent task ID - the task that this thread belongs to",
+            "description": "Parent task ID - the task that this thread belongs to (optional for headless threads)",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "tagNames": {
@@ -7930,10 +8048,7 @@
               "type": "string"
             }
           }
-        },
-        "required": [
-          "parentTaskId"
-        ]
+        }
       },
       "TaskSummaryResponseDto": {
         "type": "object",
@@ -8060,8 +8175,9 @@
           },
           "parentTaskId": {
             "type": "string",
-            "description": "Parent task ID that this thread belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+            "description": "Parent task ID that this thread belongs to (null for headless threads)",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
           },
           "stateContextBlockId": {
             "type": "string",
@@ -8116,7 +8232,6 @@
           "id",
           "title",
           "createdByActor",
-          "parentTaskId",
           "stateContextBlockId",
           "tasks",
           "referencedContextBlocks",
@@ -8271,6 +8386,119 @@
         },
         "required": [
           "content"
+        ]
+      },
+      "CreateThreadMessageDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Role of the message sender",
+            "enum": [
+              "user",
+              "assistant",
+              "system"
+            ],
+            "example": "user"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the message",
+            "example": "What is the status of this feature?"
+          },
+          "createdByActorId": {
+            "type": "string",
+            "description": "Actor ID who created the message (optional for system messages)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ]
+      },
+      "ThreadMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Message ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "threadId": {
+            "type": "string",
+            "description": "Thread ID this message belongs to",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "role": {
+            "type": "string",
+            "description": "Role of the message sender",
+            "enum": [
+              "user",
+              "assistant",
+              "system"
+            ],
+            "example": "user"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the message",
+            "example": "What is the status of this feature?"
+          },
+          "createdByActor": {
+            "description": "Actor who created the message (null for system messages)",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorResponseDto"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the message was created",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "threadId",
+          "role",
+          "content",
+          "createdAt"
+        ]
+      },
+      "ListThreadMessagesResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of messages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadMessageResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of messages",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
         ]
       },
       "CreateBlockDto": {

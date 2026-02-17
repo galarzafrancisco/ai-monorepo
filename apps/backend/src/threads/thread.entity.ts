@@ -8,6 +8,7 @@ import {
   VersionColumn,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   JoinTable,
   JoinColumn,
 } from 'typeorm';
@@ -15,6 +16,7 @@ import { ActorEntity } from '../identity-provider/actor.entity';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from '../context/block.entity';
 import { TagEntity } from '../meta/tag.entity';
+import { ThreadMessageEntity } from './thread-message.entity';
 
 @Entity({ name: 'threads' })
 export class ThreadEntity {
@@ -31,8 +33,8 @@ export class ThreadEntity {
   @JoinColumn({ name: 'created_by_actor_id' })
   createdByActor?: ActorEntity;
 
-  @Column({ type: 'uuid', nullable: false, name: 'parent_task_id' })
-  parentTaskId!: string;
+  @Column({ type: 'uuid', nullable: true, name: 'parent_task_id' })
+  parentTaskId?: string | null;
 
   @ManyToOne(() => TaskEntity)
   @JoinColumn({ name: 'parent_task_id' })
@@ -76,6 +78,9 @@ export class ThreadEntity {
     inverseJoinColumn: { name: 'actor_id' },
   })
   participants!: ActorEntity[];
+
+  @OneToMany(() => ThreadMessageEntity, (message) => message.thread)
+  messages?: ThreadMessageEntity[];
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

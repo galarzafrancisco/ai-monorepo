@@ -20,7 +20,9 @@ import { AppInitModule } from './app-init/app-init.module';
 import { TaskBlueprintsModule } from './task-blueprints/task-blueprints.module';
 import { BaselineSchema1700000000000 } from './migrations/1700000000000-BaselineSchema';
 import { AlignConnectionAuthFlowColumns1700000000001 } from './migrations/1700000000001-AlignConnectionAuthFlowColumns';
+import { UpdateAgentTypeConstraint1700000000002 } from './migrations/1700000000002-UpdateAgentTypeConstraint';
 import { AddTaskBlueprintsAndScheduledTasks1739500000000 } from './migrations/1739500000000-AddTaskBlueprintsAndScheduledTasks';
+import { RefactorThreadsForHeadlessConversations1739750000000 } from './migrations/1739750000000-RefactorThreadsForHeadlessConversations';
 
 @Module({
   imports: [
@@ -33,7 +35,9 @@ import { AddTaskBlueprintsAndScheduledTasks1739500000000 } from './migrations/17
       migrations: [
         BaselineSchema1700000000000,
         AlignConnectionAuthFlowColumns1700000000001,
+        UpdateAgentTypeConstraint1700000000002,
         AddTaskBlueprintsAndScheduledTasks1739500000000,
+        RefactorThreadsForHeadlessConversations1739750000000,
       ],
     }),
     EventEmitterModule.forRoot(),
