@@ -23,6 +23,7 @@ import { AlignConnectionAuthFlowColumns1700000000001 } from './migrations/170000
 import { UpdateAgentTypeConstraint1700000000002 } from './migrations/1700000000002-UpdateAgentTypeConstraint';
 import { AddTaskBlueprintsAndScheduledTasks1739500000000 } from './migrations/1739500000000-AddTaskBlueprintsAndScheduledTasks';
 import { RefactorThreadsForHeadlessConversations1739750000000 } from './migrations/1739750000000-RefactorThreadsForHeadlessConversations';
+import { RemoveRoleFromThreadMessage1739844333000 } from './migrations/1739844333000-RemoveRoleFromThreadMessage';
 
 @Module({
   imports: [
@@ -32,13 +33,14 @@ import { RefactorThreadsForHeadlessConversations1739750000000 } from './migratio
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: false,
       migrationsRun: true,
-      migrations: [
-        BaselineSchema1700000000000,
-        AlignConnectionAuthFlowColumns1700000000001,
-        UpdateAgentTypeConstraint1700000000002,
-        AddTaskBlueprintsAndScheduledTasks1739500000000,
-        RefactorThreadsForHeadlessConversations1739750000000,
-      ],
+       migrations: [
+         BaselineSchema1700000000000,
+         AlignConnectionAuthFlowColumns1700000000001,
+         UpdateAgentTypeConstraint1700000000002,
+         AddTaskBlueprintsAndScheduledTasks1739500000000,
+         RefactorThreadsForHeadlessConversations1739750000000,
+         RemoveRoleFromThreadMessage1739844333000,
+       ],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),

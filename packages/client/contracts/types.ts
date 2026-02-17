@@ -3360,6 +3360,11 @@ export interface components {
              * @example What is the status of this feature?
              */
             content: string;
+            /**
+             * @description Actor ID who created the message
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            createdByActorId?: string;
         };
         ThreadMessageResponseDto: {
             /**
