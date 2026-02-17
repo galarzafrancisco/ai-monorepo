@@ -3,6 +3,7 @@ import { ErrorCodes } from '@taico/errors';
 export const SecretsErrorCodes = {
   SECRET_NOT_FOUND: ErrorCodes.SECRET_NOT_FOUND,
   SECRET_NAME_CONFLICT: ErrorCodes.SECRET_NAME_CONFLICT,
+  SECRET_FEATURE_DISABLED: ErrorCodes.SECRET_FEATURE_DISABLED,
 } as const;
 
 type SecretsErrorCode = (typeof SecretsErrorCodes)[keyof typeof SecretsErrorCodes];
@@ -31,5 +32,14 @@ export class SecretNameConflictError extends SecretsDomainError {
     super('A secret with this name already exists.', SecretsErrorCodes.SECRET_NAME_CONFLICT, {
       name,
     });
+  }
+}
+
+export class SecretsFeatureDisabledError extends SecretsDomainError {
+  constructor() {
+    super(
+      'Secrets feature is disabled. Set SECRETS_ENABLED=true and provide SECRETS_ENCRYPTION_KEY to enable it.',
+      SecretsErrorCodes.SECRET_FEATURE_DISABLED,
+    );
   }
 }

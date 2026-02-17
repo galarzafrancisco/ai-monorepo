@@ -1,6 +1,7 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { isDevelopment, isSecretsEnabled } from '../config/env.config';
+import { SecretsFeatureDisabledError } from './errors/secrets.errors';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96 bits recommended for GCM
@@ -16,7 +17,7 @@ const KEY_LENGTH = 32; // 256 bits
  *
  * When the SECRETS_ENABLED feature flag is off (default), the service starts
  * without requiring the encryption key. Calls to encrypt/decrypt will throw
- * a ServiceUnavailableException until the feature is enabled.
+ * a SecretsFeatureDisabledError (maps to HTTP 503) until the feature is enabled.
  */
 @Injectable()
 export class SecretsEncryptionService {
@@ -61,16 +62,14 @@ export class SecretsEncryptionService {
 
   private assertEnabled(): void {
     if (!this.key) {
-      throw new ServiceUnavailableException(
-        'Secrets feature is disabled. Set SECRETS_ENABLED=true and provide SECRETS_ENCRYPTION_KEY to enable it.',
-      );
+      throw new SecretsFeatureDisabledError();
     }
   }
 
   /**
    * Encrypt a plaintext value.
    * Returns a base64-encoded string in the format: <iv>:<authTag>:<ciphertext>
-   * Throws ServiceUnavailableException if the Secrets feature flag is disabled.
+   * Throws SecretsFeatureDisabledError if the Secrets feature flag is disabled.
    */
   encrypt(plaintext: string): string {
     this.assertEnabled();
@@ -96,7 +95,7 @@ export class SecretsEncryptionService {
   /**
    * Decrypt an encrypted value.
    * Expects format: <iv>:<authTag>:<ciphertext> (all base64-encoded)
-   * Throws ServiceUnavailableException if the Secrets feature flag is disabled.
+   * Throws SecretsFeatureDisabledError if the Secrets feature flag is disabled.
    */
   decrypt(encryptedValue: string): string {
     this.assertEnabled();

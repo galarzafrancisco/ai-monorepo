@@ -339,4 +339,10 @@ export const ErrorCatalog: Record<
     type: '/errors/secrets/name-conflict',
     retryable: false,
   },
+  [ErrorCodes.SECRET_FEATURE_DISABLED]: {
+    status: 503,
+    title: 'Secrets feature is disabled',
+    type: '/errors/secrets/feature-disabled',
+    retryable: false,
+  },
 };
