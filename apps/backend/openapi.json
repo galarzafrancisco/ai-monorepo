@@ -5581,7 +5581,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Create a new secret (Admin only)",
+        "summary": "Create a new secret",
         "tags": [
           "Secrets"
         ]
@@ -5609,7 +5609,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "List all secrets (Admin only) - values not included",
+        "summary": "List all secrets - values not included",
         "tags": [
           "Secrets"
         ]
@@ -5650,7 +5650,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Get secret metadata by ID (Admin only) - value not included",
+        "summary": "Get secret metadata by ID - value not included",
         "tags": [
           "Secrets"
         ]
@@ -5699,7 +5699,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Update a secret (Admin only)",
+        "summary": "Update a secret",
         "tags": [
           "Secrets"
         ]
@@ -5731,7 +5731,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Delete a secret (Admin only)",
+        "summary": "Delete a secret",
         "tags": [
           "Secrets"
         ]
@@ -5772,7 +5772,7 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Get decrypted secret value (Admin only)",
+        "summary": "Get decrypted secret value",
         "tags": [
           "Secrets"
         ]

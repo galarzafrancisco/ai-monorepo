@@ -1496,10 +1496,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all secrets (Admin only) - values not included */
+        /** List all secrets - values not included */
         get: operations["SecretsController_listSecrets"];
         put?: never;
-        /** Create a new secret (Admin only) */
+        /** Create a new secret */
         post: operations["SecretsController_createSecret"];
         delete?: never;
         options?: never;
@@ -1514,15 +1514,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get secret metadata by ID (Admin only) - value not included */
+        /** Get secret metadata by ID - value not included */
         get: operations["SecretsController_getSecret"];
         put?: never;
         post?: never;
-        /** Delete a secret (Admin only) */
+        /** Delete a secret */
         delete: operations["SecretsController_deleteSecret"];
         options?: never;
         head?: never;
-        /** Update a secret (Admin only) */
+        /** Update a secret */
         patch: operations["SecretsController_updateSecret"];
         trace?: never;
     };
@@ -1533,7 +1533,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get decrypted secret value (Admin only) */
+        /** Get decrypted secret value */
         get: operations["SecretsController_getSecretValue"];
         put?: never;
         post?: never;

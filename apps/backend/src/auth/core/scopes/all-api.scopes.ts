@@ -7,6 +7,7 @@ import { ALL_AGENT_RUNS_SCOPES } from 'src/agent-runs/agent-runs.scopes';
 import { ALL_MCP_SCOPES } from './mcp.scopes';
 import { ALL_THREADS_SCOPES } from 'src/threads/threads.scopes';
 import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
+import { ALL_SECRETS_SCOPES } from 'src/secrets/secrets.scopes';
 
 export const ALL_API_SCOPES: Scope[] = [
   // Metadata
@@ -25,4 +26,6 @@ export const ALL_API_SCOPES: Scope[] = [
   ...ALL_MCP_REGISTRY_SCOPES,
   // Permissions to use MCP
   ...ALL_MCP_SCOPES,
+  // Secrets
+  ...ALL_SECRETS_SCOPES,
 ];

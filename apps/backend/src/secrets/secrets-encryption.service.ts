@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { isDevelopment } from '../config/env.config';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96 bits recommended for GCM
@@ -28,19 +29,17 @@ export class SecretsEncryptionService {
         );
       }
       this.key = keyBuffer;
-    } else {
-      const nodeEnv = process.env.NODE_ENV ?? 'development';
-      if (nodeEnv !== 'development' && nodeEnv !== 'test') {
-        throw new Error(
-          'SECRETS_ENCRYPTION_KEY environment variable is required in production. ' +
-            `Set it to a ${KEY_LENGTH * 2}-character hex string (${KEY_LENGTH} bytes).`,
-        );
-      }
-      // Development/test fallback: derive a fixed key from a well-known dev secret
+    } else if (isDevelopment()) {
+      // Development fallback: derive a fixed key from a well-known dev secret
       this.logger.warn(
         'SECRETS_ENCRYPTION_KEY is not set. Using a fixed development key. DO NOT use this in production.',
       );
       this.key = crypto.scryptSync('taico-dev-secrets-key', 'taico-salt', KEY_LENGTH);
+    } else {
+      throw new Error(
+        'SECRETS_ENCRYPTION_KEY environment variable is required in production. ' +
+          `Set it to a ${KEY_LENGTH * 2}-character hex string (${KEY_LENGTH} bytes).`,
+      );
     }
   }
 

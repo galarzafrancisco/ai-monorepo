@@ -11,7 +11,7 @@ import { OpenAPI } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class SecretsService {
     /**
-     * Create a new secret (Admin only)
+     * Create a new secret
      * @param requestBody
      * @returns SecretResponseDto Secret created successfully
      * @throws ApiError
@@ -27,7 +27,7 @@ export class SecretsService {
         });
     }
     /**
-     * List all secrets (Admin only) - values not included
+     * List all secrets - values not included
      * @returns SecretResponseDto List of secrets (no values)
      * @throws ApiError
      */
@@ -38,7 +38,7 @@ export class SecretsService {
         });
     }
     /**
-     * Get secret metadata by ID (Admin only) - value not included
+     * Get secret metadata by ID - value not included
      * @param id Secret identifier
      * @returns SecretResponseDto Secret metadata
      * @throws ApiError
@@ -58,7 +58,7 @@ export class SecretsService {
         });
     }
     /**
-     * Update a secret (Admin only)
+     * Update a secret
      * @param id Secret identifier
      * @param requestBody
      * @returns SecretResponseDto Secret updated successfully
@@ -82,7 +82,7 @@ export class SecretsService {
         });
     }
     /**
-     * Delete a secret (Admin only)
+     * Delete a secret
      * @param id Secret identifier
      * @returns void
      * @throws ApiError
@@ -102,7 +102,7 @@ export class SecretsService {
         });
     }
     /**
-     * Get decrypted secret value (Admin only)
+     * Get decrypted secret value
      * @param id Secret identifier
      * @returns SecretValueResponseDto Decrypted secret value
      * @throws ApiError

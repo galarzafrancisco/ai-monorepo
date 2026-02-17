@@ -25,7 +25,6 @@ import { AddTaskBlueprintsAndScheduledTasks1739500000000 } from './migrations/17
 import { RefactorThreadsForHeadlessConversations1739750000000 } from './migrations/1739750000000-RefactorThreadsForHeadlessConversations';
 import { RemoveRoleFromThreadMessage1739844333000 } from './migrations/1739844333000-RemoveRoleFromThreadMessage';
 import { AddSecretsTable1740000000000 } from './migrations/1740000000000-AddSecretsTable';
-import { FixSecretsNameUniqueness1740000000001 } from './migrations/1740000000001-FixSecretsNameUniqueness';
 import { SecretsModule } from './secrets/secrets.module';
 
 @Module({
@@ -44,7 +43,6 @@ import { SecretsModule } from './secrets/secrets.module';
          RefactorThreadsForHeadlessConversations1739750000000,
          RemoveRoleFromThreadMessage1739844333000,
          AddSecretsTable1740000000000,
-         FixSecretsNameUniqueness1740000000001,
        ],
     }),
     EventEmitterModule.forRoot(),
