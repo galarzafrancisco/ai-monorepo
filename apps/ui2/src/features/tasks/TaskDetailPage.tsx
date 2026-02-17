@@ -66,19 +66,27 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
   useEffect(() => {
     if (!task) return;
 
+    const statusAliases: Record<TaskStatus, string[]> = {
+      [TaskStatus.NOT_STARTED]: ['not started', 'to do', 'todo', 'queued'],
+      [TaskStatus.IN_PROGRESS]: ['in progress', 'doing', 'building'],
+      [TaskStatus.FOR_REVIEW]: ['for review', 'review', 'in review'],
+      [TaskStatus.DONE]: ['done', 'shipped', 'complete'],
+    };
+
     const statusCommands = Object.entries(TASKS_STATUS).map(([status, info]) => ({
       id: `task-status-${status}`,
       label: info.label,
       description: `Mark task as ${info.label.toLowerCase()}`,
+      aliases: statusAliases[status as TaskStatus],
       onSelect: () => handleChangeStatusForPalette(status as TaskStatus),
     }));
 
     const actionCommands = [
       {
         id: 'task-add-comment',
-        label: 'Add Comment',
+        label: 'Comment',
         description: 'Add a comment to this task',
-        aliases: ['comment', 'note'],
+        aliases: ['add comment', 'note'],
         onSelect: () => setShowNewCommentPop(true),
       },
       {
@@ -99,9 +107,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
       },
       {
         id: 'task-add-tag',
-        label: 'Add Tag',
+        label: 'Tag',
         description: 'Add a tag to this task',
-        aliases: ['tag', 'label'],
+        aliases: ['add tag', 'label'],
         onSelect: () => setShowTagPop(true),
       },
     ];
