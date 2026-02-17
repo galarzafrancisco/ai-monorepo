@@ -6,20 +6,28 @@ import {
   SubscribeMessage,
   ConnectedSocket,
   OnGatewayInit,
+  MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { MessageCreatedEvent } from './events/threads.events';
 import { ThreadWireEvents } from '@taico/events';
-import { Actor, MessageCreatedWireEvent } from '@taico/events';
+import { MessageCreatedWireEvent } from '@taico/events';
 import { ThreadMessageResponseDto } from './dto/thread-message-response.dto';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { ThreadsScopes } from './threads.scopes';
+import { ThreadsService } from './threads.service';
 
 const THREADS_ROOM = 'threads';
+
+type ThreadSubscriptionPayload = {
+  threadId?: string;
+};
+
+const getThreadRoomName = (threadId: string): string => `${THREADS_ROOM}-${threadId}`;
 
 /**
  * WebSocket gateway for Threads domain.
@@ -43,6 +51,8 @@ const THREADS_ROOM = 'threads';
 export class ThreadsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  constructor(private readonly threadsService: ThreadsService) {}
+
   @WebSocketServer()
   server!: Server;
 
@@ -65,14 +75,37 @@ export class ThreadsGateway
    */
 
   @SubscribeMessage('threads.subscribe')
-  subscribe(@ConnectedSocket() client: Socket) {
-    client.join(THREADS_ROOM);
-    return { ok: true, room: THREADS_ROOM };
+  async subscribe(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: ThreadSubscriptionPayload,
+  ) {
+    if (!body?.threadId) {
+      client.join(THREADS_ROOM);
+      return { ok: true, room: THREADS_ROOM };
+    }
+
+    try {
+      await this.threadsService.getThreadById(body.threadId);
+    } catch {
+      return { ok: false, error: 'thread not found' };
+    }
+
+    const room = getThreadRoomName(body.threadId);
+    client.join(room);
+    return { ok: true, room };
   }
 
   @SubscribeMessage('threads.unsubscribe')
-  unsubscribe(@ConnectedSocket() client: Socket) {
-    client.leave(THREADS_ROOM);
+  async unsubscribe(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: ThreadSubscriptionPayload,
+  ) {
+    if (!body?.threadId) {
+      client.leave(THREADS_ROOM);
+      return { ok: true };
+    }
+
+    client.leave(getThreadRoomName(body.threadId));
     return { ok: true };
   }
 
@@ -90,7 +123,9 @@ export class ThreadsGateway
       actor: { id: event.actor.id },
     };
 
-    this.server.to(THREADS_ROOM).emit(ThreadWireEvents.MESSAGE_CREATED, wireEvent);
+    this.server
+      .to(getThreadRoomName(event.payload.threadId))
+      .emit(ThreadWireEvents.MESSAGE_CREATED, wireEvent);
 
     this.logger.debug({
       message: 'Message created event emitted',

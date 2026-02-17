@@ -48,7 +48,7 @@ export const useThread = (threadId: string) => {
     loadMessages();
     const cleanup = setupWebsocket();
     return cleanup;
-  }, []);
+  }, [threadId]);
 
   // Load threads
   const loadThread = async () => {
@@ -107,7 +107,7 @@ export const useThread = (threadId: string) => {
 
     newSocket.on('connect', () => {
       console.log('Connected to websocket');
-      newSocket.emit('threads.subscribe', {}, (ack: any) => {
+      newSocket.emit('threads.subscribe', { threadId }, (ack: any) => {
         if (ack.ok) {
           console.log(ack);
           console.log('Subscribed to room:', ack.room);
@@ -166,6 +166,7 @@ export const useThread = (threadId: string) => {
     setSocket(newSocket);
 
     return () => {
+      newSocket.emit('threads.unsubscribe', { threadId });
       newSocket.close();
     };
 
