@@ -105,6 +105,7 @@ export type ThreadMessageResult = {
   id: string;
   threadId: string;
   content: string;
+  createdByActorId: string | null;
   createdByActor: ActorResult | null;
   createdAt: Date;
 };

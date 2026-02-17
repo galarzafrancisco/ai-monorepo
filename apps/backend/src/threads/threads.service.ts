@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ThreadEntity } from './thread.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
 import { TaskEntity } from '../tasks/task.entity';
@@ -31,6 +32,7 @@ import {
   ContextBlockNotFoundError,
   ActorNotFoundForThreadError,
 } from './errors/threads.errors';
+import { MessageCreatedEvent } from './events/threads.events';
 
 @Injectable()
 export class ThreadsService {
@@ -51,6 +53,7 @@ export class ThreadsService {
     private readonly agentRunRepository: Repository<AgentRunEntity>,
     private readonly metaService: MetaService,
     private readonly contextService: ContextService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
@@ -728,6 +731,15 @@ export class ThreadsService {
       threadId: input.threadId,
     });
 
+    // Emit domain event
+    this.eventEmitter.emit(
+      MessageCreatedEvent.INTERNAL,
+      new MessageCreatedEvent(
+        { id: input.createdByActorId || 'system' },
+        messageWithRelations,
+      ),
+    );
+
     return this.mapThreadMessageToResult(messageWithRelations);
   }
 
@@ -781,6 +793,7 @@ export class ThreadsService {
       id: message.id,
       threadId: message.threadId,
       content: message.content,
+      createdByActorId: message.createdByActorId || null,
       createdByActor: message.createdByActor
         ? this.mapActorToResult(message.createdByActor)
         : null,

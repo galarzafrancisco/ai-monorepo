@@ -4,6 +4,7 @@ import { ThreadEntity } from './thread.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
 import { ThreadsService } from './threads.service';
 import { ThreadsController } from './threads.controller';
+import { ThreadsGateway } from './threads.gateway';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from '../context/block.entity';
@@ -27,7 +28,7 @@ import { ContextModule } from '../context/context.module';
     ContextModule,
   ],
   controllers: [ThreadsController],
-  providers: [ThreadsService],
+  providers: [ThreadsService, ThreadsGateway],
   exports: [ThreadsService],
 })
 export class ThreadsModule {}
