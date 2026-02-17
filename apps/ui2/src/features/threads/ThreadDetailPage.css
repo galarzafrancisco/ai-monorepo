@@ -22,6 +22,21 @@
 .thread-detail-page__content {
   padding: var(--space-5);
   max-width: 800px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.thread-detail-page__header {
+  flex-shrink: 0;
+}
+
+.thread-detail-page__chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .thread-detail-page__actions {

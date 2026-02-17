@@ -320,7 +320,7 @@ export class ThreadsController {
     const result = await this.threadsService.createMessage({
       threadId: params.id,
       content: dto.content,
-      createdByActorId: dto.createdByActorId || user.actorId,
+      createdByActorId: user.actorId,
     });
     return ThreadMessageResponseDto.fromResult(result);
   }

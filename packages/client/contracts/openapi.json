@@ -8391,29 +8391,13 @@
       "CreateThreadMessageDto": {
         "type": "object",
         "properties": {
-          "role": {
-            "type": "string",
-            "description": "Role of the message sender",
-            "enum": [
-              "user",
-              "assistant",
-              "system"
-            ],
-            "example": "user"
-          },
           "content": {
             "type": "string",
             "description": "Content of the message",
             "example": "What is the status of this feature?"
-          },
-          "createdByActorId": {
-            "type": "string",
-            "description": "Actor ID who created the message (optional for system messages)",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
         "required": [
-          "role",
           "content"
         ]
       },
@@ -8430,23 +8414,19 @@
             "description": "Thread ID this message belongs to",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
-          "role": {
-            "type": "string",
-            "description": "Role of the message sender",
-            "enum": [
-              "user",
-              "assistant",
-              "system"
-            ],
-            "example": "user"
-          },
           "content": {
             "type": "string",
             "description": "Content of the message",
             "example": "What is the status of this feature?"
           },
+          "createdByActorId": {
+            "type": "string",
+            "description": "Actor ID who created the message",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
           "createdByActor": {
-            "description": "Actor who created the message (null for system messages)",
+            "description": "Actor who created the message",
             "nullable": true,
             "allOf": [
               {
@@ -8458,14 +8438,19 @@
             "type": "string",
             "description": "When the message was created",
             "example": "2024-01-15T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When the message was last updated",
+            "example": "2024-01-15T10:30:00.000Z"
           }
         },
         "required": [
           "id",
           "threadId",
-          "role",
           "content",
-          "createdAt"
+          "createdAt",
+          "updatedAt"
         ]
       },
       "ListThreadMessagesResponseDto": {

@@ -9,6 +9,7 @@ import "./ThreadDetailPage.css";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
 import { ThreadTaskRow } from "./ThreadTaskRow";
+import { ThreadChat } from "./ThreadChat";
 import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 
@@ -171,19 +172,25 @@ function ThreadDetailPageDesktop({
       {/* Main content area */}
       <div className="thread-detail-page__main">
         <div className="thread-detail-page__content">
-          <Text size="5" weight="bold">
-            {thread.title}
-          </Text>
-          <div style={{ marginTop: "var(--space-2)" }}>
-            <Text size="2" tone="muted">
-              #{thread.id.slice(0, 6)}
+          <div className="thread-detail-page__header">
+            <Text size="5" weight="bold">
+              {thread.title}
             </Text>
+            <div style={{ marginTop: "var(--space-2)" }}>
+              <Text size="2" tone="muted">
+                #{thread.id.slice(0, 6)}
+              </Text>
+            </div>
+
+            <DeleteWithConfirmation
+              className="thread-detail-page__actions"
+              onDelete={onDelete}
+            />
           </div>
 
-          <DeleteWithConfirmation
-            className="thread-detail-page__actions"
-            onDelete={onDelete}
-          />
+          <div className="thread-detail-page__chat">
+            <ThreadChat threadId={thread.id} />
+          </div>
         </div>
       </div>
 

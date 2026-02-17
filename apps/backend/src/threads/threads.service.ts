@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ThreadEntity } from './thread.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
 import { TaskEntity } from '../tasks/task.entity';
@@ -31,6 +32,7 @@ import {
   ContextBlockNotFoundError,
   ActorNotFoundForThreadError,
 } from './errors/threads.errors';
+import { MessageCreatedEvent } from './events/threads.events';
 
 @Injectable()
 export class ThreadsService {
@@ -51,6 +53,7 @@ export class ThreadsService {
     private readonly agentRunRepository: Repository<AgentRunEntity>,
     private readonly metaService: MetaService,
     private readonly contextService: ContextService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
@@ -707,7 +710,7 @@ export class ThreadsService {
     const message = this.threadMessageRepository.create({
       threadId: input.threadId,
       content: input.content,
-      createdByActorId: input.createdByActorId || null,
+      createdByActorId: input.createdByActorId,
     });
 
     const savedMessage = await this.threadMessageRepository.save(message);
@@ -727,6 +730,15 @@ export class ThreadsService {
       messageId: savedMessage.id,
       threadId: input.threadId,
     });
+
+    // Emit domain event
+    this.eventEmitter.emit(
+      MessageCreatedEvent.INTERNAL,
+      new MessageCreatedEvent(
+        { id: input.createdByActorId },
+        messageWithRelations,
+      ),
+    );
 
     return this.mapThreadMessageToResult(messageWithRelations);
   }
@@ -781,6 +793,7 @@ export class ThreadsService {
       id: message.id,
       threadId: message.threadId,
       content: message.content,
+      createdByActorId: message.createdByActorId,
       createdByActor: message.createdByActor
         ? this.mapActorToResult(message.createdByActor)
         : null,

@@ -98,13 +98,14 @@ export type ListThreadsResult = {
 export type CreateThreadMessageInput = {
   threadId: string;
   content: string;
-  createdByActorId?: string;
+  createdByActorId: string;
 };
 
 export type ThreadMessageResult = {
   id: string;
   threadId: string;
   content: string;
+  createdByActorId: string | null;
   createdByActor: ActorResult | null;
   createdAt: Date;
 };

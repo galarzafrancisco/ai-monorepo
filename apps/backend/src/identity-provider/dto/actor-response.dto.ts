@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ActorType } from '../enums';
 import { ActorResult } from '../../threads/dto/service/threads.service.types';
+import { ActorEntity } from '../actor.entity';
 
 export class ActorResponseDto {
   @ApiProperty({
@@ -56,6 +57,21 @@ export class ActorResponseDto {
       displayName: result.displayName,
       avatarUrl: result.avatarUrl,
       introduction: result.introduction,
+    };
+  }
+
+  /**
+   * Factory method to create an ActorResponseDto from an ActorEntity.
+   * Used by gateways to map entities to wire DTOs.
+   */
+  static fromEntity(entity: ActorEntity): ActorResponseDto {
+    return {
+      id: entity.id,
+      type: entity.type,
+      slug: entity.slug,
+      displayName: entity.displayName,
+      avatarUrl: entity.avatarUrl,
+      introduction: entity.introduction,
     };
   }
 }

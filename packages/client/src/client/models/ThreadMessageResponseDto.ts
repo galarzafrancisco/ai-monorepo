@@ -13,30 +13,24 @@ export type ThreadMessageResponseDto = {
      */
     threadId: string;
     /**
-     * Role of the message sender
-     */
-    role: ThreadMessageResponseDto.role;
-    /**
      * Content of the message
      */
     content: string;
     /**
-     * Actor who created the message (null for system messages)
+     * Actor ID who created the message
+     */
+    createdByActorId?: string | null;
+    /**
+     * Actor who created the message
      */
     createdByActor?: ActorResponseDto | null;
     /**
      * When the message was created
      */
     createdAt: string;
-};
-export namespace ThreadMessageResponseDto {
     /**
-     * Role of the message sender
+     * When the message was last updated
      */
-    export enum role {
-        USER = 'user',
-        ASSISTANT = 'assistant',
-        SYSTEM = 'system',
-    }
-}
+    updatedAt: string;
+};
 
