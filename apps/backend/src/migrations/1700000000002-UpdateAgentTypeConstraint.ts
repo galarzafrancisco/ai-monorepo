@@ -1,9 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateAgentTypeConstraint1700000000001
+export class UpdateAgentTypeConstraint1700000000002
   implements MigrationInterface
 {
-  name = 'UpdateAgentTypeConstraint1700000000001';
+  name = 'UpdateAgentTypeConstraint1700000000002';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`PRAGMA foreign_keys=off`);

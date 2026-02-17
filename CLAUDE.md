@@ -107,6 +107,13 @@ Follow the guides in `/docs/architecture/` and `/docs/review-guides/`. Key docum
 - `dto-mapping-patterns.md` - DTO transformation patterns
 - `enum-management.md` - Enum best practices
 
+### Database Migrations
+
+**CRITICAL**: When creating database migrations, you MUST register them in `apps/backend/src/app.module.ts`:
+1. Import the migration class
+2. Add it to the `migrations` array in chronological order
+3. Migrations run automatically on app startup when `migrationsRun: true`
+
 ## Documentation
 
 Extensive documentation in `/docs/`:
