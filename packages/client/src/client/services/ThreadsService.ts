@@ -7,8 +7,11 @@ import type { AppendThreadStateDto } from '../models/AppendThreadStateDto.js';
 import type { AttachTaskDto } from '../models/AttachTaskDto.js';
 import type { CreateTagDto } from '../models/CreateTagDto.js';
 import type { CreateThreadDto } from '../models/CreateThreadDto.js';
+import type { CreateThreadMessageDto } from '../models/CreateThreadMessageDto.js';
+import type { ListThreadMessagesResponseDto } from '../models/ListThreadMessagesResponseDto.js';
 import type { ReferenceContextBlockDto } from '../models/ReferenceContextBlockDto.js';
 import type { ThreadListResponseDto } from '../models/ThreadListResponseDto.js';
+import type { ThreadMessageResponseDto } from '../models/ThreadMessageResponseDto.js';
 import type { ThreadResponseDto } from '../models/ThreadResponseDto.js';
 import type { ThreadStateResponseDto } from '../models/ThreadStateResponseDto.js';
 import type { UpdateThreadDto } from '../models/UpdateThreadDto.js';
@@ -310,6 +313,59 @@ export class ThreadsService {
             mediaType: 'application/json',
             errors: {
                 400: `Invalid input data`,
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * Create a message in the thread
+     * @param id Thread UUID
+     * @param requestBody
+     * @returns ThreadMessageResponseDto Message created successfully
+     * @throws ApiError
+     */
+    public static threadsControllerCreateMessage(
+        id: string,
+        requestBody: CreateThreadMessageDto,
+    ): CancelablePromise<ThreadMessageResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/threads/{id}/messages',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Thread not found`,
+            },
+        });
+    }
+    /**
+     * List messages in a thread
+     * @param id Thread UUID
+     * @param page Page number
+     * @param limit Number of items per page
+     * @returns ListThreadMessagesResponseDto Paginated list of thread messages
+     * @throws ApiError
+     */
+    public static threadsControllerListMessages(
+        id: string,
+        page: number = 1,
+        limit: number = 20,
+    ): CancelablePromise<ListThreadMessagesResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/threads/{id}/messages',
+            path: {
+                'id': id,
+            },
+            query: {
+                'page': page,
+                'limit': limit,
+            },
+            errors: {
                 404: `Thread not found`,
             },
         });

@@ -25,7 +25,7 @@ const STATUS_ORDER = [
 // Group tasks by status, with parent task first
 const groupTasksByStatus = (thread: Thread) => {
   const parentTaskId = thread.parentTaskId;
-  const parentTask = parentTaskId
+  const parentTask = parentTaskId && typeof parentTaskId === 'string'
     ? thread.tasks.find((task) => task.id === parentTaskId)
     : null;
 
@@ -54,7 +54,7 @@ const groupTasksByStatus = (thread: Thread) => {
 
   thread.tasks.forEach((task) => {
     // Skip parent task as it's already added
-    if (task.id === parentTaskId) return;
+    if (parentTaskId && task.id === parentTaskId) return;
 
     const status = task.status as TaskStatus;
     if (tasksByStatus[status]) {

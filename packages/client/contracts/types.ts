@@ -1081,6 +1081,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List messages in a thread */
+        get: operations["ThreadsController_listMessages"];
+        put?: never;
+        /** Create a message in the thread */
+        post: operations["ThreadsController_createMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/context/blocks": {
         parameters: {
             query?: never;
@@ -3113,10 +3131,10 @@ export interface components {
              */
             title?: string;
             /**
-             * @description Parent task ID - the task that this thread belongs to
+             * @description Parent task ID - the task that this thread belongs to (optional for headless threads)
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            parentTaskId: string;
+            parentTaskId?: string;
             /**
              * @description Array of tag names to associate with the thread
              * @example [
@@ -3217,10 +3235,10 @@ export interface components {
             /** @description Actor who created the thread */
             createdByActor: components["schemas"]["ActorResponseDto"];
             /**
-             * @description Parent task ID that this thread belongs to
+             * @description Parent task ID that this thread belongs to (null for headless threads)
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            parentTaskId: string;
+            parentTaskId?: string | null;
             /**
              * @description State context block ID that tracks the evolving state of this thread
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -3335,6 +3353,73 @@ export interface components {
              * @example Decision: Using JWT for authentication.
              */
             content: string;
+        };
+        CreateThreadMessageDto: {
+            /**
+             * @description Role of the message sender
+             * @example user
+             * @enum {string}
+             */
+            role: "user" | "assistant" | "system";
+            /**
+             * @description Content of the message
+             * @example What is the status of this feature?
+             */
+            content: string;
+            /**
+             * @description Actor ID who created the message (optional for system messages)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            createdByActorId?: string;
+        };
+        ThreadMessageResponseDto: {
+            /**
+             * @description Message ID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Thread ID this message belongs to
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            threadId: string;
+            /**
+             * @description Role of the message sender
+             * @example user
+             * @enum {string}
+             */
+            role: "user" | "assistant" | "system";
+            /**
+             * @description Content of the message
+             * @example What is the status of this feature?
+             */
+            content: string;
+            /** @description Actor who created the message (null for system messages) */
+            createdByActor?: components["schemas"]["ActorResponseDto"] | null;
+            /**
+             * @description When the message was created
+             * @example 2024-01-15T10:30:00.000Z
+             */
+            createdAt: string;
+        };
+        ListThreadMessagesResponseDto: {
+            /** @description List of messages */
+            items: components["schemas"]["ThreadMessageResponseDto"][];
+            /**
+             * @description Total number of messages
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
         };
         CreateBlockDto: {
             /**
@@ -7148,6 +7233,82 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ThreadStateResponseDto"];
+                };
+            };
+            /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_listMessages: {
+        parameters: {
+            query?: {
+                /** @description Page number */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated list of thread messages */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListThreadMessagesResponseDto"];
+                };
+            };
+            /** @description Thread not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ThreadsController_createMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Thread UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateThreadMessageDto"];
+            };
+        };
+        responses: {
+            /** @description Message created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadMessageResponseDto"];
                 };
             };
             /** @description Invalid input data */

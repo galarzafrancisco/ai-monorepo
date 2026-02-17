@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThreadEntity } from './thread.entity';
+import { ThreadMessageEntity } from './thread-message.entity';
 import { ThreadsService } from './threads.service';
 import { ThreadsController } from './threads.controller';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
@@ -15,6 +16,7 @@ import { ContextModule } from '../context/context.module';
   imports: [
     TypeOrmModule.forFeature([
       ThreadEntity,
+      ThreadMessageEntity,
       TaskEntity,
       ContextBlockEntity,
       ActorEntity,
