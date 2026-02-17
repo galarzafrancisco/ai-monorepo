@@ -327,4 +327,16 @@ export const ErrorCatalog: Record<
     type: '/errors/internal',
     retryable: true,
   },
+  [ErrorCodes.SECRET_NOT_FOUND]: {
+    status: 404,
+    title: 'Secret not found',
+    type: '/errors/secrets/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.SECRET_NAME_CONFLICT]: {
+    status: 409,
+    title: 'Secret name conflict',
+    type: '/errors/secrets/name-conflict',
+    retryable: false,
+  },
 };
