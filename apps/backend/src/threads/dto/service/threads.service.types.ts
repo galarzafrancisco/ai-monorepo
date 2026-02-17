@@ -6,12 +6,6 @@ import { TaskStatus } from '../../../tasks/enums';
  * No Swagger decorators, no class-validator
  */
 
-export enum ThreadMessageRole {
-  USER = 'user',
-  ASSISTANT = 'assistant',
-  SYSTEM = 'system',
-}
-
 export type ActorResult = {
   id: string;
   type: ActorType;
@@ -103,7 +97,6 @@ export type ListThreadsResult = {
 // Thread message types
 export type CreateThreadMessageInput = {
   threadId: string;
-  role: ThreadMessageRole;
   content: string;
   createdByActorId?: string;
 };
@@ -111,7 +104,6 @@ export type CreateThreadMessageInput = {
 export type ThreadMessageResult = {
   id: string;
   threadId: string;
-  role: ThreadMessageRole;
   content: string;
   createdByActor: ActorResult | null;
   createdAt: Date;

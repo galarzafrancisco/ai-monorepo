@@ -684,7 +684,6 @@ export class ThreadsService {
     this.logger.log({
       message: 'Creating thread message',
       threadId: input.threadId,
-      role: input.role,
     });
 
     // Verify thread exists
@@ -707,7 +706,6 @@ export class ThreadsService {
 
     const message = this.threadMessageRepository.create({
       threadId: input.threadId,
-      role: input.role,
       content: input.content,
       createdByActorId: input.createdByActorId || null,
     });
@@ -782,7 +780,6 @@ export class ThreadsService {
     return {
       id: message.id,
       threadId: message.threadId,
-      role: message.role,
       content: message.content,
       createdByActor: message.createdByActor
         ? this.mapActorToResult(message.createdByActor)

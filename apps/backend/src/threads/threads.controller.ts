@@ -319,7 +319,6 @@ export class ThreadsController {
   ): Promise<ThreadMessageResponseDto> {
     const result = await this.threadsService.createMessage({
       threadId: params.id,
-      role: dto.role,
       content: dto.content,
       createdByActorId: dto.createdByActorId || user.actorId,
     });

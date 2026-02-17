@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
-import { ThreadMessageResult, ThreadMessageRole } from './service/threads.service.types';
+import { ThreadMessageResult } from './service/threads.service.types';
 
 export class ThreadMessageResponseDto {
   @ApiProperty({
@@ -16,20 +16,13 @@ export class ThreadMessageResponseDto {
   threadId!: string;
 
   @ApiProperty({
-    description: 'Role of the message sender',
-    enum: ThreadMessageRole,
-    example: ThreadMessageRole.USER,
-  })
-  role!: ThreadMessageRole;
-
-  @ApiProperty({
     description: 'Content of the message',
     example: 'What is the status of this feature?',
   })
   content!: string;
 
   @ApiPropertyOptional({
-    description: 'Actor who created the message (null for system messages)',
+    description: 'Actor who created the message',
     type: ActorResponseDto,
     nullable: true,
   })
@@ -45,7 +38,6 @@ export class ThreadMessageResponseDto {
     return {
       id: result.id,
       threadId: result.threadId,
-      role: result.role,
       content: result.content,
       createdByActor: result.createdByActor
         ? ActorResponseDto.fromResult(result.createdByActor)

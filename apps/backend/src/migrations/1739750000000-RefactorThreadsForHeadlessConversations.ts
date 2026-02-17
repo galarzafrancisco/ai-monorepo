@@ -11,7 +11,6 @@ export class RefactorThreadsForHeadlessConversations1739750000000
       CREATE TABLE IF NOT EXISTS thread_messages (
         id TEXT PRIMARY KEY,
         thread_id TEXT NOT NULL,
-        role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
         content TEXT NOT NULL,
         created_by_actor_id TEXT,
         created_at DATETIME NOT NULL DEFAULT (datetime('now')),

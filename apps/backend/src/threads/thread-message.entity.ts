@@ -9,12 +9,6 @@ import {
 import { ThreadEntity } from './thread.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 
-export enum ThreadMessageRole {
-  USER = 'user',
-  ASSISTANT = 'assistant',
-  SYSTEM = 'system',
-}
-
 @Entity({ name: 'thread_messages' })
 export class ThreadMessageEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -26,12 +20,6 @@ export class ThreadMessageEntity {
   @ManyToOne(() => ThreadEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'thread_id' })
   thread?: ThreadEntity;
-
-  @Column({
-    type: 'text',
-    nullable: false,
-  })
-  role!: ThreadMessageRole;
 
   @Column({ type: 'text', nullable: false })
   content!: string;
