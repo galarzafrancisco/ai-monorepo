@@ -20,6 +20,12 @@ type DisplayContextBlock = {
   isStateMemory: boolean;
 };
 
+type TaskStatusSummary = {
+  status: TaskStatus;
+  label: string;
+  count: number;
+};
+
 // Define the desired status order
 const STATUS_ORDER = [
   TaskStatus.DONE,
@@ -103,6 +109,28 @@ const getContextBlocksForDisplay = (thread: Thread): DisplayContextBlock[] => {
   });
 
   return allBlocks;
+};
+
+const getTaskStatusSummary = (thread: Thread): TaskStatusSummary[] => {
+  const counts: Record<TaskStatus, number> = {
+    [TaskStatus.DONE]: 0,
+    [TaskStatus.FOR_REVIEW]: 0,
+    [TaskStatus.IN_PROGRESS]: 0,
+    [TaskStatus.NOT_STARTED]: 0,
+  };
+
+  thread.tasks.forEach((task) => {
+    const status = task.status as TaskStatus;
+    if (status in counts) {
+      counts[status] += 1;
+    }
+  });
+
+  return STATUS_ORDER.map((status) => ({
+    status,
+    label: TASKS_STATUS[status].label,
+    count: counts[status],
+  })).filter((item) => item.count > 0);
 };
 
 export function ThreadDetailPage() {
@@ -331,66 +359,162 @@ function ThreadDetailPageMobile({
   const navigate = useNavigate();
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
+  const taskStatusSummary = getTaskStatusSummary(thread);
+  const [mobileView, setMobileView] = useState<"chat" | "details">("chat");
 
   return (
     <div className="thread-detail-page thread-detail-page--mobile">
       <div className="thread-detail-page__mobile-content">
-        {/* Tasks grouped by status using TaskRow */}
-        {taskGroups.map((group) => (
-          <div key={group.status} className="thread-detail-page__mobile-section">
-            <DataRowContainer title={group.label}>
-              {group.tasks.map((task) => (
-                <ThreadTaskRow
-                  key={task.id}
-                  task={task}
-                  onClick={() => navigate(`/tasks/task/${task.id}`)}
-                />
-              ))}
-            </DataRowContainer>
-          </div>
-        ))}
-
-        {/* Context section */}
-        {contextBlocks.length > 0 && (
-          <div className="thread-detail-page__mobile-section">
+        <div className="thread-detail-page__mobile-topbar">
+          <div className="thread-detail-page__mobile-thread-meta">
             <Text size="2" weight="semibold">
-              Context ({contextBlocks.length})
+              {thread.title}
             </Text>
-            <div className="thread-detail-page__mobile-list">
-              {contextBlocks.map((contextBlock) => (
-                <ThreadContextCard
-                  key={`${contextBlock.id}-${contextBlock.isStateMemory ? "state" : "reference"}`}
-                  contextBlock={contextBlock}
-                  isStateMemory={contextBlock.isStateMemory}
-                />
-              ))}
-            </div>
+            <Text size="1" tone="muted">
+              #{thread.id.slice(0, 6)} · {thread.participants.length} participants
+            </Text>
           </div>
-        )}
+          <div className="thread-detail-page__mobile-view-toggle" role="tablist" aria-label="Thread mobile views">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === "chat"}
+              className={`thread-detail-page__mobile-tab ${mobileView === "chat" ? "thread-detail-page__mobile-tab--active" : ""}`}
+              onClick={() => setMobileView("chat")}
+            >
+              Chat
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === "details"}
+              className={`thread-detail-page__mobile-tab ${mobileView === "details" ? "thread-detail-page__mobile-tab--active" : ""}`}
+              onClick={() => setMobileView("details")}
+            >
+              Details
+            </button>
+          </div>
+        </div>
 
-        {/* Participants section */}
-        {thread.participants.length > 0 && (
-          <div className="thread-detail-page__mobile-section">
-            <Text size="2" weight="semibold">
-              Participants ({thread.participants.length})
+        <div className="thread-detail-page__mobile-insights">
+          <button
+            type="button"
+            className="thread-detail-page__mobile-insight-card"
+            onClick={() => setMobileView("details")}
+          >
+            <Text size="1" tone="muted">
+              Tasks
             </Text>
-            <div className="thread-detail-page__mobile-list">
-              {thread.participants.map((participant) => (
-                <Text key={participant.id} size="2">
-                  {participant.displayName} (@{participant.slug})
+            <Text size="3" weight="bold">
+              {thread.tasks.length}
+            </Text>
+          </button>
+          <button
+            type="button"
+            className="thread-detail-page__mobile-insight-card"
+            onClick={() => setMobileView("details")}
+          >
+            <Text size="1" tone="muted">
+              Context blocks
+            </Text>
+            <Text size="3" weight="bold">
+              {contextBlocks.length}
+            </Text>
+          </button>
+        </div>
+
+        {taskStatusSummary.length > 0 && (
+          <div className="thread-detail-page__mobile-status-strip">
+            {taskStatusSummary.map((item) => (
+              <button
+                type="button"
+                key={item.status}
+                className="thread-detail-page__mobile-status-chip"
+                onClick={() => setMobileView("details")}
+              >
+                <Text size="1">{item.label}</Text>
+                <Text size="1" weight="semibold">
+                  {item.count}
                 </Text>
-              ))}
-            </div>
+              </button>
+            ))}
           </div>
         )}
 
-        <DeleteWithConfirmation
-          className="thread-detail-page__actions"
-          onDelete={onDelete}
-          size="sm"
-          deleteLabel="Delete thread"
-          confirmLabel="Delete forever"
-        />
+        {mobileView === "chat" && (
+          <div className="thread-detail-page__mobile-chat-shell">
+            <ThreadChat threadId={thread.id} />
+          </div>
+        )}
+
+        {mobileView === "details" && (
+          <>
+            {/* Tasks grouped by status using TaskRow */}
+            {taskGroups.map((group) => (
+              <div key={group.status} className="thread-detail-page__mobile-section">
+                <DataRowContainer title={group.label}>
+                  {group.tasks.map((task) => (
+                    <ThreadTaskRow
+                      key={task.id}
+                      task={task}
+                      onClick={() => navigate(`/tasks/task/${task.id}`)}
+                    />
+                  ))}
+                </DataRowContainer>
+              </div>
+            ))}
+
+            {/* Context section */}
+            {contextBlocks.length > 0 && (
+              <div className="thread-detail-page__mobile-section">
+                <Text size="2" weight="semibold">
+                  Context ({contextBlocks.length})
+                </Text>
+                <div className="thread-detail-page__mobile-list">
+                  {contextBlocks.map((contextBlock) => (
+                    <ThreadContextCard
+                      key={`${contextBlock.id}-${contextBlock.isStateMemory ? "state" : "reference"}`}
+                      contextBlock={contextBlock}
+                      isStateMemory={contextBlock.isStateMemory}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Participants section */}
+            {thread.participants.length > 0 && (
+              <div className="thread-detail-page__mobile-section">
+                <Text size="2" weight="semibold">
+                  Participants ({thread.participants.length})
+                </Text>
+                <div className="thread-detail-page__mobile-list">
+                  {thread.participants.map((participant) => (
+                    <Text key={participant.id} size="2">
+                      {participant.displayName} (@{participant.slug})
+                    </Text>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <DeleteWithConfirmation
+              className="thread-detail-page__actions"
+              onDelete={onDelete}
+              size="sm"
+              deleteLabel="Delete thread"
+              confirmLabel="Delete forever"
+            />
+          </>
+        )}
+
+        {mobileView === "chat" && (
+          <div className="thread-detail-page__mobile-jump-row">
+            <Button variant="secondary" onClick={() => setMobileView("details")}>
+              View tasks and context
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
