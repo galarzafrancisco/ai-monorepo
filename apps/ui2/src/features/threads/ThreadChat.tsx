@@ -107,26 +107,28 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
       </div>
 
       <form className="thread-chat__input-form" onSubmit={handleSendMessage}>
-        <textarea
-          className="thread-chat__input"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Write a message to this thread..."
-          rows={3}
-          disabled={chatIsSending}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage(e);
-            }
-          }}
-        />
-        <div className="thread-chat__composer-footer">
-          <Text size="1" tone="muted">
-            Enter to send, Shift+Enter for a new line
-          </Text>
-          <Button type="submit" disabled={!newMessage.trim() || chatIsSending}>
-            {chatIsSending ? "Sending..." : "Send message"}
+        <div className="thread-chat__composer-row">
+          <textarea
+            className="thread-chat__input"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Write a message to this thread..."
+            rows={3}
+            disabled={chatIsSending}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(e);
+              }
+            }}
+          />
+          <Button
+            type="submit"
+            variant="secondary"
+            className="thread-chat__send-btn"
+            disabled={!newMessage.trim() || chatIsSending}
+          >
+            {chatIsSending ? "sending..." : "send"}
           </Button>
         </div>
         {chatSendError && (
