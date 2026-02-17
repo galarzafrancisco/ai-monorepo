@@ -76,9 +76,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
     const actionCommands = [
       {
         id: 'task-add-comment',
-        label: 'Add Comment',
+        label: 'Comment',
         description: 'Add a comment to this task',
-        aliases: ['comment', 'note'],
+        aliases: ['add comment', 'note'],
         onSelect: () => setShowNewCommentPop(true),
       },
       {
@@ -99,9 +99,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
       },
       {
         id: 'task-add-tag',
-        label: 'Add Tag',
+        label: 'Tag',
         description: 'Add a tag to this task',
-        aliases: ['tag', 'label'],
+        aliases: ['add tag', 'label'],
         onSelect: () => setShowTagPop(true),
       },
     ];
