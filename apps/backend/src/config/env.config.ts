@@ -176,3 +176,12 @@ export function isDevelopment(): boolean {
 export function isProduction(): boolean {
   return getConfig().nodeEnv === 'production';
 }
+
+/**
+ * Feature flag: Secrets module.
+ * Off by default. Enable by setting SECRETS_ENABLED=true in the environment.
+ * When disabled, the app starts without requiring SECRETS_ENCRYPTION_KEY.
+ */
+export function isSecretsEnabled(): boolean {
+  return process.env.SECRETS_ENABLED === 'true';
+}
