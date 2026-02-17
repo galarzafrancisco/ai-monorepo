@@ -29,7 +29,14 @@ export class SecretsEncryptionService {
       }
       this.key = keyBuffer;
     } else {
-      // Development fallback: derive a fixed key from a well-known dev secret
+      const nodeEnv = process.env.NODE_ENV ?? 'development';
+      if (nodeEnv !== 'development' && nodeEnv !== 'test') {
+        throw new Error(
+          'SECRETS_ENCRYPTION_KEY environment variable is required in production. ' +
+            `Set it to a ${KEY_LENGTH * 2}-character hex string (${KEY_LENGTH} bytes).`,
+        );
+      }
+      // Development/test fallback: derive a fixed key from a well-known dev secret
       this.logger.warn(
         'SECRETS_ENCRYPTION_KEY is not set. Using a fixed development key. DO NOT use this in production.',
       );

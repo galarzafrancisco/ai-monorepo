@@ -14,7 +14,7 @@ export type SecretResponseDto = {
     /**
      * Human-readable description
      */
-    description?: Record<string, any> | null;
+    description?: string | null;
     /**
      * ID of the actor who created this secret
      */
@@ -22,7 +22,7 @@ export type SecretResponseDto = {
     /**
      * Slug of the actor who created this secret
      */
-    createdBy?: Record<string, any> | null;
+    createdBy?: string | null;
     /**
      * Row version for optimistic locking
      */

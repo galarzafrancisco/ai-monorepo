@@ -4517,7 +4517,7 @@ export interface components {
              * @description Human-readable description
              * @example OpenAI API key for agent completions
              */
-            description?: Record<string, never> | null;
+            description?: string | null;
             /**
              * @description ID of the actor who created this secret
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -4527,7 +4527,7 @@ export interface components {
              * @description Slug of the actor who created this secret
              * @example fran
              */
-            createdBy?: Record<string, never> | null;
+            createdBy?: string | null;
             /**
              * @description Row version for optimistic locking
              * @example 1
@@ -4571,7 +4571,7 @@ export interface components {
              * @description New description for the secret
              * @example Updated OpenAI API key
              */
-            description?: Record<string, never> | null;
+            description?: string | null;
             /**
              * @description New secret value (will be encrypted at rest)
              * @example sk-...

@@ -14,6 +14,7 @@ export class SecretResponseDto {
   name!: string;
 
   @ApiPropertyOptional({
+    type: String,
     description: 'Human-readable description',
     example: 'OpenAI API key for agent completions',
     nullable: true,
@@ -27,6 +28,7 @@ export class SecretResponseDto {
   createdByActorId!: string;
 
   @ApiPropertyOptional({
+    type: String,
     description: 'Slug of the actor who created this secret',
     example: 'fran',
     nullable: true,

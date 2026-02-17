@@ -13,6 +13,7 @@ export class UpdateSecretDto {
   name?: string;
 
   @ApiPropertyOptional({
+    type: String,
     description: 'New description for the secret',
     example: 'Updated OpenAI API key',
     nullable: true,

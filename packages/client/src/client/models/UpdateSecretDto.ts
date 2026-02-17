@@ -10,7 +10,7 @@ export type UpdateSecretDto = {
     /**
      * New description for the secret
      */
-    description?: Record<string, any> | null;
+    description?: string | null;
     /**
      * New secret value (will be encrypted at rest)
      */

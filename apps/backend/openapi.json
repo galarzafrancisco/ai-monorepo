@@ -10215,7 +10215,7 @@
             "example": "OPENAI_API_KEY"
           },
           "description": {
-            "type": "object",
+            "type": "string",
             "description": "Human-readable description",
             "example": "OpenAI API key for agent completions",
             "nullable": true
@@ -10226,7 +10226,7 @@
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "createdBy": {
-            "type": "object",
+            "type": "string",
             "description": "Slug of the actor who created this secret",
             "example": "fran",
             "nullable": true
@@ -10290,7 +10290,7 @@
             "example": "OPENAI_API_KEY_V2"
           },
           "description": {
-            "type": "object",
+            "type": "string",
             "description": "New description for the secret",
             "example": "Updated OpenAI API key",
             "nullable": true
