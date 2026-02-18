@@ -86,7 +86,7 @@ export class AgentTokensController {
     }
 
     // Issue the token
-    const result = await this.issuedAccessTokenService.issueToken({
+    const result = await this.issuedAccessTokenService.issueTokenFromPersistedActors({
       subjectActor,
       issuedByActor,
       name: dto.name,
