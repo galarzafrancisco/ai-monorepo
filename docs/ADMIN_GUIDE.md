@@ -74,6 +74,63 @@ These are for testing only. Do not use them in production.
 
 Set `NODE_ENV=production`. No users are seeded. You must create the first admin user manually. `ISSUER_URL` is required.
 
+## SQLite Backup and Restore Strategy
+
+If you run Taico on a single home server with SQLite, treat the database file as critical state and use a simple, testable backup flow.
+
+### What to Back Up
+
+- Main SQLite file (for example `apps/backend/data/taico.sqlite`)
+- WAL and SHM files if WAL mode is enabled (`*.sqlite-wal`, `*.sqlite-shm`)
+- Environment/config needed to boot the same instance (`.env`, stack env files, reverse-proxy config)
+
+### Recommended Backup Method
+
+Prefer SQLite's online backup mechanism (`.backup`) over raw file copy while the app is running.
+
+```bash
+sqlite3 /path/to/taico.sqlite ".backup '/var/backups/taico/taico-$(date +%F-%H%M%S).sqlite'"
+```
+
+Then compress and checksum the artifact:
+
+```bash
+gzip /var/backups/taico/taico-*.sqlite
+sha256sum /var/backups/taico/taico-*.sqlite.gz > /var/backups/taico/SHA256SUMS
+```
+
+### Suggested Schedule and Retention
+
+- Hourly local backups, retained for 24 hours
+- Daily backups, retained for 14-30 days
+- Weekly backups, retained for 8-12 weeks
+- At least one offsite copy (Backblaze B2, S3, rsync to another host, etc.)
+
+Use a systemd timer or cron and alert on failures.
+
+### Restore Procedure (Runbook)
+
+1. Stop Taico to avoid writes during restore.
+2. Verify backup integrity (`gzip -t`, `sha256sum -c`, optional `PRAGMA integrity_check`).
+3. Replace the active DB with the selected backup.
+4. Start Taico and validate login, tasks list, and recent comments.
+5. Record the incident and root cause.
+
+### Recovery Objectives
+
+For home-server deployments, start with:
+
+- RPO (data loss window): up to 1 hour
+- RTO (restore time): 15-30 minutes
+
+Tune backup cadence and automation if you need tighter targets.
+
+### Important Operational Notes
+
+- Always test restores periodically (for example monthly); untested backups are not reliable backups.
+- Keep backup storage and credentials separate from the primary host.
+- Before Taico upgrades/migrations, take an immediate pre-upgrade backup.
+
 ## User Management
 
 There is no self-service user creation yet. To create an admin user:
