@@ -12,4 +12,13 @@ export class ThreadListItemResponseDto {
     example: 'Implement authentication feature',
   })
   title!: string;
+
+  @ApiProperty({
+    description:
+      'Provider-specific chat session/conversation ID associated with this thread',
+    example: 'conv_123abc',
+    type: String,
+    nullable: true,
+  })
+  chatSessionId!: string | null;
 }

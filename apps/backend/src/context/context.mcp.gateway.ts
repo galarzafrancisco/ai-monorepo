@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { ContextService } from './context.service';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { MetaService } from 'src/meta/meta.service';
 import { AuthContext, UserContext } from 'src/auth/guards/context/auth-context.types';

@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { TasksService } from './tasks.service';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { TaskStatus } from './enums';
 import {
   AuthContext,
