@@ -13,8 +13,34 @@ import { getConfig } from '../config/env.config';
  */
 export interface IssueTokenInput {
   /** The actor this token is for (subject) */
-  subjectActor: ActorEntity;
+  subjectActor: ActorInfo;
   /** The actor issuing this token (must be human) */
+  issuedByActor: ActorInfo;
+  /** Human-readable name for this token */
+  name: string;
+  /** Scopes to grant */
+  scopes: string[];
+  /** Days until expiration (default: 30) */
+  expirationDays?: number;
+}
+
+/**
+ * Minimal actor fields needed to issue token claims and persistence metadata.
+ */
+export interface ActorInfo {
+  id: string;
+  slug: string;
+  type: ActorEntity['type'];
+  displayName: string;
+}
+
+/**
+ * Safer input variant for callers that already resolved actors from persistence.
+ */
+export interface IssueTokenFromPersistedActorsInput {
+  /** Persisted subject actor */
+  subjectActor: ActorEntity;
+  /** Persisted issuing actor */
   issuedByActor: ActorEntity;
   /** Human-readable name for this token */
   name: string;
@@ -52,8 +78,10 @@ export class IssuedAccessTokenService {
   ) {}
 
   /**
-   * Issue a new long-lived access token for an actor.
-   * Returns both the database record and the raw JWT (shown only once).
+   * Issue a new long-lived access token from minimal actor info.
+   *
+   * IMPORTANT: This method trusts actor metadata provided by the caller.
+   * Prefer `issueTokenFromPersistedActors` when actors were loaded from the DB.
    */
   async issueToken(input: IssueTokenInput): Promise<IssueTokenResult> {
     const config = getConfig();
@@ -113,6 +141,31 @@ export class IssuedAccessTokenService {
     return {
       entity: savedEntity,
       token,
+    };
+  }
+
+  /**
+   * Issue a token using actor entities already resolved from persistence.
+   * This is the preferred path for API/service flows that can validate actor IDs.
+   */
+  async issueTokenFromPersistedActors(
+    input: IssueTokenFromPersistedActorsInput,
+  ): Promise<IssueTokenResult> {
+    return this.issueToken({
+      subjectActor: this.toActorInfo(input.subjectActor),
+      issuedByActor: this.toActorInfo(input.issuedByActor),
+      name: input.name,
+      scopes: input.scopes,
+      expirationDays: input.expirationDays,
+    });
+  }
+
+  private toActorInfo(actor: ActorEntity): ActorInfo {
+    return {
+      id: actor.id,
+      slug: actor.slug,
+      type: actor.type,
+      displayName: actor.displayName,
     };
   }
 
