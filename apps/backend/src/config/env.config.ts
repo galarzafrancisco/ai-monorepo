@@ -7,6 +7,7 @@
  */
 
 import { Logger } from '@nestjs/common';
+import 'dotenv/config';
 
 const logger = new Logger('EnvConfig');
 
@@ -42,6 +43,9 @@ export interface AppConfig {
 
   // Development Configuration
   vitePort: string;
+
+  // TODO: move this to a proper secret
+  openAiKey: string;
 }
 
 /**
@@ -103,6 +107,8 @@ export function loadConfig(): AppConfig {
 
     // Development Configuration
     vitePort: uiPort,
+
+    openAiKey: getOpenAiKey(),
   };
 
   // Log configuration (excluding sensitive data)
@@ -113,6 +119,7 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Callback URL: ${config.callbackUrl}`);
   logger.log(`  - Database Path: ${config.databasePath}`);
   logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
+  logger.log(`  - OpenAI Key: ${config.openAiKey.slice(0,3)}...`);
 
   return config;
 }
@@ -148,6 +155,9 @@ function getCallbackUrl(): string {
   return `${issuerUrl}/api/v1/auth/callback`;
 }
 
+function getOpenAiKey(): string {
+  return process.env.OPENAI_KEY || '';
+}
 
 /**
  * Singleton instance of configuration
