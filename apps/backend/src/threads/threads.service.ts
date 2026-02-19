@@ -31,6 +31,7 @@ import {
   TaskNotFoundForThreadError,
   ContextBlockNotFoundError,
   ActorNotFoundForThreadError,
+  ThreadMissingChatSessionError,
 } from './errors/threads.errors';
 import { MessageCreatedEvent } from './events/threads.events';
 import { ChatService } from './chat.service';
@@ -114,8 +115,10 @@ export class ThreadsService {
       const conversation = await this.chatService.createConversation({
         threadId: savedThread.id,
       });
-      savedThread.chatSessionId = conversation.id;
-      await this.threadRepository.save(savedThread);
+      if (conversation?.id) {
+        savedThread.chatSessionId = conversation.id;
+        await this.threadRepository.save(savedThread);
+      }
     } catch (error) {
       this.logger.warn({
         message: 'Failed to create chat conversation for thread',
@@ -720,8 +723,7 @@ export class ThreadsService {
       throw new ThreadNotFoundError(input.threadId);
     }
     if (!thread.chatSessionId) {
-      // TODO: make an error. This shouldn't happen though.
-      throw "Thread does not have a chat session id"
+      throw new ThreadMissingChatSessionError(input.threadId);
     }
 
     // Verify actor exists if provided
@@ -768,11 +770,23 @@ export class ThreadsService {
     );
 
     // Send to chat
-    this.chatService.sendMessageToThread({
-      conversationId: thread.chatSessionId,
-      message: input.content,
-      actorId: input.createdByActorId
-    })
+    try {
+      await this.chatService.sendMessageToThread({
+        conversationId: thread.chatSessionId,
+        message: input.content,
+        actorId: input.createdByActorId,
+      });
+    } catch (error) {
+      this.logger.warn({
+        message: 'Failed to dispatch thread message to chat provider',
+        threadId: input.threadId,
+        messageId: savedMessage.id,
+        error:
+          error instanceof Error
+            ? { message: error.message, stack: error.stack }
+            : String(error),
+      });
+    }
 
     return this.mapThreadMessageToResult(messageWithRelations);
   }

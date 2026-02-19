@@ -4,8 +4,6 @@ import { ThreadsService } from "./threads.service";
 import { AgentsService } from "src/agents/agents.service";
 import { AgentResult } from "src/agents/dto/service/agents.service.types";
 // import { Agent, run } from "@openai/agents";
-import { OpenAI } from 'openai';
-import { getConfig } from "src/config/env.config";
 
 @Injectable()
 export class ChatService {
@@ -24,8 +22,12 @@ export class ChatService {
     return self;
   }
 
-  public async createConversation({ threadId }: { threadId: string }) {
-    return { id: 'asd' }
+  public async createConversation({ threadId }: { threadId: string }): Promise<{ id: string } | null> {
+    this.logger.debug({
+      message: 'Chat conversation creation is not implemented yet',
+      threadId,
+    });
+    return null;
     // const client = new OpenAI({
     //   apiKey: getConfig().openAiKey,
     // });
@@ -48,6 +50,13 @@ export class ChatService {
   public async sendMessageToThread({ conversationId, message, actorId }: { conversationId: string, message: string, actorId: string }) {
     // Get self
     const self = await this.getSelf();
+
+    this.logger.debug({
+      message: 'Chat message dispatch is not implemented yet',
+      conversationId,
+      actorId,
+      agentSlug: self.slug,
+    });
 
     // // Make agent
     // const agent = new Agent({

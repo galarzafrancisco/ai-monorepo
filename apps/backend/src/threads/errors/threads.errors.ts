@@ -27,3 +27,10 @@ export class ActorNotFoundForThreadError extends NotFoundException {
     this.name = 'ActorNotFoundForThreadError';
   }
 }
+
+export class ThreadMissingChatSessionError extends BadRequestException {
+  constructor(threadId: string) {
+    super(`Thread with ID ${threadId} does not have a chat session`);
+    this.name = 'ThreadMissingChatSessionError';
+  }
+}

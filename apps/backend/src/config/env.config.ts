@@ -119,7 +119,7 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Callback URL: ${config.callbackUrl}`);
   logger.log(`  - Database Path: ${config.databasePath}`);
   logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
-  logger.log(`  - OpenAI Key: ${config.openAiKey.slice(0,3)}...`);
+  logger.log(`  - OpenAI Key configured: ${config.openAiKey.length > 0}`);
 
   return config;
 }
