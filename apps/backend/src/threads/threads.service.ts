@@ -31,7 +31,6 @@ import {
   TaskNotFoundForThreadError,
   ContextBlockNotFoundError,
   ActorNotFoundForThreadError,
-  ThreadMissingChatSessionError,
 } from './errors/threads.errors';
 import { MessageCreatedEvent } from './events/threads.events';
 import { ChatService } from './chat.service';
@@ -722,9 +721,6 @@ export class ThreadsService {
     if (!thread) {
       throw new ThreadNotFoundError(input.threadId);
     }
-    if (!thread.chatSessionId) {
-      throw new ThreadMissingChatSessionError(input.threadId);
-    }
 
     // Verify actor exists if provided
     if (input.createdByActorId) {
@@ -769,22 +765,30 @@ export class ThreadsService {
       ),
     );
 
-    // Send to chat
-    try {
-      await this.chatService.sendMessageToThread({
-        conversationId: thread.chatSessionId,
-        message: input.content,
-        actorId: input.createdByActorId,
-      });
-    } catch (error) {
-      this.logger.warn({
-        message: 'Failed to dispatch thread message to chat provider',
+    // Send to chat when a provider conversation is available.
+    if (thread.chatSessionId) {
+      try {
+        await this.chatService.sendMessageToThread({
+          conversationId: thread.chatSessionId,
+          message: input.content,
+          actorId: input.createdByActorId,
+        });
+      } catch (error) {
+        this.logger.warn({
+          message: 'Failed to dispatch thread message to chat provider',
+          threadId: input.threadId,
+          messageId: savedMessage.id,
+          error:
+            error instanceof Error
+              ? { message: error.message, stack: error.stack }
+              : String(error),
+        });
+      }
+    } else {
+      this.logger.debug({
+        message: 'Skipping provider dispatch: thread has no chat session',
         threadId: input.threadId,
         messageId: savedMessage.id,
-        error:
-          error instanceof Error
-            ? { message: error.message, stack: error.stack }
-            : String(error),
       });
     }
 
