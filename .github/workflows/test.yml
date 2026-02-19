@@ -29,10 +29,7 @@ jobs:
             packages/shared/package-lock.json
 
       - name: Build everything
-        run: npm run zero-to-prod
-
-      - name: Install dev dependencies (for testing)
-        run: npm run install:dev
+        run: npm run build:dev
 
       - name: Run E2E tests
         id: tests
