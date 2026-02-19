@@ -12,7 +12,7 @@ This guide covers setting up the development environment, understanding the arch
 ### One-Command Setup
 
 ```bash
-npm run zero-to-prod
+npm run build:dev
 ```
 
 This installs dependencies, generates API clients from the OpenAPI spec, and builds all packages including the worker in the correct order.
@@ -43,7 +43,7 @@ You can also set `UI_PORT`, `LEGACY_UI_PORT`, and `BACKEND_PORT` env vars direct
 
 ## After Making Changes
 
-1. `npm run zero-to-prod` — verify everything compiles
+1. `npm run build:dev` — verify everything compiles
 2. `npm run test:e2e` — run end-to-end tests
 3. `npm run dev` — verify the app starts and works
 
@@ -85,7 +85,7 @@ The shared package auto-generates TypeScript types from the backend's OpenAPI sp
 3. `openapi-typescript-codegen` generates a fetch-based API client
 4. Frontend imports these for type-safe API calls
 
-This runs automatically as part of `npm run zero-to-prod`. No manual steps needed.
+This runs automatically as part of `npm run build:dev`. No manual steps needed.
 
 ### Real-Time Communication
 
