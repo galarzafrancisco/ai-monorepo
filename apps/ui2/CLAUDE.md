@@ -56,4 +56,4 @@ features/<name>/
 
 ## Data Consumption
 
-Always use the auto-generated API client from the `shared` package. Run `npm run zero-to-prod` from the repo root to regenerate types after backend changes.
+Always use the auto-generated API client from the `shared` package. Run `npm run build:dev` from the repo root to regenerate types after backend changes.

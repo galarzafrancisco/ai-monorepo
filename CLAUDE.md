@@ -20,15 +20,15 @@ Full details: `docs/PRIMITIVES.md`
 ## Development
 
 ```bash
-npm run zero-to-prod  # Install deps, generate API types, build all packages
-npm run dev           # Start backend + both frontends with hot reload
+npm run build:dev     # Install deps, generate API types, build all packages
+npm run dev:[1-5]     # Start backend + both frontends with hot reload
 ```
 
 If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a different stack (each has pre-configured ports and its own database via `stack[1-5].env`), or set `UI_PORT`, `LEGACY_UI_PORT`, and `BACKEND_PORT` env vars directly.
 
 ## After Making Changes
 
-1. `npm run zero-to-prod` — verify everything compiles
+1. `npm run build:dev` — verify everything compiles
 2. `npm run test:e2e` — run end-to-end tests
 3. `npm run dev` — verify the app starts and works
 

@@ -16,7 +16,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 4. When you make a decision, add a comment to the task to document it
 5. When you find relevant context, add it to the task as a comment
 ### Validate
-6. Always run `npm run zero-to-prod` to test that builds work
+6. Always run `npm run build:dev` to test that builds work
 7. Always run `npm run dev` to validate that the app starts
 ### Finish
 7. Open a PR to `main` using the `gh` cli. Add a title and clear description of what you did. If there's any technical debt, call it out.
@@ -32,6 +32,6 @@ You are in headless mode, and the only way to communicate with the user is throu
 # Checklist:
 - [] put the task in progress when starting to work
 - [] cut a feature branch
-- [] ran `npm run zero-to-prod` to confirm build works
+- [] ran `npm run build:dev` to confirm build works
 - [] ran `npm run dev` to ensure app starts (some AppInitRunner errors expected during startup)
 - [] created a PR when done and put the task in review
