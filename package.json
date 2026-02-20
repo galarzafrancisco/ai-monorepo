@@ -37,6 +37,9 @@
     "dotenv-cli": "^11.0.0",
     "tsc-alias": "^1.8.16"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-arm64-gnu": "4.57.1"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/galarzafrancisco/ai-monorepo.git"
