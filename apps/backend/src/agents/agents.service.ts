@@ -176,70 +176,97 @@ export class AgentsService {
     return this.mapAgentToResult(agent, agent.actor);
   }
 
-  // async updateAgent(
-  //   actorId: string,
-  //   input: UpdateAgentInput,
-  // ): Promise<AgentResult> {
-  //   this.logger.log(`Updating agent: ${agentId}`);
+  async updateAgent(
+    actorId: string,
+    input: UpdateAgentInput,
+  ): Promise<AgentResult> {
+    this.logger.log(`Updating agent with actorId: ${actorId}`);
 
-  //   const agent = await this.agentRepository.findOne({
-  //     where: { id: agentId },
-  //     relations: ['actor'],
-  //   });
+    const agent = await this.agentRepository.findOne({
+      where: { actorId },
+      relations: ['actor'],
+    });
 
-  //   if (!agent) {
-  //     throw new AgentNotFoundError(agentId);
-  //   }
+    if (!agent || !agent.actor) {
+      throw new AgentNotFoundError(actorId);
+    }
 
-  //   // Check for slug conflict if slug is being updated
-  //   if (input.slug !== undefined && input.slug !== agent.actor?.slug) {
-  //     const existingActor = await this.actorRepository.findOne({
-  //       where: { slug: input.slug },
-  //     });
+    // Check for slug conflict if slug is being updated
+    if (input.slug !== undefined && input.slug !== agent.actor.slug) {
+      const existingActor = await this.actorRepository.findOne({
+        where: { slug: input.slug },
+      });
 
-  //     if (existingActor && existingActor.id !== agent.actorId) {
-  //       throw new AgentSlugConflictError(input.slug);
-  //     }
-  //   }
+      if (existingActor && existingActor.id !== agent.actorId) {
+        throw new AgentSlugConflictError(input.slug);
+      }
+    }
 
-  //   // Apply partial updates to agent
-  //   if (input.type !== undefined) agent.type = input.type;
-  //   if (input.description !== undefined) agent.description = input.description;
-  //   if (input.systemPrompt !== undefined)
-  //     agent.systemPrompt = input.systemPrompt;
-  //   if (input.statusTriggers !== undefined)
-  //     agent.statusTriggers = input.statusTriggers;
-  //   if (input.allowedTools !== undefined)
-  //     agent.allowedTools = input.allowedTools;
-  //   if (input.isActive !== undefined) agent.isActive = input.isActive;
-  //   if (input.concurrencyLimit !== undefined)
-  //     agent.concurrencyLimit = input.concurrencyLimit;
+    // Apply updates to agent
+    if (input.type !== undefined) {
+      agent.type = input.type;
+    }
+    if (input.description !== undefined) {
+      agent.description = input.description;
+    }
+    if (input.systemPrompt !== undefined) {
+      agent.systemPrompt = input.systemPrompt;
+    }
+    if (input.providerId !== undefined) {
+      agent.providerId = this.normalizeOptionalId(input.providerId);
+    }
+    if (input.modelId !== undefined) {
+      agent.modelId = this.normalizeOptionalId(input.modelId);
+    }
+    if (input.statusTriggers !== undefined) {
+      agent.statusTriggers = input.statusTriggers;
+    }
+    if (input.tagTriggers !== undefined) {
+      agent.tagTriggers = input.tagTriggers;
+    }
+    if (input.allowedTools !== undefined) {
+      agent.allowedTools = input.allowedTools;
+    }
+    if (input.isActive !== undefined) {
+      agent.isActive = input.isActive;
+    }
+    if (input.concurrencyLimit !== undefined) {
+      agent.concurrencyLimit = input.concurrencyLimit;
+    }
 
-  //   // Update actor if name or slug changed
-  //   if (agent.actor && (input.name !== undefined || input.slug !== undefined)) {
-  //     if (input.name !== undefined) agent.actor.displayName = input.name;
-  //     if (input.slug !== undefined) agent.actor.slug = input.slug;
-  //     await this.actorRepository.save(agent.actor);
-  //   }
+    // Update actor if relevant fields changed
+    if (input.name !== undefined) {
+      agent.actor.displayName = input.name;
+    }
+    if (input.slug !== undefined) {
+      agent.actor.slug = input.slug;
+    }
+    if (input.introduction !== undefined) {
+      agent.actor.introduction = input.introduction;
+    }
+    if (input.avatarUrl !== undefined) {
+      agent.actor.avatarUrl = input.avatarUrl;
+    }
 
-  //   const updatedAgent = await this.agentRepository.save(agent);
+    await this.actorRepository.save(agent.actor);
+    const updatedAgent = await this.agentRepository.save(agent);
 
-  //   // Reload with actor relation
-  //   const agentWithRelations = await this.agentRepository.findOne({
-  //     where: { id: updatedAgent.id },
-  //     relations: ['actor'],
-  //   });
-  //   if (!agentWithRelations || !agentWithRelations.actor) {
-  //     throw new AgentNotFoundError(updatedAgent.id);
-  //   }
+    // Reload with actor relation
+    const agentWithRelations = await this.agentRepository.findOne({
+      where: { id: updatedAgent.id },
+      relations: ['actor'],
+    });
+    if (!agentWithRelations || !agentWithRelations.actor) {
+      throw new AgentNotFoundError(updatedAgent.id);
+    }
 
-  //   this.eventEmitter.emit(
-  //     'agent.updated',
-  //     new AgentUpdatedEvent(agentWithRelations!),
-  //   );
+    this.eventEmitter.emit(
+      'agent.updated',
+      new AgentUpdatedEvent(agentWithRelations),
+    );
 
-  //   return this.mapAgentToResult(agentWithRelations);
-  // }
+    return this.mapAgentToResult(agentWithRelations, agentWithRelations.actor);
+  }
 
   async deleteAgent(actorId: string): Promise<void> {
     this.logger.log(`Deleting agent with actorId: ${actorId}`);
