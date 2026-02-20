@@ -24,30 +24,40 @@ export class ChatService {
     return self;
   }
 
-  public async createConversation({ threadId }: { threadId: string }) {
-    return { id: 'asd' }
-    // const client = new OpenAI({
-    //   apiKey: getConfig().openAiKey,
-    // });
-    // const conversation = await client.conversations.create({
-    //   metadata: {
-    //     threadId
-    //   }
-    // });
-    // return conversation;
+  private getClient(): OpenAI {
+    return new OpenAI({
+      apiKey: getConfig().openAiKey,
+    });
   }
 
-  // private async getConversation({ conversationId }: { conversationId: string }) {
-  //   const client = new OpenAI({
-  //     apiKey: getConfig().openAiKey,
-  //   });
-  //   const conversation = await client.conversations.retrieve(conversationId);
-  //   return conversation;
-  // }
+  public async createConversation({ threadId }: { threadId: string }) {
+    const client = this.getClient();
+    const conversation = await client.conversations.create({
+      metadata: {
+        threadId,
+      },
+    });
+    return conversation;
+  }
+
+  private async getConversation({ conversationId }: { conversationId: string }) {
+    const client = this.getClient();
+    const conversation = await client.conversations.retrieve(conversationId);
+    return conversation;
+  }
 
   public async sendMessageToThread({ conversationId, message, actorId }: { conversationId: string, message: string, actorId: string }) {
     // Get self
     const self = await this.getSelf();
+    const conversation = await this.getConversation({ conversationId });
+    this.logger.log({
+      message: 'Sending message to provider conversation',
+      conversationId,
+      actorId,
+      conversation: conversation.id,
+      agent: self.slug,
+      contentLength: message.length,
+    });
 
     // // Make agent
     // const agent = new Agent({
