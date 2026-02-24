@@ -70,23 +70,15 @@ export class McpRegistryController {
     description: 'Server with providedId already exists',
   })
   async createServer(@Body() dto: CreateServerDto): Promise<ServerResponseDto> {
-    const server =
-      dto.type === 'http'
-        ? await this.mcpRegistryService.createServer({
-            providedId: dto.providedId,
-            name: dto.name,
-            description: dto.description,
-            type: 'http',
-            url: dto.url || '',
-          })
-        : await this.mcpRegistryService.createServer({
-            providedId: dto.providedId,
-            name: dto.name,
-            description: dto.description,
-            type: 'stdio',
-            cmd: dto.cmd || '',
-            args: dto.args,
-          });
+    const server = await this.mcpRegistryService.createServer({
+      providedId: dto.providedId,
+      name: dto.name,
+      description: dto.description,
+      type: dto.type,
+      url: dto.url,
+      cmd: dto.cmd,
+      args: dto.args,
+    });
     return this.mapServerToResponse(server);
   }
 

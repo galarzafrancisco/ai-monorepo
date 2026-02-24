@@ -25,7 +25,12 @@ type StdioServerConfig = {
   url?: undefined;
 };
 
-export type CreateServerInput = ServerBase & (HttpServerConfig | StdioServerConfig);
+export type CreateServerInput = ServerBase & {
+  type: McpServerType;
+  url?: string;
+  cmd?: string;
+  args?: string[];
+};
 
 export type UpdateServerInput = {
   type?: McpServerType;

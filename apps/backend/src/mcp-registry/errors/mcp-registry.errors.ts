@@ -13,6 +13,7 @@ export const McpRegistryErrorCodes = {
   SCOPE_HAS_MAPPINGS: ErrorCodes.SCOPE_HAS_MAPPINGS,
   CONNECTION_HAS_MAPPINGS: ErrorCodes.CONNECTION_HAS_MAPPINGS,
   INVALID_MAPPING: ErrorCodes.INVALID_MAPPING,
+  VALIDATION_FAILED: ErrorCodes.VALIDATION_FAILED,
 } as const;
 
 type McpRegistryErrorCode =
@@ -141,6 +142,6 @@ export class InvalidMappingError extends McpRegistryDomainError {
 
 export class InvalidServerConfigurationError extends McpRegistryDomainError {
   constructor(message: string) {
-    super(message, McpRegistryErrorCodes.INVALID_MAPPING);
+    super(message, McpRegistryErrorCodes.VALIDATION_FAILED);
   }
 }
