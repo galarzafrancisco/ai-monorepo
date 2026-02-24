@@ -350,6 +350,10 @@ The authorization server enables MCP clients to access resources from downstream
   provided_id: string (unique),     // External identifier (e.g., 'tasks')
   name: string,
   description: string,
+  type: 'http' | 'stdio',
+  url?: string,                     // Required for type='http'
+  cmd?: string,                     // Required for type='stdio'
+  args?: string[],                  // Optional for type='stdio'
   created_at: timestamp,
   updated_at: timestamp,
   deleted_at: timestamp
@@ -357,8 +361,9 @@ The authorization server enables MCP clients to access resources from downstream
 ```
 
 **Relationships**:
-- Has many `mcp_scopes` (1:N)
-- Has many `mcp_connections` (1:N)
+- HTTP servers can have many `mcp_scopes` (1:N)
+- HTTP servers can have many `mcp_connections` (1:N)
+- STDIO servers do not participate in OAuth scope/connection flows
 
 #### 7. mcp_scopes (McpScopeEntity)
 **Purpose**: Scopes exposed by MCP servers

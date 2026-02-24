@@ -10,6 +10,7 @@ export const createTasks: CreateServerInput = {
   providedId: 'tasks',
   name: 'Tasks',
   description: 'This MCP server allows you to interact with tasks!',
+  type: 'http',
   url: `${config.issuerUrl}/api/v1/tasks/tasks/mcp`,
 };
 

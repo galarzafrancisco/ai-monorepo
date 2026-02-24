@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ToolsService } from './api';
+import { CreateServerDto } from '@taico/client';
 
 // Types will be generated from backend response DTOs
 type McpServer = {
@@ -7,7 +8,10 @@ type McpServer = {
   providedId: string;
   name: string;
   description: string;
+  type: 'http' | 'stdio';
   url?: string;
+  cmd?: string;
+  args?: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -114,11 +118,22 @@ export const useMcpRegistry = () => {
   };
 
   // Create server
-  const createServer = async (data: { providedId: string; name: string; description: string; url?: string }) => {
+  const createServer = async (data: {
+    providedId: string;
+    name: string;
+    description: string;
+    url?: string;
+    type?: CreateServerDto.type;
+    cmd?: string;
+    args?: string[];
+  }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const createdServer = await ToolsService.mcpRegistryControllerCreateServer(data);
+      const createdServer = await ToolsService.mcpRegistryControllerCreateServer({
+        ...data,
+        type: data.type ?? CreateServerDto.type.HTTP,
+      });
       await loadServers();
       return createdServer;
     } catch (err) {

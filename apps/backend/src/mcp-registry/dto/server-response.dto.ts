@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { MCP_SERVER_TYPES } from '../mcp-server.types';
+import type { McpServerType } from '../mcp-server.types';
 
 export class ServerResponseDto {
   @ApiProperty({
@@ -26,11 +28,33 @@ export class ServerResponseDto {
   description!: string;
 
   @ApiProperty({
+    description: 'Transport type of the MCP server',
+    enum: MCP_SERVER_TYPES,
+    example: 'http',
+  })
+  type!: McpServerType;
+
+  @ApiProperty({
     description: 'URL that MCP Clients will use to connect to the server',
     example: 'http://localhost:3000/api/v1/tasks/tasks/mcp',
     required: false,
   })
   url?: string;
+
+  @ApiProperty({
+    description: 'Command used to start a stdio MCP server',
+    example: 'npx',
+    required: false,
+  })
+  cmd?: string;
+
+  @ApiProperty({
+    description: 'Arguments passed to the stdio command',
+    example: ['@playwright/mcp@latest'],
+    required: false,
+    type: [String],
+  })
+  args?: string[];
 
   @ApiProperty({
     description: 'Timestamp when the server was created',

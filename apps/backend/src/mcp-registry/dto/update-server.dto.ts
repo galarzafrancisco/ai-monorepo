@@ -1,7 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, MaxLength, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MaxLength,
+  IsUrl,
+  IsIn,
+  IsArray,
+  IsNotEmpty,
+  ArrayMaxSize,
+} from 'class-validator';
+import { MCP_SERVER_TYPES } from '../mcp-server.types';
+import type { McpServerType } from '../mcp-server.types';
 
 export class UpdateServerDto {
+  @ApiProperty({
+    description: 'Transport type of the MCP server',
+    enum: MCP_SERVER_TYPES,
+    required: false,
+    example: 'stdio',
+  })
+  @IsOptional()
+  @IsIn(MCP_SERVER_TYPES)
+  type?: McpServerType;
+
   @ApiProperty({
     description: 'Display name of the MCP server',
     example: 'GitHub Integration',
@@ -31,4 +52,27 @@ export class UpdateServerDto {
   @IsUrl({ require_tld: false })
   @MaxLength(2048)
   url?: string;
+
+  @ApiProperty({
+    description: 'Command used to start a stdio MCP server',
+    example: 'npx',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(1024)
+  cmd?: string;
+
+  @ApiProperty({
+    description: 'Arguments passed to the stdio command',
+    example: ['@playwright/mcp@latest'],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(64)
+  @IsString({ each: true })
+  args?: string[];
 }

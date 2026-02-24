@@ -70,7 +70,23 @@ export class McpRegistryController {
     description: 'Server with providedId already exists',
   })
   async createServer(@Body() dto: CreateServerDto): Promise<ServerResponseDto> {
-    const server = await this.mcpRegistryService.createServer(dto);
+    const server =
+      dto.type === 'http'
+        ? await this.mcpRegistryService.createServer({
+            providedId: dto.providedId,
+            name: dto.name,
+            description: dto.description,
+            type: 'http',
+            url: dto.url || '',
+          })
+        : await this.mcpRegistryService.createServer({
+            providedId: dto.providedId,
+            name: dto.name,
+            description: dto.description,
+            type: 'stdio',
+            cmd: dto.cmd || '',
+            args: dto.args,
+          });
     return this.mapServerToResponse(server);
   }
 
@@ -402,7 +418,10 @@ export class McpRegistryController {
       providedId: server.providedId,
       name: server.name,
       description: server.description,
+      type: server.type,
       url: server.url,
+      cmd: server.cmd,
+      args: server.args,
       createdAt: this.formatDate(server.createdAt),
       updatedAt: this.formatDate(server.updatedAt),
     };

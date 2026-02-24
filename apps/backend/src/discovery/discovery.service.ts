@@ -15,6 +15,7 @@ import {
   createContextScopes,
 } from 'src/app-init/mcp/context.mcp';
 import { Scope } from 'src/auth/core/types/scope.type';
+import { InvalidServerConfigurationError } from 'src/mcp-registry/errors/mcp-registry.errors';
 
 @Injectable()
 export class DiscoveryService {
@@ -30,6 +31,10 @@ export class DiscoveryService {
 
   private populateSystemServer(server: CreateServerInput, scopes: Scope[]) {
     const config = getConfig();
+    if (server.type !== 'http') {
+      return;
+    }
+
     if (!server.url) {
       return;
     }
@@ -63,6 +68,12 @@ export class DiscoveryService {
     const scopes = (server.scopes ?? [])
       .map((scope) => scope.id)
       .sort((a, b) => a.localeCompare(b));
+
+    if (server.type !== 'http') {
+      throw new InvalidServerConfigurationError(
+        `MCP server '${serverIdentifier}' is a stdio server and does not expose OAuth metadata.`,
+      );
+    }
 
     return {
       issuer: input.issuer,

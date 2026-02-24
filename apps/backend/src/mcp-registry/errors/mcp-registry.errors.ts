@@ -138,3 +138,9 @@ export class InvalidMappingError extends McpRegistryDomainError {
     super(message, McpRegistryErrorCodes.INVALID_MAPPING);
   }
 }
+
+export class InvalidServerConfigurationError extends McpRegistryDomainError {
+  constructor(message: string) {
+    super(message, McpRegistryErrorCodes.INVALID_MAPPING);
+  }
+}
