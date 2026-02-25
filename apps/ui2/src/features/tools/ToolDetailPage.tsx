@@ -7,6 +7,10 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
 import './ToolDetailPage.css';
 
+type ProtectedResourceMetadata = {
+  authorization_servers?: string[];
+};
+
 // Helper to get status color and label
 function getAuthStatusDisplay(status: string): { color: 'gray' | 'blue' | 'green' | 'yellow' | 'orange' | 'red' | 'purple', label: string } {
   switch (status) {
@@ -74,6 +78,68 @@ export function ToolDetailPage() {
       loadToolAuthorizations(toolId).then(setAuthorizations);
     }
   }, [tool, toolId, loadToolScopes, loadToolClients, loadToolAuthorizations]);
+
+  // Discover and load authorization server metadata from the tool URL
+  useEffect(() => {
+    const toolUrlString = tool?.url;
+
+    if (!toolUrlString) {
+      setAuthorizationServerMetadata(null);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const loadAuthorizationServerMetadata = async () => {
+      try {
+        const toolUrl = new URL(toolUrlString);
+        const protectedResourceUrl = new URL(
+          `/.well-known/oauth-protected-resource${toolUrl.pathname}`,
+          toolUrl.origin,
+        );
+
+        const protectedResourceResponse = await fetch(protectedResourceUrl.toString(), {
+          signal: abortController.signal,
+        });
+
+        if (!protectedResourceResponse.ok) {
+          setAuthorizationServerMetadata(null);
+          return;
+        }
+
+        const protectedResourceMetadata = await protectedResourceResponse.json() as ProtectedResourceMetadata;
+        const authorizationServerUrl = protectedResourceMetadata.authorization_servers?.[0];
+
+        if (!authorizationServerUrl) {
+          setAuthorizationServerMetadata(null);
+          return;
+        }
+
+        const authorizationServerResponse = await fetch(authorizationServerUrl, {
+          signal: abortController.signal,
+        });
+
+        if (!authorizationServerResponse.ok) {
+          setAuthorizationServerMetadata(null);
+          return;
+        }
+
+        const metadata = await authorizationServerResponse.json();
+        setAuthorizationServerMetadata(metadata);
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
+          return;
+        }
+        setAuthorizationServerMetadata(null);
+      }
+    };
+
+    loadAuthorizationServerMetadata();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [tool?.url]);
 
   // Set document title (browser tab)
   useDocumentTitle({ tool: { name: tool?.name } });
