@@ -114,10 +114,7 @@ export function ToolDetailPage() {
           setAuthorizationServerMetadata(null);
           return;
         }
-        const asUrl = new URL(asUrlString);
-
-        const asMetadataUrl = new URL(`${asUrl.origin}/.well-known/oauth-authorization-server${asUrl.pathname}`)
-        const asMetadataResponse = await fetch(asMetadataUrl, {
+        const asMetadataResponse = await fetch(asUrlString, {
           signal: abortController.signal,
         });
 
