@@ -17,6 +17,14 @@ export class ContextMcpGateway {
   ) { }
 
   private buildServer(user: UserContext, authContext: AuthContext): McpServer {
+    const readOnlyAnnotations = {
+      readOnlyHint: true,
+    };
+
+    const destructiveAnnotations = {
+      destructiveHint: true,
+    };
+
     const server = new McpServer({
       name: 'context',
       version: '0.0.0',
@@ -28,6 +36,7 @@ export class ContextMcpGateway {
         title: 'List context blocks',
         description:
           'Get a list of all context blocks with metadata (title, id, author)',
+        annotations: readOnlyAnnotations,
         inputSchema: {
           tag: z.string().optional(),
         },
@@ -50,6 +59,7 @@ export class ContextMcpGateway {
       {
         title: 'Get context block',
         description: 'Retrieve the full content of a context block by ID',
+        annotations: readOnlyAnnotations,
         inputSchema: {
           blockId: z.string(),
         },
@@ -187,6 +197,7 @@ export class ContextMcpGateway {
       {
         title: 'Delete context block',
         description: 'Delete a context block by its identifier',
+        annotations: destructiveAnnotations,
         inputSchema: {
           blockId: z.string(),
         },
@@ -262,6 +273,7 @@ export class ContextMcpGateway {
       {
         title: 'Get all tags',
         description: 'List all available tags',
+        annotations: readOnlyAnnotations,
       },
       async ({ }) => {
         const tags = await this.metaService.getAllTags();
@@ -282,6 +294,7 @@ export class ContextMcpGateway {
         title: 'Get child blocks',
         description:
           'Get all child blocks for a given parent block ID (omit parentId for root blocks)',
+        annotations: readOnlyAnnotations,
         inputSchema: {
           parentId: z.string().optional(),
         },
@@ -305,6 +318,7 @@ export class ContextMcpGateway {
         title: 'Get block tree',
         description:
           'Get the complete hierarchical tree structure of all blocks',
+        annotations: readOnlyAnnotations,
       },
       async ({ }) => {
         const tree = await this.contextService.getBlockTree();
