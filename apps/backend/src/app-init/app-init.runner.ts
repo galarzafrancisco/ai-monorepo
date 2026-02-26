@@ -38,6 +38,7 @@ import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './agent/prompts';
 import { createQwen3CoderNext } from './agent/qwen3-coder-next';
+import { createPlaywright } from './mcp/playwright.mcp';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -195,6 +196,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureMcpServerExists(createContext, createContextScopes);
     } catch (error) {
       this.logger.error('Error ensuring Context MCP Server exists');
+    }
+    try {
+      await this.ensureMcpServerExists(createPlaywright, []);
+    } catch (error) {
+      this.logger.error('Error ensuring Playwright MCP Server exists');
     }
   }
 

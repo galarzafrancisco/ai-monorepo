@@ -380,7 +380,7 @@ export function ToolDetailPage() {
           <DataRow
             onClick={() =>
               copyToClipboard(
-                formatCommand(['claude', 'mcp', 'add', tool.providedId, ...stdioCommandParts]),
+                formatCommand(['claude', 'mcp', 'add', tool.providedId, '--', ...stdioCommandParts]),
               )
             }
           >
@@ -388,7 +388,7 @@ export function ToolDetailPage() {
               Claude Code
             </Text>
             <Text style="mono">
-              {formatCommand(['claude', 'mcp', 'add', tool.providedId, ...stdioCommandParts])}
+              {formatCommand(['claude', 'mcp', 'add', tool.providedId, '--', ...stdioCommandParts])}
               <Text size="1" tone="muted">tap to copy</Text>
             </Text>
           </DataRow>
