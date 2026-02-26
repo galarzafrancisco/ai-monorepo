@@ -7,6 +7,10 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
 import './ToolDetailPage.css';
 
+type ProtectedResourceMetadata = {
+  authorization_servers?: string[];
+};
+
 // Helper to get status color and label
 function getAuthStatusDisplay(status: string): { color: 'gray' | 'blue' | 'green' | 'yellow' | 'orange' | 'red' | 'purple', label: string } {
   switch (status) {
@@ -104,6 +108,70 @@ export function ToolDetailPage() {
 
   const formatCommand = (parts: string[]): string =>
     parts.map((part) => quoteArg(part)).join(' ');
+  // Discover and load authorization server metadata from the tool URL
+  useEffect(() => {
+    const prUrlString = tool?.url;
+
+    if (!prUrlString) {
+      setAuthorizationServerMetadata(null);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const loadAuthorizationServerMetadata = async () => {
+      try {
+        const prUrl = new URL(prUrlString);
+        const prMetadataUrl = new URL(
+          `/.well-known/oauth-protected-resource${prUrl.pathname}`,
+          prUrl.origin,
+        );
+
+        const prMetadataResponse = await fetch(prMetadataUrl.toString(), {
+          signal: abortController.signal,
+        });
+
+        if (!prMetadataResponse.ok) {
+          setAuthorizationServerMetadata(null);
+          return;
+        }
+        
+        const prMetadata = await prMetadataResponse.json() as ProtectedResourceMetadata;
+        const asUrlString = prMetadata.authorization_servers?.[0];
+
+        if (!asUrlString) {
+          setAuthorizationServerMetadata(null);
+          return;
+        }
+        const asUrl = new URL(asUrlString);
+
+        const asMetadataUrl = new URL(`${asUrl.origin}/.well-known/oauth-authorization-server${asUrl.pathname}`)
+        const asMetadataResponse = await fetch(asMetadataUrl, {
+          signal: abortController.signal,
+        });
+
+        if (!asMetadataResponse.ok) {
+          setAuthorizationServerMetadata(null);
+          return;
+        }
+
+        const asMetadata = await asMetadataResponse.json();
+        setAuthorizationServerMetadata(asMetadata);
+      } catch (error) {
+        console.error(error)
+        if ((error as Error).name === 'AbortError') {
+          return;
+        }
+        setAuthorizationServerMetadata(null);
+      }
+    };
+
+    loadAuthorizationServerMetadata();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [tool?.url]);
 
   // Set document title (browser tab)
   useDocumentTitle({ tool: { name: tool?.name } });
@@ -208,7 +276,7 @@ export function ToolDetailPage() {
       {isHttpTool && tool.url ? (
         <DataRowContainer title="Server URL" className="tool-detail-page__section">
           <DataRow onClick={() => copyToClipboard(tool.url || '')}>
-            <Text size="2" style="mono" className="tool-detail-page__url">
+            <Text as="div" size="2" style="mono" className="tool-detail-page__url">
               {tool.url}
               <Text size='1' tone='muted'>tap to copy</Text>
             </Text>
@@ -228,7 +296,7 @@ export function ToolDetailPage() {
                <Text size="2" tone="muted">
                  Run this command to start the MCP inspector:
                </Text>
-               <Text style='mono'>
+               <Text as="div" style='mono'>
                  {`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`}
                  <Text size='1' tone='muted'>tap to copy</Text>
                </Text>
@@ -241,7 +309,7 @@ export function ToolDetailPage() {
                <Text size="2" tone="muted">
                  Run this command to add this MCP server to Codex:
                </Text>
-               <Text style='mono'>
+               <Text as="div" style='mono'>
                  {`codex mcp add ${tool.providedId} --url ${tool.url}`}
                  <Text size='1' tone='muted'>tap to copy</Text>
                </Text>
@@ -251,7 +319,7 @@ export function ToolDetailPage() {
                <Text weight="medium" size="3">
                  Claude Code
                </Text>
-               <Text style='mono'>
+               <Text as="div" style='mono'>
                  {`claude mcp add ${tool.providedId} --transport http ${tool.url}`}
                  <Text size='1' tone='muted'>tap to copy</Text>
                </Text>
