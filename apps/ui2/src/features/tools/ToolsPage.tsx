@@ -66,8 +66,10 @@ function ToolRow({ tool, onClick }: { tool: Tool; onClick?: () => void }): JSX.E
     { label: 'MCP Server', color: 'blue' },
   ];
 
-  if (tool.url) {
+  if (tool.type === 'http') {
     tags.push({ label: 'remote', color: 'green' });
+  } else {
+    tags.push({ label: 'stdio', color: 'orange' });
   }
 
   return (

@@ -38,6 +38,7 @@ import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './agent/prompts';
 import { createQwen3CoderNext } from './agent/qwen3-coder-next';
+import { createPlaywright } from './mcp/playwright.mcp';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -196,6 +197,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
     } catch (error) {
       this.logger.error('Error ensuring Context MCP Server exists');
     }
+    try {
+      await this.ensureMcpServerExists(createPlaywright, []);
+    } catch (error) {
+      this.logger.error('Error ensuring Playwright MCP Server exists');
+    }
   }
 
   async ensureUsers() {
@@ -246,30 +252,38 @@ export class AppInitRunner implements OnApplicationBootstrap {
         if (
           server.name != serverConfig.name ||
           server.description != serverConfig.description ||
-          server.url != serverConfig.url
+          server.type != serverConfig.type ||
+          server.url != serverConfig.url ||
+          server.cmd != serverConfig.cmd ||
+          JSON.stringify(server.args ?? []) != JSON.stringify(serverConfig.args ?? [])
         ) {
           server = await this.mcpRegistryService.updateServer(server.id, {
             name: serverConfig.name,
             description: serverConfig.description,
+            type: serverConfig.type,
             url: serverConfig.url,
+            cmd: serverConfig.cmd,
+            args: serverConfig.args,
           });
         }
       } else {
         throw error;
       }
     }
-    try {
-      this.logger.log(`Ensuring scopes for MCP Server ${server.name}`);
-      await this.mcpRegistryService.createScopes(server.id, scopesConfig);
-      this.logger.log(`Scopes ensured for MCP Server ${server.name}`);
-    } catch (error) {
-      if (!(error instanceof ScopeAlreadyExistsError)) {
-        this.logger.error(
-          `Error ensuring scopes for MCP Server ${server.name}`,
-        );
-        throw error;
+    if (server.type === 'http') {
+      try {
+        this.logger.log(`Ensuring scopes for MCP Server ${server.name}`);
+        await this.mcpRegistryService.createScopes(server.id, scopesConfig);
+        this.logger.log(`Scopes ensured for MCP Server ${server.name}`);
+      } catch (error) {
+        if (!(error instanceof ScopeAlreadyExistsError)) {
+          this.logger.error(
+            `Error ensuring scopes for MCP Server ${server.name}`,
+          );
+          throw error;
+        }
+        this.logger.log(`Scopes already exist for MCP Server ${server.name}`);
       }
-      this.logger.log(`Scopes already exist for MCP Server ${server.name}`);
     }
     return server;
   }

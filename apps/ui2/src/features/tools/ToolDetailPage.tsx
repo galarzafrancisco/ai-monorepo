@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
@@ -51,6 +51,9 @@ export function ToolDetailPage() {
   const [authorizationServerMetadata, setAuthorizationServerMetadata] = useState<any | null>(null);
   const [showCopiedToast, setShowCopiedToast] = useState(false);
 
+  const isHttpTool = tool?.type === 'http';
+  const isStdioTool = tool?.type === 'stdio';
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setShowCopiedToast(true);
@@ -73,12 +76,38 @@ export function ToolDetailPage() {
   // Load scopes, clients, and authorizations when tool is available
   useEffect(() => {
     if (tool && toolId) {
-      loadToolScopes(toolId).then(setScopes);
+      if (tool.type === 'http') {
+        loadToolScopes(toolId).then(setScopes);
+        loadToolAuthorizations(toolId).then(setAuthorizations);
+      } else {
+        setScopes([]);
+        setAuthorizations([]);
+      }
+
       loadToolClients(toolId).then(setClients);
-      loadToolAuthorizations(toolId).then(setAuthorizations);
     }
   }, [tool, toolId, loadToolScopes, loadToolClients, loadToolAuthorizations]);
 
+  const stdioCommandParts = useMemo(() => {
+    if (!tool || tool.type !== 'stdio') {
+      return [];
+    }
+
+    return [tool.cmd, ...(tool.args ?? [])].filter(
+      (part): part is string => Boolean(part),
+    );
+  }, [tool]);
+
+  const quoteArg = (value: string): string => {
+    if (/^[a-zA-Z0-9._/@:=+-]+$/.test(value)) {
+      return value;
+    }
+
+    return `"${value.replace(/(["\\$`])/g, '\\$1')}"`;
+  };
+
+  const formatCommand = (parts: string[]): string =>
+    parts.map((part) => quoteArg(part)).join(' ');
   // Discover and load authorization server metadata from the tool URL
   useEffect(() => {
     const prUrlString = tool?.url;
@@ -184,8 +213,10 @@ export function ToolDetailPage() {
     { label: 'MCP Server', color: 'blue' },
   ];
 
-  if (tool.url) {
+  if (tool.type === 'http') {
     tags.push({ label: 'remote', color: 'green' });
+  } else {
+    tags.push({ label: 'stdio', color: 'orange' });
   }
 
   return (
@@ -242,7 +273,7 @@ export function ToolDetailPage() {
 
 
       {/* URL */}
-      {tool.url ? (
+      {isHttpTool && tool.url ? (
         <DataRowContainer title="Server URL" className="tool-detail-page__section">
           <DataRow onClick={() => copyToClipboard(tool.url || '')}>
             <Text as="div" size="2" style="mono" className="tool-detail-page__url">
@@ -255,7 +286,7 @@ export function ToolDetailPage() {
       }
 
       {
-        tool.url && (
+        isHttpTool && tool.url && (
           <DataRowContainer title="Configure" className="tool-detail-page__section">
              {/* Inspector Command */}
              <DataRow onClick={() => copyToClipboard(`npx @modelcontextprotocol/inspector --transport http --server-url ${tool.url}`)}>
@@ -297,8 +328,75 @@ export function ToolDetailPage() {
         )
       }
 
+      {isStdioTool && stdioCommandParts.length > 0 && (
+        <DataRowContainer title="Configure" className="tool-detail-page__section">
+          <DataRow
+            onClick={() =>
+              copyToClipboard(
+                formatCommand([
+                  'npx',
+                  '@modelcontextprotocol/inspector',
+                  '--transport',
+                  'stdio',
+                  ...stdioCommandParts,
+                ]),
+              )
+            }
+          >
+            <Text weight="medium" size="3">
+              Inspector Command
+            </Text>
+            <Text size="2" tone="muted">
+              Run this command to start the MCP inspector:
+            </Text>
+            <Text style="mono">
+              {formatCommand([
+                'npx',
+                '@modelcontextprotocol/inspector',
+                '--transport',
+                'stdio',
+                ...stdioCommandParts,
+              ])}
+              <Text size="1" tone="muted">tap to copy</Text>
+            </Text>
+          </DataRow>
+
+          <DataRow
+            onClick={() =>
+              copyToClipboard(
+                formatCommand(['codex', 'mcp', 'add', tool.providedId, ...stdioCommandParts]),
+              )
+            }
+          >
+            <Text weight="medium" size="3">
+              Codex
+            </Text>
+            <Text style="mono">
+              {formatCommand(['codex', 'mcp', 'add', tool.providedId, ...stdioCommandParts])}
+              <Text size="1" tone="muted">tap to copy</Text>
+            </Text>
+          </DataRow>
+
+          <DataRow
+            onClick={() =>
+              copyToClipboard(
+                formatCommand(['claude', 'mcp', 'add', tool.providedId, '--', ...stdioCommandParts]),
+              )
+            }
+          >
+            <Text weight="medium" size="3">
+              Claude Code
+            </Text>
+            <Text style="mono">
+              {formatCommand(['claude', 'mcp', 'add', tool.providedId, '--', ...stdioCommandParts])}
+              <Text size="1" tone="muted">tap to copy</Text>
+            </Text>
+          </DataRow>
+        </DataRowContainer>
+      )}
+
       {/* Scopes (Permissions) */}
-      {
+      {isHttpTool && (
         scopes.length ? (
           <DataRowContainer title="Scopes">
             {scopes.map(scope => (
@@ -313,51 +411,59 @@ export function ToolDetailPage() {
             This server doesn't have any permissions configured
           </Text>
         )
-      }
+      )}
+
+      {isStdioTool && (
+        <Text tone="muted" size="2">
+          STDIO servers do not expose OAuth scopes.
+        </Text>
+      )}
 
 
 
       {/* Authorizations */}
-      <DataRowContainer title="Authorizations" className="tool-detail-page__section">
-        {authorizations.length === 0 ? (
-          <DataRow>
-            <Text tone="muted" size="2">
-              No active authorizations
-            </Text>
-          </DataRow>
-        ) : (
-          [...authorizations]
-            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-            .map(auth => {
-              const statusDisplay = getAuthStatusDisplay(auth.status);
-              const lastUpdatedAt = elapsedTime(auth.updatedAt);
+      {isHttpTool && (
+        <DataRowContainer title="Authorizations" className="tool-detail-page__section">
+          {authorizations.length === 0 ? (
+            <DataRow>
+              <Text tone="muted" size="2">
+                No active authorizations
+              </Text>
+            </DataRow>
+          ) : (
+            [...authorizations]
+              .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+              .map(auth => {
+                const statusDisplay = getAuthStatusDisplay(auth.status);
+                const lastUpdatedAt = elapsedTime(auth.updatedAt);
 
-            return (
-              <DataRow key={auth.id}>
-                {/* Client name */}
-                <Text weight="medium" size="3">
-                  {auth.mcpAuthorizationFlow.clientName || 'Unknown Client'}
-                </Text>
-
-                {/* Actor connection info */}
-                {auth.actor && (
-                  <Text size="2" tone="muted">
-                    @{auth.actor.slug} updated {lastUpdatedAt}
+              return (
+                <DataRow key={auth.id}>
+                  {/* Client name */}
+                  <Text weight="medium" size="3">
+                    {auth.mcpAuthorizationFlow.clientName || 'Unknown Client'}
                   </Text>
-                )}
 
-                {/* Status tag */}
-                <div style={{ marginTop: '4px' }}>
-                  <Chip color={statusDisplay.color}>
-                    {statusDisplay.label}
-                  </Chip>
-                </div>
+                  {/* Actor connection info */}
+                  {auth.actor && (
+                    <Text size="2" tone="muted">
+                      @{auth.actor.slug} updated {lastUpdatedAt}
+                    </Text>
+                  )}
 
-              </DataRow>
-            );
-          })
-        )}
-      </DataRowContainer>
+                  {/* Status tag */}
+                  <div style={{ marginTop: '4px' }}>
+                    <Chip color={statusDisplay.color}>
+                      {statusDisplay.label}
+                    </Chip>
+                  </div>
+
+                </DataRow>
+              );
+            })
+          )}
+        </DataRowContainer>
+      )}
 
       {/* Back button */}
       <DataRowContainer className="tool-detail-page__actions">

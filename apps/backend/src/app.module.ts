@@ -25,6 +25,7 @@ import { AddTaskBlueprintsAndScheduledTasks1739500000000 } from './migrations/17
 import { RefactorThreadsForHeadlessConversations1739750000000 } from './migrations/1739750000000-RefactorThreadsForHeadlessConversations';
 import { RemoveRoleFromThreadMessage1739844333000 } from './migrations/1739844333000-RemoveRoleFromThreadMessage';
 import { AddSecretsTable1740000000000 } from './migrations/1740000000000-AddSecretsTable';
+import { AddMcpServerTransportConfig1740500000000 } from './migrations/1740500000000-AddMcpServerTransportConfig';
 import { SecretsModule } from './secrets/secrets.module';
 
 @Module({
@@ -41,9 +42,10 @@ import { SecretsModule } from './secrets/secrets.module';
          UpdateAgentTypeConstraint1700000000002,
          AddTaskBlueprintsAndScheduledTasks1739500000000,
          RefactorThreadsForHeadlessConversations1739750000000,
-         RemoveRoleFromThreadMessage1739844333000,
-         AddSecretsTable1740000000000,
-       ],
+          RemoveRoleFromThreadMessage1739844333000,
+          AddSecretsTable1740000000000,
+          AddMcpServerTransportConfig1740500000000,
+        ],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),

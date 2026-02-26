@@ -34,8 +34,15 @@ import {
   ScopeHasMappingsError,
   ConnectionHasMappingsError,
   InvalidMappingError,
+  InvalidServerConfigurationError,
 } from './errors/mcp-registry.errors';
 import { Scope } from 'src/auth/core/types/scope.type';
+import {
+  MCP_SERVER_TYPE_HTTP,
+  MCP_SERVER_TYPE_STDIO,
+  MCP_SERVER_TYPES,
+  McpServerType,
+} from './mcp-server.types';
 
 @Injectable()
 export class McpRegistryService {
@@ -57,6 +64,8 @@ export class McpRegistryService {
   // Server CRUD operations
 
   async createServer(input: CreateServerInput): Promise<ServerRecord> {
+    this.validateServerConfiguration(input);
+
     // Check for duplicate providedId
     const existing = await this.serverRepository.findOne({
       where: { providedId: input.providedId },
@@ -174,6 +183,13 @@ export class McpRegistryService {
       throw new ServerNotFoundError(serverId);
     }
 
+    this.validateServerConfiguration({
+      type: (input.type ?? server.type) as McpServerType,
+      url: input.url ?? server.url,
+      cmd: input.cmd ?? server.cmd,
+      args: input.args ?? server.args,
+    });
+
     // Update only provided fields
     Object.assign(server, input);
 
@@ -210,6 +226,7 @@ export class McpRegistryService {
     }
 
     await this.assertServerExists(serverId);
+    await this.assertHttpServer(serverId, 'Scopes are only supported for HTTP servers.');
 
     const scopeIds = scopes.map((input) => input.id);
     const duplicateScopeId = this.findDuplicate(scopeIds);
@@ -296,6 +313,10 @@ export class McpRegistryService {
   ): Promise<ConnectionRecord> {
     // Verify server exists
     await this.assertServerExists(serverId);
+    await this.assertHttpServer(
+      serverId,
+      'Connections are only supported for HTTP servers.',
+    );
 
     // Check for duplicate friendly name per server
     const existing = await this.connectionRepository.findOne({
@@ -412,6 +433,11 @@ export class McpRegistryService {
     serverId: string,
     input: CreateMappingInput,
   ): Promise<MappingRecord> {
+    await this.assertHttpServer(
+      serverId,
+      'Scope mappings are only supported for HTTP servers.',
+    );
+
     // Verify scope exists
     await this.assertScopeExists(input.scopeId, serverId);
 
@@ -499,6 +525,21 @@ export class McpRegistryService {
     }
   }
 
+  private async assertHttpServer(serverId: string, message: string): Promise<void> {
+    const server = await this.serverRepository.findOne({
+      where: { id: serverId },
+      select: ['type'],
+    });
+
+    if (!server) {
+      throw new ServerNotFoundError(serverId);
+    }
+
+    if (server.type !== MCP_SERVER_TYPE_HTTP) {
+      throw new InvalidServerConfigurationError(message);
+    }
+  }
+
   private findDuplicate(values: string[]): string | undefined {
     const seen = new Set<string>();
     for (const value of values) {
@@ -511,21 +552,96 @@ export class McpRegistryService {
   }
 
   private mapServerEntityToRecord(server: McpServerEntity): ServerRecord {
+    this.validateServerConfiguration({
+      type: server.type,
+      url: server.url,
+      cmd: server.cmd,
+      args: server.args,
+    });
+
+    const createdAt =
+      server.createdAt instanceof Date
+        ? server.createdAt
+        : new Date(server.createdAt);
+    const updatedAt =
+      server.updatedAt instanceof Date
+        ? server.updatedAt
+        : new Date(server.updatedAt);
+
+    if (server.type === MCP_SERVER_TYPE_HTTP) {
+      return {
+        id: server.id,
+        providedId: server.providedId,
+        name: server.name,
+        description: server.description,
+        type: MCP_SERVER_TYPE_HTTP,
+        url: server.url!,
+        createdAt,
+        updatedAt,
+      };
+    }
+
     return {
       id: server.id,
       providedId: server.providedId,
       name: server.name,
       description: server.description,
-      url: server.url,
-      createdAt:
-        server.createdAt instanceof Date
-          ? server.createdAt
-          : new Date(server.createdAt),
-      updatedAt:
-        server.updatedAt instanceof Date
-          ? server.updatedAt
-          : new Date(server.updatedAt),
+      type: MCP_SERVER_TYPE_STDIO,
+      cmd: server.cmd!,
+      args: server.args ?? [],
+      createdAt,
+      updatedAt,
     };
+  }
+
+  private validateServerConfiguration(input: {
+    type?: string;
+    url?: string;
+    cmd?: string;
+    args?: string[];
+  }): void {
+    if (!input.type || !MCP_SERVER_TYPES.includes(input.type as McpServerType)) {
+      throw new InvalidServerConfigurationError(
+        "Server type must be either 'http' or 'stdio'.",
+      );
+    }
+
+    if (input.type === MCP_SERVER_TYPE_HTTP) {
+      if (!input.url) {
+        throw new InvalidServerConfigurationError(
+          "HTTP servers must include a URL.",
+        );
+      }
+      if (input.cmd) {
+        throw new InvalidServerConfigurationError(
+          "HTTP servers cannot include a command.",
+        );
+      }
+      if (input.args && input.args.length > 0) {
+        throw new InvalidServerConfigurationError(
+          "HTTP servers cannot include command arguments.",
+        );
+      }
+      return;
+    }
+
+    if (input.type === MCP_SERVER_TYPE_STDIO) {
+      if (!input.cmd) {
+        throw new InvalidServerConfigurationError(
+          "STDIO servers must include a command.",
+        );
+      }
+      if (input.url) {
+        throw new InvalidServerConfigurationError(
+          "STDIO servers cannot include a URL.",
+        );
+      }
+      if (input.args && !Array.isArray(input.args)) {
+        throw new InvalidServerConfigurationError(
+          'STDIO server arguments must be an array of strings.',
+        );
+      }
+    }
   }
 
   private mapScopeEntityToRecord(scope: McpScopeEntity): ScopeRecord {
