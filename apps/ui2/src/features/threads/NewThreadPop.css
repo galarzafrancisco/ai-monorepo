@@ -3,8 +3,8 @@
   padding: var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-2);
-  font-size: 16px;
-  font-weight: 500;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-medium);
   background-color: var(--surface);
   color: var(--text);
   outline: none;

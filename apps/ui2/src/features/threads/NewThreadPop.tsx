@@ -50,7 +50,7 @@ export function NewThreadPop({ onCancel, onSave }: NewThreadPopProps) {
     >
       <>
         {/* Thread Title */}
-        <div className="new-thread-pop__input-title">
+        <div>
           <input
             className="new-thread-pop__input-title"
             ref={titleRef}
