@@ -13,13 +13,14 @@ export type ThreadsContextValue = {
   navItems: NavegationItem[];
   setNavItems: (navItems: NavegationItem[]) => void;
   getThread: (id: string) => Promise<Thread>;
+  createThread: (title?: string) => Promise<Thread>;
   deleteThread: (id: string) => Promise<void>;
 };
 
 const ThreadsContext = createContext<ThreadsContextValue | null>(null);
 
 export function ThreadsProvider({ children }: { children: React.ReactNode }) {
-  const { threads, isLoading, error, getThread, deleteThread } = useThreads();
+  const { threads, isLoading, error, getThread, createThread, deleteThread } = useThreads();
   const [sectionTitle, setSectionTitle] = useState("");
   const [navItems, setNavItems] = useState<NavegationItem[]>([]);
 
@@ -34,6 +35,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       navItems,
       setNavItems,
       getThread,
+      createThread,
       deleteThread,
     };
   }, [
@@ -45,6 +47,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     navItems,
     setNavItems,
     getThread,
+    createThread,
     deleteThread,
   ]);
 
