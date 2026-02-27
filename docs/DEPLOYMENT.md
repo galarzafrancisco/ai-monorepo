@@ -31,7 +31,7 @@ Taico uses a two-repository GitOps approach for deployments:
 └─────────────────────────────────────────────────────────────────────┘
                                     │
                                     │ ArgoCD watches
-                                    │ overlay/main
+                                    │ overlays/main
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Kubernetes Cluster                           │
@@ -154,7 +154,7 @@ The deployment repository has its own CI that:
 
 ArgoCD continuously watches the deployment repository:
 
-1. Detects changes to `overlay/main/kustomization.yaml`
+1. Detects changes to `overlays/main/kustomization.yaml`
 2. Applies Kustomize replacements
 3. Syncs manifests to the Kubernetes cluster
 4. Performs rolling updates

@@ -25,6 +25,8 @@ spec:
         envFrom:
         - configMapRef:
             name: taico-config
+        - secretRef:
+            name: taico-secrets
         volumeMounts:
         - name: data
           mountPath: /app/data
