@@ -61,6 +61,15 @@ export class ThreadsGateway
 
   private logger = new Logger(ThreadsGateway.name);
 
+  private getRoomSize(room: string): number {
+    const adapter = this.server?.sockets?.adapter;
+    if (!adapter) {
+      return 0;
+    }
+
+    return adapter.rooms.get(room)?.size ?? 0;
+  }
+
   afterInit() {
     this.logger.log('Threads WebSocket Gateway initialized');
   }
@@ -111,7 +120,7 @@ export class ThreadsGateway
       clientId: client.id,
       threadId: body.threadId,
       room,
-      roomSize: this.server.sockets.adapter.rooms.get(room)?.size ?? 0,
+      roomSize: this.getRoomSize(room),
     });
     return { ok: true, room };
   }
@@ -144,7 +153,7 @@ export class ThreadsGateway
       clientId: client.id,
       threadId: body.threadId,
       room,
-      roomSize: this.server.sockets.adapter.rooms.get(room)?.size ?? 0,
+      roomSize: this.getRoomSize(room),
     });
     return { ok: true };
   }
@@ -177,8 +186,19 @@ export class ThreadsGateway
 
   @OnEvent(ThreadAgentActivityEvent.INTERNAL)
   handleAgentActivity(event: ThreadAgentActivityEvent) {
+    if (!this.server) {
+      this.logger.warn({
+        message:
+          'Skipping agent activity emission because websocket server is not initialized',
+        threadId: event.payload.threadId,
+        kind: event.payload.kind,
+        actorId: event.actor.id,
+      });
+      return;
+    }
+
     const room = getThreadRoomName(event.payload.threadId);
-    const roomSize = this.server.sockets.adapter.rooms.get(room)?.size ?? 0;
+    const roomSize = this.getRoomSize(room);
 
     this.logger.log({
       message: 'ThreadAgentActivityEvent captured in gateway',
