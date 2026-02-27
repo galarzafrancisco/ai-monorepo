@@ -127,6 +127,23 @@ export class ThreadsController {
     };
   }
 
+  @Get('by-task/:taskId')
+  @ApiOperation({ summary: 'Get a thread by task ID' })
+  @ApiOkResponse({
+    type: ThreadResponseDto,
+    description: 'Thread found for task or null when task has no thread',
+  })
+  async getThreadByTaskId(
+    @Param('taskId') taskId: string,
+  ): Promise<ThreadResponseDto | null> {
+    const result = await this.threadsService.findThreadByTaskId(taskId);
+    if (!result) {
+      return null;
+    }
+
+    return ThreadResponseDto.fromResult(result);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a thread by ID with full details' })
   @ApiOkResponse({ type: ThreadResponseDto, description: 'Thread found' })

@@ -3488,6 +3488,42 @@
         ]
       }
     },
+    "/api/v1/threads/by-task/{taskId}": {
+      "get": {
+        "operationId": "ThreadsController_getThreadByTaskId",
+        "parameters": [
+          {
+            "name": "taskId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thread found for task or null when task has no thread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get a thread by task ID",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/threads/{id}/tasks": {
       "post": {
         "operationId": "ThreadsController_attachTask",

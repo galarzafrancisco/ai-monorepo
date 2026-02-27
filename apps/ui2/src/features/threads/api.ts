@@ -12,8 +12,15 @@ export class ThreadsService {
     return await GeneratedThreadsService.threadsControllerGetThread(id);
   }
 
-  static async createThread(title?: string): Promise<Thread> {
-    return await GeneratedThreadsService.threadsControllerCreateThread({ title });
+  static async createThread(input?: { title?: string; parentTaskId?: string }): Promise<Thread> {
+    return await GeneratedThreadsService.threadsControllerCreateThread({
+      title: input?.title,
+      parentTaskId: input?.parentTaskId,
+    });
+  }
+
+  static async getThreadForTask(taskId: string): Promise<Thread | null> {
+    return await GeneratedThreadsService.threadsControllerGetThreadByTaskId(taskId);
   }
 
   static async deleteThread(id: string): Promise<void> {
