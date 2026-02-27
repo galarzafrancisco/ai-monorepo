@@ -125,6 +125,23 @@ export class ThreadsService {
         });
     }
     /**
+     * Get a thread by task ID
+     * @param taskId
+     * @returns ThreadResponseDto Thread found for task or null when task has no thread
+     * @throws ApiError
+     */
+    public static threadsControllerGetThreadByTaskId(
+        taskId: string,
+    ): CancelablePromise<ThreadResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/threads/by-task/{taskId}',
+            path: {
+                'taskId': taskId,
+            },
+        });
+    }
+    /**
      * Attach a task to the thread
      * @param id Thread UUID
      * @param requestBody

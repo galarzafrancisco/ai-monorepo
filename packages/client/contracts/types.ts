@@ -961,6 +961,23 @@ export interface paths {
         patch: operations["ThreadsController_updateThread"];
         trace?: never;
     };
+    "/api/v1/threads/by-task/{taskId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a thread by task ID */
+        get: operations["ThreadsController_getThreadByTaskId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/tasks": {
         parameters: {
             query?: never;
@@ -7146,6 +7163,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ThreadsController_getThreadByTaskId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thread found for task or null when task has no thread */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"];
+                };
             };
         };
     };
