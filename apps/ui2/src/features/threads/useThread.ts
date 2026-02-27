@@ -44,6 +44,8 @@ export const useThread = (threadId: string) => {
   const [isConnected, setIsConnected] = useState(false);
   const activityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const logPrefix = `[useThread][${threadId}]`;
+
   // Boot
   useEffect(() => {
     loadThread();
@@ -102,57 +104,92 @@ export const useThread = (threadId: string) => {
 
   // Setup websocket
   const setupWebsocket = () => {
+    console.log(`${logPrefix} Initializing websocket`, { socketUrl: SOCKET_URL });
+
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
     });
 
+    console.log(`${logPrefix} Websocket created`, { socketId: newSocket.id ?? null });
+
     newSocket.on('connect', () => {
-      console.log('Connected to websocket');
+      console.log(`${logPrefix} Connected to websocket`, {
+        socketId: newSocket.id,
+      });
+
+      console.log(`${logPrefix} Sending threads.subscribe`, { threadId });
       newSocket.emit('threads.subscribe', { threadId }, (ack: any) => {
         if (ack.ok) {
-          console.log(ack);
-          console.log('Subscribed to room:', ack.room);
+          console.log(`${logPrefix} Subscribed to room`, {
+            room: ack.room,
+            ack,
+          });
           setIsConnected(true);
         } else {
-          console.error('Failed to subscribe to room');
+          console.error(`${logPrefix} Failed to subscribe to room`, { ack });
           setIsConnected(false);
         }
       });
     });
 
+    newSocket.on('connect_error', (err) => {
+      console.error(`${logPrefix} Websocket connect_error`, {
+        message: err.message,
+      });
+    });
+
     newSocket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
+      console.log(`${logPrefix} WebSocket disconnected`);
       setIsConnected(false);
       if (activityTimeoutRef.current) {
+        console.log(`${logPrefix} Clearing activity timeout on disconnect`);
         clearTimeout(activityTimeoutRef.current);
         activityTimeoutRef.current = null;
       }
+      console.log(`${logPrefix} Clearing agent activity on disconnect`);
       setAgentActivity(null);
     });
 
     const scheduleActivityReset = () => {
       if (activityTimeoutRef.current) {
+        console.log(`${logPrefix} Replacing existing activity timeout`);
         clearTimeout(activityTimeoutRef.current);
       }
       activityTimeoutRef.current = setTimeout(() => {
+        console.log(`${logPrefix} Activity timeout reached, clearing indicator`);
         setAgentActivity(null);
         activityTimeoutRef.current = null;
       }, 3000);
+
+      console.log(`${logPrefix} Activity timeout scheduled`, {
+        timeoutMs: 3000,
+      });
     };
+
+    console.log(`${logPrefix} Registering websocket event handlers`, {
+      messageEvent: ThreadWireEvents.MESSAGE_CREATED,
+      activityEvent: ThreadWireEvents.AGENT_ACTIVITY,
+    });
 
     // Handle new message event
     newSocket.on(ThreadWireEvents.MESSAGE_CREATED, (event: MessageCreatedWireEvent) => {
-      console.log(ThreadWireEvents.MESSAGE_CREATED, event);
+      console.log(`${logPrefix} Received MESSAGE_CREATED`, event);
 
       if (event.payload.threadId !== threadId) {
+        console.log(`${logPrefix} Ignoring MESSAGE_CREATED for different thread`, {
+          incomingThreadId: event.payload.threadId,
+          expectedThreadId: threadId,
+        });
         return;
       }
 
       if (activityTimeoutRef.current) {
+        console.log(`${logPrefix} Clearing activity timeout because message arrived`);
         clearTimeout(activityTimeoutRef.current);
         activityTimeoutRef.current = null;
       }
+      console.log(`${logPrefix} Clearing agent activity because message arrived`);
       setAgentActivity(null);
 
       // Adapt types (this needs better hanlding).
@@ -187,10 +224,19 @@ export const useThread = (threadId: string) => {
     });
 
     newSocket.on(ThreadWireEvents.AGENT_ACTIVITY, (event: AgentActivityWireEvent) => {
+      console.log(`${logPrefix} Received AGENT_ACTIVITY`, event);
+
       if (event.payload.threadId !== threadId) {
+        console.log(`${logPrefix} Ignoring AGENT_ACTIVITY for different thread`, {
+          incomingThreadId: event.payload.threadId,
+          expectedThreadId: threadId,
+        });
         return;
       }
 
+      console.log(`${logPrefix} Updating agent activity`, {
+        kind: event.payload.kind,
+      });
       setAgentActivity(event.payload.kind);
       scheduleActivityReset();
     });
@@ -198,8 +244,13 @@ export const useThread = (threadId: string) => {
     setSocket(newSocket);
 
     return () => {
+      console.log(`${logPrefix} Cleaning up websocket`, {
+        socketId: newSocket.id ?? null,
+      });
+      console.log(`${logPrefix} Sending threads.unsubscribe`, { threadId });
       newSocket.emit('threads.unsubscribe', { threadId });
       if (activityTimeoutRef.current) {
+        console.log(`${logPrefix} Clearing activity timeout on cleanup`);
         clearTimeout(activityTimeoutRef.current);
         activityTimeoutRef.current = null;
       }
