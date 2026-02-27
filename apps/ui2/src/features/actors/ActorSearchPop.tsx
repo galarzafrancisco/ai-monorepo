@@ -21,12 +21,21 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const selectedRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const searchRequestIdRef = useRef(0);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (selectedActor) {
+      selectedRef.current?.focus();
+      return;
+    }
+    inputRef.current?.focus();
+  }, [selectedActor]);
 
   useEffect(() => {
     refreshActors().catch(() => undefined);
@@ -137,6 +146,23 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
     inputRef.current?.focus();
   };
 
+  const handleSelectedKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.nativeEvent.isComposing) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCancel?.();
+      return;
+    }
+
+    if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      event.preventDefault();
+      void handleSave();
+    }
+  }, [onCancel, handleSave]);
+
   async function handleSave(): Promise<boolean> {
     if (!selectedActor) {
       return false;
@@ -153,7 +179,13 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
       <div className="actor-search-pop">
         {/* Search input or selected actor display */}
         {selectedActor ? (
-          <div className="actor-search-pop__selected" onClick={handleClearSelection}>
+          <div
+            className="actor-search-pop__selected"
+            onClick={handleClearSelection}
+            onKeyDown={handleSelectedKeyDown}
+            ref={selectedRef}
+            tabIndex={0}
+          >
             <Avatar name={selectedActor.displayName} size="md" src={selectedActor.avatarUrl || undefined}/>
             <div className="actor-search-pop__selected-info">
               <Text weight="medium" size="3">{selectedActor.displayName}</Text>
