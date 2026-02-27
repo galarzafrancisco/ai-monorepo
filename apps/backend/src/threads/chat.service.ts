@@ -12,6 +12,22 @@ import { ALL_TASKS_SCOPES } from "src/tasks/tasks.scopes";
 import { ALL_CONTEXT_SCOPES } from "src/context/context.scopes";
 import { ActorEntity } from "src/identity-provider/actor.entity";
 
+export interface CreateConversationArgs {
+  threadId: string;
+}
+
+export interface MakeMessageArgs {
+  message: string;
+  actor: ActorEntity;
+}
+
+export interface SendMessageToThreadArgs {
+  conversationId: string;
+  threadId: string;
+  message: string;
+  actor: ActorEntity;
+}
+
 class PrefixedMcpServer implements MCPServer {
   private readonly nameMap = new Map<string, string>();
 
@@ -160,7 +176,7 @@ export class ChatService {
     return self;
   }
 
-  public async createConversation({ threadId }: { threadId: string }) {
+  public async createConversation({ threadId }: CreateConversationArgs) {
     const client = new OpenAI({
       apiKey: getConfig().openAiKey,
     });
@@ -180,11 +196,11 @@ export class ChatService {
   //   return conversation;
   // }
 
-  private makeMessage({ message, actor }: { message: string, actor: ActorEntity }) {
+  private makeMessage({ message, actor }: MakeMessageArgs) {
     return `[${actor.displayName} @${actor.slug}] says:\n${message}`;
   }
 
-  public async sendMessageToThread({ conversationId, threadId, message, actor }: { conversationId: string, threadId: string, message: string, actor: ActorEntity }) {
+  public async sendMessageToThread({ conversationId, threadId, message, actor }: SendMessageToThreadArgs) {
     // Get self
     const self = await this.getSelf();
 
