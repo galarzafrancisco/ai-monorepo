@@ -1,0 +1,74 @@
+.threads-fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+  z-index: 999;
+  /* below your pop (9999), above content */
+
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+
+  border: 0;
+  background: var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  color: var(--accent-contrast);
+
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.threads-fab:hover {
+  background-color: var(--accent-hover);
+}
+
+.threads-fab:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+/* Optional: if your bottom nav overlaps, give yourself more clearance */
+@media (max-width: 900px) {
+  .threads-fab {
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
+    /* tweak 56px to your bottom nav height */
+  }
+}
+
+.threads-fab--desktop {
+  width: auto;
+  height: 44px;
+  padding: 0 14px;
+  gap: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  color: var(--accent-contrast);
+}
+
+.threads-fab--desktop:hover {
+  background-color: var(--accent-hover);
+}
+
+.threads-fab__plus {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.threads-fab__label {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}

@@ -46,6 +46,14 @@ export const useThreads = () => {
     return await ThreadsService.getThread(id);
   }, []);
 
+  // Create a new thread
+  const createThread = useCallback(async (title?: string): Promise<Thread> => {
+    const thread = await ThreadsService.createThread(title);
+    // Add to local state optimistically
+    setThreads((prev) => [thread, ...prev]);
+    return thread;
+  }, []);
+
   const deleteThread = useCallback(async (id: string) => {
     await ThreadsService.deleteThread(id);
     setThreads((prev) => prev.filter((thread) => thread.id !== id));
@@ -87,6 +95,7 @@ export const useThreads = () => {
     threads,
     loadThreads,
     getThread,
+    createThread,
     deleteThread,
   };
 };

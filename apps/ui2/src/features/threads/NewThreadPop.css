@@ -1,0 +1,20 @@
+.new-thread-pop__input-title {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  font-size: 16px;
+  font-weight: 500;
+  background-color: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.new-thread-pop__input-title:focus {
+  border-color: var(--accent);
+}
+
+.new-thread-pop__input-title::placeholder {
+  color: var(--text-muted);
+}
