@@ -127,26 +127,9 @@ export class ChatService {
     });
 
     for await (const event of result) {
-      this.logger.log({
-        message: 'Received streaming event from OpenAI run',
-        eventType: event.type,
-        threadId,
-        conversationId,
-      });
       if (event.type === "run_item_stream_event") {
-        this.logger.log({
-          message: 'Processing run item stream event',
-          itemType: event.item.type,
-          threadId,
-          conversationId,
-        });
         switch (event.item.type) {
           case "reasoning_item":
-            this.logger.log({
-              message: 'Reasoning item received, emitting thinking activity',
-              threadId,
-              actorId: self.actorId,
-            });
             this.threadsService.emitAgentActivity({
               threadId,
               actorId: self.actorId,
@@ -154,11 +137,6 @@ export class ChatService {
             });
             break;
           case "tool_call_item":
-            this.logger.log({
-              message: 'Tool call item received, emitting tool_calling activity',
-              threadId,
-              actorId: self.actorId,
-            });
             this.threadsService.emitAgentActivity({
               threadId,
               actorId: self.actorId,
@@ -166,18 +144,8 @@ export class ChatService {
             });
             break;
           case "tool_call_output_item":
-            this.logger.log({
-              message: 'Tool call output item received',
-              threadId,
-              conversationId,
-            });
             break;
           case "message_output_item":
-            this.logger.log({
-              message: 'Message output item received, creating thread message',
-              threadId,
-              actorId: self.actorId,
-            });
             this.threadsService.createMessage({
               threadId: threadId,
               content: event.item.content,

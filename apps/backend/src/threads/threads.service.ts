@@ -785,14 +785,6 @@ export class ThreadsService {
     actorId: string;
     kind: ThreadAgentActivityKind;
   }): void {
-    this.logger.log({
-      message: 'Emitting thread agent activity domain event',
-      threadId: input.threadId,
-      actorId: input.actorId,
-      kind: input.kind,
-      eventName: ThreadAgentActivityEvent.INTERNAL.toString(),
-    });
-
     this.eventEmitter.emit(
       ThreadAgentActivityEvent.INTERNAL,
       new ThreadAgentActivityEvent(

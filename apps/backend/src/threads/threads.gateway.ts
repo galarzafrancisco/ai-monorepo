@@ -61,15 +61,6 @@ export class ThreadsGateway
 
   private logger = new Logger(ThreadsGateway.name);
 
-  private getRoomSize(room: string): number {
-    const adapter = this.server?.sockets?.adapter;
-    if (!adapter) {
-      return 0;
-    }
-
-    return adapter.rooms.get(room)?.size ?? 0;
-  }
-
   afterInit() {
     this.logger.log('Threads WebSocket Gateway initialized');
   }
@@ -91,19 +82,8 @@ export class ThreadsGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() body: ThreadSubscriptionPayload,
   ) {
-    this.logger.log({
-      message: 'Received threads.subscribe',
-      clientId: client.id,
-      threadId: body?.threadId ?? null,
-    });
-
     if (!body?.threadId) {
       client.join(THREADS_ROOM);
-      this.logger.log({
-        message: 'Client subscribed to global threads room',
-        clientId: client.id,
-        room: THREADS_ROOM,
-      });
       return { ok: true, room: THREADS_ROOM };
     }
 
@@ -115,13 +95,6 @@ export class ThreadsGateway
 
     const room = getThreadRoomName(body.threadId);
     client.join(room);
-    this.logger.log({
-      message: 'Client subscribed to thread room',
-      clientId: client.id,
-      threadId: body.threadId,
-      room,
-      roomSize: this.getRoomSize(room),
-    });
     return { ok: true, room };
   }
 
@@ -130,31 +103,13 @@ export class ThreadsGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() body: ThreadSubscriptionPayload,
   ) {
-    this.logger.log({
-      message: 'Received threads.unsubscribe',
-      clientId: client.id,
-      threadId: body?.threadId ?? null,
-    });
-
     if (!body?.threadId) {
       client.leave(THREADS_ROOM);
-      this.logger.log({
-        message: 'Client unsubscribed from global threads room',
-        clientId: client.id,
-        room: THREADS_ROOM,
-      });
       return { ok: true };
     }
 
     const room = getThreadRoomName(body.threadId);
     client.leave(room);
-    this.logger.log({
-      message: 'Client unsubscribed from thread room',
-      clientId: client.id,
-      threadId: body.threadId,
-      room,
-      roomSize: this.getRoomSize(room),
-    });
     return { ok: true };
   }
 
@@ -187,27 +142,10 @@ export class ThreadsGateway
   @OnEvent(ThreadAgentActivityEvent.INTERNAL)
   handleAgentActivity(event: ThreadAgentActivityEvent) {
     if (!this.server) {
-      this.logger.warn({
-        message:
-          'Skipping agent activity emission because websocket server is not initialized',
-        threadId: event.payload.threadId,
-        kind: event.payload.kind,
-        actorId: event.actor.id,
-      });
       return;
     }
 
     const room = getThreadRoomName(event.payload.threadId);
-    const roomSize = this.getRoomSize(room);
-
-    this.logger.log({
-      message: 'ThreadAgentActivityEvent captured in gateway',
-      threadId: event.payload.threadId,
-      kind: event.payload.kind,
-      actorId: event.actor.id,
-      room,
-      roomSize,
-    });
 
     const wireEvent: AgentActivityWireEvent = {
       payload: {
@@ -220,15 +158,5 @@ export class ThreadsGateway
     this.server
       .to(room)
       .emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
-
-    this.logger.log({
-      message: 'Agent activity wire event emitted',
-      threadId: event.payload.threadId,
-      kind: event.payload.kind,
-      actorId: event.actor.id,
-      room,
-      roomSize,
-      wireEventName: ThreadWireEvents.AGENT_ACTIVITY,
-    });
   }
 }
