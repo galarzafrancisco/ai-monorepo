@@ -17,7 +17,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 5. When you find relevant context, add it to the task as a comment
 ### Validate
 6. Always run \`npm run build:dev\` to test that builds work
-7. Always run \`npm run dev\` to validate that the app starts
+7. Always run \`npm run dev:[1-5]\` to validate that the app starts
 ### Finish
 7. Open a PR to \`main\` using the \`gh\` cli. Add a title and clear description of what you did. If there's any technical debt, call it out.
 8. Mark the task as \`in review\` adding a comment that you've finish implementation, link to the PR and are watching the CI
