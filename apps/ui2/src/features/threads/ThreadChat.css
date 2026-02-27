@@ -13,6 +13,11 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-2) 0;
+  scrollbar-width: none; /* Firefox */
+}
+
+.thread-chat__messages::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
 
 .thread-chat__message {
