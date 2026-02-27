@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DataRowContainer } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
@@ -7,7 +7,6 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useToast } from "../../shared/context/ToastContext";
 import { useCommandPalette } from "../../ui/components";
-import { NewThreadPop } from "./NewThreadPop";
 import './ThreadsPage.css';
 
 export function ThreadsPage() {
@@ -16,7 +15,6 @@ export function ThreadsPage() {
   const isDesktop = useIsDesktop();
   const { showError } = useToast();
   const { registerCommands } = useCommandPalette();
-  const [showNewThreadPop, setShowNewThreadPop] = useState(false);
 
   // Set browser tab title
   useDocumentTitle();
@@ -26,6 +24,23 @@ export function ThreadsPage() {
     setSectionTitle("Threads 🧵");
   }, [setSectionTitle]);
 
+  const handleThreadClick = (threadId: string) => {
+    navigate(`/threads/${threadId}`);
+  };
+
+  const handleNewThread = useCallback(async () => {
+    try {
+      const thread = await createThread();
+      if (thread) {
+        navigate(`/threads/${thread.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating thread');
+      console.error(error);
+      showError(error);
+    }
+  }, [createThread, navigate, showError]);
+
   // Register page-specific commands
   useEffect(() => {
     const commands = [
@@ -34,37 +49,12 @@ export function ThreadsPage() {
         label: 'New Thread',
         description: 'Create a new thread',
         aliases: ['create thread', 'add thread'],
-        onSelect: () => setShowNewThreadPop(true),
+        onSelect: handleNewThread,
       },
     ];
 
     return registerCommands(commands);
-  }, [registerCommands]);
-
-  const handleThreadClick = (threadId: string) => {
-    navigate(`/threads/${threadId}`);
-  };
-
-  const handleNewThreadCancel = () => {
-    setShowNewThreadPop(false);
-  };
-
-  const handleNewThreadSave = async ({ title }: { title?: string }): Promise<boolean> => {
-    try {
-      const thread = await createThread(title);
-      if (thread) {
-        navigate(`/threads/${thread.id}`);
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error('Error creating thread');
-      console.error(error);
-      showError(error);
-      return false;
-    }
-  };
+  }, [registerCommands, handleNewThread]);
 
   return (
     <>
@@ -82,7 +72,7 @@ export function ThreadsPage() {
       <button
         className={`threads-fab ${isDesktop ? 'threads-fab--desktop' : ''}`}
         type="button"
-        onClick={() => setShowNewThreadPop(true)}
+        onClick={handleNewThread}
         aria-label="Create new thread"
       >
         {isDesktop ? (
@@ -94,10 +84,6 @@ export function ThreadsPage() {
           '+'
         )}
       </button>
-
-      {showNewThreadPop && (
-        <NewThreadPop onCancel={handleNewThreadCancel} onSave={handleNewThreadSave} />
-      )}
     </>
   );
 }
