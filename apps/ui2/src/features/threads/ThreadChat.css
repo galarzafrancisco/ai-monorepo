@@ -56,6 +56,26 @@
   background: transparent;
 }
 
+.thread-chat__activity {
+  align-self: flex-start;
+  width: fit-content;
+  border: 1px dashed var(--border-subtle);
+  padding: var(--space-2) var(--space-3);
+  margin-top: calc(var(--space-2) * -1);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  animation: thread-chat-activity-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes thread-chat-activity-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .thread-chat__input-form {
   display: flex;
   flex-direction: column;

@@ -20,6 +20,7 @@ export const ThreadWireEvents = {
   THREAD_UPDATED: 'thread.updated',
   THREAD_DELETED: 'thread.deleted',
   MESSAGE_CREATED: 'thread.message.created',
+  AGENT_ACTIVITY: 'thread.agent.activity',
 } as const;
 
 export type ThreadWireEventName =
@@ -130,6 +131,20 @@ export interface MessageCreatedWireEvent {
   actor: MinimalEventActor;
 }
 
+export type ThreadAgentActivityKind = 'thinking' | 'tool_calling';
+
+/**
+ * Agent activity event
+ * Emitted for ephemeral assistant actions (thinking/tool calling)
+ */
+export interface AgentActivityWireEvent {
+  payload: {
+    threadId: string;
+    kind: ThreadAgentActivityKind;
+  };
+  actor: MinimalEventActor;
+}
+
 /**
  * Union type of all thread wire events
  */
@@ -137,4 +152,5 @@ export type ThreadWireEvent =
   | ThreadCreatedWireEvent
   | ThreadUpdatedWireEvent
   | ThreadDeletedWireEvent
-  | MessageCreatedWireEvent;
+  | MessageCreatedWireEvent
+  | AgentActivityWireEvent;

@@ -127,47 +127,30 @@ export class ChatService {
     });
 
     for await (const event of result) {
-      this.logger.log(`event type: ${event.type}`);
-      // this.logger.log(event);
       if (event.type === "run_item_stream_event") {
         switch (event.item.type) {
           case "reasoning_item":
-            console.log('Reasoning');
-            this.threadsService.createMessage({
-              threadId: threadId,
-              content: `Thinking...`,
-              createdByActorId: self.actorId,
+            this.threadsService.emitAgentActivity({
+              threadId,
+              actorId: self.actorId,
+              kind: 'thinking',
             });
-            console.log(event.item.toJSON());
             break;
           case "tool_call_item":
-            console.log('Tool call');
-            this.threadsService.createMessage({
-              threadId: threadId,
-              content: `🔨 Tool call`,
-              createdByActorId: self.actorId,
+            this.threadsService.emitAgentActivity({
+              threadId,
+              actorId: self.actorId,
+              kind: 'tool_calling',
             });
-            console.log(event.item.toJSON());
             break;
           case "tool_call_output_item":
-            console.log('Tool response');
-            this.threadsService.createMessage({
-              threadId: threadId,
-              content: `🔨 Tool response`,
-              createdByActorId: self.actorId,
-            });
             break;
           case "message_output_item":
-            console.log('Message');
-            console.log(event.item.content);
             this.threadsService.createMessage({
               threadId: threadId,
               content: event.item.content,
               createdByActorId: self.actorId,
             });
-            break;
-          default:
-            console.log(`type: ${event.item.type}`);
             break;
         }
       }

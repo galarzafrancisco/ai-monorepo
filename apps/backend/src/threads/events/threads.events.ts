@@ -56,3 +56,18 @@ export class MessageCreatedEvent extends ThreadDomainEvent<ThreadMessageEntity> 
     super(actor, message);
   }
 }
+
+export type ThreadAgentActivityKind = 'thinking' | 'tool_calling';
+
+export type ThreadAgentActivityPayload = {
+  threadId: string;
+  kind: ThreadAgentActivityKind;
+};
+
+export class ThreadAgentActivityEvent extends ThreadDomainEvent<ThreadAgentActivityPayload> {
+  static readonly INTERNAL = Symbol('threads.ThreadAgentActivityEvent');
+
+  constructor(actor: EventActor, payload: ThreadAgentActivityPayload) {
+    super(actor, payload);
+  }
+}

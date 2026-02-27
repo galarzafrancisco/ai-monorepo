@@ -13,12 +13,20 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  const { messages, sendMessage, chatIsSending, chatIsLoading, chatError, chatSendError } = useThread(threadId);
+  const {
+    messages,
+    agentActivity,
+    sendMessage,
+    chatIsSending,
+    chatIsLoading,
+    chatError,
+    chatSendError,
+  } = useThread(threadId);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when messages/activity update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, agentActivity]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,8 +111,17 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
             );
           })
         )}
+
         <div ref={messagesEndRef} />
       </div>
+
+      {agentActivity && (
+        <div className="thread-chat__activity" role="status" aria-live="polite">
+          <Text size="1" tone="muted">
+            {agentActivity === "thinking" ? "Assistant is thinking..." : "Assistant is calling a tool..."}
+          </Text>
+        </div>
+      )}
 
       <form className="thread-chat__input-form" onSubmit={handleSendMessage}>
         <div className="thread-chat__composer-row">
