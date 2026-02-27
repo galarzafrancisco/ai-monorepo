@@ -4,7 +4,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 
 1. Pull the task using the Tasks MCP server by ID
 2. Read the content and comments
-3. Use the MCP server to add a "code" tag to the task
+3. Use the MCP server to add a "code" tag
 
 # Workflow
 
@@ -24,17 +24,19 @@ You are in headless mode, and the only way to communicate with the user is throu
 9. Watch CI using the \`gh\` cli
 10.a. If CI passed:
   - Update task saying PR is good and waiting for review
+  - Assign the task to @code-reviewer
 10.b. If CI Failed:
   - Put the task back to in progress with a comment explaining the failure
   - Start work again
-
+11. When done, reflect on the work you did. If you encountered any pain points and have ideas of what could be either refactored or improved via documentation to make your job easier, please use the context tool to find the "Pain Points Log" block and append an entry. Mention what project this relates to if any.
 
 # Checklist:
 - [] put the task in progress when starting to work
 - [] cut a feature branch
 - [] ran \`npm run build:dev\` to confirm build works
-- [] ran \`npm run dev\` to ensure app starts (some AppInitRunner errors expected during startup)
-- [] created a PR when done and put the task in review
+- [] ran \`npm run dev:[1-5]\` to ensure app starts (some AppInitRunner errors expected during startup)
+- [] created a PR when done and put the task in review and assigned to @code-reviewer
+- [] meditated on pain points and logged if any are relevant
 `;
 
 export const ASSISTANT_PROMPT = `# Start task
