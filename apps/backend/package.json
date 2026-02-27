@@ -54,6 +54,7 @@
     "@nestjs/swagger": "^11.2.1",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.8",
+    "@openai/agents": "^0.5.2",
     "@taico/errors": "^0.0.2",
     "@taico/events": "^0.0.2",
     "@types/bcrypt": "^6.0.0",

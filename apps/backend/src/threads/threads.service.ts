@@ -56,7 +56,7 @@ export class ThreadsService {
     private readonly contextService: ContextService,
     private readonly eventEmitter: EventEmitter2,
     private readonly chatService: ChatService,
-  ) {}
+  ) { }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
     this.logger.log({
@@ -725,13 +725,11 @@ export class ThreadsService {
     }
 
     // Verify actor exists if provided
-    if (input.createdByActorId) {
-      const actor = await this.actorRepository.findOne({
-        where: { id: input.createdByActorId },
-      });
-      if (!actor) {
-        throw new ActorNotFoundForThreadError(input.createdByActorId);
-      }
+    const actor = await this.actorRepository.findOne({
+      where: { id: input.createdByActorId },
+    });
+    if (!actor) {
+      throw new ActorNotFoundForThreadError(input.createdByActorId);
     }
 
     const message = this.threadMessageRepository.create({
@@ -770,8 +768,9 @@ export class ThreadsService {
     // Send to chat
     this.chatService.sendMessageToThread({
       conversationId: thread.chatSessionId,
+      threadId: thread.id,
       message: input.content,
-      actorId: input.createdByActorId
+      actor,
     })
 
     return this.mapThreadMessageToResult(messageWithRelations);
