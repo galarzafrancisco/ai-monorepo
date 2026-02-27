@@ -54,3 +54,14 @@ replacements:
           name: taico-config
         fieldPaths:
           - data.ISSUER_URL
+  # Replace OPENAI_KEY in taico-config ConfigMap
+  - source:
+      kind: ConfigMap
+      name: env
+      fieldPath: data.OPENAI_KEY
+    targets:
+      - select:
+          kind: ConfigMap
+          name: taico-config
+        fieldPaths:
+          - data.OPENAI_KEY
