@@ -11,9 +11,12 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { MessageCreatedEvent } from './events/threads.events';
+import {
+  MessageCreatedEvent,
+  ThreadAgentActivityEvent,
+} from './events/threads.events';
 import { ThreadWireEvents } from '@taico/events';
-import { MessageCreatedWireEvent } from '@taico/events';
+import { AgentActivityWireEvent, MessageCreatedWireEvent } from '@taico/events';
 import { ThreadMessageResponseDto } from './dto/thread-message-response.dto';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
@@ -131,6 +134,28 @@ export class ThreadsGateway
       message: 'Message created event emitted',
       messageId: event.payload.id,
       threadId: event.payload.threadId,
+      actorId: event.actor.id,
+    });
+  }
+
+  @OnEvent(ThreadAgentActivityEvent.INTERNAL)
+  handleAgentActivity(event: ThreadAgentActivityEvent) {
+    const wireEvent: AgentActivityWireEvent = {
+      payload: {
+        threadId: event.payload.threadId,
+        kind: event.payload.kind,
+      },
+      actor: { id: event.actor.id },
+    };
+
+    this.server
+      .to(getThreadRoomName(event.payload.threadId))
+      .emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
+
+    this.logger.debug({
+      message: 'Agent activity event emitted',
+      threadId: event.payload.threadId,
+      kind: event.payload.kind,
       actorId: event.actor.id,
     });
   }

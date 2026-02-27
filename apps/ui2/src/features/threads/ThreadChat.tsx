@@ -13,7 +13,15 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  const { messages, sendMessage, chatIsSending, chatIsLoading, chatError, chatSendError } = useThread(threadId);
+  const {
+    messages,
+    agentActivity,
+    sendMessage,
+    chatIsSending,
+    chatIsLoading,
+    chatError,
+    chatSendError,
+  } = useThread(threadId);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -103,6 +111,15 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
             );
           })
         )}
+
+        {agentActivity && (
+          <div className="thread-chat__activity" role="status" aria-live="polite">
+            <Text size="1" tone="muted">
+              {agentActivity === "thinking" ? "Assistant is thinking..." : "Assistant is calling a tool..."}
+            </Text>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 

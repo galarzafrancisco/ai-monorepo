@@ -1,13 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ThreadsService } from './api';
 import type { Thread, Message } from './types';
 import { ActorType as DtoActorType } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
 import {
+  AgentActivityWireEvent,
   ThreadWireEvents,
   MessageCreatedWireEvent,
-  ThreadMessageWirePayload,
   ActorType as WireActorType,
 } from "@taico/events";
 import { ActorResponseDto } from '@taico/client';
@@ -37,10 +37,12 @@ export const useThread = (threadId: string) => {
   // Data store
   const [thread, setThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [agentActivity, setAgentActivity] = useState<"thinking" | "tool_calling" | null>(null);
 
   // Transport
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const activityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Boot
   useEffect(() => {
@@ -122,7 +124,22 @@ export const useThread = (threadId: string) => {
     newSocket.on('disconnect', () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+        activityTimeoutRef.current = null;
+      }
+      setAgentActivity(null);
     });
+
+    const scheduleActivityReset = () => {
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+      }
+      activityTimeoutRef.current = setTimeout(() => {
+        setAgentActivity(null);
+        activityTimeoutRef.current = null;
+      }, 3000);
+    };
 
     // Handle new message event
     newSocket.on(ThreadWireEvents.MESSAGE_CREATED, (event: MessageCreatedWireEvent) => {
@@ -131,6 +148,12 @@ export const useThread = (threadId: string) => {
       if (event.payload.threadId !== threadId) {
         return;
       }
+
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+        activityTimeoutRef.current = null;
+      }
+      setAgentActivity(null);
 
       // Adapt types (this needs better hanlding).
       const createdByActorWire = event.payload.createdByActor;
@@ -163,10 +186,23 @@ export const useThread = (threadId: string) => {
 
     });
 
+    newSocket.on(ThreadWireEvents.AGENT_ACTIVITY, (event: AgentActivityWireEvent) => {
+      if (event.payload.threadId !== threadId) {
+        return;
+      }
+
+      setAgentActivity(event.payload.kind);
+      scheduleActivityReset();
+    });
+
     setSocket(newSocket);
 
     return () => {
       newSocket.emit('threads.unsubscribe', { threadId });
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+        activityTimeoutRef.current = null;
+      }
       newSocket.close();
     };
 
@@ -183,6 +219,7 @@ export const useThread = (threadId: string) => {
 
     // Data
     messages,
+    agentActivity,
     sendMessage,
   };
 };

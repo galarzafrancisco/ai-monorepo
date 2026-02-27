@@ -32,7 +32,11 @@ import {
   ContextBlockNotFoundError,
   ActorNotFoundForThreadError,
 } from './errors/threads.errors';
-import { MessageCreatedEvent } from './events/threads.events';
+import {
+  MessageCreatedEvent,
+  ThreadAgentActivityEvent,
+  ThreadAgentActivityKind,
+} from './events/threads.events';
 import { ChatService } from './chat.service';
 
 @Injectable()
@@ -774,6 +778,23 @@ export class ThreadsService {
     })
 
     return this.mapThreadMessageToResult(messageWithRelations);
+  }
+
+  emitAgentActivity(input: {
+    threadId: string;
+    actorId: string;
+    kind: ThreadAgentActivityKind;
+  }): void {
+    this.eventEmitter.emit(
+      ThreadAgentActivityEvent.INTERNAL,
+      new ThreadAgentActivityEvent(
+        { id: input.actorId },
+        {
+          threadId: input.threadId,
+          kind: input.kind,
+        },
+      ),
+    );
   }
 
   async listMessages(
