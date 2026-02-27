@@ -11,6 +11,7 @@ interface ThreadChatProps {
 export function ThreadChat({ threadId }: ThreadChatProps) {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
 
   const {
@@ -28,12 +29,21 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, agentActivity]);
 
+  useEffect(() => {
+    if (!chatIsLoading) {
+      messageInputRef.current?.focus();
+    }
+  }, [chatIsLoading, threadId]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || chatIsSending) return;
     try {
       await sendMessage(newMessage);
       setNewMessage("");
+      requestAnimationFrame(() => {
+        messageInputRef.current?.focus();
+      });
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -126,6 +136,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
       <form className="thread-chat__input-form" onSubmit={handleSendMessage}>
         <div className="thread-chat__composer-row">
           <textarea
+            ref={messageInputRef}
             className="thread-chat__input"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
