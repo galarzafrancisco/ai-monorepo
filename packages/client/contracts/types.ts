@@ -1099,6 +1099,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List agents with optional filtering and pagination */
+        get: operations["AgentsController_listAgents"];
+        put?: never;
+        /** Create a new agent */
+        post: operations["AgentsController_createAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agents/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an agent by slug */
+        get: operations["AgentsController_getAgentBySlug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agents/{actorId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an agent */
+        delete: operations["AgentsController_deleteAgent"];
+        options?: never;
+        head?: never;
+        /** Patch an agent and its linked actor fields */
+        patch: operations["AgentsController_patchAgent"];
+        trace?: never;
+    };
+    "/api/v1/agents/{slug}/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all tokens for an agent */
+        get: operations["AgentTokensController_listTokens"];
+        put?: never;
+        /** Issue a new access token for an agent */
+        post: operations["AgentTokensController_issueToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agents/{slug}/tokens/{tokenId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke an agent token */
+        delete: operations["AgentTokensController_revokeToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/context/blocks": {
         parameters: {
             query?: never;
@@ -1396,94 +1484,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/agents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List agents with optional filtering and pagination */
-        get: operations["AgentsController_listAgents"];
-        put?: never;
-        /** Create a new agent */
-        post: operations["AgentsController_createAgent"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/agents/{slug}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get an agent by slug */
-        get: operations["AgentsController_getAgentBySlug"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/agents/{actorId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete an agent */
-        delete: operations["AgentsController_deleteAgent"];
-        options?: never;
-        head?: never;
-        /** Patch an agent and its linked actor fields */
-        patch: operations["AgentsController_patchAgent"];
-        trace?: never;
-    };
-    "/api/v1/agents/{slug}/tokens": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all tokens for an agent */
-        get: operations["AgentTokensController_listTokens"];
-        put?: never;
-        /** Issue a new access token for an agent */
-        post: operations["AgentTokensController_issueToken"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/agents/{slug}/tokens/{tokenId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke an agent token */
-        delete: operations["AgentTokensController_revokeToken"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3340,6 +3340,11 @@ export interface components {
              * @example Implement authentication feature
              */
             title: string;
+            /**
+             * @description Provider-specific chat session/conversation ID associated with this thread
+             * @example conv_123abc
+             */
+            chatSessionId: string | null;
             /** @description Actor who created the thread */
             createdByActor: components["schemas"]["ActorResponseDto"];
             /**
@@ -3394,6 +3399,11 @@ export interface components {
              * @example Implement authentication feature
              */
             title: string;
+            /**
+             * @description Provider-specific chat session/conversation ID associated with this thread
+             * @example conv_123abc
+             */
+            chatSessionId: string | null;
         };
         ThreadListResponseDto: {
             /** @description Array of thread list items */
@@ -3521,6 +3531,431 @@ export interface components {
              * @example 20
              */
             limit: number;
+        };
+        CreateAgentDto: {
+            /**
+             * @description Unique, human-readable identifier for the agent
+             * @example buddy
+             */
+            slug: string;
+            /**
+             * @description Display name for the agent
+             * @example Buddy
+             */
+            name: string;
+            /**
+             * @description Type of agent (provider)
+             * @default claude
+             * @example claude
+             * @enum {string}
+             */
+            type: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
+            /**
+             * @description Short description of what this agent does
+             * @example A helpful assistant agent
+             */
+            description?: string;
+            /**
+             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
+             */
+            introduction?: string;
+            /**
+             * @description Optional avatar URL for the agent actor
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: string | null;
+            /**
+             * @description Core instructions/persona for this agent
+             * @example You are a helpful assistant that helps users with tasks.
+             */
+            systemPrompt: string;
+            /**
+             * @description Provider ID to select a model runtime
+             * @example openai
+             */
+            providerId?: string;
+            /**
+             * @description Model ID used by the agent runtime
+             * @example gpt-5.2-codex
+             */
+            modelId?: string;
+            /**
+             * @description Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.
+             * @default []
+             * @example [
+             *       "NOT_STARTED"
+             *     ]
+             */
+            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /**
+             * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
+             * @default []
+             * @example [
+             *       "code"
+             *     ]
+             */
+            tagTriggers: string[];
+            /**
+             * @description List of tool identifiers this agent is allowed to use
+             * @default []
+             * @example [
+             *       "tasks.createTask",
+             *       "tasks.readTask",
+             *       "context.search"
+             *     ]
+             */
+            allowedTools: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @default true
+             * @example true
+             */
+            isActive: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: number;
+        };
+        AgentResponseDto: {
+            /**
+             * @description Unique identifier for the actor representing this agent
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            actorId: string;
+            /**
+             * @description Unique, human-readable identifier
+             * @example buddy
+             */
+            slug: string;
+            /**
+             * @description Display name for the agent
+             * @example Buddy
+             */
+            name: string;
+            /**
+             * @description Type of agent (provider)
+             * @example claude
+             * @enum {string}
+             */
+            type: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
+            /**
+             * @description Short description of what this agent does
+             * @example A helpful assistant agent
+             */
+            description?: Record<string, never>;
+            /**
+             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
+             */
+            introduction?: Record<string, never>;
+            /**
+             * @description Optional avatar URL for the agent actor
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: string | null;
+            /**
+             * @description Core instructions/persona for this agent
+             * @example You are a helpful assistant that helps users with tasks.
+             */
+            systemPrompt: string;
+            /**
+             * @description Provider ID to select a model runtime
+             * @example openai
+             */
+            providerId?: string | null;
+            /**
+             * @description Model ID used by the agent runtime
+             * @example gpt-5.2-codex
+             */
+            modelId?: string | null;
+            /**
+             * @description Task statuses that trigger this agent to activate
+             * @example [
+             *       "NOT_STARTED",
+             *       "IN_PROGRESS"
+             *     ]
+             */
+            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /**
+             * @description Task tags that trigger this agent to activate
+             * @example [
+             *       "code",
+             *       "review"
+             *     ]
+             */
+            tagTriggers: string[];
+            /**
+             * @description List of MCP tool identifiers this agent is allowed to use
+             * @example [
+             *       "tasks.createTask",
+             *       "tasks.readTask",
+             *       "context.search"
+             *     ]
+             */
+            allowedTools: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @example true
+             */
+            isActive: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: Record<string, never>;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description Agent creation timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Agent last update timestamp
+             * @example 2025-11-28T10:30:00.000Z
+             */
+            updatedAt: string;
+            /**
+             * @description Agent deletion timestamp (soft delete)
+             * @example null
+             */
+            deletedAt?: Record<string, never>;
+        };
+        AgentListResponseDto: {
+            /** @description List of agents */
+            items: components["schemas"]["AgentResponseDto"][];
+            /**
+             * @description Total number of agents matching the query
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 20
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 3
+             */
+            totalPages: number;
+        };
+        PatchAgentDto: {
+            /**
+             * @description Updated actor slug for the agent
+             * @example code-reviewer
+             */
+            slug?: string;
+            /**
+             * @description Updated actor display name for the agent
+             * @example Code Reviewer
+             */
+            name?: string;
+            /**
+             * @description Core instructions/persona for this agent
+             * @example You are a helpful assistant that helps users with tasks.
+             */
+            systemPrompt?: string;
+            /**
+             * @description Provider ID to select a model runtime
+             * @example openai
+             */
+            providerId?: string;
+            /**
+             * @description Model ID used by the agent runtime
+             * @example gpt-5.2-codex
+             */
+            modelId?: string;
+            /**
+             * @description Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.
+             * @example [
+             *       "NOT_STARTED"
+             *     ]
+             */
+            statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /**
+             * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
+             * @example [
+             *       "code"
+             *     ]
+             */
+            tagTriggers?: string[];
+            /**
+             * @description Type of agent (provider)
+             * @example claude
+             * @enum {string}
+             */
+            type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
+            /**
+             * @description Short description of what this agent does
+             * @example A helpful assistant agent
+             */
+            description?: string | null;
+            /**
+             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
+             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
+             */
+            introduction?: string | null;
+            /**
+             * @description Optional avatar URL for the agent actor
+             * @example https://example.com/avatar.png
+             */
+            avatarUrl?: string | null;
+            /**
+             * @description List of tool identifiers this agent is allowed to use
+             * @example [
+             *       "tasks.createTask",
+             *       "tasks.readTask",
+             *       "context.search"
+             *     ]
+             */
+            allowedTools?: string[];
+            /**
+             * @description Whether this agent is available for assignment
+             * @example true
+             */
+            isActive?: boolean;
+            /**
+             * @description Max number of tasks this agent can process in parallel
+             * @example 5
+             */
+            concurrencyLimit?: number | null;
+        };
+        IssueAccessTokenRequestDto: {
+            /**
+             * @description Human-readable name for this token (e.g., "CI/CD Pipeline Token")
+             * @example Production API Token
+             */
+            name: string;
+            /**
+             * @description Scopes to grant to this token
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes: string[];
+            /**
+             * @description Number of days until token expires (default: 30, max: 365)
+             * @default 30
+             * @example 30
+             */
+            expirationDays: number;
+        };
+        IssueAccessTokenResponseDto: {
+            /**
+             * @description Unique identifier for this token (can be used for revocation)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Human-readable name for this token
+             * @example Production API Token
+             */
+            name: string;
+            /**
+             * @description The raw JWT token - only shown once, store securely!
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            token: string;
+            /**
+             * @description Scopes granted to this token
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes: string[];
+            /**
+             * @description When this token expires (ISO 8601)
+             * @example 2025-02-20T12:00:00.000Z
+             */
+            expiresAt: string;
+            /**
+             * @description When this token was created (ISO 8601)
+             * @example 2025-01-20T12:00:00.000Z
+             */
+            createdAt: string;
+        };
+        IssuedAccessTokenResponseDto: {
+            /**
+             * @description Unique identifier for this token
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Human-readable name for this token
+             * @example Production API Token
+             */
+            name: string;
+            /**
+             * @description Scopes granted to this token
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes: string[];
+            /**
+             * @description Subject actor ID this token is issued for (JWT sub claim)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            sub: string;
+            /**
+             * @description Subject actor slug
+             * @example my-agent
+             */
+            subjectSlug: string;
+            /**
+             * @description Subject actor display name
+             * @example My Agent
+             */
+            subjectDisplayName: string;
+            /**
+             * @description Actor ID of the issuer (human who created this token)
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            issuedBy: string;
+            /**
+             * @description Display name of the issuer
+             * @example John Doe
+             */
+            issuedByDisplayName: string;
+            /**
+             * @description When this token expires (ISO 8601)
+             * @example 2025-02-20T12:00:00.000Z
+             */
+            expiresAt: string;
+            /**
+             * @description When this token was created (ISO 8601)
+             * @example 2025-01-20T12:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description When this token was revoked (ISO 8601), null if active
+             * @example null
+             */
+            revokedAt?: string | null;
+            /**
+             * @description When this token was last used (ISO 8601), null if never used
+             * @example 2025-01-21T08:30:00.000Z
+             */
+            lastUsedAt?: string | null;
+            /**
+             * @description Whether the token is still valid (not expired and not revoked)
+             * @example true
+             */
+            isValid: boolean;
         };
         CreateBlockDto: {
             /**
@@ -4113,431 +4548,6 @@ export interface components {
              * @example Tasks MCP API
              */
             resource_name: string;
-        };
-        CreateAgentDto: {
-            /**
-             * @description Unique, human-readable identifier for the agent
-             * @example buddy
-             */
-            slug: string;
-            /**
-             * @description Display name for the agent
-             * @example Buddy
-             */
-            name: string;
-            /**
-             * @description Type of agent (provider)
-             * @default claude
-             * @example claude
-             * @enum {string}
-             */
-            type: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
-            /**
-             * @description Short description of what this agent does
-             * @example A helpful assistant agent
-             */
-            description?: string;
-            /**
-             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
-             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
-             */
-            introduction?: string;
-            /**
-             * @description Optional avatar URL for the agent actor
-             * @example https://example.com/avatar.png
-             */
-            avatarUrl?: string | null;
-            /**
-             * @description Core instructions/persona for this agent
-             * @example You are a helpful assistant that helps users with tasks.
-             */
-            systemPrompt: string;
-            /**
-             * @description Provider ID to select a model runtime
-             * @example openai
-             */
-            providerId?: string;
-            /**
-             * @description Model ID used by the agent runtime
-             * @example gpt-5.2-codex
-             */
-            modelId?: string;
-            /**
-             * @description Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.
-             * @default []
-             * @example [
-             *       "NOT_STARTED"
-             *     ]
-             */
-            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
-            /**
-             * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
-             * @default []
-             * @example [
-             *       "code"
-             *     ]
-             */
-            tagTriggers: string[];
-            /**
-             * @description List of tool identifiers this agent is allowed to use
-             * @default []
-             * @example [
-             *       "tasks.createTask",
-             *       "tasks.readTask",
-             *       "context.search"
-             *     ]
-             */
-            allowedTools: string[];
-            /**
-             * @description Whether this agent is available for assignment
-             * @default true
-             * @example true
-             */
-            isActive: boolean;
-            /**
-             * @description Max number of tasks this agent can process in parallel
-             * @example 5
-             */
-            concurrencyLimit?: number;
-        };
-        AgentResponseDto: {
-            /**
-             * @description Unique identifier for the actor representing this agent
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            actorId: string;
-            /**
-             * @description Unique, human-readable identifier
-             * @example buddy
-             */
-            slug: string;
-            /**
-             * @description Display name for the agent
-             * @example Buddy
-             */
-            name: string;
-            /**
-             * @description Type of agent (provider)
-             * @example claude
-             * @enum {string}
-             */
-            type: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
-            /**
-             * @description Short description of what this agent does
-             * @example A helpful assistant agent
-             */
-            description?: Record<string, never>;
-            /**
-             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
-             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
-             */
-            introduction?: Record<string, never>;
-            /**
-             * @description Optional avatar URL for the agent actor
-             * @example https://example.com/avatar.png
-             */
-            avatarUrl?: string | null;
-            /**
-             * @description Core instructions/persona for this agent
-             * @example You are a helpful assistant that helps users with tasks.
-             */
-            systemPrompt: string;
-            /**
-             * @description Provider ID to select a model runtime
-             * @example openai
-             */
-            providerId?: string | null;
-            /**
-             * @description Model ID used by the agent runtime
-             * @example gpt-5.2-codex
-             */
-            modelId?: string | null;
-            /**
-             * @description Task statuses that trigger this agent to activate
-             * @example [
-             *       "NOT_STARTED",
-             *       "IN_PROGRESS"
-             *     ]
-             */
-            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
-            /**
-             * @description Task tags that trigger this agent to activate
-             * @example [
-             *       "code",
-             *       "review"
-             *     ]
-             */
-            tagTriggers: string[];
-            /**
-             * @description List of MCP tool identifiers this agent is allowed to use
-             * @example [
-             *       "tasks.createTask",
-             *       "tasks.readTask",
-             *       "context.search"
-             *     ]
-             */
-            allowedTools: string[];
-            /**
-             * @description Whether this agent is available for assignment
-             * @example true
-             */
-            isActive: boolean;
-            /**
-             * @description Max number of tasks this agent can process in parallel
-             * @example 5
-             */
-            concurrencyLimit?: Record<string, never>;
-            /**
-             * @description Row version for optimistic locking
-             * @example 1
-             */
-            rowVersion: number;
-            /**
-             * @description Agent creation timestamp
-             * @example 2025-11-28T10:30:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Agent last update timestamp
-             * @example 2025-11-28T10:30:00.000Z
-             */
-            updatedAt: string;
-            /**
-             * @description Agent deletion timestamp (soft delete)
-             * @example null
-             */
-            deletedAt?: Record<string, never>;
-        };
-        AgentListResponseDto: {
-            /** @description List of agents */
-            items: components["schemas"]["AgentResponseDto"][];
-            /**
-             * @description Total number of agents matching the query
-             * @example 42
-             */
-            total: number;
-            /**
-             * @description Current page number
-             * @example 1
-             */
-            page: number;
-            /**
-             * @description Number of items per page
-             * @example 20
-             */
-            limit: number;
-            /**
-             * @description Total number of pages
-             * @example 3
-             */
-            totalPages: number;
-        };
-        PatchAgentDto: {
-            /**
-             * @description Updated actor slug for the agent
-             * @example code-reviewer
-             */
-            slug?: string;
-            /**
-             * @description Updated actor display name for the agent
-             * @example Code Reviewer
-             */
-            name?: string;
-            /**
-             * @description Core instructions/persona for this agent
-             * @example You are a helpful assistant that helps users with tasks.
-             */
-            systemPrompt?: string;
-            /**
-             * @description Provider ID to select a model runtime
-             * @example openai
-             */
-            providerId?: string;
-            /**
-             * @description Model ID used by the agent runtime
-             * @example gpt-5.2-codex
-             */
-            modelId?: string;
-            /**
-             * @description Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.
-             * @example [
-             *       "NOT_STARTED"
-             *     ]
-             */
-            statusTriggers?: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
-            /**
-             * @description Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: ["code"] for code-related tasks, ["review"] for review workflows, ["urgent"] for priority handling.
-             * @example [
-             *       "code"
-             *     ]
-             */
-            tagTriggers?: string[];
-            /**
-             * @description Type of agent (provider)
-             * @example claude
-             * @enum {string}
-             */
-            type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
-            /**
-             * @description Short description of what this agent does
-             * @example A helpful assistant agent
-             */
-            description?: string | null;
-            /**
-             * @description Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks
-             * @example I specialize in code review and bug fixing. Assign me tasks related to quality assurance.
-             */
-            introduction?: string | null;
-            /**
-             * @description Optional avatar URL for the agent actor
-             * @example https://example.com/avatar.png
-             */
-            avatarUrl?: string | null;
-            /**
-             * @description List of tool identifiers this agent is allowed to use
-             * @example [
-             *       "tasks.createTask",
-             *       "tasks.readTask",
-             *       "context.search"
-             *     ]
-             */
-            allowedTools?: string[];
-            /**
-             * @description Whether this agent is available for assignment
-             * @example true
-             */
-            isActive?: boolean;
-            /**
-             * @description Max number of tasks this agent can process in parallel
-             * @example 5
-             */
-            concurrencyLimit?: number | null;
-        };
-        IssueAccessTokenRequestDto: {
-            /**
-             * @description Human-readable name for this token (e.g., "CI/CD Pipeline Token")
-             * @example Production API Token
-             */
-            name: string;
-            /**
-             * @description Scopes to grant to this token
-             * @example [
-             *       "tasks:read",
-             *       "tasks:write"
-             *     ]
-             */
-            scopes: string[];
-            /**
-             * @description Number of days until token expires (default: 30, max: 365)
-             * @default 30
-             * @example 30
-             */
-            expirationDays: number;
-        };
-        IssueAccessTokenResponseDto: {
-            /**
-             * @description Unique identifier for this token (can be used for revocation)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Human-readable name for this token
-             * @example Production API Token
-             */
-            name: string;
-            /**
-             * @description The raw JWT token - only shown once, store securely!
-             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-             */
-            token: string;
-            /**
-             * @description Scopes granted to this token
-             * @example [
-             *       "tasks:read",
-             *       "tasks:write"
-             *     ]
-             */
-            scopes: string[];
-            /**
-             * @description When this token expires (ISO 8601)
-             * @example 2025-02-20T12:00:00.000Z
-             */
-            expiresAt: string;
-            /**
-             * @description When this token was created (ISO 8601)
-             * @example 2025-01-20T12:00:00.000Z
-             */
-            createdAt: string;
-        };
-        IssuedAccessTokenResponseDto: {
-            /**
-             * @description Unique identifier for this token
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Human-readable name for this token
-             * @example Production API Token
-             */
-            name: string;
-            /**
-             * @description Scopes granted to this token
-             * @example [
-             *       "tasks:read",
-             *       "tasks:write"
-             *     ]
-             */
-            scopes: string[];
-            /**
-             * @description Subject actor ID this token is issued for (JWT sub claim)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            sub: string;
-            /**
-             * @description Subject actor slug
-             * @example my-agent
-             */
-            subjectSlug: string;
-            /**
-             * @description Subject actor display name
-             * @example My Agent
-             */
-            subjectDisplayName: string;
-            /**
-             * @description Actor ID of the issuer (human who created this token)
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            issuedBy: string;
-            /**
-             * @description Display name of the issuer
-             * @example John Doe
-             */
-            issuedByDisplayName: string;
-            /**
-             * @description When this token expires (ISO 8601)
-             * @example 2025-02-20T12:00:00.000Z
-             */
-            expiresAt: string;
-            /**
-             * @description When this token was created (ISO 8601)
-             * @example 2025-01-20T12:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description When this token was revoked (ISO 8601), null if active
-             * @example null
-             */
-            revokedAt?: string | null;
-            /**
-             * @description When this token was last used (ISO 8601), null if never used
-             * @example 2025-01-21T08:30:00.000Z
-             */
-            lastUsedAt?: string | null;
-            /**
-             * @description Whether the token is still valid (not expired and not revoked)
-             * @example true
-             */
-            isValid: boolean;
         };
         CreateSecretDto: {
             /**
@@ -7521,6 +7531,195 @@ export interface operations {
             };
         };
     };
+    AgentsController_listAgents: {
+        parameters: {
+            query?: {
+                /** @description Filter by active status */
+                isActive?: boolean;
+                /** @description Page number for pagination */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentListResponseDto"];
+                };
+            };
+        };
+    };
+    AgentsController_createAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAgentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AgentsController_getAgentBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent slug */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AgentsController_deleteAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent actor ID */
+                actorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AgentsController_patchAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent actor ID */
+                actorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchAgentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponseDto"];
+                };
+            };
+        };
+    };
+    AgentTokensController_listTokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent slug */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedAccessTokenResponseDto"][];
+                };
+            };
+        };
+    };
+    AgentTokensController_issueToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent slug */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueAccessTokenRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueAccessTokenResponseDto"];
+                };
+            };
+        };
+    };
+    AgentTokensController_revokeToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent slug */
+                slug: string;
+                /** @description Token ID to revoke */
+                tokenId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedAccessTokenResponseDto"];
+                };
+            };
+        };
+    };
     ContextController_listBlocks: {
         parameters: {
             query?: {
@@ -8352,195 +8551,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProtectedResourceMetadataResponseDto"];
-                };
-            };
-        };
-    };
-    AgentsController_listAgents: {
-        parameters: {
-            query?: {
-                /** @description Filter by active status */
-                isActive?: boolean;
-                /** @description Page number for pagination */
-                page?: number;
-                /** @description Number of items per page */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AgentListResponseDto"];
-                };
-            };
-        };
-    };
-    AgentsController_createAgent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAgentDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AgentResponseDto"];
-                };
-            };
-        };
-    };
-    AgentsController_getAgentBySlug: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Agent slug */
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AgentResponseDto"];
-                };
-            };
-        };
-    };
-    AgentsController_deleteAgent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Agent actor ID */
-                actorId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AgentsController_patchAgent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Agent actor ID */
-                actorId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchAgentDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AgentResponseDto"];
-                };
-            };
-        };
-    };
-    AgentTokensController_listTokens: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Agent slug */
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssuedAccessTokenResponseDto"][];
-                };
-            };
-        };
-    };
-    AgentTokensController_issueToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Agent slug */
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IssueAccessTokenRequestDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssueAccessTokenResponseDto"];
-                };
-            };
-        };
-    };
-    AgentTokensController_revokeToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Agent slug */
-                slug: string;
-                /** @description Token ID to revoke */
-                tokenId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IssuedAccessTokenResponseDto"];
                 };
             };
         };

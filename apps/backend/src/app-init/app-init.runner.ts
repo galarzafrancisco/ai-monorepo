@@ -38,6 +38,7 @@ import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './agent/prompts';
 import { createQwen3CoderNext } from './agent/qwen3-coder-next';
+import { createTaico } from './agent/taico.agent';
 import { createPlaywright } from './mcp/playwright.mcp';
 
 @Injectable()
@@ -159,6 +160,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
   async ensureAgents() {
     // Create agents
+    try {
+      await this.ensureAgentExists(createTaico);
+    } catch (error) {
+      this.logger.error('Error ensuring taico Agent exists');
+    }
     try {
       await this.ensureAgentExists(createClaudeDev);
     } catch (error) {

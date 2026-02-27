@@ -26,6 +26,9 @@ export class ThreadEntity {
   @Column({ type: 'text' })
   title!: string;
 
+  @Column({ type: 'text', nullable: true, name: 'chat_session_id' })
+  chatSessionId!: string | null;
+
   @Column({ type: 'uuid', nullable: false, name: 'created_by_actor_id' })
   createdByActorId!: string;
 

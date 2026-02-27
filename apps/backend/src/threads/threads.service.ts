@@ -33,6 +33,7 @@ import {
   ActorNotFoundForThreadError,
 } from './errors/threads.errors';
 import { MessageCreatedEvent } from './events/threads.events';
+import { ChatService } from './chat.service';
 
 @Injectable()
 export class ThreadsService {
@@ -54,7 +55,8 @@ export class ThreadsService {
     private readonly metaService: MetaService,
     private readonly contextService: ContextService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+    private readonly chatService: ChatService,
+  ) { }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
     this.logger.log({
@@ -99,12 +101,31 @@ export class ThreadsService {
 
     const thread = this.threadRepository.create({
       title,
+      chatSessionId: null,
       createdByActorId: input.createdByActorId,
       parentTaskId: input.parentTaskId || null,
       stateContextBlockId: stateBlock.id,
     });
 
     const savedThread = await this.threadRepository.save(thread);
+
+    // Create provider-side conversation/session and persist its ID on the thread.
+    try {
+      const conversation = await this.chatService.createConversation({
+        threadId: savedThread.id,
+      });
+      savedThread.chatSessionId = conversation.id;
+      await this.threadRepository.save(savedThread);
+    } catch (error) {
+      this.logger.warn({
+        message: 'Failed to create chat conversation for thread',
+        threadId: savedThread.id,
+        error:
+          error instanceof Error
+            ? { message: error.message, stack: error.stack }
+            : String(error),
+      });
+    }
 
     // Handle tags if provided
     if (input.tagNames && input.tagNames.length > 0) {
@@ -253,6 +274,7 @@ export class ThreadsService {
       items: threads.map((thread) => ({
         id: thread.id,
         title: thread.title,
+        chatSessionId: thread.chatSessionId ?? null,
       })),
       total,
       page: input.page,
@@ -613,6 +635,7 @@ export class ThreadsService {
     return {
       id: thread.id,
       title: thread.title,
+      chatSessionId: thread.chatSessionId ?? null,
       createdByActor: this.mapActorToResult(thread.createdByActor),
       parentTaskId: thread.parentTaskId || null,
       stateContextBlockId: thread.stateContextBlockId,
@@ -696,15 +719,17 @@ export class ThreadsService {
     if (!thread) {
       throw new ThreadNotFoundError(input.threadId);
     }
+    if (!thread.chatSessionId) {
+      // TODO: make an error. This shouldn't happen though.
+      throw "Thread does not have a chat session id"
+    }
 
     // Verify actor exists if provided
-    if (input.createdByActorId) {
-      const actor = await this.actorRepository.findOne({
-        where: { id: input.createdByActorId },
-      });
-      if (!actor) {
-        throw new ActorNotFoundForThreadError(input.createdByActorId);
-      }
+    const actor = await this.actorRepository.findOne({
+      where: { id: input.createdByActorId },
+    });
+    if (!actor) {
+      throw new ActorNotFoundForThreadError(input.createdByActorId);
     }
 
     const message = this.threadMessageRepository.create({
@@ -739,6 +764,14 @@ export class ThreadsService {
         messageWithRelations,
       ),
     );
+
+    // Send to chat
+    this.chatService.sendMessageToThread({
+      conversationId: thread.chatSessionId,
+      threadId: thread.id,
+      message: input.content,
+      actor,
+    })
 
     return this.mapThreadMessageToResult(messageWithRelations);
   }

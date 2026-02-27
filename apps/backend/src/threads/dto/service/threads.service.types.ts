@@ -69,6 +69,7 @@ export type ListThreadsInput = {
 export type ThreadResult = {
   id: string;
   title: string;
+  chatSessionId: string | null;
   createdByActor: ActorResult;
   parentTaskId: string | null;
   stateContextBlockId: string;
@@ -85,6 +86,7 @@ export type ThreadResult = {
 export type ThreadListItemResult = {
   id: string;
   title: string;
+  chatSessionId: string | null;
 };
 
 export type ListThreadsResult = {

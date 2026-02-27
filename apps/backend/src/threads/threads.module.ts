@@ -12,6 +12,9 @@ import { ActorEntity } from '../identity-provider/actor.entity';
 import { MetaModule } from '../meta/meta.module';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { ContextModule } from '../context/context.module';
+import { ChatService } from './chat.service';
+import { AgentsModule } from 'src/agents/agents.module';
+import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
 
 @Module({
   imports: [
@@ -23,12 +26,14 @@ import { ContextModule } from '../context/context.module';
       ActorEntity,
       AgentRunEntity,
     ]),
+    AgentsModule,
+    AuthorizationServerModule,
     AuthGuardsModule,
     MetaModule,
     ContextModule,
   ],
   controllers: [ThreadsController],
-  providers: [ThreadsService, ThreadsGateway],
+  providers: [ThreadsService, ThreadsGateway, ChatService],
   exports: [ThreadsService],
 })
 export class ThreadsModule {}

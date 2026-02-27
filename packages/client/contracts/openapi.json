@@ -4016,6 +4016,352 @@
         ]
       }
     },
+    "/api/v1/agents": {
+      "post": {
+        "operationId": "AgentsController_createAgent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new agent",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "get": {
+        "operationId": "AgentsController_listAgents",
+        "parameters": [
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List agents with optional filtering and pagination",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agents/{slug}": {
+      "get": {
+        "operationId": "AgentsController_getAgentBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Agent slug",
+            "examples": {
+              "bySlug": {
+                "summary": "By slug",
+                "value": "alfred"
+              }
+            },
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get an agent by slug",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agents/{actorId}": {
+      "patch": {
+        "operationId": "AgentsController_patchAgent",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "description": "Agent actor ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchAgentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Patch an agent and its linked actor fields",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "delete": {
+        "operationId": "AgentsController_deleteAgent",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "description": "Agent actor ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete an agent",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agents/{slug}/tokens": {
+      "post": {
+        "operationId": "AgentTokensController_issueToken",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Agent slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueAccessTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueAccessTokenResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Issue a new access token for an agent",
+        "tags": [
+          "Agent Tokens"
+        ]
+      },
+      "get": {
+        "operationId": "AgentTokensController_listTokens",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Agent slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IssuedAccessTokenResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all tokens for an agent",
+        "tags": [
+          "Agent Tokens"
+        ]
+      }
+    },
+    "/api/v1/agents/{slug}/tokens/{tokenId}": {
+      "delete": {
+        "operationId": "AgentTokensController_revokeToken",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Agent slug",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenId",
+            "required": true,
+            "in": "path",
+            "description": "Token ID to revoke",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedAccessTokenResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Revoke an agent token",
+        "tags": [
+          "Agent Tokens"
+        ]
+      }
+    },
     "/api/v1/context/blocks": {
       "post": {
         "operationId": "ContextController_createBlock",
@@ -5201,352 +5547,6 @@
         },
         "tags": [
           "Discovery"
-        ]
-      }
-    },
-    "/api/v1/agents": {
-      "post": {
-        "operationId": "AgentsController_createAgent",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAgentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new agent",
-        "tags": [
-          "Agent"
-        ]
-      },
-      "get": {
-        "operationId": "AgentsController_listAgents",
-        "parameters": [
-          {
-            "name": "isActive",
-            "required": false,
-            "in": "query",
-            "description": "Filter by active status",
-            "schema": {
-              "example": true,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number for pagination",
-            "schema": {
-              "default": 1,
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of items per page",
-            "schema": {
-              "default": 20,
-              "example": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentListResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List agents with optional filtering and pagination",
-        "tags": [
-          "Agent"
-        ]
-      }
-    },
-    "/api/v1/agents/{slug}": {
-      "get": {
-        "operationId": "AgentsController_getAgentBySlug",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "description": "Agent slug",
-            "examples": {
-              "bySlug": {
-                "summary": "By slug",
-                "value": "alfred"
-              }
-            },
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get an agent by slug",
-        "tags": [
-          "Agent"
-        ]
-      }
-    },
-    "/api/v1/agents/{actorId}": {
-      "patch": {
-        "operationId": "AgentsController_patchAgent",
-        "parameters": [
-          {
-            "name": "actorId",
-            "required": true,
-            "in": "path",
-            "description": "Agent actor ID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PatchAgentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Patch an agent and its linked actor fields",
-        "tags": [
-          "Agent"
-        ]
-      },
-      "delete": {
-        "operationId": "AgentsController_deleteAgent",
-        "parameters": [
-          {
-            "name": "actorId",
-            "required": true,
-            "in": "path",
-            "description": "Agent actor ID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete an agent",
-        "tags": [
-          "Agent"
-        ]
-      }
-    },
-    "/api/v1/agents/{slug}/tokens": {
-      "post": {
-        "operationId": "AgentTokensController_issueToken",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "description": "Agent slug",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IssueAccessTokenRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IssueAccessTokenResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Issue a new access token for an agent",
-        "tags": [
-          "Agent Tokens"
-        ]
-      },
-      "get": {
-        "operationId": "AgentTokensController_listTokens",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "description": "Agent slug",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/IssuedAccessTokenResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List all tokens for an agent",
-        "tags": [
-          "Agent Tokens"
-        ]
-      }
-    },
-    "/api/v1/agents/{slug}/tokens/{tokenId}": {
-      "delete": {
-        "operationId": "AgentTokensController_revokeToken",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "description": "Agent slug",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenId",
-            "required": true,
-            "in": "path",
-            "description": "Token ID to revoke",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IssuedAccessTokenResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Revoke an agent token",
-        "tags": [
-          "Agent Tokens"
         ]
       }
     },
@@ -8467,6 +8467,12 @@
             "description": "Thread title",
             "example": "Implement authentication feature"
           },
+          "chatSessionId": {
+            "type": "string",
+            "description": "Provider-specific chat session/conversation ID associated with this thread",
+            "example": "conv_123abc",
+            "nullable": true
+          },
           "createdByActor": {
             "description": "Actor who created the thread",
             "allOf": [
@@ -8533,6 +8539,7 @@
         "required": [
           "id",
           "title",
+          "chatSessionId",
           "createdByActor",
           "stateContextBlockId",
           "tasks",
@@ -8566,11 +8573,18 @@
             "type": "string",
             "description": "Thread title",
             "example": "Implement authentication feature"
+          },
+          "chatSessionId": {
+            "type": "string",
+            "description": "Provider-specific chat session/conversation ID associated with this thread",
+            "example": "conv_123abc",
+            "nullable": true
           }
         },
         "required": [
           "id",
-          "title"
+          "title",
+          "chatSessionId"
         ]
       },
       "ThreadListResponseDto": {
@@ -8786,6 +8800,597 @@
           "total",
           "page",
           "limit"
+        ]
+      },
+      "CreateAgentDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier for the agent",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of agent (provider)",
+            "example": "claude",
+            "enum": [
+              "claude",
+              "codex",
+              "opencode",
+              "adk",
+              "githubcopilot",
+              "other"
+            ],
+            "default": "claude"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent"
+          },
+          "introduction": {
+            "type": "string",
+            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
+            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Optional avatar URL for the agent actor",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "providerId": {
+            "type": "string",
+            "description": "Provider ID to select a model runtime",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model ID used by the agent runtime",
+            "example": "gpt-5.2-codex"
+          },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
+            "example": [
+              "NOT_STARTED"
+            ],
+            "default": [],
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
+          },
+          "tagTriggers": {
+            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
+            "example": [
+              "code"
+            ],
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "tasks.createTask",
+              "tasks.readTask",
+              "context.search"
+            ],
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true,
+            "default": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "systemPrompt"
+        ]
+      },
+      "AgentResponseDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "description": "Unique identifier for the actor representing this agent",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Unique, human-readable identifier",
+            "example": "buddy"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the agent",
+            "example": "Buddy"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of agent (provider)",
+            "example": "claude",
+            "enum": [
+              "claude",
+              "codex",
+              "opencode",
+              "adk",
+              "githubcopilot",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "object",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent"
+          },
+          "introduction": {
+            "type": "object",
+            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
+            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Optional avatar URL for the agent actor",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "providerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Provider ID to select a model runtime",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Model ID used by the agent runtime",
+            "example": "gpt-5.2-codex"
+          },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Task statuses that trigger this agent to activate",
+            "example": [
+              "NOT_STARTED",
+              "IN_PROGRESS"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
+          },
+          "tagTriggers": {
+            "description": "Task tags that trigger this agent to activate",
+            "example": [
+              "code",
+              "review"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowedTools": {
+            "description": "List of MCP tool identifiers this agent is allowed to use",
+            "example": [
+              "tasks.createTask",
+              "tasks.readTask",
+              "context.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true
+          },
+          "concurrencyLimit": {
+            "type": "object",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Agent creation timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Agent last update timestamp",
+            "example": "2025-11-28T10:30:00.000Z"
+          },
+          "deletedAt": {
+            "type": "object",
+            "description": "Agent deletion timestamp (soft delete)",
+            "example": null
+          }
+        },
+        "required": [
+          "actorId",
+          "slug",
+          "name",
+          "type",
+          "systemPrompt",
+          "statusTriggers",
+          "tagTriggers",
+          "allowedTools",
+          "isActive",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AgentListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of agents",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of agents matching the query",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "PatchAgentDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Updated actor slug for the agent",
+            "example": "code-reviewer"
+          },
+          "name": {
+            "type": "string",
+            "description": "Updated actor display name for the agent",
+            "example": "Code Reviewer"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Core instructions/persona for this agent",
+            "example": "You are a helpful assistant that helps users with tasks."
+          },
+          "providerId": {
+            "type": "string",
+            "description": "Provider ID to select a model runtime",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model ID used by the agent runtime",
+            "example": "gpt-5.2-codex"
+          },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
+            "example": [
+              "NOT_STARTED"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
+          },
+          "tagTriggers": {
+            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
+            "example": [
+              "code"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of agent (provider)",
+            "example": "claude",
+            "enum": [
+              "claude",
+              "codex",
+              "opencode",
+              "adk",
+              "githubcopilot",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what this agent does",
+            "example": "A helpful assistant agent",
+            "nullable": true
+          },
+          "introduction": {
+            "type": "string",
+            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
+            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance.",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Optional avatar URL for the agent actor",
+            "example": "https://example.com/avatar.png",
+            "nullable": true
+          },
+          "allowedTools": {
+            "description": "List of tool identifiers this agent is allowed to use",
+            "example": [
+              "tasks.createTask",
+              "tasks.readTask",
+              "context.search"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this agent is available for assignment",
+            "example": true
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Max number of tasks this agent can process in parallel",
+            "example": 5,
+            "nullable": true
+          }
+        }
+      },
+      "IssueAccessTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for this token (e.g., \"CI/CD Pipeline Token\")",
+            "example": "Production API Token",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "scopes": {
+            "description": "Scopes to grant to this token",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expirationDays": {
+            "type": "number",
+            "description": "Number of days until token expires (default: 30, max: 365)",
+            "example": 30,
+            "default": 30,
+            "minimum": 1,
+            "maximum": 365
+          }
+        },
+        "required": [
+          "name",
+          "scopes"
+        ]
+      },
+      "IssueAccessTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this token (can be used for revocation)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for this token",
+            "example": "Production API Token"
+          },
+          "token": {
+            "type": "string",
+            "description": "The raw JWT token - only shown once, store securely!",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "scopes": {
+            "description": "Scopes granted to this token",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When this token expires (ISO 8601)",
+            "example": "2025-02-20T12:00:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When this token was created (ISO 8601)",
+            "example": "2025-01-20T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "token",
+          "scopes",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "IssuedAccessTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this token",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for this token",
+            "example": "Production API Token"
+          },
+          "scopes": {
+            "description": "Scopes granted to this token",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sub": {
+            "type": "string",
+            "description": "Subject actor ID this token is issued for (JWT sub claim)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "subjectSlug": {
+            "type": "string",
+            "description": "Subject actor slug",
+            "example": "my-agent"
+          },
+          "subjectDisplayName": {
+            "type": "string",
+            "description": "Subject actor display name",
+            "example": "My Agent"
+          },
+          "issuedBy": {
+            "type": "string",
+            "description": "Actor ID of the issuer (human who created this token)",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "issuedByDisplayName": {
+            "type": "string",
+            "description": "Display name of the issuer",
+            "example": "John Doe"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When this token expires (ISO 8601)",
+            "example": "2025-02-20T12:00:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When this token was created (ISO 8601)",
+            "example": "2025-01-20T12:00:00.000Z"
+          },
+          "revokedAt": {
+            "type": "string",
+            "description": "When this token was revoked (ISO 8601), null if active",
+            "example": null,
+            "nullable": true
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "description": "When this token was last used (ISO 8601), null if never used",
+            "example": "2025-01-21T08:30:00.000Z",
+            "nullable": true
+          },
+          "isValid": {
+            "type": "boolean",
+            "description": "Whether the token is still valid (not expired and not revoked)",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "scopes",
+          "sub",
+          "subjectSlug",
+          "subjectDisplayName",
+          "issuedBy",
+          "issuedByDisplayName",
+          "expiresAt",
+          "createdAt",
+          "isValid"
         ]
       },
       "CreateBlockDto": {
@@ -9658,597 +10263,6 @@
           "scopes_supported",
           "bearer_methods_supported",
           "resource_name"
-        ]
-      },
-      "CreateAgentDto": {
-        "type": "object",
-        "properties": {
-          "slug": {
-            "type": "string",
-            "description": "Unique, human-readable identifier for the agent",
-            "example": "buddy"
-          },
-          "name": {
-            "type": "string",
-            "description": "Display name for the agent",
-            "example": "Buddy"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of agent (provider)",
-            "example": "claude",
-            "enum": [
-              "claude",
-              "codex",
-              "opencode",
-              "adk",
-              "githubcopilot",
-              "other"
-            ],
-            "default": "claude"
-          },
-          "description": {
-            "type": "string",
-            "description": "Short description of what this agent does",
-            "example": "A helpful assistant agent"
-          },
-          "introduction": {
-            "type": "string",
-            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
-            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
-          },
-          "avatarUrl": {
-            "type": "string",
-            "description": "Optional avatar URL for the agent actor",
-            "example": "https://example.com/avatar.png",
-            "nullable": true
-          },
-          "systemPrompt": {
-            "type": "string",
-            "description": "Core instructions/persona for this agent",
-            "example": "You are a helpful assistant that helps users with tasks."
-          },
-          "providerId": {
-            "type": "string",
-            "description": "Provider ID to select a model runtime",
-            "example": "openai"
-          },
-          "modelId": {
-            "type": "string",
-            "description": "Model ID used by the agent runtime",
-            "example": "gpt-5.2-codex"
-          },
-          "statusTriggers": {
-            "type": "array",
-            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
-            "example": [
-              "NOT_STARTED"
-            ],
-            "default": [],
-            "items": {
-              "type": "string",
-              "enum": [
-                "NOT_STARTED",
-                "IN_PROGRESS",
-                "FOR_REVIEW",
-                "DONE"
-              ]
-            }
-          },
-          "tagTriggers": {
-            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
-            "example": [
-              "code"
-            ],
-            "default": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "allowedTools": {
-            "description": "List of tool identifiers this agent is allowed to use",
-            "example": [
-              "tasks.createTask",
-              "tasks.readTask",
-              "context.search"
-            ],
-            "default": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "isActive": {
-            "type": "boolean",
-            "description": "Whether this agent is available for assignment",
-            "example": true,
-            "default": true
-          },
-          "concurrencyLimit": {
-            "type": "number",
-            "description": "Max number of tasks this agent can process in parallel",
-            "example": 5
-          }
-        },
-        "required": [
-          "slug",
-          "name",
-          "systemPrompt"
-        ]
-      },
-      "AgentResponseDto": {
-        "type": "object",
-        "properties": {
-          "actorId": {
-            "type": "string",
-            "description": "Unique identifier for the actor representing this agent",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "slug": {
-            "type": "string",
-            "description": "Unique, human-readable identifier",
-            "example": "buddy"
-          },
-          "name": {
-            "type": "string",
-            "description": "Display name for the agent",
-            "example": "Buddy"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of agent (provider)",
-            "example": "claude",
-            "enum": [
-              "claude",
-              "codex",
-              "opencode",
-              "adk",
-              "githubcopilot",
-              "other"
-            ]
-          },
-          "description": {
-            "type": "object",
-            "description": "Short description of what this agent does",
-            "example": "A helpful assistant agent"
-          },
-          "introduction": {
-            "type": "object",
-            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
-            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance."
-          },
-          "avatarUrl": {
-            "type": "string",
-            "description": "Optional avatar URL for the agent actor",
-            "example": "https://example.com/avatar.png",
-            "nullable": true
-          },
-          "systemPrompt": {
-            "type": "string",
-            "description": "Core instructions/persona for this agent",
-            "example": "You are a helpful assistant that helps users with tasks."
-          },
-          "providerId": {
-            "type": "string",
-            "nullable": true,
-            "description": "Provider ID to select a model runtime",
-            "example": "openai"
-          },
-          "modelId": {
-            "type": "string",
-            "nullable": true,
-            "description": "Model ID used by the agent runtime",
-            "example": "gpt-5.2-codex"
-          },
-          "statusTriggers": {
-            "type": "array",
-            "description": "Task statuses that trigger this agent to activate",
-            "example": [
-              "NOT_STARTED",
-              "IN_PROGRESS"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "NOT_STARTED",
-                "IN_PROGRESS",
-                "FOR_REVIEW",
-                "DONE"
-              ]
-            }
-          },
-          "tagTriggers": {
-            "description": "Task tags that trigger this agent to activate",
-            "example": [
-              "code",
-              "review"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "allowedTools": {
-            "description": "List of MCP tool identifiers this agent is allowed to use",
-            "example": [
-              "tasks.createTask",
-              "tasks.readTask",
-              "context.search"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "isActive": {
-            "type": "boolean",
-            "description": "Whether this agent is available for assignment",
-            "example": true
-          },
-          "concurrencyLimit": {
-            "type": "object",
-            "description": "Max number of tasks this agent can process in parallel",
-            "example": 5
-          },
-          "rowVersion": {
-            "type": "number",
-            "description": "Row version for optimistic locking",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Agent creation timestamp",
-            "example": "2025-11-28T10:30:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Agent last update timestamp",
-            "example": "2025-11-28T10:30:00.000Z"
-          },
-          "deletedAt": {
-            "type": "object",
-            "description": "Agent deletion timestamp (soft delete)",
-            "example": null
-          }
-        },
-        "required": [
-          "actorId",
-          "slug",
-          "name",
-          "type",
-          "systemPrompt",
-          "statusTriggers",
-          "tagTriggers",
-          "allowedTools",
-          "isActive",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "AgentListResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "List of agents",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AgentResponseDto"
-            }
-          },
-          "total": {
-            "type": "number",
-            "description": "Total number of agents matching the query",
-            "example": 42
-          },
-          "page": {
-            "type": "number",
-            "description": "Current page number",
-            "example": 1
-          },
-          "limit": {
-            "type": "number",
-            "description": "Number of items per page",
-            "example": 20
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "Total number of pages",
-            "example": 3
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "limit",
-          "totalPages"
-        ]
-      },
-      "PatchAgentDto": {
-        "type": "object",
-        "properties": {
-          "slug": {
-            "type": "string",
-            "description": "Updated actor slug for the agent",
-            "example": "code-reviewer"
-          },
-          "name": {
-            "type": "string",
-            "description": "Updated actor display name for the agent",
-            "example": "Code Reviewer"
-          },
-          "systemPrompt": {
-            "type": "string",
-            "description": "Core instructions/persona for this agent",
-            "example": "You are a helpful assistant that helps users with tasks."
-          },
-          "providerId": {
-            "type": "string",
-            "description": "Provider ID to select a model runtime",
-            "example": "openai"
-          },
-          "modelId": {
-            "type": "string",
-            "description": "Model ID used by the agent runtime",
-            "example": "gpt-5.2-codex"
-          },
-          "statusTriggers": {
-            "type": "array",
-            "description": "Task statuses that trigger agent activation. When a task transitions to one of these statuses AND matches any tagTriggers (if specified), the agent will be notified to process it. Common patterns: [NOT_STARTED] for new task pickup, [FOR_REVIEW] for review workflows, [IN_PROGRESS] for monitoring active work.",
-            "example": [
-              "NOT_STARTED"
-            ],
-            "items": {
-              "type": "string",
-              "enum": [
-                "NOT_STARTED",
-                "IN_PROGRESS",
-                "FOR_REVIEW",
-                "DONE"
-              ]
-            }
-          },
-          "tagTriggers": {
-            "description": "Task tags that trigger agent activation (combined with statusTriggers using AND logic). When both a matching status AND tag are present, the agent activates. If empty, only status matching is required. Common examples: [\"code\"] for code-related tasks, [\"review\"] for review workflows, [\"urgent\"] for priority handling.",
-            "example": [
-              "code"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of agent (provider)",
-            "example": "claude",
-            "enum": [
-              "claude",
-              "codex",
-              "opencode",
-              "adk",
-              "githubcopilot",
-              "other"
-            ]
-          },
-          "description": {
-            "type": "string",
-            "description": "Short description of what this agent does",
-            "example": "A helpful assistant agent",
-            "nullable": true
-          },
-          "introduction": {
-            "type": "string",
-            "description": "Introduction field for semantic matching - describes what this agent is good at and when to assign them tasks",
-            "example": "I specialize in code review and bug fixing. Assign me tasks related to quality assurance.",
-            "nullable": true
-          },
-          "avatarUrl": {
-            "type": "string",
-            "description": "Optional avatar URL for the agent actor",
-            "example": "https://example.com/avatar.png",
-            "nullable": true
-          },
-          "allowedTools": {
-            "description": "List of tool identifiers this agent is allowed to use",
-            "example": [
-              "tasks.createTask",
-              "tasks.readTask",
-              "context.search"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "isActive": {
-            "type": "boolean",
-            "description": "Whether this agent is available for assignment",
-            "example": true
-          },
-          "concurrencyLimit": {
-            "type": "number",
-            "description": "Max number of tasks this agent can process in parallel",
-            "example": 5,
-            "nullable": true
-          }
-        }
-      },
-      "IssueAccessTokenRequestDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Human-readable name for this token (e.g., \"CI/CD Pipeline Token\")",
-            "example": "Production API Token",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "scopes": {
-            "description": "Scopes to grant to this token",
-            "example": [
-              "tasks:read",
-              "tasks:write"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "expirationDays": {
-            "type": "number",
-            "description": "Number of days until token expires (default: 30, max: 365)",
-            "example": 30,
-            "default": 30,
-            "minimum": 1,
-            "maximum": 365
-          }
-        },
-        "required": [
-          "name",
-          "scopes"
-        ]
-      },
-      "IssueAccessTokenResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for this token (can be used for revocation)",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Human-readable name for this token",
-            "example": "Production API Token"
-          },
-          "token": {
-            "type": "string",
-            "description": "The raw JWT token - only shown once, store securely!",
-            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-          },
-          "scopes": {
-            "description": "Scopes granted to this token",
-            "example": [
-              "tasks:read",
-              "tasks:write"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "expiresAt": {
-            "type": "string",
-            "description": "When this token expires (ISO 8601)",
-            "example": "2025-02-20T12:00:00.000Z"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "When this token was created (ISO 8601)",
-            "example": "2025-01-20T12:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "token",
-          "scopes",
-          "expiresAt",
-          "createdAt"
-        ]
-      },
-      "IssuedAccessTokenResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique identifier for this token",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Human-readable name for this token",
-            "example": "Production API Token"
-          },
-          "scopes": {
-            "description": "Scopes granted to this token",
-            "example": [
-              "tasks:read",
-              "tasks:write"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "sub": {
-            "type": "string",
-            "description": "Subject actor ID this token is issued for (JWT sub claim)",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "subjectSlug": {
-            "type": "string",
-            "description": "Subject actor slug",
-            "example": "my-agent"
-          },
-          "subjectDisplayName": {
-            "type": "string",
-            "description": "Subject actor display name",
-            "example": "My Agent"
-          },
-          "issuedBy": {
-            "type": "string",
-            "description": "Actor ID of the issuer (human who created this token)",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "issuedByDisplayName": {
-            "type": "string",
-            "description": "Display name of the issuer",
-            "example": "John Doe"
-          },
-          "expiresAt": {
-            "type": "string",
-            "description": "When this token expires (ISO 8601)",
-            "example": "2025-02-20T12:00:00.000Z"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "When this token was created (ISO 8601)",
-            "example": "2025-01-20T12:00:00.000Z"
-          },
-          "revokedAt": {
-            "type": "string",
-            "description": "When this token was revoked (ISO 8601), null if active",
-            "example": null,
-            "nullable": true
-          },
-          "lastUsedAt": {
-            "type": "string",
-            "description": "When this token was last used (ISO 8601), null if never used",
-            "example": "2025-01-21T08:30:00.000Z",
-            "nullable": true
-          },
-          "isValid": {
-            "type": "boolean",
-            "description": "Whether the token is still valid (not expired and not revoked)",
-            "example": true
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "scopes",
-          "sub",
-          "subjectSlug",
-          "subjectDisplayName",
-          "issuedBy",
-          "issuedByDisplayName",
-          "expiresAt",
-          "createdAt",
-          "isValid"
         ]
       },
       "CreateSecretDto": {

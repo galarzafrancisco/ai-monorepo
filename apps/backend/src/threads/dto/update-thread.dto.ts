@@ -9,4 +9,5 @@ export class UpdateThreadDto {
   @IsString()
   @IsOptional()
   title?: string;
+
 }

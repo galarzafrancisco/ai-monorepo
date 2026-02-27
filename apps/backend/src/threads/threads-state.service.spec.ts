@@ -78,6 +78,7 @@ describe('ThreadsService - State Context Block', () => {
   const mockThread: ThreadEntity = {
     id: 'thread-uuid',
     title: 'Test Thread',
+    chatSessionId: null,
     createdByActorId: 'actor-uuid',
     parentTaskId: 'parent-task-uuid',
     stateContextBlockId: 'state-block-uuid',
