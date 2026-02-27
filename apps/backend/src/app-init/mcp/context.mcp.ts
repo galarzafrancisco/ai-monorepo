@@ -10,6 +10,7 @@ export const createContext: CreateServerInput = {
   providedId: 'context',
   name: 'Context',
   description: 'Context',
+  type: 'http',
   url: `${config.issuerUrl}/api/v1/context/blocks/mcp`,
 };
 

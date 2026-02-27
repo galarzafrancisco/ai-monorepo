@@ -7003,16 +7003,41 @@
             "description": "Short description of the MCP server",
             "example": "Provides access to GitHub repositories and issues"
           },
+          "type": {
+            "type": "string",
+            "description": "Transport type of the MCP server",
+            "enum": [
+              "http",
+              "stdio"
+            ],
+            "example": "http"
+          },
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
             "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
+          },
+          "cmd": {
+            "type": "string",
+            "description": "Command used to start a stdio MCP server",
+            "example": "npx"
+          },
+          "args": {
+            "description": "Arguments passed to the stdio command",
+            "example": [
+              "@playwright/mcp@latest"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "providedId",
           "name",
-          "description"
+          "description",
+          "type"
         ]
       },
       "ServerResponseDto": {
@@ -7038,10 +7063,34 @@
             "description": "Short description of the MCP server",
             "example": "Provides access to GitHub repositories and issues"
           },
+          "type": {
+            "type": "string",
+            "description": "Transport type of the MCP server",
+            "enum": [
+              "http",
+              "stdio"
+            ],
+            "example": "http"
+          },
           "url": {
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
             "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
+          },
+          "cmd": {
+            "type": "string",
+            "description": "Command used to start a stdio MCP server",
+            "example": "npx"
+          },
+          "args": {
+            "description": "Arguments passed to the stdio command",
+            "example": [
+              "@playwright/mcp@latest"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "createdAt": {
             "type": "string",
@@ -7059,6 +7108,7 @@
           "providedId",
           "name",
           "description",
+          "type",
           "createdAt",
           "updatedAt"
         ]
@@ -7099,6 +7149,15 @@
       "UpdateServerDto": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "description": "Transport type of the MCP server",
+            "enum": [
+              "http",
+              "stdio"
+            ],
+            "example": "stdio"
+          },
           "name": {
             "type": "string",
             "description": "Display name of the MCP server",
@@ -7113,6 +7172,21 @@
             "type": "string",
             "description": "URL that MCP Clients will use to connect to the server",
             "example": "http://localhost:3000/api/v1/tasks/tasks/mcp"
+          },
+          "cmd": {
+            "type": "string",
+            "description": "Command used to start a stdio MCP server",
+            "example": "npx"
+          },
+          "args": {
+            "description": "Arguments passed to the stdio command",
+            "example": [
+              "@playwright/mcp@latest"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

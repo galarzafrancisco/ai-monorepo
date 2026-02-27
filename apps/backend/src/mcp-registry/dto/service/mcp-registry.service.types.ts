@@ -3,17 +3,42 @@
  * These are transport-agnostic and avoid framework-specific decorators.
  */
 
-export type CreateServerInput = {
+import { McpServerType } from '../../mcp-server.types';
+
+type ServerBase = {
   providedId: string;
   name: string;
   description: string;
+};
+
+type HttpServerConfig = {
+  type: 'http';
+  url: string;
+  cmd?: undefined;
+  args?: undefined;
+};
+
+type StdioServerConfig = {
+  type: 'stdio';
+  cmd: string;
+  args?: string[];
+  url?: undefined;
+};
+
+export type CreateServerInput = ServerBase & {
+  type: McpServerType;
   url?: string;
+  cmd?: string;
+  args?: string[];
 };
 
 export type UpdateServerInput = {
+  type?: McpServerType;
   name?: string;
   description?: string;
   url?: string;
+  cmd?: string;
+  args?: string[];
 };
 
 export type CreateConnectionInput = {
@@ -32,15 +57,18 @@ export type CreateMappingInput = {
   downstreamScope: string;
 };
 
-export type ServerRecord = {
+type ServerRecordBase = {
   id: string;
   providedId: string;
   name: string;
   description: string;
-  url?: string;
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type HttpServerRecord = ServerRecordBase & HttpServerConfig;
+export type StdioServerRecord = ServerRecordBase & StdioServerConfig;
+export type ServerRecord = HttpServerRecord | StdioServerRecord;
 
 export type ScopeRecord = {
   id: string;

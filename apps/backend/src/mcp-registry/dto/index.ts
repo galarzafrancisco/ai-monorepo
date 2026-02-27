@@ -14,3 +14,4 @@ export * from './delete-scope-response.dto';
 export * from './delete-connection-response.dto';
 export * from './delete-mapping-response.dto';
 export * from './service/mcp-registry.service.types';
+export * from '../mcp-server.types';

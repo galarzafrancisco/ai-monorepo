@@ -26,6 +26,14 @@ export class TasksMcpGateway {
     authContext: AuthContext,
     runId?: string,
   ): McpServer {
+    const readOnlyAnnotations = {
+      readOnlyHint: true,
+    };
+
+    const destructiveAnnotations = {
+      destructiveHint: true,
+    };
+
     const server = new McpServer({
       name: 'Tasks',
       version: '0.0.0',
@@ -40,6 +48,7 @@ export class TasksMcpGateway {
       {
         title: 'List tasks',
         description: 'Use to get a summary of tasks available', // Keep descriptions short to save tokens. Explain when to use it.
+        annotations: readOnlyAnnotations,
         inputSchema: {
           tag: z.string().optional(),
         },
@@ -76,6 +85,7 @@ export class TasksMcpGateway {
         title: 'List tasks with filters',
         description:
           'List tasks by status and recency with a configurable limit.',
+        annotations: readOnlyAnnotations,
         inputSchema: {
           status: z.nativeEnum(TaskStatus).optional(),
           assignee: z.string().optional(),
@@ -124,6 +134,7 @@ export class TasksMcpGateway {
       {
         title: 'Get task details',
         description: 'Retrieve full details of a task by ID',
+        annotations: readOnlyAnnotations,
         inputSchema: {
           taskId: z.string(),
         },
@@ -147,6 +158,7 @@ export class TasksMcpGateway {
         title: 'Search tasks',
         description:
           'Fuzzy search for tasks by name and description. Returns matching tasks sorted by relevance.',
+        annotations: readOnlyAnnotations,
         inputSchema: {
           query: z.string(),
           limit: z.number().optional(),
@@ -176,6 +188,7 @@ export class TasksMcpGateway {
         title: 'Search actors',
         description:
           'Fuzzy search for actors by display name or slug. Returns matching actors sorted by relevance.',
+        annotations: readOnlyAnnotations,
         inputSchema: {
           query: z.string(),
         },
@@ -285,6 +298,7 @@ export class TasksMcpGateway {
         {
           title: 'Delete task',
           description: 'Delete a task by ID',
+          annotations: destructiveAnnotations,
           inputSchema: {
             taskId: z.string(),
           },
@@ -636,6 +650,7 @@ export class TasksMcpGateway {
       {
         title: 'Get all tags',
         description: 'List all available tags',
+        annotations: readOnlyAnnotations,
       },
       async ({}) => {
         const tags = await this.metaService.getAllTags();

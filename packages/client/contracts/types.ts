@@ -2358,10 +2358,28 @@ export interface components {
              */
             description: string;
             /**
+             * @description Transport type of the MCP server
+             * @example http
+             * @enum {string}
+             */
+            type: "http" | "stdio";
+            /**
              * @description URL that MCP Clients will use to connect to the server
              * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
+            /**
+             * @description Command used to start a stdio MCP server
+             * @example npx
+             */
+            cmd?: string;
+            /**
+             * @description Arguments passed to the stdio command
+             * @example [
+             *       "@playwright/mcp@latest"
+             *     ]
+             */
+            args?: string[];
         };
         ServerResponseDto: {
             /**
@@ -2385,10 +2403,28 @@ export interface components {
              */
             description: string;
             /**
+             * @description Transport type of the MCP server
+             * @example http
+             * @enum {string}
+             */
+            type: "http" | "stdio";
+            /**
              * @description URL that MCP Clients will use to connect to the server
              * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
+            /**
+             * @description Command used to start a stdio MCP server
+             * @example npx
+             */
+            cmd?: string;
+            /**
+             * @description Arguments passed to the stdio command
+             * @example [
+             *       "@playwright/mcp@latest"
+             *     ]
+             */
+            args?: string[];
             /**
              * @description Timestamp when the server was created
              * @example 2025-11-05T08:00:00.000Z
@@ -2421,6 +2457,12 @@ export interface components {
         };
         UpdateServerDto: {
             /**
+             * @description Transport type of the MCP server
+             * @example stdio
+             * @enum {string}
+             */
+            type?: "http" | "stdio";
+            /**
              * @description Display name of the MCP server
              * @example GitHub Integration
              */
@@ -2435,6 +2477,18 @@ export interface components {
              * @example http://localhost:3000/api/v1/tasks/tasks/mcp
              */
             url?: string;
+            /**
+             * @description Command used to start a stdio MCP server
+             * @example npx
+             */
+            cmd?: string;
+            /**
+             * @description Arguments passed to the stdio command
+             * @example [
+             *       "@playwright/mcp@latest"
+             *     ]
+             */
+            args?: string[];
         };
         DeleteServerResponseDto: {
             /**

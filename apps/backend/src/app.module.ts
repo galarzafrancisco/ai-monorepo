@@ -26,6 +26,7 @@ import { RefactorThreadsForHeadlessConversations1739750000000 } from './migratio
 import { RemoveRoleFromThreadMessage1739844333000 } from './migrations/1739844333000-RemoveRoleFromThreadMessage';
 import { AddSecretsTable1740000000000 } from './migrations/1740000000000-AddSecretsTable';
 import { AddChatSessionIdToThreads1741000000000 } from './migrations/1741000000000-AddChatSessionIdToThreads';
+import { AddMcpServerTransportConfig1740500000000 } from './migrations/1740500000000-AddMcpServerTransportConfig';
 import { SecretsModule } from './secrets/secrets.module';
 
 @Module({
@@ -36,16 +37,19 @@ import { SecretsModule } from './secrets/secrets.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: false,
       migrationsRun: true,
-       migrations: [
-         BaselineSchema1700000000000,
-         AlignConnectionAuthFlowColumns1700000000001,
-         UpdateAgentTypeConstraint1700000000002,
-         AddTaskBlueprintsAndScheduledTasks1739500000000,
-         RefactorThreadsForHeadlessConversations1739750000000,
-         RemoveRoleFromThreadMessage1739844333000,
-         AddSecretsTable1740000000000,
-         AddChatSessionIdToThreads1741000000000,
-       ],
+      migrations: [
+        BaselineSchema1700000000000,
+        AlignConnectionAuthFlowColumns1700000000001,
+        UpdateAgentTypeConstraint1700000000002,
+        AddTaskBlueprintsAndScheduledTasks1739500000000,
+        RefactorThreadsForHeadlessConversations1739750000000,
+        RemoveRoleFromThreadMessage1739844333000,
+        AddSecretsTable1740000000000,
+        AddChatSessionIdToThreads1741000000000,
+        RemoveRoleFromThreadMessage1739844333000,
+        AddSecretsTable1740000000000,
+        AddMcpServerTransportConfig1740500000000,
+      ],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
@@ -67,4 +71,4 @@ import { SecretsModule } from './secrets/secrets.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
