@@ -120,6 +120,7 @@ Extensive documentation in `/docs/`:
 - `architecture/` - Core architectural decisions and patterns
 - `review-guides/` - Checklists for entities, DTOs, controllers, MCPs, errors
 - `how-to-guides/` - Implementation guides
+- `DEPLOYMENT.md` - Production deployment with Kubernetes and GitOps workflow
 
 ## MCP Integration
 
