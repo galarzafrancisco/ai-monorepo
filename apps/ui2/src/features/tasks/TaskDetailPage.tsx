@@ -15,6 +15,7 @@ import { InputRequestResponseDto, MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
+import { ThreadsService } from '../threads/api';
 import type { Task } from './types';
 import './TaskDetailPage.css';
 
@@ -62,6 +63,66 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
       showError(err);
     }
   }, [task, handlers, showError]);
+
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [isResolvingThread, setIsResolvingThread] = useState(false);
+
+  const handleOpenOrCreateThread = useCallback(async () => {
+    if (!task) {
+      return;
+    }
+
+    setIsResolvingThread(true);
+    try {
+      if (threadId) {
+        navigate(`/threads/${threadId}`);
+        return;
+      }
+
+      const createdThread = await ThreadsService.createThread({
+        title: task.name,
+        parentTaskId: task.id,
+      });
+      setThreadId(createdThread.id);
+      navigate(`/threads/${createdThread.id}`);
+    } catch (err: unknown) {
+      showError(err);
+    } finally {
+      setIsResolvingThread(false);
+    }
+  }, [task, threadId, navigate, showError]);
+
+  useEffect(() => {
+    if (!task) {
+      setThreadId(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsResolvingThread(true);
+
+    void ThreadsService.getThreadForTask(task.id)
+      .then((thread) => {
+        if (!cancelled) {
+          setThreadId(thread?.id ?? null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          showError(err);
+          setThreadId(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsResolvingThread(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [task, showError]);
 
   useEffect(() => {
     if (!task) return;
@@ -112,10 +173,19 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
         aliases: ['add tag', 'label'],
         onSelect: () => setShowTagPop(true),
       },
+      {
+        id: 'task-thread-action',
+        label: threadId ? 'Go to thread' : 'Create thread',
+        description: threadId ? 'Open this task thread' : 'Create a thread from this task',
+        aliases: ['thread', 'open thread', 'create thread'],
+        onSelect: () => {
+          void handleOpenOrCreateThread();
+        },
+      },
     ];
 
     return registerCommands([...statusCommands, ...actionCommands]);
-  }, [task, registerCommands, handleChangeStatusForPalette, handlers, showError]);
+  }, [task, registerCommands, handleChangeStatusForPalette, handlers, showError, threadId, handleOpenOrCreateThread]);
 
   useEffect(() => {
     if (!task) {
@@ -657,6 +727,16 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
       />
 
       <DataRowContainer className='task-detail-page__actions'>
+        <Button
+          size='lg'
+          variant={threadId ? 'primary' : 'secondary'}
+          onClick={() => {
+            void handleOpenOrCreateThread();
+          }}
+          disabled={isResolvingThread}
+        >
+          {threadId ? 'Go to thread' : 'Create thread'}
+        </Button>
         <Button
           size='lg'
           variant='secondary'

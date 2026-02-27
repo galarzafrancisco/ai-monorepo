@@ -48,7 +48,7 @@ export const useThreads = () => {
 
   // Create a new thread
   const createThread = useCallback(async (title?: string): Promise<Thread> => {
-    const thread = await ThreadsService.createThread(title);
+    const thread = await ThreadsService.createThread({ title });
     // Add to local state optimistically
     setThreads((prev) => [thread, ...prev]);
     return thread;

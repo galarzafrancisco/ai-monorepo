@@ -12,8 +12,37 @@ export class ThreadsService {
     return await GeneratedThreadsService.threadsControllerGetThread(id);
   }
 
-  static async createThread(title?: string): Promise<Thread> {
-    return await GeneratedThreadsService.threadsControllerCreateThread({ title });
+  static async createThread(input?: { title?: string; parentTaskId?: string }): Promise<Thread> {
+    return await GeneratedThreadsService.threadsControllerCreateThread({
+      title: input?.title,
+      parentTaskId: input?.parentTaskId,
+    });
+  }
+
+  static async getThreadForTask(taskId: string): Promise<Thread | null> {
+    const limit = 50;
+    let page = 1;
+
+    while (true) {
+      const response = await GeneratedThreadsService.threadsControllerListThreads(page, limit);
+      const threads = await Promise.all(
+        response.items.map((thread) => GeneratedThreadsService.threadsControllerGetThread(thread.id)),
+      );
+
+      const matchingThread = threads.find((thread) =>
+        thread.tasks.some((task) => task.id === taskId),
+      );
+
+      if (matchingThread) {
+        return matchingThread;
+      }
+
+      if (page >= response.totalPages) {
+        return null;
+      }
+
+      page += 1;
+    }
   }
 
   static async deleteThread(id: string): Promise<void> {
