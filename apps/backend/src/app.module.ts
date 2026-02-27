@@ -46,8 +46,6 @@ import { SecretsModule } from './secrets/secrets.module';
         RemoveRoleFromThreadMessage1739844333000,
         AddSecretsTable1740000000000,
         AddChatSessionIdToThreads1741000000000,
-        RemoveRoleFromThreadMessage1739844333000,
-        AddSecretsTable1740000000000,
         AddMcpServerTransportConfig1740500000000,
       ],
     }),
