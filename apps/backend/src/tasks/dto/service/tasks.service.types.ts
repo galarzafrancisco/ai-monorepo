@@ -62,6 +62,14 @@ export type ListTasksInput = {
   limit: number;
 };
 
+export type ListTasksBoardInput = {
+  assignee?: string;
+  sessionId?: string;
+  tag?: string;
+  columnLimit: number;
+  cursors?: Partial<Record<TaskStatus, string>>;
+};
+
 export type AddTagInput = {
   name: string;
 };
@@ -140,6 +148,19 @@ export type ListTasksResult = {
   total: number;
   page: number;
   limit: number;
+};
+
+export type TaskBoardColumnResult = {
+  items: TaskResult[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total: number;
+};
+
+export type ListTasksBoardResult = {
+  total: number;
+  columnLimit: number;
+  columns: Record<TaskStatus, TaskBoardColumnResult>;
 };
 
 export type SearchTasksInput = {

@@ -47,7 +47,13 @@ export const useTasks = () => {
     setError(null);
     try {
       const response = await TasksService.tasksControllerListTasks();
-      setTasks(sortTasks(response.items));
+      const tasks = [
+        ...response.columns.NOT_STARTED.items,
+        ...response.columns.IN_PROGRESS.items,
+        ...response.columns.FOR_REVIEW.items,
+        ...response.columns.DONE.items,
+      ];
+      setTasks(sortTasks(tasks));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks'); // Question: should we have an error map instead of passing back raw messages?
     } finally {

@@ -41,21 +41,27 @@ export class TaskService {
         });
     }
     /**
-     * List tasks with optional filtering and pagination
-     * @param assignee Filter tasks by assignee name
+     * List tasks for kanban board with per-status keyset pagination
+     * @param assignee Filter tasks by assignee slug
      * @param sessionId Filter tasks by session ID
      * @param tag Filter tasks by tag name
-     * @param page Page number (1-indexed)
-     * @param limit Items per page (1-100)
-     * @returns TaskListResponseDto Paginated list of tasks
+     * @param columnLimit Number of tasks to fetch per status column
+     * @param notStartedCursor Cursor for NOT_STARTED status column
+     * @param inProgressCursor Cursor for IN_PROGRESS status column
+     * @param forReviewCursor Cursor for FOR_REVIEW status column
+     * @param doneCursor Cursor for DONE status column
+     * @returns TaskListResponseDto Per-status task slices with independent cursors
      * @throws ApiError
      */
     public static tasksControllerListTasks(
         assignee?: string,
         sessionId?: string,
         tag?: string,
-        page: number = 1,
-        limit: number = 20,
+        columnLimit: number = 50,
+        notStartedCursor?: string,
+        inProgressCursor?: string,
+        forReviewCursor?: string,
+        doneCursor?: string,
     ): CancelablePromise<TaskListResponseDto> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -64,8 +70,11 @@ export class TaskService {
                 'assignee': assignee,
                 'sessionId': sessionId,
                 'tag': tag,
-                'page': page,
-                'limit': limit,
+                'columnLimit': columnLimit,
+                'notStartedCursor': notStartedCursor,
+                'inProgressCursor': inProgressCursor,
+                'forReviewCursor': forReviewCursor,
+                'doneCursor': doneCursor,
             },
         });
     }

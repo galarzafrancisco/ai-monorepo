@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -28,24 +28,46 @@ export class ListTasksQueryDto {
   tag?: string;
 
   @ApiPropertyOptional({
-    description: 'Page number (1-indexed)',
-    example: 1,
-    default: 1,
+    description: 'Number of tasks to fetch per status column',
+    example: 50,
+    default: 50,
   })
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()
   @Min(1)
-  page?: number = 1;
+  @Max(200)
+  columnLimit?: number = 50;
 
   @ApiPropertyOptional({
-    description: 'Items per page (1-100)',
-    example: 20,
-    default: 20,
+    description: 'Keyset cursor for NOT_STARTED column',
+    example: 'eyJ1cGRhdGVkQXQiOiIyMDI2LTAyLTI4VDEyOjAwOjAwLjAwMFoiLCJpZCI6InV1aWQtMSJ9',
   })
+  @IsString()
   @IsOptional()
-  @Transform(({ value }) => Number(value))
-  @IsInt()
-  @Min(1)
-  limit?: number = 20;
+  notStartedCursor?: string;
+
+  @ApiPropertyOptional({
+    description: 'Keyset cursor for IN_PROGRESS column',
+    example: 'eyJ1cGRhdGVkQXQiOiIyMDI2LTAyLTI4VDEyOjAwOjAwLjAwMFoiLCJpZCI6InV1aWQtMiJ9',
+  })
+  @IsString()
+  @IsOptional()
+  inProgressCursor?: string;
+
+  @ApiPropertyOptional({
+    description: 'Keyset cursor for FOR_REVIEW column',
+    example: 'eyJ1cGRhdGVkQXQiOiIyMDI2LTAyLTI4VDEyOjAwOjAwLjAwMFoiLCJpZCI6InV1aWQtMyJ9',
+  })
+  @IsString()
+  @IsOptional()
+  forReviewCursor?: string;
+
+  @ApiPropertyOptional({
+    description: 'Keyset cursor for DONE column',
+    example: 'eyJ1cGRhdGVkQXQiOiIyMDI2LTAyLTI4VDEyOjAwOjAwLjAwMFoiLCJpZCI6InV1aWQtNCJ9',
+  })
+  @IsString()
+  @IsOptional()
+  doneCursor?: string;
 }

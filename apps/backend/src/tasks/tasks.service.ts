@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, In } from 'typeorm';
+import { Repository, In, SelectQueryBuilder } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
@@ -17,6 +17,7 @@ import {
   CreateCommentInput,
   CreateArtefactInput,
   ListTasksInput,
+  ListTasksBoardInput,
   AddTagInput,
   CreateInputRequestInput,
   AnswerInputRequestInput,
@@ -24,6 +25,8 @@ import {
   CommentResult,
   ArtefactResult,
   ListTasksResult,
+  ListTasksBoardResult,
+  TaskBoardColumnResult,
   TagResult,
   ActorResult,
   InputRequestResult,
@@ -584,6 +587,216 @@ export class TasksService {
       page: input.page,
       limit: input.limit,
     };
+  }
+
+  async listTasksBoard(input: ListTasksBoardInput): Promise<ListTasksBoardResult> {
+    this.logger.log({
+      message: 'Listing tasks for board',
+      filters: {
+        assignee: input.assignee,
+        sessionId: input.sessionId,
+        tag: input.tag,
+      },
+      columnLimit: input.columnLimit,
+      cursors: input.cursors,
+    });
+
+    const statuses: TaskStatus[] = [
+      TaskStatus.NOT_STARTED,
+      TaskStatus.IN_PROGRESS,
+      TaskStatus.FOR_REVIEW,
+      TaskStatus.DONE,
+    ];
+
+    const [columnsArray, totalsByStatus] = await Promise.all([
+      Promise.all(
+        statuses.map((status) =>
+          this.fetchBoardColumn(status, input.columnLimit, input.cursors?.[status], input),
+        ),
+      ),
+      Promise.all(statuses.map((status) => this.countByStatus(status, input))),
+    ]);
+
+    const columns: Record<TaskStatus, TaskBoardColumnResult> = {
+      [TaskStatus.NOT_STARTED]: columnsArray[0],
+      [TaskStatus.IN_PROGRESS]: columnsArray[1],
+      [TaskStatus.FOR_REVIEW]: columnsArray[2],
+      [TaskStatus.DONE]: columnsArray[3],
+    };
+
+    columns[TaskStatus.NOT_STARTED].total = totalsByStatus[0];
+    columns[TaskStatus.IN_PROGRESS].total = totalsByStatus[1];
+    columns[TaskStatus.FOR_REVIEW].total = totalsByStatus[2];
+    columns[TaskStatus.DONE].total = totalsByStatus[3];
+
+    return {
+      total: totalsByStatus.reduce((sum, value) => sum + value, 0),
+      columnLimit: input.columnLimit,
+      columns,
+    };
+  }
+
+  private buildFilteredTaskQuery(
+    input: Pick<ListTasksInput, 'assignee' | 'sessionId' | 'tag' | 'updatedAfter'>,
+  ): SelectQueryBuilder<TaskEntity> {
+    const queryBuilder = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.comments', 'comments')
+      .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
+      .leftJoinAndSelect('task.artefacts', 'artefacts')
+      .leftJoinAndSelect('task.inputRequests', 'inputRequests')
+      .leftJoinAndSelect('task.tags', 'tags')
+      .leftJoinAndSelect('task.dependsOn', 'dependsOn')
+      .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
+      .leftJoinAndSelect('task.createdByActor', 'createdByActor');
+
+    if (input.tag) {
+      queryBuilder.innerJoin('task.tags', 'filterTag', 'filterTag.name = :tagName', {
+        tagName: input.tag,
+      });
+    }
+
+    if (input.assignee) {
+      queryBuilder.andWhere('assigneeActor.slug = :assignee', {
+        assignee: input.assignee,
+      });
+    }
+
+    if (input.sessionId) {
+      queryBuilder.andWhere('task.sessionId = :sessionId', {
+        sessionId: input.sessionId,
+      });
+    }
+
+    if (input.updatedAfter) {
+      queryBuilder.andWhere('task.updatedAt >= :updatedAfter', {
+        updatedAfter: input.updatedAfter,
+      });
+    }
+
+    return queryBuilder;
+  }
+
+  private buildFilteredTaskCountQuery(
+    input: Pick<ListTasksInput, 'assignee' | 'sessionId' | 'tag' | 'updatedAfter'>,
+  ): SelectQueryBuilder<TaskEntity> {
+    const queryBuilder = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoin('task.assigneeActor', 'assigneeActor');
+
+    if (input.tag) {
+      queryBuilder.innerJoin('task.tags', 'filterTag', 'filterTag.name = :tagName', {
+        tagName: input.tag,
+      });
+    }
+
+    if (input.assignee) {
+      queryBuilder.andWhere('assigneeActor.slug = :assignee', {
+        assignee: input.assignee,
+      });
+    }
+
+    if (input.sessionId) {
+      queryBuilder.andWhere('task.sessionId = :sessionId', {
+        sessionId: input.sessionId,
+      });
+    }
+
+    if (input.updatedAfter) {
+      queryBuilder.andWhere('task.updatedAt >= :updatedAfter', {
+        updatedAfter: input.updatedAfter,
+      });
+    }
+
+    return queryBuilder;
+  }
+
+  private encodeCursor(task: TaskEntity): string {
+    return Buffer.from(
+      JSON.stringify({
+        updatedAt: task.updatedAt.toISOString(),
+        id: task.id,
+      }),
+      'utf8',
+    ).toString('base64url');
+  }
+
+  private decodeCursor(cursor: string): { updatedAt: Date; id: string } {
+    try {
+      const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as {
+        updatedAt?: string;
+        id?: string;
+      };
+      if (!decoded.updatedAt || !decoded.id) {
+        throw new Error('Invalid cursor payload');
+      }
+      const updatedAt = new Date(decoded.updatedAt);
+      if (Number.isNaN(updatedAt.getTime())) {
+        throw new Error('Invalid cursor timestamp');
+      }
+      return { updatedAt, id: decoded.id };
+    } catch (error) {
+      throw new Error(`Invalid board cursor: ${String(error)}`);
+    }
+  }
+
+  private async fetchBoardColumn(
+    status: TaskStatus,
+    limit: number,
+    cursor: string | undefined,
+    filters: Pick<ListTasksBoardInput, 'assignee' | 'sessionId' | 'tag'>,
+  ): Promise<TaskBoardColumnResult> {
+    const queryBuilder = this.buildFilteredTaskQuery({
+      assignee: filters.assignee,
+      sessionId: filters.sessionId,
+      tag: filters.tag,
+    });
+
+    queryBuilder.andWhere('task.status = :status', { status });
+
+    if (cursor) {
+      const decoded = this.decodeCursor(cursor);
+      queryBuilder.andWhere(
+        '(task.updatedAt < :cursorUpdatedAt OR (task.updatedAt = :cursorUpdatedAt AND task.id < :cursorId))',
+        {
+          cursorUpdatedAt: decoded.updatedAt,
+          cursorId: decoded.id,
+        },
+      );
+    }
+
+    queryBuilder
+      .orderBy('task.updatedAt', 'DESC')
+      .addOrderBy('task.id', 'DESC')
+      .take(limit + 1);
+
+    const tasks = await queryBuilder.getMany();
+    const hasMore = tasks.length > limit;
+    const slicedTasks = hasMore ? tasks.slice(0, limit) : tasks;
+    const nextCursor = hasMore && slicedTasks.length > 0
+      ? this.encodeCursor(slicedTasks[slicedTasks.length - 1])
+      : null;
+
+    return {
+      items: slicedTasks.map((task) => this.mapTaskToResult(task)),
+      nextCursor,
+      hasMore,
+      total: 0,
+    };
+  }
+
+  private async countByStatus(
+    status: TaskStatus,
+    filters: Pick<ListTasksBoardInput, 'assignee' | 'sessionId' | 'tag'>,
+  ): Promise<number> {
+    const queryBuilder = this.buildFilteredTaskCountQuery({
+      assignee: filters.assignee,
+      sessionId: filters.sessionId,
+      tag: filters.tag,
+    });
+
+    queryBuilder.andWhere('task.status = :status', { status });
+    return queryBuilder.getCount();
   }
 
   async getTaskById(taskId: string): Promise<TaskResult> {
