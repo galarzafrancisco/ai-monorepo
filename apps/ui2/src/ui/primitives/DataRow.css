@@ -157,6 +157,8 @@
   cursor: pointer;
   font-size: var(--fs-2);
   line-height: 1;
+  margin-left: 2px;
+  margin-right: -2px;
 }
 
 .chip__remove:hover {
