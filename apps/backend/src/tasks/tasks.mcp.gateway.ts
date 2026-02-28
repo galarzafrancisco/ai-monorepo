@@ -12,6 +12,7 @@ import {
 import { TasksScopes } from './tasks.scopes';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { MetaService } from 'src/meta/meta.service';
+import { ThreadsService } from 'src/threads/threads.service';
 
 @Injectable()
 export class TasksMcpGateway {
@@ -19,6 +20,7 @@ export class TasksMcpGateway {
     private readonly tasksService: TasksService,
     private readonly metaService: MetaService,
     private readonly actorService: ActorService,
+    private readonly threadsService: ThreadsService,
   ) {}
 
   private buildServer(
@@ -73,6 +75,42 @@ export class TasksMcpGateway {
                   };
                 }),
               ),
+            },
+          ],
+        };
+      },
+    );
+
+    server.registerTool(
+      'list_tasks_by_thread',
+      {
+        title: 'List tasks by thread',
+        description:
+          'Get tasks currently attached to a thread, including status and parent-task marker.',
+        annotations: readOnlyAnnotations,
+        inputSchema: {
+          threadId: z.string(),
+        },
+      },
+      async ({ threadId }) => {
+        const thread = await this.threadsService.getThreadById(threadId);
+        const tasks = thread.tasks.map((task) => {
+          const result = {
+            id: task.id,
+            name: task.name,
+            status: task.status
+          }
+          if (task.id === thread.parentTaskId) {
+            result['isParent'] = true;
+          }
+          return result;
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(tasks),
             },
           ],
         };

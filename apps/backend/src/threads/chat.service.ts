@@ -74,6 +74,21 @@ export class ChatService {
     return `[${actor.displayName} @${actor.slug}] says:\n${message}`;
   }
 
+  private buildThreadScopedInstructions(baseInstructions: string, threadId: string): string {
+    return `${baseInstructions}
+
+Thread context:
+- You are working inside thread ${threadId}.
+- This thread coordinates multiple tasks working toward a shared goal.
+- Keep your guidance and execution aligned with thread-level context, not just one task.
+
+Operational guidance:
+- Use tasks__list_tasks_by_thread with this threadId to understand current subtasks and status.
+- Use context__get_thread_state_memory with this threadId to read current shared state memory.
+- During conversation, when you discover durable cross-task decisions/constraints/risks, update memory via context__update_block.
+- Only write durable shared memory (not ephemeral chat details).`;
+  }
+
   public async sendMessageToThread({ conversationId, threadId, message, actor }: SendMessageToThreadArgs) {
     // Get self
     const self = await this.getSelf();
@@ -115,7 +130,7 @@ export class ChatService {
     const mcpServers = await this.openAiMcpServerFactoryService.createServers(token);
     const agent = new Agent({
       name: self.name,
-      instructions: self.systemPrompt,
+      instructions: this.buildThreadScopedInstructions(self.systemPrompt, threadId),
       model: self.modelId || 'gpt-5.2-codex',
       mcpServers: mcpServers,
     });

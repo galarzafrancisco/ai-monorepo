@@ -7,6 +7,7 @@ import { z } from 'zod/v3';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { MetaService } from 'src/meta/meta.service';
 import { AuthContext, UserContext } from 'src/auth/guards/context/auth-context.types';
+import { ThreadsService } from 'src/threads/threads.service';
 
 @Injectable()
 export class ContextMcpGateway {
@@ -14,6 +15,7 @@ export class ContextMcpGateway {
     private readonly contextService: ContextService,
     private readonly metaService: MetaService,
     private readonly actorService: ActorService,
+    private readonly threadsService: ThreadsService,
   ) { }
 
   private buildServer(user: UserContext, authContext: AuthContext): McpServer {
@@ -48,6 +50,36 @@ export class ContextMcpGateway {
             {
               type: 'text',
               text: JSON.stringify(blocks),
+            },
+          ],
+        };
+      },
+    );
+
+    server.registerTool(
+      'get_thread_state_memory',
+      {
+        title: 'Get thread state memory',
+        description:
+          'Get the thread state memory block content and metadata by thread ID.',
+        annotations: readOnlyAnnotations,
+        inputSchema: {
+          threadId: z.string(),
+        },
+      },
+      async ({ threadId }) => {
+        const thread = await this.threadsService.getThreadById(threadId);
+        const state = await this.threadsService.getThreadState(threadId);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                threadId,
+                stateContextBlockId: thread.stateContextBlockId,
+                content: state,
+              }),
             },
           ],
         };
