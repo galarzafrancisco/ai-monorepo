@@ -177,7 +177,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
         id: 'task-thread-action',
         label: threadId ? 'Go to thread' : 'Create thread',
         description: threadId ? 'Open this task thread' : 'Create a thread from this task',
-        aliases: ['thread', 'open thread', 'create thread'],
+        aliases: ['thread', 'open thread', 'create thread', 'chat'],
         onSelect: () => {
           void handleOpenOrCreateThread();
         },
