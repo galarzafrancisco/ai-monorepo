@@ -4,6 +4,8 @@ import "./DataRow.css";
 export type DataRowTag = {
   label: string;
   color?: "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple";
+  onClick?: () => void;
+  clickLabel?: string;
   onRemove?: () => void;
   removeLabel?: string;
 };
@@ -68,27 +70,48 @@ export function DataRow({
 
           {tags.length ? (
             <div className="data-row__tags" aria-label="tags">
-              {tags.map((t, index) => (
-                <span
-                  key={`${t.label}-${t.color ?? "gray"}-${index}`}
-                  className={`chip chip--${t.color ?? "gray"}`}
-                >
-                  {t.label}
-                  {t.onRemove ? (
+              {tags.map((t, index) => {
+                const chipClass = `chip chip--${t.color ?? "gray"}${t.onClick ? " chip--clickable" : ""}`;
+
+                if (t.onClick) {
+                  return (
                     <button
+                      key={`${t.label}-${t.color ?? "gray"}-${index}`}
                       type="button"
-                      className="chip__remove"
-                      aria-label={t.removeLabel ?? `Remove ${t.label}`}
+                      className={chipClass}
+                      aria-label={t.clickLabel ?? t.label}
                       onClick={(event) => {
                         event.stopPropagation();
-                        t.onRemove?.();
+                        t.onClick?.();
                       }}
                     >
-                      ×
+                      {t.label}
                     </button>
-                  ) : null}
-                </span>
-              ))}
+                  );
+                }
+
+                return (
+                  <span
+                    key={`${t.label}-${t.color ?? "gray"}-${index}`}
+                    className={chipClass}
+                  >
+                    {t.label}
+                    {t.onRemove ? (
+                      <button
+                        type="button"
+                        className="chip__remove"
+                        aria-label={t.removeLabel ?? `Remove ${t.label}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          t.onRemove?.();
+                        }}
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </span>
+                );
+              })}
             </div>
           ) : null}
         </div>
