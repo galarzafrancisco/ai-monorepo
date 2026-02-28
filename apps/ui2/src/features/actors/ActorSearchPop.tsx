@@ -187,7 +187,7 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
           onKeyDown={handleKeyDown}
         />
 
-        <div className="actor-search-pop__list" ref={listRef}>
+        <div className="actor-search-pop__list" ref={listRef} role="listbox" aria-label="Assignees">
           {filteredActors.length === 0 ? (
             <div className="actor-search-pop__empty">
               <Text tone="muted">
@@ -205,6 +205,8 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
               <button
                 key={actor.id}
                 type="button"
+                role="option"
+                aria-selected={index === highlightedIndex}
                 className={`actor-search-pop__item ${index === highlightedIndex ? 'actor-search-pop__item--highlighted' : ''}`}
                 onClick={() => void submitActor(actor)}
                 onMouseEnter={() => setHighlightedIndex(index)}
