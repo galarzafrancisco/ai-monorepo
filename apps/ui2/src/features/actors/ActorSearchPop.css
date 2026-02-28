@@ -7,7 +7,7 @@
 .actor-search-pop__input {
   background-color: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-2);
+  border-radius: var(--r-2);
   width: 100%;
   font-size: var(--fs-3);
   padding: var(--space-2) var(--space-3);
@@ -16,14 +16,15 @@
 
 .actor-search-pop__input:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--focus-ring);
 }
 
 .actor-search-pop__list {
   max-height: 300px;
   overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: var(--radius-2);
+  border-radius: var(--r-2);
   background: var(--surface);
 }
 
@@ -31,14 +32,27 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  width: 100%;
+  border: 0;
+  text-align: left;
   padding: var(--space-2) var(--space-3);
   cursor: pointer;
-  transition: background-color 0.1s ease;
+  background: transparent;
+  border-left: 3px solid transparent;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
 }
 
-.actor-search-pop__item:hover,
+.actor-search-pop__item:hover {
+  background: var(--bg);
+}
+
 .actor-search-pop__item--highlighted {
-  background: var(--surface-2);
+  background: var(--accent);
+  border-left-color: var(--accent-hover);
+}
+
+.actor-search-pop__item--highlighted .text {
+  color: var(--accent-contrast);
 }
 
 .actor-search-pop__item-info {
@@ -47,31 +61,12 @@
   min-width: 0;
 }
 
+.actor-search-pop__item:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
 .actor-search-pop__empty {
   padding: var(--space-4);
   text-align: center;
-}
-
-.actor-search-pop__selected {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--surface-2);
-  border-radius: var(--radius-2);
-  cursor: pointer;
-}
-
-.actor-search-pop__selected:hover {
-  background: var(--surface-3);
-}
-
-.actor-search-pop__selected-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.actor-search-pop__clear {
-  font-style: italic;
 }
