@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { Text, DataRowTag } from "../../ui/primitives";
+import { Text } from "../../ui/primitives";
 import { MetaService, MetaTagResponseDto } from "@taico/client";
 import "./TagSearchPop.css";
 
@@ -14,8 +14,8 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [query, setQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<MetaTagResponseDto | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -97,70 +97,82 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
     }
   }, [highlightedIndex, filteredTags.length, canCreateNew]);
 
+  const submitTag = useCallback(async (tag: MetaTagResponseDto): Promise<boolean> => {
+    if (isSaving) {
+      return false;
+    }
+
+    setIsSaving(true);
+    try {
+      const didSave = await onSave(tag);
+      if (didSave) {
+        onCancel?.();
+      }
+      return didSave;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, onCancel, onSave]);
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing) {
+      return;
+    }
+
     const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
-    if (totalItems === 0) return;
 
     switch (e.key) {
       case 'ArrowDown':
+        if (totalItems === 0) {
+          return;
+        }
         e.preventDefault();
         setHighlightedIndex(prev =>
           prev < totalItems - 1 ? prev + 1 : prev
         );
         break;
       case 'ArrowUp':
+        if (totalItems === 0) {
+          return;
+        }
         e.preventDefault();
         setHighlightedIndex(prev => prev > 0 ? prev - 1 : 0);
         break;
       case 'Enter':
         e.preventDefault();
         if (highlightedIndex < filteredTags.length) {
-          setSelectedTag(filteredTags[highlightedIndex]);
+          void submitTag(filteredTags[highlightedIndex]);
         } else if (canCreateNew && highlightedIndex === filteredTags.length) {
-          // Create new tag
-          setSelectedTag({
-            id: '', // Will be assigned by backend
-            name: query.trim(),
-            color: undefined,
-            createdAt: '',
-            updatedAt: '',
-          });
+          void submitTag(buildNewTag(query));
         }
         break;
       case 'Escape':
         e.preventDefault();
-        if (selectedTag) {
-          setSelectedTag(null);
-        }
+        onCancel?.();
         break;
     }
-  }, [filteredTags, highlightedIndex, canCreateNew, selectedTag, query]);
-
-  const handleSelectTag = (tag: MetaTagResponseDto) => {
-    setSelectedTag(tag);
-  };
-
-  const handleCreateNew = () => {
-    setSelectedTag({
-      id: '', // Will be assigned by backend
-      name: query.trim(),
-      color: undefined,
-      createdAt: '',
-      updatedAt: '',
-    });
-  };
-
-  const handleClearSelection = () => {
-    setSelectedTag(null);
-    setQuery("");
-    inputRef.current?.focus();
-  };
+  }, [canCreateNew, filteredTags, highlightedIndex, onCancel, query, submitTag]);
 
   async function handleSave(): Promise<boolean> {
-    if (!selectedTag) {
+    const totalItems = filteredTags.length + (canCreateNew ? 1 : 0);
+    if (totalItems === 0) {
       return false;
     }
-    return onSave(selectedTag);
+
+    if (highlightedIndex < filteredTags.length) {
+      const tag = filteredTags[highlightedIndex];
+      if (!tag) {
+        return false;
+      }
+
+      return submitTag(tag);
+    }
+
+    if (canCreateNew && highlightedIndex === filteredTags.length) {
+      return submitTag(buildNewTag(query));
+    }
+
+    return false;
   }
 
   return (
@@ -170,68 +182,73 @@ export function TagSearchPop({ onCancel, onSave, existingTags }: TagSearchPopPro
       onSave={handleSave}
     >
       <div className="tag-search-pop">
-        {/* Search input or selected tag display */}
-        {selectedTag ? (
-          <div className="tag-search-pop__selected" onClick={handleClearSelection}>
-            <div className="tag-search-pop__tag-badge" style={{ backgroundColor: selectedTag.color || '#999' }}>
-              {selectedTag.name}
-            </div>
-            <Text tone="muted" size="2" className="tag-search-pop__clear">tap to change</Text>
-          </div>
-        ) : (
-          <>
-            <input
-              ref={inputRef}
-              type="text"
-              className="tag-search-pop__input"
-              placeholder="Search or create tag..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
+        <input
+          ref={inputRef}
+          type="text"
+          className="tag-search-pop__input"
+          placeholder="Search or create tag..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
 
-            {/* Dropdown list */}
-            <div className="tag-search-pop__list" ref={listRef}>
-              {isLoadingTags ? (
-                <div className="tag-search-pop__empty">
-                  <Text tone="muted">Loading tags...</Text>
-                </div>
-              ) : filteredTags.length === 0 && !canCreateNew ? (
-                <div className="tag-search-pop__empty">
-                  <Text tone="muted">No tags found</Text>
-                </div>
-              ) : (
-                <>
-                  {filteredTags.map((tag, index) => (
-                    <div
-                      key={tag.id}
-                      className={`tag-search-pop__item ${index === highlightedIndex ? 'tag-search-pop__item--highlighted' : ''}`}
-                      onClick={() => handleSelectTag(tag)}
-                      onMouseEnter={() => setHighlightedIndex(index)}
-                    >
-                      <div className="tag-search-pop__tag-badge" style={{ backgroundColor: tag.color || '#999' }}>
-                        {tag.name}
-                      </div>
-                    </div>
-                  ))}
-                  {canCreateNew && (
-                    <div
-                      className={`tag-search-pop__item tag-search-pop__item--create ${highlightedIndex === filteredTags.length ? 'tag-search-pop__item--highlighted' : ''}`}
-                      onClick={handleCreateNew}
-                      onMouseEnter={() => setHighlightedIndex(filteredTags.length)}
-                    >
-                      <Text size="2" tone="muted">Create new tag:</Text>
-                      <div className="tag-search-pop__tag-badge" style={{ backgroundColor: '#999' }}>
-                        {query.trim()}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+        <div className="tag-search-pop__list" ref={listRef} role="listbox" aria-label="Available tags">
+          {isLoadingTags ? (
+            <div className="tag-search-pop__empty">
+              <Text tone="muted">Loading tags...</Text>
             </div>
-          </>
-        )}
+          ) : filteredTags.length === 0 && !canCreateNew ? (
+            <div className="tag-search-pop__empty">
+              <Text tone="muted">No tags found</Text>
+            </div>
+          ) : (
+            <>
+              {filteredTags.map((tag, index) => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  role="option"
+                  aria-selected={index === highlightedIndex}
+                  className={`tag-search-pop__item ${index === highlightedIndex ? 'tag-search-pop__item--highlighted' : ''}`}
+                  onClick={() => void submitTag(tag)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  disabled={isSaving}
+                >
+                  <div className="tag-search-pop__tag-badge" style={{ backgroundColor: tag.color || '#999' }}>
+                    {tag.name}
+                  </div>
+                </button>
+              ))}
+              {canCreateNew && (
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={highlightedIndex === filteredTags.length}
+                  className={`tag-search-pop__item tag-search-pop__item--create ${highlightedIndex === filteredTags.length ? 'tag-search-pop__item--highlighted' : ''}`}
+                  onClick={() => void submitTag(buildNewTag(query))}
+                  onMouseEnter={() => setHighlightedIndex(filteredTags.length)}
+                  disabled={isSaving}
+                >
+                  <Text size="2" tone="muted">Create new tag:</Text>
+                  <div className="tag-search-pop__tag-badge" style={{ backgroundColor: '#999' }}>
+                    {query.trim()}
+                  </div>
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </PopShell>
   );
+}
+
+function buildNewTag(query: string): MetaTagResponseDto {
+  return {
+    id: '',
+    name: query.trim(),
+    color: undefined,
+    createdAt: '',
+    updatedAt: '',
+  };
 }
