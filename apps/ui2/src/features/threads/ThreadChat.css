@@ -51,6 +51,11 @@
   background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
 }
 
+.thread-chat__message--streaming {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+}
+
 .thread-chat__empty-state {
   display: flex;
   justify-content: center;

@@ -5,6 +5,7 @@ import { AgentsService } from "src/agents/agents.service";
 import { AgentResult } from "src/agents/dto/service/agents.service.types";
 import { Agent, run, setDefaultOpenAIKey } from "@openai/agents";
 import { OpenAI } from "openai";
+import { randomUUID } from "crypto";
 import { getConfig } from "src/config/env.config";
 import { ActorType } from "src/identity-provider/enums";
 import { McpScopes } from "src/auth/core/scopes/mcp.scopes";
@@ -72,6 +73,39 @@ export class ChatService {
 
   private makeMessage({ message, actor }: MakeMessageArgs) {
     return `[${actor.displayName} @${actor.slug}] says:\n${message}`;
+  }
+
+  private parseResponseTextDelta(event: unknown): string | null {
+    if (!event || typeof event !== 'object') {
+      return null;
+    }
+
+    const typedEvent = event as {
+      type?: unknown;
+      data?: {
+        type?: unknown;
+        delta?: unknown;
+      };
+    };
+
+    if (typedEvent.type !== 'raw_model_stream_event') {
+      return null;
+    }
+
+    const rawEvent = typedEvent.data;
+    if (!rawEvent || typeof rawEvent !== 'object') {
+      return null;
+    }
+
+    if (rawEvent.type !== 'response.output_text.delta') {
+      return null;
+    }
+
+    if (typeof rawEvent.delta === 'string') {
+      return rawEvent.delta;
+    }
+
+    return null;
   }
 
   private buildThreadScopedInstructions(baseInstructions: string, threadId: string): string {
@@ -142,8 +176,19 @@ Operational guidance:
       conversationId,
       stream: true,
     });
+    const responseStreamId = randomUUID();
 
     for await (const event of result) {
+      const textDelta = this.parseResponseTextDelta(event);
+      if (textDelta) {
+        this.threadsService.emitAgentResponseDelta({
+          threadId,
+          actorId: self.actorId,
+          streamId: responseStreamId,
+          delta: textDelta,
+        });
+      }
+
       if (event.type === "run_item_stream_event") {
         switch (event.item.type) {
           case "reasoning_item":

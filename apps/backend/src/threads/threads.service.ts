@@ -37,6 +37,7 @@ import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
   ThreadAgentActivityKind,
+  ThreadAgentResponseDeltaEvent,
   ThreadTitleUpdatedEvent,
 } from './events/threads.events';
 import { ChatService } from './chat.service';
@@ -54,6 +55,13 @@ type EmitAgentActivityInput = {
   threadId: string;
   actorId: string;
   kind: ThreadAgentActivityKind;
+};
+
+type EmitAgentResponseDeltaInput = {
+  threadId: string;
+  actorId: string;
+  streamId: string;
+  delta: string;
 };
 
 @Injectable()
@@ -928,6 +936,20 @@ export class ThreadsService {
         {
           threadId: input.threadId,
           kind: input.kind,
+        },
+      ),
+    );
+  }
+
+  emitAgentResponseDelta(input: EmitAgentResponseDeltaInput): void {
+    this.eventEmitter.emit(
+      ThreadAgentResponseDeltaEvent.INTERNAL,
+      new ThreadAgentResponseDeltaEvent(
+        { id: input.actorId },
+        {
+          threadId: input.threadId,
+          streamId: input.streamId,
+          delta: input.delta,
         },
       ),
     );

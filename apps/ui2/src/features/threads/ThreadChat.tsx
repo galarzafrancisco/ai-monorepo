@@ -17,6 +17,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   const {
     messages,
     agentActivity,
+    agentResponseStream,
     sendMessage,
     chatIsSending,
     chatIsLoading,
@@ -27,7 +28,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   // Auto-scroll to bottom when messages/activity update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, agentActivity]);
+  }, [messages, agentActivity, agentResponseStream?.content]);
 
   useEffect(() => {
     if (!chatIsLoading) {
@@ -120,6 +121,24 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
               </div>
             );
           })
+        )}
+
+        {agentResponseStream && (
+          <div className="thread-chat__message thread-chat__message--streaming" role="status" aria-live="polite">
+            <div className="thread-chat__message-header">
+              <div className="thread-chat__author">
+                <Avatar name="Assistant" size="xs" />
+                <Text size="1" weight="semibold">
+                  Assistant
+                </Text>
+              </div>
+              <Text size="1" tone="muted">
+                typing...
+              </Text>
+            </div>
+
+            <Text size="2">{agentResponseStream.content}</Text>
+          </div>
         )}
 
         <div ref={messagesEndRef} />
