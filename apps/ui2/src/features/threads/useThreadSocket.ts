@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { getUIWebSocketUrl } from '../../config/api';
 import {
   AgentActivityWireEvent,
+  AgentResponseDeltaWireEvent,
   ThreadWireEvents,
   MessageCreatedWireEvent,
   Actor as ThreadWireActor,
@@ -39,6 +40,11 @@ export interface UseThreadSocketResult {
   socket: Socket | null;
   isConnected: boolean;
   agentActivity: "thinking" | "tool_calling" | null;
+  agentResponseStream: {
+    streamId: string;
+    actorId: string;
+    content: string;
+  } | null;
   onMessageCreated: (handler: (message: Message) => void) => void;
 }
 
@@ -54,6 +60,11 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [agentActivity, setAgentActivity] = useState<"thinking" | "tool_calling" | null>(null);
+  const [agentResponseStream, setAgentResponseStream] = useState<{
+    streamId: string;
+    actorId: string;
+    content: string;
+  } | null>(null);
   const activityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageHandlerRef = useRef<((message: Message) => void) | null>(null);
 
@@ -102,6 +113,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
         activityTimeoutRef.current = null;
       }
       setAgentActivity(null);
+      setAgentResponseStream(null);
     });
 
     // Handle new message event
@@ -116,6 +128,12 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
         activityTimeoutRef.current = null;
       }
       setAgentActivity(null);
+      setAgentResponseStream((current) => {
+        if (!current) {
+          return current;
+        }
+        return current.actorId === event.payload.createdByActorId ? null : current;
+      });
 
       // Convert wire types to DTO types
       const createdByActorDto = convertWireActorToDto(event.payload.createdByActor);
@@ -139,6 +157,27 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
       scheduleActivityReset();
     });
 
+    newSocket.on(ThreadWireEvents.AGENT_RESPONSE_DELTA, (event: AgentResponseDeltaWireEvent) => {
+      if (event.payload.threadId !== threadId) {
+        return;
+      }
+
+      setAgentResponseStream((current) => {
+        if (!current || current.streamId !== event.payload.streamId) {
+          return {
+            streamId: event.payload.streamId,
+            actorId: event.actor.id,
+            content: event.payload.delta,
+          };
+        }
+
+        return {
+          ...current,
+          content: `${current.content}${event.payload.delta}`,
+        };
+      });
+    });
+
     setSocket(newSocket);
 
     return () => {
@@ -147,6 +186,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
         clearTimeout(activityTimeoutRef.current);
         activityTimeoutRef.current = null;
       }
+      setAgentResponseStream(null);
       newSocket.close();
     };
   }, [threadId, scheduleActivityReset]);
@@ -155,6 +195,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
     socket,
     isConnected,
     agentActivity,
+    agentResponseStream,
     onMessageCreated,
   };
 };

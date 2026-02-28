@@ -72,6 +72,20 @@ export class ThreadAgentActivityEvent extends ThreadDomainEvent<ThreadAgentActiv
   }
 }
 
+export type ThreadAgentResponseDeltaPayload = {
+  threadId: string;
+  streamId: string;
+  delta: string;
+};
+
+export class ThreadAgentResponseDeltaEvent extends ThreadDomainEvent<ThreadAgentResponseDeltaPayload> {
+  static readonly INTERNAL = Symbol('threads.ThreadAgentResponseDeltaEvent');
+
+  constructor(actor: EventActor, payload: ThreadAgentResponseDeltaPayload) {
+    super(actor, payload);
+  }
+}
+
 export type ThreadTitleUpdatedPayload = {
   threadId: string;
   title: string;

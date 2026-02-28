@@ -5,6 +5,7 @@ import { AgentsService } from "src/agents/agents.service";
 import { AgentResult } from "src/agents/dto/service/agents.service.types";
 import { Agent, run, setDefaultOpenAIKey } from "@openai/agents";
 import { OpenAI } from "openai";
+import { randomUUID } from "crypto";
 import { getConfig } from "src/config/env.config";
 import { ActorType } from "src/identity-provider/enums";
 import { McpScopes } from "src/auth/core/scopes/mcp.scopes";
@@ -28,6 +29,10 @@ export interface SendMessageToThreadArgs {
   message: string;
   actor: ActorEntity;
 }
+
+type RunStreamEvent = Awaited<ReturnType<typeof run>> extends AsyncIterable<infer T>
+  ? T
+  : never;
 
 @Injectable()
 export class ChatService {
@@ -72,6 +77,18 @@ export class ChatService {
 
   private makeMessage({ message, actor }: MakeMessageArgs) {
     return `[${actor.displayName} @${actor.slug}] says:\n${message}`;
+  }
+
+  private parseResponseTextDelta(event: RunStreamEvent): string | null {
+    if (event.type !== 'raw_model_stream_event') {
+      return null;
+    }
+
+    if (event.data.type !== 'output_text_delta') {
+      return null;
+    }
+
+    return event.data.delta;
   }
 
   private buildThreadScopedInstructions(baseInstructions: string, threadId: string): string {
@@ -143,8 +160,19 @@ Operational guidance:
       conversationId,
       stream: true,
     });
+    const responseStreamId = randomUUID();
 
     for await (const event of result) {
+      const textDelta = this.parseResponseTextDelta(event);
+      if (textDelta) {
+        this.threadsService.emitAgentResponseDelta({
+          threadId,
+          actorId: self.actorId,
+          streamId: responseStreamId,
+          delta: textDelta,
+        });
+      }
+
       if (event.type === "run_item_stream_event") {
         switch (event.item.type) {
           case "reasoning_item":

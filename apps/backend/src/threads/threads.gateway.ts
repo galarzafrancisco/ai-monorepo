@@ -14,11 +14,13 @@ import { OnEvent } from '@nestjs/event-emitter';
 import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
+  ThreadAgentResponseDeltaEvent,
   ThreadTitleUpdatedEvent,
 } from './events/threads.events';
 import { ThreadWireEvents } from '@taico/events';
 import {
   AgentActivityWireEvent,
+  AgentResponseDeltaWireEvent,
   MessageCreatedWireEvent,
   ThreadTitleUpdatedWireEvent,
 } from '@taico/events';
@@ -163,6 +165,28 @@ export class ThreadsGateway
     this.server
       .to(room)
       .emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
+  }
+
+  @OnEvent(ThreadAgentResponseDeltaEvent.INTERNAL)
+  handleAgentResponseDelta(event: ThreadAgentResponseDeltaEvent) {
+    if (!this.server) {
+      return;
+    }
+
+    const room = getThreadRoomName(event.payload.threadId);
+
+    const wireEvent: AgentResponseDeltaWireEvent = {
+      payload: {
+        threadId: event.payload.threadId,
+        streamId: event.payload.streamId,
+        delta: event.payload.delta,
+      },
+      actor: { id: event.actor.id },
+    };
+
+    this.server
+      .to(room)
+      .emit(ThreadWireEvents.AGENT_RESPONSE_DELTA, wireEvent);
   }
 
   @OnEvent(ThreadTitleUpdatedEvent.INTERNAL)

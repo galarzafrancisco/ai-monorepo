@@ -22,6 +22,7 @@ export const ThreadWireEvents = {
   THREAD_TITLE_UPDATED: 'thread.title.updated',
   MESSAGE_CREATED: 'thread.message.created',
   AGENT_ACTIVITY: 'thread.agent.activity',
+  AGENT_RESPONSE_DELTA: 'thread.agent.response.delta',
 } as const;
 
 export type ThreadWireEventName =
@@ -159,6 +160,19 @@ export interface AgentActivityWireEvent {
 }
 
 /**
+ * Agent response delta event
+ * Emitted when assistant streaming text chunks are received.
+ */
+export interface AgentResponseDeltaWireEvent {
+  payload: {
+    threadId: string;
+    streamId: string;
+    delta: string;
+  };
+  actor: MinimalEventActor;
+}
+
+/**
  * Union type of all thread wire events
  */
 export type ThreadWireEvent =
@@ -167,4 +181,5 @@ export type ThreadWireEvent =
   | ThreadDeletedWireEvent
   | ThreadTitleUpdatedWireEvent
   | MessageCreatedWireEvent
-  | AgentActivityWireEvent;
+  | AgentActivityWireEvent
+  | AgentResponseDeltaWireEvent;
