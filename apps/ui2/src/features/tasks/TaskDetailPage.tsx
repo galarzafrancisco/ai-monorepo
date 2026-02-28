@@ -445,38 +445,18 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
         ) : (
           null
         )}
-      </DataRowContainer >
 
-      <DataRowContainer className='task-detail-page__section'>
-        <div className="task-detail-page__tags">
-          <Text size='2' weight='medium'>Tags</Text>
-          <div className="task-detail-page__tags-list">
-            {task.tags.length === 0 ? (
-              <Text size='2' tone='muted'>No tags</Text>
-            ) : (
-              task.tags.map(tag => (
-                <button
-                  key={tag.id}
-                  className="task-detail-page__tag"
-                  style={{ backgroundColor: tag.color || '#999' }}
-                  onClick={() => removeTag(tag.id)}
-                  title="Click to remove"
-                >
-                  {tag.name}
-                  <span className="task-detail-page__tag-remove">×</span>
-                </button>
-              ))
-            )}
-            <Button
-              size='sm'
-              variant='secondary'
-              onClick={() => setShowTagPop(true)}
-            >
-              + Add Tag
-            </Button>
-          </div>
+        <div className="task-detail-page__tag-actions">
+          <Button
+            size='sm'
+            variant='secondary'
+            onClick={() => setShowTagPop(true)}
+          >
+            Add tag
+          </Button>
+          <Text size='1' tone='muted'>shortcut: T</Text>
         </div>
-      </DataRowContainer>
+      </DataRowContainer >
 
       {task.artefacts && task.artefacts.length > 0 && (
         <DataRowContainer className='task-detail-page__section'>
