@@ -3,6 +3,13 @@ import { io, Socket } from 'socket.io-client';
 import { ThreadsService } from './api';
 import type { ThreadListItem, Thread } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
+import { ThreadTitleUpdatedWireEvent, ThreadWireEvents } from '@taico/events';
+
+type ThreadsSubscribeAck = {
+  ok: boolean;
+  room?: string;
+  error?: string;
+};
 
 
 // Use centralized API configuration
@@ -60,7 +67,7 @@ export const useThreads = () => {
   }, []);
 
   // Setup websocket
-  const setupWebsocket = () => {
+  const setupWebsocket = useCallback(() => {
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
@@ -68,7 +75,7 @@ export const useThreads = () => {
 
     newSocket.on('connect', () => {
       console.log('Connected to websocket');
-      newSocket.emit('threads.subscribe', {}, (ack: any) => {
+      newSocket.emit('threads.subscribe', {}, (ack: ThreadsSubscribeAck) => {
         if (ack.ok) {
           console.log(ack);
           console.log('Subscribed to room:', ack.room);
@@ -80,11 +87,30 @@ export const useThreads = () => {
       });
     });
 
+    newSocket.on(ThreadWireEvents.THREAD_TITLE_UPDATED, (event: ThreadTitleUpdatedWireEvent) => {
+      setThreads((prev) =>
+        prev.map((thread) =>
+          thread.id === event.payload.threadId
+            ? { ...thread, title: event.payload.title }
+            : thread,
+        ),
+      );
+    });
+
     newSocket.on('disconnect', () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
     });
-  }
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.emit('threads.unsubscribe', {});
+      newSocket.close();
+      setSocket(null);
+      setIsConnected(false);
+    };
+  }, []);
 
   return {
     // UI feedback

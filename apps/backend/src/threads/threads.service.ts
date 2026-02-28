@@ -9,6 +9,7 @@ import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { MetaService } from '../meta/meta.service';
+import { TagEntity } from '../meta/tag.entity';
 import { ContextService } from '../context/context.service';
 import {
   CreateThreadInput,
@@ -36,12 +37,29 @@ import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
   ThreadAgentActivityKind,
+  ThreadTitleUpdatedEvent,
 } from './events/threads.events';
 import { ChatService } from './chat.service';
+import { ActorType } from '../identity-provider/enums';
+import { ThreadTitleService } from './thread-title.service';
+
+type GenerateTitleFromFirstMessageInput = {
+  thread: ThreadEntity;
+  actor: ActorEntity;
+  messageContent: string;
+  existingMessageCount: number;
+};
+
+type EmitAgentActivityInput = {
+  threadId: string;
+  actorId: string;
+  kind: ThreadAgentActivityKind;
+};
 
 @Injectable()
 export class ThreadsService {
   private readonly logger = new Logger(ThreadsService.name);
+  private static readonly DEFAULT_THREAD_TITLE = 'New thread';
 
   constructor(
     @InjectRepository(ThreadEntity)
@@ -60,6 +78,7 @@ export class ThreadsService {
     private readonly contextService: ContextService,
     private readonly eventEmitter: EventEmitter2,
     private readonly chatService: ChatService,
+    private readonly threadTitleService: ThreadTitleService,
   ) { }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
@@ -88,8 +107,12 @@ export class ThreadsService {
       }
     }
 
-    // Generate title if not provided
-    const title = input.title || this.inferTitle(createdByActor.slug);
+    // Generate title based on available context
+    const title = input.title
+      || (parentTask
+        ? ((await this.threadTitleService.generateFromParentTask(parentTask))
+          || ThreadsService.DEFAULT_THREAD_TITLE)
+        : ThreadsService.DEFAULT_THREAD_TITLE);
 
     // Create state context block for the thread
     const stateBlockContent = parentTask
@@ -623,8 +646,65 @@ export class ThreadsService {
     return thread;
   }
 
-  private inferTitle(actorSlug: string): string {
-    return `@${actorSlug} created`;
+  private isPlaceholderTitle(title: string | null | undefined): boolean {
+    if (!title) {
+      return true;
+    }
+
+    return title.trim().toLowerCase() === ThreadsService.DEFAULT_THREAD_TITLE.toLowerCase();
+  }
+
+  private async maybeGenerateTitleFromFirstMessage(
+    input: GenerateTitleFromFirstMessageInput,
+  ): Promise<void> {
+    if (input.actor.type !== ActorType.HUMAN) {
+      return;
+    }
+    if (input.existingMessageCount > 0) {
+      return;
+    }
+    if (!this.isPlaceholderTitle(input.thread.title)) {
+      return;
+    }
+
+    const content = input.messageContent.trim();
+    if (!content) {
+      return;
+    }
+
+    const generatedTitle = await this.threadTitleService.generateFromMessage(content);
+    if (!generatedTitle || this.isPlaceholderTitle(generatedTitle)) {
+      return;
+    }
+
+    input.thread.title = generatedTitle;
+    await this.threadRepository.save(input.thread);
+    this.eventEmitter.emit(
+      ThreadTitleUpdatedEvent.INTERNAL,
+      new ThreadTitleUpdatedEvent(
+        { id: input.actor.id },
+        {
+          threadId: input.thread.id,
+          title: generatedTitle,
+        },
+      ),
+    );
+
+    try {
+      await this.contextService.updateBlock(input.thread.stateContextBlockId, {
+        title: `Thread State: ${generatedTitle}`,
+      });
+    } catch (error) {
+      this.logger.warn({
+        message: 'Failed to update thread state block title after generating thread title',
+        threadId: input.thread.id,
+        stateContextBlockId: input.thread.stateContextBlockId,
+        error:
+          error instanceof Error
+            ? { message: error.message, stack: error.stack }
+            : String(error),
+      });
+    }
   }
 
   private async buildThreadResult(thread: ThreadEntity): Promise<ThreadResult> {
@@ -669,7 +749,7 @@ export class ThreadsService {
     };
   }
 
-  private mapTagToResult(tag: any): TagResult {
+  private mapTagToResult(tag: TagEntity): TagResult {
     return {
       id: tag.id,
       name: tag.name,
@@ -725,7 +805,7 @@ export class ThreadsService {
     }
     if (!thread.chatSessionId) {
       // TODO: make an error. This shouldn't happen though.
-      throw "Thread does not have a chat session id"
+      throw new Error('Thread does not have a chat session id');
     }
 
     // Verify actor exists if provided
@@ -735,6 +815,9 @@ export class ThreadsService {
     if (!actor) {
       throw new ActorNotFoundForThreadError(input.createdByActorId);
     }
+    const existingMessageCount = await this.threadMessageRepository.count({
+      where: { threadId: input.threadId },
+    });
 
     const message = this.threadMessageRepository.create({
       threadId: input.threadId,
@@ -775,16 +858,19 @@ export class ThreadsService {
       threadId: thread.id,
       message: input.content,
       actor,
-    })
+    });
+
+    await this.maybeGenerateTitleFromFirstMessage({
+      thread,
+      actor,
+      messageContent: input.content,
+      existingMessageCount,
+    });
 
     return this.mapThreadMessageToResult(messageWithRelations);
   }
 
-  emitAgentActivity(input: {
-    threadId: string;
-    actorId: string;
-    kind: ThreadAgentActivityKind;
-  }): void {
+  emitAgentActivity(input: EmitAgentActivityInput): void {
     this.eventEmitter.emit(
       ThreadAgentActivityEvent.INTERNAL,
       new ThreadAgentActivityEvent(

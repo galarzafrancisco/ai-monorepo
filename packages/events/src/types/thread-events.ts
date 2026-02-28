@@ -19,6 +19,7 @@ export const ThreadWireEvents = {
   THREAD_CREATED: 'thread.created',
   THREAD_UPDATED: 'thread.updated',
   THREAD_DELETED: 'thread.deleted',
+  THREAD_TITLE_UPDATED: 'thread.title.updated',
   MESSAGE_CREATED: 'thread.message.created',
   AGENT_ACTIVITY: 'thread.agent.activity',
 } as const;
@@ -123,6 +124,18 @@ export interface ThreadDeletedWireEvent {
 }
 
 /**
+ * Thread title updated event
+ * Emitted when a thread title changes after initial creation.
+ */
+export interface ThreadTitleUpdatedWireEvent {
+  payload: {
+    threadId: string;
+    title: string;
+  };
+  actor: MinimalEventActor;
+}
+
+/**
  * Message created event
  * Emitted when a message is created in a thread
  */
@@ -152,5 +165,6 @@ export type ThreadWireEvent =
   | ThreadCreatedWireEvent
   | ThreadUpdatedWireEvent
   | ThreadDeletedWireEvent
+  | ThreadTitleUpdatedWireEvent
   | MessageCreatedWireEvent
   | AgentActivityWireEvent;

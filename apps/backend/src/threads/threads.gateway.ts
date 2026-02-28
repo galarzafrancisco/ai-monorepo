@@ -14,9 +14,14 @@ import { OnEvent } from '@nestjs/event-emitter';
 import {
   MessageCreatedEvent,
   ThreadAgentActivityEvent,
+  ThreadTitleUpdatedEvent,
 } from './events/threads.events';
 import { ThreadWireEvents } from '@taico/events';
-import { AgentActivityWireEvent, MessageCreatedWireEvent } from '@taico/events';
+import {
+  AgentActivityWireEvent,
+  MessageCreatedWireEvent,
+  ThreadTitleUpdatedWireEvent,
+} from '@taico/events';
 import { ThreadMessageResponseDto } from './dto/thread-message-response.dto';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
@@ -158,5 +163,28 @@ export class ThreadsGateway
     this.server
       .to(room)
       .emit(ThreadWireEvents.AGENT_ACTIVITY, wireEvent);
+  }
+
+  @OnEvent(ThreadTitleUpdatedEvent.INTERNAL)
+  handleThreadTitleUpdated(event: ThreadTitleUpdatedEvent) {
+    if (!this.server) {
+      return;
+    }
+
+    const wireEvent: ThreadTitleUpdatedWireEvent = {
+      payload: {
+        threadId: event.payload.threadId,
+        title: event.payload.title,
+      },
+      actor: { id: event.actor.id },
+    };
+
+    this.server
+      .to(THREADS_ROOM)
+      .emit(ThreadWireEvents.THREAD_TITLE_UPDATED, wireEvent);
+
+    this.server
+      .to(getThreadRoomName(event.payload.threadId))
+      .emit(ThreadWireEvents.THREAD_TITLE_UPDATED, wireEvent);
   }
 }

@@ -16,6 +16,8 @@ import { ChatService } from './chat.service';
 import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
 import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
+import { LlmModule } from '../llm/llm.module';
+import { ThreadTitleService } from './thread-title.service';
 
 @Module({
   imports: [
@@ -29,12 +31,19 @@ import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.servi
     ]),
     AgentsModule,
     AuthorizationServerModule,
+    LlmModule,
     AuthGuardsModule,
     MetaModule,
     ContextModule,
   ],
   controllers: [ThreadsController],
-  providers: [ThreadsService, ThreadsGateway, ChatService, OpenAiMcpServerFactoryService],
+  providers: [
+    ThreadsService,
+    ThreadsGateway,
+    ChatService,
+    OpenAiMcpServerFactoryService,
+    ThreadTitleService,
+  ],
   exports: [ThreadsService],
 })
 export class ThreadsModule {}
