@@ -1,6 +1,6 @@
 {
   "name": "@taico/errors",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "private": false,
   "license": "MIT",
