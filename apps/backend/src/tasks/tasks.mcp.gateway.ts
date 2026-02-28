@@ -117,6 +117,54 @@ export class TasksMcpGateway {
       },
     );
 
+    canWrite &&
+      server.registerTool(
+        'attach_task_to_thread',
+        {
+          title: 'Attach task to thread',
+          description: 'Attach a task to a thread by IDs',
+          inputSchema: {
+            threadId: z.string(),
+            taskId: z.string(),
+          },
+        },
+        async ({ threadId, taskId }) => {
+          await this.threadsService.attachTask(threadId, taskId);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
+    canWrite &&
+      server.registerTool(
+        'detach_task_from_thread',
+        {
+          title: 'Detach task from thread',
+          description: 'Detach a task from a thread by IDs',
+          inputSchema: {
+            threadId: z.string(),
+            taskId: z.string(),
+          },
+        },
+        async ({ threadId, taskId }) => {
+          await this.threadsService.detachTask(threadId, taskId);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
     server.registerTool(
       'list_tasks_filtered',
       {

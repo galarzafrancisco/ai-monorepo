@@ -341,6 +341,27 @@ export class ThreadsService {
     return await this.buildThreadResult(updatedThread);
   }
 
+  async detachTask(threadId: string, taskId: string): Promise<ThreadResult> {
+    this.logger.log({
+      message: 'Detaching task from thread',
+      threadId,
+      taskId,
+    });
+
+    const thread = await this.getThreadWithRelations(threadId);
+    thread.tasks = thread.tasks.filter((task) => task.id !== taskId);
+    await this.threadRepository.save(thread);
+
+    this.logger.log({
+      message: 'Task detached from thread',
+      threadId,
+      taskId,
+    });
+
+    const updatedThread = await this.getThreadWithRelations(threadId);
+    return await this.buildThreadResult(updatedThread);
+  }
+
   async referenceContextBlock(
     threadId: string,
     contextBlockId: string,
@@ -370,6 +391,32 @@ export class ThreadsService {
         contextBlockId,
       });
     }
+
+    const updatedThread = await this.getThreadWithRelations(threadId);
+    return await this.buildThreadResult(updatedThread);
+  }
+
+  async unreferenceContextBlock(
+    threadId: string,
+    contextBlockId: string,
+  ): Promise<ThreadResult> {
+    this.logger.log({
+      message: 'Removing referenced context block from thread',
+      threadId,
+      contextBlockId,
+    });
+
+    const thread = await this.getThreadWithRelations(threadId);
+    thread.referencedContextBlocks = thread.referencedContextBlocks.filter(
+      (block) => block.id !== contextBlockId,
+    );
+    await this.threadRepository.save(thread);
+
+    this.logger.log({
+      message: 'Referenced context block removed from thread',
+      threadId,
+      contextBlockId,
+    });
 
     const updatedThread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(updatedThread);
