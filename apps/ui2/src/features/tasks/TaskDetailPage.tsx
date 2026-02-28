@@ -404,7 +404,10 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
             StatusTag({ status: task.status }),
-            ...task.tags.map(tag => ({ label: tag.name })),
+            ...task.tags.map(tag => ({
+              label: tag.name,
+              onRemove: () => removeTag(tag.id),
+            })),
           ]}
           topRight={<Text size='1' tone='muted'>{elapsedTime(task.updatedAt)}</Text>}
         >
