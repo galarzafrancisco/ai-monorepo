@@ -18,6 +18,7 @@ import { AuthorizationServerModule } from 'src/authorization-server/authorizatio
 import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
 import { LlmModule } from '../llm/llm.module';
 import { ThreadTitleService } from './thread-title.service';
+import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { ThreadTitleService } from './thread-title.service';
     ChatService,
     OpenAiMcpServerFactoryService,
     ThreadTitleService,
+    ThreadStateReconcilerService,
   ],
   exports: [ThreadsService],
 })

@@ -116,7 +116,10 @@ export class ThreadsService {
 
     // Create state context block for the thread
     const stateBlockContent = parentTask
-      ? `This thread was created to achieve task ${parentTask.name} (id ${parentTask.id}).`
+      ? [
+          `This thread was created to achieve task ${parentTask.name} (id ${parentTask.id}).`,
+          `Parent goal: ${parentTask.description || 'No description provided.'}`,
+        ].join('\n')
       : `This thread was created by @${createdByActor.slug}.`;
     const stateBlock = await this.contextService.createBlock({
       title: `Thread State: ${title}`,
