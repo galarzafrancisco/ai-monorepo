@@ -408,6 +408,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
               label: tag.name,
               onRemove: () => removeTag(tag.id),
             })),
+            {
+              label: '+ add tag',
+              color: 'gray' as const,
+              onClick: () => setShowTagPop(true),
+              clickLabel: 'Add tag',
+            },
           ]}
           topRight={<Text size='1' tone='muted'>{elapsedTime(task.updatedAt)}</Text>}
         >
@@ -445,17 +451,6 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
         ) : (
           null
         )}
-
-        <div className="task-detail-page__tag-actions">
-          <Button
-            size='sm'
-            variant='secondary'
-            onClick={() => setShowTagPop(true)}
-          >
-            Add tag
-          </Button>
-          <Text size='1' tone='muted'>shortcut: T</Text>
-        </div>
       </DataRowContainer >
 
       {task.artefacts && task.artefacts.length > 0 && (

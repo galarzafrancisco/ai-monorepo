@@ -129,6 +129,7 @@
 }
 
 .chip {
+  appearance: none;
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -140,6 +141,15 @@
   border: 1px solid var(--border);
   background: var(--chip-bg, transparent);
   color: var(--chip-fg, var(--text));
+  font-family: inherit;
+}
+
+.chip--clickable {
+  cursor: pointer;
+}
+
+.chip--clickable:hover {
+  filter: brightness(0.96);
 }
 
 .chip__remove {
