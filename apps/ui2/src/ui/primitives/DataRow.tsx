@@ -4,6 +4,8 @@ import "./DataRow.css";
 export type DataRowTag = {
   label: string;
   color?: "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple";
+  onRemove?: () => void;
+  removeLabel?: string;
 };
 
 export type DataRowAnimation = "entering" | "exiting";
@@ -66,12 +68,25 @@ export function DataRow({
 
           {tags.length ? (
             <div className="data-row__tags" aria-label="tags">
-              {tags.map((t) => (
+              {tags.map((t, index) => (
                 <span
-                  key={t.label}
+                  key={`${t.label}-${t.color ?? "gray"}-${index}`}
                   className={`chip chip--${t.color ?? "gray"}`}
                 >
                   {t.label}
+                  {t.onRemove ? (
+                    <button
+                      type="button"
+                      className="chip__remove"
+                      aria-label={t.removeLabel ?? `Remove ${t.label}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        t.onRemove?.();
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
                 </span>
               ))}
             </div>

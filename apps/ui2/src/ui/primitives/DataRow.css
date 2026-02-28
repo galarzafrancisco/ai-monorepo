@@ -131,6 +131,7 @@
 .chip {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-1);
   height: 20px;
   padding: 0 8px;
   border-radius: 999px;
@@ -139,6 +140,29 @@
   border: 1px solid var(--border);
   background: var(--chip-bg, transparent);
   color: var(--chip-fg, var(--text));
+}
+
+.chip__remove {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: var(--fs-2);
+  line-height: 1;
+  margin-left: 2px;
+  margin-right: -2px;
+}
+
+.chip__remove:hover {
+  background: color-mix(in srgb, var(--chip-fg, var(--text)) 16%, transparent);
 }
 
 /* chip color variants (tweak to your palette) */
