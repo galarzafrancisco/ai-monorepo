@@ -46,6 +46,10 @@ export interface AppConfig {
 
   // TODO: move this to a proper secret
   openAiKey: string;
+
+  // Feature Flags
+  threadStateReconcilerEnabled: boolean;
+  threadStateReconcilerDebounceMs: number;
 }
 
 /**
@@ -109,6 +113,9 @@ export function loadConfig(): AppConfig {
     vitePort: uiPort,
 
     openAiKey: getOpenAiKey(),
+
+    threadStateReconcilerEnabled: getThreadStateReconcilerEnabled(),
+    threadStateReconcilerDebounceMs: getThreadStateReconcilerDebounceMs(),
   };
 
   // Log configuration (excluding sensitive data)
@@ -120,6 +127,8 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Database Path: ${config.databasePath}`);
   logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
   logger.log(`  - OpenAI Key: ${config.openAiKey.slice(0,3)}...`);
+  logger.log(`  - Thread State Reconciler Enabled: ${config.threadStateReconcilerEnabled}`);
+  logger.log(`  - Thread State Reconciler Debounce Ms: ${config.threadStateReconcilerDebounceMs}`);
 
   return config;
 }
@@ -159,6 +168,21 @@ function getOpenAiKey(): string {
   return process.env.OPENAI_KEY || '';
 }
 
+function getThreadStateReconcilerEnabled(): boolean {
+  return process.env.THREAD_STATE_RECONCILER_ENABLED !== 'false';
+}
+
+function getThreadStateReconcilerDebounceMs(): number {
+  const parsed = parseInt(
+    process.env.THREAD_STATE_RECONCILER_DEBOUNCE_MS || '20000',
+    10,
+  );
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 20000;
+  }
+  return parsed;
+}
+
 /**
  * Singleton instance of configuration
  * Load once and reuse throughout the application
@@ -194,4 +218,12 @@ export function isProduction(): boolean {
  */
 export function isSecretsEnabled(): boolean {
   return process.env.SECRETS_ENABLED === 'true';
+}
+
+/**
+ * Feature flag: Thread state reconciler.
+ * On by default. Disable by setting THREAD_STATE_RECONCILER_ENABLED=false.
+ */
+export function isThreadStateReconcilerEnabled(): boolean {
+  return getConfig().threadStateReconcilerEnabled;
 }
