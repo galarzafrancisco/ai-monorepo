@@ -4,12 +4,14 @@ import {
   ApiError,
   AgentService,
   TaskService,
+  ThreadsService,
   MetaProjectsService,
   AgentRunService,
   type AgentResponseDto,
   type AgentRunResponseDto,
   type ProjectResponseDto,
   type TaskResponseDto,
+  type ThreadResponseDto,
 } from "@taico/client";
 
 function isApiError(error: unknown): error is ApiError {
@@ -96,6 +98,17 @@ export class Taico {
   async getProjectBySlug(slug: string): Promise<ProjectResponseDto | null> {
     try {
       return await MetaProjectsService.projectsControllerGetProjectBySlug(slug);
+    } catch (error: unknown) {
+      if (isApiError(error) && error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async getThreadByTaskId(taskId: string): Promise<ThreadResponseDto | null> {
+    try {
+      return await ThreadsService.threadsControllerGetThreadByTaskId(taskId);
     } catch (error: unknown) {
       if (isApiError(error) && error.status === 404) {
         return null;

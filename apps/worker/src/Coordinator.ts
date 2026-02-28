@@ -3,6 +3,7 @@ import { TaskWirePayload } from "@taico/events";
 import {
   type AgentResponseDto,
   type TaskResponseDto,
+  type ThreadResponseDto,
 } from "@taico/client";
 import { Taico } from "./Taico.js";
 import {
@@ -251,7 +252,29 @@ export class Coordinator {
     return null;
   }
 
-  private buildPrompt(task: WorkerTask, agent: AgentResponseDto, mode: RunMode, inputRequest?: InputRequestLike) {
+  private buildThreadContextInstructions(task: WorkerTask, thread: ThreadResponseDto): string[] {
+    return [
+      '',
+      'Thread context:',
+      `- This task belongs to thread "${thread.id}" (${thread.title}).`,
+      `- This task is ${thread.parentTaskId === task.id ? 'the parent task' : 'an attached task'} in that thread.`,
+      `- Read shared thread memory at the start via mcp__context__get_thread_state_memory with threadId "${thread.id}".`,
+      `- Check sibling task status via mcp__tasks__list_tasks_by_thread with threadId "${thread.id}".`,
+      `- Keep decisions aligned with this shared memory and thread-level goal, not only this single task.`,
+    ];
+  }
+
+  private buildPrompt(
+    task: WorkerTask,
+    agent: AgentResponseDto,
+    mode: RunMode,
+    inputRequest?: InputRequestLike,
+    thread?: ThreadResponseDto | null,
+  ) {
+    const threadContextInstructions = thread
+      ? this.buildThreadContextInstructions(task, thread)
+      : [];
+
     if (mode === 'input_request' && inputRequest) {
       return [
         `You got triggered by an unanswered input request in task "${task.id}".`,
@@ -261,11 +284,19 @@ export class Coordinator {
         `Input request id: ${inputRequest.id}`,
         `Question: ${String(inputRequest.question ?? '')}`,
         '',
+        ...threadContextInstructions,
+        '',
         'Fetch the task, answer the input request assigned to you, and stop there.',
       ].join('\n');
     }
 
-    return `You got triggered by new activity in task "${task.id}". Fetch the task and proceed according to the following instructions.\n\n\n ${agent.systemPrompt}`;
+    return [
+      `You got triggered by new activity in task "${task.id}".`,
+      'Fetch the task and proceed according to the following instructions.',
+      ...threadContextInstructions,
+      '',
+      agent.systemPrompt,
+    ].join('\n');
   }
 
   private async executeTask(task: WorkerTask, agent: AgentResponseDto, mode: RunMode, inputRequest?: InputRequestLike) {
@@ -312,6 +343,11 @@ export class Coordinator {
       const workDir = await prepareWorkspace(task.id, agent.actorId, repoUrl);
       console.log(`- workspace prepped`);
 
+      const thread = await this.client.getThreadByTaskId(task.id);
+      if (thread) {
+        console.log(`- Task ${task.id} belongs to thread ${thread.id} (${thread.title})`);
+      }
+
       const run = await this.client.startRun(task.id);
       if (!run) {
         console.error(`Failed to create a run ❌`);
@@ -346,7 +382,7 @@ export class Coordinator {
         const results = await runner.run(
           {
             taskId: task.id,
-            prompt: this.buildPrompt(task, agent, mode, inputRequest),
+            prompt: this.buildPrompt(task, agent, mode, inputRequest, thread),
             cwd: workDir,
             runId: run.id,
             resume: sessionId ?? undefined,
