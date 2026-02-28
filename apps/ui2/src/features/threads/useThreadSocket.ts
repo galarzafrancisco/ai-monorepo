@@ -5,6 +5,7 @@ import {
   AgentActivityWireEvent,
   ThreadWireEvents,
   MessageCreatedWireEvent,
+  Actor as ThreadWireActor,
   ActorType as WireActorType,
 } from "@taico/events";
 import { ActorResponseDto } from '@taico/client';
@@ -13,10 +14,16 @@ import { ActorType as DtoActorType } from './types';
 
 const SOCKET_URL = getUIWebSocketUrl('/threads');
 
+type ThreadsSubscribeAck = {
+  ok: boolean;
+  room?: string;
+  error?: string;
+};
+
 /**
  * Converts wire actor type to DTO actor type
  */
-const convertWireActorToDto = (wireActor: any): ActorResponseDto | null => {
+const convertWireActorToDto = (wireActor: ThreadWireActor | null): ActorResponseDto | null => {
   if (!wireActor) return null;
 
   if (wireActor.type === WireActorType.HUMAN) {
@@ -71,7 +78,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
     });
 
     newSocket.on('connect', () => {
-      newSocket.emit('threads.subscribe', { threadId }, (ack: any) => {
+      newSocket.emit('threads.subscribe', { threadId }, (ack: ThreadsSubscribeAck) => {
         if (ack.ok) {
           setIsConnected(true);
         } else {

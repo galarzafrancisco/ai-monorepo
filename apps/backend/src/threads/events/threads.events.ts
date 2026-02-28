@@ -13,7 +13,7 @@ export type EventActor = {
   id: string;
 };
 
-export abstract class ThreadDomainEvent<TPayload = unknown> {
+export abstract class ThreadDomainEvent<TPayload = Record<string, never>> {
   readonly occurredAt: Date = new Date();
 
   constructor(
@@ -68,6 +68,19 @@ export class ThreadAgentActivityEvent extends ThreadDomainEvent<ThreadAgentActiv
   static readonly INTERNAL = Symbol('threads.ThreadAgentActivityEvent');
 
   constructor(actor: EventActor, payload: ThreadAgentActivityPayload) {
+    super(actor, payload);
+  }
+}
+
+export type ThreadTitleUpdatedPayload = {
+  threadId: string;
+  title: string;
+};
+
+export class ThreadTitleUpdatedEvent extends ThreadDomainEvent<ThreadTitleUpdatedPayload> {
+  static readonly INTERNAL = Symbol('threads.ThreadTitleUpdatedEvent');
+
+  constructor(actor: EventActor, payload: ThreadTitleUpdatedPayload) {
     super(actor, payload);
   }
 }
