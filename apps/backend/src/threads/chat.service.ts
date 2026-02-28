@@ -88,6 +88,7 @@ Operational guidance:
 - When a task or context block becomes relevant to the thread, attach it using tasks__attach_task_to_thread or context__attach_block_to_thread.
 - If a task/block was attached by mistake or is no longer relevant, remove it using tasks__detach_task_from_thread or context__detach_block_from_thread.
 - During conversation, when you discover durable cross-task decisions/constraints/risks, update memory via context__update_block.
+- If the user asks for updates on a given task, read the task and the memory block to update the user.
 - Only write durable shared memory (not ephemeral chat details).`;
   }
 
