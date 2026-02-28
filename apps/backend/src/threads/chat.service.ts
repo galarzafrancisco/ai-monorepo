@@ -30,6 +30,10 @@ export interface SendMessageToThreadArgs {
   actor: ActorEntity;
 }
 
+type RunStreamEvent = Awaited<ReturnType<typeof run>> extends AsyncIterable<infer T>
+  ? T
+  : never;
+
 @Injectable()
 export class ChatService {
 
@@ -75,37 +79,16 @@ export class ChatService {
     return `[${actor.displayName} @${actor.slug}] says:\n${message}`;
   }
 
-  private parseResponseTextDelta(event: unknown): string | null {
-    if (!event || typeof event !== 'object') {
+  private parseResponseTextDelta(event: RunStreamEvent): string | null {
+    if (event.type !== 'raw_model_stream_event') {
       return null;
     }
 
-    const typedEvent = event as {
-      type?: unknown;
-      data?: {
-        type?: unknown;
-        delta?: unknown;
-      };
-    };
-
-    if (typedEvent.type !== 'raw_model_stream_event') {
+    if (event.data.type !== 'output_text_delta') {
       return null;
     }
 
-    const rawEvent = typedEvent.data;
-    if (!rawEvent || typeof rawEvent !== 'object') {
-      return null;
-    }
-
-    if (rawEvent.type !== 'response.output_text.delta') {
-      return null;
-    }
-
-    if (typeof rawEvent.delta === 'string') {
-      return rawEvent.delta;
-    }
-
-    return null;
+    return event.data.delta;
   }
 
   private buildThreadScopedInstructions(baseInstructions: string, threadId: string): string {
