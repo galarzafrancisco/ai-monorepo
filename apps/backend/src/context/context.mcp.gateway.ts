@@ -87,6 +87,52 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
+      'attach_block_to_thread',
+      {
+        title: 'Attach context block to thread',
+        description: 'Attach a context block to a thread by IDs',
+        inputSchema: {
+          threadId: z.string(),
+          blockId: z.string(),
+        },
+      },
+      async ({ threadId, blockId }) => {
+        await this.threadsService.referenceContextBlock(threadId, blockId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'done',
+            },
+          ],
+        };
+      },
+    );
+
+    server.registerTool(
+      'detach_block_from_thread',
+      {
+        title: 'Detach context block from thread',
+        description: 'Detach a context block from a thread by IDs',
+        inputSchema: {
+          threadId: z.string(),
+          blockId: z.string(),
+        },
+      },
+      async ({ threadId, blockId }) => {
+        await this.threadsService.unreferenceContextBlock(threadId, blockId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'done',
+            },
+          ],
+        };
+      },
+    );
+
+    server.registerTool(
       'get_block',
       {
         title: 'Get context block',

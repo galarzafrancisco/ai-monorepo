@@ -85,6 +85,8 @@ Thread context:
 Operational guidance:
 - Use tasks__list_tasks_by_thread with this threadId to understand current subtasks and status.
 - Use context__get_thread_state_memory with this threadId to read current shared state memory.
+- When a task or context block becomes relevant to the thread, attach it using tasks__attach_task_to_thread or context__attach_block_to_thread.
+- If a task/block was attached by mistake or is no longer relevant, remove it using tasks__detach_task_from_thread or context__detach_block_from_thread.
 - During conversation, when you discover durable cross-task decisions/constraints/risks, update memory via context__update_block.
 - Only write durable shared memory (not ephemeral chat details).`;
   }
