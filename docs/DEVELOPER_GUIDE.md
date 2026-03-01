@@ -91,6 +91,8 @@ This runs automatically as part of `npm run build:dev`. No manual steps needed.
 
 Socket.io WebSocket gateways per feature module. The agent workers use this to react to task events in real time.
 
+For implementation details and conventions, see [Real-Time Events Guide](how-to-guides/realtime-events.md).
+
 ## Key Technologies
 
 - **Backend**: NestJS 11, TypeORM, SQLite, Socket.io, MCP SDK
