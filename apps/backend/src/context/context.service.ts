@@ -96,6 +96,9 @@ export class ContextService {
       );
       saved.tags = tags;
       await this.blockRepository.save(saved);
+
+      // Increment usage tracking for all tags
+      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
     }
 
     // Reload with relations
@@ -337,6 +340,10 @@ export class ContextService {
     if (!block.tags.some((t) => t.id === tag.id)) {
       block.tags.push(tag);
       await this.blockRepository.save(block);
+
+      // Increment tag usage tracking
+      await this.metaService.incrementTagUsage(tag.id);
+
       this.logger.log({
         message: 'Tag added to block',
         blockId,

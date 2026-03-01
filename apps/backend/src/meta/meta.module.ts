@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TagEntity } from './tag.entity';
+import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
 import { MetaService } from './meta.service';
 import { ProjectsService } from './projects.service';
@@ -12,7 +13,7 @@ import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TagEntity, ProjectEntity]),
+    TypeOrmModule.forFeature([TagEntity, TagUsageEntity, ProjectEntity]),
     AuthorizationServerModule,
     AuthGuardsModule,
     SearchModule,

@@ -27,6 +27,7 @@ import { RemoveRoleFromThreadMessage1739844333000 } from './migrations/173984433
 import { AddSecretsTable1740000000000 } from './migrations/1740000000000-AddSecretsTable';
 import { AddChatSessionIdToThreads1741000000000 } from './migrations/1741000000000-AddChatSessionIdToThreads';
 import { AddMcpServerTransportConfig1740500000000 } from './migrations/1740500000000-AddMcpServerTransportConfig';
+import { AddTagUsageTable1741100000000 } from './migrations/1741100000000-AddTagUsageTable';
 import { SecretsModule } from './secrets/secrets.module';
 
 @Module({
@@ -45,8 +46,9 @@ import { SecretsModule } from './secrets/secrets.module';
         RefactorThreadsForHeadlessConversations1739750000000,
         RemoveRoleFromThreadMessage1739844333000,
         AddSecretsTable1740000000000,
-        AddChatSessionIdToThreads1741000000000,
         AddMcpServerTransportConfig1740500000000,
+        AddChatSessionIdToThreads1741000000000,
+        AddTagUsageTable1741100000000,
       ],
     }),
     EventEmitterModule.forRoot(),

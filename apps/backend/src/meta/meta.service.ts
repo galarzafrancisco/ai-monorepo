@@ -2,6 +2,7 @@ import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TagEntity } from './tag.entity';
+import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
 import { CreateTagInput, TagResult } from './dto/service/meta.service.types';
 
@@ -39,6 +40,8 @@ export class MetaService {
   constructor(
     @InjectRepository(TagEntity)
     private readonly tagRepository: Repository<TagEntity>,
+    @InjectRepository(TagUsageEntity)
+    private readonly tagUsageRepository: Repository<TagUsageEntity>,
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
   ) {}
@@ -147,16 +150,58 @@ export class MetaService {
   async getAllTags(): Promise<TagResult[]> {
     this.logger.log({ message: 'Getting all tags' });
 
-    const tags = await this.tagRepository.find({
-      order: { name: 'ASC' },
+    // Get all tags with their usage stats
+    const tags = await this.tagRepository
+      .createQueryBuilder('tag')
+      .leftJoinAndSelect('tag_usage', 'usage', 'usage.tag_id = tag.id')
+      .select([
+        'tag.id',
+        'tag.name',
+        'tag.color',
+        'tag.created_at',
+        'tag.updated_at',
+        'usage.usage_count',
+        'usage.last_used_at',
+      ])
+      .getRawMany();
+
+    // Sort by: most recently used, then most frequently used, then alphabetically
+    const sortedTags = tags.sort((a, b) => {
+      const aLastUsed = a.usage_last_used_at
+        ? new Date(a.usage_last_used_at).getTime()
+        : 0;
+      const bLastUsed = b.usage_last_used_at
+        ? new Date(b.usage_last_used_at).getTime()
+        : 0;
+
+      // Primary: Most recently used (DESC)
+      if (aLastUsed !== bLastUsed) {
+        return bLastUsed - aLastUsed;
+      }
+
+      // Secondary: Most frequently used (DESC)
+      const aUsageCount = a.usage_usage_count || 0;
+      const bUsageCount = b.usage_usage_count || 0;
+      if (aUsageCount !== bUsageCount) {
+        return bUsageCount - aUsageCount;
+      }
+
+      // Tertiary: Alphabetically by name (ASC)
+      return a.tag_name.localeCompare(b.tag_name);
     });
 
     this.logger.log({
       message: 'Tags retrieved',
-      count: tags.length,
+      count: sortedTags.length,
     });
 
-    return tags.map((tag) => this.mapTagToResult(tag));
+    return sortedTags.map((raw) => ({
+      id: raw.tag_id,
+      name: raw.tag_name,
+      color: raw.tag_color,
+      createdAt: new Date(raw.tag_created_at),
+      updatedAt: new Date(raw.tag_updated_at),
+    }));
   }
 
   async getTagById(tagId: string): Promise<TagResult | null> {
@@ -374,6 +419,56 @@ export class MetaService {
         taskCount,
         blockCount,
       });
+    }
+  }
+
+  /**
+   * Increment usage count and update last used timestamp for a tag
+   * Uses upsert to handle concurrent updates atomically
+   * @param tagId - ID of the tag to track usage for
+   */
+  async incrementTagUsage(tagId: string): Promise<void> {
+    this.logger.log({
+      message: 'Incrementing tag usage',
+      tagId,
+    });
+
+    const now = new Date().toISOString();
+
+    // Use INSERT ... ON CONFLICT (SQLite upsert) to handle concurrent updates atomically
+    // This prevents duplicate rows and race conditions
+    await this.tagUsageRepository.query(
+      `
+      INSERT INTO tag_usage (tag_id, usage_count, last_used_at, created_at, updated_at)
+      VALUES (?, 1, ?, ?, ?)
+      ON CONFLICT(tag_id) DO UPDATE SET
+        usage_count = usage_count + 1,
+        last_used_at = excluded.last_used_at,
+        updated_at = excluded.updated_at
+      `,
+      [tagId, now, now, now],
+    );
+
+    this.logger.log({
+      message: 'Tag usage updated',
+      tagId,
+    });
+  }
+
+  /**
+   * Batch increment usage for multiple tags
+   * @param tagIds - Array of tag IDs to track usage for
+   */
+  async incrementTagsUsage(tagIds: string[]): Promise<void> {
+    if (tagIds.length === 0) return;
+
+    this.logger.log({
+      message: 'Batch incrementing tag usage',
+      tagCount: tagIds.length,
+    });
+
+    for (const tagId of tagIds) {
+      await this.incrementTagUsage(tagId);
     }
   }
 
