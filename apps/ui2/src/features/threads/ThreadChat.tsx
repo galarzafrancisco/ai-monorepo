@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Text, Button, Avatar } from "../../ui/primitives";
 import { useThread } from "./useThread";
 import { useAuth } from "../../auth";
+import { useDraftState } from "../../shared/hooks/useDraftState";
 import "./ThreadChat.css";
 
 interface ThreadChatProps {
@@ -9,7 +10,11 @@ interface ThreadChatProps {
 }
 
 export function ThreadChat({ threadId }: ThreadChatProps) {
-  const [newMessage, setNewMessage] = useState("");
+  const [draftState, setDraftState, clearDraft] = useDraftState({
+    key: `thread-chat-draft-${threadId}`,
+    defaultValue: { content: "" },
+  });
+  const { content: newMessage } = draftState;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
@@ -41,7 +46,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
     if (!newMessage.trim() || chatIsSending) return;
     try {
       await sendMessage(newMessage);
-      setNewMessage("");
+      clearDraft();
       requestAnimationFrame(() => {
         messageInputRef.current?.focus();
       });
@@ -158,7 +163,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
             ref={messageInputRef}
             className="thread-chat__input"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => setDraftState({ ...draftState, content: e.target.value })}
             placeholder="Write a message to this thread..."
             rows={3}
             disabled={chatIsSending}
