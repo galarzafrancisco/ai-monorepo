@@ -84,24 +84,28 @@ export class ClaudeMessageFormatter {
   }
 
   private formatResult(message: SDKResultMessage): string | null {
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+
     if (
       message.subtype === 'success' &&
       typeof message.result === 'string'
     ) {
       return [
-        `--- Agent turn complete ---`,
+        `--- ${agentLabel} turn complete ---`,
         message.result,
         `---------------------------`,
       ].join('\n');
     }
 
-    return `✅ Agent result received`;
+    return `✅ ${agentLabel} result received`;
   }
 
   private formatSystem(message: SDKSystemMessage): string | null {
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+
     if (message.subtype === 'init') {
       return [
-        `🧠 Claude initialized`,
+        `🧠 ${agentLabel} Claude initialized`,
         `- Permissions: ${message.permissionMode}`,
         `- Tools: ${message.tools.length}`,
         `- MCP Servers: ${message.mcp_servers.length}`,
@@ -112,7 +116,7 @@ export class ClaudeMessageFormatter {
       ].join('\n');
     }
 
-    return `⚙️ System message`;
+    return `⚙️ ${agentLabel} System message`;
   }
 
   private formatStreamEvent(_: SDKPartialAssistantMessage): string | null {
@@ -126,6 +130,7 @@ export class ClaudeMessageFormatter {
   }
 
   private formatAuthStatus(_: SDKAuthStatusMessage): string | null {
-    return `🔐 Auth status updated`;
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+    return `🔐 ${agentLabel} Auth status updated`;
   }
 }

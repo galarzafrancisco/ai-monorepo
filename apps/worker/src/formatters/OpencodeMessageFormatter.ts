@@ -57,10 +57,11 @@ export class OpencodeSyncMessageFormatter {
 
   format(info: AssistantMessage, parts: Array<Part>): Array<string> {
     const messages: string[] = [];
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
 
     // Parse info
     if (info.error) {
-      messages.push(`Error ${info.error.name}: ${JSON.stringify(info.error.data)}`);
+      messages.push(`❌ ${agentLabel} Error ${info.error.name}: ${JSON.stringify(info.error.data)}`);
     }
 
     // Parse parts
