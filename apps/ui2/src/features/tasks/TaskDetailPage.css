@@ -30,6 +30,37 @@
   margin: var(--space-3);
 }
 
+.task-detail-page__shell-container {
+  padding: var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.task-detail-page__shell-line {
+  display: block;
+  height: 12px;
+  border-radius: var(--r-2);
+  background: linear-gradient(90deg, var(--surface) 20%, var(--app-surface) 50%, var(--surface) 80%);
+  background-size: 220% 100%;
+  animation: task-detail-shell-wave 1.4s ease-in-out infinite;
+}
+
+.task-detail-page__shell-line--wide {
+  width: 75%;
+}
+
+.task-detail-page__shell-line--mid {
+  width: 58%;
+}
+
+.task-detail-page__shell-line--short {
+  width: 35%;
+}
+
+.task-detail-page__shell-line--full {
+  width: 100%;
+}
+
 .task-detail-page__add-comment {
   margin-bottom: 16px;
 }
@@ -182,6 +213,15 @@
   }
   100% {
     transform: translateX(120%);
+  }
+}
+
+@keyframes task-detail-shell-wave {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
   }
 }
 /* Autocomplete */

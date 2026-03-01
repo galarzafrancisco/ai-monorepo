@@ -26,7 +26,8 @@ const TASKS_PAGE_SIZE = 100;
 
 export const useTasks = () => {
   // UI feedback
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Data store
@@ -116,6 +117,7 @@ export const useTasks = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {
+      setHasLoadedOnce(true);
       setIsLoading(false);
     }
   };
@@ -241,6 +243,7 @@ export const useTasks = () => {
   return {
     // UI feedback
     isLoading,
+    hasLoadedOnce,
     error,
     activityByTaskId,
 
