@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useCallback, useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 import { ContextService } from './api';
 import { ContextBlock, ContextBlockSummary } from './types';
 import { getUIWebSocketUrl } from '../../config/api';
@@ -31,11 +31,16 @@ type ContextBlockDeletedEvent = {
   };
 };
 
+type ContextSubscribeAck = {
+  ok: boolean;
+  room?: string;
+  error?: string;
+};
+
 export function useContextBlocks() {
   const [blocks, setBlocks] = useState<ContextBlockSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   // Sort blocks by updatedAt (newest first)
@@ -71,7 +76,7 @@ export function useContextBlocks() {
 
     newSocket.on('connect', () => {
       console.log('Connected to context WebSocket');
-      newSocket.emit('context.subscribe', {}, (ack: any) => {
+      newSocket.emit('context.subscribe', {}, (ack: ContextSubscribeAck) => {
         if (ack.ok) {
           console.log('Subscribed to context room:', ack.room);
           setIsConnected(true);
@@ -87,6 +92,10 @@ export function useContextBlocks() {
     newSocket.on('disconnect', () => {
       console.log('Context WebSocket disconnected');
       setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('Context websocket connect_error', err.message);
     });
 
     // Handle block created event
@@ -115,9 +124,8 @@ export function useContextBlocks() {
       setBlocks((prev) => prev.filter((b) => b.id !== event.payload.blockId));
     });
 
-    setSocket(newSocket);
-
     return () => {
+      newSocket.emit('context.unsubscribe', {});
       newSocket.close();
     };
   };
@@ -137,39 +145,27 @@ export function useContextBlock(id: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleted, setIsDeleted] = useState(false);
-  const [socket, setSocket] = useState<Socket | null>(null);
+
+  const fetchBlock = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await ContextService.contextControllerGetBlock(id);
+      setBlock(data);
+      setIsDeleted(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch context block');
+      console.error('Error fetching context block:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchBlock = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await ContextService.contextControllerGetBlock(id);
-        if (isMounted) {
-          setBlock(data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch context block');
-          console.error('Error fetching context block:', err);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
     if (id) {
       fetchBlock();
     }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
+  }, [id, fetchBlock]);
 
   // Setup WebSocket connection for real-time updates
   useEffect(() => {
@@ -182,13 +178,18 @@ export function useContextBlock(id: string) {
 
     newSocket.on('connect', () => {
       console.log('Connected to context WebSocket (detail page)');
-      newSocket.emit('context.subscribe', {}, (ack: any) => {
+      newSocket.emit('context.subscribe', { blockId: id }, (ack: ContextSubscribeAck) => {
         if (ack.ok) {
           console.log('Subscribed to context room (detail page):', ack.room);
+          fetchBlock();
         } else {
-          console.error('Failed to subscribe to context room (detail page)');
+          console.error('Failed to subscribe to context room (detail page)', ack.error);
         }
       });
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('Context detail websocket connect_error', err.message);
     });
 
     newSocket.on('disconnect', () => {
@@ -200,9 +201,7 @@ export function useContextBlock(id: string) {
       if (event.payload.id === id) {
         console.log('context.block.updated (detail page)', event);
         // Fetch the full block details to get the content
-        ContextService.contextControllerGetBlock(id)
-          .then((data) => setBlock(data))
-          .catch((err) => console.error('Error refreshing block after update:', err));
+        fetchBlock().catch((err) => console.error('Error refreshing block after update:', err));
       }
     });
 
@@ -215,12 +214,11 @@ export function useContextBlock(id: string) {
       }
     });
 
-    setSocket(newSocket);
-
     return () => {
+      newSocket.emit('context.unsubscribe', { blockId: id });
       newSocket.close();
     };
-  }, [id]);
+  }, [id, fetchBlock]);
 
   return { block, isLoading, error, isDeleted };
 }

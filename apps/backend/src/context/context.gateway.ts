@@ -6,6 +6,7 @@ import {
   OnGatewayInit,
   SubscribeMessage,
   ConnectedSocket,
+  MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
@@ -21,8 +22,14 @@ import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { ContextScopes } from './context.scopes';
+import { ContextService } from './context.service';
 
 const CONTEXT_ROOM = 'context';
+const getBlockRoomName = (blockId: string): string => `${CONTEXT_ROOM}-${blockId}`;
+
+type ContextSubscriptionPayload = {
+  blockId?: string;
+};
 
 /**
  * WebSocket gateway for Context domain.
@@ -46,6 +53,8 @@ const CONTEXT_ROOM = 'context';
 export class ContextGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  constructor(private readonly contextService: ContextService) {}
+
   @WebSocketServer()
   server!: Server;
 
@@ -66,14 +75,37 @@ export class ContextGateway
    */
 
   @SubscribeMessage('context.subscribe')
-  subscribe(@ConnectedSocket() client: Socket) {
-    client.join(CONTEXT_ROOM);
-    return { ok: true, room: CONTEXT_ROOM };
+  async subscribe(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: ContextSubscriptionPayload,
+  ) {
+    if (!body?.blockId) {
+      client.join(CONTEXT_ROOM);
+      return { ok: true, room: CONTEXT_ROOM };
+    }
+
+    try {
+      await this.contextService.getBlockById(body.blockId);
+    } catch {
+      return { ok: false, error: 'block not found' };
+    }
+
+    const room = getBlockRoomName(body.blockId);
+    client.join(room);
+    return { ok: true, room };
   }
 
   @SubscribeMessage('context.unsubscribe')
-  unsubscribe(@ConnectedSocket() client: Socket) {
-    client.leave(CONTEXT_ROOM);
+  unsubscribe(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: ContextSubscriptionPayload,
+  ) {
+    if (!body?.blockId) {
+      client.leave(CONTEXT_ROOM);
+      return { ok: true };
+    }
+
+    client.leave(getBlockRoomName(body.blockId));
     return { ok: true };
   }
 
@@ -107,6 +139,13 @@ export class ContextGateway
       actor: event.actor,
     });
 
+    this.server
+      .to(getBlockRoomName(event.block.id))
+      .emit(ContextWireEvents.CONTEXT_BLOCK_UPDATED, {
+        payload: dto,
+        actor: event.actor,
+      });
+
     this.logger.debug({
       message: 'Block updated event emitted',
       blockId: event.block.id,
@@ -120,6 +159,13 @@ export class ContextGateway
       payload: { blockId: event.blockId },
       actor: event.actor,
     });
+
+    this.server
+      .to(getBlockRoomName(event.blockId))
+      .emit(ContextWireEvents.CONTEXT_BLOCK_DELETED, {
+        payload: { blockId: event.blockId },
+        actor: event.actor,
+      });
 
     this.logger.debug({
       message: 'Block deleted event emitted',
