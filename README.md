@@ -40,6 +40,7 @@ npm run dev:[1-5]      # Start backend + frontend with hot reload
 - **[Getting Started](docs/GETTING_STARTED.md)** — Create tasks, configure agents, and build workflows.
 - **[Admin Guide](docs/ADMIN_GUIDE.md)** — User management, running workers, and system configuration.
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** — Development setup, architecture, API generation, and contributing.
+- **[Real-Time Events Guide](docs/how-to-guides/realtime-events.md)** — Domain events, gateway wiring, room topology, and UI sync strategy.
 - **[Deployment Guide](docs/DEPLOYMENT.md)** — Production deployment with Kubernetes and GitOps workflow.
 - **[Agents Worker](apps/worker/README.md)** — How to run agent workers that execute tasks.
 
