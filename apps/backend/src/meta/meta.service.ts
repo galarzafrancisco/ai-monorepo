@@ -1,6 +1,7 @@
 import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { TagEntity } from './tag.entity';
 import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
@@ -150,28 +151,25 @@ export class MetaService {
   async getAllTags(): Promise<TagResult[]> {
     this.logger.log({ message: 'Getting all tags' });
 
-    // Get all tags with their usage stats
-    const tags = await this.tagRepository
-      .createQueryBuilder('tag')
-      .leftJoinAndSelect('tag_usage', 'usage', 'usage.tag_id = tag.id')
-      .select([
-        'tag.id',
-        'tag.name',
-        'tag.color',
-        'tag.created_at',
-        'tag.updated_at',
-        'usage.usage_count',
-        'usage.last_used_at',
-      ])
-      .getRawMany();
+    const [tags, usageRows] = await Promise.all([
+      this.tagRepository.find(),
+      this.tagUsageRepository.find(),
+    ]);
 
-    // Sort by: most recently used, then most frequently used, then alphabetically
+    const usageByTagId = new Map(
+      usageRows.map((usage) => [usage.tagId, usage] as const),
+    );
+
+    // Sort by: most recently used, then most frequently used, then alphabetically.
     const sortedTags = tags.sort((a, b) => {
-      const aLastUsed = a.usage_last_used_at
-        ? new Date(a.usage_last_used_at).getTime()
+      const aUsage = usageByTagId.get(a.id);
+      const bUsage = usageByTagId.get(b.id);
+
+      const aLastUsed = aUsage?.lastUsedAt
+        ? new Date(aUsage.lastUsedAt).getTime()
         : 0;
-      const bLastUsed = b.usage_last_used_at
-        ? new Date(b.usage_last_used_at).getTime()
+      const bLastUsed = bUsage?.lastUsedAt
+        ? new Date(bUsage.lastUsedAt).getTime()
         : 0;
 
       // Primary: Most recently used (DESC)
@@ -180,14 +178,14 @@ export class MetaService {
       }
 
       // Secondary: Most frequently used (DESC)
-      const aUsageCount = a.usage_usage_count || 0;
-      const bUsageCount = b.usage_usage_count || 0;
+      const aUsageCount = aUsage?.usageCount ?? 0;
+      const bUsageCount = bUsage?.usageCount ?? 0;
       if (aUsageCount !== bUsageCount) {
         return bUsageCount - aUsageCount;
       }
 
       // Tertiary: Alphabetically by name (ASC)
-      return a.tag_name.localeCompare(b.tag_name);
+      return a.name.localeCompare(b.name);
     });
 
     this.logger.log({
@@ -195,13 +193,7 @@ export class MetaService {
       count: sortedTags.length,
     });
 
-    return sortedTags.map((raw) => ({
-      id: raw.tag_id,
-      name: raw.tag_name,
-      color: raw.tag_color,
-      createdAt: new Date(raw.tag_created_at),
-      updatedAt: new Date(raw.tag_updated_at),
-    }));
+    return sortedTags.map((tag) => this.mapTagToResult(tag));
   }
 
   async getTagById(tagId: string): Promise<TagResult | null> {
@@ -439,14 +431,14 @@ export class MetaService {
     // This prevents duplicate rows and race conditions
     await this.tagUsageRepository.query(
       `
-      INSERT INTO tag_usage (tag_id, usage_count, last_used_at, created_at, updated_at)
-      VALUES (?, 1, ?, ?, ?)
+      INSERT INTO tag_usage (id, tag_id, usage_count, last_used_at, created_at, updated_at)
+      VALUES (?, ?, 1, ?, ?, ?)
       ON CONFLICT(tag_id) DO UPDATE SET
         usage_count = usage_count + 1,
         last_used_at = excluded.last_used_at,
         updated_at = excluded.updated_at
       `,
-      [tagId, now, now, now],
+      [randomUUID(), tagId, now, now, now],
     );
 
     this.logger.log({
