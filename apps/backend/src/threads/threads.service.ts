@@ -172,6 +172,9 @@ export class ThreadsService {
       );
       savedThread.tags = tags;
       await this.threadRepository.save(savedThread);
+
+      // Increment usage tracking for all tags
+      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
     }
 
     // Handle tasks if provided
@@ -448,6 +451,10 @@ export class ThreadsService {
     if (!thread.tags.some((t) => t.id === tag.id)) {
       thread.tags.push(tag);
       await this.threadRepository.save(thread);
+
+      // Increment tag usage tracking
+      await this.metaService.incrementTagUsage(tag.id);
+
       this.logger.log({
         message: 'Tag added to thread',
         threadId,

@@ -126,6 +126,9 @@ export class TasksService {
       );
       savedTask.tags = tags;
       await this.taskRepository.save(savedTask);
+
+      // Increment usage tracking for all tags
+      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
     }
 
     // Handle dependencies if provided
@@ -824,6 +827,10 @@ export class TasksService {
     if (!task.tags.some((t) => t.id === tag.id)) {
       task.tags.push(tag);
       await this.taskRepository.save(task);
+
+      // Increment tag usage tracking
+      await this.metaService.incrementTagUsage(tag.id);
+
       this.logger.log({
         message: 'Tag added to task',
         taskId,
