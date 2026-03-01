@@ -19,6 +19,8 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
+    const agentLabel = ctx.agentSlug ? `@${ctx.agentSlug}` : 'Assistant';
+
     return new Promise(async (resolve, reject) => {
       try {
         // Init client
@@ -77,7 +79,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         });
         session.on('assistant.message', (message) => {
           lastAssistantMessage = message.data.content ?? '';
-          void emit(`💬 Assistant: ${message.data.content}`);
+          void emit(`💬 ${agentLabel}: ${message.data.content}`);
         });
         session.on('tool.execution_start', (toolCall) => {
           void emit(`🔧 Tool call: ${toolCall.data.toolName}`);

@@ -10,6 +10,8 @@ import {
 } from "@anthropic-ai/claude-agent-sdk";
 
 export class ClaudeMessageFormatter {
+  constructor(private agentSlug?: string) {}
+
   format(message: SDKMessage): string | null {
     switch (message.type) {
       case 'assistant':
@@ -46,13 +48,15 @@ export class ClaudeMessageFormatter {
 
     if (!Array.isArray(content)) return null;
 
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+
     for (const c of content) {
       if (c.type === 'tool_use') {
         parts.push(`🔧 Tool call: ${c.name}`);
       } else if (c.type === 'text') {
-        parts.push(`💬 Assistant: ${c.text}`);
+        parts.push(`💬 ${agentLabel}: ${c.text}`);
       } else {
-        parts.push(`💬 Assistant (${c.type})`);
+        parts.push(`💬 ${agentLabel} (${c.type})`);
       }
     }
 

@@ -12,7 +12,6 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   // changes the working directory at a time.
   private static chdirLock: Promise<void> = Promise.resolve();
 
-  private formatter = new OpencodeAsyncMessageFormatter();
   private client: OpencodeClient | null = null;
   private abortController: AbortController = new AbortController();
   private close: () => void = () => {};
@@ -132,10 +131,12 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
+    const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
+
     // Start client
     await this.initBullshit({ runId: ctx.runId, cwd: ctx.cwd });
     // await this.init({ runId: ctx.runId });
-    
+
     if (!this.client) {
       throw new Error("Failed to create Opencode client");
     }
@@ -191,7 +192,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           break;
         }
 
-        const message = this.formatter.format(event);
+        const message = formatter.format(event);
         if (message) {
           emit(message);
         }

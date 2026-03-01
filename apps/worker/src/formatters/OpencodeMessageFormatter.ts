@@ -1,21 +1,23 @@
 import { AssistantMessage, Part, Event } from "@opencode-ai/sdk";
 
-export function opencodePartToText(part: Part): string {
+export function opencodePartToText(part: Part, agentSlug?: string): string {
+  const agentLabel = agentSlug ? `@${agentSlug}` : 'Assistant';
+
   switch (part.type) {
     case 'text':
-      return `💬 Assistant: ${part.text}`;
+      return `💬 ${agentLabel}: ${part.text}`;
     case 'subtask':
-      return `💬 Assistant: Creating subtask: ${part.description}`;
+      return `💬 ${agentLabel}: Creating subtask: ${part.description}`;
     case 'reasoning':
-      return `💬 Assistant: Thinking...`;
+      return `💬 ${agentLabel}: Thinking...`;
     case 'file':
       return `📂 File ${part.filename || ''}`;
     case 'tool':
       return `🔧 Tool call: ${part.tool}`;
     case 'step-start':
-      return `💬 Assistant: Starting step`;
+      return `💬 ${agentLabel}: Starting step`;
     case 'step-finish':
-      return `💬 Assistant: Finish step: ${part.reason}`;
+      return `💬 ${agentLabel}: Finish step: ${part.reason}`;
     case 'snapshot':
       return `📸 Snapshot: ${part.snapshot}`;
     case 'patch':
@@ -30,6 +32,8 @@ export function opencodePartToText(part: Part): string {
 }
 
 export class OpencodeAsyncMessageFormatter {
+  constructor(private agentSlug?: string) {}
+
   // Only listen to part update (this is where tool calls and messages happen)
   format(event: Event): string | null {
     if (event.type !== 'message.part.updated') {
@@ -42,13 +46,15 @@ export class OpencodeAsyncMessageFormatter {
 
     // Parse part into text
     const part = event.properties.part;
-    const message = opencodePartToText(part);
+    const message = opencodePartToText(part, this.agentSlug);
 
     return message;
   }
 }
 
 export class OpencodeSyncMessageFormatter {
+  constructor(private agentSlug?: string) {}
+
   format(info: AssistantMessage, parts: Array<Part>): Array<string> {
     const messages: string[] = [];
 
@@ -58,7 +64,7 @@ export class OpencodeSyncMessageFormatter {
     }
 
     // Parse parts
-    const partMessages = parts.map(opencodePartToText);
+    const partMessages = parts.map(part => opencodePartToText(part, this.agentSlug));
 
     return [...messages, ...partMessages];
   }
