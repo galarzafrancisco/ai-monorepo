@@ -1,35 +1,39 @@
 import { AssistantMessage, Part, Event } from "@opencode-ai/sdk";
 
-export function opencodePartToText(part: Part): string {
+export function opencodePartToText(part: Part, agentSlug?: string): string {
+  const agentLabel = agentSlug ? `@${agentSlug}` : 'Assistant';
+
   switch (part.type) {
     case 'text':
-      return `💬 Assistant: ${part.text}`;
+      return `💬 ${agentLabel}: ${part.text}`;
     case 'subtask':
-      return `💬 Assistant: Creating subtask: ${part.description}`;
+      return `💬 ${agentLabel}: Creating subtask: ${part.description}`;
     case 'reasoning':
-      return `💬 Assistant: Thinking...`;
+      return `💬 ${agentLabel}: Thinking...`;
     case 'file':
-      return `📂 File ${part.filename || ''}`;
+      return `📂 ${agentLabel} File ${part.filename || ''}`;
     case 'tool':
-      return `🔧 Tool call: ${part.tool}`;
+      return `🔧 ${agentLabel} Tool call: ${part.tool}`;
     case 'step-start':
-      return `💬 Assistant: Starting step`;
+      return `💬 ${agentLabel}: Starting step`;
     case 'step-finish':
-      return `💬 Assistant: Finish step: ${part.reason}`;
+      return `💬 ${agentLabel}: Finish step: ${part.reason}`;
     case 'snapshot':
-      return `📸 Snapshot: ${part.snapshot}`;
+      return `📸 ${agentLabel} Snapshot: ${part.snapshot}`;
     case 'patch':
-      return `🔧 Patching files: ${part.files}`;
+      return `🔧 ${agentLabel} Patching files: ${part.files}`;
     case 'agent':
-      return `🤖 Agent: ${part.name}`;
+      return `🤖 ${agentLabel} Agent: ${part.name}`;
     case 'retry':
-      return `🔄 Retrying error due to error '${part.error.name}'. Attempt ${part.attempt}...`;
+      return `🔄 ${agentLabel} Retrying error due to error '${part.error.name}'. Attempt ${part.attempt}...`;
     case 'compaction':
-      return `🚜 Compacting`;
+      return `🚜 ${agentLabel} Compacting`;
   }
 }
 
 export class OpencodeAsyncMessageFormatter {
+  constructor(private agentSlug?: string) {}
+
   // Only listen to part update (this is where tool calls and messages happen)
   format(event: Event): string | null {
     if (event.type !== 'message.part.updated') {
@@ -42,23 +46,26 @@ export class OpencodeAsyncMessageFormatter {
 
     // Parse part into text
     const part = event.properties.part;
-    const message = opencodePartToText(part);
+    const message = opencodePartToText(part, this.agentSlug);
 
     return message;
   }
 }
 
 export class OpencodeSyncMessageFormatter {
+  constructor(private agentSlug?: string) {}
+
   format(info: AssistantMessage, parts: Array<Part>): Array<string> {
     const messages: string[] = [];
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
 
     // Parse info
     if (info.error) {
-      messages.push(`Error ${info.error.name}: ${JSON.stringify(info.error.data)}`);
+      messages.push(`❌ ${agentLabel} Error ${info.error.name}: ${JSON.stringify(info.error.data)}`);
     }
 
     // Parse parts
-    const partMessages = parts.map(opencodePartToText);
+    const partMessages = parts.map(part => opencodePartToText(part, this.agentSlug));
 
     return [...messages, ...partMessages];
   }

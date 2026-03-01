@@ -8,8 +8,6 @@ import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
 
-  private formatter = new ClaudeMessageFormatter();
-
   constructor(_modelConfig: AgentModelConfig = {}) {
     super();
   }
@@ -20,6 +18,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
+    const formatter = new ClaudeMessageFormatter(ctx.agentSlug);
 
     let finalResult = '';
     const stream = query({
@@ -71,7 +70,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
       }
 
       // map → string
-      const text = this.formatter.format(msg);
+      const text = formatter.format(msg);
       if (text) await emit(text);
 
       if (msg.type === 'result' && msg.subtype === 'success') {

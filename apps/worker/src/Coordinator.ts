@@ -386,6 +386,7 @@ export class Coordinator {
             cwd: workDir,
             runId: run.id,
             resume: sessionId ?? undefined,
+            agentSlug: agent.slug,
           },
           {
             onEvent: (message: string) => {

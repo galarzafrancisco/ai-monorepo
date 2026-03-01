@@ -1,7 +1,11 @@
 import { Event } from "@google/adk";
 
 export class ADKMessageFormatter {
+  constructor(private agentSlug?: string) {}
+
   format(message: Event): Array<string> {
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+
     const content = message.content;
     if (!content) {
       return [];
@@ -13,19 +17,19 @@ export class ADKMessageFormatter {
     const partMessages = parts.map(part => {
       // Think
       if (part.thought) {
-        return `💬 Thinking...`;
+        return `💬 ${agentLabel} Thinking...`;
       }
       // Tool call
       if (part.functionCall) {
-        return `🔧 Tool call: ${part.functionCall.name}`;
+        return `🔧 ${agentLabel} Tool call: ${part.functionCall.name}`;
       }
       // Tool response
       if (part.functionResponse) {
-        return `🔧 Tool response: ${part.functionResponse.name}`;
+        return `🔧 ${agentLabel} Tool response: ${part.functionResponse.name}`;
       }
       // Text
       if (part.text) {
-        return `💬 Assistant: ${part.text}`;
+        return `💬 ${agentLabel}: ${part.text}`;
       }
       return null;
     }).filter(p => p != null);

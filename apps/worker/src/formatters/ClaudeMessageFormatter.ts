@@ -10,6 +10,8 @@ import {
 } from "@anthropic-ai/claude-agent-sdk";
 
 export class ClaudeMessageFormatter {
+  constructor(private agentSlug?: string) {}
+
   format(message: SDKMessage): string | null {
     switch (message.type) {
       case 'assistant':
@@ -46,13 +48,15 @@ export class ClaudeMessageFormatter {
 
     if (!Array.isArray(content)) return null;
 
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+
     for (const c of content) {
       if (c.type === 'tool_use') {
-        parts.push(`🔧 Tool call: ${c.name}`);
+        parts.push(`🔧 ${agentLabel} Tool call: ${c.name}`);
       } else if (c.type === 'text') {
-        parts.push(`💬 Assistant: ${c.text}`);
+        parts.push(`💬 ${agentLabel}: ${c.text}`);
       } else {
-        parts.push(`💬 Assistant (${c.type})`);
+        parts.push(`💬 ${agentLabel} (${c.type})`);
       }
     }
 
@@ -80,24 +84,28 @@ export class ClaudeMessageFormatter {
   }
 
   private formatResult(message: SDKResultMessage): string | null {
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+
     if (
       message.subtype === 'success' &&
       typeof message.result === 'string'
     ) {
       return [
-        `--- Agent turn complete ---`,
+        `--- ${agentLabel} turn complete ---`,
         message.result,
         `---------------------------`,
       ].join('\n');
     }
 
-    return `✅ Agent result received`;
+    return `✅ ${agentLabel} result received`;
   }
 
   private formatSystem(message: SDKSystemMessage): string | null {
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+
     if (message.subtype === 'init') {
       return [
-        `🧠 Claude initialized`,
+        `🧠 ${agentLabel} Claude initialized`,
         `- Permissions: ${message.permissionMode}`,
         `- Tools: ${message.tools.length}`,
         `- MCP Servers: ${message.mcp_servers.length}`,
@@ -108,7 +116,7 @@ export class ClaudeMessageFormatter {
       ].join('\n');
     }
 
-    return `⚙️ System message`;
+    return `⚙️ ${agentLabel} System message`;
   }
 
   private formatStreamEvent(_: SDKPartialAssistantMessage): string | null {
@@ -122,6 +130,7 @@ export class ClaudeMessageFormatter {
   }
 
   private formatAuthStatus(_: SDKAuthStatusMessage): string | null {
-    return `🔐 Auth status updated`;
+    const agentLabel = this.agentSlug ? `@${this.agentSlug}` : 'Assistant';
+    return `🔐 ${agentLabel} Auth status updated`;
   }
 }

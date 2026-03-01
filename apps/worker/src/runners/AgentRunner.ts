@@ -28,6 +28,9 @@ export type AgentRunContext = {
   runId: string;
 
   model?: Model;
+
+  /** Agent slug for personalized activity messages */
+  agentSlug?: string;
 };
 
 export type AgentRunCallbacks = {

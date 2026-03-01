@@ -64,7 +64,6 @@ class NamespacedMCPToolset extends MCPToolset {
 export class ADKAgentRunner extends BaseAgentRunner {
   readonly kind = 'adk';
 
-  private formatter = new ADKMessageFormatter();
   private modelId: string;
 
   private sessionService = new InMemorySessionService();
@@ -73,14 +72,15 @@ export class ADKAgentRunner extends BaseAgentRunner {
     super();
     this.modelId = modelConfig.modelId ?? 'gemini-2.5-flash';
   }
-  
+
   protected async runInternal(
     ctx: AgentRunContext,
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
-    
+    const formatter = new ADKMessageFormatter(ctx.agentSlug);
+
     let finalResult = '';
 
     // Init a session
@@ -136,7 +136,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
 
     for await (const msg of stream) {
       // map → string
-      const messages = this.formatter.format(msg);
+      const messages = formatter.format(msg);
       messages.forEach(async (message) => {
         await emit(message);
       });

@@ -19,6 +19,8 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
   ): Promise<string> {
+    const agentLabel = ctx.agentSlug ? `@${ctx.agentSlug}` : 'Assistant';
+
     return new Promise(async (resolve, reject) => {
       try {
         // Init client
@@ -73,17 +75,17 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           resolve(lastAssistantMessage);
         });
         session.on('assistant.reasoning', (reasoning) => {
-          void emit(`💬 Thinking... ${reasoning.data.content}`);
+          void emit(`💬 ${agentLabel} Thinking... ${reasoning.data.content}`);
         });
         session.on('assistant.message', (message) => {
           lastAssistantMessage = message.data.content ?? '';
-          void emit(`💬 Assistant: ${message.data.content}`);
+          void emit(`💬 ${agentLabel}: ${message.data.content}`);
         });
         session.on('tool.execution_start', (toolCall) => {
-          void emit(`🔧 Tool call: ${toolCall.data.toolName}`);
+          void emit(`🔧 ${agentLabel} Tool call: ${toolCall.data.toolName}`);
         });
         session.on('tool.execution_complete', () => {
-          void emit(`🔧 Tool response`);
+          void emit(`🔧 ${agentLabel} Tool response`);
         });
 
         // Fire up the prompt
