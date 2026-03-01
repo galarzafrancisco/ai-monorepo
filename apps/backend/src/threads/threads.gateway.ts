@@ -16,15 +16,18 @@ import {
   ThreadAgentActivityEvent,
   ThreadAgentResponseDeltaEvent,
   ThreadTitleUpdatedEvent,
+  ThreadUpdatedEvent,
 } from './events/threads.events';
 import { ThreadWireEvents } from '@taico/events';
 import {
   AgentActivityWireEvent,
   AgentResponseDeltaWireEvent,
   MessageCreatedWireEvent,
+  ThreadUpdatedWireEvent,
   ThreadTitleUpdatedWireEvent,
 } from '@taico/events';
 import { ThreadMessageResponseDto } from './dto/thread-message-response.dto';
+import { ThreadResponseDto } from './dto/thread-response.dto';
 import { WsAccessTokenGuard } from 'src/auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from 'src/auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
@@ -210,5 +213,30 @@ export class ThreadsGateway
     this.server
       .to(getThreadRoomName(event.payload.threadId))
       .emit(ThreadWireEvents.THREAD_TITLE_UPDATED, wireEvent);
+  }
+
+  @OnEvent(ThreadUpdatedEvent.INTERNAL)
+  async handleThreadUpdated(event: ThreadUpdatedEvent) {
+    if (!this.server) {
+      return;
+    }
+
+    try {
+      const thread = await this.threadsService.getThreadById(event.payload.id);
+      const wireEvent: ThreadUpdatedWireEvent = {
+        payload: ThreadResponseDto.fromResult(thread),
+        actor: { id: event.actor.id },
+      };
+
+      this.server
+        .to(getThreadRoomName(thread.id))
+        .emit(ThreadWireEvents.THREAD_UPDATED, wireEvent);
+    } catch (error) {
+      this.logger.warn({
+        message: 'Failed to emit thread.updated event',
+        threadId: event.payload.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 }

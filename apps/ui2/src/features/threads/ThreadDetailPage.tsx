@@ -1,10 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
+import {
+  TaskAssignedWireEvent,
+  TaskDeletedWireEvent,
+  TaskStatusChangedWireEvent,
+  TaskUpdatedWireEvent,
+  TaskWireEvents,
+  ThreadTitleUpdatedWireEvent,
+  ThreadUpdatedWireEvent,
+  ThreadWireEvents,
+} from "@taico/events";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { Text, Stack, Button, DataRowContainer, Chip, Avatar } from "../../ui/primitives";
 import { DeleteWithConfirmation } from "../../ui/components";
 import type { Thread } from "./types";
+import { getUIWebSocketUrl } from "../../config/api";
 import "./ThreadDetailPage.css";
 import { ThreadContextCard } from "./ThreadContextCard";
 import { ThreadTaskCard } from "./ThreadTaskCard";
@@ -25,6 +37,9 @@ type TaskStatusSummary = {
   label: string;
   count: number;
 };
+
+const THREADS_SOCKET_URL = getUIWebSocketUrl('/threads');
+const TASKS_SOCKET_URL = getUIWebSocketUrl('/tasks');
 
 // Define the desired status order
 const STATUS_ORDER = [
@@ -142,8 +157,25 @@ export function ThreadDetailPage() {
   const [thread, setThread] = useState<Thread | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const threadTaskIdsRef = useRef<Set<string>>(new Set());
 
   const { setNavItems } = useThreadsCtx();
+
+  const refreshThread = useCallback(async () => {
+    if (!threadId) return;
+
+    try {
+      const threadData = await getThread(threadId);
+      setThread(threadData);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load thread");
+    }
+  }, [threadId, getThread]);
+
+  useEffect(() => {
+    threadTaskIdsRef.current = new Set(thread?.tasks.map((task) => task.id) ?? []);
+  }, [thread]);
 
   // Load thread details
   useEffect(() => {
@@ -152,19 +184,80 @@ export function ThreadDetailPage() {
 
     const loadThread = async () => {
       setIsLoading(true);
-      setError(null);
-      try {
-        const threadData = await getThread(threadId);
-        setThread(threadData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load thread");
-      } finally {
-        setIsLoading(false);
-      }
+      await refreshThread();
+      setIsLoading(false);
     };
 
     loadThread();
-  }, [threadId, getThread]);
+  }, [threadId, refreshThread, setNavItems]);
+
+  useEffect(() => {
+    if (!threadId) return;
+
+    const threadSocket = io(THREADS_SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+    });
+
+    threadSocket.on('connect', () => {
+      threadSocket.emit('threads.subscribe', { threadId });
+      void refreshThread();
+    });
+
+    threadSocket.on(ThreadWireEvents.THREAD_UPDATED, (event: ThreadUpdatedWireEvent) => {
+      if (event.payload.id !== threadId) {
+        return;
+      }
+      void refreshThread();
+    });
+
+    threadSocket.on(ThreadWireEvents.THREAD_TITLE_UPDATED, (event: ThreadTitleUpdatedWireEvent) => {
+      if (event.payload.threadId !== threadId) {
+        return;
+      }
+      void refreshThread();
+    });
+
+    const taskSocket = io(TASKS_SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+    });
+
+    taskSocket.on('connect', () => {
+      taskSocket.emit('tasks.subscribe', {});
+      void refreshThread();
+    });
+
+    const refreshIfTaskBelongsToThread = (taskId: string) => {
+      if (!threadTaskIdsRef.current.has(taskId)) {
+        return;
+      }
+      void refreshThread();
+    };
+
+    taskSocket.on(TaskWireEvents.TASK_UPDATED, (event: TaskUpdatedWireEvent) => {
+      refreshIfTaskBelongsToThread(event.payload.id);
+    });
+
+    taskSocket.on(TaskWireEvents.TASK_STATUS_CHANGED, (event: TaskStatusChangedWireEvent) => {
+      refreshIfTaskBelongsToThread(event.payload.id);
+    });
+
+    taskSocket.on(TaskWireEvents.TASK_ASSIGNED, (event: TaskAssignedWireEvent) => {
+      refreshIfTaskBelongsToThread(event.payload.id);
+    });
+
+    taskSocket.on(TaskWireEvents.TASK_DELETED, (event: TaskDeletedWireEvent) => {
+      refreshIfTaskBelongsToThread(event.payload.taskId);
+    });
+
+    return () => {
+      threadSocket.emit('threads.unsubscribe', { threadId });
+      threadSocket.close();
+      taskSocket.emit('tasks.unsubscribe', {});
+      taskSocket.close();
+    };
+  }, [threadId, refreshThread]);
 
   // Set section title
   useEffect(() => {
