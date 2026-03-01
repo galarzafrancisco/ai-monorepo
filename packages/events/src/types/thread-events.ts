@@ -34,7 +34,14 @@ export type ThreadWireEventName =
 export interface TaskSummaryWirePayload {
   id: string;
   name: string;
+  description: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  assigneeActor: Actor | null;
+  createdByActor: Actor;
+  tags: TagWirePayload[];
+  commentCount: number;
+  inputRequests: unknown[];
+  updatedAt: string;
 }
 
 /**
@@ -65,16 +72,13 @@ export interface Actor {
 export interface ThreadWirePayload {
   id: string;
   title: string;
-  createdByActorId: string;
+  chatSessionId: string | null;
   createdByActor: Actor;
   parentTaskId: string | null;
-  parentTask: TaskSummaryWirePayload | null;
-  stateBlockId: string;
-  stateBlock: ContextBlockSummaryWirePayload;
+  stateContextBlockId: string;
   tags: TagWirePayload[];
   tasks: TaskSummaryWirePayload[];
-  contextBlocks: ContextBlockSummaryWirePayload[];
-  participantActorIds: string[];
+  referencedContextBlocks: ContextBlockSummaryWirePayload[];
   participants: Actor[];
   rowVersion: number;
   createdAt: string;

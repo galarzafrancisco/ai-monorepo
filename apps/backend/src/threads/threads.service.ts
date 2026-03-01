@@ -39,6 +39,7 @@ import {
   ThreadAgentActivityKind,
   ThreadAgentResponseDeltaEvent,
   ThreadTitleUpdatedEvent,
+  ThreadUpdatedEvent,
 } from './events/threads.events';
 import { ChatService } from './chat.service';
 import { ActorType } from '../identity-provider/enums';
@@ -68,6 +69,13 @@ type EmitAgentResponseDeltaInput = {
 export class ThreadsService {
   private readonly logger = new Logger(ThreadsService.name);
   private static readonly DEFAULT_THREAD_TITLE = 'New thread';
+
+  private emitThreadUpdated(thread: ThreadEntity): void {
+    this.eventEmitter.emit(
+      ThreadUpdatedEvent.INTERNAL,
+      new ThreadUpdatedEvent({ id: thread.createdByActorId }, thread),
+    );
+  }
 
   constructor(
     @InjectRepository(ThreadEntity)
@@ -346,6 +354,7 @@ export class ThreadsService {
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
+    this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -367,6 +376,7 @@ export class ThreadsService {
     });
 
     const updatedThread = await this.getThreadWithRelations(threadId);
+    this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -401,6 +411,7 @@ export class ThreadsService {
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
+    this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -427,6 +438,7 @@ export class ThreadsService {
     });
 
     const updatedThread = await this.getThreadWithRelations(threadId);
+    this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
 
