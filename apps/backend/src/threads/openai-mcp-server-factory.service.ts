@@ -1,7 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { IssueTokenResult } from "src/authorization-server/issued-access-token.service";
 import { getConfig } from "src/config/env.config";
 import { MCPServer, MCPServerStreamableHttp } from "@openai/agents";
+
+type AccessTokenInput = {
+  token: string;
+};
 
 class PrefixedMcpServer implements MCPServer {
   private readonly nameMap = new Map<string, string>();
@@ -89,7 +92,7 @@ class PrefixedMcpServer implements MCPServer {
 
 @Injectable()
 export class OpenAiMcpServerFactoryService {
-  public async createServers(token: IssueTokenResult): Promise<MCPServer[]> {
+  public async createServers(token: AccessTokenInput): Promise<MCPServer[]> {
     const baseUrl = getConfig().issuerUrl;
 
     const customFetch: typeof fetch = async (

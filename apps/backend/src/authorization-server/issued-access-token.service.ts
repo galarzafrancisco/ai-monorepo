@@ -61,6 +61,32 @@ export interface IssueTokenResult {
 }
 
 /**
+ * Result of issuing a short-lived system token.
+ */
+export interface IssueSystemTokenResult {
+  /** Unique token ID claim */
+  jti: string;
+  /** When the token expires */
+  expiresAt: Date;
+  /** The raw JWT */
+  token: string;
+}
+
+/**
+ * Input for issuing short-lived system tokens that are not persisted.
+ */
+export interface IssueSystemTokenInput {
+  /** The actor this token is for (subject) */
+  subjectActor: ActorInfo;
+  /** The actor issuing this token */
+  issuedByActor: ActorInfo;
+  /** Scopes to grant */
+  scopes: string[];
+  /** Token lifetime in seconds (defaults to MCP access token duration) */
+  expirationSeconds?: number;
+}
+
+/**
  * Service for issuing and managing long-lived access tokens.
  * Generic design - can issue tokens for any actor (agents, services, etc.)
  *
@@ -86,47 +112,21 @@ export class IssuedAccessTokenService {
   async issueToken(input: IssueTokenInput): Promise<IssueTokenResult> {
     const config = getConfig();
     const expirationDays = input.expirationDays ?? 30;
-
-    // Generate unique token ID (jti)
-    const jti = randomBytes(16).toString('hex');
-
-    // Calculate expiration
-    const now = Math.floor(Date.now() / 1000);
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + expirationDays);
-    const expSeconds = now + expirationDays * 24 * 60 * 60;
-
-    // Build JWT claims
-    const claims: AccessTokenClaims = {
-      iss: config.issuerUrl,
-      sub: input.subjectActor.id,
-      actor_id: input.subjectActor.id,
-      actor_slug: input.subjectActor.slug,
-      actor_type: input.subjectActor.type,
-      displayName: input.subjectActor.displayName,
-      aud: config.issuerUrl, // Self-issued tokens audience is the issuer
-      exp: expSeconds,
-      iat: now,
-      jti,
-      client_id: 'issued-token', // Special client_id for manually issued tokens
-      scope: input.scopes,
-      resource: config.issuerUrl,
-      version: '1.0.0',
-      // Custom claim to track who issued this token
-      issued_by: input.issuedByActor.id,
-    };
-
-    // Sign the JWT
-    const token = await this.tokenSignerService.signToken(claims);
+    const issuedToken = await this.signIssuedToken({
+      subjectActor: input.subjectActor,
+      issuedByActor: input.issuedByActor,
+      scopes: input.scopes,
+      expirationSeconds: expirationDays * 24 * 60 * 60,
+    });
 
     // Store token metadata in database
     const entity = this.tokenRepository.create({
       subjectActorId: input.subjectActor.id,
       issuedByActorId: input.issuedByActor.id,
-      jti,
+      jti: issuedToken.jti,
       name: input.name,
       scopes: input.scopes,
-      expiresAt,
+      expiresAt: issuedToken.expiresAt,
       revokedAt: null,
       lastUsedAt: null,
     });
@@ -135,13 +135,34 @@ export class IssuedAccessTokenService {
 
     this.logger.log(
       `Issued access token "${input.name}" for actor ${input.subjectActor.slug} ` +
-        `(expires: ${expiresAt.toISOString()})`,
+        `(expires: ${issuedToken.expiresAt.toISOString()})`,
     );
 
     return {
       entity: savedEntity,
-      token,
+      token: issuedToken.token,
     };
+  }
+
+  /**
+   * Issue a short-lived system token without persisting metadata in the database.
+   */
+  async issueSystemToken(
+    input: IssueSystemTokenInput,
+  ): Promise<IssueSystemTokenResult> {
+    const issuedToken = await this.signIssuedToken({
+      subjectActor: input.subjectActor,
+      issuedByActor: input.issuedByActor,
+      scopes: input.scopes,
+      expirationSeconds: input.expirationSeconds,
+    });
+
+    this.logger.debug(
+      `Issued ephemeral system token for actor ${input.subjectActor.slug} ` +
+        `(jti: ${issuedToken.jti}, expires: ${issuedToken.expiresAt.toISOString()})`,
+    );
+
+    return issuedToken;
   }
 
   /**
@@ -166,6 +187,49 @@ export class IssuedAccessTokenService {
       slug: actor.slug,
       type: actor.type,
       displayName: actor.displayName,
+    };
+  }
+
+  private async signIssuedToken(input: {
+    subjectActor: ActorInfo;
+    issuedByActor: ActorInfo;
+    scopes: string[];
+    expirationSeconds?: number;
+  }): Promise<IssueSystemTokenResult> {
+    const config = getConfig();
+    const lifetimeSeconds =
+      input.expirationSeconds ?? config.mcpAccessTokenDurationSeconds;
+    const safeLifetimeSeconds = Math.max(1, Math.floor(lifetimeSeconds));
+
+    const jti = randomBytes(16).toString('hex');
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const expSeconds = nowSeconds + safeLifetimeSeconds;
+    const expiresAt = new Date(expSeconds * 1000);
+
+    const claims: AccessTokenClaims = {
+      iss: config.issuerUrl,
+      sub: input.subjectActor.id,
+      actor_id: input.subjectActor.id,
+      actor_slug: input.subjectActor.slug,
+      actor_type: input.subjectActor.type,
+      displayName: input.subjectActor.displayName,
+      aud: config.issuerUrl,
+      exp: expSeconds,
+      iat: nowSeconds,
+      jti,
+      client_id: 'issued-token',
+      scope: input.scopes,
+      resource: config.issuerUrl,
+      version: '1.0.0',
+      issued_by: input.issuedByActor.id,
+    };
+
+    const token = await this.tokenSignerService.signToken(claims);
+
+    return {
+      token,
+      jti,
+      expiresAt,
     };
   }
 

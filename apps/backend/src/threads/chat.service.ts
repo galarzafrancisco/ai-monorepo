@@ -133,18 +133,16 @@ Operational guidance:
       displayName: actor.displayName,
     }
 
-    const token = await this.issuedAccessTokenService.issueToken({
+    const token = await this.issuedAccessTokenService.issueSystemToken({
       subjectActor: selfActor,
       issuedByActor: chatActor,
-      name: `thread ${threadId} - ${new Date().toISOString()}`,
       scopes: [
         McpScopes.USE.id,
         ...ALL_TASKS_SCOPES.map(scope => scope.id),
         ...ALL_CONTEXT_SCOPES.map(scope => scope.id),
       ],
-      expirationDays: 1, // kill it after 1 day max
     });
-    this.logger.debug(`Issued access token for actor ${actor.id} with id ${token.entity.id}`);
+    this.logger.debug(`Issued ephemeral access token for actor ${actor.id} with jti ${token.jti}`);
 
     // Make agent
     const mcpServers = await this.openAiMcpServerFactoryService.createServers(token);
@@ -202,10 +200,6 @@ Operational guidance:
       }
     }
 
-    this.issuedAccessTokenService.revokeTokenById(token.entity.id)
-      .catch(err => {
-        this.logger.error(`Failed to revoke token for thread ${threadId} - token id ${token.entity.id}: ${err}`)
-      })
     return;
   }
 

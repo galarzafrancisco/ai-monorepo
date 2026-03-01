@@ -162,7 +162,7 @@ Now run the required process. If relevant, update the state block with context__
       where: { id: latestItem.actorId },
     });
 
-    const token = await this.issuedAccessTokenService.issueToken({
+    const token = await this.issuedAccessTokenService.issueSystemToken({
       subjectActor: selfActor,
       issuedByActor: issuedByActor
         ? {
@@ -172,13 +172,11 @@ Now run the required process. If relevant, update the state block with context__
             displayName: issuedByActor.displayName,
           }
         : selfActor,
-      name: `thread state reconcile ${thread.id} - ${new Date().toISOString()}`,
       scopes: [
         McpScopes.USE.id,
         ...ALL_TASKS_SCOPES.map((scope) => scope.id),
         ...ALL_CONTEXT_SCOPES.map((scope) => scope.id),
       ],
-      expirationDays: 1,
     });
 
     try {
@@ -212,20 +210,6 @@ Now run the required process. If relevant, update the state block with context__
             ? { message: error.message, stack: error.stack }
             : String(error),
       });
-    } finally {
-      await this.issuedAccessTokenService
-        .revokeTokenById(token.entity.id)
-        .catch((error) => {
-          this.logger.error({
-            message: 'Failed to revoke state-reconciliation token',
-            tokenId: token.entity.id,
-            threadId: thread.id,
-            error:
-              error instanceof Error
-                ? { message: error.message, stack: error.stack }
-                : String(error),
-          });
-        });
     }
   }
 
