@@ -201,6 +201,7 @@ export function ThreadDetailPage() {
 
     threadSocket.on('connect', () => {
       threadSocket.emit('threads.subscribe', { threadId });
+      void refreshThread();
     });
 
     threadSocket.on(ThreadWireEvents.THREAD_UPDATED, (event: ThreadUpdatedWireEvent) => {
@@ -224,6 +225,7 @@ export function ThreadDetailPage() {
 
     taskSocket.on('connect', () => {
       taskSocket.emit('tasks.subscribe', {});
+      void refreshThread();
     });
 
     const refreshIfTaskBelongsToThread = (taskId: string) => {
