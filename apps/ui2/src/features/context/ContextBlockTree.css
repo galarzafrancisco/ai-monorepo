@@ -1,0 +1,123 @@
+.context-tree {
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+
+.context-tree__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface) 75%, var(--card-bg));
+}
+
+.context-tree__branch {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.context-tree__item {
+  margin: 0;
+  padding: 0;
+}
+
+.context-tree__row {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  color: inherit;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  padding-left: calc(var(--space-4) + var(--tree-depth, 0) * var(--space-4));
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.context-tree__item:last-child > .context-tree__row {
+  border-bottom: 0;
+}
+
+.context-tree__row:hover {
+  background: color-mix(in srgb, var(--surface) 70%, var(--card-bg));
+}
+
+.context-tree__row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.context-tree__marker {
+  width: 28px;
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+}
+
+.context-tree__main {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.context-tree__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+}
+
+.context-tree__id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.context-tree__tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.context-tree__tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.context-tree__tag--count {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+}
+
+@media (max-width: 640px) {
+  .context-tree__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .context-tree__row {
+    grid-template-columns: auto 1fr;
+  }
+
+  .context-tree__tags {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
