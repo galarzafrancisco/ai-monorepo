@@ -40,6 +40,7 @@ import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './agent/prompts';
 import { createQwen3CoderNext } from './agent/qwen3-coder-next';
 import { createTaico } from './agent/taico.agent';
 import { createPlaywright } from './mcp/playwright.mcp';
+import { createElen } from './mcp/elen.mcp';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -207,6 +208,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureMcpServerExists(createPlaywright, []);
     } catch (error) {
       this.logger.error('Error ensuring Playwright MCP Server exists');
+    }
+    try {
+      await this.ensureMcpServerExists(createElen, []);
+    } catch (error) {
+      this.logger.error('Error ensuring Elen MCP Server exists');
     }
   }
 
