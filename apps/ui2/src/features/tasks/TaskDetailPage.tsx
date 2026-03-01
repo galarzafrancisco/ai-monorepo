@@ -34,11 +34,12 @@ export type TaskDetailViewProps = {
   task?: Task;
   backPath: string;
   setSectionTitle: (title: string) => void;
+  isLoadingTask?: boolean;
   activityByTaskId?: Record<string, TaskActivityWireEvent>;
   handlers: TaskDetailHandlers;
 };
 
-export function TaskDetailView({ task, backPath, setSectionTitle, activityByTaskId = {}, handlers }: TaskDetailViewProps) {
+export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers }: TaskDetailViewProps) {
   const navigate = useNavigate();
   const { actors } = useActorsCtx();
   const { user } = useAuth();
@@ -188,12 +189,16 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
   }, [task, registerCommands, handleChangeStatusForPalette, handlers, showError, threadId, handleOpenOrCreateThread]);
 
   useEffect(() => {
+    if (isLoadingTask) {
+      setSectionTitle('Loading task...');
+      return;
+    }
     if (!task) {
       setSectionTitle('Task');
       return
     }
     setSectionTitle(task.name);
-  }, [task, setSectionTitle]);
+  }, [task, isLoadingTask, setSectionTitle]);
 
   useEffect(() => {
     return () => {
@@ -363,6 +368,10 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
       }, ACTIVITY_EXIT_MS);
     }, ACTIVITY_VISIBLE_MS);
   }, [activity, task, ACTIVITY_EXIT_MS, ACTIVITY_VISIBLE_MS]);
+
+  if (!task && isLoadingTask) {
+    return <TaskDetailLoadingShell backPath={backPath} />;
+  }
 
   if (!task) {
     return (
@@ -742,9 +751,21 @@ export function TaskDetailView({ task, backPath, setSectionTitle, activityByTask
 
 export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
-  const { tasks, setSectionTitle, addComment, deleteTask, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasksCtx();
+  const {
+    tasks,
+    isLoading,
+    hasLoadedOnce,
+    setSectionTitle,
+    addComment,
+    deleteTask,
+    assignTask,
+    assignTaskToMe,
+    answerInputRequest,
+    activityByTaskId,
+  } = useTasksCtx();
 
   const task = tasks.find(t => t.id === taskId);
+  const isLoadingTask = !task && (!hasLoadedOnce || isLoading);
 
   const handlers: TaskDetailHandlers = {
     addComment: ({ taskId, comment }) => addComment({ taskId, comment }),
@@ -762,9 +783,40 @@ export function TaskDetailPage() {
       task={task}
       backPath="/tasks"
       setSectionTitle={setSectionTitle}
+      isLoadingTask={isLoadingTask}
       activityByTaskId={activityByTaskId}
       handlers={handlers}
     />
+  );
+}
+
+function TaskDetailLoadingShell({ backPath }: { backPath: string }) {
+  const navigate = useNavigate();
+
+  return (
+    <div className="task-detail-page">
+      <DataRowContainer className="task-detail-page__section task-detail-page__shell-container">
+        <div className="task-detail-page__shell-line task-detail-page__shell-line--wide" />
+        <div className="task-detail-page__shell-line task-detail-page__shell-line--mid" />
+      </DataRowContainer>
+
+      <DataRowContainer className="task-detail-page__section task-detail-page__shell-container">
+        <div className="task-detail-page__shell-line task-detail-page__shell-line--full" />
+        <div className="task-detail-page__shell-line task-detail-page__shell-line--short" />
+        <div className="task-detail-page__shell-line task-detail-page__shell-line--mid" />
+      </DataRowContainer>
+
+      <DataRowContainer className="task-detail-page__section task-detail-page__shell-container">
+        <div className="task-detail-page__shell-line task-detail-page__shell-line--full" />
+        <div className="task-detail-page__shell-line task-detail-page__shell-line--full" />
+      </DataRowContainer>
+
+      <div className="task-detail-page__actions">
+        <Button size="lg" variant="secondary" onClick={() => navigate(backPath)}>
+          Back to Tasks
+        </Button>
+      </div>
+    </div>
   );
 }
 

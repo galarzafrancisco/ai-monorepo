@@ -39,6 +39,7 @@ export type TasksContextValue = {
     answer: string;
   }) => Promise<InputRequestResponseDto>;
   isLoading: boolean;
+  hasLoadedOnce: boolean;
   error: string | null;
   isConnected: boolean;
   sectionTitle: string;
@@ -68,7 +69,7 @@ type ActiveAnimation = {
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
-  const { tasks, isLoading, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasks();
+  const { tasks, isLoading, hasLoadedOnce, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasks();
   const [sectionTitle, setSectionTitle] = useState("");
   const [shippedCelebrationTrigger, setShippedCelebrationTrigger] = useState(0);
 
@@ -228,6 +229,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       assignTaskToMe,
       answerInputRequest,
       isLoading,
+      hasLoadedOnce,
       error,
       isConnected,
       sectionTitle,
@@ -247,6 +249,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     assignTaskToMe,
     answerInputRequest,
     isLoading,
+    hasLoadedOnce,
     error,
     isConnected,
     sectionTitle,
