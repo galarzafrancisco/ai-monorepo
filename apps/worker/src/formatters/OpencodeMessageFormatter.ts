@@ -11,23 +11,23 @@ export function opencodePartToText(part: Part, agentSlug?: string): string {
     case 'reasoning':
       return `💬 ${agentLabel}: Thinking...`;
     case 'file':
-      return `📂 File ${part.filename || ''}`;
+      return `📂 ${agentLabel} File ${part.filename || ''}`;
     case 'tool':
-      return `🔧 Tool call: ${part.tool}`;
+      return `🔧 ${agentLabel} Tool call: ${part.tool}`;
     case 'step-start':
       return `💬 ${agentLabel}: Starting step`;
     case 'step-finish':
       return `💬 ${agentLabel}: Finish step: ${part.reason}`;
     case 'snapshot':
-      return `📸 Snapshot: ${part.snapshot}`;
+      return `📸 ${agentLabel} Snapshot: ${part.snapshot}`;
     case 'patch':
-      return `🔧 Patching files: ${part.files}`;
+      return `🔧 ${agentLabel} Patching files: ${part.files}`;
     case 'agent':
-      return `🤖 Agent: ${part.name}`;
+      return `🤖 ${agentLabel} Agent: ${part.name}`;
     case 'retry':
-      return `🔄 Retrying error due to error '${part.error.name}'. Attempt ${part.attempt}...`;
+      return `🔄 ${agentLabel} Retrying error due to error '${part.error.name}'. Attempt ${part.attempt}...`;
     case 'compaction':
-      return `🚜 Compacting`;
+      return `🚜 ${agentLabel} Compacting`;
   }
 }
 

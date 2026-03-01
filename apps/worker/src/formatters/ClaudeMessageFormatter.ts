@@ -52,7 +52,7 @@ export class ClaudeMessageFormatter {
 
     for (const c of content) {
       if (c.type === 'tool_use') {
-        parts.push(`🔧 Tool call: ${c.name}`);
+        parts.push(`🔧 ${agentLabel} Tool call: ${c.name}`);
       } else if (c.type === 'text') {
         parts.push(`💬 ${agentLabel}: ${c.text}`);
       } else {

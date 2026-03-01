@@ -17,15 +17,15 @@ export class ADKMessageFormatter {
     const partMessages = parts.map(part => {
       // Think
       if (part.thought) {
-        return `💬 Thinking...`;
+        return `💬 ${agentLabel} Thinking...`;
       }
       // Tool call
       if (part.functionCall) {
-        return `🔧 Tool call: ${part.functionCall.name}`;
+        return `🔧 ${agentLabel} Tool call: ${part.functionCall.name}`;
       }
       // Tool response
       if (part.functionResponse) {
-        return `🔧 Tool response: ${part.functionResponse.name}`;
+        return `🔧 ${agentLabel} Tool response: ${part.functionResponse.name}`;
       }
       // Text
       if (part.text) {
