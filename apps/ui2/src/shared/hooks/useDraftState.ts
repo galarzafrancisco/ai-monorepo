@@ -6,21 +6,35 @@ interface UseDraftStateOptions<T> {
   debounceMs?: number;
 }
 
-export function useDraftState<T>({ key, defaultValue, debounceMs = 500 }: UseDraftStateOptions<T>) {
-  // Initialize state from localStorage or default
-  const [state, setState] = useState<T>(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.error('Error loading draft from localStorage:', error);
+function loadDraftFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      return JSON.parse(stored) as T;
     }
-    return defaultValue;
-  });
+  } catch (error) {
+    console.error('Error loading draft from localStorage:', error);
+  }
+
+  return fallback;
+}
+
+export function useDraftState<T>({ key, defaultValue, debounceMs = 500 }: UseDraftStateOptions<T>) {
+  const defaultValueRef = useRef(defaultValue);
+
+  useEffect(() => {
+    defaultValueRef.current = defaultValue;
+  }, [defaultValue]);
+
+  // Initialize state from localStorage or default
+  const [state, setState] = useState<T>(() => loadDraftFromStorage(key, defaultValue));
 
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  // Reload when localStorage key changes (for entity-scoped drafts)
+  useEffect(() => {
+    setState(loadDraftFromStorage(key, defaultValueRef.current));
+  }, [key]);
 
   // Save to localStorage with debouncing
   useEffect(() => {
@@ -47,7 +61,7 @@ export function useDraftState<T>({ key, defaultValue, debounceMs = 500 }: UseDra
   const clearDraft = () => {
     try {
       localStorage.removeItem(key);
-      setState(defaultValue);
+      setState(defaultValueRef.current);
     } catch (error) {
       console.error('Error clearing draft from localStorage:', error);
     }
