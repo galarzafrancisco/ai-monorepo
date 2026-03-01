@@ -424,6 +424,7 @@ export class MetaService {
 
   /**
    * Increment usage count and update last used timestamp for a tag
+   * Uses upsert to handle concurrent updates atomically
    * @param tagId - ID of the tag to track usage for
    */
   async incrementTagUsage(tagId: string): Promise<void> {
@@ -432,30 +433,25 @@ export class MetaService {
       tagId,
     });
 
-    // Find existing usage record
-    let usage = await this.tagUsageRepository.findOne({
-      where: { tagId },
-    });
+    const now = new Date().toISOString();
 
-    if (usage) {
-      // Update existing record
-      usage.usageCount += 1;
-      usage.lastUsedAt = new Date();
-      await this.tagUsageRepository.save(usage);
-    } else {
-      // Create new usage record
-      usage = this.tagUsageRepository.create({
-        tagId,
-        usageCount: 1,
-        lastUsedAt: new Date(),
-      });
-      await this.tagUsageRepository.save(usage);
-    }
+    // Use INSERT ... ON CONFLICT (SQLite upsert) to handle concurrent updates atomically
+    // This prevents duplicate rows and race conditions
+    await this.tagUsageRepository.query(
+      `
+      INSERT INTO tag_usage (tag_id, usage_count, last_used_at, created_at, updated_at)
+      VALUES (?, 1, ?, ?, ?)
+      ON CONFLICT(tag_id) DO UPDATE SET
+        usage_count = usage_count + 1,
+        last_used_at = excluded.last_used_at,
+        updated_at = excluded.updated_at
+      `,
+      [tagId, now, now, now],
+    );
 
     this.logger.log({
       message: 'Tag usage updated',
       tagId,
-      usageCount: usage.usageCount,
     });
   }
 

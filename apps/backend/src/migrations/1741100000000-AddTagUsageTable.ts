@@ -57,12 +57,13 @@ export class AddTagUsageTable1741100000000 implements MigrationInterface {
       true,
     );
 
-    // Create index on tag_id
+    // Create unique index on tag_id to ensure one usage record per tag
     await queryRunner.createIndex(
       'tag_usage',
       new TableIndex({
         name: 'IDX_tag_usage_tag_id',
         columnNames: ['tag_id'],
+        isUnique: true,
       }),
     );
   }

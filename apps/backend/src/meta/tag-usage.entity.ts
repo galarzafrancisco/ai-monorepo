@@ -11,7 +11,7 @@ import {
 import { TagEntity } from './tag.entity';
 
 @Entity({ name: 'tag_usage' })
-@Index(['tagId'])
+@Index(['tagId'], { unique: true })
 export class TagUsageEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
