@@ -30,17 +30,13 @@
   width: 100%;
   border: 0;
   border-bottom: 1px solid var(--border-subtle);
-  background: transparent;
-  color: inherit;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: 0;
+  padding-right: var(--space-4);
   padding-left: calc(var(--space-4) + var(--tree-depth, 0) * var(--space-4));
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
 }
 
 .context-tree__item:last-child > .context-tree__row {
@@ -51,9 +47,35 @@
   background: color-mix(in srgb, var(--surface) 70%, var(--card-bg));
 }
 
-.context-tree__row:focus-visible {
+.context-tree__open:focus-visible,
+.context-tree__toggle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+}
+
+.context-tree__open {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-tree__toggle {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) 0;
+  cursor: pointer;
 }
 
 .context-tree__marker {
@@ -112,12 +134,12 @@
     flex-direction: column;
   }
 
-  .context-tree__row {
-    grid-template-columns: auto 1fr;
-  }
-
   .context-tree__tags {
     grid-column: 2;
     justify-content: flex-start;
+  }
+
+  .context-tree__open {
+    grid-template-columns: 1fr;
   }
 }

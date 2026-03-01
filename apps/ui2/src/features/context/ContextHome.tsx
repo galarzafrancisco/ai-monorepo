@@ -29,5 +29,9 @@ export function ContextHome(): JSX.Element {
     return <div className="context-home__empty">No context blocks found</div>;
   }
 
-  return <ContextBlockTree blocks={blocks} onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)} />;
+  return (
+    <div className="context-home">
+      <ContextBlockTree blocks={blocks} onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)} />
+    </div>
+  );
 }
