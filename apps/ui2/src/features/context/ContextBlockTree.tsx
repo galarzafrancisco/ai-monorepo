@@ -101,7 +101,7 @@ function TreeBranch({
               className="context-tree__row"
               style={{ ["--tree-depth" as string]: clampedDepth }}
             >
-              {hasChildren ? (
+              {hasChildren && (
                 <button
                   type="button"
                   className="context-tree__toggle"
@@ -110,13 +110,9 @@ function TreeBranch({
                   onClick={() => onToggleNode(node.block.id)}
                 >
                   <span className="context-tree__marker" aria-hidden="true">
-                    {isExpanded ? "[-]" : "[+]"}
+                    {isExpanded ? "▼" : "►"}
                   </span>
                 </button>
-              ) : (
-                <span className="context-tree__marker" aria-hidden="true">
-                  -
-                </span>
               )}
               <button type="button" className="context-tree__open" onClick={() => onOpenBlock(node.block.id)}>
                 <div className="context-tree__main">
@@ -160,9 +156,26 @@ function TreeBranch({
   );
 }
 
+function getAllParentIds(tree: TreeNode[]): Set<string> {
+  const parentIds = new Set<string>();
+
+  const traverse = (nodes: TreeNode[]) => {
+    for (const node of nodes) {
+      if (node.children.length > 0) {
+        parentIds.add(node.block.id);
+        traverse(node.children);
+      }
+    }
+  };
+
+  traverse(tree);
+  return parentIds;
+}
+
 export function ContextBlockTree({ blocks, onOpenBlock }: ContextBlockTreeProps): JSX.Element {
   const tree = useMemo(() => buildTree(blocks), [blocks]);
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  // Start with all parent nodes collapsed
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => getAllParentIds(tree));
 
   const handleToggleNode = (blockId: string) => {
     setCollapsedIds((previous) => {
@@ -176,21 +189,8 @@ export function ContextBlockTree({ blocks, onOpenBlock }: ContextBlockTreeProps)
     });
   };
 
-  const rootCount = tree.length;
-  const nestedCount = blocks.length - rootCount;
-
   return (
     <section className="context-tree">
-      <header className="context-tree__header">
-        <Text weight="semibold" size="3" tone="default">
-          Block hierarchy
-        </Text>
-        <Text size="2" tone="muted">
-          {rootCount} root {rootCount === 1 ? "block" : "blocks"}
-          {nestedCount > 0 ? ` · ${nestedCount} nested` : ""}
-        </Text>
-      </header>
-
       <TreeBranch
         nodes={tree}
         depth={0}
