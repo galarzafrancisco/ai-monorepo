@@ -929,12 +929,20 @@ export class ThreadsService {
       ),
     );
 
-    // Send to chat
-    this.chatService.sendMessageToThread({
+    // Send to chat (fire-and-forget with error handling to prevent unhandled rejection)
+    void this.chatService.sendMessageToThread({
       conversationId: thread.chatSessionId,
       threadId: thread.id,
       message: input.content,
       actor,
+    }).catch((error) => {
+      this.logger.error({
+        message: 'Failed to send message to chat service',
+        threadId: thread.id,
+        error: error instanceof Error
+          ? { message: error.message, stack: error.stack, name: error.name }
+          : String(error),
+      });
     });
 
     await this.maybeGenerateTitleFromFirstMessage({

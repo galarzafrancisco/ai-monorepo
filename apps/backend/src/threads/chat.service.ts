@@ -56,15 +56,26 @@ export class ChatService {
   }
 
   public async createConversation({ threadId }: CreateConversationArgs) {
-    const client = new OpenAI({
-      apiKey: getConfig().openAiKey,
-    });
-    const conversation = await client.conversations.create({
-      metadata: {
-        threadId
-      }
-    });
-    return conversation;
+    try {
+      const client = new OpenAI({
+        apiKey: getConfig().openAiKey,
+      });
+      const conversation = await client.conversations.create({
+        metadata: {
+          threadId
+        }
+      });
+      return conversation;
+    } catch (error) {
+      this.logger.error({
+        message: 'Failed to create OpenAI conversation',
+        threadId,
+        error: error instanceof Error
+          ? { message: error.message, stack: error.stack, name: error.name }
+          : String(error),
+      });
+      throw error;
+    }
   }
 
   // private async getConversation({ conversationId }: { conversationId: string }) {
@@ -154,50 +165,85 @@ Operational guidance:
     });
     this.logger.log(`Sending message sent to ${conversationId}`);
 
-    const result = await run(agent, this.makeMessage({ message, actor }), {
-      conversationId,
-      stream: true,
-    });
-    const responseStreamId = randomUUID();
+    try {
+      const result = await run(agent, this.makeMessage({ message, actor }), {
+        conversationId,
+        stream: true,
+      });
+      const responseStreamId = randomUUID();
 
-    for await (const event of result) {
-      const textDelta = this.parseResponseTextDelta(event);
-      if (textDelta) {
-        this.threadsService.emitAgentResponseDelta({
+      for await (const event of result) {
+        const textDelta = this.parseResponseTextDelta(event);
+        if (textDelta) {
+          this.threadsService.emitAgentResponseDelta({
+            threadId,
+            actorId: self.actorId,
+            streamId: responseStreamId,
+            delta: textDelta,
+          });
+        }
+
+        if (event.type === "run_item_stream_event") {
+          switch (event.item.type) {
+            case "reasoning_item":
+              this.threadsService.emitAgentActivity({
+                threadId,
+                actorId: self.actorId,
+                kind: 'thinking',
+              });
+              break;
+            case "tool_call_item":
+              this.threadsService.emitAgentActivity({
+                threadId,
+                actorId: self.actorId,
+                kind: 'tool_calling',
+              });
+              break;
+            case "tool_call_output_item":
+              break;
+            case "message_output_item":
+              this.threadsService.createMessage({
+                threadId: threadId,
+                content: event.item.content,
+                createdByActorId: self.actorId,
+              });
+              break;
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error({
+        message: 'OpenAI agent run failed',
+        threadId,
+        conversationId,
+        error: error instanceof Error
+          ? { message: error.message, stack: error.stack, name: error.name }
+          : String(error),
+      });
+
+      // Send an error message to the thread so users know something went wrong
+      const errorMessage = error instanceof Error
+        ? `I encountered an error while processing your message: ${error.message}`
+        : 'I encountered an unexpected error while processing your message.';
+
+      try {
+        await this.threadsService.createMessage({
+          threadId: threadId,
+          content: errorMessage,
+          createdByActorId: self.actorId,
+        });
+      } catch (messageError) {
+        this.logger.error({
+          message: 'Failed to create error message in thread',
           threadId,
-          actorId: self.actorId,
-          streamId: responseStreamId,
-          delta: textDelta,
+          error: messageError instanceof Error
+            ? { message: messageError.message, stack: messageError.stack, name: messageError.name }
+            : String(messageError),
         });
       }
 
-      if (event.type === "run_item_stream_event") {
-        switch (event.item.type) {
-          case "reasoning_item":
-            this.threadsService.emitAgentActivity({
-              threadId,
-              actorId: self.actorId,
-              kind: 'thinking',
-            });
-            break;
-          case "tool_call_item":
-            this.threadsService.emitAgentActivity({
-              threadId,
-              actorId: self.actorId,
-              kind: 'tool_calling',
-            });
-            break;
-          case "tool_call_output_item":
-            break;
-          case "message_output_item":
-            this.threadsService.createMessage({
-              threadId: threadId,
-              content: event.item.content,
-              createdByActorId: self.actorId,
-            });
-            break;
-        }
-      }
+      // Do not re-throw - error has been handled by logging and sending user-facing message
+      // This prevents unhandled promise rejection crashes
     }
 
     return;
