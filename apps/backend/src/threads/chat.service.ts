@@ -226,14 +226,24 @@ Operational guidance:
         ? `I encountered an error while processing your message: ${error.message}`
         : 'I encountered an unexpected error while processing your message.';
 
-      this.threadsService.createMessage({
-        threadId: threadId,
-        content: errorMessage,
-        createdByActorId: self.actorId,
-      });
+      try {
+        await this.threadsService.createMessage({
+          threadId: threadId,
+          content: errorMessage,
+          createdByActorId: self.actorId,
+        });
+      } catch (messageError) {
+        this.logger.error({
+          message: 'Failed to create error message in thread',
+          threadId,
+          error: messageError instanceof Error
+            ? { message: messageError.message, stack: messageError.stack, name: messageError.name }
+            : String(messageError),
+        });
+      }
 
-      // Re-throw to allow upstream error handling if needed
-      throw error;
+      // Do not re-throw - error has been handled by logging and sending user-facing message
+      // This prevents unhandled promise rejection crashes
     }
 
     return;
