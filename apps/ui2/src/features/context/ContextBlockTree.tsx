@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Text } from "../../ui/primitives";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import type { ContextBlockSummary } from "./types";
@@ -176,6 +176,16 @@ export function ContextBlockTree({ blocks, onOpenBlock }: ContextBlockTreeProps)
   const tree = useMemo(() => buildTree(blocks), [blocks]);
   // Start with all parent nodes collapsed
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => getAllParentIds(tree));
+  // Track whether we've initialized the collapsed state after data loads
+  const hasInitializedRef = useRef(false);
+
+  // Update collapsed state when tree loads for the first time
+  useEffect(() => {
+    if (!hasInitializedRef.current && tree.length > 0) {
+      setCollapsedIds(getAllParentIds(tree));
+      hasInitializedRef.current = true;
+    }
+  }, [tree]);
 
   const handleToggleNode = (blockId: string) => {
     setCollapsedIds((previous) => {
