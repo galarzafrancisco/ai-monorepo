@@ -101,7 +101,7 @@ function TreeBranch({
               className="context-tree__row"
               style={{ ["--tree-depth" as string]: clampedDepth }}
             >
-              {hasChildren && (
+              {hasChildren ? (
                 <button
                   type="button"
                   className="context-tree__toggle"
@@ -113,6 +113,8 @@ function TreeBranch({
                     {isExpanded ? "▼" : "►"}
                   </span>
                 </button>
+              ) : (
+                <span className="context-tree__spacer" aria-hidden="true" />
               )}
               <button type="button" className="context-tree__open" onClick={() => onOpenBlock(node.block.id)}>
                 <div className="context-tree__main">

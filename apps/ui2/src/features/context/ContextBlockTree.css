@@ -74,6 +74,11 @@
   font-size: var(--fs-2);
 }
 
+.context-tree__spacer {
+  width: 28px;
+  display: inline-block;
+}
+
 .context-tree__main {
   min-width: 0;
   display: grid;
