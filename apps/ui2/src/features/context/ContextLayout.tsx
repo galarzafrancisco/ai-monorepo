@@ -8,8 +8,6 @@ export function ContextLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
   const { sectionTitle } = useContextCtx();
 
-  console.log('Context layout mounting');
-
   return (
     <div style={{ minHeight: 0 }}>
       {isDesktop ?

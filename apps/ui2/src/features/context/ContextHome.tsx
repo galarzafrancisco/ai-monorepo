@@ -1,17 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { DataRowContainer } from "../../ui/primitives";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useContextCtx } from "./ContextProvider";
-import { ContextBlockRow } from "./ContextBlockRow";
+import { ContextBlockTree } from "./ContextBlockTree";
 import "./ContextHome.css";
 
 export function ContextHome(): JSX.Element {
   const { setSectionTitle, blocks, isLoading, error } = useContextCtx();
   const navigate = useNavigate();
-
-  console.log(`blocks`)
-  console.log(blocks)
 
   // Set document title (browser tab)
   useDocumentTitle();
@@ -34,14 +30,8 @@ export function ContextHome(): JSX.Element {
   }
 
   return (
-    <DataRowContainer>
-      {blocks.map((block) => (
-        <ContextBlockRow
-          key={block.id}
-          blockSummary={block}
-          onClick={() => navigate(`/context/block/${block.id}`)}
-        />
-      ))}
-    </DataRowContainer>
+    <div className="context-home">
+      <ContextBlockTree blocks={blocks} onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)} />
+    </div>
   );
 }

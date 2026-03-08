@@ -1,3 +1,10 @@
+.context-home {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
 .context-home__loading,
 .context-home__error,
 .context-home__empty {
