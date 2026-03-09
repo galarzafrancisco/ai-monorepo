@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsGitUrl } from '../validators/is-git-url.validator';
 
 export class PatchProjectDto {
   @ApiPropertyOptional({
@@ -11,10 +12,10 @@ export class PatchProjectDto {
   description?: string;
 
   @ApiPropertyOptional({
-    description: 'Repository URL for code projects',
+    description: 'Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)',
     example: 'https://github.com/user/repo',
   })
-  @IsUrl()
+  @IsGitUrl()
   @IsOptional()
   repoUrl?: string;
 }

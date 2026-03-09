@@ -5903,7 +5903,7 @@
           },
           "repoUrl": {
             "type": "string",
-            "description": "Repository URL for code projects",
+            "description": "Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)",
             "example": "https://github.com/user/repo"
           },
           "color": {
@@ -5985,7 +5985,7 @@
           },
           "repoUrl": {
             "type": "string",
-            "description": "Repository URL for code projects",
+            "description": "Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)",
             "example": "https://github.com/user/repo"
           }
         }

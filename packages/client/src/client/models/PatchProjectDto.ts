@@ -8,7 +8,7 @@ export type PatchProjectDto = {
      */
     description?: string;
     /**
-     * Repository URL for code projects
+     * Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)
      */
     repoUrl?: string;
 };

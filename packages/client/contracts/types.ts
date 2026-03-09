@@ -1610,7 +1610,7 @@ export interface components {
              */
             description?: string;
             /**
-             * @description Repository URL for code projects
+             * @description Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)
              * @example https://github.com/user/repo
              */
             repoUrl?: string;
@@ -1674,7 +1674,7 @@ export interface components {
              */
             description?: string;
             /**
-             * @description Repository URL for code projects
+             * @description Repository URL for code projects (supports HTTP/HTTPS and SSH URLs)
              * @example https://github.com/user/repo
              */
             repoUrl?: string;
