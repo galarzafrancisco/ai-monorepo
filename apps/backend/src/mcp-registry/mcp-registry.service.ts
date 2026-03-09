@@ -552,12 +552,9 @@ export class McpRegistryService {
   }
 
   private mapServerEntityToRecord(server: McpServerEntity): ServerRecord {
-    this.validateServerConfiguration({
-      type: server.type,
-      url: server.url,
-      cmd: server.cmd,
-      args: server.args,
-    });
+    // Note: We intentionally do NOT validate configuration here.
+    // Validation happens at create/update time. This mapping is used
+    // for read operations and should be tolerant of legacy/invalid data.
 
     const createdAt =
       server.createdAt instanceof Date
@@ -575,7 +572,7 @@ export class McpRegistryService {
         name: server.name,
         description: server.description,
         type: MCP_SERVER_TYPE_HTTP,
-        url: server.url!,
+        url: server.url ?? '', // Provide empty string if null to satisfy type
         createdAt,
         updatedAt,
       };
@@ -587,7 +584,7 @@ export class McpRegistryService {
       name: server.name,
       description: server.description,
       type: MCP_SERVER_TYPE_STDIO,
-      cmd: server.cmd!,
+      cmd: server.cmd ?? '', // Provide empty string if null to satisfy type
       args: server.args ?? [],
       createdAt,
       updatedAt,
