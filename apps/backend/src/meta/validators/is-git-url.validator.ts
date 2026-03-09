@@ -4,6 +4,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import isURL from 'validator/lib/isURL';
 
 /**
  * Custom validator for Git repository URLs.
@@ -13,7 +14,7 @@ import {
  * - HTTPS: https://github.com/user/repo.git
  * - HTTP: http://github.com/user/repo.git
  * - SSH: git@github.com:user/repo.git
- * - SSH alternative: ssh://git@github.com/user/repo.git
+ * - SSH alternative: ssh://git@github.com:port/user/repo.git (with optional port)
  */
 @ValidatorConstraint({ name: 'isGitUrl', async: false })
 export class IsGitUrlConstraint implements ValidatorConstraintInterface {
@@ -22,15 +23,20 @@ export class IsGitUrlConstraint implements ValidatorConstraintInterface {
       return false;
     }
 
-    // HTTP/HTTPS URL pattern
-    const httpPattern = /^https?:\/\/.+/;
+    // Use validator library for strict HTTP/HTTPS validation
+    const isHttpUrl = isURL(value, {
+      protocols: ['http', 'https'],
+      require_protocol: true,
+    });
 
     // SSH URL patterns:
     // - git@host:path/to/repo.git
     // - ssh://git@host/path/to/repo.git
-    const sshPattern = /^(git@[\w.-]+:[\w./-]+|ssh:\/\/git@[\w.-]+\/[\w./-]+)$/;
+    // - ssh://git@host:port/path/to/repo.git (with custom port)
+    const sshPattern =
+      /^(git@[\w.-]+:[\w./-]+|ssh:\/\/git@[\w.-]+(:\d+)?\/[\w./-]+)$/;
 
-    return httpPattern.test(value) || sshPattern.test(value);
+    return isHttpUrl || sshPattern.test(value);
   }
 
   defaultMessage(): string {

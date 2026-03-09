@@ -41,8 +41,8 @@ describe('IsGitUrlConstraint', () => {
     });
 
     it('should accept SSH URLs with custom ports', () => {
-      // Standard format doesn't include ports, but ssh:// format can
-      expect(validator.validate('ssh://git@github.com/user/repo.git')).toBe(true);
+      expect(validator.validate('ssh://git@github.com:2222/user/repo.git')).toBe(true);
+      expect(validator.validate('ssh://git@example.com:22/user/repo.git')).toBe(true);
     });
   });
 
@@ -66,6 +66,12 @@ describe('IsGitUrlConstraint', () => {
     it('should reject malformed SSH URLs', () => {
       expect(validator.validate('github.com:user/repo.git')).toBe(false);
       expect(validator.validate('@github.com:user/repo.git')).toBe(false);
+    });
+
+    it('should reject malformed HTTP/HTTPS URLs', () => {
+      expect(validator.validate('https://')).toBe(false);
+      expect(validator.validate('http://')).toBe(false);
+      expect(validator.validate('https://invalid url with spaces')).toBe(false);
     });
   });
 
