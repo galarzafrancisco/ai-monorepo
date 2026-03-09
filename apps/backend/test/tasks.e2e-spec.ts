@@ -12,6 +12,7 @@ import {
   TEST_USER_DISPLAY_NAME,
 } from './helpers/auth.helper';
 import cookieParser from 'cookie-parser';
+import { RUN_ID_HEADER } from '../src/auth/guards/constants/headers.constants';
 
 describe('Tasks E2E Tests', () => {
   let app: INestApplication<App>;
@@ -105,6 +106,55 @@ describe('Tasks E2E Tests', () => {
       expect(response.body.status).toBe('NOT_STARTED');
 
       taskWithAssigneeId = response.body.id;
+    });
+  });
+
+  describe('Task Creation From Agent Run', () => {
+    it('should create a task in the parent task thread when run id header is provided', async () => {
+      const parentTaskResponse = await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .send({
+          name: 'Parent Task For Run',
+          description: 'Parent task created to simulate worker task creation',
+        })
+        .expect(201);
+
+      const parentTaskId = parentTaskResponse.body.id;
+
+      const agentRunResponse = await request(httpServer)
+        .post('/api/v1/agent-runs')
+        .set('Cookie', authCookies)
+        .send({
+          parentTaskId,
+        })
+        .expect(201);
+
+      const runId = agentRunResponse.body.id;
+
+      const childTaskResponse = await request(httpServer)
+        .post('/api/v1/tasks/tasks')
+        .set('Cookie', authCookies)
+        .set(RUN_ID_HEADER, runId)
+        .send({
+          name: 'Child Task From Run',
+          description: 'Task created as a child from agent run context',
+        })
+        .expect(201);
+
+      const childTaskId = childTaskResponse.body.id;
+
+      const threadResponse = await request(httpServer)
+        .get(`/api/v1/threads/by-task/${parentTaskId}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(threadResponse.body).toBeDefined();
+      expect(threadResponse.body.parentTaskId).toBe(parentTaskId);
+
+      const taskIdsInThread = threadResponse.body.tasks.map((task: any) => task.id);
+      expect(taskIdsInThread).toContain(parentTaskId);
+      expect(taskIdsInThread).toContain(childTaskId);
     });
   });
 
