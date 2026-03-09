@@ -552,6 +552,13 @@ export class McpRegistryService {
   }
 
   private mapServerEntityToRecord(server: McpServerEntity): ServerRecord {
+    this.validateServerConfiguration({
+      type: server.type,
+      url: server.url,
+      cmd: server.cmd,
+      args: server.args,
+    });
+
     const createdAt =
       server.createdAt instanceof Date
         ? server.createdAt

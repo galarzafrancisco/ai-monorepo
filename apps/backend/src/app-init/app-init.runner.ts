@@ -14,6 +14,7 @@ import { CreateServerInput, ServerRecord } from 'src/mcp-registry/dto';
 import {
   ScopeAlreadyExistsError,
   ServerAlreadyExistsError,
+  InvalidServerConfigurationError,
 } from 'src/mcp-registry/errors/mcp-registry.errors';
 import {
   AgentResult,
@@ -258,9 +259,37 @@ export class AppInitRunner implements OnApplicationBootstrap {
       server = await this.mcpRegistryService.createServer(serverConfig);
     } catch (error) {
       if (error instanceof ServerAlreadyExistsError) {
-        server = await this.mcpRegistryService.getServerByProvidedId(
-          serverConfig.providedId,
-        );
+        try {
+          server = await this.mcpRegistryService.getServerByProvidedId(
+            serverConfig.providedId,
+          );
+        } catch (getError) {
+          if (!(getError instanceof InvalidServerConfigurationError)) {
+            throw getError;
+          }
+
+          this.logger.warn(
+            `Server ${serverConfig.providedId} has invalid transport config, attempting self-heal`,
+          );
+
+          const existingServerId =
+            await this.mcpRegistryService.resolveServerIdFromProvidedId(
+              serverConfig.providedId,
+            );
+          if (!existingServerId) {
+            throw getError;
+          }
+
+          server = await this.mcpRegistryService.updateServer(existingServerId, {
+            name: serverConfig.name,
+            description: serverConfig.description,
+            type: serverConfig.type,
+            url: serverConfig.url,
+            cmd: serverConfig.cmd,
+            args: serverConfig.args,
+          });
+        }
+
         if (
           server.name != serverConfig.name ||
           server.description != serverConfig.description ||
