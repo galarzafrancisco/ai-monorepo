@@ -50,10 +50,12 @@ describe('Tools (e2e)', () => {
         providedId: `test-server-${Math.random()}`,
         name: 'Test MCP Server',
         description: 'A test MCP server for e2e testing',
+        type: 'http',
+        url: 'http://localhost:3000/test/mcp',
       };
 
       const response = await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
@@ -69,16 +71,18 @@ describe('Tools (e2e)', () => {
         providedId: `unique-server-${Math.random()}`,
         name: 'Unique Server',
         description: 'Test server',
+        type: 'http',
+        url: 'http://localhost:3000/test/mcp',
       };
 
       await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(dto)
         .expect(409);
@@ -86,7 +90,7 @@ describe('Tools (e2e)', () => {
 
     it('should list servers with pagination', async () => {
       const response = await request(app.getHttpServer())
-        .get('/mcp/servers?page=1&limit=10')
+        .get('/api/v1/mcp/servers?page=1&limit=10')
         .set('Cookie', authCookies)
         .expect(200);
 
@@ -101,10 +105,12 @@ describe('Tools (e2e)', () => {
         providedId: `server-by-uuid-${Math.random()}`,
         name: 'Server By UUID',
         description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
       };
 
       const createResponse = await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(createDto)
         .expect(201);
@@ -112,7 +118,7 @@ describe('Tools (e2e)', () => {
       const serverId = createResponse.body.id;
 
       const response = await request(app.getHttpServer())
-        .get(`/mcp/servers/${serverId}`)
+        .get(`/api/v1/mcp/servers/${serverId}`)
         .set('Cookie', authCookies)
         .expect(200);
 
@@ -125,16 +131,19 @@ describe('Tools (e2e)', () => {
         providedId: `server-by-provided-${Math.random()}`,
         name: 'Server By Provided ID',
         description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
       };
 
       await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(createDto)
         .expect(201);
 
       const response = await request(app.getHttpServer())
-        .get(`/mcp/servers/${createDto.providedId}`)
+        .get(`/api/v1/mcp/servers/${createDto.providedId}`)
+        .set('Cookie', authCookies)
         .expect(200);
 
       expect(response.body.providedId).toBe(createDto.providedId);
@@ -149,10 +158,12 @@ describe('Tools (e2e)', () => {
         providedId: `scope-test-server-${Math.random()}`,
         name: 'Scope Test Server',
         description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
       };
 
       const response = await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
@@ -167,7 +178,7 @@ describe('Tools (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send([dto])
         .expect(201);
@@ -185,7 +196,7 @@ describe('Tools (e2e)', () => {
       ];
 
       const response = await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send(dtos)
         .expect(201);
@@ -201,13 +212,13 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send([dto])
         .expect(201);
 
       const response = await request(app.getHttpServer())
-        .get(`/mcp/servers/${serverId}/scopes`)
+        .get(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .expect(200);
 
@@ -222,13 +233,13 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send([dto])
         .expect(201);
 
       const response = await request(app.getHttpServer())
-        .get(`/mcp/servers/${serverId}/scopes/${dto.scopeId}`)
+        .get(`/api/v1/mcp/servers/${serverId}/scopes/${dto.scopeId}`)
         .set('Cookie', authCookies)
         .expect(200);
 
@@ -242,13 +253,13 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send([dto])
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send([dto])
         .expect(409);
@@ -263,10 +274,12 @@ describe('Tools (e2e)', () => {
         providedId: `connection-test-server-${Math.random()}`,
         name: 'Connection Test Server',
         description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
       };
 
       const response = await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
@@ -284,7 +297,7 @@ describe('Tools (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/connections`)
+        .post(`/api/v1/mcp/servers/${serverId}/connections`)
         .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
@@ -304,13 +317,13 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/connections`)
+        .post(`/api/v1/mcp/servers/${serverId}/connections`)
         .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       const response = await request(app.getHttpServer())
-        .get(`/mcp/servers/${serverId}/connections`)
+        .get(`/api/v1/mcp/servers/${serverId}/connections`)
         .set('Cookie', authCookies)
         .expect(200);
 
@@ -328,13 +341,13 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/connections`)
+        .post(`/api/v1/mcp/servers/${serverId}/connections`)
         .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/connections`)
+        .post(`/api/v1/mcp/servers/${serverId}/connections`)
         .set('Cookie', authCookies)
         .send(dto)
         .expect(409);
@@ -352,10 +365,12 @@ describe('Tools (e2e)', () => {
         providedId: `mapping-test-server-${Math.random()}`,
         name: 'Mapping Test Server',
         description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
       };
 
       const serverResponse = await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
@@ -369,7 +384,7 @@ describe('Tools (e2e)', () => {
       };
 
       const scopeResponse = await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send([scopeDto])
         .expect(201);
@@ -386,7 +401,7 @@ describe('Tools (e2e)', () => {
       };
 
       const connectionResponse = await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/connections`)
+        .post(`/api/v1/mcp/servers/${serverId}/connections`)
         .set('Cookie', authCookies)
         .send(connectionDto)
         .expect(201);
@@ -402,7 +417,7 @@ describe('Tools (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/mappings`)
+        .post(`/api/v1/mcp/servers/${serverId}/mappings`)
         .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
@@ -421,13 +436,13 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/mappings`)
+        .post(`/api/v1/mcp/servers/${serverId}/mappings`)
         .set('Cookie', authCookies)
         .send(dto)
         .expect(201);
 
       const response = await request(app.getHttpServer())
-        .get(`/mcp/servers/${serverId}/scopes/${scopeId}/mappings`)
+        .get(`/api/v1/mcp/servers/${serverId}/scopes/${scopeId}/mappings`)
         .set('Cookie', authCookies)
         .expect(200);
 
@@ -442,10 +457,12 @@ describe('Tools (e2e)', () => {
         providedId: `delete-test-${Math.random()}`,
         name: 'Delete Test Server',
         description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
       };
 
       const serverResponse = await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
@@ -458,13 +475,13 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send([scopeDto])
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/mcp/servers/${serverId}`)
+        .delete(`/api/v1/mcp/servers/${serverId}`)
         .set('Cookie', authCookies)
         .expect(409);
     });
@@ -474,10 +491,12 @@ describe('Tools (e2e)', () => {
         providedId: `scope-delete-test-${Math.random()}`,
         name: 'Scope Delete Test',
         description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
       };
 
       const serverResponse = await request(app.getHttpServer())
-        .post('/mcp/servers')
+        .post('/api/v1/mcp/servers')
         .set('Cookie', authCookies)
         .send(serverDto)
         .expect(201);
@@ -490,7 +509,7 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/scopes`)
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
         .set('Cookie', authCookies)
         .send([scopeDto])
         .expect(201);
@@ -504,7 +523,7 @@ describe('Tools (e2e)', () => {
       };
 
       const connectionResponse = await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/connections`)
+        .post(`/api/v1/mcp/servers/${serverId}/connections`)
         .set('Cookie', authCookies)
         .send(connectionDto)
         .expect(201);
@@ -516,15 +535,344 @@ describe('Tools (e2e)', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverId}/mappings`)
+        .post(`/api/v1/mcp/servers/${serverId}/mappings`)
         .set('Cookie', authCookies)
         .send(mappingDto)
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/mcp/servers/${serverId}/scopes/${scopeDto.scopeId}`)
+        .delete(`/api/v1/mcp/servers/${serverId}/scopes/${scopeDto.scopeId}`)
         .set('Cookie', authCookies)
         .expect(409);
+    });
+  });
+
+  describe('Server Update', () => {
+    it('should update server details', async () => {
+      const createDto: CreateServerDto = {
+        providedId: `update-server-${Math.random()}`,
+        name: 'Original Name',
+        description: 'Original Description',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
+      };
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/api/v1/mcp/servers')
+        .set('Cookie', authCookies)
+        .send(createDto)
+        .expect(201);
+
+      const serverId = createResponse.body.id;
+
+      const updateResponse = await request(app.getHttpServer())
+        .patch(`/api/v1/mcp/servers/${serverId}`)
+        .set('Cookie', authCookies)
+        .send({
+          name: 'Updated Name',
+          description: 'Updated Description',
+        })
+        .expect(200);
+
+      expect(updateResponse.body.id).toBe(serverId);
+      expect(updateResponse.body.name).toBe('Updated Name');
+      expect(updateResponse.body.description).toBe('Updated Description');
+    });
+
+    it('should return 404 when updating non-existent server', async () => {
+      const fakeUuid = '00000000-0000-0000-0000-000000000000';
+      await request(app.getHttpServer())
+        .patch(`/api/v1/mcp/servers/${fakeUuid}`)
+        .set('Cookie', authCookies)
+        .send({ name: 'New Name' })
+        .expect(404);
+    });
+  });
+
+  describe('Connection Operations', () => {
+    let serverId: string;
+    let connectionId: string;
+
+    beforeEach(async () => {
+      const serverDto: CreateServerDto = {
+        providedId: `conn-ops-server-${Math.random()}`,
+        name: 'Connection Ops Server',
+        description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/mcp/servers')
+        .set('Cookie', authCookies)
+        .send(serverDto)
+        .expect(201);
+
+      serverId = response.body.id;
+
+      const connectionDto: CreateConnectionDto = {
+        friendlyName: 'Test Connection',
+        clientId: 'test_client',
+        clientSecret: 'test_secret',
+        authorizeUrl: 'https://example.com/auth',
+        tokenUrl: 'https://example.com/token',
+      };
+
+      const connResponse = await request(app.getHttpServer())
+        .post(`/api/v1/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
+        .send(connectionDto)
+        .expect(201);
+
+      connectionId = connResponse.body.id;
+    });
+
+    it('should get connection by ID', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/api/v1/mcp/connections/${connectionId}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(response.body.id).toBe(connectionId);
+      expect(response.body.friendlyName).toBe('Test Connection');
+      expect(response.body.clientSecret).toBeNull(); // Should never expose secret
+    });
+
+    it('should update connection details', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/api/v1/mcp/connections/${connectionId}`)
+        .set('Cookie', authCookies)
+        .send({
+          friendlyName: 'Updated Connection',
+          authorizeUrl: 'https://updated.com/auth',
+        })
+        .expect(200);
+
+      expect(response.body.id).toBe(connectionId);
+      expect(response.body.friendlyName).toBe('Updated Connection');
+      expect(response.body.authorizeUrl).toBe('https://updated.com/auth');
+    });
+
+    it('should delete connection without mappings', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/api/v1/mcp/connections/${connectionId}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(response.body.message).toBeDefined();
+
+      // Verify deletion
+      await request(app.getHttpServer())
+        .get(`/api/v1/mcp/connections/${connectionId}`)
+        .set('Cookie', authCookies)
+        .expect(404);
+    });
+
+    it('should prevent deleting connection with mappings', async () => {
+      // Create scope
+      const scopeDto: CreateScopeDto = {
+        scopeId: 'test:scope',
+        description: 'Test scope',
+      };
+
+      const scopeResponse = await request(app.getHttpServer())
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
+        .send([scopeDto])
+        .expect(201);
+
+      // Create mapping
+      const mappingDto: CreateMappingDto = {
+        scopeId: scopeResponse.body[0].scopeId,
+        connectionId: connectionId,
+        downstreamScope: 'test:downstream',
+      };
+
+      await request(app.getHttpServer())
+        .post(`/api/v1/mcp/servers/${serverId}/mappings`)
+        .set('Cookie', authCookies)
+        .send(mappingDto)
+        .expect(201);
+
+      // Try to delete connection - should fail
+      await request(app.getHttpServer())
+        .delete(`/api/v1/mcp/connections/${connectionId}`)
+        .set('Cookie', authCookies)
+        .expect(409);
+    });
+  });
+
+  describe('Mapping Deletion', () => {
+    let serverId: string;
+    let scopeId: string;
+    let connectionId: string;
+    let mappingId: string;
+
+    beforeEach(async () => {
+      // Create server
+      const serverDto: CreateServerDto = {
+        providedId: `mapping-delete-${Math.random()}`,
+        name: 'Mapping Delete Server',
+        description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
+      };
+
+      const serverResponse = await request(app.getHttpServer())
+        .post('/api/v1/mcp/servers')
+        .set('Cookie', authCookies)
+        .send(serverDto)
+        .expect(201);
+
+      serverId = serverResponse.body.id;
+
+      // Create scope
+      const scopeDto: CreateScopeDto = {
+        scopeId: 'delete:scope',
+        description: 'Delete scope',
+      };
+
+      const scopeResponse = await request(app.getHttpServer())
+        .post(`/api/v1/mcp/servers/${serverId}/scopes`)
+        .set('Cookie', authCookies)
+        .send([scopeDto])
+        .expect(201);
+
+      scopeId = scopeResponse.body[0].scopeId;
+
+      // Create connection
+      const connectionDto: CreateConnectionDto = {
+        friendlyName: 'Mapping Delete Connection',
+        clientId: 'test_client',
+        clientSecret: 'test_secret',
+        authorizeUrl: 'https://example.com/auth',
+        tokenUrl: 'https://example.com/token',
+      };
+
+      const connectionResponse = await request(app.getHttpServer())
+        .post(`/api/v1/mcp/servers/${serverId}/connections`)
+        .set('Cookie', authCookies)
+        .send(connectionDto)
+        .expect(201);
+
+      connectionId = connectionResponse.body.id;
+
+      // Create mapping
+      const mappingDto: CreateMappingDto = {
+        scopeId: scopeId,
+        connectionId: connectionId,
+        downstreamScope: 'test:downstream',
+      };
+
+      const mappingResponse = await request(app.getHttpServer())
+        .post(`/api/v1/mcp/servers/${serverId}/mappings`)
+        .set('Cookie', authCookies)
+        .send(mappingDto)
+        .expect(201);
+
+      mappingId = mappingResponse.body.id;
+    });
+
+    it('should delete a mapping', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/api/v1/mcp/mappings/${mappingId}`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(response.body.message).toBeDefined();
+
+      // Verify mapping is gone
+      const listResponse = await request(app.getHttpServer())
+        .get(`/api/v1/mcp/servers/${serverId}/scopes/${scopeId}/mappings`)
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      expect(listResponse.body).toHaveLength(0);
+    });
+
+    it('should return 404 when deleting non-existent mapping', async () => {
+      const fakeUuid = '00000000-0000-0000-0000-000000000000';
+      await request(app.getHttpServer())
+        .delete(`/api/v1/mcp/mappings/${fakeUuid}`)
+        .set('Cookie', authCookies)
+        .expect(404);
+    });
+  });
+
+  describe('Authentication and Authorization', () => {
+    it('should reject requests without authentication', async () => {
+      await request(app.getHttpServer()).get('/api/v1/mcp/servers').expect(401);
+    });
+
+    it('should reject requests with invalid cookies', async () => {
+      await request(app.getHttpServer())
+        .get('/api/v1/mcp/servers')
+        .set('Cookie', 'invalid_cookie=invalid_value')
+        .expect(401);
+    });
+  });
+
+  describe('Validation Errors', () => {
+    it('should reject server creation with invalid data', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/mcp/servers')
+        .set('Cookie', authCookies)
+        .send({
+          // Missing required fields (providedId, description, type)
+          name: 'Test',
+        })
+        .expect(400);
+    });
+
+    it('should reject server creation with extra fields', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/mcp/servers')
+        .set('Cookie', authCookies)
+        .send({
+          providedId: 'test-server',
+          name: 'Test',
+          description: 'Test',
+          type: 'http' as const,
+          url: 'http://localhost:3000/test/mcp',
+          extraField: 'should not be allowed',
+        })
+        .expect(400);
+    });
+
+    it('should reject invalid UUID in path parameters', async () => {
+      await request(app.getHttpServer())
+        .patch('/api/v1/mcp/servers/invalid-uuid')
+        .set('Cookie', authCookies)
+        .send({ name: 'Test' })
+        .expect(400);
+    });
+
+    it('should reject connection creation with invalid URL', async () => {
+      const serverDto: CreateServerDto = {
+        providedId: `validation-server-${Math.random()}`,
+        name: 'Validation Server',
+        description: 'Test',
+        type: 'http' as const,
+        url: 'http://localhost:3000/test/mcp',
+      };
+
+      const serverResponse = await request(app.getHttpServer())
+        .post('/api/v1/mcp/servers')
+        .set('Cookie', authCookies)
+        .send(serverDto)
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/mcp/servers/${serverResponse.body.id}/connections`)
+        .set('Cookie', authCookies)
+        .send({
+          friendlyName: 'Test',
+          clientId: 'test',
+          clientSecret: 'test',
+          authorizeUrl: 'not-a-valid-url',
+          tokenUrl: 'https://example.com/token',
+        })
+        .expect(400);
     });
   });
 });
