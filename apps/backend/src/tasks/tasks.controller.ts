@@ -81,16 +81,28 @@ export class TasksController {
   async createTask(
     @Body() dto: CreateTaskDto,
     @CurrentUser() user: UserContext,
+    @CurrentRunId() runId: string | undefined,
   ): Promise<TaskResponseDto> {
-    const result = await this.TasksService.createTask({
-      name: dto.name,
-      description: dto.description,
-      assigneeActorId: dto.assigneeActorId,
-      sessionId: dto.sessionId,
-      tagNames: dto.tagNames,
-      createdByActorId: user.actorId,
-      dependsOnIds: dto.dependsOnIds,
-    });
+    const result = runId
+      ? await this.TasksService.createTaskInThread({
+          name: dto.name,
+          description: dto.description,
+          assigneeActorId: dto.assigneeActorId,
+          sessionId: dto.sessionId,
+          tagNames: dto.tagNames,
+          createdByActorId: user.actorId,
+          dependsOnIds: dto.dependsOnIds,
+          runId,
+        })
+      : await this.TasksService.createTask({
+          name: dto.name,
+          description: dto.description,
+          assigneeActorId: dto.assigneeActorId,
+          sessionId: dto.sessionId,
+          tagNames: dto.tagNames,
+          createdByActorId: user.actorId,
+          dependsOnIds: dto.dependsOnIds,
+        });
     return TaskResponseDto.fromResult(result);
   }
 
