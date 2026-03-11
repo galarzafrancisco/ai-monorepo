@@ -7,6 +7,7 @@ Public npm packages under the `@taico` scope.
 | `@taico/client` | Auto-generated API client and TypeScript types from the backend OpenAPI spec | [npm](https://www.npmjs.com/package/@taico/client) |
 | `@taico/events` | Shared event type definitions for WebSocket communication | [npm](https://www.npmjs.com/package/@taico/events) |
 | `@taico/errors` | Shared error classes and error codes | [npm](https://www.npmjs.com/package/@taico/errors) |
+| `@taico/adk-session-store` | SQLite-backed Google ADK session service compatible with `BaseSessionService` | - |
 | `@taico/taico` | Taico backend server (NestJS + bundled UIs) | [npm](https://www.npmjs.com/package/@taico/taico) |
 
 ## Prerequisites
