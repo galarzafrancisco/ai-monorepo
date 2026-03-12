@@ -160,7 +160,14 @@ export class ChatService implements OnModuleDestroy {
     return event.data.delta;
   }
 
-  private buildThreadScopedInstructions(baseInstructions: string, threadId: string): string {
+  private buildThreadScopedInstructions(
+    baseInstructions: string,
+    threadId: string,
+    options?: { useNamespacedToolNames?: boolean },
+  ): string {
+    const tasksPrefix = options?.useNamespacedToolNames ? "mcp__tasks__" : "tasks__";
+    const contextPrefix = options?.useNamespacedToolNames ? "mcp__context__" : "context__";
+
     return `${baseInstructions}
 
 Thread context:
@@ -169,23 +176,27 @@ Thread context:
 - Keep your guidance and execution aligned with thread-level context, not just one task.
 
 Operational guidance:
-- Use tasks__list_tasks_by_thread with this threadId to understand current subtasks and status.
-- Use context__get_thread_state_memory with this threadId to read current shared state memory.
-- When a task or context block becomes relevant to the thread, attach it using tasks__attach_task_to_thread or context__attach_block_to_thread.
-- If a task/block was attached by mistake or is no longer relevant, remove it using tasks__detach_task_from_thread or context__detach_block_from_thread.
-- During conversation, when you discover durable cross-task decisions/constraints/risks, update memory via context__update_block.
+- Use ${tasksPrefix}list_tasks_by_thread with this threadId to understand current subtasks and status.
+- Use ${contextPrefix}get_thread_state_memory with this threadId to read current shared state memory.
+- When a task or context block becomes relevant to the thread, attach it using ${tasksPrefix}attach_task_to_thread or ${contextPrefix}attach_block_to_thread.
+- If a task/block was attached by mistake or is no longer relevant, remove it using ${tasksPrefix}detach_task_from_thread or ${contextPrefix}detach_block_from_thread.
+- During conversation, when you discover durable cross-task decisions/constraints/risks, update memory via ${contextPrefix}update_block.
 - If the user asks for updates on a given task, read the task and the memory block to update the user.
 - Only write durable shared memory (not ephemeral chat details).`;
   }
 
-  private async createAdkRunner(token: string, modelId: string): Promise<Runner> {
+  private async createAdkRunner(
+    token: string,
+    modelId: string,
+    instructions: string,
+  ): Promise<Runner> {
     const baseUrl = getConfig().issuerUrl;
 
     const agent = new LlmAgent({
       name: "taico",
       model: modelId,
       description: "",
-      instruction: "",
+      instruction: instructions,
       tools: [
         new NamespacedMCPToolset(
           {
@@ -288,9 +299,13 @@ Operational guidance:
 
     if (self.type === AgentType.ADK) {
       try {
+        const instructions = this.buildThreadScopedInstructions(self.systemPrompt, threadId, {
+          useNamespacedToolNames: true,
+        });
         const runner = await this.createAdkRunner(
           token.token,
           self.modelId || "gemini-2.5-flash",
+          instructions,
         );
         const stream = runner.runAsync({
           userId: threadId,
