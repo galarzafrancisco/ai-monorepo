@@ -11,7 +11,7 @@ import {
   State,
   createSession,
 } from '@google/adk';
-import { Database } from 'sqlite3';
+import sqlite3 from 'sqlite3';
 import { randomUUID } from 'node:crypto';
 
 export interface SqliteSessionServiceOptions {
@@ -36,13 +36,13 @@ type StateRow = {
 };
 
 export class SqliteSessionService extends BaseSessionService {
-  private readonly db: Database;
+  private readonly db: sqlite3.Database;
 
   private readonly ready: Promise<void>;
 
   constructor(options: SqliteSessionServiceOptions = {}) {
     super();
-    this.db = new Database(options.filename ?? ':memory:');
+    this.db = new sqlite3.Database(options.filename ?? ':memory:');
     this.ready = this.initialize();
   }
 
