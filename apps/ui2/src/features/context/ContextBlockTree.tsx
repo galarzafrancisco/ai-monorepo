@@ -30,7 +30,7 @@ function normalizeParentId(parentId: ContextBlockSummary["parentId"]): string | 
 
 function compareBlocks(a: ContextBlockSummary, b: ContextBlockSummary): number {
   if (a.order !== b.order) {
-    return a.order - b.order;
+    return b.order - a.order;
   }
 
   return a.title.localeCompare(b.title);
