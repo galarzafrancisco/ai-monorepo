@@ -1,14 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, DataRow, Text, DataRowContainer, DataRowTag } from "../../ui/primitives";
 import { useToolsCtx } from "./ToolsProvider";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Tool } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { useIsDesktop } from "../../app/hooks/useIsDesktop";
+import { NewToolPop } from "./NewToolPop";
+import "./ToolsPage.css";
 
 export function ToolsPage() {
-  const { tools, setSectionTitle, isLoading, error } = useToolsCtx();
+  const { tools, setSectionTitle, isLoading, error, createTool } = useToolsCtx();
   const navigate = useNavigate();
+  const isDesktop = useIsDesktop();
+  const [showNewToolPop, setShowNewToolPop] = useState(false);
 
   // Set document title (browser tab)
   useDocumentTitle();
@@ -38,26 +43,64 @@ export function ToolsPage() {
     );
   }
 
-  if (tools.length === 0) {
-    return (
-      <DataRowContainer>
-        <DataRow leading={<Avatar name="?" size="lg" />}>
-          <Text tone="muted">No tools found</Text>
-        </DataRow>
-      </DataRowContainer>
-    );
-  }
+  const handleNewToolCancel = () => {
+    setShowNewToolPop(false);
+  };
+
+  const handleNewToolSave = async ({ name, type }: { name: string; type: 'http' | 'stdio' }): Promise<boolean> => {
+    try {
+      const tool = await createTool({ name, type });
+      if (tool) {
+        navigate(`/tools/tool/${tool.id}`);
+        return true;
+      }
+
+      return false;
+    } catch (saveError) {
+      console.error('Error creating tool');
+      console.error(saveError);
+      return false;
+    }
+  };
 
   return (
-    <DataRowContainer>
-      {tools.map(tool => (
-        <ToolRow
-          key={tool.id}
-          tool={tool}
-          onClick={() => navigate(`/tools/tool/${tool.id}`)}
-        />
-      ))}
-    </DataRowContainer>
+    <>
+      <DataRowContainer>
+        {tools.length === 0 ? (
+          <DataRow leading={<Avatar name="?" size="lg" />}>
+            <Text tone="muted">No tools found</Text>
+          </DataRow>
+        ) : (
+          tools.map(tool => (
+            <ToolRow
+              key={tool.id}
+              tool={tool}
+              onClick={() => navigate(`/tools/tool/${tool.id}`)}
+            />
+          ))
+        )}
+      </DataRowContainer>
+
+      <button
+        className={`tools-fab ${isDesktop ? 'tools-fab--desktop' : ''}`}
+        type="button"
+        onClick={() => setShowNewToolPop(true)}
+        aria-label="Create new tool"
+      >
+        {isDesktop ? (
+          <>
+            <span className="tools-fab__plus">+</span>
+            <span className="tools-fab__label">New tool</span>
+          </>
+        ) : (
+          '+'
+        )}
+      </button>
+
+      {showNewToolPop ? (
+        <NewToolPop onCancel={handleNewToolCancel} onSave={handleNewToolSave} />
+      ) : null}
+    </>
   );
 }
 

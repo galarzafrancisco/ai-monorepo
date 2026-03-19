@@ -14,6 +14,7 @@ export type ToolsContextValue = {
   loadToolClients: (serverId: string) => Promise<ToolClient[]>;
   loadToolAuthorizations: (serverId: string) => Promise<ToolAuthorization[]>;
   loadClientDetails: (connectionId: string) => Promise<ToolClient | null>;
+  createTool: (params: { name: string; type: 'http' | 'stdio' }) => Promise<Tool | null>;
 };
 
 const ToolsContext = createContext<ToolsContextValue | null>(null);
@@ -28,6 +29,7 @@ export function ToolsProvider({ children }: { children: React.ReactNode }) {
     loadToolClients,
     loadToolAuthorizations,
     loadClientDetails,
+    createTool,
   } = useTools();
   const [sectionTitle, setSectionTitle] = useState("");
 
@@ -44,6 +46,7 @@ export function ToolsProvider({ children }: { children: React.ReactNode }) {
       loadToolClients,
       loadToolAuthorizations,
       loadClientDetails,
+      createTool,
     };
   }, [
     tools,
@@ -56,6 +59,7 @@ export function ToolsProvider({ children }: { children: React.ReactNode }) {
     loadToolClients,
     loadToolAuthorizations,
     loadClientDetails,
+    createTool,
   ]);
 
   return <ToolsContext.Provider value={value}>{children}</ToolsContext.Provider>;

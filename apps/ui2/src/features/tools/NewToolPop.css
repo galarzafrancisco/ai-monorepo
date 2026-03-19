@@ -1,0 +1,39 @@
+.new-tool-pop__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.new-tool-pop__group + .new-tool-pop__group {
+  margin-top: var(--space-3);
+}
+
+.new-tool-pop__label {
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+  padding: 0 var(--space-2);
+}
+
+.new-tool-pop__input,
+.new-tool-pop__select {
+  background-color: var(--surface);
+  border: 0;
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+.new-tool-pop__input {
+  font-size: var(--fs-4);
+}
+
+.new-tool-pop__select {
+  font-size: var(--fs-3);
+}
+
+.new-tool-pop__input:focus,
+.new-tool-pop__select:focus {
+  outline: none;
+}
