@@ -622,8 +622,12 @@ export function ToolDetailPage() {
       <DeleteWithConfirmation
         className="tool-detail-page__actions"
         onDelete={async () => {
-          await deleteTool(tool.id);
-          navigate('/tools');
+          const success = await deleteTool(tool.id);
+          if (success) {
+            navigate('/tools');
+          } else {
+            showError('Failed to delete tool');
+          }
         }}
       />
 
