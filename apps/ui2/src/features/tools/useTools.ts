@@ -172,6 +172,49 @@ export const useTools = () => {
     }
   };
 
+  // Update tool
+  const updateTool = useCallback(async (toolId: string, updates: Partial<Tool>): Promise<Tool | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedTool = await ToolsService.mcpRegistryControllerUpdateServer(toolId, updates);
+
+      setTools((previousTools) => {
+        const updated = previousTools.map((tool) =>
+          tool.id === toolId ? updatedTool : tool
+        );
+        return sortTools(updated);
+      });
+
+      return updatedTool;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update tool');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Delete tool
+  const deleteTool = useCallback(async (toolId: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await ToolsService.mcpRegistryControllerDeleteServer(toolId);
+
+      setTools((previousTools) => {
+        return previousTools.filter((tool) => tool.id !== toolId);
+      });
+
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete tool');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     // UI feedback
     isLoading,
@@ -186,5 +229,7 @@ export const useTools = () => {
     loadToolAuthorizations,
     loadClientDetails,
     createTool,
+    updateTool,
+    deleteTool,
   };
 };

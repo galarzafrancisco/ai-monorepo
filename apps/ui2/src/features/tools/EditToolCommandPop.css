@@ -1,0 +1,38 @@
+.edit-tool-command-pop__wrapper {
+  padding: var(--space-4);
+}
+
+.edit-tool-command-pop__input {
+  width: 100%;
+  padding: var(--space-2);
+  font-size: var(--font-size-3);
+  font-family: var(--font-family-mono);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2);
+  background: var(--color-surface);
+  color: var(--color-text);
+  margin-top: var(--space-2);
+}
+
+.edit-tool-command-pop__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.edit-tool-command-pop__textarea {
+  width: 100%;
+  padding: var(--space-2);
+  font-size: var(--font-size-3);
+  font-family: var(--font-family-mono);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2);
+  background: var(--color-surface);
+  color: var(--color-text);
+  resize: vertical;
+  margin-top: var(--space-2);
+}
+
+.edit-tool-command-pop__textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
