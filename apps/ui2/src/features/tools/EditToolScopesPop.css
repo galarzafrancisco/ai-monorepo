@@ -1,0 +1,50 @@
+.edit-tool-scopes-pop__wrapper {
+  padding: var(--space-4);
+}
+
+.edit-tool-scopes-pop__scopes-list {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.edit-tool-scopes-pop__scope-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+}
+
+.edit-tool-scopes-pop__scope-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.edit-tool-scopes-pop__new-scope {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.edit-tool-scopes-pop__input {
+  width: 100%;
+  padding: var(--space-2);
+  font-size: var(--fs-3);
+  font-family: var(--font-sans);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.edit-tool-scopes-pop__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}

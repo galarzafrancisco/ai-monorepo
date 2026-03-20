@@ -2,9 +2,17 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
+import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
+import { useToast } from '../../shared/context/ToastContext';
 import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
+import { ToolsService } from './api';
+import { EditToolNamePop } from './EditToolNamePop';
+import { EditToolDescriptionPop } from './EditToolDescriptionPop';
+import { EditToolUrlPop } from './EditToolUrlPop';
+import { EditToolCommandPop } from './EditToolCommandPop';
+import { EditToolScopesPop } from './EditToolScopesPop';
 import './ToolDetailPage.css';
 
 type ProtectedResourceMetadata = {
@@ -38,7 +46,8 @@ function getAuthStatusDisplay(status: string): { color: 'gray' | 'blue' | 'green
 export function ToolDetailPage() {
   const { toolId } = useParams<{ toolId: string }>();
   const navigate = useNavigate();
-  const { tools, setSectionTitle, loadToolDetails, loadToolScopes, loadToolClients, loadToolAuthorizations } = useToolsCtx();
+  const { tools, setSectionTitle, loadToolDetails, loadToolScopes, loadToolClients, loadToolAuthorizations, updateTool, deleteTool } = useToolsCtx();
+  const { showError } = useToast();
 
   // Find tool from context first (for quick load)
   const toolFromList = tools.find(t => t.id === toolId);
@@ -50,6 +59,13 @@ export function ToolDetailPage() {
   const [expandedMetadata, setExpandedMetadata] = useState(false);
   const [authorizationServerMetadata, setAuthorizationServerMetadata] = useState<any | null>(null);
   const [showCopiedToast, setShowCopiedToast] = useState(false);
+
+  // Edit pops state
+  const [showEditNamePop, setShowEditNamePop] = useState(false);
+  const [showEditDescriptionPop, setShowEditDescriptionPop] = useState(false);
+  const [showEditUrlPop, setShowEditUrlPop] = useState(false);
+  const [showEditCommandPop, setShowEditCommandPop] = useState(false);
+  const [showEditScopesPop, setShowEditScopesPop] = useState(false);
 
   const isHttpTool = tool?.type === 'http';
   const isStdioTool = tool?.type === 'stdio';
@@ -108,6 +124,107 @@ export function ToolDetailPage() {
 
   const formatCommand = (parts: string[]): string =>
     parts.map((part) => quoteArg(part)).join(' ');
+
+  // Save handlers
+  const handleSaveName = async ({ name }: { name: string }): Promise<boolean> => {
+    if (!tool) return false;
+    try {
+      const updated = await updateTool(tool.id, { name });
+      if (updated) {
+        setTool(updated);
+        setShowEditNamePop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update name:', err);
+      showError(err);
+      return false;
+    }
+  };
+
+  const handleSaveDescription = async ({ description }: { description: string }): Promise<boolean> => {
+    if (!tool) return false;
+    try {
+      const updated = await updateTool(tool.id, { description });
+      if (updated) {
+        setTool(updated);
+        setShowEditDescriptionPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update description:', err);
+      showError(err);
+      return false;
+    }
+  };
+
+  const handleSaveUrl = async ({ url }: { url: string }): Promise<boolean> => {
+    if (!tool) return false;
+    try {
+      const updated = await updateTool(tool.id, { url });
+      if (updated) {
+        setTool(updated);
+        setShowEditUrlPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update URL:', err);
+      showError(err);
+      return false;
+    }
+  };
+
+  const handleSaveCommand = async ({ cmd, args }: { cmd: string; args: string[] }): Promise<boolean> => {
+    if (!tool) return false;
+    try {
+      const updated = await updateTool(tool.id, { cmd, args });
+      if (updated) {
+        setTool(updated);
+        setShowEditCommandPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update command:', err);
+      showError(err);
+      return false;
+    }
+  };
+
+  const handleSaveScopes = async ({
+    scopesToCreate,
+    scopesToDelete,
+  }: {
+    scopesToCreate: Array<{ id: string; description: string }>;
+    scopesToDelete: string[];
+  }): Promise<boolean> => {
+    if (!tool) return false;
+    try {
+      // Delete scopes
+      for (const scopeId of scopesToDelete) {
+        await ToolsService.mcpRegistryControllerDeleteScope(tool.id, scopeId);
+      }
+
+      // Create scopes
+      if (scopesToCreate.length > 0) {
+        await ToolsService.mcpRegistryControllerCreateScopes(tool.id, scopesToCreate);
+      }
+
+      // Reload scopes
+      const updatedScopes = await loadToolScopes(tool.id);
+      setScopes(updatedScopes);
+      setShowEditScopesPop(false);
+      return true;
+    } catch (err) {
+      console.error('Failed to update scopes:', err);
+      showError(err);
+      return false;
+    }
+  };
+
   // Discover and load authorization server metadata from the tool URL
   useEffect(() => {
     const prUrlString = tool?.url;
@@ -271,19 +388,50 @@ export function ToolDetailPage() {
         </DataRow>
       </DataRowContainer>
 
+      {/* Name */}
+      <DataRowContainer title="Name" className="tool-detail-page__section">
+        <DataRow onClick={() => setShowEditNamePop(true)}>
+          <Text size="2">{tool.name}</Text>
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
+
+      {/* Description */}
+      <DataRowContainer title="Description" className="tool-detail-page__section">
+        <DataRow onClick={() => setShowEditDescriptionPop(true)}>
+          <Text size="2">{tool.description}</Text>
+          <Text size="1" tone="muted">tap to edit</Text>
+        </DataRow>
+      </DataRowContainer>
+
 
       {/* URL */}
       {isHttpTool && tool.url ? (
         <DataRowContainer title="Server URL" className="tool-detail-page__section">
-          <DataRow onClick={() => copyToClipboard(tool.url || '')}>
+          <DataRow onClick={() => setShowEditUrlPop(true)}>
             <Text as="div" size="2" style="mono" className="tool-detail-page__url">
               {tool.url}
-              <Text size='1' tone='muted'>tap to copy</Text>
             </Text>
+            <Text size='1' tone='muted'>tap to edit</Text>
           </DataRow>
         </DataRowContainer >
       ) : null
       }
+
+      {/* Command (stdio tools) */}
+      {isStdioTool && (
+        <DataRowContainer title="Command" className="tool-detail-page__section">
+          <DataRow onClick={() => setShowEditCommandPop(true)}>
+            <Text size="2" style="mono">{tool.cmd}</Text>
+            {tool.args && tool.args.length > 0 && (
+              <Text size="2" tone="muted" style="mono">
+                Args: {tool.args.join(' ')}
+              </Text>
+            )}
+            <Text size="1" tone="muted">tap to edit</Text>
+          </DataRow>
+        </DataRowContainer>
+      )}
 
       {
         isHttpTool && tool.url && (
@@ -397,20 +545,25 @@ export function ToolDetailPage() {
 
       {/* Scopes (Permissions) */}
       {isHttpTool && (
-        scopes.length ? (
-          <DataRowContainer title="Scopes">
-            {scopes.map(scope => (
-              <DataRow key={scope.id}>
-                <Text size="2" style="mono" weight="medium">{scope.id}</Text>
-                <Text size="2" tone="muted">{scope.description}</Text>
-              </DataRow>
-            ))}
-          </DataRowContainer>
-        ) : (
-          <Text tone="muted" size="2">
-            This server doesn't have any permissions configured
-          </Text>
-        )
+        <DataRowContainer title="Scopes" className="tool-detail-page__section">
+          <DataRow onClick={() => setShowEditScopesPop(true)}>
+            {scopes.length > 0 ? (
+              <Stack spacing="1">
+                {scopes.map(scope => (
+                  <div key={scope.id}>
+                    <Text size="2" style="mono" weight="medium">{scope.id}</Text>
+                    <Text size="2" tone="muted">{scope.description}</Text>
+                  </div>
+                ))}
+              </Stack>
+            ) : (
+              <Text tone="muted" size="2">
+                No scopes configured
+              </Text>
+            )}
+            <Text size="1" tone="muted">tap to edit</Text>
+          </DataRow>
+        </DataRowContainer>
       )}
 
       {isStdioTool && (
@@ -465,6 +618,19 @@ export function ToolDetailPage() {
         </DataRowContainer>
       )}
 
+      {/* Delete */}
+      <DeleteWithConfirmation
+        className="tool-detail-page__actions"
+        onDelete={async () => {
+          const success = await deleteTool(tool.id);
+          if (success) {
+            navigate('/tools');
+          } else {
+            showError('Failed to delete tool');
+          }
+        }}
+      />
+
       {/* Back button */}
       <DataRowContainer className="tool-detail-page__actions">
         <Button
@@ -480,6 +646,45 @@ export function ToolDetailPage() {
       <div className={`tool-detail-page__toast ${showCopiedToast ? 'tool-detail-page__toast--visible' : ''}`}>
         Copied!
       </div>
+
+      {/* Edit Pops */}
+      {showEditNamePop && tool && (
+        <EditToolNamePop
+          initialValue={tool.name}
+          onCancel={() => setShowEditNamePop(false)}
+          onSave={handleSaveName}
+        />
+      )}
+      {showEditDescriptionPop && tool && (
+        <EditToolDescriptionPop
+          initialValue={tool.description}
+          onCancel={() => setShowEditDescriptionPop(false)}
+          onSave={handleSaveDescription}
+        />
+      )}
+      {showEditUrlPop && tool && isHttpTool && tool.url && (
+        <EditToolUrlPop
+          initialValue={tool.url}
+          onCancel={() => setShowEditUrlPop(false)}
+          onSave={handleSaveUrl}
+        />
+      )}
+      {showEditCommandPop && tool && isStdioTool && (
+        <EditToolCommandPop
+          initialCmd={tool.cmd || ''}
+          initialArgs={tool.args || []}
+          onCancel={() => setShowEditCommandPop(false)}
+          onSave={handleSaveCommand}
+        />
+      )}
+      {showEditScopesPop && tool && isHttpTool && (
+        <EditToolScopesPop
+          toolId={tool.id}
+          initialScopes={scopes}
+          onCancel={() => setShowEditScopesPop(false)}
+          onSave={handleSaveScopes}
+        />
+      )}
     </div >
   );
 }
