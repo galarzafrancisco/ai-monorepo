@@ -123,6 +123,11 @@
   gap: 2px;
 }
 
+.agent-detail-page__scope-note {
+  margin-bottom: var(--space-2);
+  display: block;
+}
+
 /* Tag triggers display */
 .agent-detail-page__tag-triggers {
   display: flex;

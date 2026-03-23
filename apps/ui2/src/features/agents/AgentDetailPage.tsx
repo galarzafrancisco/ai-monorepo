@@ -17,24 +17,8 @@ import { EditConcurrencyLimitPop } from './EditConcurrencyLimitPop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
+import { DEFAULT_AGENT_TOKEN_SCOPES } from '../../shared/const/scopes';
 import './AgentDetailPage.css';
-
-const DEFAULT_SCOPES = [
-  'meta:read',
-  'meta:write',
-  'tasks:read',
-  'tasks:write',
-  'context:read',
-  'context:write',
-  'agents:read',
-  'run:read',
-  'run:write',
-  'threads:read',
-  'threads:write',
-  'mcp-registry:read',
-  'mcp:use',
-  'secret:read',
-];
 
 export function AgentDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -54,7 +38,7 @@ export function AgentDetailPage() {
   const [isCreatingToken, setIsCreatingToken] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tokenName, setTokenName] = useState('');
-  const [selectedScopes, setSelectedScopes] = useState<Set<string>>(new Set(DEFAULT_SCOPES));
+  const [selectedScopes, setSelectedScopes] = useState<Set<string>>(new Set(DEFAULT_AGENT_TOKEN_SCOPES));
   const [tokenExpDays, setTokenExpDays] = useState(30);
 
   // Available scopes from the API
@@ -144,7 +128,7 @@ export function AgentDetailPage() {
       loadScopes();
     }
     if (!showCreateForm) {
-      setSelectedScopes(new Set(DEFAULT_SCOPES)); // Reset to defaults
+      setSelectedScopes(new Set(DEFAULT_AGENT_TOKEN_SCOPES)); // Reset to defaults
     }
   }, [showCreateForm, availableScopes.length, loadScopes]);
 
@@ -174,7 +158,7 @@ export function AgentDetailPage() {
       setNewlyCreatedToken(result.token);
       setShowCreateForm(false);
       setTokenName('');
-      setSelectedScopes(new Set(DEFAULT_SCOPES)); // Reset to defaults
+      setSelectedScopes(new Set(DEFAULT_AGENT_TOKEN_SCOPES)); // Reset to defaults
       await loadTokens();
     } catch (err) {
       console.error('Failed to create token:', err);
@@ -608,6 +592,9 @@ export function AgentDetailPage() {
                 <label>
                   <Text size="1" tone="muted">Scopes</Text>
                 </label>
+                <Text size="1" tone="muted" className="agent-detail-page__scope-note">
+                  The preselected scopes are sufficient for the worker process running this agent.
+                </Text>
                 {scopesLoading ? (
                   <Text size="2" tone="muted">Loading available scopes...</Text>
                 ) : (
