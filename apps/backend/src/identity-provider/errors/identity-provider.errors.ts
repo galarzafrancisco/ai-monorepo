@@ -3,6 +3,8 @@ import { ErrorCodes } from '@taico/errors';
 // Module-scoped re-export of error codes used by Identity Provider
 export const IdentityProviderErrorCodes = {
   USER_NOT_FOUND: ErrorCodes.USER_NOT_FOUND,
+  INVALID_CREDENTIALS: ErrorCodes.INVALID_CREDENTIALS,
+  INVALID_CURRENT_PASSWORD: ErrorCodes.INVALID_CURRENT_PASSWORD,
 } as const;
 
 type IdentityProviderErrorCode =
@@ -28,5 +30,20 @@ export class UserNotFoundError extends IdentityProviderDomainError {
     super('User not found.', IdentityProviderErrorCodes.USER_NOT_FOUND, {
       userId,
     });
+  }
+}
+
+export class InvalidCredentialsError extends IdentityProviderDomainError {
+  constructor() {
+    super('Invalid credentials', IdentityProviderErrorCodes.INVALID_CREDENTIALS);
+  }
+}
+
+export class InvalidCurrentPasswordError extends IdentityProviderDomainError {
+  constructor() {
+    super(
+      'Current password is incorrect',
+      IdentityProviderErrorCodes.INVALID_CURRENT_PASSWORD,
+    );
   }
 }

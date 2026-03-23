@@ -2,7 +2,6 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,7 +14,11 @@ import {
 import { ActorService } from './actor.service';
 import { ActorEntity } from './actor.entity';
 import { ActorType, UserRole } from './enums';
-import { UserNotFoundError } from './errors/identity-provider.errors';
+import {
+  UserNotFoundError,
+  InvalidCredentialsError,
+  InvalidCurrentPasswordError,
+} from './errors/identity-provider.errors';
 
 @Injectable()
 export class IdentityProviderService {
@@ -36,14 +39,12 @@ export class IdentityProviderService {
     });
 
     if (!user) {
-      // TODO: this is an HTTP exception. Should be service error.
-      throw new UnauthorizedException('Invalid credentials');
+      throw new InvalidCredentialsError();
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      // TODO: this is an HTTP exception. Should be service error.
-      throw new UnauthorizedException('Invalid credentials');
+      throw new InvalidCredentialsError();
     }
 
     // User must come with the actor expanded given how we queried it from the DB
@@ -119,8 +120,7 @@ export class IdentityProviderService {
     });
 
     if (!user) {
-      // TODO: this is an HTTP exception. Should be service error.
-      throw new UnauthorizedException('User not found');
+      throw new UserNotFoundError(userId);
     }
 
     // Verify current password
@@ -129,8 +129,7 @@ export class IdentityProviderService {
       user.passwordHash,
     );
     if (!isPasswordValid) {
-      // TODO: this is an HTTP exception. Should be service error.
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new InvalidCurrentPasswordError();
     }
 
     // Hash and update new password

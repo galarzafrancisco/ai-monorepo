@@ -351,4 +351,16 @@ export const ErrorCatalog: Record<
     type: '/errors/identity/user-not-found',
     retryable: false,
   },
+  [ErrorCodes.INVALID_CREDENTIALS]: {
+    status: 401,
+    title: 'Invalid credentials',
+    type: '/errors/identity/invalid-credentials',
+    retryable: false,
+  },
+  [ErrorCodes.INVALID_CURRENT_PASSWORD]: {
+    status: 401,
+    title: 'Current password is incorrect',
+    type: '/errors/identity/invalid-current-password',
+    retryable: false,
+  },
 };
