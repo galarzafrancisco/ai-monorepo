@@ -76,8 +76,18 @@ export class McpRegistryService {
     }
 
     const server = this.serverRepository.create(input);
-    const savedServer = await this.serverRepository.save(server);
-    return this.mapServerEntityToRecord(savedServer);
+    try {
+      const savedServer = await this.serverRepository.save(server);
+      return this.mapServerEntityToRecord(savedServer);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        String(error.message).includes('UNIQUE constraint failed')
+      ) {
+        throw new ServerAlreadyExistsError(input.providedId);
+      }
+      throw error;
+    }
   }
 
   async listServers(

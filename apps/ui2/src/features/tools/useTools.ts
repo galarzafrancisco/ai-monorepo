@@ -166,7 +166,7 @@ export const useTools = () => {
       return newTool;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create tool');
-      return null;
+      throw err;
     } finally {
       setIsLoading(false);
     }
