@@ -138,6 +138,13 @@ export class IdentityProviderService {
     this.logger.log(`Password changed successfully for user: ${user.email}`);
   }
 
+  async hasAdminUsers(): Promise<boolean> {
+    const count = await this.userRepository.count({
+      where: { role: 'admin', isActive: true },
+    });
+    return count > 0;
+  }
+
   private async hashPassword(password: string): Promise<string> {
     const saltRounds = 12;
     return bcrypt.hash(password, saltRounds);
