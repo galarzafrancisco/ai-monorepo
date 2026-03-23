@@ -1,6 +1,6 @@
 {
   "name": "@taico/taico",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "private": false,
   "license": "MIT",
   "main": "./dist/main.js",
@@ -55,8 +55,8 @@
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.8",
     "@openai/agents": "^0.5.2",
-    "@taico/errors": "^0.0.3",
-    "@taico/events": "^0.0.3",
+    "@taico/errors": "^0.1.0",
+    "@taico/events": "^0.1.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "bcrypt": "^6.0.0",
