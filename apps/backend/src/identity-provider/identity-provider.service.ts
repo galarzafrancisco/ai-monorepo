@@ -14,7 +14,7 @@ import {
 } from './dto/service/identity-provider.service.types';
 import { ActorService } from './actor.service';
 import { ActorEntity } from './actor.entity';
-import { UserRole } from './enums';
+import { ActorType, UserRole } from './enums';
 
 @Injectable()
 export class IdentityProviderService {
@@ -170,23 +170,26 @@ export class IdentityProviderService {
       const { password, email, displayName, slug, introduction } = createUserInput;
       const passwordHash = await this.hashPassword(password);
 
-      // Create actor first
-      const actor = await this.actorService.createUserActor({
+      // Create actor within the transaction (not via service to maintain atomicity)
+      const actor = transactionalEntityManager.create(ActorEntity, {
+        type: ActorType.HUMAN,
         slug,
         displayName,
-        introduction,
+        avatarUrl: null,
+        introduction: introduction ?? null,
       });
+      const savedActor = await transactionalEntityManager.save(ActorEntity, actor);
 
       // Create user with admin role
       const user = transactionalEntityManager.create(User, {
         email,
         passwordHash,
-        actorId: actor.id,
+        actorId: savedActor.id,
         role: UserRole.ADMIN,
       });
 
       const savedUser = await transactionalEntityManager.save(User, user);
-      savedUser.actor = actor;
+      savedUser.actor = savedActor;
 
       return savedUser;
     });
