@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   Logger,
   InternalServerErrorException,
+  ConflictException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -326,29 +327,24 @@ export class WebAuthController {
     type: LoginResponseDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 409,
     description: 'Admin users already exist, onboarding not allowed',
   })
   async onboard(
     @Body() onboardingDto: OnboardingRequestDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<LoginResponseDto> {
-    // Check if admin users exist
-    const hasAdmins = await this.identityProviderService.hasAdminUsers();
-    if (hasAdmins) {
-      throw new UnauthorizedException('Onboarding not allowed: admin users already exist');
-    }
-
-    // Create the first admin user
-    const user = await this.identityProviderService.createUser({
+    // Atomically create first admin user (prevents race condition)
+    const user = await this.identityProviderService.createFirstAdminUserIfNeeded({
       email: onboardingDto.email,
       slug: onboardingDto.slug,
       displayName: onboardingDto.displayName,
       password: onboardingDto.password,
     });
 
-    // Update role to admin
-    await this.identityProviderService.updateUserRole(user.id, { role: UserRole.ADMIN });
+    if (!user) {
+      throw new ConflictException('Onboarding not allowed: admin users already exist');
+    }
 
     // Get the actor
     const actor = await this.actorService.getActorById(user.actorId);

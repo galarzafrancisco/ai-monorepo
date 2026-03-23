@@ -119,7 +119,7 @@ export class WebAuthenticationService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Admin users already exist, onboarding not allowed`,
+                409: `Admin users already exist, onboarding not allowed`,
             },
         });
     }

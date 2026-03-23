@@ -5655,7 +5655,7 @@ export interface operations {
                 };
             };
             /** @description Admin users already exist, onboarding not allowed */
-            400: {
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

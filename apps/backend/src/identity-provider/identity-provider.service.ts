@@ -14,6 +14,7 @@ import {
 } from './dto/service/identity-provider.service.types';
 import { ActorService } from './actor.service';
 import { ActorEntity } from './actor.entity';
+import { UserRole } from './enums';
 
 @Injectable()
 export class IdentityProviderService {
@@ -140,9 +141,55 @@ export class IdentityProviderService {
 
   async hasAdminUsers(): Promise<boolean> {
     const count = await this.userRepository.count({
-      where: { role: 'admin', isActive: true },
+      where: { role: UserRole.ADMIN, isActive: true },
     });
     return count > 0;
+  }
+
+  /**
+   * Atomically creates the first admin user if no admin users exist.
+   * This method uses a database transaction to prevent race conditions
+   * when multiple concurrent onboarding requests are made.
+   *
+   * @returns The created admin user, or null if admin users already exist
+   */
+  async createFirstAdminUserIfNeeded(createUserInput: CreateUserInput): Promise<User | null> {
+    // Use a transaction to ensure atomicity of check + create
+    return await this.userRepository.manager.transaction(async (transactionalEntityManager) => {
+      // Check if admin users exist within the transaction
+      const adminCount = await transactionalEntityManager.count(User, {
+        where: { role: UserRole.ADMIN, isActive: true },
+      });
+
+      if (adminCount > 0) {
+        // Admin users already exist
+        return null;
+      }
+
+      // Create the admin user within the transaction
+      const { password, email, displayName, slug, introduction } = createUserInput;
+      const passwordHash = await this.hashPassword(password);
+
+      // Create actor first
+      const actor = await this.actorService.createUserActor({
+        slug,
+        displayName,
+        introduction,
+      });
+
+      // Create user with admin role
+      const user = transactionalEntityManager.create(User, {
+        email,
+        passwordHash,
+        actorId: actor.id,
+        role: UserRole.ADMIN,
+      });
+
+      const savedUser = await transactionalEntityManager.save(User, user);
+      savedUser.actor = actor;
+
+      return savedUser;
+    });
   }
 
   private async hashPassword(password: string): Promise<string> {
