@@ -5097,7 +5097,7 @@ export interface operations {
                 /** @description Opaque state value for CSRF protection */
                 state: string;
                 /** @description Resource server URL that the client wants to access */
-                resource: string;
+                resource?: string;
             };
             header?: never;
             path: {
