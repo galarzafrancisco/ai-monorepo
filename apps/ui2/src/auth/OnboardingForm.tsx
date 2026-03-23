@@ -41,7 +41,24 @@ export function OnboardingForm() {
       // Navigate to home
       navigate('/', { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Failed to create admin user');
+      // Extract error message from RFC 7807 Problem Details response
+      let errorMessage = 'Failed to create admin user';
+
+      if (err.body?.context?.fields && Array.isArray(err.body.context.fields)) {
+        // Use field-specific validation errors if available
+        errorMessage = err.body.context.fields.join(', ');
+      } else if (err.body?.detail) {
+        // Use the detailed error message from the Problem Details response
+        errorMessage = err.body.detail;
+      } else if (err.body?.title) {
+        // Fallback to the error title
+        errorMessage = err.body.title;
+      } else if (err.message) {
+        // Fallback to the generic error message
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
