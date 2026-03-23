@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   Logger,
   InternalServerErrorException,
+  ConflictException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -18,11 +19,14 @@ import { LoginRequestDto } from './dto/login-request.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { ChangePasswordRequestDto } from './dto/change-password-request.dto';
+import { OnboardingStatusResponseDto } from './dto/onboarding-status-response.dto';
+import { OnboardingRequestDto } from './dto/onboarding-request.dto';
 import { getConfig } from '../config/env.config';
 import { COOKIE_KEYS } from '../auth/core/constants/cookie-keys.constant';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { WebAuthService } from './web-auth.service';
 import { ActorService } from 'src/identity-provider/actor.service';
+import { UserRole } from 'src/identity-provider/enums';
 
 @ApiTags('Web Authentication')
 @Controller('auth')
@@ -299,5 +303,92 @@ export class WebAuthController {
     this.logger.log(`Password changed for user: ${actor.user.email}`);
 
     return { ok: true };
+  }
+
+  @Get('onboarding-status')
+  @ApiOperation({ summary: 'Check if system needs onboarding' })
+  @ApiResponse({
+    status: 200,
+    description: 'Onboarding status',
+    type: OnboardingStatusResponseDto,
+  })
+  async getOnboardingStatus(): Promise<OnboardingStatusResponseDto> {
+    const hasAdmins = await this.identityProviderService.hasAdminUsers();
+    return { needsOnboarding: !hasAdmins };
+  }
+
+  @Post('onboard')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Create first admin user (only works if no admins exist)' })
+  @ApiBody({ type: OnboardingRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'First admin user created and logged in',
+    type: LoginResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Admin users already exist, onboarding not allowed',
+  })
+  async onboard(
+    @Body() onboardingDto: OnboardingRequestDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<LoginResponseDto> {
+    // Atomically create first admin user (prevents race condition)
+    const user = await this.identityProviderService.createFirstAdminUserIfNeeded({
+      email: onboardingDto.email,
+      slug: onboardingDto.slug,
+      displayName: onboardingDto.displayName,
+      password: onboardingDto.password,
+    });
+
+    if (!user) {
+      throw new ConflictException('Onboarding not allowed: admin users already exist');
+    }
+
+    // Get the actor
+    const actor = await this.actorService.getActorById(user.actorId);
+    if (!actor) {
+      this.logger.error('Actor not found after user creation');
+      throw new InternalServerErrorException('Failed to retrieve actor');
+    }
+
+    // Auto-login the user
+    const { accessToken, refreshToken, expiresInSeconds } =
+      await this.webAuthService.login(onboardingDto.email, onboardingDto.password);
+
+    // Set cookies (same logic as login)
+    const config = getConfig();
+    const isProduction = config.nodeEnv === 'production';
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+      path: '/',
+    };
+
+    response.cookie(COOKIE_KEYS.ACCESS_TOKEN, accessToken, {
+      ...cookieOptions,
+      maxAge: expiresInSeconds * 1000,
+    });
+
+    response.cookie(COOKIE_KEYS.REFRESH_TOKEN, refreshToken, {
+      ...cookieOptions,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    this.logger.log(`First admin user created: ${onboardingDto.email}`);
+
+    return {
+      user: {
+        id: actor.id,
+        email: user.email,
+        displayName: actor.displayName,
+        role: UserRole.ADMIN,
+        actorId: user.actorId,
+      },
+      expiresIn: expiresInSeconds,
+    };
   }
 }

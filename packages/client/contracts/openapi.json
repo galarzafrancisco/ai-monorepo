@@ -1206,6 +1206,63 @@
         ]
       }
     },
+    "/api/v1/auth/onboarding-status": {
+      "get": {
+        "operationId": "WebAuthController_getOnboardingStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Onboarding status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Check if system needs onboarding",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/onboard": {
+      "post": {
+        "operationId": "WebAuthController_onboard",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "First admin user created and logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Admin users already exist, onboarding not allowed"
+          }
+        },
+        "summary": "Create first admin user (only works if no admins exist)",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
     "/api/v1/auth-journeys/servers/{serverId}": {
       "get": {
         "operationId": "AuthJourneysController_getAuthJourneys",
@@ -6761,6 +6818,50 @@
         "required": [
           "currentPassword",
           "newPassword"
+        ]
+      },
+      "OnboardingStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "needsOnboarding": {
+            "type": "boolean",
+            "description": "Whether the system needs to be onboarded (no admin users exist)",
+            "example": true
+          }
+        },
+        "required": [
+          "needsOnboarding"
+        ]
+      },
+      "OnboardingRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email address for the first admin user",
+            "example": "admin@example.com"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name for the first admin user",
+            "example": "Admin User"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Slug/username for the first admin user",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password for the first admin user (minimum 8 characters)",
+            "example": "securepassword123"
+          }
+        },
+        "required": [
+          "email",
+          "displayName",
+          "slug",
+          "password"
         ]
       },
       "ActorResponseDto": {

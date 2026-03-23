@@ -5,6 +5,8 @@
 import type { ChangePasswordRequestDto } from '../models/ChangePasswordRequestDto.js';
 import type { LoginRequestDto } from '../models/LoginRequestDto.js';
 import type { LoginResponseDto } from '../models/LoginResponseDto.js';
+import type { OnboardingRequestDto } from '../models/OnboardingRequestDto.js';
+import type { OnboardingStatusResponseDto } from '../models/OnboardingStatusResponseDto.js';
 import type { UserResponseDto } from '../models/UserResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
@@ -88,6 +90,36 @@ export class WebAuthenticationService {
             mediaType: 'application/json',
             errors: {
                 401: `Not authenticated or current password is incorrect`,
+            },
+        });
+    }
+    /**
+     * Check if system needs onboarding
+     * @returns OnboardingStatusResponseDto Onboarding status
+     * @throws ApiError
+     */
+    public static webAuthControllerGetOnboardingStatus(): CancelablePromise<OnboardingStatusResponseDto> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/auth/onboarding-status',
+        });
+    }
+    /**
+     * Create first admin user (only works if no admins exist)
+     * @param requestBody
+     * @returns LoginResponseDto First admin user created and logged in
+     * @throws ApiError
+     */
+    public static webAuthControllerOnboard(
+        requestBody: OnboardingRequestDto,
+    ): CancelablePromise<LoginResponseDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/onboard',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                409: `Admin users already exist, onboarding not allowed`,
             },
         });
     }

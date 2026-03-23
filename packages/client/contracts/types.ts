@@ -433,6 +433,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/onboarding-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check if system needs onboarding */
+        get: operations["WebAuthController_getOnboardingStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/onboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create first admin user (only works if no admins exist) */
+        post: operations["WebAuthController_onboard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth-journeys/servers/{serverId}": {
         parameters: {
             query?: never;
@@ -2194,6 +2228,35 @@ export interface components {
              * @example newPassword456
              */
             newPassword: string;
+        };
+        OnboardingStatusResponseDto: {
+            /**
+             * @description Whether the system needs to be onboarded (no admin users exist)
+             * @example true
+             */
+            needsOnboarding: boolean;
+        };
+        OnboardingRequestDto: {
+            /**
+             * @description Email address for the first admin user
+             * @example admin@example.com
+             */
+            email: string;
+            /**
+             * @description Display name for the first admin user
+             * @example Admin User
+             */
+            displayName: string;
+            /**
+             * @description Slug/username for the first admin user
+             * @example admin
+             */
+            slug: string;
+            /**
+             * @description Password for the first admin user (minimum 8 characters)
+             * @example securepassword123
+             */
+            password: string;
         };
         ActorResponseDto: {
             /**
@@ -5542,6 +5605,57 @@ export interface operations {
             };
             /** @description Not authenticated or current password is incorrect */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WebAuthController_getOnboardingStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Onboarding status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingStatusResponseDto"];
+                };
+            };
+        };
+    };
+    WebAuthController_onboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingRequestDto"];
+            };
+        };
+        responses: {
+            /** @description First admin user created and logged in */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponseDto"];
+                };
+            };
+            /** @description Admin users already exist, onboarding not allowed */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './providers';
-import { AuthProvider, LoginPage, ProtectedRoute } from '../auth';
+import { AuthProvider, LoginPage, OnboardingPage, ProtectedRoute } from '../auth';
+import { OnboardingChecker } from '../auth/OnboardingChecker';
 import { BetaShell } from './shells/BetaShell';
 import { HomeRoutes } from '../features/home/HomeRoutes';
 import { BASE_PATH } from '../shared/const/base';
@@ -48,7 +49,12 @@ export function App() {
             <ActorsProvider>
               <CommandPaletteProvider>
                 <Routes>
-                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/onboarding" element={<OnboardingPage />} />
+                  <Route path="/login" element={
+                    <OnboardingChecker>
+                      <LoginPage />
+                    </OnboardingChecker>
+                  } />
                   <Route
                     path='*'
                     element={
