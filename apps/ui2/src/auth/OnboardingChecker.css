@@ -4,3 +4,28 @@
   max-width: 600px;
   margin: 0 auto;
 }
+
+.onboarding-checker-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.onboarding-checker-dots::after {
+  content: '...';
+  display: inline-block;
+  width: 1em;
+  text-align: left;
+  overflow: hidden;
+  animation: onboarding-checker-dots 1.2s steps(4, end) infinite;
+}
+
+@keyframes onboarding-checker-dots {
+  0% {
+    width: 0;
+  }
+
+  100% {
+    width: 1em;
+  }
+}
