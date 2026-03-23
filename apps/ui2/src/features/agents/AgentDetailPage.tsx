@@ -17,9 +17,8 @@ import { EditConcurrencyLimitPop } from './EditConcurrencyLimitPop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
+import { DEFAULT_AGENT_TOKEN_SCOPES } from '../../shared/const/scopes';
 import './AgentDetailPage.css';
-
-const DEFAULT_SCOPES = ['meta:read'];
 
 export function AgentDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -39,7 +38,7 @@ export function AgentDetailPage() {
   const [isCreatingToken, setIsCreatingToken] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [tokenName, setTokenName] = useState('');
-  const [selectedScopes, setSelectedScopes] = useState<Set<string>>(new Set(DEFAULT_SCOPES));
+  const [selectedScopes, setSelectedScopes] = useState<Set<string>>(new Set(DEFAULT_AGENT_TOKEN_SCOPES));
   const [tokenExpDays, setTokenExpDays] = useState(30);
 
   // Available scopes from the API
@@ -129,7 +128,7 @@ export function AgentDetailPage() {
       loadScopes();
     }
     if (!showCreateForm) {
-      setSelectedScopes(new Set(DEFAULT_SCOPES)); // Reset to defaults
+      setSelectedScopes(new Set(DEFAULT_AGENT_TOKEN_SCOPES)); // Reset to defaults
     }
   }, [showCreateForm, availableScopes.length, loadScopes]);
 
@@ -159,7 +158,7 @@ export function AgentDetailPage() {
       setNewlyCreatedToken(result.token);
       setShowCreateForm(false);
       setTokenName('');
-      setSelectedScopes(new Set(DEFAULT_SCOPES)); // Reset to defaults
+      setSelectedScopes(new Set(DEFAULT_AGENT_TOKEN_SCOPES)); // Reset to defaults
       await loadTokens();
     } catch (err) {
       console.error('Failed to create token:', err);
@@ -328,6 +327,26 @@ export function AgentDetailPage() {
     } catch (err) {
       console.error('Failed to revoke token:', err);
       alert('Failed to revoke token');
+    }
+  };
+
+  // Handle refreshing an expired/revoked token (creating a new one with same scopes)
+  const handleRefreshToken = async (token: AgentToken) => {
+    if (!slug) return;
+    setIsCreatingToken(true);
+    try {
+      const result = await AgentTokensService.agentTokensControllerIssueToken(slug, {
+        name: token.name,
+        scopes: token.scopes,
+        expirationDays: tokenExpDays,
+      });
+      setNewlyCreatedToken(result.token);
+      await loadTokens();
+    } catch (err) {
+      console.error('Failed to refresh token:', err);
+      alert('Failed to refresh token');
+    } finally {
+      setIsCreatingToken(false);
     }
   };
 
@@ -573,6 +592,9 @@ export function AgentDetailPage() {
                 <label>
                   <Text size="1" tone="muted">Scopes</Text>
                 </label>
+                <Text size="1" tone="muted" className="agent-detail-page__scope-note">
+                  The preselected scopes are sufficient for the worker process running this agent.
+                </Text>
                 {scopesLoading ? (
                   <Text size="2" tone="muted">Loading available scopes...</Text>
                 ) : (
@@ -653,7 +675,16 @@ export function AgentDetailPage() {
                   >
                     Revoke
                   </Button>
-                ) : null
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleRefreshToken(token)}
+                    disabled={isCreatingToken}
+                  >
+                    Refresh
+                  </Button>
+                )
               }
             >
               <Text weight="medium" size="2">{token.name}</Text>

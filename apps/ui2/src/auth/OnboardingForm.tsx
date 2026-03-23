@@ -124,12 +124,11 @@ export function OnboardingForm() {
               className="login-input"
               placeholder="••••••••"
               required
-              minLength={8}
               disabled={isLoading}
               autoComplete="new-password"
             />
             <Text size="1" tone="muted">
-              Minimum 8 characters. Remember this password - you won't receive a confirmation email.
+              Remember this password - you won't receive a confirmation email.
             </Text>
           </Stack>
 
