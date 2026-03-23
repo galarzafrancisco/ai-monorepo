@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
@@ -76,18 +76,27 @@ export function ToolDetailPage() {
     setTimeout(() => setShowCopiedToast(false), 1500);
   };
 
-  // Load tool details if not in list
+  // Track which toolId has been handled to avoid re-fetching after deletion
+  const handledToolIdRef = useRef<string | null>(toolFromList ? (toolId ?? null) : null);
+
+  // Load tool details from API on mount or toolId change (not when toolFromList disappears)
   useEffect(() => {
-    if (!toolFromList && toolId) {
-      setIsLoading(true);
-      loadToolDetails(toolId).then((loadedTool) => {
-        setTool(loadedTool);
-        setIsLoading(false);
-      });
-    } else if (toolFromList) {
-      setTool(toolFromList);
+    if (!toolId) return;
+    const fromList = toolFromList;
+    if (fromList) {
+      setTool(fromList);
+      handledToolIdRef.current = toolId;
+      return;
     }
-  }, [toolId, toolFromList, loadToolDetails]);
+    if (handledToolIdRef.current === toolId) return;
+    handledToolIdRef.current = toolId;
+    setIsLoading(true);
+    loadToolDetails(toolId).then((loadedTool) => {
+      setTool(loadedTool);
+      setIsLoading(false);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toolId, loadToolDetails]);
 
   // Load scopes, clients, and authorizations when tool is available
   useEffect(() => {

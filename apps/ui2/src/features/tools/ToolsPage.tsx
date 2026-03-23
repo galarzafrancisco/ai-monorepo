@@ -14,6 +14,7 @@ export function ToolsPage() {
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
   const [showNewToolPop, setShowNewToolPop] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Set document title (browser tab)
   useDocumentTitle();
@@ -33,7 +34,7 @@ export function ToolsPage() {
     );
   }
 
-  if (error) {
+  if (error && tools.length === 0) {
     return (
       <DataRowContainer>
         <DataRow leading={<Avatar name="!" size="lg" />}>
@@ -45,20 +46,21 @@ export function ToolsPage() {
 
   const handleNewToolCancel = () => {
     setShowNewToolPop(false);
+    setFormError(null);
   };
 
   const handleNewToolSave = async ({ name, type }: { name: string; type: 'http' | 'stdio' }): Promise<boolean> => {
+    setFormError(null);
     try {
       const tool = await createTool({ name, type });
       if (tool) {
         navigate(`/tools/tool/${tool.id}`);
         return true;
       }
-
       return false;
-    } catch (saveError) {
-      console.error('Error creating tool');
-      console.error(saveError);
+    } catch (saveError: any) {
+      const detail = saveError?.body?.detail ?? saveError?.message ?? 'Failed to create tool';
+      setFormError(detail);
       return false;
     }
   };
@@ -98,7 +100,7 @@ export function ToolsPage() {
       </button>
 
       {showNewToolPop ? (
-        <NewToolPop onCancel={handleNewToolCancel} onSave={handleNewToolSave} />
+        <NewToolPop onCancel={handleNewToolCancel} onSave={handleNewToolSave} error={formError} />
       ) : null}
     </>
   );

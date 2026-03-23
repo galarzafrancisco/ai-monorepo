@@ -10,9 +10,10 @@ type NewToolPopPayload = {
 type NewToolPopProps = {
   onCancel?: () => void;
   onSave: (payload: NewToolPopPayload) => Promise<boolean>;
+  error?: string | null;
 };
 
-export function NewToolPop({ onCancel, onSave }: NewToolPopProps) {
+export function NewToolPop({ onCancel, onSave, error }: NewToolPopProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<'http' | 'stdio'>('http');
   const nameRef = useRef<HTMLInputElement | null>(null);
@@ -47,6 +48,10 @@ export function NewToolPop({ onCancel, onSave }: NewToolPopProps) {
           onChange={(event) => setName(event.target.value)}
         />
       </div>
+
+      {error ? (
+        <p className="new-tool-pop__error">{error}</p>
+      ) : null}
 
       <div className="new-tool-pop__group">
         <label className="new-tool-pop__label" htmlFor="new-tool-transport-type">
