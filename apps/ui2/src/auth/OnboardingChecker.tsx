@@ -16,20 +16,14 @@ export function OnboardingChecker({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [retryInSeconds, setRetryInSeconds] = useState<number | null>(null);
 
   useEffect(() => {
     let isActive = true;
     let retryTimeoutId: ReturnType<typeof setTimeout> | undefined;
-    let retryCountdownId: ReturnType<typeof setInterval> | undefined;
 
     const clearRetryTimers = () => {
       if (retryTimeoutId) {
         clearTimeout(retryTimeoutId);
-      }
-
-      if (retryCountdownId) {
-        clearInterval(retryCountdownId);
       }
     };
 
@@ -44,7 +38,6 @@ export function OnboardingChecker({ children }: { children: React.ReactNode }) {
         clearRetryTimers();
         setNeedsOnboarding(status.needsOnboarding);
         setError(null);
-        setRetryInSeconds(null);
       } catch (err) {
         if (!isActive) {
           return;
@@ -54,17 +47,6 @@ export function OnboardingChecker({ children }: { children: React.ReactNode }) {
         setError(err instanceof Error ? err : new Error('Failed to check onboarding status'));
         setNeedsOnboarding(null);
         setRetryCount((current) => current + 1);
-        setRetryInSeconds(RETRY_INTERVAL_SECONDS);
-
-        retryCountdownId = setInterval(() => {
-          setRetryInSeconds((current) => {
-            if (current === null || current <= 1) {
-              return 0;
-            }
-
-            return current - 1;
-          });
-        }, 1000);
 
         retryTimeoutId = setTimeout(() => {
           clearRetryTimers();
@@ -96,23 +78,22 @@ export function OnboardingChecker({ children }: { children: React.ReactNode }) {
   }
 
   if (error) {
-    const retryLabel = retryInSeconds === null ? 'Retrying soon...' : `Retrying in ${retryInSeconds}s`;
-
     return (
-      <div className="onboarding-checker-error">
-        <Stack spacing="4" align="center">
+      <div className="onboarding-checker-shell">
+        <Stack spacing="4" align="center" className="onboarding-checker-card">
+          <span className="onboarding-checker-signal" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
           <Text size="5" weight="semibold" as="div">
-            Still waking things up...
+            Reconnecting to Taico...
           </Text>
-          <Text size="3" as="div">
-            We are trying to reach your Taico app, but it has not answered yet.
+          <Text size="3" tone="muted" as="div" className="onboarding-checker-copy">
+            The backend is not responding yet. We will keep retrying until it is back.
           </Text>
-          <Text size="2" tone="muted" as="div">
-            No action needed - we will keep checking automatically.
-          </Text>
-          <Text size="2" tone="muted" as="div" className="onboarding-checker-feedback">
-            {retryLabel} (attempt {retryCount})
-            <span className="onboarding-checker-dots" aria-hidden="true" />
+          <Text size="1" tone="muted" as="div" className="onboarding-checker-feedback">
+            Retry attempt {retryCount}
           </Text>
         </Stack>
       </div>
