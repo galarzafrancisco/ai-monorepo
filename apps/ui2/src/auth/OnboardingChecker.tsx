@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { WebAuthenticationService } from './api';
+import { Stack } from '../ui/primitives/Stack';
+import { Text } from '../ui/primitives/Text';
+import { Button } from '../ui/primitives/Button';
+import './OnboardingChecker.css';
 
 /**
  * Component that checks if onboarding is needed and redirects accordingly
@@ -38,20 +42,21 @@ export function OnboardingChecker({ children }: { children: React.ReactNode }) {
   if (error) {
     // Show error state with retry button
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h2>Unable to Check System Status</h2>
-        <p>Could not determine if the system needs initial setup.</p>
-        <p style={{ color: '#666', fontSize: '0.9rem' }}>{error.message}</p>
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            marginTop: '1rem',
-            padding: '0.5rem 1rem',
-            cursor: 'pointer'
-          }}
-        >
-          Retry
-        </button>
+      <div className="onboarding-checker-error">
+        <Stack spacing="4" align="center">
+          <Text size="5" weight="semibold" as="div">
+            Unable to Check System Status
+          </Text>
+          <Text size="3" as="div">
+            Could not determine if the system needs initial setup.
+          </Text>
+          <Text size="2" tone="muted" as="div">
+            {error.message}
+          </Text>
+          <Button onClick={() => window.location.reload()} variant="primary">
+            Retry
+          </Button>
+        </Stack>
       </div>
     );
   }
