@@ -44,7 +44,10 @@ export function OnboardingForm() {
       // Extract error message from RFC 7807 Problem Details response
       let errorMessage = 'Failed to create admin user';
 
-      if (err.body?.detail) {
+      if (err.body?.context?.fields && Array.isArray(err.body.context.fields)) {
+        // Use field-specific validation errors if available
+        errorMessage = err.body.context.fields.join(', ');
+      } else if (err.body?.detail) {
         // Use the detailed error message from the Problem Details response
         errorMessage = err.body.detail;
       } else if (err.body?.title) {
