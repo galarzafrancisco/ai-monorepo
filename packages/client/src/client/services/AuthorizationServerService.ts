@@ -88,10 +88,10 @@ export class AuthorizationServerService {
      * @param codeChallengeMethod PKCE code challenge method (S256 for SHA-256)
      * @param redirectUri Redirect URI where the authorization response will be sent
      * @param state Opaque state value for CSRF protection
-     * @param resource Resource server URL that the client wants to access
      * @param serverIdentifier
      * @param version
      * @param scope Space-delimited list of scopes being requested
+     * @param resource Resource server URL that the client wants to access
      * @returns void
      * @throws ApiError
      */
@@ -102,10 +102,10 @@ export class AuthorizationServerService {
         codeChallengeMethod: string,
         redirectUri: string,
         state: string,
-        resource: string,
         serverIdentifier: string,
         version: string,
         scope?: string,
+        resource?: string,
     ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'GET',

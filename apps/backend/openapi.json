@@ -648,7 +648,7 @@
           },
           {
             "name": "resource",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Resource server URL that the client wants to access",
             "schema": {

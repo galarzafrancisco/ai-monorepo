@@ -76,12 +76,12 @@ export class AuthorizationRequestDto {
   @IsNotEmpty()
   state!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Resource server URL that the client wants to access',
     example: 'http://localhost:4001/',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @IsUrl({ require_tld: false, require_protocol: true })
-  resource!: string;
+  resource?: string;
 }
