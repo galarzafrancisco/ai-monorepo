@@ -123,4 +123,20 @@ export class WebAuthenticationService {
             },
         });
     }
+    /**
+     * Mark walkthrough as seen for authenticated user
+     * @returns any Walkthrough marked as seen
+     * @throws ApiError
+     */
+    public static webAuthControllerMarkWalkthroughSeen(): CancelablePromise<{
+        ok?: boolean;
+    }> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/mark-walkthrough-seen',
+            errors: {
+                401: `Not authenticated`,
+            },
+        });
+    }
 }

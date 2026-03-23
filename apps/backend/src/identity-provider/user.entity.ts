@@ -35,6 +35,9 @@ export class User {
   @Column({ type: 'varchar', default: 'standard' })
   role!: 'admin' | 'standard';
 
+  @Column({ default: false })
+  hasSeenWalkthrough!: boolean;
+
   @VersionColumn()
   rowVersion!: number;
 

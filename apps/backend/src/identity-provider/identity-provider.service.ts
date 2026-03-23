@@ -195,6 +195,21 @@ export class IdentityProviderService {
     });
   }
 
+  async markWalkthroughSeen(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isActive: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    user.hasSeenWalkthrough = true;
+    await this.userRepository.save(user);
+
+    this.logger.log(`Walkthrough marked as seen for user: ${user.email}`);
+  }
+
   private async hashPassword(password: string): Promise<string> {
     const saltRounds = 12;
     return bcrypt.hash(password, saltRounds);

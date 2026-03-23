@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './providers';
-import { AuthProvider, LoginPage, OnboardingPage, ProtectedRoute } from '../auth';
+import { AuthProvider, LoginPage, OnboardingPage, WalkthroughPage, ProtectedRoute, WalkthroughChecker } from '../auth';
 import { OnboardingChecker } from '../auth/OnboardingChecker';
 import { BetaShell } from './shells/BetaShell';
 import { HomeRoutes } from '../features/home/HomeRoutes';
@@ -55,13 +55,20 @@ export function App() {
                       <LoginPage />
                     </OnboardingChecker>
                   } />
+                  <Route path="/walkthrough" element={
+                    <ProtectedRoute>
+                      <WalkthroughPage />
+                    </ProtectedRoute>
+                  } />
                   <Route
                     path='*'
                     element={
                       <ProtectedRoute>
-                        <BetaShell>
-                          <BetaAppRoutes />
-                        </BetaShell>
+                        <WalkthroughChecker>
+                          <BetaShell>
+                            <BetaAppRoutes />
+                          </BetaShell>
+                        </WalkthroughChecker>
                       </ProtectedRoute>
                     }
                   />
