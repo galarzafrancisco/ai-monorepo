@@ -72,11 +72,11 @@ These are for testing only. Do not use them in production.
 
 ### Production
 
-Set `NODE_ENV=production`. No users are seeded. You must create the first admin user manually. `ISSUER_URL` is required.
+Set `NODE_ENV=production`. No users are seeded. On first startup, if no admin exists, Taico prompts you to create the first admin user through onboarding. `ISSUER_URL` is required.
 
 ## User Management
 
-There is no self-service user creation yet. To create an admin user:
+There is no self-service user creation yet. The first admin is created through onboarding. To create additional admin users:
 
 **Kubernetes:**
 ```bash
