@@ -345,4 +345,34 @@ export const ErrorCatalog: Record<
     type: '/errors/secrets/feature-disabled',
     retryable: false,
   },
+  [ErrorCodes.USER_EMAIL_CONFLICT]: {
+    status: 409,
+    title: 'Email address already in use',
+    type: '/errors/identity-provider/email-conflict',
+    retryable: false,
+  },
+  [ErrorCodes.USER_SLUG_CONFLICT]: {
+    status: 409,
+    title: 'Username already taken',
+    type: '/errors/identity-provider/slug-conflict',
+    retryable: false,
+  },
+  [ErrorCodes.PASSWORD_TOO_SHORT]: {
+    status: 400,
+    title: 'Password too short',
+    type: '/errors/identity-provider/password-too-short',
+    retryable: false,
+  },
+  [ErrorCodes.ONBOARDING_NOT_ALLOWED]: {
+    status: 409,
+    title: 'Onboarding not allowed',
+    type: '/errors/identity-provider/onboarding-not-allowed',
+    retryable: false,
+  },
+  [ErrorCodes.INVALID_CREDENTIALS]: {
+    status: 401,
+    title: 'Invalid credentials',
+    type: '/errors/identity-provider/invalid-credentials',
+    retryable: false,
+  },
 };

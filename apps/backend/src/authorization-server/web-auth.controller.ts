@@ -10,7 +10,6 @@ import {
   UnauthorizedException,
   Logger,
   InternalServerErrorException,
-  ConflictException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -27,6 +26,7 @@ import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { WebAuthService } from './web-auth.service';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { UserRole } from 'src/identity-provider/enums';
+import { OnboardingNotAllowedError } from 'src/identity-provider/errors/identity-provider.errors';
 
 @ApiTags('Web Authentication')
 @Controller('auth')
@@ -343,7 +343,7 @@ export class WebAuthController {
     });
 
     if (!user) {
-      throw new ConflictException('Onboarding not allowed: admin users already exist');
+      throw new OnboardingNotAllowedError();
     }
 
     // Get the actor
