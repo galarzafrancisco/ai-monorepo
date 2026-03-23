@@ -2,7 +2,6 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,9 +16,10 @@ import { ActorEntity } from './actor.entity';
 import { ActorType, UserRole } from './enums';
 import {
   InvalidCredentialsError,
-  OnboardingNotAllowedError,
+  InvalidCurrentPasswordError,
   PasswordTooShortError,
   UserEmailConflictError,
+  UserNotFoundError,
   UserSlugConflictError,
 } from './errors/identity-provider.errors';
 
@@ -123,8 +123,7 @@ export class IdentityProviderService {
     });
 
     if (!user) {
-      // TODO: this is an HTTP exception. Should be service error.
-      throw new UnauthorizedException('User not found');
+      throw new UserNotFoundError(userId);
     }
 
     // Verify current password
@@ -133,8 +132,7 @@ export class IdentityProviderService {
       user.passwordHash,
     );
     if (!isPasswordValid) {
-      // TODO: this is an HTTP exception. Should be service error.
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new InvalidCurrentPasswordError();
     }
 
     // Hash and update new password
@@ -162,7 +160,9 @@ export class IdentityProviderService {
    * @throws {UserSlugConflictError} If an actor with the slug already exists
    * @throws {OnboardingNotAllowedError} If admin users already exist
    */
-  async createFirstAdminUserIfNeeded(createUserInput: CreateUserInput): Promise<User | null> {
+  async createFirstAdminUserIfNeeded(
+    createUserInput: CreateUserInput,
+  ): Promise<User | null> {
     // Validate password length before transaction
     const MIN_PASSWORD_LENGTH = 8;
     if (createUserInput.password.length < MIN_PASSWORD_LENGTH) {
@@ -171,47 +171,56 @@ export class IdentityProviderService {
 
     // Use a transaction to ensure atomicity of check + create
     try {
-      return await this.userRepository.manager.transaction(async (transactionalEntityManager) => {
-        // Check if admin users exist within the transaction
-        const adminCount = await transactionalEntityManager.count(User, {
-          where: { role: UserRole.ADMIN, isActive: true },
-        });
+      return await this.userRepository.manager.transaction(
+        async transactionalEntityManager => {
+          // Check if admin users exist within the transaction
+          const adminCount = await transactionalEntityManager.count(User, {
+            where: { role: UserRole.ADMIN, isActive: true },
+          });
 
-        if (adminCount > 0) {
-          // Admin users already exist
-          return null;
-        }
+          if (adminCount > 0) {
+            // Admin users already exist
+            return null;
+          }
 
-        // Create the admin user within the transaction
-        const { password, email, displayName, slug, introduction } = createUserInput;
-        const passwordHash = await this.hashPassword(password);
+          // Create the admin user within the transaction
+          const { password, email, displayName, slug, introduction } =
+            createUserInput;
+          const passwordHash = await this.hashPassword(password);
 
-        // Create actor within the transaction (not via service to maintain atomicity)
-        const actor = transactionalEntityManager.create(ActorEntity, {
-          type: ActorType.HUMAN,
-          slug,
-          displayName,
-          avatarUrl: null,
-          introduction: introduction ?? null,
-        });
-        const savedActor = await transactionalEntityManager.save(ActorEntity, actor);
+          // Create actor within the transaction (not via service to maintain atomicity)
+          const actor = transactionalEntityManager.create(ActorEntity, {
+            type: ActorType.HUMAN,
+            slug,
+            displayName,
+            avatarUrl: null,
+            introduction: introduction ?? null,
+          });
+          const savedActor = await transactionalEntityManager.save(
+            ActorEntity,
+            actor,
+          );
 
-        // Create user with admin role
-        const user = transactionalEntityManager.create(User, {
-          email,
-          passwordHash,
-          actorId: savedActor.id,
-          role: UserRole.ADMIN,
-        });
+          // Create user with admin role
+          const user = transactionalEntityManager.create(User, {
+            email,
+            passwordHash,
+            actorId: savedActor.id,
+            role: UserRole.ADMIN,
+          });
 
-        const savedUser = await transactionalEntityManager.save(User, user);
-        savedUser.actor = savedActor;
+          const savedUser = await transactionalEntityManager.save(User, user);
+          savedUser.actor = savedActor;
 
-        return savedUser;
-      });
+          return savedUser;
+        },
+      );
     } catch (error: any) {
       // Handle database constraint violations
-      if (error.code === 'SQLITE_CONSTRAINT' || error.message?.includes('UNIQUE constraint failed')) {
+      if (
+        error.code === 'SQLITE_CONSTRAINT' ||
+        error.message?.includes('UNIQUE constraint failed')
+      ) {
         // Determine which constraint was violated
         if (error.message?.includes('actors.slug')) {
           throw new UserSlugConflictError(createUserInput.slug);
@@ -222,6 +231,21 @@ export class IdentityProviderService {
       // Re-throw if it's not a constraint violation we handle
       throw error;
     }
+  }
+
+  async markWalkthroughSeen(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isActive: true },
+    });
+
+    if (!user) {
+      throw new UserNotFoundError(userId);
+    }
+
+    user.hasSeenWalkthrough = true;
+    await this.userRepository.save(user);
+
+    this.logger.log(`Walkthrough marked as seen for user: ${user.email}`);
   }
 
   private async hashPassword(password: string): Promise<string> {

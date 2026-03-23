@@ -1,11 +1,13 @@
 import { ErrorCodes } from '@taico/errors';
 
 export const IdentityProviderErrorCodes = {
+  USER_NOT_FOUND: ErrorCodes.USER_NOT_FOUND,
   USER_EMAIL_CONFLICT: ErrorCodes.USER_EMAIL_CONFLICT,
   USER_SLUG_CONFLICT: ErrorCodes.USER_SLUG_CONFLICT,
   PASSWORD_TOO_SHORT: ErrorCodes.PASSWORD_TOO_SHORT,
   ONBOARDING_NOT_ALLOWED: ErrorCodes.ONBOARDING_NOT_ALLOWED,
   INVALID_CREDENTIALS: ErrorCodes.INVALID_CREDENTIALS,
+  INVALID_CURRENT_PASSWORD: ErrorCodes.INVALID_CURRENT_PASSWORD,
   INTERNAL_ERROR: ErrorCodes.INTERNAL_ERROR,
 } as const;
 
@@ -24,6 +26,14 @@ export abstract class IdentityProviderDomainError extends Error {
   ) {
     super(message);
     this.name = this.constructor.name;
+  }
+}
+
+export class UserNotFoundError extends IdentityProviderDomainError {
+  constructor(userId: string) {
+    super('User not found.', IdentityProviderErrorCodes.USER_NOT_FOUND, {
+      userId,
+    });
   }
 }
 
@@ -71,6 +81,15 @@ export class InvalidCredentialsError extends IdentityProviderDomainError {
     super(
       'Invalid email or password.',
       IdentityProviderErrorCodes.INVALID_CREDENTIALS,
+    );
+  }
+}
+
+export class InvalidCurrentPasswordError extends IdentityProviderDomainError {
+  constructor() {
+    super(
+      'Current password is incorrect',
+      IdentityProviderErrorCodes.INVALID_CURRENT_PASSWORD,
     );
   }
 }

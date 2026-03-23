@@ -1263,6 +1263,37 @@
         ]
       }
     },
+    "/api/v1/auth/mark-walkthrough-seen": {
+      "post": {
+        "operationId": "WebAuthController_markWalkthroughSeen",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Walkthrough marked as seen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        },
+        "summary": "Mark walkthrough as seen for authenticated user",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
     "/api/v1/auth-journeys/servers/{serverId}": {
       "get": {
         "operationId": "AuthJourneysController_getAuthJourneys",
@@ -6769,6 +6800,11 @@
             "type": "string",
             "description": "Actor ID associated with this user",
             "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "hasSeenWalkthrough": {
+            "type": "boolean",
+            "description": "Whether the user has seen the walkthrough",
+            "example": false
           }
         },
         "required": [
@@ -6776,7 +6812,8 @@
           "email",
           "displayName",
           "role",
-          "actorId"
+          "actorId",
+          "hasSeenWalkthrough"
         ]
       },
       "LoginResponseDto": {

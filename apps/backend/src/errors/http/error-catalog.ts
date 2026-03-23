@@ -345,6 +345,12 @@ export const ErrorCatalog: Record<
     type: '/errors/secrets/feature-disabled',
     retryable: false,
   },
+  [ErrorCodes.USER_NOT_FOUND]: {
+    status: 404,
+    title: 'User not found',
+    type: '/errors/identity-provider/user-not-found',
+    retryable: false,
+  },
   [ErrorCodes.USER_EMAIL_CONFLICT]: {
     status: 409,
     title: 'Email address already in use',
@@ -373,6 +379,12 @@ export const ErrorCatalog: Record<
     status: 401,
     title: 'Invalid credentials',
     type: '/errors/identity-provider/invalid-credentials',
+    retryable: false,
+  },
+  [ErrorCodes.INVALID_CURRENT_PASSWORD]: {
+    status: 401,
+    title: 'Current password is incorrect',
+    type: '/errors/identity-provider/invalid-current-password',
     retryable: false,
   },
 };

@@ -467,6 +467,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/mark-walkthrough-seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark walkthrough as seen for authenticated user */
+        post: operations["WebAuthController_markWalkthroughSeen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth-journeys/servers/{serverId}": {
         parameters: {
             query?: never;
@@ -2207,6 +2224,11 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             actorId: string;
+            /**
+             * @description Whether the user has seen the walkthrough
+             * @example false
+             */
+            hasSeenWalkthrough: boolean;
         };
         LoginResponseDto: {
             /** @description Authenticated user information */
@@ -5656,6 +5678,36 @@ export interface operations {
             };
             /** @description Admin users already exist, onboarding not allowed */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WebAuthController_markWalkthroughSeen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Walkthrough marked as seen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @example true */
+                        ok?: boolean;
+                    };
+                };
+            };
+            /** @description Not authenticated */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

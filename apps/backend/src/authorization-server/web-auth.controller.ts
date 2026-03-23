@@ -93,6 +93,7 @@ export class WebAuthController {
         displayName: actor.displayName,
         role: user.role,
         actorId: user.actorId,
+        hasSeenWalkthrough: user.hasSeenWalkthrough,
       },
       expiresIn: expiresInSeconds,
     };
@@ -159,6 +160,7 @@ export class WebAuthController {
         displayName: actor.displayName,
         role: user.role,
         actorId: user.actorId,
+        hasSeenWalkthrough: user.hasSeenWalkthrough,
       },
       expiresIn,
     };
@@ -247,6 +249,7 @@ export class WebAuthController {
       displayName: actor.displayName,
       role: actor.user.role,
       actorId: actor.user.actorId,
+      hasSeenWalkthrough: actor.user.hasSeenWalkthrough,
     };
   }
 
@@ -387,8 +390,55 @@ export class WebAuthController {
         displayName: actor.displayName,
         role: UserRole.ADMIN,
         actorId: user.actorId,
+        hasSeenWalkthrough: user.hasSeenWalkthrough,
       },
       expiresIn: expiresInSeconds,
     };
+  }
+
+  @Post('mark-walkthrough-seen')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mark walkthrough as seen for authenticated user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Walkthrough marked as seen',
+    schema: {
+      type: 'object',
+      properties: {
+        ok: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Not authenticated',
+  })
+  async markWalkthroughSeen(@Req() request: Request): Promise<{ ok: boolean }> {
+    // Get access token from cookie
+    const accessToken = request.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
+
+    if (!accessToken) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    // Validate token and get payload
+    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
+
+    // Get user from database
+    const actor = await this.actorService.getActorById(payload.actor_id, true);
+    if (!actor) {
+      throw new UnauthorizedException('Actor not found');
+    }
+    if (!actor.user) {
+      this.logger.error('Actor returned no user. This should not happen');
+      throw new InternalServerErrorException('Failed to retrieve actor');
+    }
+
+    // Mark walkthrough as seen
+    await this.identityProviderService.markWalkthroughSeen(actor.user.id);
+
+    this.logger.log(`Walkthrough marked as seen for user: ${actor.user.email}`);
+
+    return { ok: true };
   }
 }

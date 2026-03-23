@@ -23,6 +23,10 @@ export type UserResponseDto = {
      * Actor ID associated with this user
      */
     actorId: string;
+    /**
+     * Whether the user has seen the walkthrough
+     */
+    hasSeenWalkthrough: boolean;
 };
 export namespace UserResponseDto {
     /**

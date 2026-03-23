@@ -29,6 +29,7 @@ import { AddChatSessionIdToThreads1741000000000 } from './migrations/17410000000
 import { AddMcpServerTransportConfig1740500000000 } from './migrations/1740500000000-AddMcpServerTransportConfig';
 import { AddTagUsageTable1741100000000 } from './migrations/1741100000000-AddTagUsageTable';
 import { McpServerProvidedIdPartialUniqueIndex1741200000000 } from './migrations/1741200000000-McpServerProvidedIdPartialUniqueIndex';
+import { AddHasSeenWalkthroughToUsers1741300000000 } from './migrations/1741300000000-AddHasSeenWalkthroughToUsers';
 import { SecretsModule } from './secrets/secrets.module';
 
 @Module({
@@ -51,6 +52,7 @@ import { SecretsModule } from './secrets/secrets.module';
         AddChatSessionIdToThreads1741000000000,
         AddTagUsageTable1741100000000,
         McpServerProvidedIdPartialUniqueIndex1741200000000,
+        AddHasSeenWalkthroughToUsers1741300000000,
       ],
     }),
     EventEmitterModule.forRoot(),
