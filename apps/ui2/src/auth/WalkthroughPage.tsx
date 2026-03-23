@@ -7,6 +7,7 @@ import { Button } from '../ui/primitives/Button';
 import { Card } from '../ui/primitives/Card';
 import { Row } from '../ui/primitives/Row';
 import { WebAuthenticationService } from './api';
+import { useAuth } from './AuthContext';
 import './WalkthroughPage.css';
 
 interface Primitive {
@@ -40,6 +41,7 @@ const PRIMITIVES: Primitive[] = [
 
 export function WalkthroughPage() {
   const navigate = useNavigate();
+  const { refreshAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +50,8 @@ export function WalkthroughPage() {
       setIsLoading(true);
       setError(null);
       await WebAuthenticationService.webAuthControllerMarkWalkthroughSeen();
+      // Refresh auth state to update hasSeenWalkthrough flag
+      await refreshAuth();
       navigate('/home', { replace: true });
     } catch (err) {
       console.error('Failed to mark walkthrough as seen:', err);

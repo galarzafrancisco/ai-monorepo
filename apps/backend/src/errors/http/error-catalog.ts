@@ -345,4 +345,10 @@ export const ErrorCatalog: Record<
     type: '/errors/secrets/feature-disabled',
     retryable: false,
   },
+  [ErrorCodes.USER_NOT_FOUND]: {
+    status: 401,
+    title: 'User not found',
+    type: '/errors/identity/user-not-found',
+    retryable: false,
+  },
 };

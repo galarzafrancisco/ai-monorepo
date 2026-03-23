@@ -15,6 +15,7 @@ import {
 import { ActorService } from './actor.service';
 import { ActorEntity } from './actor.entity';
 import { ActorType, UserRole } from './enums';
+import { UserNotFoundError } from './errors/identity-provider.errors';
 
 @Injectable()
 export class IdentityProviderService {
@@ -201,7 +202,7 @@ export class IdentityProviderService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UserNotFoundError(userId);
     }
 
     user.hasSeenWalkthrough = true;
