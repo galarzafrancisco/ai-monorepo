@@ -19,7 +19,22 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import './AgentDetailPage.css';
 
-const DEFAULT_SCOPES = ['meta:read'];
+const DEFAULT_SCOPES = [
+  'meta:read',
+  'meta:write',
+  'tasks:read',
+  'tasks:write',
+  'context:read',
+  'context:write',
+  'agents:read',
+  'run:read',
+  'run:write',
+  'threads:read',
+  'threads:write',
+  'mcp-registry:read',
+  'mcp:use',
+  'secret:read',
+];
 
 export function AgentDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -328,6 +343,26 @@ export function AgentDetailPage() {
     } catch (err) {
       console.error('Failed to revoke token:', err);
       alert('Failed to revoke token');
+    }
+  };
+
+  // Handle refreshing an expired/revoked token (creating a new one with same scopes)
+  const handleRefreshToken = async (token: AgentToken) => {
+    if (!slug) return;
+    setIsCreatingToken(true);
+    try {
+      const result = await AgentTokensService.agentTokensControllerIssueToken(slug, {
+        name: token.name,
+        scopes: token.scopes,
+        expirationDays: tokenExpDays,
+      });
+      setNewlyCreatedToken(result.token);
+      await loadTokens();
+    } catch (err) {
+      console.error('Failed to refresh token:', err);
+      alert('Failed to refresh token');
+    } finally {
+      setIsCreatingToken(false);
     }
   };
 
@@ -653,7 +688,16 @@ export function AgentDetailPage() {
                   >
                     Revoke
                   </Button>
-                ) : null
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleRefreshToken(token)}
+                    disabled={isCreatingToken}
+                  >
+                    Refresh
+                  </Button>
+                )
               }
             >
               <Text weight="medium" size="2">{token.name}</Text>
