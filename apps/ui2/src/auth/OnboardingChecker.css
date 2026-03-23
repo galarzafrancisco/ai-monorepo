@@ -1,6 +1,81 @@
-.onboarding-checker-error {
+.onboarding-checker-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
   padding: var(--space-6);
+  background:
+    radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 42%),
+    radial-gradient(circle at 80% 85%, color-mix(in srgb, var(--text) 7%, transparent), transparent 34%),
+    var(--app-surface);
+}
+
+.onboarding-checker-card {
+  width: min(540px, 100%);
+  padding: var(--space-6);
+  border-radius: var(--r-4);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--accent) 8%);
   text-align: center;
-  max-width: 600px;
-  margin: 0 auto;
+  box-shadow: 0 24px 40px color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.onboarding-checker-copy {
+  max-width: 45ch;
+}
+
+.onboarding-checker-feedback {
+  min-height: 1.5em;
+  opacity: 0.75;
+}
+
+.onboarding-checker-signal {
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+
+.onboarding-checker-signal > span {
+  width: 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 75%, var(--text) 25%);
+  transform-origin: bottom;
+  animation: onboarding-checker-wave 1.2s ease-in-out infinite;
+}
+
+.onboarding-checker-signal > span:nth-child(1) {
+  height: 0.9rem;
+}
+
+.onboarding-checker-signal > span:nth-child(2) {
+  height: 1.4rem;
+  animation-delay: 0.12s;
+}
+
+.onboarding-checker-signal > span:nth-child(3) {
+  height: 2rem;
+  animation-delay: 0.24s;
+}
+
+@keyframes onboarding-checker-wave {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .onboarding-checker-shell {
+    padding: var(--space-4);
+  }
+
+  .onboarding-checker-card {
+    padding: var(--space-5);
+  }
 }
