@@ -41,6 +41,8 @@ import { createQwen3CoderNext } from './agent/qwen3-coder-next';
 import { createTaico } from './agent/taico.agent';
 import { createPlaywright } from './mcp/playwright.mcp';
 import { createElen } from './mcp/elen.mcp';
+import { ChatProvidersService } from 'src/chat-providers/chat-providers.service';
+import { ChatProviderType } from 'src/chat-providers/enums';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -53,6 +55,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     private readonly identityProviderService: IdentityProviderService,
     private readonly metaService: MetaService,
     private readonly contextService: ContextService,
+    private readonly chatProvidersService: ChatProvidersService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(ActorEntity)
@@ -71,6 +74,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     await this.ensureMcpServers();
     await this.ensurePromptTag();
     await this.ensurePromptContextBlocks();
+    await this.ensureDefaultChatProvider();
 
     if (config.nodeEnv === 'development') {
       this.ensureUsers();
@@ -393,6 +397,31 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.log('Prompt context blocks ensured');
     } catch (error) {
       this.logger.error('Error ensuring prompt context blocks exist');
+    }
+  }
+
+  async ensureDefaultChatProvider(): Promise<void> {
+    try {
+      this.logger.log('Ensuring default OpenAI chat provider exists');
+
+      const existingProviders = await this.chatProvidersService.listChatProviders();
+      const openAiProviderExists = existingProviders.some(
+        (provider) => provider.type === ChatProviderType.OPENAI,
+      );
+
+      if (!openAiProviderExists) {
+        this.logger.log('Creating default OpenAI chat provider');
+        await this.chatProvidersService.createChatProvider({
+          name: 'OpenAI',
+          type: ChatProviderType.OPENAI,
+          secretId: null,
+        });
+        this.logger.log('Default OpenAI chat provider created');
+      }
+
+      this.logger.log('Default chat provider ensured');
+    } catch (error) {
+      this.logger.error('Error ensuring default chat provider exists');
     }
   }
 }

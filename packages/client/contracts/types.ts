@@ -1410,6 +1410,114 @@ export interface paths {
         patch: operations["ContextController_handleMcp_patch"];
         trace?: never;
     };
+    "/api/v1/chat-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all chat providers */
+        get: operations["ChatProvidersController_listChatProviders"];
+        put?: never;
+        /** Create a new chat provider */
+        post: operations["ChatProvidersController_createChatProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chat-providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get chat provider by ID */
+        get: operations["ChatProvidersController_getChatProvider"];
+        put?: never;
+        post?: never;
+        /** Delete a chat provider */
+        delete: operations["ChatProvidersController_deleteChatProvider"];
+        options?: never;
+        head?: never;
+        /** Update a chat provider */
+        patch: operations["ChatProvidersController_updateChatProvider"];
+        trace?: never;
+    };
+    "/api/v1/chat-providers/set-active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set the active chat provider */
+        post: operations["ChatProvidersController_setActiveChatProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all secrets - values not included */
+        get: operations["SecretsController_listSecrets"];
+        put?: never;
+        /** Create a new secret */
+        post: operations["SecretsController_createSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/secrets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get secret metadata by ID - value not included */
+        get: operations["SecretsController_getSecret"];
+        put?: never;
+        post?: never;
+        /** Delete a secret */
+        delete: operations["SecretsController_deleteSecret"];
+        options?: never;
+        head?: never;
+        /** Update a secret */
+        patch: operations["SecretsController_updateSecret"];
+        trace?: never;
+    };
+    "/api/v1/secrets/{id}/value": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get decrypted secret value */
+        get: operations["SecretsController_getSecretValue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/task-blueprints": {
         parameters: {
             query?: never;
@@ -1549,60 +1657,6 @@ export interface paths {
             cookie?: never;
         };
         get: operations["DiscoveryController_all"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/secrets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all secrets - values not included */
-        get: operations["SecretsController_listSecrets"];
-        put?: never;
-        /** Create a new secret */
-        post: operations["SecretsController_createSecret"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/secrets/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get secret metadata by ID - value not included */
-        get: operations["SecretsController_getSecret"];
-        put?: never;
-        post?: never;
-        /** Delete a secret */
-        delete: operations["SecretsController_deleteSecret"];
-        options?: never;
-        head?: never;
-        /** Update a secret */
-        patch: operations["SecretsController_updateSecret"];
-        trace?: never;
-    };
-    "/api/v1/secrets/{id}/value": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get decrypted secret value */
-        get: operations["SecretsController_getSecretValue"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4321,6 +4375,189 @@ export interface components {
              */
             newParentId: Record<string, never> | null;
         };
+        CreateChatProviderDto: {
+            /**
+             * @description Display name for the chat provider
+             * @example OpenAI Production
+             */
+            name: string;
+            /**
+             * @description Type of chat provider
+             * @example openai
+             * @enum {string}
+             */
+            type: "openai";
+            /**
+             * @description ID of the secret containing the API key
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            secretId?: string;
+        };
+        ChatProviderResponseDto: {
+            /**
+             * @description Chat provider identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Display name of the chat provider
+             * @example OpenAI Production
+             */
+            name: string;
+            /**
+             * @description Type of chat provider
+             * @example openai
+             * @enum {string}
+             */
+            type: "openai";
+            /**
+             * @description ID of the secret containing the API key
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            secretId?: string | null;
+            /**
+             * @description Whether this provider is currently active
+             * @example true
+             */
+            isActive: boolean;
+            /**
+             * @description Whether this provider has all required configuration
+             * @example true
+             */
+            isConfigured: boolean;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description ISO timestamp when the provider was created
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description ISO timestamp when the provider was last updated
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        UpdateChatProviderDto: {
+            /**
+             * @description Display name for the chat provider
+             * @example OpenAI Production
+             */
+            name?: string;
+            /**
+             * @description ID of the secret containing the API key
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            secretId?: string;
+            /**
+             * @description API key for the chat provider. If provided, a secret will be created automatically.
+             * @example sk-...
+             */
+            apiKey?: string;
+        };
+        SetActiveChatProviderDto: {
+            /**
+             * @description ID of the chat provider to set as active
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            providerId: string;
+        };
+        CreateSecretDto: {
+            /**
+             * @description Unique name for the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description Human-readable description of the secret
+             * @example OpenAI API key for agent completions
+             */
+            description?: string;
+            /**
+             * @description The secret value (will be encrypted at rest)
+             * @example sk-...
+             */
+            value: string;
+        };
+        SecretResponseDto: {
+            /**
+             * @description Secret identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description Human-readable description
+             * @example OpenAI API key for agent completions
+             */
+            description?: string | null;
+            /**
+             * @description ID of the actor who created this secret
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            createdByActorId: string;
+            /**
+             * @description Slug of the actor who created this secret
+             * @example fran
+             */
+            createdBy?: string | null;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description ISO timestamp when the secret was created
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description ISO timestamp when the secret was last updated
+             * @example 2024-01-01T00:00:00.000Z
+             */
+            updatedAt: string;
+        };
+        SecretValueResponseDto: {
+            /**
+             * @description Secret identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Name of the secret
+             * @example OPENAI_API_KEY
+             */
+            name: string;
+            /**
+             * @description The decrypted secret value
+             * @example sk-...
+             */
+            value: string;
+        };
+        UpdateSecretDto: {
+            /**
+             * @description New name for the secret
+             * @example OPENAI_API_KEY_V2
+             */
+            name?: string;
+            /**
+             * @description New description for the secret
+             * @example Updated OpenAI API key
+             */
+            description?: string | null;
+            /**
+             * @description New secret value (will be encrypted at rest)
+             * @example sk-...
+             */
+            value?: string;
+        };
         CreateTaskBlueprintDto: {
             /**
              * @description Name of the task blueprint
@@ -4650,99 +4887,6 @@ export interface components {
              * @example Tasks MCP API
              */
             resource_name: string;
-        };
-        CreateSecretDto: {
-            /**
-             * @description Unique name for the secret
-             * @example OPENAI_API_KEY
-             */
-            name: string;
-            /**
-             * @description Human-readable description of the secret
-             * @example OpenAI API key for agent completions
-             */
-            description?: string;
-            /**
-             * @description The secret value (will be encrypted at rest)
-             * @example sk-...
-             */
-            value: string;
-        };
-        SecretResponseDto: {
-            /**
-             * @description Secret identifier
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Name of the secret
-             * @example OPENAI_API_KEY
-             */
-            name: string;
-            /**
-             * @description Human-readable description
-             * @example OpenAI API key for agent completions
-             */
-            description?: string | null;
-            /**
-             * @description ID of the actor who created this secret
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            createdByActorId: string;
-            /**
-             * @description Slug of the actor who created this secret
-             * @example fran
-             */
-            createdBy?: string | null;
-            /**
-             * @description Row version for optimistic locking
-             * @example 1
-             */
-            rowVersion: number;
-            /**
-             * @description ISO timestamp when the secret was created
-             * @example 2024-01-01T00:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description ISO timestamp when the secret was last updated
-             * @example 2024-01-01T00:00:00.000Z
-             */
-            updatedAt: string;
-        };
-        SecretValueResponseDto: {
-            /**
-             * @description Secret identifier
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Name of the secret
-             * @example OPENAI_API_KEY
-             */
-            name: string;
-            /**
-             * @description The decrypted secret value
-             * @example sk-...
-             */
-            value: string;
-        };
-        UpdateSecretDto: {
-            /**
-             * @description New name for the secret
-             * @example OPENAI_API_KEY_V2
-             */
-            name?: string;
-            /**
-             * @description New description for the secret
-             * @example Updated OpenAI API key
-             */
-            description?: string | null;
-            /**
-             * @description New secret value (will be encrypted at rest)
-             * @example sk-...
-             */
-            value?: string;
         };
     };
     responses: never;
@@ -8341,6 +8485,339 @@ export interface operations {
             };
         };
     };
+    ChatProvidersController_listChatProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of chat providers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatProviderResponseDto"][];
+                };
+            };
+        };
+    };
+    ChatProvidersController_createChatProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChatProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Chat provider created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatProviderResponseDto"];
+                };
+            };
+        };
+    };
+    ChatProvidersController_getChatProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Chat provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chat provider details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatProviderResponseDto"];
+                };
+            };
+            /** @description Chat provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChatProvidersController_deleteChatProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Chat provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chat provider deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chat provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChatProvidersController_updateChatProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Chat provider identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateChatProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Chat provider updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatProviderResponseDto"];
+                };
+            };
+            /** @description Chat provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChatProvidersController_setActiveChatProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetActiveChatProviderDto"];
+            };
+        };
+        responses: {
+            /** @description Active chat provider set successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatProviderResponseDto"];
+                };
+            };
+            /** @description Chat provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_listSecrets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of secrets (no values) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"][];
+                };
+            };
+        };
+    };
+    SecretsController_createSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSecretDto"];
+            };
+        };
+        responses: {
+            /** @description Secret created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+        };
+    };
+    SecretsController_getSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_deleteSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_updateSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSecretDto"];
+            };
+        };
+        responses: {
+            /** @description Secret updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SecretsController_getSecretValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Secret identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Decrypted secret value */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretValueResponseDto"];
+                };
+            };
+            /** @description Secret not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     TaskBlueprintsController_listTaskBlueprints: {
         parameters: {
             query?: {
@@ -8757,172 +9234,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProtectedResourceMetadataResponseDto"];
                 };
-            };
-        };
-    };
-    SecretsController_listSecrets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of secrets (no values) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretResponseDto"][];
-                };
-            };
-        };
-    };
-    SecretsController_createSecret: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateSecretDto"];
-            };
-        };
-        responses: {
-            /** @description Secret created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretResponseDto"];
-                };
-            };
-        };
-    };
-    SecretsController_getSecret: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Secret identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Secret metadata */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretResponseDto"];
-                };
-            };
-            /** @description Secret not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    SecretsController_deleteSecret: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Secret identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Secret deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Secret not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    SecretsController_updateSecret: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Secret identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateSecretDto"];
-            };
-        };
-        responses: {
-            /** @description Secret updated successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretResponseDto"];
-                };
-            };
-            /** @description Secret not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    SecretsController_getSecretValue: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Secret identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Decrypted secret value */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SecretValueResponseDto"];
-                };
-            };
-            /** @description Secret not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

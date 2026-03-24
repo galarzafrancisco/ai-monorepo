@@ -25,6 +25,7 @@ import { AddTaskBlueprintsAndScheduledTasks1739500000000 } from './migrations/17
 import { RefactorThreadsForHeadlessConversations1739750000000 } from './migrations/1739750000000-RefactorThreadsForHeadlessConversations';
 import { RemoveRoleFromThreadMessage1739844333000 } from './migrations/1739844333000-RemoveRoleFromThreadMessage';
 import { AddSecretsTable1740000000000 } from './migrations/1740000000000-AddSecretsTable';
+import { AddChatProvidersTable1740100000000 } from './migrations/1740100000000-AddChatProvidersTable';
 import { AddChatSessionIdToThreads1741000000000 } from './migrations/1741000000000-AddChatSessionIdToThreads';
 import { AddMcpServerTransportConfig1740500000000 } from './migrations/1740500000000-AddMcpServerTransportConfig';
 import { AddTagUsageTable1741100000000 } from './migrations/1741100000000-AddTagUsageTable';
@@ -32,6 +33,7 @@ import { McpServerProvidedIdPartialUniqueIndex1741200000000 } from './migrations
 import { AddHasSeenWalkthroughToUsers1741300000000 } from './migrations/1741300000000-AddHasSeenWalkthroughToUsers';
 import { EnforceSingleThreadPerParentTask1741400000000 } from './migrations/1741400000000-EnforceSingleThreadPerParentTask';
 import { SecretsModule } from './secrets/secrets.module';
+import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 
 @Module({
   imports: [
@@ -49,6 +51,7 @@ import { SecretsModule } from './secrets/secrets.module';
         RefactorThreadsForHeadlessConversations1739750000000,
         RemoveRoleFromThreadMessage1739844333000,
         AddSecretsTable1740000000000,
+        AddChatProvidersTable1740100000000,
         AddMcpServerTransportConfig1740500000000,
         AddChatSessionIdToThreads1741000000000,
         AddTagUsageTable1741100000000,
@@ -73,6 +76,7 @@ import { SecretsModule } from './secrets/secrets.module';
     IdentityProviderModule,
     AppInitModule,
     SecretsModule,
+    ChatProvidersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

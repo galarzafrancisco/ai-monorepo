@@ -9,6 +9,7 @@ import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { AgentEntity } from 'src/agents/agent.entity';
 import { MetaModule } from 'src/meta/meta.module';
 import { ContextModule } from 'src/context/context.module';
+import { ChatProvidersModule } from 'src/chat-providers/chat-providers.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ContextModule } from 'src/context/context.module';
     IdentityProviderModule,
     MetaModule,
     ContextModule,
+    ChatProvidersModule,
   ],
   providers: [AppInitRunner],
   exports: [AppInitRunner],
