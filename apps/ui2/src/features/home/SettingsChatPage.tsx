@@ -186,15 +186,16 @@ export function SettingsChatPage() {
                   >
                     Configure
                   </Button>
-                  <Button
-                    variant={provider.isActive ? 'primary' : 'secondary'}
-                    size="sm"
-                    onClick={() => handleSetActive(provider.id)}
-                    disabled={provider.isActive || !provider.isConfigured}
-                    title={!provider.isConfigured ? 'Configure the provider first to set it as active' : ''}
-                  >
-                    {provider.isActive ? 'Active' : 'Set Active'}
-                  </Button>
+                  <span title={!provider.isConfigured ? 'Configure the provider first to set it as active' : ''}>
+                    <Button
+                      variant={provider.isActive ? 'primary' : 'secondary'}
+                      size="sm"
+                      onClick={() => handleSetActive(provider.id)}
+                      disabled={provider.isActive || !provider.isConfigured}
+                    >
+                      {provider.isActive ? 'Active' : 'Set Active'}
+                    </Button>
+                  </span>
                 </Row>
               )}
             </Stack>
