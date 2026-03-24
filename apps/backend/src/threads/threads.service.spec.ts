@@ -438,17 +438,55 @@ describe('ThreadsService - Parent Task ID', () => {
           tasks: [mockParentTask, newTask],
         };
 
+        const relationQueryBuilder = {
+          relation: jest.fn().mockReturnThis(),
+          of: jest.fn().mockReturnThis(),
+          add: jest.fn().mockResolvedValue(undefined),
+        };
+
         threadRepository.findOne.mockResolvedValue(mockThread);
         taskRepository.findOne.mockResolvedValue(newTask);
-        threadRepository.save.mockResolvedValue(threadWithTwoTasks);
+        threadRepository.createQueryBuilder.mockReturnValue(
+          relationQueryBuilder as any,
+        );
         threadRepository.findOne.mockResolvedValueOnce(mockThread); // First call
-        threadRepository.findOne.mockResolvedValueOnce(threadWithTwoTasks); // Second call after save
-        threadRepository.findOne.mockResolvedValueOnce(threadWithTwoTasks); // Third call in attachTask
+        threadRepository.findOne.mockResolvedValueOnce(threadWithTwoTasks); // Second call after attach
 
         const result = await service.attachTask('thread-uuid', 'new-task-uuid');
 
+        expect(relationQueryBuilder.add).toHaveBeenCalledWith('new-task-uuid');
         expect(result.parentTaskId).toBe('parent-task-uuid'); // Should remain unchanged
         expect(result.tasks.length).toBe(2);
+      });
+
+      it('should treat duplicate thread-task attach as idempotent success', async () => {
+        const relationQueryBuilder = {
+          relation: jest.fn().mockReturnThis(),
+          of: jest.fn().mockReturnThis(),
+          add: jest.fn().mockRejectedValue(
+            new QueryFailedError('INSERT INTO thread_tasks ...', [], {
+              code: 'SQLITE_CONSTRAINT',
+              message:
+                'UNIQUE constraint failed: thread_tasks.thread_id, thread_tasks.task_id',
+            } as any),
+          ),
+        };
+
+        threadRepository.createQueryBuilder.mockReturnValue(
+          relationQueryBuilder as any,
+        );
+        threadRepository.findOne
+          .mockResolvedValueOnce(mockThread)
+          .mockResolvedValueOnce(mockThread);
+        taskRepository.findOne.mockResolvedValue(mockParentTask);
+
+        const result = await service.attachTask(
+          'thread-uuid',
+          'parent-task-uuid',
+        );
+
+        expect(result.parentTaskId).toBe('parent-task-uuid');
+        expect(result.tasks.length).toBe(1);
       });
     });
   });

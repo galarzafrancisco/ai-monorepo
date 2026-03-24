@@ -348,19 +348,32 @@ export class ThreadsService {
       taskId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
+    await this.getThreadWithRelations(threadId);
     const task = await this.taskRepository.findOne({ where: { id: taskId } });
 
     if (!task) {
       throw new TaskNotFoundForThreadError(taskId);
     }
 
-    // Check if task is already attached
-    if (!thread.tasks.some((t) => t.id === taskId)) {
-      thread.tasks.push(task);
-      await this.threadRepository.save(thread);
+    try {
+      await this.threadRepository
+        .createQueryBuilder()
+        .relation(ThreadEntity, 'tasks')
+        .of(threadId)
+        .add(taskId);
+
       this.logger.log({
         message: 'Task attached to thread',
+        threadId,
+        taskId,
+      });
+    } catch (error) {
+      if (!this.isThreadTaskUniqueViolation(error)) {
+        throw error;
+      }
+
+      this.logger.log({
+        message: 'Task was already attached to thread',
         threadId,
         taskId,
       });
@@ -846,6 +859,28 @@ export class ThreadsService {
     return (
       message.includes('uq_threads_parent_task_id_non_null')
       || message.includes('threads.parent_task_id')
+    );
+  }
+
+  private isThreadTaskUniqueViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const driverError = (error as any).driverError;
+    const code = driverError?.code;
+    const message = driverError?.message ?? '';
+
+    const isUniqueConstraintCode =
+      code === 'SQLITE_CONSTRAINT' || code === '23505';
+    if (!isUniqueConstraintCode) {
+      return false;
+    }
+
+    return (
+      message.includes('thread_tasks')
+      && message.includes('thread_id')
+      && message.includes('task_id')
     );
   }
 
