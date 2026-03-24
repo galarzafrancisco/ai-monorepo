@@ -19,6 +19,7 @@ import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.servi
 import { LlmModule } from '../llm/llm.module';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
+import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ThreadStateReconcilerService } from './thread-state-reconciler.service'
     AuthGuardsModule,
     MetaModule,
     ContextModule,
+    ChatProvidersModule,
   ],
   controllers: [ThreadsController],
   providers: [

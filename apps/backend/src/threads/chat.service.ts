@@ -23,6 +23,7 @@ import { AgentType } from "src/agents/enums";
 import { BaseTool, Event, LlmAgent, MCPToolset, Runner } from "@google/adk";
 import { SqliteSessionService } from "@taico/adk-session-store";
 import { basename, dirname, extname, join } from "node:path";
+import { ChatProvidersService } from "src/chat-providers/chat-providers.service";
 
 export interface CreateConversationArgs {
   threadId: string;
@@ -57,8 +58,10 @@ export class ChatService implements OnModuleDestroy {
     private readonly threadsService: ThreadsService,
     private readonly issuedAccessTokenService: IssuedAccessTokenService,
     private readonly openAiMcpServerFactoryService: OpenAiMcpServerFactoryService,
+    private readonly chatProvidersService: ChatProvidersService,
   ) {
     // I absolutely hate this, but it's the only way to provide a key to the @openai/agents sdk
+    // This will be overridden with the provider-specific key at runtime
     setDefaultOpenAIKey(getConfig().openAiKey);
 
     this.adkSessionService = new SqliteSessionService({
@@ -83,6 +86,23 @@ export class ChatService implements OnModuleDestroy {
   private async getSelf(): Promise<AgentResult> {
     const self = this.agentsService.getAgentBySlug({ slug: 'taico' });
     return self;
+  }
+
+  private async getOpenAiApiKey(): Promise<string> {
+    try {
+      const config = await this.chatProvidersService.getActiveChatProviderConfig();
+      return config.apiKey;
+    } catch (error) {
+      // Fall back to environment variable if no provider is configured
+      this.logger.warn({
+        message: 'No active chat provider configured, falling back to environment variable',
+        error:
+          error instanceof Error
+            ? { message: error.message, name: error.name }
+            : String(error),
+      });
+      return getConfig().openAiKey;
+    }
   }
 
   private getChatDatabasePath(databasePath: string): string {
@@ -115,8 +135,9 @@ export class ChatService implements OnModuleDestroy {
     }
 
     try {
+      const apiKey = await this.getOpenAiApiKey();
       const client = new OpenAI({
-        apiKey: getConfig().openAiKey,
+        apiKey,
       });
       const conversation = await client.conversations.create({
         metadata: {
@@ -408,6 +429,8 @@ Operational guidance:
     }
 
     // Make agent
+    const apiKey = await this.getOpenAiApiKey();
+    setDefaultOpenAIKey(apiKey); // Set the key for this request
     const mcpServers = await this.openAiMcpServerFactoryService.createServers(token);
     const agent = new Agent({
       name: self.name,

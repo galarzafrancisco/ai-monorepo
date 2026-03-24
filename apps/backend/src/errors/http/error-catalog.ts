@@ -387,4 +387,28 @@ export const ErrorCatalog: Record<
     type: '/errors/identity-provider/invalid-current-password',
     retryable: false,
   },
+  [ErrorCodes.CHAT_PROVIDER_NOT_FOUND]: {
+    status: 404,
+    title: 'Chat provider not found',
+    type: '/errors/chat-providers/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.CHAT_PROVIDER_ALREADY_ACTIVE]: {
+    status: 409,
+    title: 'Another chat provider is already active',
+    type: '/errors/chat-providers/already-active',
+    retryable: false,
+  },
+  [ErrorCodes.CHAT_PROVIDER_NOT_CONFIGURED]: {
+    status: 400,
+    title: 'Chat provider is not fully configured',
+    type: '/errors/chat-providers/not-configured',
+    retryable: false,
+  },
+  [ErrorCodes.NO_ACTIVE_CHAT_PROVIDER]: {
+    status: 503,
+    title: 'No active chat provider configured',
+    type: '/errors/chat-providers/no-active-provider',
+    retryable: false,
+  },
 };

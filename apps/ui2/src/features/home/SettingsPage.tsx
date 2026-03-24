@@ -79,6 +79,25 @@ export function SettingsPage() {
           </Row>
         </Stack>
       </Card>
+
+      <Card padding="5">
+        <Stack spacing="3">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">Chat</Text>
+            <Text tone="muted">Configure chat providers for conversations</Text>
+          </Stack>
+          <Row justify="space-between" align="center">
+            <Text size="2" tone="muted">Manage OpenAI and other providers</Text>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/settings/chat')}
+            >
+              Configure Chat
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
     </Stack>
   );
 }
