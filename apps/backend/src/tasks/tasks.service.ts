@@ -54,6 +54,7 @@ import { ActorService } from 'src/identity-provider/actor.service';
 import { SearchService } from '../search/search.service';
 import { AgentRunsService } from '../agent-runs/agent-runs.service';
 import { ThreadsService } from '../threads/threads.service';
+import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
 
 @Injectable()
 export class TasksService {
@@ -211,29 +212,39 @@ export class TasksService {
       dependsOnIds: input.dependsOnIds,
     });
 
-    // Try to find a thread where the parent task is
-    let thread = await this.threadsService.findThreadByTaskId(parentTaskId);
-
-    if (thread) {
-      // Thread exists, attach the task to it
-      this.logger.log({
-        message: 'Attaching task to existing thread',
-        taskId: task.id,
-        threadId: thread.id,
+    // Create thread optimistically. If another call created it first,
+    // recover by attaching this task to the already-created thread.
+    let thread: Awaited<ReturnType<ThreadsService['createThread']>> | null =
+      null;
+    try {
+      thread = await this.threadsService.createThread({
+        createdByActorId: input.createdByActorId,
+        parentTaskId,
+        taskIds: [task.id],
       });
-      await this.threadsService.attachTask(thread.id, task.id);
-    } else {
-      // Thread doesn't exist, create it and attach both tasks
+    } catch (error) {
+      if (!(error instanceof ParentTaskThreadAlreadyExistsError)) {
+        throw error;
+      }
+
       this.logger.log({
-        message: 'Creating new thread for tasks',
+        message:
+          'Parent thread was created concurrently, attaching task to existing thread',
         parentTaskId,
         newTaskId: task.id,
       });
-      thread = await this.threadsService.createThread({
-        createdByActorId: input.createdByActorId,
-        parentTaskId: parentTaskId,
-        taskIds: [task.id],
-      });
+
+      thread = await this.threadsService.findThreadByTaskId(parentTaskId);
+      if (!thread) {
+        throw error;
+      }
+      await this.threadsService.attachTask(thread.id, task.id);
+    }
+
+    if (!thread) {
+      throw new Error(
+        `Failed to resolve thread for parent task ${parentTaskId}`,
+      );
     }
 
     this.logger.log({

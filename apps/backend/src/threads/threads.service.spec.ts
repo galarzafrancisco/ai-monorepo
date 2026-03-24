@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { ThreadsService } from './threads.service';
 import { ThreadEntity } from './thread.entity';
 import { TaskEntity } from '../tasks/task.entity';
@@ -13,6 +13,7 @@ import {
   ThreadNotFoundError,
   TaskNotFoundForThreadError,
   ActorNotFoundForThreadError,
+  ParentTaskThreadAlreadyExistsError,
 } from './errors/threads.errors';
 import { CreateThreadInput } from './dto/service/threads.service.types';
 import { ActorType } from '../identity-provider/enums';
@@ -21,6 +22,7 @@ describe('ThreadsService - Parent Task ID', () => {
   let service: ThreadsService;
   let threadRepository: jest.Mocked<Repository<ThreadEntity>>;
   let taskRepository: jest.Mocked<Repository<TaskEntity>>;
+  let contextBlockRepository: jest.Mocked<Repository<ContextBlockEntity>>;
   let actorRepository: jest.Mocked<Repository<ActorEntity>>;
   let metaService: jest.Mocked<MetaService>;
   let contextService: jest.Mocked<ContextService>;
@@ -105,6 +107,7 @@ describe('ThreadsService - Parent Task ID', () => {
           useValue: {
             findOne: jest.fn(),
             findBy: jest.fn(),
+            delete: jest.fn(),
           },
         },
         {
@@ -144,6 +147,7 @@ describe('ThreadsService - Parent Task ID', () => {
     service = module.get<ThreadsService>(ThreadsService);
     threadRepository = module.get(getRepositoryToken(ThreadEntity));
     taskRepository = module.get(getRepositoryToken(TaskEntity));
+    contextBlockRepository = module.get(getRepositoryToken(ContextBlockEntity));
     actorRepository = module.get(getRepositoryToken(ActorEntity));
     metaService = module.get(MetaService);
     contextService = module.get(ContextService);
@@ -393,44 +397,31 @@ describe('ThreadsService - Parent Task ID', () => {
   });
 
   describe('Edge Cases', () => {
-    describe('5.1. Multiple Threads Can Share Same Parent Task', () => {
-      it('should allow creating multiple threads with the same parent task', async () => {
-        const input1: CreateThreadInput = {
-          title: 'Thread 1',
+    describe('5.1. Duplicate Parent Thread Creation', () => {
+      it('should throw ParentTaskThreadAlreadyExistsError on unique-parent conflict', async () => {
+        const input: CreateThreadInput = {
+          title: 'Thread 2',
           createdByActorId: 'actor-uuid',
           parentTaskId: 'parent-task-uuid',
         };
 
-        const input2: CreateThreadInput = {
-          title: 'Thread 2',
-          createdByActorId: 'actor-uuid',
-          parentTaskId: 'parent-task-uuid', // Same parent task
-        };
-
         actorRepository.findOne.mockResolvedValue(mockActor);
         taskRepository.findOne.mockResolvedValue(mockParentTask);
-        taskRepository.findBy.mockResolvedValue([mockParentTask]);
         contextService.createBlock.mockResolvedValue(mockStateBlock);
+        threadRepository.create.mockReturnValue(mockThread);
+        threadRepository.save.mockRejectedValue(
+          new QueryFailedError('INSERT INTO threads ...', [], {
+            code: 'SQLITE_CONSTRAINT',
+            message: 'UNIQUE constraint failed: threads.parent_task_id',
+          } as any),
+        );
 
-        const thread1 = { ...mockThread, id: 'thread-1-uuid', title: 'Thread 1' };
-        const thread2 = { ...mockThread, id: 'thread-2-uuid', title: 'Thread 2' };
-
-        threadRepository.create
-          .mockReturnValueOnce(thread1)
-          .mockReturnValueOnce(thread2);
-        threadRepository.save
-          .mockResolvedValueOnce(thread1)
-          .mockResolvedValueOnce(thread2);
-        threadRepository.findOne
-          .mockResolvedValueOnce(thread1)
-          .mockResolvedValueOnce(thread2);
-
-        const result1 = await service.createThread(input1);
-        const result2 = await service.createThread(input2);
-
-        expect(result1.parentTaskId).toBe('parent-task-uuid');
-        expect(result2.parentTaskId).toBe('parent-task-uuid');
-        expect(result1.id).not.toBe(result2.id);
+        await expect(service.createThread(input)).rejects.toThrow(
+          ParentTaskThreadAlreadyExistsError,
+        );
+        expect(contextBlockRepository.delete).toHaveBeenCalledWith({
+          id: 'state-block-uuid',
+        });
       });
     });
 

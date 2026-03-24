@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, QueryFailedError } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ThreadEntity } from './thread.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
@@ -32,6 +32,7 @@ import {
   TaskNotFoundForThreadError,
   ContextBlockNotFoundError,
   ActorNotFoundForThreadError,
+  ParentTaskThreadAlreadyExistsError,
 } from './errors/threads.errors';
 import {
   MessageCreatedEvent,
@@ -153,7 +154,16 @@ export class ThreadsService {
       stateContextBlockId: stateBlock.id,
     });
 
-    const savedThread = await this.threadRepository.save(thread);
+    let savedThread: ThreadEntity;
+    try {
+      savedThread = await this.threadRepository.save(thread);
+    } catch (error) {
+      if (this.isParentTaskThreadUniqueViolation(error, input.parentTaskId)) {
+        await this.contextBlockRepository.delete({ id: stateBlock.id });
+        throw new ParentTaskThreadAlreadyExistsError(input.parentTaskId!);
+      }
+      throw error;
+    }
 
     // Create provider-side conversation/session and persist its ID on the thread.
     try {
@@ -813,6 +823,30 @@ export class ThreadsService {
       updatedAt: thread.updatedAt,
       deletedAt: thread.deletedAt,
     };
+  }
+
+  private isParentTaskThreadUniqueViolation(
+    error: unknown,
+    parentTaskId?: string,
+  ): boolean {
+    if (!parentTaskId || !(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const driverError = (error as any).driverError;
+    const code = driverError?.code;
+    const message = driverError?.message ?? '';
+
+    const isUniqueConstraintCode =
+      code === 'SQLITE_CONSTRAINT' || code === '23505';
+    if (!isUniqueConstraintCode) {
+      return false;
+    }
+
+    return (
+      message.includes('uq_threads_parent_task_id_non_null')
+      || message.includes('threads.parent_task_id')
+    );
   }
 
   private mapActorToResult(actor: ActorEntity): ActorResult {
