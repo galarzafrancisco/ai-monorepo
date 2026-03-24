@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Agent, run, setDefaultOpenAIKey } from '@openai/agents';
+import { Agent, run } from '@openai/agents';
 import { AgentsService } from 'src/agents/agents.service';
 import { AgentResult } from 'src/agents/dto/service/agents.service.types';
 import { IssuedAccessTokenService } from 'src/authorization-server/issued-access-token.service';
@@ -58,7 +58,6 @@ export class ThreadStateReconcilerService {
     @InjectRepository(ActorEntity)
     private readonly actorRepository: Repository<ActorEntity>,
   ) {
-    setDefaultOpenAIKey(getConfig().openAiKey);
     this.activityBatcher = new KeyedDebounceBatchProcessor({
       delayMs: getConfig().threadStateReconcilerDebounceMs,
       handleBatch: async (threadId, items) => {

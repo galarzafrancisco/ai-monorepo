@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OpenAI } from 'openai';
 import { Response as OpenAiResponse } from 'openai/resources/responses/responses';
-import { getConfig } from '../config/env.config';
+import { ChatProvidersService } from '../chat-providers/chat-providers.service';
 
 export type GenerateTextInput = {
   prompt: string;
@@ -12,15 +12,24 @@ export type GenerateTextInput = {
 export class OpenAiResponsesService {
   private readonly logger = new Logger(OpenAiResponsesService.name);
 
+  constructor(private readonly chatProvidersService: ChatProvidersService) {}
+
   private extractResponseText(response: OpenAiResponse): string {
     return response.output_text.trim();
   }
 
   async generateText(input: GenerateTextInput): Promise<string | null> {
-    const apiKey = getConfig().openAiKey;
-    if (!apiKey) {
+    let apiKey: string;
+    try {
+      const config = await this.chatProvidersService.getActiveChatProviderConfig();
+      apiKey = config.apiKey;
+    } catch (error) {
       this.logger.warn({
-        message: 'Skipping OpenAI response generation because OPENAI_KEY is not configured',
+        message: 'Skipping OpenAI response generation because no active chat provider is configured',
+        error:
+          error instanceof Error
+            ? { message: error.message, name: error.name }
+            : String(error),
       });
       return null;
     }
