@@ -22,6 +22,7 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<number | null>(null);
+  const requestIdRef = useRef<number>(0);
 
   // Calculate match score for a command
   // Higher score = better match
@@ -109,23 +110,37 @@ export function CommandPalette() {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Clear task results if no input
+    // Clear task results and loading state if no input
     if (!searchTerm) {
       setTaskResults([]);
+      setIsSearchingTasks(false);
       return;
     }
+
+    // Increment request ID to invalidate any pending requests
+    requestIdRef.current += 1;
+    const currentRequestId = requestIdRef.current;
 
     // Debounce task search
     searchTimeoutRef.current = window.setTimeout(async () => {
       setIsSearchingTasks(true);
       try {
         const results = await TaskService.tasksControllerSearchTasks(searchTerm, 5, 0.1);
-        setTaskResults(results);
+        // Only apply results if this request is still current
+        if (requestIdRef.current === currentRequestId) {
+          setTaskResults(results);
+        }
       } catch (err) {
         console.error('Failed to search tasks:', err);
-        setTaskResults([]);
+        // Only clear results if this request is still current
+        if (requestIdRef.current === currentRequestId) {
+          setTaskResults([]);
+        }
       } finally {
-        setIsSearchingTasks(false);
+        // Only update loading state if this request is still current
+        if (requestIdRef.current === currentRequestId) {
+          setIsSearchingTasks(false);
+        }
       }
     }, 200);
 
@@ -181,9 +196,12 @@ export function CommandPalette() {
     setInput('');
     setSelectedIndex(0);
     setTaskResults([]);
+    setIsSearchingTasks(false);
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
+    // Invalidate any pending async requests
+    requestIdRef.current += 1;
   }
 
   function executeItem(item: PaletteItem) {
