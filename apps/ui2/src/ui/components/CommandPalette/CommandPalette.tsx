@@ -1,16 +1,28 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCommandPalette } from './CommandPaletteProvider';
 import type { Command } from './CommandPaletteProvider';
+import { TaskService, type TaskSearchResultDto } from '@taico/client';
 import './CommandPalette.css';
+
+// Result types that can be selected in the palette
+type PaletteItem =
+  | { type: 'command'; command: Command }
+  | { type: 'task'; task: TaskSearchResultDto };
 
 export function CommandPalette() {
   const { commands } = useCommandPalette();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [shake, setShake] = useState(false);
+  const [taskResults, setTaskResults] = useState<TaskSearchResultDto[]>([]);
+  const [isSearchingTasks, setIsSearchingTasks] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<number | null>(null);
+  const requestIdRef = useRef<number>(0);
 
   // Calculate match score for a command
   // Higher score = better match
@@ -71,6 +83,13 @@ export function CommandPalette() {
     })
     .map((item) => item.command);
 
+  // Combine commands and tasks into a single list
+  // Commands come first (higher priority), then task results
+  const allItems: PaletteItem[] = [
+    ...filteredCommands.map((cmd): PaletteItem => ({ type: 'command', command: cmd })),
+    ...taskResults.map((task): PaletteItem => ({ type: 'task', task })),
+  ];
+
   function highlightMatch(text: string): React.ReactNode {
     if (!searchTerm) return text;
     const idx = text.toLowerCase().indexOf(searchTerm);
@@ -83,6 +102,56 @@ export function CommandPalette() {
       </>
     );
   }
+
+  // Search tasks when input changes (with debounce)
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Clear task results and loading state if no input
+    if (!searchTerm) {
+      // Increment request ID to invalidate any in-flight requests
+      requestIdRef.current += 1;
+      setTaskResults([]);
+      setIsSearchingTasks(false);
+      return;
+    }
+
+    // Increment request ID to invalidate any pending requests
+    requestIdRef.current += 1;
+    const currentRequestId = requestIdRef.current;
+
+    // Debounce task search
+    searchTimeoutRef.current = window.setTimeout(async () => {
+      setIsSearchingTasks(true);
+      try {
+        const results = await TaskService.tasksControllerSearchTasks(searchTerm, 5, 0.1);
+        // Only apply results if this request is still current
+        if (requestIdRef.current === currentRequestId) {
+          setTaskResults(results);
+        }
+      } catch (err) {
+        console.error('Failed to search tasks:', err);
+        // Only clear results if this request is still current
+        if (requestIdRef.current === currentRequestId) {
+          setTaskResults([]);
+        }
+      } finally {
+        // Only update loading state if this request is still current
+        if (requestIdRef.current === currentRequestId) {
+          setIsSearchingTasks(false);
+        }
+      }
+    }, 200);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm]);
 
   // Reset selected index when filtered commands change
   useEffect(() => {
@@ -128,10 +197,21 @@ export function CommandPalette() {
     setIsOpen(false);
     setInput('');
     setSelectedIndex(0);
+    setTaskResults([]);
+    setIsSearchingTasks(false);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    // Invalidate any pending async requests
+    requestIdRef.current += 1;
   }
 
-  function executeCommand(command: Command) {
-    command.onSelect();
+  function executeItem(item: PaletteItem) {
+    if (item.type === 'command') {
+      item.command.onSelect();
+    } else {
+      navigate(`/tasks/${item.task.id}`);
+    }
     closeAndReset();
   }
 
@@ -145,7 +225,7 @@ export function CommandPalette() {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex((prev) =>
-        prev < filteredCommands.length - 1 ? prev + 1 : prev
+        prev < allItems.length - 1 ? prev + 1 : prev
       );
       return;
     }
@@ -159,16 +239,16 @@ export function CommandPalette() {
     if (e.key === 'Enter') {
       e.preventDefault();
 
-      if (filteredCommands.length === 0) {
+      if (allItems.length === 0) {
         // Trigger shake animation
         setShake(true);
         setTimeout(() => setShake(false), 500);
         return;
       }
 
-      const selectedCommand = filteredCommands[selectedIndex];
-      if (selectedCommand) {
-        executeCommand(selectedCommand);
+      const selectedItem = allItems[selectedIndex];
+      if (selectedItem) {
+        executeItem(selectedItem);
       }
       return;
     }
@@ -194,29 +274,55 @@ export function CommandPalette() {
           spellCheck={false}
         />
 
-        {filteredCommands.length > 0 && (
+        {allItems.length > 0 && (
           <div className="command-palette-results">
-            {filteredCommands.map((cmd, index) => (
-              <div
-                key={cmd.id}
-                className={`command-palette-item ${
-                  index === selectedIndex ? 'command-palette-item--selected' : ''
-                }`}
-                onClick={() => executeCommand(cmd)}
-                onMouseEnter={() => setSelectedIndex(index)}
-              >
-                <span className="command-palette-item-label">{highlightMatch(cmd.label)}</span>
-                {cmd.description && (
-                  <span className="command-palette-item-description">{cmd.description}</span>
-                )}
-              </div>
-            ))}
+            {allItems.map((item, index) => {
+              if (item.type === 'command') {
+                const cmd = item.command;
+                return (
+                  <div
+                    key={`cmd-${cmd.id}`}
+                    className={`command-palette-item ${
+                      index === selectedIndex ? 'command-palette-item--selected' : ''
+                    }`}
+                    onClick={() => executeItem(item)}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                  >
+                    <span className="command-palette-item-label">{highlightMatch(cmd.label)}</span>
+                    {cmd.description && (
+                      <span className="command-palette-item-description">{cmd.description}</span>
+                    )}
+                  </div>
+                );
+              } else {
+                const task = item.task;
+                return (
+                  <div
+                    key={`task-${task.id}`}
+                    className={`command-palette-item command-palette-item--task ${
+                      index === selectedIndex ? 'command-palette-item--selected' : ''
+                    }`}
+                    onClick={() => executeItem(item)}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                  >
+                    <span className="command-palette-item-label">{highlightMatch(task.name)}</span>
+                    <span className="command-palette-item-description">Task</span>
+                  </div>
+                );
+              }
+            })}
           </div>
         )}
 
-        {input && filteredCommands.length === 0 && (
+        {input && allItems.length === 0 && !isSearchingTasks && (
           <div className="command-palette-no-results">
-            No commands found
+            No results found
+          </div>
+        )}
+
+        {isSearchingTasks && (
+          <div className="command-palette-searching">
+            Searching tasks...
           </div>
         )}
       </div>
