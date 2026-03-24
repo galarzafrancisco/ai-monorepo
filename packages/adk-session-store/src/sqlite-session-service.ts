@@ -11,8 +11,13 @@ import {
   State,
   createSession,
 } from '@google/adk';
-import { Database } from 'sqlite3';
+import * as sqlite3 from 'sqlite3';
 import { randomUUID } from 'node:crypto';
+
+type Sqlite3Module = typeof import('sqlite3');
+
+const sqlite3Module =
+  (sqlite3 as unknown as { default?: Sqlite3Module }).default ?? (sqlite3 as unknown as Sqlite3Module);
 
 export interface SqliteSessionServiceOptions {
   filename?: string;
@@ -36,13 +41,13 @@ type StateRow = {
 };
 
 export class SqliteSessionService extends BaseSessionService {
-  private readonly db: Database;
+  private readonly db: sqlite3.Database;
 
   private readonly ready: Promise<void>;
 
   constructor(options: SqliteSessionServiceOptions = {}) {
     super();
-    this.db = new Database(options.filename ?? ':memory:');
+    this.db = new sqlite3Module.Database(options.filename ?? ':memory:');
     this.ready = this.initialize();
   }
 
