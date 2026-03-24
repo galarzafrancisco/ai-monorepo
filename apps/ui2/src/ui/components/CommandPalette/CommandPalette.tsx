@@ -210,7 +210,7 @@ export function CommandPalette() {
     if (item.type === 'command') {
       item.command.onSelect();
     } else {
-      navigate(`/tasks/${item.task.id}`);
+      navigate(`/tasks/task/${item.task.id}`);
     }
     closeAndReset();
   }
