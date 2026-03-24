@@ -17,10 +17,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: 'npm'
@@ -37,7 +37,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-results
           path: apps/backend/test-results/
@@ -65,7 +65,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -112,12 +112,12 @@ jobs:
 
     steps:
       - name: Checkout ai-monorepo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: ai-monorepo
 
       - name: Checkout spark-ops
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: galarzafrancisco/spark-ops
           token: ${{ secrets.SPARK_OPS_TOKEN }}
