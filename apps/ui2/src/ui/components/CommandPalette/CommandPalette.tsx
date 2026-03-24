@@ -112,6 +112,8 @@ export function CommandPalette() {
 
     // Clear task results and loading state if no input
     if (!searchTerm) {
+      // Increment request ID to invalidate any in-flight requests
+      requestIdRef.current += 1;
       setTaskResults([]);
       setIsSearchingTasks(false);
       return;
