@@ -10270,6 +10270,11 @@
             "type": "string",
             "description": "ID of the secret containing the API key",
             "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for the chat provider. If provided, a secret will be created automatically.",
+            "example": "sk-..."
           }
         }
       },

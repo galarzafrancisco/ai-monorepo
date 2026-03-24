@@ -11,5 +11,9 @@ export type UpdateChatProviderDto = {
      * ID of the secret containing the API key
      */
     secretId?: string;
+    /**
+     * API key for the chat provider. If provided, a secret will be created automatically.
+     */
+    apiKey?: string;
 };
 

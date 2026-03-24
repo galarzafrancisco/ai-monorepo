@@ -87,7 +87,24 @@ export class ChatProvidersService {
       provider.name = input.name;
     }
 
-    if (input.secretId !== undefined) {
+    // If apiKey is provided, create a secret automatically
+    if (input.apiKey !== undefined) {
+      if (!input.createdByActorId) {
+        throw new Error('createdByActorId is required when providing an API key');
+      }
+
+      this.logger.log({ message: 'Creating secret for API key', providerId: id });
+
+      const secret = await this.secretsService.createSecret({
+        name: `${provider.name} API Key`,
+        description: `API key for ${provider.name} chat provider`,
+        value: input.apiKey,
+        createdByActorId: input.createdByActorId,
+      });
+
+      provider.secretId = secret.id;
+    } else if (input.secretId !== undefined) {
+      // Fallback to direct secretId assignment if provided
       provider.secretId = input.secretId;
     }
 

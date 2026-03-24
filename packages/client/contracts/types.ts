@@ -4452,6 +4452,11 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             secretId?: string;
+            /**
+             * @description API key for the chat provider. If provided, a secret will be created automatically.
+             * @example sk-...
+             */
+            apiKey?: string;
         };
         SetActiveChatProviderDto: {
             /**

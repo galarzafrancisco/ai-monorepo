@@ -18,4 +18,12 @@ export class UpdateChatProviderDto {
   @IsUUID()
   @IsOptional()
   secretId?: string;
+
+  @ApiPropertyOptional({
+    description: 'API key for the chat provider. If provided, a secret will be created automatically.',
+    example: 'sk-...',
+  })
+  @IsString()
+  @IsOptional()
+  apiKey?: string;
 }

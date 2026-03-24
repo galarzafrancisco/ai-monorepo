@@ -21,6 +21,8 @@ import {
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
+import { CurrentUser } from '../auth/guards/decorators/current-user.decorator';
+import type { UserContext } from '../auth/guards/context/auth-context.types';
 import { ChatProvidersService } from './chat-providers.service';
 import { CreateChatProviderDto } from './dto/http/create-chat-provider.dto';
 import { UpdateChatProviderDto } from './dto/http/update-chat-provider.dto';
@@ -83,10 +85,13 @@ export class ChatProvidersController {
   async updateChatProvider(
     @Param() params: ChatProviderParamsDto,
     @Body() dto: UpdateChatProviderDto,
+    @CurrentUser() user: UserContext,
   ): Promise<ChatProviderResponseDto> {
     const result = await this.chatProvidersService.updateChatProvider(params.id, {
       name: dto.name,
       secretId: dto.secretId,
+      apiKey: dto.apiKey,
+      createdByActorId: user.actorId,
     });
     return this.mapToResponse(result);
   }

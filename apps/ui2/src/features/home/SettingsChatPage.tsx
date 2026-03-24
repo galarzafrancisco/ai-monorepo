@@ -1,7 +1,7 @@
 import { Stack, Text, Card, Button, Row } from '../../ui/primitives';
 import { useHomeCtx } from './HomeProvider';
 import { useEffect, useState } from 'react';
-import { ChatProvidersService, SecretsService } from '@taico/client';
+import { ChatProvidersService } from '@taico/client';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import '../../auth/LoginPage.css';
 
@@ -17,11 +17,10 @@ interface ChatProvider {
 export function SettingsChatPage() {
   const { setSectionTitle } = useHomeCtx();
   const [providers, setProviders] = useState<ChatProvider[]>([]);
-  const [secrets, setSecrets] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedSecretId, setSelectedSecretId] = useState<string>('');
+  const [apiKey, setApiKey] = useState<string>('');
   const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,12 +31,8 @@ export function SettingsChatPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [providersData, secretsData] = await Promise.all([
-        ChatProvidersService.chatProvidersControllerListChatProviders(),
-        SecretsService.secretsControllerListSecrets(),
-      ]);
+      const providersData = await ChatProvidersService.chatProvidersControllerListChatProviders();
       setProviders(providersData as ChatProvider[]);
-      setSecrets(secretsData);
     } catch (err: any) {
       setError(err?.body?.detail || 'Failed to load chat settings');
     } finally {
@@ -46,8 +41,8 @@ export function SettingsChatPage() {
   };
 
   const handleConfigureProvider = async (providerId: string) => {
-    if (!selectedSecretId) {
-      setError('Please select an API key');
+    if (!apiKey.trim()) {
+      setError('Please enter an API key');
       return;
     }
 
@@ -58,12 +53,12 @@ export function SettingsChatPage() {
       await ChatProvidersService.chatProvidersControllerUpdateChatProvider(
         providerId,
         {
-          secretId: selectedSecretId,
+          apiKey: apiKey,
         }
       );
       setSuccess('Provider configured successfully');
       setEditingProviderId(null);
-      setSelectedSecretId('');
+      setApiKey('');
       await loadData();
     } catch (err: any) {
       setError(err?.body?.detail || 'Failed to configure provider');
@@ -147,27 +142,26 @@ export function SettingsChatPage() {
                 <Stack spacing="3">
                   <Stack spacing="2">
                     <Text size="2" weight="medium">
-                      Select API Key
+                      Enter API Key
                     </Text>
-                    <select
-                      value={selectedSecretId}
-                      onChange={(e) => setSelectedSecretId(e.target.value)}
+                    <input
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
                       className="login-input"
-                    >
-                      <option value="">-- Select a secret --</option>
-                      {secrets.map((secret) => (
-                        <option key={secret.id} value={secret.id}>
-                          {secret.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="sk-..."
+                      autoFocus
+                    />
+                    <Text size="1" tone="muted">
+                      Your API key will be stored securely
+                    </Text>
                   </Stack>
                   <Row spacing="2">
                     <Button
                       variant="primary"
                       size="sm"
                       onClick={() => handleConfigureProvider(provider.id)}
-                      disabled={!selectedSecretId}
+                      disabled={!apiKey.trim()}
                     >
                       Save
                     </Button>
@@ -176,7 +170,7 @@ export function SettingsChatPage() {
                       size="sm"
                       onClick={() => {
                         setEditingProviderId(null);
-                        setSelectedSecretId('');
+                        setApiKey('');
                       }}
                     >
                       Cancel
@@ -220,7 +214,11 @@ export function SettingsChatPage() {
             Need an API Key?
           </Text>
           <Text tone="muted">
-            Create secrets for your API keys in the Secrets page, then come back here to configure your chat provider.
+            For OpenAI, you can get an API key from{' '}
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+              platform.openai.com/api-keys
+            </a>
+            . Simply paste it into the configuration form above.
           </Text>
         </Stack>
       </Card>

@@ -9,6 +9,8 @@ export type CreateChatProviderInput = {
 export type UpdateChatProviderInput = {
   name?: string;
   secretId?: string | null;
+  apiKey?: string;
+  createdByActorId?: string;
 };
 
 export type SetActiveChatProviderInput = {
