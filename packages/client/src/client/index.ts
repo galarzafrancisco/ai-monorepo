@@ -74,6 +74,8 @@ export type { MappingResponseDto } from './models/MappingResponseDto.js';
 export { McpFlowResponseDto } from './models/McpFlowResponseDto.js';
 export type { MetaTagResponseDto } from './models/MetaTagResponseDto.js';
 export type { MoveBlockDto } from './models/MoveBlockDto.js';
+export type { OnboardingRequestDto } from './models/OnboardingRequestDto.js';
+export type { OnboardingStatusResponseDto } from './models/OnboardingStatusResponseDto.js';
 export { PatchAgentDto } from './models/PatchAgentDto.js';
 export type { PatchProjectDto } from './models/PatchProjectDto.js';
 export type { ProjectResponseDto } from './models/ProjectResponseDto.js';

@@ -1,0 +1,19 @@
+.edit-tool-name-pop__input-wrapper {
+  padding: var(--space-4);
+}
+
+.edit-tool-name-pop__input {
+  width: 100%;
+  padding: var(--space-2);
+  font-size: var(--fs-3);
+  font-family: var(--font-sans);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.edit-tool-name-pop__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}

@@ -29,12 +29,14 @@ function hashString(input: string): number {
   return h >>> 0; // unsigned
 }
 
-function pickColorToken(name: string): (typeof PALETTE)[number] {
+function pickColorToken(name: string | undefined): (typeof PALETTE)[number] {
+  if (!name) return PALETTE[0];
   const idx = hashString(name.trim().toLowerCase()) % PALETTE.length;
   return PALETTE[idx];
 }
 
-function getInitials(name: string): string {
+function getInitials(name: string | undefined): string {
+  if (!name) return "?";
   const cleaned = name.trim();
   if (!cleaned) return "?";
 

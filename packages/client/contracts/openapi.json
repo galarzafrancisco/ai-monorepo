@@ -648,7 +648,7 @@
           },
           {
             "name": "resource",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Resource server URL that the client wants to access",
             "schema": {
@@ -1201,6 +1201,94 @@
           }
         },
         "summary": "Change password for authenticated user",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/onboarding-status": {
+      "get": {
+        "operationId": "WebAuthController_getOnboardingStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Onboarding status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Check if system needs onboarding",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/onboard": {
+      "post": {
+        "operationId": "WebAuthController_onboard",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "First admin user created and logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Admin users already exist, onboarding not allowed"
+          }
+        },
+        "summary": "Create first admin user (only works if no admins exist)",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/mark-walkthrough-seen": {
+      "post": {
+        "operationId": "WebAuthController_markWalkthroughSeen",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Walkthrough marked as seen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        },
+        "summary": "Mark walkthrough as seen for authenticated user",
         "tags": [
           "Web Authentication"
         ]
@@ -6712,6 +6800,11 @@
             "type": "string",
             "description": "Actor ID associated with this user",
             "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "hasSeenWalkthrough": {
+            "type": "boolean",
+            "description": "Whether the user has seen the walkthrough",
+            "example": false
           }
         },
         "required": [
@@ -6719,7 +6812,8 @@
           "email",
           "displayName",
           "role",
-          "actorId"
+          "actorId",
+          "hasSeenWalkthrough"
         ]
       },
       "LoginResponseDto": {
@@ -6761,6 +6855,50 @@
         "required": [
           "currentPassword",
           "newPassword"
+        ]
+      },
+      "OnboardingStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "needsOnboarding": {
+            "type": "boolean",
+            "description": "Whether the system needs to be onboarded (no admin users exist)",
+            "example": true
+          }
+        },
+        "required": [
+          "needsOnboarding"
+        ]
+      },
+      "OnboardingRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email address for the first admin user",
+            "example": "admin@example.com"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name for the first admin user",
+            "example": "Admin User"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Slug/username for the first admin user",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password for the first admin user (minimum 8 characters)",
+            "example": "securepassword123"
+          }
+        },
+        "required": [
+          "email",
+          "displayName",
+          "slug",
+          "password"
         ]
       },
       "ActorResponseDto": {

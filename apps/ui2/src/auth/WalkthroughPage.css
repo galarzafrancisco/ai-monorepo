@@ -1,0 +1,48 @@
+.walkthrough-content {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.walkthrough-header {
+  text-align: center;
+}
+
+.primitive-card {
+  padding: var(--space-4);
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  transition: border-color 0.2s ease;
+}
+
+.primitive-card:hover {
+  border-color: var(--border);
+}
+
+.primitive-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border-radius: var(--r-2);
+}
+
+.primitive-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.walkthrough-button {
+  width: 100%;
+}
+
+.walkthrough-error {
+  color: var(--danger);
+  text-align: center;
+}

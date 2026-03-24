@@ -1,6 +1,37 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ToolsService, AuthorizationJourneysService } from './api';
 import type { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
+import { CreateServerDto } from '@taico/client';
+
+const DEFAULT_HTTP_URL = 'http://localhost:3000/mcp';
+const DEFAULT_STDIO_CMD = 'npx';
+const DEFAULT_STDIO_ARGS = ['-y', '@modelcontextprotocol/server-memory'] as const;
+
+const toProvidedId = (name: string): string => {
+  const normalized = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return normalized || 'new-tool';
+};
+
+const ensureUniqueProvidedId = (base: string, tools: Tool[]): string => {
+  const existing = new Set(tools.map((tool) => tool.providedId));
+  if (!existing.has(base)) {
+    return base;
+  }
+
+  let candidateIndex = 2;
+  let candidate = `${base}-${candidateIndex}`;
+  while (existing.has(candidate)) {
+    candidateIndex += 1;
+    candidate = `${base}-${candidateIndex}`;
+  }
+
+  return candidate;
+};
 
 export const useTools = () => {
   // UI feedback
@@ -105,6 +136,85 @@ export const useTools = () => {
     }
   }, []);
 
+  // Create tool
+  const createTool = async (params: { name: string; type: 'http' | 'stdio' }): Promise<Tool | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const baseProvidedId = toProvidedId(params.name);
+      const providedId = ensureUniqueProvidedId(baseProvidedId, tools);
+
+      const request: CreateServerDto = {
+        providedId,
+        name: params.name,
+        description: `New ${params.type.toUpperCase()} MCP server`,
+        type:
+          params.type === 'http'
+            ? CreateServerDto.type.HTTP
+            : CreateServerDto.type.STDIO,
+        ...(params.type === 'http'
+          ? { url: DEFAULT_HTTP_URL }
+          : { cmd: DEFAULT_STDIO_CMD, args: [...DEFAULT_STDIO_ARGS] }),
+      };
+
+      const newTool = await ToolsService.mcpRegistryControllerCreateServer(request);
+
+      setTools((previousTools) => {
+        return sortTools([...previousTools, newTool]);
+      });
+
+      return newTool;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create tool');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update tool
+  const updateTool = useCallback(async (toolId: string, updates: Partial<Tool>): Promise<Tool | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedTool = await ToolsService.mcpRegistryControllerUpdateServer(toolId, updates);
+
+      setTools((previousTools) => {
+        const updated = previousTools.map((tool) =>
+          tool.id === toolId ? updatedTool : tool
+        );
+        return sortTools(updated);
+      });
+
+      return updatedTool;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update tool');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Delete tool
+  const deleteTool = useCallback(async (toolId: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await ToolsService.mcpRegistryControllerDeleteServer(toolId);
+
+      setTools((previousTools) => {
+        return previousTools.filter((tool) => tool.id !== toolId);
+      });
+
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete tool');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     // UI feedback
     isLoading,
@@ -118,5 +228,8 @@ export const useTools = () => {
     loadToolClients,
     loadToolAuthorizations,
     loadClientDetails,
+    createTool,
+    updateTool,
+    deleteTool,
   };
 };

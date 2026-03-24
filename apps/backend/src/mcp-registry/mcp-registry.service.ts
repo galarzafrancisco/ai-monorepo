@@ -76,8 +76,18 @@ export class McpRegistryService {
     }
 
     const server = this.serverRepository.create(input);
-    const savedServer = await this.serverRepository.save(server);
-    return this.mapServerEntityToRecord(savedServer);
+    try {
+      const savedServer = await this.serverRepository.save(server);
+      return this.mapServerEntityToRecord(savedServer);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        String(error.message).includes('UNIQUE constraint failed')
+      ) {
+        throw new ServerAlreadyExistsError(input.providedId);
+      }
+      throw error;
+    }
   }
 
   async listServers(
@@ -190,8 +200,12 @@ export class McpRegistryService {
       args: input.args ?? server.args,
     });
 
-    // Update only provided fields
-    Object.assign(server, input);
+    // Skip undefined values — DTO class fields are initialized to undefined by
+    // TypeScript (ES2023 target), so a plain Object.assign would overwrite valid
+    // entity fields with undefined for any key not present in the request body.
+    Object.assign(server, Object.fromEntries(
+      Object.entries(input).filter(([, v]) => v !== undefined),
+    ));
 
     const updatedServer = await this.serverRepository.save(server);
     return this.mapServerEntityToRecord(updatedServer);

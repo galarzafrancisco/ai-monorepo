@@ -1,0 +1,69 @@
+.tools-fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+  z-index: 999;
+
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+
+  border: 0;
+  background: var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  color: var(--accent-contrast);
+
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.tools-fab:hover {
+  background-color: var(--accent-hover);
+}
+
+.tools-fab:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+@media (max-width: 900px) {
+  .tools-fab {
+    bottom: calc(var(--space-5) + env(safe-area-inset-bottom) + 56px);
+  }
+}
+
+.tools-fab--desktop {
+  width: auto;
+  height: 44px;
+  padding: 0 14px;
+  gap: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+}
+
+.tools-fab--desktop:hover {
+  background-color: var(--accent-hover);
+}
+
+.tools-fab__plus {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.tools-fab__label {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
