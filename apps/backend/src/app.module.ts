@@ -30,6 +30,7 @@ import { AddMcpServerTransportConfig1740500000000 } from './migrations/174050000
 import { AddTagUsageTable1741100000000 } from './migrations/1741100000000-AddTagUsageTable';
 import { McpServerProvidedIdPartialUniqueIndex1741200000000 } from './migrations/1741200000000-McpServerProvidedIdPartialUniqueIndex';
 import { AddHasSeenWalkthroughToUsers1741300000000 } from './migrations/1741300000000-AddHasSeenWalkthroughToUsers';
+import { EnforceSingleThreadPerParentTask1741400000000 } from './migrations/1741400000000-EnforceSingleThreadPerParentTask';
 import { SecretsModule } from './secrets/secrets.module';
 
 @Module({
@@ -53,6 +54,7 @@ import { SecretsModule } from './secrets/secrets.module';
         AddTagUsageTable1741100000000,
         McpServerProvidedIdPartialUniqueIndex1741200000000,
         AddHasSeenWalkthroughToUsers1741300000000,
+        EnforceSingleThreadPerParentTask1741400000000,
       ],
     }),
     EventEmitterModule.forRoot(),
