@@ -11,10 +11,10 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 9999;
-  padding: var(--space-4);
+  padding: min(20vh, 12rem) var(--space-4) var(--space-4);
 }
 
 .command-palette-container {
@@ -95,7 +95,7 @@
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .command-palette-backdrop {
-    padding: var(--space-3);
+    padding: var(--space-6) var(--space-3) var(--space-3);
   }
 
   .command-palette-input {
