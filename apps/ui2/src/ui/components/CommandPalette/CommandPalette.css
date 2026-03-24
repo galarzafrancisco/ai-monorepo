@@ -27,6 +27,16 @@
   overflow: hidden;
 }
 
+.command-palette-container--shake {
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
 .command-palette-input {
   width: 100%;
   padding: var(--space-5);
@@ -86,10 +96,16 @@
   font-weight: var(--fw-semibold);
 }
 
-.command-palette-no-results {
+.command-palette-no-results,
+.command-palette-searching {
   padding: var(--space-4) var(--space-5);
   color: var(--text-muted);
   font-size: var(--fs-2);
+}
+
+.command-palette-item--task {
+  /* Tasks have a subtle visual difference */
+  opacity: 0.95;
 }
 
 /* Mobile adjustments */
