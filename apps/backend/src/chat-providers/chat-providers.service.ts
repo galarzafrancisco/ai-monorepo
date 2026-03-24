@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ChatProviderEntity } from './chat-provider.entity';
 import { SecretsService } from '../secrets/secrets.service';
 import {
@@ -25,6 +25,7 @@ export class ChatProvidersService {
     @InjectRepository(ChatProviderEntity)
     private readonly chatProviderRepository: Repository<ChatProviderEntity>,
     private readonly secretsService: SecretsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createChatProvider(
@@ -117,30 +118,32 @@ export class ChatProvidersService {
       providerId: input.providerId,
     });
 
-    const provider = await this.chatProviderRepository.findOne({
-      where: { id: input.providerId },
+    // Use a transaction to prevent race conditions
+    return await this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(ChatProviderEntity);
+
+      const provider = await repository.findOne({
+        where: { id: input.providerId },
+      });
+
+      if (!provider) {
+        throw new ChatProviderNotFoundError(input.providerId);
+      }
+
+      // Check if provider is configured
+      if (!provider.secretId) {
+        throw new ChatProviderNotConfiguredError(input.providerId);
+      }
+
+      // Deactivate all other providers
+      await repository.update({}, { isActive: false });
+
+      // Activate the selected provider
+      provider.isActive = true;
+      const saved = await repository.save(provider);
+
+      return this.mapToResult(saved);
     });
-
-    if (!provider) {
-      throw new ChatProviderNotFoundError(input.providerId);
-    }
-
-    // Check if provider is configured
-    if (!provider.secretId) {
-      throw new ChatProviderNotConfiguredError(input.providerId);
-    }
-
-    // Deactivate all other providers
-    await this.chatProviderRepository.update(
-      {},
-      { isActive: false },
-    );
-
-    // Activate the selected provider
-    provider.isActive = true;
-    await this.chatProviderRepository.save(provider);
-
-    return this.mapToResult(provider);
   }
 
   async getActiveChatProviderConfig(): Promise<ActiveChatProviderConfigResult> {
