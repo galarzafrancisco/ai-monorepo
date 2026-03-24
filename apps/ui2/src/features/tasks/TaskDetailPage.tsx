@@ -132,7 +132,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       [TaskStatus.NOT_STARTED]: ['not started', 'to do', 'todo', 'queued'],
       [TaskStatus.IN_PROGRESS]: ['in progress', 'doing', 'building'],
       [TaskStatus.FOR_REVIEW]: ['for review', 'review', 'in review'],
-      [TaskStatus.DONE]: ['done', 'shipped', 'complete'],
+      [TaskStatus.DONE]: ['done', 'shipped', 'release', 'complete'],
     };
 
     const statusCommands = Object.entries(TASKS_STATUS).map(([status, info]) => ({
