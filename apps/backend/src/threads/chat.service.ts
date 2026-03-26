@@ -60,10 +60,6 @@ export class ChatService implements OnModuleDestroy {
     private readonly openAiMcpServerFactoryService: OpenAiMcpServerFactoryService,
     private readonly chatProvidersService: ChatProvidersService,
   ) {
-    // I absolutely hate this, but it's the only way to provide a key to the @openai/agents sdk
-    // This will be overridden with the provider-specific key at runtime
-    setDefaultOpenAIKey(getConfig().openAiKey);
-
     this.adkSessionService = new SqliteSessionService({
       filename: this.getChatDatabasePath(getConfig().databasePath),
     });
@@ -89,20 +85,8 @@ export class ChatService implements OnModuleDestroy {
   }
 
   private async getOpenAiApiKey(): Promise<string> {
-    try {
-      const config = await this.chatProvidersService.getActiveChatProviderConfig();
-      return config.apiKey;
-    } catch (error) {
-      // Fall back to environment variable if no provider is configured
-      this.logger.warn({
-        message: 'No active chat provider configured, falling back to environment variable',
-        error:
-          error instanceof Error
-            ? { message: error.message, name: error.name }
-            : String(error),
-      });
-      return getConfig().openAiKey;
-    }
+    const config = await this.chatProvidersService.getActiveChatProviderConfig();
+    return config.apiKey;
   }
 
   private getChatDatabasePath(databasePath: string): string {
@@ -156,14 +140,6 @@ export class ChatService implements OnModuleDestroy {
       throw error;
     }
   }
-
-  // private async getConversation({ conversationId }: { conversationId: string }) {
-  //   const client = new OpenAI({
-  //     apiKey: getConfig().openAiKey,
-  //   });
-  //   const conversation = await client.conversations.retrieve(conversationId);
-  //   return conversation;
-  // }
 
   private makeMessage({ message, actor }: MakeMessageArgs) {
     return `[${actor.displayName} @${actor.slug}] says:\n${message}`;
