@@ -135,10 +135,11 @@ export function loadConfig(): AppConfig {
 
 function getEnv(): NodeEnv {
   const env = process.env.NODE_ENV;
-  if (env === 'production' || env === 'development') {
-    return env;
+  // Assume production by default. Only development if explicitly set.
+  if (env === 'development') {
+    return 'development';
   }
-  return 'development';
+  return 'production';
 }
 
 function getUiPort(): string {
