@@ -23,6 +23,9 @@ const KEY_LENGTH = 32; // 256 bits
  * When the SECRETS_ENABLED feature flag is off (default), the service starts
  * without requiring either mode. Calls to encrypt/decrypt will throw a
  * SecretsFeatureDisabledError (maps to HTTP 503) until the feature is enabled.
+ *
+ * IMPORTANT: If both SECRETS_ENCRYPTION_KEY and ALLOW_PLAINTEXT_SECRETS_INSECURE
+ * are set, encryption takes precedence and plaintext mode is ignored.
  */
 @Injectable()
 export class SecretsEncryptionService {
@@ -44,8 +47,10 @@ export class SecretsEncryptionService {
     }
 
     const envKey = process.env.SECRETS_ENCRYPTION_KEY;
-    this.allowPlaintextStorage = isPlaintextSecretsInsecurelyAllowed();
+    const plaintextFlagSet = isPlaintextSecretsInsecurelyAllowed();
+
     if (envKey) {
+      // Encryption key is present — use encrypted storage
       const keyBuffer = Buffer.from(envKey, 'hex');
       if (keyBuffer.length !== KEY_LENGTH) {
         throw new Error(
@@ -53,12 +58,24 @@ export class SecretsEncryptionService {
         );
       }
       this.key = keyBuffer;
-    } else if (this.allowPlaintextStorage) {
+      this.allowPlaintextStorage = false;
+
+      // Warn if both encryption key and plaintext flag are set
+      if (plaintextFlagSet) {
+        this.logger.warn(
+          'Both SECRETS_ENCRYPTION_KEY and ALLOW_PLAINTEXT_SECRETS_INSECURE are set. ' +
+            'Encryption takes precedence. Secrets will be encrypted.',
+        );
+      }
+    } else if (plaintextFlagSet) {
+      // No encryption key, but plaintext mode is explicitly allowed
       this.logger.warn(
         'ALLOW_PLAINTEXT_SECRETS_INSECURE=true is set. Secrets will be stored without encryption. DO NOT use this for high-value secrets.',
       );
       this.key = null;
+      this.allowPlaintextStorage = true;
     } else {
+      // Neither encryption key nor plaintext flag is set
       throw new Error(
         'SECRETS_ENABLED=true requires either SECRETS_ENCRYPTION_KEY or ALLOW_PLAINTEXT_SECRETS_INSECURE=true. ' +
           `If using encryption, set SECRETS_ENCRYPTION_KEY to a ${KEY_LENGTH * 2}-character hex string (${KEY_LENGTH} bytes).`,
