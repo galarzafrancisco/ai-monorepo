@@ -43,6 +43,10 @@ import { createPlaywright } from './mcp/playwright.mcp';
 import { createElen } from './mcp/elen.mcp';
 import { ChatProvidersService } from 'src/chat-providers/chat-providers.service';
 import { ChatProviderType } from 'src/chat-providers/enums';
+import {
+  createInternalWorkerAuthScopes,
+  createInternalWorkerAuthTarget,
+} from './mcp/internal-worker-auth.mcp';
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
@@ -198,6 +202,14 @@ export class AppInitRunner implements OnApplicationBootstrap {
   }
 
   async ensureMcpServers() {
+    try {
+      await this.ensureMcpServerExists(
+        createInternalWorkerAuthTarget,
+        createInternalWorkerAuthScopes,
+      );
+    } catch (error) {
+      this.logger.error('Error ensuring internal worker auth target exists');
+    }
     try {
       await this.ensureMcpServerExists(createTasks, createTasksScopes);
     } catch (error) {

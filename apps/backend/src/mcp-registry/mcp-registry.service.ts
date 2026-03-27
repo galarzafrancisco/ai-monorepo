@@ -43,6 +43,7 @@ import {
   MCP_SERVER_TYPES,
   McpServerType,
 } from './mcp-server.types';
+import { INTERNAL_WORKER_AUTH_TARGET_ID } from 'src/auth/core/constants/internal-auth-target.constant';
 
 @Injectable()
 export class McpRegistryService {
@@ -94,11 +95,16 @@ export class McpRegistryService {
     page: number = 1,
     limit: number = 50,
   ): Promise<ListServersResult> {
-    const [items, total] = await this.serverRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+    const query = this.serverRepository
+      .createQueryBuilder('server')
+      .where('server.providedId != :internalTargetId', {
+        internalTargetId: INTERNAL_WORKER_AUTH_TARGET_ID,
+      })
+      .orderBy('server.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [items, total] = await query.getManyAndCount();
 
     return {
       items: items.map((server) => this.mapServerEntityToRecord(server)),

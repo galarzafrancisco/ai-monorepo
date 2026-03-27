@@ -9,6 +9,7 @@ import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
+import { runWorkerMode } from './worker/worker-mode';
 
 const logger = new Logger('Bootstrap');
 
@@ -46,6 +47,19 @@ function isAddressInUseError(error: unknown): boolean {
 }
 
 async function bootstrap() {
+  const args = process.argv.slice(2);
+  const generateSpec = args.includes('--generate-spec');
+  const workerMode = args.includes('--worker');
+
+  if (workerMode) {
+    const serverUrl = readCliOption(args, '--serverurl');
+    if (!serverUrl) {
+      throw new Error('Missing required --serverurl for worker mode');
+    }
+    await runWorkerMode({ serverUrl });
+    return;
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Cookie parser for session management
@@ -96,9 +110,6 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
 
-  // Check if --generate-spec flag is present
-  const generateSpec = process.argv.includes('--generate-spec');
-
   if (generateSpec) {
     // Write OpenAPI spec to file and exit
     const outputPath = join(__dirname, '..', 'openapi.json');
@@ -140,9 +151,20 @@ async function bootstrap() {
   }
 
   const config = getConfig();
-  let port = config.port;
+  const cliPort = readCliOption(args, '--port');
+  const port = cliPort ? Number(cliPort) : config.port;
 
   await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
 }
+
+function readCliOption(args: string[], name: string): string | null {
+  const index = args.indexOf(name);
+  if (index === -1) {
+    return null;
+  }
+
+  return args[index + 1] ?? null;
+}
+
 bootstrap();
