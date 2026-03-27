@@ -138,6 +138,7 @@ async function bootstrapWorkerAuthorization(
       client_name: `Taico Worker (${process.pid})`,
       redirect_uris: [redirectUri],
       grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code'],
       token_endpoint_auth_method: 'none',
       scope: INTERNAL_WORKER_AUTH_SCOPES.map((scope) => scope.id).join(' '),
     }),
