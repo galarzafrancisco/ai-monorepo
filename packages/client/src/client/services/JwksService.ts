@@ -5,6 +5,7 @@
 import type { JwksResponseDto } from '../models/JwksResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class JwksService {
     /**
@@ -13,8 +14,8 @@ export class JwksService {
      * @returns JwksResponseDto JWKS retrieved successfully
      * @throws ApiError
      */
-    public static jwksControllerGetJwks(): CancelablePromise<JwksResponseDto> {
-        return __request(OpenAPI, {
+    public static jwksControllerGetJwks(config: OpenAPIConfig = OpenAPI): CancelablePromise<JwksResponseDto> {
+        return __request(config, {
             method: 'GET',
             url: '/.well-known/jwks.json',
         });

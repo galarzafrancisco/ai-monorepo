@@ -1,12 +1,8 @@
 // Taico.ts - API client wrapper using generated services
 import {
-  OpenAPI,
   ApiError,
-  AgentService,
-  TaskService,
-  ThreadsService,
-  MetaProjectsService,
-  AgentRunService,
+  createTaicoClient,
+  type TaicoClient,
   type AgentResponseDto,
   type AgentRunResponseDto,
   type ProjectResponseDto,
@@ -19,18 +15,21 @@ function isApiError(error: unknown): error is ApiError {
 }
 
 export class Taico {
+  private readonly client: TaicoClient;
+
   constructor(
     baseUrl: string,
     accessToken: string,
   ) {
-    // Configure the generated client
-    OpenAPI.BASE = baseUrl;
-    OpenAPI.TOKEN = accessToken;
+    this.client = createTaicoClient({
+      baseUrl,
+      token: accessToken,
+    });
   }
 
   async getAgent(agentSlug: string): Promise<AgentResponseDto | null> {
     try {
-      return await AgentService.agentsControllerGetAgentBySlug(agentSlug);
+      return await this.client.AgentService.agentsControllerGetAgentBySlug(agentSlug);
     } catch (error: unknown) {
       if (isApiError(error) && error.status === 404) {
         return null;
@@ -67,14 +66,14 @@ export class Taico {
 
   async addComment(taskId: string, comment: string): Promise<void> {
     try {
-      await TaskService.tasksControllerAddComment(taskId, { content: comment });
+      await this.client.TaskService.tasksControllerAddComment(taskId, { content: comment });
     } catch (error) {
       console.error(`Failed to post comment to task ${taskId}:`, error);
     }
   }
 
   async listTasks(page = 1, limit = 100): Promise<TaskResponseDto[]> {
-    const response = await TaskService.tasksControllerListTasks(
+    const response = await this.client.TaskService.tasksControllerListTasks(
       undefined,
       undefined,
       undefined,
@@ -86,7 +85,7 @@ export class Taico {
 
   async getTask(taskId: string): Promise<TaskResponseDto | null> {
     try {
-      return await TaskService.tasksControllerGetTask(taskId);
+      return await this.client.TaskService.tasksControllerGetTask(taskId);
     } catch (error: unknown) {
       if (isApiError(error) && error.status === 404) {
         return null;
@@ -97,7 +96,7 @@ export class Taico {
 
   async getProjectBySlug(slug: string): Promise<ProjectResponseDto | null> {
     try {
-      return await MetaProjectsService.projectsControllerGetProjectBySlug(slug);
+      return await this.client.MetaProjectsService.projectsControllerGetProjectBySlug(slug);
     } catch (error: unknown) {
       if (isApiError(error) && error.status === 404) {
         return null;
@@ -108,7 +107,7 @@ export class Taico {
 
   async getThreadByTaskId(taskId: string): Promise<ThreadResponseDto | null> {
     try {
-      return await ThreadsService.threadsControllerGetThreadByTaskId(taskId);
+      return await this.client.ThreadsService.threadsControllerGetThreadByTaskId(taskId);
     } catch (error: unknown) {
       if (isApiError(error) && error.status === 404) {
         return null;
@@ -119,7 +118,7 @@ export class Taico {
 
   async startRun(taskId: string): Promise<AgentRunResponseDto | null> {
     try {
-      return await AgentRunService.agentRunsControllerCreateAgentRun({
+      return await this.client.AgentRunService.agentRunsControllerCreateAgentRun({
         parentTaskId: taskId,
       });
     } catch (error) {

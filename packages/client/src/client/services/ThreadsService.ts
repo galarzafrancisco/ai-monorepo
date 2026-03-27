@@ -18,6 +18,7 @@ import type { UpdateThreadDto } from '../models/UpdateThreadDto.js';
 import type { UpdateThreadStateDto } from '../models/UpdateThreadStateDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class ThreadsService {
     /**
@@ -28,8 +29,9 @@ export class ThreadsService {
      */
     public static threadsControllerCreateThread(
         requestBody: CreateThreadDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/threads',
             body: requestBody,
@@ -49,8 +51,9 @@ export class ThreadsService {
     public static threadsControllerListThreads(
         page?: number,
         limit?: number,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadListResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/threads',
             query: {
@@ -69,8 +72,9 @@ export class ThreadsService {
     public static threadsControllerUpdateThread(
         id: string,
         requestBody: UpdateThreadDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/threads/{id}',
             path: {
@@ -92,8 +96,9 @@ export class ThreadsService {
      */
     public static threadsControllerGetThread(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/threads/{id}',
             path: {
@@ -112,8 +117,9 @@ export class ThreadsService {
      */
     public static threadsControllerDeleteThread(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/threads/{id}',
             path: {
@@ -132,8 +138,9 @@ export class ThreadsService {
      */
     public static threadsControllerGetThreadByTaskId(
         taskId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/threads/by-task/{taskId}',
             path: {
@@ -151,8 +158,9 @@ export class ThreadsService {
     public static threadsControllerAttachTask(
         id: string,
         requestBody: AttachTaskDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/threads/{id}/tasks',
             path: {
@@ -176,8 +184,9 @@ export class ThreadsService {
     public static threadsControllerReferenceContextBlock(
         id: string,
         requestBody: ReferenceContextBlockDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/threads/{id}/context-blocks',
             path: {
@@ -201,8 +210,9 @@ export class ThreadsService {
     public static threadsControllerAddTagToThread(
         id: string,
         requestBody: CreateTagDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/threads/{id}/tags',
             path: {
@@ -226,8 +236,9 @@ export class ThreadsService {
     public static threadsControllerRemoveTagFromThread(
         id: string,
         tagId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/threads/{id}/tags/{tagId}',
             path: {
@@ -249,8 +260,9 @@ export class ThreadsService {
     public static threadsControllerAddParticipant(
         id: string,
         requestBody: AddParticipantDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/threads/{id}/participants',
             path: {
@@ -272,8 +284,9 @@ export class ThreadsService {
      */
     public static threadsControllerGetThreadState(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadStateResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/threads/{id}/state',
             path: {
@@ -294,8 +307,9 @@ export class ThreadsService {
     public static threadsControllerUpdateThreadState(
         id: string,
         requestBody: UpdateThreadStateDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadStateResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/threads/{id}/state',
             path: {
@@ -319,8 +333,9 @@ export class ThreadsService {
     public static threadsControllerAppendThreadState(
         id: string,
         requestBody: AppendThreadStateDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadStateResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/threads/{id}/state/append',
             path: {
@@ -344,8 +359,9 @@ export class ThreadsService {
     public static threadsControllerCreateMessage(
         id: string,
         requestBody: CreateThreadMessageDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ThreadMessageResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/threads/{id}/messages',
             path: {
@@ -371,8 +387,9 @@ export class ThreadsService {
         id: string,
         page: number = 1,
         limit: number = 20,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ListThreadMessagesResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/threads/{id}/messages',
             path: {

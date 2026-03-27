@@ -10,6 +10,7 @@ import type { OnboardingStatusResponseDto } from '../models/OnboardingStatusResp
 import type { UserResponseDto } from '../models/UserResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class WebAuthenticationService {
     /**
@@ -20,8 +21,9 @@ export class WebAuthenticationService {
      */
     public static webAuthControllerLogin(
         requestBody: LoginRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<LoginResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/login',
             body: requestBody,
@@ -36,8 +38,8 @@ export class WebAuthenticationService {
      * @returns LoginResponseDto Token refreshed successfully, new tokens set in cookies
      * @throws ApiError
      */
-    public static webAuthControllerRefresh(): CancelablePromise<LoginResponseDto> {
-        return __request(OpenAPI, {
+    public static webAuthControllerRefresh(config: OpenAPIConfig = OpenAPI): CancelablePromise<LoginResponseDto> {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/refresh',
             errors: {
@@ -50,10 +52,10 @@ export class WebAuthenticationService {
      * @returns any Logout successful, cookies cleared
      * @throws ApiError
      */
-    public static webAuthControllerLogout(): CancelablePromise<{
+    public static webAuthControllerLogout(config: OpenAPIConfig = OpenAPI): CancelablePromise<{
         ok?: boolean;
     }> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/logout',
         });
@@ -63,8 +65,8 @@ export class WebAuthenticationService {
      * @returns UserResponseDto Current user information
      * @throws ApiError
      */
-    public static webAuthControllerMe(): CancelablePromise<UserResponseDto> {
-        return __request(OpenAPI, {
+    public static webAuthControllerMe(config: OpenAPIConfig = OpenAPI): CancelablePromise<UserResponseDto> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth/me',
             errors: {
@@ -80,10 +82,11 @@ export class WebAuthenticationService {
      */
     public static webAuthControllerChangePassword(
         requestBody: ChangePasswordRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<{
         ok?: boolean;
     }> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/change-password',
             body: requestBody,
@@ -98,8 +101,8 @@ export class WebAuthenticationService {
      * @returns OnboardingStatusResponseDto Onboarding status
      * @throws ApiError
      */
-    public static webAuthControllerGetOnboardingStatus(): CancelablePromise<OnboardingStatusResponseDto> {
-        return __request(OpenAPI, {
+    public static webAuthControllerGetOnboardingStatus(config: OpenAPIConfig = OpenAPI): CancelablePromise<OnboardingStatusResponseDto> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth/onboarding-status',
         });
@@ -112,8 +115,9 @@ export class WebAuthenticationService {
      */
     public static webAuthControllerOnboard(
         requestBody: OnboardingRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<LoginResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/onboard',
             body: requestBody,
@@ -128,10 +132,10 @@ export class WebAuthenticationService {
      * @returns any Walkthrough marked as seen
      * @throws ApiError
      */
-    public static webAuthControllerMarkWalkthroughSeen(): CancelablePromise<{
+    public static webAuthControllerMarkWalkthroughSeen(config: OpenAPIConfig = OpenAPI): CancelablePromise<{
         ok?: boolean;
     }> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/mark-walkthrough-seen',
             errors: {

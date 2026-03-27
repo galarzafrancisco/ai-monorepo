@@ -19,6 +19,7 @@ import type { TaskSearchResultDto } from '../models/TaskSearchResultDto.js';
 import type { UpdateTaskDto } from '../models/UpdateTaskDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class TaskService {
     /**
@@ -29,8 +30,9 @@ export class TaskService {
      */
     public static tasksControllerCreateTask(
         requestBody: CreateTaskDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/tasks/tasks',
             body: requestBody,
@@ -56,8 +58,9 @@ export class TaskService {
         tag?: string,
         page: number = 1,
         limit: number = 20,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskListResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/tasks/tasks',
             query: {
@@ -79,8 +82,9 @@ export class TaskService {
     public static tasksControllerUpdateTask(
         id: string,
         requestBody: UpdateTaskDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/tasks/tasks/{id}',
             path: {
@@ -102,8 +106,9 @@ export class TaskService {
      */
     public static tasksControllerDeleteTask(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/tasks/tasks/{id}',
             path: {
@@ -122,8 +127,9 @@ export class TaskService {
      */
     public static tasksControllerGetTask(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/tasks/tasks/{id}',
             path: {
@@ -144,8 +150,9 @@ export class TaskService {
     public static tasksControllerAssignTask(
         id: string,
         requestBody: AssignTaskDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/tasks/tasks/{id}/assign',
             path: {
@@ -167,8 +174,9 @@ export class TaskService {
      */
     public static tasksControllerAssignTaskToMe(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/tasks/tasks/{id}/assign-to-me',
             path: {
@@ -191,8 +199,9 @@ export class TaskService {
         query: string,
         limit: number = 10,
         threshold: number = 0.3,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<TaskSearchResultDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/tasks/tasks/search/query',
             query: {
@@ -212,8 +221,9 @@ export class TaskService {
     public static tasksControllerAddComment(
         id: string,
         requestBody: CreateCommentDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<CommentResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/tasks/tasks/{id}/comments',
             path: {
@@ -237,8 +247,9 @@ export class TaskService {
     public static tasksControllerAddArtefact(
         id: string,
         requestBody: CreateArtefactDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ArtefactResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/tasks/tasks/{id}/artefacts',
             path: {
@@ -262,8 +273,9 @@ export class TaskService {
     public static tasksControllerChangeStatus(
         id: string,
         requestBody: ChangeTaskStatusDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/tasks/tasks/{id}/status',
             path: {
@@ -287,8 +299,9 @@ export class TaskService {
     public static tasksControllerAddTagToTask(
         id: string,
         requestBody: CreateTagDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/tasks/tasks/{id}/tags',
             path: {
@@ -312,8 +325,9 @@ export class TaskService {
     public static tasksControllerRemoveTagFromTask(
         id: string,
         tagId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/tasks/tasks/{id}/tags/{tagId}',
             path: {
@@ -335,8 +349,9 @@ export class TaskService {
     public static tasksControllerCreateInputRequest(
         id: string,
         requestBody: CreateInputRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<InputRequestResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/tasks/tasks/{id}/input-requests',
             path: {
@@ -362,8 +377,9 @@ export class TaskService {
         id: string,
         inputRequestId: string,
         requestBody: AnswerInputRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<InputRequestResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/tasks/tasks/{id}/input-requests/{inputRequestId}/answer',
             path: {
@@ -382,8 +398,8 @@ export class TaskService {
      * @returns any
      * @throws ApiError
      */
-    public static tasksControllerHandleMcpGet(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static tasksControllerHandleMcpGet(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/tasks/tasks/mcp',
         });
@@ -392,8 +408,8 @@ export class TaskService {
      * @returns any
      * @throws ApiError
      */
-    public static tasksControllerHandleMcpPost(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static tasksControllerHandleMcpPost(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/tasks/tasks/mcp',
         });
@@ -402,8 +418,8 @@ export class TaskService {
      * @returns any
      * @throws ApiError
      */
-    public static tasksControllerHandleMcpPut(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static tasksControllerHandleMcpPut(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'PUT',
             url: '/api/v1/tasks/tasks/mcp',
         });
@@ -412,8 +428,8 @@ export class TaskService {
      * @returns any
      * @throws ApiError
      */
-    public static tasksControllerHandleMcpDelete(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static tasksControllerHandleMcpDelete(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/tasks/tasks/mcp',
         });
@@ -422,8 +438,8 @@ export class TaskService {
      * @returns any
      * @throws ApiError
      */
-    public static tasksControllerHandleMcpPatch(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static tasksControllerHandleMcpPatch(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/tasks/tasks/mcp',
         });
@@ -432,8 +448,8 @@ export class TaskService {
      * @returns any
      * @throws ApiError
      */
-    public static tasksControllerHandleMcpOptions(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static tasksControllerHandleMcpOptions(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'OPTIONS',
             url: '/api/v1/tasks/tasks/mcp',
         });
@@ -442,8 +458,8 @@ export class TaskService {
      * @returns any
      * @throws ApiError
      */
-    public static tasksControllerHandleMcpHead(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static tasksControllerHandleMcpHead(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'HEAD',
             url: '/api/v1/tasks/tasks/mcp',
         });

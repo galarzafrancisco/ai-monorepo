@@ -8,6 +8,7 @@ import type { SecretValueResponseDto } from '../models/SecretValueResponseDto.js
 import type { UpdateSecretDto } from '../models/UpdateSecretDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class SecretsService {
     /**
@@ -18,8 +19,9 @@ export class SecretsService {
      */
     public static secretsControllerCreateSecret(
         requestBody: CreateSecretDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<SecretResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/secrets',
             body: requestBody,
@@ -31,8 +33,8 @@ export class SecretsService {
      * @returns SecretResponseDto List of secrets (no values)
      * @throws ApiError
      */
-    public static secretsControllerListSecrets(): CancelablePromise<Array<SecretResponseDto>> {
-        return __request(OpenAPI, {
+    public static secretsControllerListSecrets(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<SecretResponseDto>> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/secrets',
         });
@@ -45,8 +47,9 @@ export class SecretsService {
      */
     public static secretsControllerGetSecret(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<SecretResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/secrets/{id}',
             path: {
@@ -67,8 +70,9 @@ export class SecretsService {
     public static secretsControllerUpdateSecret(
         id: string,
         requestBody: UpdateSecretDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<SecretResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/secrets/{id}',
             path: {
@@ -89,8 +93,9 @@ export class SecretsService {
      */
     public static secretsControllerDeleteSecret(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/secrets/{id}',
             path: {
@@ -109,8 +114,9 @@ export class SecretsService {
      */
     public static secretsControllerGetSecretValue(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<SecretValueResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/secrets/{id}/value',
             path: {

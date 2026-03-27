@@ -5,6 +5,7 @@
 import type { ActorResponseDto } from '../models/ActorResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class ActorsService {
     /**
@@ -12,8 +13,8 @@ export class ActorsService {
      * @returns ActorResponseDto List of all actors
      * @throws ApiError
      */
-    public static actorControllerListActors(): CancelablePromise<Array<ActorResponseDto>> {
-        return __request(OpenAPI, {
+    public static actorControllerListActors(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<ActorResponseDto>> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/actors',
         });
@@ -30,8 +31,9 @@ export class ActorsService {
         query: string,
         limit: number = 10,
         threshold: number = 0.3,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<ActorResponseDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/actors/search',
             query: {

@@ -8,6 +8,7 @@ import type { ScheduledTaskResponseDto } from '../models/ScheduledTaskResponseDt
 import type { UpdateScheduledTaskDto } from '../models/UpdateScheduledTaskDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class ScheduledTasksService {
     /**
@@ -18,8 +19,9 @@ export class ScheduledTasksService {
      */
     public static scheduledTasksControllerCreateScheduledTask(
         requestBody: CreateScheduledTaskDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ScheduledTaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/scheduled-tasks',
             body: requestBody,
@@ -41,8 +43,9 @@ export class ScheduledTasksService {
         page: number = 1,
         limit: number = 20,
         enabled?: boolean,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ScheduledTaskListResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/scheduled-tasks',
             query: {
@@ -60,8 +63,9 @@ export class ScheduledTasksService {
      */
     public static scheduledTasksControllerGetScheduledTask(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ScheduledTaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/scheduled-tasks/{id}',
             path: {
@@ -82,8 +86,9 @@ export class ScheduledTasksService {
     public static scheduledTasksControllerUpdateScheduledTask(
         id: string,
         requestBody: UpdateScheduledTaskDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ScheduledTaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/scheduled-tasks/{id}',
             path: {
@@ -105,8 +110,9 @@ export class ScheduledTasksService {
      */
     public static scheduledTasksControllerDeleteScheduledTask(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/scheduled-tasks/{id}',
             path: {

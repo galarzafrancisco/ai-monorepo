@@ -5,6 +5,7 @@
 import type { AuthJourneyResponseDto } from '../models/AuthJourneyResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class AuthorizationJourneysService {
     /**
@@ -15,8 +16,9 @@ export class AuthorizationJourneysService {
      */
     public static authJourneysControllerGetAuthJourneys(
         serverId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<AuthJourneyResponseDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth-journeys/servers/{serverId}',
             path: {

@@ -8,6 +8,7 @@ import type { CreateAgentDto } from '../models/CreateAgentDto.js';
 import type { PatchAgentDto } from '../models/PatchAgentDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class AgentService {
     /**
@@ -18,8 +19,9 @@ export class AgentService {
      */
     public static agentsControllerCreateAgent(
         requestBody: CreateAgentDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AgentResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/agents',
             body: requestBody,
@@ -38,8 +40,9 @@ export class AgentService {
         isActive?: boolean,
         page: number = 1,
         limit: number = 20,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AgentListResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/agents',
             query: {
@@ -57,8 +60,9 @@ export class AgentService {
      */
     public static agentsControllerGetAgentBySlug(
         slug: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AgentResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/agents/{slug}',
             path: {
@@ -76,8 +80,9 @@ export class AgentService {
     public static agentsControllerPatchAgent(
         actorId: string,
         requestBody: PatchAgentDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AgentResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/agents/{actorId}',
             path: {
@@ -95,8 +100,9 @@ export class AgentService {
      */
     public static agentsControllerDeleteAgent(
         actorId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/agents/{actorId}',
             path: {

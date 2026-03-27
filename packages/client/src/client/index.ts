@@ -9,6 +9,7 @@ export type { OpenAPIConfig } from './core/OpenAPI.js';
 
 export { ActorResponseDto } from './models/ActorResponseDto.js';
 export type { AddParticipantDto } from './models/AddParticipantDto.js';
+export type { AgentExecutionTokenResponseDto } from './models/AgentExecutionTokenResponseDto.js';
 export type { AgentListResponseDto } from './models/AgentListResponseDto.js';
 export { AgentResponseDto } from './models/AgentResponseDto.js';
 export type { AgentRunListResponseDto } from './models/AgentRunListResponseDto.js';
@@ -85,6 +86,7 @@ export type { ProtectedResourceMetadataResponseDto } from './models/ProtectedRes
 export type { ReferenceContextBlockDto } from './models/ReferenceContextBlockDto.js';
 export { RegisterClientDto } from './models/RegisterClientDto.js';
 export type { ReorderBlockDto } from './models/ReorderBlockDto.js';
+export type { RequestAgentExecutionTokenDto } from './models/RequestAgentExecutionTokenDto.js';
 export type { ScheduledTaskListResponseDto } from './models/ScheduledTaskListResponseDto.js';
 export type { ScheduledTaskResponseDto } from './models/ScheduledTaskResponseDto.js';
 export type { ScopeDto } from './models/ScopeDto.js';
@@ -127,6 +129,7 @@ export { UserResponseDto } from './models/UserResponseDto.js';
 
 export { ActorsService } from './services/ActorsService.js';
 export { AgentService } from './services/AgentService.js';
+export { AgentExecutionTokensService } from './services/AgentExecutionTokensService.js';
 export { AgentRunService } from './services/AgentRunService.js';
 export { AgentTokensService } from './services/AgentTokensService.js';
 export { AppService } from './services/AppService.js';
