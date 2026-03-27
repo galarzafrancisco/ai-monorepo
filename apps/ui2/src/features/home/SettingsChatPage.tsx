@@ -241,37 +241,44 @@ export function SettingsChatPage() {
                       && providerFeedback.action === 'deactivate'
                         ? providerFeedback.message
                         : null;
+                    const actionFeedback = activateFeedback || deactivateFeedback;
+                    const isActionDisabled = !provider.isActive && !provider.isConfigured;
+                    const actionVariant = actionFeedback
+                      ? 'primary'
+                      : provider.isActive
+                        ? 'danger'
+                        : 'primary';
+                    const actionLabel = actionFeedback
+                      || (provider.isActive ? 'Deactivate' : 'Set Active');
+                    const actionHandler = provider.isActive
+                      ? () => handleDeactivate(provider.id)
+                      : () => handleSetActive(provider.id);
+                    const actionTitle = isActionDisabled
+                      ? 'Configure the provider first to set it as active'
+                      : '';
 
                     return (
                       <>
                         <Button
                           variant={configureFeedback ? 'primary' : 'secondary'}
                           size="sm"
-                        onClick={() => setEditingProviderId(provider.id)}
-                      >
-                        {configureFeedback || (provider.isConfigured ? 'Update Config' : 'Configure')}
-                      </Button>
-                      {provider.isActive ? (
-                        <Button
-                          variant={deactivateFeedback ? 'primary' : 'secondary'}
-                          size="sm"
-                          onClick={() => handleDeactivate(provider.id)}
+                          onClick={() => setEditingProviderId(provider.id)}
                         >
-                          {deactivateFeedback || 'Deactivate'}
+                          {configureFeedback || (provider.isConfigured ? 'Update Config' : 'Configure')}
                         </Button>
-                      ) : (
-                        <span title={!provider.isConfigured ? 'Configure the provider first to set it as active' : ''}>
+                        <span className="settings-chat__action-wrapper" title={actionTitle}>
                           <Button
-                            variant={activateFeedback ? 'primary' : 'secondary'}
+                            variant={actionVariant}
                             size="sm"
-                            onClick={() => handleSetActive(provider.id)}
-                            disabled={!provider.isConfigured}
+                            onClick={actionHandler}
+                            disabled={isActionDisabled}
+                            className="settings-chat__action-button"
+                            data-feedback={activateFeedback ? 'active' : deactivateFeedback ? 'deactivated' : null}
                           >
-                            {activateFeedback || 'Set Active'}
+                            {actionLabel}
                           </Button>
                         </span>
-                      )}
-                      </>
+                        </>
                     );
                   })()}
                 </Row>
