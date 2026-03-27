@@ -4,7 +4,7 @@ metadata:
   name: taico-config
   namespace: taico
 data:
-  NODE_ENV: "production"
+  # NODE_ENV defaults to production (no need to set explicitly)
   BACKEND_PORT: "3000"
   SECRETS_ENABLED: "false"
   ALLOW_PLAINTEXT_SECRETS_INSECURE: "false"

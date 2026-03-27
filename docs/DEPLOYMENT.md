@@ -71,7 +71,7 @@ metadata:
   name: taico-config
   namespace: taico
 data:
-  NODE_ENV: "production"
+  # NODE_ENV defaults to production (no need to set explicitly)
   BACKEND_PORT: "3000"
   SECRETS_ENABLED: "false"
   ALLOW_PLAINTEXT_SECRETS_INSECURE: "false"
@@ -117,9 +117,8 @@ replacements:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `NODE_ENV` | Runtime environment | `production` |
 | `BACKEND_PORT` | Backend server port | `3000` |
-| `ISSUER_URL` | OAuth issuer URL (must match public URL) | `https://taico.example.com` |
+| `ISSUER_URL` | OAuth issuer URL (must match public URL, defaults to localhost) | `https://taico.example.com` |
 | `DATABASE_PATH` | SQLite database path | `/app/data/database.sqlite` |
 | `SECRETS_ENABLED` | Enables in-app secret storage | `true` |
 | `ALLOW_PLAINTEXT_SECRETS_INSECURE` | Dangerous escape hatch for storing secrets without encryption | `false` |

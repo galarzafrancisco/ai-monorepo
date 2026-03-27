@@ -12,5 +12,6 @@
     "^@/(.*)$": "<rootDir>/../src/$1",
     "^src/(.*)$": "<rootDir>/../src/$1"
   },
-  "transformIgnorePatterns": []
+  "transformIgnorePatterns": [],
+  "setupFiles": ["<rootDir>/setup-test-env.js"]
 }

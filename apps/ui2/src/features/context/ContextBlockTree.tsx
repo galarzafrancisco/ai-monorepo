@@ -7,6 +7,7 @@ import "./ContextBlockTree.css";
 type TreeNode = {
   block: ContextBlockSummary;
   children: TreeNode[];
+  latestUpdatedAt: number;
 };
 
 const MAX_DEPTH = 6;
@@ -40,7 +41,11 @@ function buildTree(blocks: ContextBlockSummary[]): TreeNode[] {
   const nodeById = new Map<string, TreeNode>();
 
   blocks.forEach((block) => {
-    nodeById.set(block.id, { block, children: [] });
+    nodeById.set(block.id, {
+      block,
+      children: [],
+      latestUpdatedAt: new Date(block.updatedAt).getTime(),
+    });
   });
 
   const roots: TreeNode[] = [];
@@ -72,6 +77,35 @@ function buildTree(blocks: ContextBlockSummary[]): TreeNode[] {
   };
 
   sortNodes(roots);
+
+  const updateLatest = (node: TreeNode): number => {
+    if (node.children.length === 0) {
+      return node.latestUpdatedAt;
+    }
+
+    let latest = node.latestUpdatedAt;
+    node.children.forEach((child) => {
+      const childLatest = updateLatest(child);
+      if (childLatest > latest) {
+        latest = childLatest;
+      }
+    });
+
+    node.latestUpdatedAt = latest;
+    return latest;
+  };
+
+  roots.forEach((node) => {
+    updateLatest(node);
+  });
+
+  roots.sort((a, b) => {
+    const updatedDiff = b.latestUpdatedAt - a.latestUpdatedAt;
+    if (updatedDiff !== 0) {
+      return updatedDiff;
+    }
+    return compareBlocks(a.block, b.block);
+  });
   return roots;
 }
 

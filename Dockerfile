@@ -49,7 +49,7 @@ COPY --from=builder /workdir/packages/events/dist ./packages/events/dist
 RUN mkdir -p /workdir/data
 
 # Set environment variables
-ENV NODE_ENV=production
+# NODE_ENV defaults to production (no need to set explicitly)
 ENV PORT=3000
 
 # Expose the application port
