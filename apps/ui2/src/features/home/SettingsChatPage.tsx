@@ -273,6 +273,7 @@ export function SettingsChatPage() {
                             onClick={actionHandler}
                             disabled={isActionDisabled}
                             className="settings-chat__action-button"
+                            data-feedback={activateFeedback ? 'active' : deactivateFeedback ? 'deactivated' : null}
                           >
                             {actionLabel}
                           </Button>

@@ -39,3 +39,13 @@
 .settings-chat__action-wrapper {
   display: inline-flex;
 }
+
+.settings-chat__action-button {
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.settings-chat__action-button[data-feedback="active"],
+.settings-chat__action-button[data-feedback="deactivated"] {
+  background-color: transparent;
+  box-shadow: none;
+}
