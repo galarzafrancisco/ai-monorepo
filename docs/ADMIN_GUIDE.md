@@ -59,7 +59,7 @@ Taico has two modes, controlled by the `NODE_ENV` environment variable:
 
 ### Development
 
-Set `NODE_ENV=development` to enable development mode. The database is seeded with two test users:
+Development mode is the default (no need to set `NODE_ENV`). The database is seeded with two test users:
 
 | Email | Password | Role |
 |---|---|---|
@@ -72,7 +72,7 @@ These are for testing only. Do not use them in production.
 
 ### Production
 
-Production mode is the default (no need to set `NODE_ENV`). No users are seeded. On first startup, if no admin exists, Taico prompts you to create the first admin user through onboarding. `ISSUER_URL` is required.
+Set `NODE_ENV=production` to enable production mode. No users are seeded. On first startup, if no admin exists, Taico prompts you to create the first admin user through onboarding. `ISSUER_URL` is required in production mode.
 
 ## User Management
 

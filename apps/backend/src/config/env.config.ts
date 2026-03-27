@@ -135,11 +135,12 @@ export function loadConfig(): AppConfig {
 
 function getEnv(): NodeEnv {
   const env = process.env.NODE_ENV;
-  // Assume production by default. Only development if explicitly set.
-  if (env === 'development') {
-    return 'development';
+  // Default to development for ease of local use (npx @taico/taico just works).
+  // Production deployments (Docker, K8s) should explicitly set NODE_ENV=production.
+  if (env === 'production') {
+    return 'production';
   }
-  return 'production';
+  return 'development';
 }
 
 function getUiPort(): string {

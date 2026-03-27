@@ -71,7 +71,7 @@ metadata:
   name: taico-config
   namespace: taico
 data:
-  # NODE_ENV defaults to production (set in Dockerfile), no need to specify
+  NODE_ENV: "production"  # Explicitly set for K8s deployments (defaults to development otherwise)
   BACKEND_PORT: "3000"
   ISSUER_URL: PLACEHOLDER_ISSUER_URL
   ADK_URL: PLACEHOLDER_ADK_URL
