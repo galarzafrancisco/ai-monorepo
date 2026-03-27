@@ -136,70 +136,18 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     };
   }, [task, showError]);
 
-  // Hybrid approach: use real-time tasks from allTasks when available,
-  // but fetch missing dependencies individually to handle pagination limits
-  // Store null for failed fetches to prevent retry loops
-  const [fetchedDependencyTasks, setFetchedDependencyTasks] = useState<Record<string, Task | null>>({});
-
-  useEffect(() => {
-    if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) {
-      setFetchedDependencyTasks({});
-      return;
-    }
-
-    // Find which dependencies are missing from allTasks
-    // Exclude IDs already in fetchedDependencyTasks (including failed fetches with null)
-    const missingIds = task.dependsOnIds.filter(
-      id => !allTasks.find(t => t.id === id) && !(id in fetchedDependencyTasks)
-    );
-
-    if (missingIds.length === 0) {
-      return;
-    }
-
-    // Fetch missing dependencies
-    let cancelled = false;
-    Promise.all(
-      missingIds.map(id =>
-        TasksService.tasksControllerGetTask(id)
-          .then(task => ({ id, task, error: null }))
-          .catch((err: unknown) => ({ id, task: null, error: err }))
-      )
-    ).then(results => {
-      if (cancelled) return;
-
-      // Use functional state update to avoid race conditions
-      setFetchedDependencyTasks(prev => {
-        const updated = { ...prev };
-        results.forEach(({ id, task, error }) => {
-          if (task) {
-            updated[id] = task as Task;
-          } else if (error) {
-            // Report fetch errors to user and store null to prevent retry loop
-            showError(error);
-            updated[id] = null;
-          }
-        });
-        return updated;
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [task, allTasks, fetchedDependencyTasks, showError]);
-
-  // Look up dependency tasks from the real-time tasks array first,
-  // then fall back to fetched tasks for those outside the pagination window
-  // Filter out undefined (not fetched yet) and null (failed to fetch)
+  // Look up dependency tasks from the real-time tasks array.
+  // The useTasks hook already maintains a real-time updated tasks array via WebSocket.
+  // If a dependency isn't in allTasks (e.g., outside the 100-task pagination window),
+  // it simply won't display - which is acceptable behavior.
   const dependencyTasks = useMemo(() => {
     if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) {
       return [];
     }
     return task.dependsOnIds
-      .map(id => allTasks.find(t => t.id === id) || fetchedDependencyTasks[id])
-      .filter((t): t is Task => t !== undefined && t !== null);
-  }, [task, allTasks, fetchedDependencyTasks]);
+      .map(id => allTasks.find(t => t.id === id))
+      .filter((t): t is Task => t !== undefined);
+  }, [task, allTasks]);
 
   useEffect(() => {
     if (!task) return;
