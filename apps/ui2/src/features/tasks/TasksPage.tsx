@@ -9,6 +9,7 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Task } from "./types";
 import { useToast } from "../../shared/context/ToastContext";
 import { useCommandPalette } from "../../ui/components";
+import { TasksService } from "./api";
 import './TasksPage.css';
 import { NewTaskPop } from "./NewTaskPop";
 import { TasksToRows } from "./TasksToRows";
@@ -20,7 +21,7 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
   const statusFilter = isDesktop ? undefined : status;
   const { tasks, createTask, setSectionTitle, animationByStatus, globalEnteringIds, globalExitingTasks, activityByTaskId } = useTasksCtx();
   const { showError } = useToast();
-  const { registerCommands } = useCommandPalette();
+  const { registerCommands, registerTaskSearch } = useCommandPalette();
 
   const navigate = useNavigate();
 
@@ -50,6 +51,10 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
 
     return registerCommands(commands);
   }, [registerCommands]);
+
+  useEffect(() => {
+    return registerTaskSearch((query: string) => TasksService.tasksControllerSearchTasks(query, 5, 0.1));
+  }, [registerTaskSearch]);
 
   // Filter tasks by status
   const filteredTasks = useMemo(() => {
