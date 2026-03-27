@@ -48,4 +48,6 @@
 .settings-chat__action-button[data-feedback="deactivated"] {
   background-color: transparent;
   box-shadow: none;
+  border-color: var(--border);
+  color: var(--text);
 }
