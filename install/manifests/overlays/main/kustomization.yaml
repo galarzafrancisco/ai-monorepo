@@ -43,28 +43,6 @@ replacements:
           name: taico-config
         fieldPaths:
           - data.OLLAMA_URL
-  # Replace SECRETS_ENABLED in taico-config ConfigMap
-  - source:
-      kind: ConfigMap
-      name: env
-      fieldPath: data.SECRETS_ENABLED
-    targets:
-      - select:
-          kind: ConfigMap
-          name: taico-config
-        fieldPaths:
-          - data.SECRETS_ENABLED
-  # Replace ALLOW_PLAINTEXT_SECRETS_INSECURE in taico-config ConfigMap
-  - source:
-      kind: ConfigMap
-      name: env
-      fieldPath: data.ALLOW_PLAINTEXT_SECRETS_INSECURE
-    targets:
-      - select:
-          kind: ConfigMap
-          name: taico-config
-        fieldPaths:
-          - data.ALLOW_PLAINTEXT_SECRETS_INSECURE
   # Replace ISSUER_URL in taico-config ConfigMap
   - source:
       kind: ConfigMap
