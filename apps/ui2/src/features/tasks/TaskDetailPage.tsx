@@ -160,24 +160,31 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     Promise.all(
       missingIds.map(id =>
         TasksService.tasksControllerGetTask(id)
-          .then(task => ({ id, task }))
-          .catch(() => ({ id, task: null }))
+          .then(task => ({ id, task, error: null }))
+          .catch((err: unknown) => ({ id, task: null, error: err }))
       )
     ).then(results => {
       if (cancelled) return;
-      const newFetched: Record<string, Task> = { ...fetchedDependencyTasks };
-      results.forEach(({ id, task }) => {
-        if (task) {
-          newFetched[id] = task as Task;
-        }
+
+      // Use functional state update to avoid race conditions
+      setFetchedDependencyTasks(prev => {
+        const updated = { ...prev };
+        results.forEach(({ id, task, error }) => {
+          if (task) {
+            updated[id] = task as Task;
+          } else if (error) {
+            // Report fetch errors to user
+            showError(error);
+          }
+        });
+        return updated;
       });
-      setFetchedDependencyTasks(newFetched);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [task, allTasks, fetchedDependencyTasks]);
+  }, [task, allTasks, fetchedDependencyTasks, showError]);
 
   // Look up dependency tasks from the real-time tasks array first,
   // then fall back to fetched tasks for those outside the pagination window
