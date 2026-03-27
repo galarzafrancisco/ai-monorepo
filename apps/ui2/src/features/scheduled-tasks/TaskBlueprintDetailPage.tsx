@@ -19,7 +19,7 @@ export function TaskBlueprintDetailPage() {
     updateBlueprint,
     deleteBlueprint,
   } = useScheduledTasksCtx();
-  const { setSectionTitle } = useTasksCtx();
+  const { setSectionTitle, tasks } = useTasksCtx();
 
   const blueprint = useMemo(() => {
     if (!taskBlueprintId) {
@@ -102,6 +102,7 @@ export function TaskBlueprintDetailPage() {
       backPath="/tasks/schedule"
       setSectionTitle={setSectionTitle}
       handlers={handlers}
+      allTasks={tasks}
     />
   );
 }

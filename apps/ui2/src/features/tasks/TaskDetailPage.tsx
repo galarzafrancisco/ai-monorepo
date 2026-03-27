@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
@@ -40,9 +40,10 @@ export type TaskDetailViewProps = {
   isLoadingTask?: boolean;
   activityByTaskId?: Record<string, TaskActivityWireEvent>;
   handlers: TaskDetailHandlers;
+  allTasks: Task[];
 };
 
-export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers }: TaskDetailViewProps) {
+export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks }: TaskDetailViewProps) {
   const navigate = useNavigate();
   const { actors } = useActorsCtx();
   const { user } = useAuth();
@@ -135,37 +136,18 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     };
   }, [task, showError]);
 
-  // Fetch dependency tasks
-  useEffect(() => {
+  // Look up dependency tasks from the real-time tasks array.
+  // The useTasks hook already maintains a real-time updated tasks array via WebSocket.
+  // If a dependency isn't in allTasks (e.g., outside the 100-task pagination window),
+  // it simply won't display - which is acceptable behavior.
+  const dependencyTasks = useMemo(() => {
     if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) {
-      setDependencyTasks([]);
-      return;
+      return [];
     }
-
-    let cancelled = false;
-
-    const fetchDependencies = async () => {
-      try {
-        const tasks = await Promise.all(
-          task.dependsOnIds.map(id => TasksService.tasksControllerGetTask(id))
-        );
-        if (!cancelled) {
-          setDependencyTasks(tasks);
-        }
-      } catch (err: unknown) {
-        if (!cancelled) {
-          showError(err);
-          setDependencyTasks([]);
-        }
-      }
-    };
-
-    void fetchDependencies();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [task, showError]);
+    return task.dependsOnIds
+      .map(id => allTasks.find(t => t.id === id))
+      .filter((t): t is Task => t !== undefined);
+  }, [task, allTasks]);
 
   useEffect(() => {
     if (!task) return;
@@ -260,7 +242,6 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [showAssignPop, setShowAssignPop] = useState(false);
   const [showTagPop, setShowTagPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
-  const [dependencyTasks, setDependencyTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -864,6 +845,7 @@ export function TaskDetailPage() {
       isLoadingTask={isLoadingTask}
       activityByTaskId={activityByTaskId}
       handlers={handlers}
+      allTasks={tasks}
     />
   );
 }
