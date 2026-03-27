@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, matchPath } from 'react-router-dom';
 import { useCommandPalette } from './CommandPaletteProvider';
 import type { Command } from './CommandPaletteProvider';
 import { TaskService, type TaskSearchResultDto } from '@taico/client';
@@ -13,6 +13,7 @@ type PaletteItem =
 export function CommandPalette() {
   const { commands } = useCommandPalette();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -23,6 +24,7 @@ export function CommandPalette() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<number | null>(null);
   const requestIdRef = useRef<number>(0);
+  const isTaskSearchEnabled = !matchPath('/tasks/task/:taskId', location.pathname);
 
   // Calculate match score for a command
   // Higher score = better match
@@ -110,6 +112,14 @@ export function CommandPalette() {
       clearTimeout(searchTimeoutRef.current);
     }
 
+    if (!isTaskSearchEnabled) {
+      // Increment request ID to invalidate any in-flight requests
+      requestIdRef.current += 1;
+      setTaskResults([]);
+      setIsSearchingTasks(false);
+      return;
+    }
+
     // Clear task results and loading state if no input
     if (!searchTerm) {
       // Increment request ID to invalidate any in-flight requests
@@ -151,7 +161,7 @@ export function CommandPalette() {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm]);
+  }, [isTaskSearchEnabled, searchTerm]);
 
   // Reset selected index when filtered commands change
   useEffect(() => {
