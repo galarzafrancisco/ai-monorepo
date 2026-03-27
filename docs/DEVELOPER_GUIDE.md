@@ -68,7 +68,8 @@ Running two separate backend watch processes from the same package is not recomm
 
 1. `npm run build:dev` — verify everything compiles
 2. `npm run test:e2e` — run end-to-end tests
-3. `npm run dev` — verify the app starts and works
+3. `npm run test:e2e:worker-auth` — run the worker OAuth and execution-token backend coverage
+4. `npm run dev` — verify the app starts and works
 
 ## Architecture
 
