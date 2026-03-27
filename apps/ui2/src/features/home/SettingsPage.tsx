@@ -4,11 +4,13 @@ import { useEffect } from 'react';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
+import { useCommandPalette } from '../../ui/components';
 
 export function SettingsPage() {
   const { setSectionTitle } = useHomeCtx();
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
+  const { registerCommands } = useCommandPalette();
 
   // Set document title (browser tab)
   useDocumentTitle();
@@ -16,6 +18,42 @@ export function SettingsPage() {
   useEffect(() => {
     setSectionTitle('Settings');
   }, []);
+
+  // Register page-specific commands
+  useEffect(() => {
+    const commands = [
+      {
+        id: 'settings-account',
+        label: 'Account Settings',
+        description: 'Manage your account security',
+        aliases: ['password', 'account', 'security'],
+        onSelect: () => navigate('/settings/account'),
+      },
+      {
+        id: 'settings-appearance',
+        label: 'Appearance Settings',
+        description: 'Choose your preferred color theme',
+        aliases: ['theme', 'appearance', 'dark mode', 'light mode'],
+        onSelect: () => navigate('/settings/appearance'),
+      },
+      {
+        id: 'settings-projects',
+        label: 'Projects Settings',
+        description: 'Manage your projects',
+        aliases: ['projects', 'manage projects'],
+        onSelect: () => navigate('/settings/projects'),
+      },
+      {
+        id: 'settings-chat',
+        label: 'Chat Settings',
+        description: 'Configure chat providers for conversations',
+        aliases: ['chat', 'openai', 'providers', 'chat providers'],
+        onSelect: () => navigate('/settings/chat'),
+      },
+    ];
+
+    return registerCommands(commands);
+  }, [registerCommands, navigate]);
 
   return (
     <Stack spacing="6">
