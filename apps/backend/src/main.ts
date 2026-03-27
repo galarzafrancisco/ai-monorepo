@@ -48,8 +48,21 @@ function isAddressInUseError(error: unknown): boolean {
 
 async function bootstrap() {
   const args = process.argv.slice(2);
+  const help = args.includes('--help') || args.includes('-h');
   const generateSpec = args.includes('--generate-spec');
+  const serverMode = args.includes('--server');
   const workerMode = args.includes('--worker');
+
+  if (help) {
+    printUsage();
+    return;
+  }
+
+  if (serverMode && workerMode) {
+    throw new Error(
+      'Cannot start both --server and --worker in the same process yet.',
+    );
+  }
 
   if (workerMode) {
     const serverUrl = readCliOption(args, '--serverurl');
@@ -156,6 +169,23 @@ async function bootstrap() {
 
   await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
+}
+
+function printUsage(): void {
+  console.log(`taico usage:
+
+  taico
+    Start the server.
+
+  taico --server [--port <port>]
+    Start the server explicitly.
+
+  taico --worker --serverurl <url>
+    Start worker mode against an existing Taico server.
+
+  taico --generate-spec
+    Generate the OpenAPI specification and exit.
+`);
 }
 
 function readCliOption(args: string[], name: string): string | null {
