@@ -536,7 +536,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             const statusTag: MetaTagResponseDto = {
               id: `status-${depTask.status}`,
               name: TASKS_STATUS[depTask.status].label,
-              color: getStatusColor(depTask.status),
+              color: '#808080', // placeholder color (not used by TaskRow)
               createdAt: depTask.createdAt,
               updatedAt: depTask.updatedAt,
             };
@@ -894,19 +894,6 @@ function TaskDetailLoadingShell({ backPath }: { backPath: string }) {
       </div>
     </div>
   );
-}
-
-function getStatusColor(status: TaskStatus): string {
-  if (status === TaskStatus.DONE) {
-    return '#9b59b6'; // purple
-  } else if (status === TaskStatus.IN_PROGRESS) {
-    return '#27ae60'; // green
-  } else if (status === TaskStatus.NOT_STARTED) {
-    return '#3498db'; // blue
-  } else if (status === TaskStatus.FOR_REVIEW) {
-    return '#e67e22'; // orange
-  }
-  return '#95a5a6'; // gray
 }
 
 function StatusTag({ status }: { status: TaskStatus }): DataRowTag {
