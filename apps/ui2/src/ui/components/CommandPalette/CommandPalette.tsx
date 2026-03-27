@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCommandPalette } from './CommandPaletteProvider';
 import type { Command } from './CommandPaletteProvider';
-import { TaskService, type TaskSearchResultDto } from '@taico/client';
+import type { TaskSearchResultDto } from '@taico/client';
 import './CommandPalette.css';
 
 // Result types that can be selected in the palette
@@ -11,7 +11,7 @@ type PaletteItem =
   | { type: 'task'; task: TaskSearchResultDto };
 
 export function CommandPalette() {
-  const { commands } = useCommandPalette();
+  const { commands, searchTasks } = useCommandPalette();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -110,6 +110,13 @@ export function CommandPalette() {
       clearTimeout(searchTimeoutRef.current);
     }
 
+    if (!searchTasks) {
+      requestIdRef.current += 1;
+      setTaskResults([]);
+      setIsSearchingTasks(false);
+      return;
+    }
+
     // Clear task results and loading state if no input
     if (!searchTerm) {
       // Increment request ID to invalidate any in-flight requests
@@ -127,7 +134,7 @@ export function CommandPalette() {
     searchTimeoutRef.current = window.setTimeout(async () => {
       setIsSearchingTasks(true);
       try {
-        const results = await TaskService.tasksControllerSearchTasks(searchTerm, 5, 0.1);
+        const results = await searchTasks(searchTerm);
         // Only apply results if this request is still current
         if (requestIdRef.current === currentRequestId) {
           setTaskResults(results);
@@ -151,7 +158,7 @@ export function CommandPalette() {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm]);
+  }, [searchTerm, searchTasks]);
 
   // Reset selected index when filtered commands change
   useEffect(() => {

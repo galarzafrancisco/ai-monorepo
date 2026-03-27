@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CommandPalette } from './CommandPalette';
+import type { TaskSearchResultDto } from '@taico/client';
 
 export interface Command {
   id: string;
@@ -10,9 +11,13 @@ export interface Command {
   onSelect: () => void;
 }
 
+export type TaskSearchHandler = (query: string) => Promise<TaskSearchResultDto[]>;
+
 interface CommandPaletteContextValue {
   commands: Command[];
   registerCommands: (commands: Command[]) => () => void;
+  searchTasks?: TaskSearchHandler;
+  registerTaskSearch: (searchHandler: TaskSearchHandler) => () => void;
 }
 
 const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(null);
@@ -28,6 +33,7 @@ export function useCommandPalette() {
 export function CommandPaletteProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [registeredMap, setRegisteredMap] = useState<Map<string, Command[]>>(new Map());
+  const [registeredTaskSearchMap, setRegisteredTaskSearchMap] = useState<Map<string, TaskSearchHandler>>(new Map());
   const keyCounter = useRef(0);
 
   const globalCommands: Command[] = useMemo(() => [
@@ -98,12 +104,36 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
     };
   }, []);
 
+  const registerTaskSearch = useCallback((searchHandler: TaskSearchHandler) => {
+    const key = String(++keyCounter.current);
+    setRegisteredTaskSearchMap(prev => {
+      const next = new Map(prev);
+      next.set(key, searchHandler);
+      return next;
+    });
+    return () => {
+      setRegisteredTaskSearchMap(prev => {
+        const next = new Map(prev);
+        next.delete(key);
+        return next;
+      });
+    };
+  }, []);
+
   const commands = useMemo(() => {
     const pageCommands = Array.from(registeredMap.values()).flat();
     return [...pageCommands, ...globalCommands];
   }, [globalCommands, registeredMap]);
 
-  const value = useMemo(() => ({ commands, registerCommands }), [commands, registerCommands]);
+  const searchTasks = useMemo(() => {
+    const handlers = Array.from(registeredTaskSearchMap.values());
+    return handlers[handlers.length - 1];
+  }, [registeredTaskSearchMap]);
+
+  const value = useMemo(
+    () => ({ commands, registerCommands, searchTasks, registerTaskSearch }),
+    [commands, registerCommands, searchTasks, registerTaskSearch],
+  );
 
   return (
     <CommandPaletteContext.Provider value={value}>
