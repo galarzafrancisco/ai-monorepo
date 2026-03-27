@@ -1,8 +1,11 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Text, Button, Avatar } from "../../ui/primitives";
 import { useThread } from "./useThread";
 import { useAuth } from "../../auth";
 import { useDraftState } from "../../shared/hooks/useDraftState";
+import { useChatReadiness } from "../chat-providers/useChatReadiness";
+import { ChatSetupCallout } from "../chat-providers/ChatSetupCallout";
 import "./ThreadChat.css";
 
 interface ThreadChatProps {
@@ -10,6 +13,7 @@ interface ThreadChatProps {
 }
 
 export function ThreadChat({ threadId }: ThreadChatProps) {
+  const navigate = useNavigate();
   const [draftState, setDraftState, clearDraft] = useDraftState({
     key: `thread-chat-draft-${threadId}`,
     defaultValue: { content: "" },
@@ -18,6 +22,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
+  const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
   const {
     messages,
@@ -149,7 +154,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {agentActivity && (
+      {isChatReady && agentActivity && (
         <div className="thread-chat__activity" role="status" aria-live="polite">
           <Text size="1" tone="muted">
             {agentActivity === "thinking" ? "Assistant is thinking..." : "Assistant is calling a tool..."}
@@ -157,38 +162,49 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
         </div>
       )}
 
-      <form className="thread-chat__input-form" onSubmit={handleSendMessage}>
-        <div className="thread-chat__composer-row">
-          <textarea
-            ref={messageInputRef}
-            className="thread-chat__input"
-            value={newMessage}
-            onChange={(e) => setDraftState({ ...draftState, content: e.target.value })}
-            placeholder="Write a message to this thread..."
-            rows={3}
-            disabled={chatIsSending}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage(e);
-              }
-            }}
+      {!isChatReadinessLoading && readiness && !readiness.isReady ? (
+        <div className="thread-chat__setup-callout">
+          <ChatSetupCallout
+            title={readiness.title}
+            description={readiness.description}
+            ctaLabel={readiness.ctaLabel}
+            onOpenSettings={() => navigate('/settings/chat')}
           />
-          <Button
-            type="submit"
-            variant="secondary"
-            className="thread-chat__send-btn"
-            disabled={!newMessage.trim() || chatIsSending}
-          >
-            {chatIsSending ? "sending..." : "send"}
-          </Button>
         </div>
-        {chatSendError && (
-          <div className="thread-chat__status thread-chat__status--error">
-            <Text size="1">{chatSendError}</Text>
+      ) : (
+        <form className="thread-chat__input-form" onSubmit={handleSendMessage}>
+          <div className="thread-chat__composer-row">
+            <textarea
+              ref={messageInputRef}
+              className="thread-chat__input"
+              value={newMessage}
+              onChange={(e) => setDraftState({ ...draftState, content: e.target.value })}
+              placeholder="Write a message to this thread..."
+              rows={3}
+              disabled={chatIsSending || isChatReadinessLoading}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage(e);
+                }
+              }}
+            />
+            <Button
+              type="submit"
+              variant="secondary"
+              className="thread-chat__send-btn"
+              disabled={!newMessage.trim() || chatIsSending || isChatReadinessLoading}
+            >
+              {chatIsSending ? "sending..." : "send"}
+            </Button>
           </div>
-        )}
-      </form>
+          {chatSendError && (
+            <div className="thread-chat__status thread-chat__status--error">
+              <Text size="1">{chatSendError}</Text>
+            </div>
+          )}
+        </form>
+      )}
     </div>
   );
 }

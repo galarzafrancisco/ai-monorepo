@@ -1,0 +1,45 @@
+.chat-setup-callout {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 10%, var(--card-bg)) 0%,
+      var(--card-bg) 52%,
+      color-mix(in srgb, var(--surface) 82%, var(--card-bg)) 100%
+    );
+}
+
+.chat-setup-callout::after {
+  content: '';
+  position: absolute;
+  inset: auto -10% -36% auto;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.chat-setup-callout__badge {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border: 1px dashed color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--text);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.chat-setup-callout__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
