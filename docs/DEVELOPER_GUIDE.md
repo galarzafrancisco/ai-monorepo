@@ -41,6 +41,29 @@ npm run dev:5   # See stack5.env
 
 You can also set `UI_PORT`, `LEGACY_UI_PORT`, and `BACKEND_PORT` env vars directly.
 
+### Running Worker Mode Against a Dev Stack
+
+Use the existing stack-based `dev:[1-5]` scripts for the watched server and UI, then start the worker against the same stack in a second terminal:
+
+```bash
+npm run dev:1
+```
+
+Then:
+
+```bash
+npm run taico:worker:1
+```
+
+Equivalent worker scripts exist for stacks `2` through `5`.
+
+This split is intentional:
+
+- `npm run dev:[1-5]` keeps the backend in Nest watch mode
+- `npm run taico:worker:[1-5]` runs the worker from built output against the stack's `ISSUER_URL`
+
+Running two separate backend watch processes from the same package is not recommended because they rebuild the same output and can interfere with each other.
+
 ## After Making Changes
 
 1. `npm run build:dev` — verify everything compiles

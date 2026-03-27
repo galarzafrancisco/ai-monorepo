@@ -16,6 +16,10 @@ import {
 } from 'src/app-init/mcp/context.mcp';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { InvalidServerConfigurationError } from 'src/mcp-registry/errors/mcp-registry.errors';
+import {
+  createInternalWorkerAuthScopes,
+  createInternalWorkerAuthTarget,
+} from 'src/app-init/mcp/internal-worker-auth.mcp';
 
 @Injectable()
 export class DiscoveryService {
@@ -25,6 +29,10 @@ export class DiscoveryService {
   }
 
   private populateSystemServers() {
+    this.populateSystemServer(
+      createInternalWorkerAuthTarget,
+      createInternalWorkerAuthScopes,
+    );
     this.populateSystemServer(createTasks, createTasksScopes);
     this.populateSystemServer(createContext, createContextScopes);
   }
