@@ -35,3 +35,7 @@
 .settings-chat__helper-link:hover {
   text-decoration: underline;
 }
+
+.settings-chat__action-wrapper {
+  display: inline-flex;
+}
