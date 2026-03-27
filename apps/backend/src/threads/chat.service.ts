@@ -89,6 +89,16 @@ export class ChatService implements OnModuleDestroy {
     return config.apiKey;
   }
 
+  public async ensureConversationAvailable(): Promise<void> {
+    const self = await this.getSelf();
+
+    if (self.type === AgentType.ADK) {
+      return;
+    }
+
+    await this.getOpenAiApiKey();
+  }
+
   private getChatDatabasePath(databasePath: string): string {
     if (databasePath === ":memory:") {
       return databasePath;

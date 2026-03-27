@@ -150,3 +150,8 @@
   background: color-mix(in srgb, var(--danger) 14%, transparent);
   color: var(--danger);
 }
+
+.thread-chat__setup-callout {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-3);
+}
