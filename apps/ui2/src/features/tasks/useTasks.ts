@@ -21,7 +21,7 @@ import {
 
 // Use centralized API configuration
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
-const TASKS_PAGE_SIZE = 100;
+const TASKS_PER_COLUMN = 50;
 
 
 export const useTasks = () => {
@@ -76,6 +76,16 @@ export const useTasks = () => {
     });
   };
 
+  const flattenBoardTasks = (response: any): Task[] => {
+    const allTasks = [
+      ...response.columns.NOT_STARTED.items,
+      ...response.columns.IN_PROGRESS.items,
+      ...response.columns.FOR_REVIEW.items,
+      ...response.columns.DONE.items,
+    ];
+    return sortTasks(allTasks);
+  };
+
   // Create task
   const createTask = async (task: CreateTaskDto) => {
     return await TasksService.tasksControllerCreateTask(task);
@@ -112,8 +122,13 @@ export const useTasks = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await TasksService.tasksControllerListTasks(undefined, undefined, undefined, 1, TASKS_PAGE_SIZE);
-      setTasks(sortTasks(response.items));
+      const response = await TasksService.tasksControllerListTasks(
+        undefined,
+        undefined,
+        undefined,
+        TASKS_PER_COLUMN,
+      );
+      setTasks(flattenBoardTasks(response));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {

@@ -74,14 +74,21 @@ export class Taico {
   }
 
   async listTasks(page = 1, limit = 100): Promise<TaskResponseDto[]> {
+    void page;
+    const perColumnLimit = Math.max(1, Math.floor(limit / 4));
     const response = await TaskService.tasksControllerListTasks(
       undefined,
       undefined,
       undefined,
-      page,
-      limit,
+      perColumnLimit,
     );
-    return response.items;
+    const board = response as any;
+    return [
+      ...board.columns.NOT_STARTED.items,
+      ...board.columns.IN_PROGRESS.items,
+      ...board.columns.FOR_REVIEW.items,
+      ...board.columns.DONE.items,
+    ];
   }
 
   async getTask(taskId: string): Promise<TaskResponseDto | null> {

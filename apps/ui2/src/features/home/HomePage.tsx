@@ -10,7 +10,7 @@ import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useAuth } from "../../auth/AuthContext";
 import "./HomePage.css";
 
-const TASKS_PAGE_SIZE = 100;
+const TASKS_PER_COLUMN = 25;
 
 const STATUS_ORDER = [
   TaskStatus.NOT_STARTED,
@@ -39,11 +39,22 @@ export function HomePage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await TasksService.tasksControllerListTasks(undefined, undefined, undefined, 1, TASKS_PAGE_SIZE);
+        const response = await TasksService.tasksControllerListTasks(
+          undefined,
+          undefined,
+          undefined,
+          TASKS_PER_COLUMN,
+        );
+        const items = [
+          ...response.columns.NOT_STARTED.items,
+          ...response.columns.IN_PROGRESS.items,
+          ...response.columns.FOR_REVIEW.items,
+          ...response.columns.DONE.items,
+        ];
         if (!active) {
           return;
         }
-        setTasks(response.items ?? []);
+        setTasks(items);
       } catch (err) {
         if (!active) {
           return;

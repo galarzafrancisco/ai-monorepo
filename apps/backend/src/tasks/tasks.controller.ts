@@ -58,6 +58,7 @@ import { TasksScopes } from './tasks.scopes';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 import { CurrentRunId } from 'src/auth/guards/decorators/current-run-id.decorator';
+import { TaskStatus } from './enums';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
@@ -197,29 +198,57 @@ export class TasksController {
 
   @Get()
   @ApiOperation({
-    summary: 'List tasks with optional filtering and pagination',
+    summary: 'List tasks for kanban board with per-status keyset pagination',
   })
   @ApiOkResponse({
     type: TaskListResponseDto,
-    description: 'Paginated list of tasks',
+    description: 'Per-status task slices with independent cursors',
   })
   async listTasks(
     @Query() query: ListTasksQueryDto,
   ): Promise<TaskListResponseDto> {
-    const result = await this.TasksService.listTasks({
+    const result = await this.TasksService.listTasksBoard({
       assignee: query.assignee,
       sessionId: query.sessionId,
       tag: query.tag,
-      page: query.page ?? 1,
-      limit: query.limit ?? 200,
+      columnLimit: query.columnLimit ?? 50,
+      cursors: {
+        [TaskStatus.NOT_STARTED]: query.notStartedCursor,
+        [TaskStatus.IN_PROGRESS]: query.inProgressCursor,
+        [TaskStatus.FOR_REVIEW]: query.forReviewCursor,
+        [TaskStatus.DONE]: query.doneCursor,
+      },
     });
 
     return {
-      items: result.items.map((item) => TaskResponseDto.fromResult(item)),
       total: result.total,
-      page: result.page,
-      limit: result.limit,
-      totalPages: Math.ceil(result.total / result.limit),
+      columnLimit: result.columnLimit,
+      columns: {
+        NOT_STARTED: {
+          items: result.columns.NOT_STARTED.items.map((item) => TaskResponseDto.fromResult(item)),
+          total: result.columns.NOT_STARTED.total,
+          hasMore: result.columns.NOT_STARTED.hasMore,
+          nextCursor: result.columns.NOT_STARTED.nextCursor,
+        },
+        IN_PROGRESS: {
+          items: result.columns.IN_PROGRESS.items.map((item) => TaskResponseDto.fromResult(item)),
+          total: result.columns.IN_PROGRESS.total,
+          hasMore: result.columns.IN_PROGRESS.hasMore,
+          nextCursor: result.columns.IN_PROGRESS.nextCursor,
+        },
+        FOR_REVIEW: {
+          items: result.columns.FOR_REVIEW.items.map((item) => TaskResponseDto.fromResult(item)),
+          total: result.columns.FOR_REVIEW.total,
+          hasMore: result.columns.FOR_REVIEW.hasMore,
+          nextCursor: result.columns.FOR_REVIEW.nextCursor,
+        },
+        DONE: {
+          items: result.columns.DONE.items.map((item) => TaskResponseDto.fromResult(item)),
+          total: result.columns.DONE.total,
+          hasMore: result.columns.DONE.hasMore,
+          nextCursor: result.columns.DONE.nextCursor,
+        },
+      },
     };
   }
 
