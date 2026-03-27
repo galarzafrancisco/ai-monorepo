@@ -138,7 +138,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   // Hybrid approach: use real-time tasks from allTasks when available,
   // but fetch missing dependencies individually to handle pagination limits
-  const [fetchedDependencyTasks, setFetchedDependencyTasks] = useState<Record<string, Task>>({});
+  // Store null for failed fetches to prevent retry loops
+  const [fetchedDependencyTasks, setFetchedDependencyTasks] = useState<Record<string, Task | null>>({});
 
   useEffect(() => {
     if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) {
@@ -147,8 +148,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     }
 
     // Find which dependencies are missing from allTasks
+    // Exclude IDs already in fetchedDependencyTasks (including failed fetches with null)
     const missingIds = task.dependsOnIds.filter(
-      id => !allTasks.find(t => t.id === id) && !fetchedDependencyTasks[id]
+      id => !allTasks.find(t => t.id === id) && !(id in fetchedDependencyTasks)
     );
 
     if (missingIds.length === 0) {
@@ -173,8 +175,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           if (task) {
             updated[id] = task as Task;
           } else if (error) {
-            // Report fetch errors to user
+            // Report fetch errors to user and store null to prevent retry loop
             showError(error);
+            updated[id] = null;
           }
         });
         return updated;
@@ -188,13 +191,14 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   // Look up dependency tasks from the real-time tasks array first,
   // then fall back to fetched tasks for those outside the pagination window
+  // Filter out undefined (not fetched yet) and null (failed to fetch)
   const dependencyTasks = useMemo(() => {
     if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) {
       return [];
     }
     return task.dependsOnIds
       .map(id => allTasks.find(t => t.id === id) || fetchedDependencyTasks[id])
-      .filter((t): t is Task => t !== undefined);
+      .filter((t): t is Task => t !== undefined && t !== null);
   }, [task, allTasks, fetchedDependencyTasks]);
 
   useEffect(() => {
