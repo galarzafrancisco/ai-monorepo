@@ -19,6 +19,7 @@ import { ThreadsService } from '../threads/api';
 import type { Task } from './types';
 import { useChatReadiness } from '../chat-providers/useChatReadiness';
 import { ChatSetupCallout } from '../chat-providers/ChatSetupCallout';
+import { TaskRow } from './TaskRow';
 import './TaskDetailPage.css';
 
 type TaskDetailHandlers = {
@@ -134,6 +135,38 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     };
   }, [task, showError]);
 
+  // Fetch dependency tasks
+  useEffect(() => {
+    if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) {
+      setDependencyTasks([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchDependencies = async () => {
+      try {
+        const tasks = await Promise.all(
+          task.dependsOnIds.map(id => TasksService.tasksControllerGetTask(id))
+        );
+        if (!cancelled) {
+          setDependencyTasks(tasks);
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          showError(err);
+          setDependencyTasks([]);
+        }
+      }
+    };
+
+    void fetchDependencies();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [task, showError]);
+
   useEffect(() => {
     if (!task) return;
 
@@ -227,6 +260,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [showAssignPop, setShowAssignPop] = useState(false);
   const [showTagPop, setShowTagPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
+  const [dependencyTasks, setDependencyTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -476,7 +510,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           {task.artefacts.map(artefact => (
             <DataRow
               key={artefact.id}
-              
+
             >
               <Text as='span' weight='medium' size='3'>
                 {`${artefact.name}: `}
@@ -493,6 +527,32 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
               </Text>
             </DataRow>
           ))}
+        </DataRowContainer>
+      )}
+
+      {dependencyTasks.length > 0 && (
+        <DataRowContainer title="Depends on" className='task-detail-page__section'>
+          {dependencyTasks.map(depTask => {
+            // Add synthetic status tag to display task status
+            // Note: TaskRow component only uses tag.name, not tag.color
+            const statusTag: MetaTagResponseDto = {
+              id: `status-${depTask.status}`,
+              name: TASKS_STATUS[depTask.status].label,
+              color: '', // Not used by TaskRow component
+              createdAt: depTask.createdAt,
+              updatedAt: depTask.updatedAt,
+            };
+            return (
+              <TaskRow
+                key={depTask.id}
+                task={{
+                  ...depTask,
+                  tags: [...depTask.tags, statusTag],
+                }}
+                onClick={() => navigate(`/tasks/task/${depTask.id}`)}
+              />
+            );
+          })}
         </DataRowContainer>
       )}
 
