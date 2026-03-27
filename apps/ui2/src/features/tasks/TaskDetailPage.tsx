@@ -533,10 +533,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       {dependencyTasks.length > 0 && (
         <DataRowContainer title="Depends on" className='task-detail-page__section'>
           {dependencyTasks.map(depTask => {
+            // Add synthetic status tag to display task status
+            // Note: TaskRow component only uses tag.name, not tag.color
             const statusTag: MetaTagResponseDto = {
               id: `status-${depTask.status}`,
               name: TASKS_STATUS[depTask.status].label,
-              color: '#808080', // placeholder color (not used by TaskRow)
+              color: '', // Not used by TaskRow component
               createdAt: depTask.createdAt,
               updatedAt: depTask.updatedAt,
             };
