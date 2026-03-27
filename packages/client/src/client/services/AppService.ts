@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class AppService {
     /**
@@ -11,8 +12,8 @@ export class AppService {
      * @returns string Returns a greeting message
      * @throws ApiError
      */
-    public static appControllerGetHello(): CancelablePromise<string> {
-        return __request(OpenAPI, {
+    public static appControllerGetHello(config: OpenAPIConfig = OpenAPI): CancelablePromise<string> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1',
         });

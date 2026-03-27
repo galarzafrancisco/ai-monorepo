@@ -15,6 +15,7 @@ import type { TokenRequestDto } from '../models/TokenRequestDto.js';
 import type { TokenResponseDto } from '../models/TokenResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class AuthorizationServerService {
     /**
@@ -30,8 +31,9 @@ export class AuthorizationServerService {
         serverId: string,
         version: string,
         requestBody: RegisterClientDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ClientRegistrationResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/clients/register/mcp/{serverId}/{version}',
             path: {
@@ -55,8 +57,9 @@ export class AuthorizationServerService {
      */
     public static clientRegistrationControllerGetClient(
         clientId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ClientRegistrationResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth/clients/{clientId}',
             path: {
@@ -73,8 +76,8 @@ export class AuthorizationServerService {
      * @returns ClientRegistrationResponseDto List of registered clients
      * @throws ApiError
      */
-    public static clientRegistrationControllerListClients(): CancelablePromise<Array<ClientRegistrationResponseDto>> {
-        return __request(OpenAPI, {
+    public static clientRegistrationControllerListClients(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<ClientRegistrationResponseDto>> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth/clients',
         });
@@ -106,8 +109,9 @@ export class AuthorizationServerService {
         version: string,
         scope?: string,
         resource?: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}',
             path: {
@@ -144,8 +148,9 @@ export class AuthorizationServerService {
         serverIdentifier: string,
         version: string,
         requestBody: ConsentDecisionDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/authorize/mcp/{serverIdentifier}/{version}',
             path: {
@@ -171,8 +176,9 @@ export class AuthorizationServerService {
      */
     public static authorizationControllerGetConsentMetadata(
         flowId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<GetConsentMetadataResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth/consent/{flowId}',
             path: {
@@ -197,8 +203,9 @@ export class AuthorizationServerService {
         serverIdentifier: string,
         version: string,
         requestBody: TokenRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TokenResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/token/mcp/{serverIdentifier}/{version}',
             path: {
@@ -226,8 +233,9 @@ export class AuthorizationServerService {
         serverIdentifier: string,
         version: string,
         requestBody: IntrospectTokenRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<IntrospectTokenResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/introspect/mcp/{serverIdentifier}/{version}',
             path: {
@@ -254,8 +262,9 @@ export class AuthorizationServerService {
         serverIdentifier: string,
         version: string,
         requestBody: TokenExchangeRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TokenExchangeResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/auth/token-exchange/mcp/{serverIdentifier}/{version}',
             path: {
@@ -289,8 +298,9 @@ export class AuthorizationServerService {
         error?: string,
         scope?: string,
         errorDescription?: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth/callback',
             query: {
@@ -313,8 +323,8 @@ export class AuthorizationServerService {
      * @returns ScopesResponseDto List of all available scopes
      * @throws ApiError
      */
-    public static authorizationControllerGetScopes(): CancelablePromise<ScopesResponseDto> {
-        return __request(OpenAPI, {
+    public static authorizationControllerGetScopes(config: OpenAPIConfig = OpenAPI): CancelablePromise<ScopesResponseDto> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/auth/scopes',
         });

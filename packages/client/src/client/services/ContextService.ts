@@ -13,6 +13,7 @@ import type { ReorderBlockDto } from '../models/ReorderBlockDto.js';
 import type { UpdateBlockDto } from '../models/UpdateBlockDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class ContextService {
     /**
@@ -23,8 +24,9 @@ export class ContextService {
      */
     public static contextControllerCreateBlock(
         requestBody: CreateBlockDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/context/blocks',
             body: requestBody,
@@ -42,8 +44,9 @@ export class ContextService {
      */
     public static contextControllerListBlocks(
         tag?: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockListResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/context/blocks',
             query: {
@@ -56,8 +59,8 @@ export class ContextService {
      * @returns BlockTreeResponseDto Page hierarchy tree
      * @throws ApiError
      */
-    public static contextControllerGetBlockTree(): CancelablePromise<Array<BlockTreeResponseDto>> {
-        return __request(OpenAPI, {
+    public static contextControllerGetBlockTree(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<BlockTreeResponseDto>> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/context/blocks/tree',
         });
@@ -70,8 +73,9 @@ export class ContextService {
      */
     public static contextControllerGetBlock(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/context/blocks/{id}',
             path: {
@@ -89,8 +93,9 @@ export class ContextService {
     public static contextControllerUpdateBlock(
         id: string,
         requestBody: UpdateBlockDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/context/blocks/{id}',
             path: {
@@ -111,8 +116,9 @@ export class ContextService {
      */
     public static contextControllerDeleteBlock(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/context/blocks/{id}',
             path: {
@@ -130,8 +136,9 @@ export class ContextService {
     public static contextControllerAppendToBlock(
         id: string,
         requestBody: AppendBlockDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/context/blocks/{id}/append',
             path: {
@@ -151,8 +158,9 @@ export class ContextService {
     public static contextControllerReorderBlock(
         id: string,
         requestBody: ReorderBlockDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/context/blocks/{id}/reorder',
             path: {
@@ -172,8 +180,9 @@ export class ContextService {
     public static contextControllerMoveBlock(
         id: string,
         requestBody: MoveBlockDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/context/blocks/{id}/move',
             path: {
@@ -196,8 +205,9 @@ export class ContextService {
     public static contextControllerAddTagToBlock(
         id: string,
         requestBody: CreateTagDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/context/blocks/{id}/tags',
             path: {
@@ -220,8 +230,9 @@ export class ContextService {
     public static contextControllerRemoveTagFromBlock(
         id: string,
         tagId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<BlockResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/context/blocks/{id}/tags/{tagId}',
             path: {
@@ -234,8 +245,8 @@ export class ContextService {
      * @returns any
      * @throws ApiError
      */
-    public static contextControllerHandleMcpGet(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static contextControllerHandleMcpGet(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/context/blocks/mcp',
         });
@@ -244,8 +255,8 @@ export class ContextService {
      * @returns any
      * @throws ApiError
      */
-    public static contextControllerHandleMcpPost(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static contextControllerHandleMcpPost(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/context/blocks/mcp',
         });
@@ -254,8 +265,8 @@ export class ContextService {
      * @returns any
      * @throws ApiError
      */
-    public static contextControllerHandleMcpPut(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static contextControllerHandleMcpPut(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'PUT',
             url: '/api/v1/context/blocks/mcp',
         });
@@ -264,8 +275,8 @@ export class ContextService {
      * @returns any
      * @throws ApiError
      */
-    public static contextControllerHandleMcpDelete(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static contextControllerHandleMcpDelete(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/context/blocks/mcp',
         });
@@ -274,8 +285,8 @@ export class ContextService {
      * @returns any
      * @throws ApiError
      */
-    public static contextControllerHandleMcpPatch(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static contextControllerHandleMcpPatch(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/context/blocks/mcp',
         });
@@ -284,8 +295,8 @@ export class ContextService {
      * @returns any
      * @throws ApiError
      */
-    public static contextControllerHandleMcpOptions(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static contextControllerHandleMcpOptions(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'OPTIONS',
             url: '/api/v1/context/blocks/mcp',
         });
@@ -294,8 +305,8 @@ export class ContextService {
      * @returns any
      * @throws ApiError
      */
-    public static contextControllerHandleMcpHead(): CancelablePromise<any> {
-        return __request(OpenAPI, {
+    public static contextControllerHandleMcpHead(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
             method: 'HEAD',
             url: '/api/v1/context/blocks/mcp',
         });

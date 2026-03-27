@@ -9,6 +9,7 @@ import type { TaskResponseDto } from '../models/TaskResponseDto.js';
 import type { UpdateTaskBlueprintDto } from '../models/UpdateTaskBlueprintDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class TaskBlueprintsService {
     /**
@@ -19,8 +20,9 @@ export class TaskBlueprintsService {
      */
     public static taskBlueprintsControllerCreateTaskBlueprint(
         requestBody: CreateTaskBlueprintDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskBlueprintResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/task-blueprints',
             body: requestBody,
@@ -40,8 +42,9 @@ export class TaskBlueprintsService {
     public static taskBlueprintsControllerListTaskBlueprints(
         page: number = 1,
         limit: number = 20,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskBlueprintListResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/task-blueprints',
             query: {
@@ -58,8 +61,9 @@ export class TaskBlueprintsService {
      */
     public static taskBlueprintsControllerGetTaskBlueprint(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskBlueprintResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/task-blueprints/{id}',
             path: {
@@ -80,8 +84,9 @@ export class TaskBlueprintsService {
     public static taskBlueprintsControllerUpdateTaskBlueprint(
         id: string,
         requestBody: UpdateTaskBlueprintDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskBlueprintResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/task-blueprints/{id}',
             path: {
@@ -103,8 +108,9 @@ export class TaskBlueprintsService {
      */
     public static taskBlueprintsControllerDeleteTaskBlueprint(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/task-blueprints/{id}',
             path: {
@@ -124,8 +130,9 @@ export class TaskBlueprintsService {
      */
     public static taskBlueprintsControllerCreateTaskFromBlueprint(
         id: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/task-blueprints/{id}/create-task',
             path: {

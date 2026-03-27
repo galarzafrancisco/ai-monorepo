@@ -8,6 +8,7 @@ import type { CreateAgentRunDto } from '../models/CreateAgentRunDto.js';
 import type { UpdateAgentRunDto } from '../models/UpdateAgentRunDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class AgentRunService {
     /**
@@ -18,8 +19,9 @@ export class AgentRunService {
      */
     public static agentRunsControllerCreateAgentRun(
         requestBody: CreateAgentRunDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AgentRunResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/agent-runs',
             body: requestBody,
@@ -43,8 +45,9 @@ export class AgentRunService {
         parentTaskId?: string,
         page: number = 1,
         limit: number = 20,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AgentRunListResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/agent-runs',
             query: {
@@ -63,8 +66,9 @@ export class AgentRunService {
      */
     public static agentRunsControllerGetAgentRunById(
         runId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AgentRunResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/agent-runs/{runId}',
             path: {
@@ -85,8 +89,9 @@ export class AgentRunService {
     public static agentRunsControllerUpdateAgentRun(
         runId: string,
         requestBody: UpdateAgentRunDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AgentRunResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/agent-runs/{runId}',
             path: {

@@ -1255,6 +1255,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents/{slug}/execution-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request a short-lived execution token for an agent */
+        post: operations["AgentExecutionTokensController_requestExecutionToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/chat-providers": {
         parameters: {
             query?: never;
@@ -4129,6 +4146,51 @@ export interface components {
              * @example true
              */
             isValid: boolean;
+        };
+        RequestAgentExecutionTokenDto: {
+            /**
+             * @description Scopes to grant to the short-lived execution token.
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes: string[];
+            /**
+             * @description Lifetime of the short-lived execution token in seconds. Defaults to the server MCP access token duration.
+             * @example 600
+             */
+            expirationSeconds?: number;
+        };
+        AgentExecutionTokenResponseDto: {
+            /**
+             * @description The raw short-lived JWT execution token for the agent.
+             * @example eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            token: string;
+            /**
+             * @description Scopes granted to this token.
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopes: string[];
+            /**
+             * @description When this token expires (ISO 8601).
+             * @example 2026-03-27T08:30:00.000Z
+             */
+            expiresAt: string;
+            /**
+             * @description Agent slug this token acts as.
+             * @example claude-dev
+             */
+            agentSlug: string;
+            /**
+             * @description Client identifier of the caller that requested the token.
+             * @example worker-client
+             */
+            requestedByClientId: string;
         };
         CreateChatProviderDto: {
             /**
@@ -8082,6 +8144,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IssuedAccessTokenResponseDto"];
+                };
+            };
+        };
+    };
+    AgentExecutionTokensController_requestExecutionToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent slug */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestAgentExecutionTokenDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutionTokenResponseDto"];
                 };
             };
         };

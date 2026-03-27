@@ -7,6 +7,7 @@ import type { IssueAccessTokenResponseDto } from '../models/IssueAccessTokenResp
 import type { IssuedAccessTokenResponseDto } from '../models/IssuedAccessTokenResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class AgentTokensService {
     /**
@@ -19,8 +20,9 @@ export class AgentTokensService {
     public static agentTokensControllerIssueToken(
         slug: string,
         requestBody: IssueAccessTokenRequestDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<IssueAccessTokenResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/agents/{slug}/tokens',
             path: {
@@ -38,8 +40,9 @@ export class AgentTokensService {
      */
     public static agentTokensControllerListTokens(
         slug: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<IssuedAccessTokenResponseDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/agents/{slug}/tokens',
             path: {
@@ -57,8 +60,9 @@ export class AgentTokensService {
     public static agentTokensControllerRevokeToken(
         slug: string,
         tokenId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<IssuedAccessTokenResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/agents/{slug}/tokens/{tokenId}',
             path: {

@@ -6,6 +6,7 @@ import type { CreateTagDto } from '../models/CreateTagDto.js';
 import type { MetaTagResponseDto } from '../models/MetaTagResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class MetaService {
     /**
@@ -16,8 +17,9 @@ export class MetaService {
      */
     public static metaControllerCreateTag(
         requestBody: CreateTagDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<MetaTagResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/meta/tags',
             body: requestBody,
@@ -32,8 +34,8 @@ export class MetaService {
      * @returns MetaTagResponseDto List of all tags
      * @throws ApiError
      */
-    public static metaControllerGetAllTags(): CancelablePromise<Array<MetaTagResponseDto>> {
-        return __request(OpenAPI, {
+    public static metaControllerGetAllTags(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<MetaTagResponseDto>> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/meta/tags',
         });
@@ -43,8 +45,8 @@ export class MetaService {
      * @returns string List of available tag colors in hex format
      * @throws ApiError
      */
-    public static metaControllerGetTagColors(): CancelablePromise<Array<string>> {
-        return __request(OpenAPI, {
+    public static metaControllerGetTagColors(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<string>> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/meta/tags/colors',
         });
@@ -57,8 +59,9 @@ export class MetaService {
      */
     public static metaControllerDeleteTag(
         tagId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/meta/tags/{tagId}',
             path: {

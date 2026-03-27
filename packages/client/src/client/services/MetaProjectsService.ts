@@ -7,6 +7,7 @@ import type { PatchProjectDto } from '../models/PatchProjectDto.js';
 import type { ProjectResponseDto } from '../models/ProjectResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class MetaProjectsService {
     /**
@@ -17,8 +18,9 @@ export class MetaProjectsService {
      */
     public static projectsControllerCreateProject(
         requestBody: CreateProjectDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ProjectResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/meta/projects',
             body: requestBody,
@@ -33,8 +35,8 @@ export class MetaProjectsService {
      * @returns ProjectResponseDto List of all projects
      * @throws ApiError
      */
-    public static projectsControllerGetAllProjects(): CancelablePromise<Array<ProjectResponseDto>> {
-        return __request(OpenAPI, {
+    public static projectsControllerGetAllProjects(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<ProjectResponseDto>> {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/meta/projects',
         });
@@ -51,8 +53,9 @@ export class MetaProjectsService {
         q: string,
         limit?: number,
         threshold?: number,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<ProjectResponseDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/meta/projects/search',
             query: {
@@ -70,8 +73,9 @@ export class MetaProjectsService {
      */
     public static projectsControllerGetProjectBySlug(
         slug: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ProjectResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/meta/projects/by-slug/{slug}',
             path: {
@@ -90,8 +94,9 @@ export class MetaProjectsService {
      */
     public static projectsControllerGetProject(
         projectId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ProjectResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/meta/projects/{projectId}',
             path: {
@@ -112,8 +117,9 @@ export class MetaProjectsService {
     public static projectsControllerUpdateProject(
         projectId: string,
         requestBody: PatchProjectDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ProjectResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/meta/projects/{projectId}',
             path: {
@@ -135,8 +141,9 @@ export class MetaProjectsService {
      */
     public static projectsControllerDeleteProject(
         projectId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<void> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/meta/projects/{projectId}',
             path: {

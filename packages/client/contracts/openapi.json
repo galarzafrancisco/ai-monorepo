@@ -4486,6 +4486,53 @@
         ]
       }
     },
+    "/api/v1/agents/{slug}/execution-token": {
+      "post": {
+        "operationId": "AgentExecutionTokensController_requestExecutionToken",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "description": "Agent slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestAgentExecutionTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentExecutionTokenResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Request a short-lived execution token for an agent",
+        "tags": [
+          "Agent Execution Tokens"
+        ]
+      }
+    },
     "/api/v1/chat-providers": {
       "post": {
         "operationId": "ChatProvidersController_createChatProvider",
@@ -9812,6 +9859,75 @@
           "expiresAt",
           "createdAt",
           "isValid"
+        ]
+      },
+      "RequestAgentExecutionTokenDto": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "description": "Scopes to grant to the short-lived execution token.",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expirationSeconds": {
+            "type": "number",
+            "description": "Lifetime of the short-lived execution token in seconds. Defaults to the server MCP access token duration.",
+            "example": 600,
+            "minimum": 1,
+            "maximum": 3600
+          }
+        },
+        "required": [
+          "scopes"
+        ]
+      },
+      "AgentExecutionTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The raw short-lived JWT execution token for the agent.",
+            "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "scopes": {
+            "description": "Scopes granted to this token.",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When this token expires (ISO 8601).",
+            "example": "2026-03-27T08:30:00.000Z"
+          },
+          "agentSlug": {
+            "type": "string",
+            "description": "Agent slug this token acts as.",
+            "example": "claude-dev"
+          },
+          "requestedByClientId": {
+            "type": "string",
+            "description": "Client identifier of the caller that requested the token.",
+            "example": "worker-client"
+          }
+        },
+        "required": [
+          "token",
+          "scopes",
+          "expiresAt",
+          "agentSlug",
+          "requestedByClientId"
         ]
       },
       "CreateChatProviderDto": {

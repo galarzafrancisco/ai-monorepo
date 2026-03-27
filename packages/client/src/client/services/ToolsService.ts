@@ -19,6 +19,7 @@ import type { UpdateConnectionDto } from '../models/UpdateConnectionDto.js';
 import type { UpdateServerDto } from '../models/UpdateServerDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class ToolsService {
     /**
@@ -29,8 +30,9 @@ export class ToolsService {
      */
     public static mcpRegistryControllerCreateServer(
         requestBody: CreateServerDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ServerResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/mcp/servers',
             body: requestBody,
@@ -50,8 +52,9 @@ export class ToolsService {
     public static mcpRegistryControllerListServers(
         page?: number,
         limit?: number,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ServerListResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/mcp/servers',
             query: {
@@ -68,8 +71,9 @@ export class ToolsService {
      */
     public static mcpRegistryControllerGetServer(
         serverId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ServerResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}',
             path: {
@@ -90,8 +94,9 @@ export class ToolsService {
     public static mcpRegistryControllerUpdateServer(
         serverId: string,
         requestBody: UpdateServerDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ServerResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/mcp/servers/{serverId}',
             path: {
@@ -112,8 +117,9 @@ export class ToolsService {
      */
     public static mcpRegistryControllerDeleteServer(
         serverId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<DeleteServerResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/mcp/servers/{serverId}',
             path: {
@@ -135,8 +141,9 @@ export class ToolsService {
     public static mcpRegistryControllerCreateScopes(
         serverId: string,
         requestBody: Array<CreateScopeDto>,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<ScopeResponseDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/mcp/servers/{serverId}/scopes',
             path: {
@@ -158,8 +165,9 @@ export class ToolsService {
      */
     public static mcpRegistryControllerListScopes(
         serverId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<ScopeResponseDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}/scopes',
             path: {
@@ -180,8 +188,9 @@ export class ToolsService {
     public static mcpRegistryControllerGetScope(
         serverId: string,
         scopeId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ScopeResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}/scopes/{scopeId}',
             path: {
@@ -203,8 +212,9 @@ export class ToolsService {
     public static mcpRegistryControllerDeleteScope(
         serverId: string,
         scopeId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<DeleteScopeResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/mcp/servers/{serverId}/scopes/{scopeId}',
             path: {
@@ -227,8 +237,9 @@ export class ToolsService {
     public static mcpRegistryControllerCreateConnection(
         serverId: string,
         requestBody: CreateConnectionDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ConnectionResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/mcp/servers/{serverId}/connections',
             path: {
@@ -250,8 +261,9 @@ export class ToolsService {
      */
     public static mcpRegistryControllerListConnections(
         serverId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<ConnectionResponseDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}/connections',
             path: {
@@ -270,8 +282,9 @@ export class ToolsService {
      */
     public static mcpRegistryControllerGetConnection(
         connectionId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ConnectionResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/mcp/connections/{connectionId}',
             path: {
@@ -292,8 +305,9 @@ export class ToolsService {
     public static mcpRegistryControllerUpdateConnection(
         connectionId: string,
         requestBody: UpdateConnectionDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ConnectionResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'PATCH',
             url: '/api/v1/mcp/connections/{connectionId}',
             path: {
@@ -315,8 +329,9 @@ export class ToolsService {
      */
     public static mcpRegistryControllerDeleteConnection(
         connectionId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<DeleteConnectionResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/mcp/connections/{connectionId}',
             path: {
@@ -338,8 +353,9 @@ export class ToolsService {
     public static mcpRegistryControllerCreateMapping(
         serverId: string,
         requestBody: CreateMappingDto,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<MappingResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'POST',
             url: '/api/v1/mcp/servers/{serverId}/mappings',
             path: {
@@ -363,8 +379,9 @@ export class ToolsService {
     public static mcpRegistryControllerListMappings(
         serverId: string,
         scopeId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<Array<MappingResponseDto>> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/api/v1/mcp/servers/{serverId}/scopes/{scopeId}/mappings',
             path: {
@@ -384,8 +401,9 @@ export class ToolsService {
      */
     public static mcpRegistryControllerDeleteMapping(
         mappingId: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<DeleteMappingResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'DELETE',
             url: '/api/v1/mcp/mappings/{mappingId}',
             path: {

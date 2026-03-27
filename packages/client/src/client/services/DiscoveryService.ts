@@ -6,6 +6,7 @@ import type { AuthorizationServerMetadataDto } from '../models/AuthorizationServ
 import type { ProtectedResourceMetadataResponseDto } from '../models/ProtectedResourceMetadataResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
+import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class DiscoveryService {
     /**
@@ -14,10 +15,10 @@ export class DiscoveryService {
      * @returns any Issuer URL retrieved successfully
      * @throws ApiError
      */
-    public static discoveryControllerGetIssuer(): CancelablePromise<{
+    public static discoveryControllerGetIssuer(config: OpenAPIConfig = OpenAPI): CancelablePromise<{
         issuer?: string;
     }> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/.well-known/oauth-authorization-server/mcp/issuer',
         });
@@ -33,8 +34,9 @@ export class DiscoveryService {
     public static discoveryControllerGetAuthorizationServerMetadata(
         mcpServerId: string,
         version: string,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<AuthorizationServerMetadataDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/.well-known/oauth-authorization-server/mcp/{mcpServerId}/{version}',
             path: {
@@ -50,8 +52,9 @@ export class DiscoveryService {
      */
     public static discoveryControllerAll(
         path: Array<string>,
+        config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ProtectedResourceMetadataResponseDto> {
-        return __request(OpenAPI, {
+        return __request(config, {
             method: 'GET',
             url: '/.well-known/oauth-protected-resource/{path}',
             path: {
