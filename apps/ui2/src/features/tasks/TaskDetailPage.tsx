@@ -547,7 +547,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                   ...depTask,
                   tags: [...depTask.tags, statusTag],
                 }}
-                onClick={() => navigate(`/tasks/${depTask.id}`)}
+                onClick={() => navigate(`/tasks/task/${depTask.id}`)}
               />
             );
           })}
