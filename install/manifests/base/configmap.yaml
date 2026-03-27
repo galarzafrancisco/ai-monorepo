@@ -4,7 +4,7 @@ metadata:
   name: taico-config
   namespace: taico
 data:
-  NODE_ENV: "production"
+  # NODE_ENV defaults to production (no need to set explicitly)
   BACKEND_PORT: "3000"
   ISSUER_URL: PLACEHOLDER_ISSUER_URL
   ADK_URL: PLACEHOLDER_ADK_URL

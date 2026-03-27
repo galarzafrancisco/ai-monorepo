@@ -71,7 +71,7 @@ metadata:
   name: taico-config
   namespace: taico
 data:
-  NODE_ENV: "production"
+  # NODE_ENV defaults to production (no need to set explicitly)
   BACKEND_PORT: "3000"
   ISSUER_URL: PLACEHOLDER_ISSUER_URL
   ADK_URL: PLACEHOLDER_ADK_URL
@@ -116,9 +116,8 @@ replacements:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `NODE_ENV` | Runtime environment | `production` |
 | `BACKEND_PORT` | Backend server port | `3000` |
-| `ISSUER_URL` | OAuth issuer URL (must match public URL) | `https://taico.example.com` |
+| `ISSUER_URL` | OAuth issuer URL (must match public URL, defaults to localhost) | `https://taico.example.com` |
 | `DATABASE_PATH` | SQLite database path | `/app/data/database.sqlite` |
 | `OPENAI_KEY` | OpenAI API key for chat features | `sk-...` |
 

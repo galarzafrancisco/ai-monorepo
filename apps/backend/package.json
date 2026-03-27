@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "nest build",
-    "build:prod": "npm run build && node dist/main --generate-spec",
+    "build:prod": "npm run build && NODE_ENV=development node dist/main --generate-spec",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

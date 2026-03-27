@@ -57,9 +57,15 @@ env $(cat .env.reviewer | xargs) npx -y @taico/worker
 
 Taico has two modes, controlled by the `NODE_ENV` environment variable:
 
+### Production (Default)
+
+Production mode is the default when `NODE_ENV` is not set. This ensures `npx @taico/taico` works out of the box. No users are seeded. On first startup, if no admin exists, Taico prompts you to create the first admin user through onboarding.
+
+`ISSUER_URL` defaults to `http://localhost:<UI_PORT>` (default 2000) for ease of use. Serious production deployments should set `ISSUER_URL` explicitly to match the public URL.
+
 ### Development
 
-Set `NODE_ENV=development` (the default). The database is seeded with two test users:
+Set `NODE_ENV=development` to enable development mode. The database is seeded with two test users:
 
 | Email | Password | Role |
 |---|---|---|
@@ -67,12 +73,6 @@ Set `NODE_ENV=development` (the default). The database is seeded with two test u
 | `admin@test.com` | `admin` | Admin |
 
 These are for testing only. Do not use them in production.
-
-> **Note:** In development mode, the server assumes it's behind a Vite dev proxy and sets the OAuth issuer URL to `http://localhost:<UI_PORT>` (default 2000). When running standalone (e.g., via `npx`), you must set `ISSUER_URL` to match the actual server URL (e.g., `http://localhost:3000`). See [Quick Start via npx](#quick-start-via-npx).
-
-### Production
-
-Set `NODE_ENV=production`. No users are seeded. On first startup, if no admin exists, Taico prompts you to create the first admin user through onboarding. `ISSUER_URL` is required.
 
 ## User Management
 

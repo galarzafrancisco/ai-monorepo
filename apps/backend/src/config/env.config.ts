@@ -135,10 +135,13 @@ export function loadConfig(): AppConfig {
 
 function getEnv(): NodeEnv {
   const env = process.env.NODE_ENV;
-  if (env === 'production' || env === 'development') {
-    return env;
+  // Default to production when NODE_ENV is not set.
+  // This ensures `npx @taico/taico` runs in production mode with safe defaults.
+  // Development environments should explicitly set NODE_ENV=development.
+  if (env === 'development') {
+    return 'development';
   }
-  return 'development';
+  return 'production';
 }
 
 function getUiPort(): string {
@@ -150,12 +153,9 @@ function getIssuerUrl(): string {
   if (issuerUrl) {
     return issuerUrl;
   }
-  if (getEnv() === 'production') {
-    logger.error('ISSUER_URL is not set in production environment');
-    throw new Error('ISSUER_URL must be set in production');
-  }
-  // Default for development
-  logger.warn('Using default ISSUER_URL for development');
+  // Default to localhost for ease of use (npx @taico/taico just works).
+  // Serious production deployments should set ISSUER_URL explicitly.
+  logger.warn(`ISSUER_URL not set, defaulting to http://localhost:${getUiPort()}`);
   return `http://localhost:${getUiPort()}`;
 }
 
