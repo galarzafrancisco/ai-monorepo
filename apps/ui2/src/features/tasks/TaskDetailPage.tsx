@@ -17,6 +17,8 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import { ThreadsService } from '../threads/api';
 import type { Task } from './types';
+import { useChatReadiness } from '../chat-providers/useChatReadiness';
+import { ChatSetupCallout } from '../chat-providers/ChatSetupCallout';
 import './TaskDetailPage.css';
 
 type TaskDetailHandlers = {
@@ -43,8 +45,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const navigate = useNavigate();
   const { actors } = useActorsCtx();
   const { user } = useAuth();
-  const { showError } = useToast();
+  const { showError, showToast } = useToast();
   const { registerCommands } = useCommandPalette();
+  const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
   const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
@@ -73,6 +76,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       return;
     }
 
+    if (!isChatReady) {
+      showToast('Thread chat unlocks in Chat Settings.', 'info');
+      navigate('/settings/chat');
+      return;
+    }
+
     setIsResolvingThread(true);
     try {
       if (threadId) {
@@ -91,7 +100,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     } finally {
       setIsResolvingThread(false);
     }
-  }, [task, threadId, navigate, showError]);
+  }, [task, threadId, isChatReady, navigate, showError, showToast]);
 
   useEffect(() => {
     if (!task) {
@@ -714,13 +723,22 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       />
 
       <DataRowContainer className='task-detail-page__actions'>
+        {!isChatReadinessLoading && readiness && !readiness.isReady ? (
+          <ChatSetupCallout
+            title={readiness.title}
+            description={readiness.description}
+            ctaLabel={readiness.ctaLabel}
+            onOpenSettings={() => navigate('/settings/chat')}
+          />
+        ) : null}
+
         <Button
           size='lg'
           variant={threadId ? 'primary' : 'secondary'}
           onClick={() => {
             void handleOpenOrCreateThread();
           }}
-          disabled={isResolvingThread}
+          disabled={isResolvingThread || !isChatReady || isChatReadinessLoading}
         >
           {threadId ? 'Go to thread' : 'Create thread'}
         </Button>

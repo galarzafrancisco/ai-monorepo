@@ -120,4 +120,15 @@ export class ChatProvidersService {
             },
         });
     }
+    /**
+     * Deactivate the active chat provider
+     * @returns void
+     * @throws ApiError
+     */
+    public static chatProvidersControllerDeactivateActiveChatProvider(): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/chat-providers/deactivate',
+        });
+    }
 }

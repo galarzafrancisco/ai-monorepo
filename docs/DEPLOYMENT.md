@@ -49,7 +49,7 @@ install/manifests/
 ├── base/                          # Base Kubernetes resources
 │   ├── kustomization.yaml         # Base kustomization config
 │   ├── namespace.yaml             # Taico namespace
-│   ├── configmap.yaml             # Environment variables (with placeholders)
+│   ├── configmap.yaml             # Non-sensitive environment variables
 │   ├── deployment.yaml            # Main application deployment
 │   ├── service.yaml               # Kubernetes service
 │   ├── ingress.yaml               # Ingress configuration
@@ -62,7 +62,7 @@ install/manifests/
 
 ### Base ConfigMap
 
-The base `configmap.yaml` defines all environment variables needed by the application with placeholder values:
+The base `configmap.yaml` defines non-sensitive environment variables needed by the application with placeholder values:
 
 ```yaml
 apiVersion: v1
@@ -73,10 +73,11 @@ metadata:
 data:
   # NODE_ENV defaults to production (no need to set explicitly)
   BACKEND_PORT: "3000"
+  SECRETS_ENABLED: "false"
+  ALLOW_PLAINTEXT_SECRETS_INSECURE: "false"
   ISSUER_URL: PLACEHOLDER_ISSUER_URL
   ADK_URL: PLACEHOLDER_ADK_URL
   OLLAMA_URL: PLACEHOLDER_OLLAMA_URL
-  OPENAI_KEY: PLACEHOLDER_OPENAI_KEY
   DATABASE_PATH: "/app/data/database.sqlite"
 ```
 
@@ -97,17 +98,17 @@ resources:
 - ../../base
 
 replacements:
-  # Example: Replace OPENAI_KEY placeholder with actual value
+  # Example: Replace SECRETS_ENABLED placeholder with actual value
   - source:
       kind: ConfigMap
       name: env
-      fieldPath: data.OPENAI_KEY
+      fieldPath: data.SECRETS_ENABLED
     targets:
       - select:
           kind: ConfigMap
           name: taico-config
         fieldPaths:
-          - data.OPENAI_KEY
+          - data.SECRETS_ENABLED
 ```
 
 ## Environment Variables Reference
@@ -119,7 +120,8 @@ replacements:
 | `BACKEND_PORT` | Backend server port | `3000` |
 | `ISSUER_URL` | OAuth issuer URL (must match public URL, defaults to localhost) | `https://taico.example.com` |
 | `DATABASE_PATH` | SQLite database path | `/app/data/database.sqlite` |
-| `OPENAI_KEY` | OpenAI API key for chat features | `sk-...` |
+| `SECRETS_ENABLED` | Enables in-app secret storage | `true` |
+| `ALLOW_PLAINTEXT_SECRETS_INSECURE` | Dangerous escape hatch for storing secrets without encryption | `false` |
 
 ### Optional/Integration URLs
 
@@ -144,7 +146,7 @@ When code is pushed to the main branch:
 
 The deployment repository has its own CI that:
 
-1. Reads secrets from GitHub repository secrets
+1. Reads deployment values from the deployment repository
 2. Hydrates `env.env` files with actual values (replacing placeholders)
 3. Commits the changes
 4. Auto-merges to main branch
@@ -158,16 +160,16 @@ ArgoCD continuously watches the deployment repository:
 3. Syncs manifests to the Kubernetes cluster
 4. Performs rolling updates
 
-## Adding New Secrets
+## Adding New Environment Variables
 
-To add a new secret/environment variable to production:
+To add a new non-sensitive environment variable to production:
 
 ### Step 1: Update Application Manifests
 
 1. Add placeholder to `install/manifests/base/configmap.yaml`:
    ```yaml
    data:
-     NEW_SECRET: PLACEHOLDER_NEW_SECRET
+     NEW_ENV_VAR: PLACEHOLDER_NEW_ENV_VAR
    ```
 
 2. Add replacement rule to `install/manifests/overlays/main/kustomization.yaml`:
@@ -176,28 +178,27 @@ To add a new secret/environment variable to production:
      - source:
          kind: ConfigMap
          name: env
-         fieldPath: data.NEW_SECRET
+         fieldPath: data.NEW_ENV_VAR
        targets:
          - select:
              kind: ConfigMap
              name: taico-config
            fieldPaths:
-             - data.NEW_SECRET
+             - data.NEW_ENV_VAR
    ```
 
 3. Add placeholder to `install/manifests/overlays/main/env.env`:
    ```
-   NEW_SECRET=placeholder-value
+   NEW_ENV_VAR=placeholder-value
    ```
 
 4. Commit and push to the application repository
 
-### Step 2: Configure Secret in Deployment Repository
+### Step 2: Configure Value in Deployment Repository
 
 1. Go to the deployment repository on GitHub
-2. Navigate to Settings → Secrets and variables → Actions
-3. Add a new repository secret with the actual value
-4. Update the deployment repository's CI to inject this secret into `env.env`
+2. Update the overlay `env.env` value in the deployment repository
+3. If the value is sensitive, do not put it in `env.env`; provide it through a Kubernetes Secret or an external secret manager instead
 
 ### Step 3: Verify Deployment
 
@@ -232,8 +233,10 @@ If you added a new environment variable but it's not appearing:
 ## Security Best Practices
 
 1. **Never commit actual secrets** to the application repository
-2. All production secrets must be stored as GitHub repository secrets in the deployment repo
-3. Use placeholder values in `env.env` files in the application repo
+2. Use `env.env` only for non-sensitive configuration
+3. For in-app secret storage, set `SECRETS_ENABLED=true` and choose exactly one of:
+   `SECRETS_ENCRYPTION_KEY` via a Kubernetes Secret or external secret manager
+   `ALLOW_PLAINTEXT_SECRETS_INSECURE=true` for low-criticality secrets only
 4. Rotate secrets regularly
 5. Use least-privilege access for service accounts
 

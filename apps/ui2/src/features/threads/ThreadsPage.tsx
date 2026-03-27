@@ -7,14 +7,17 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { useToast } from "../../shared/context/ToastContext";
 import { useCommandPalette } from "../../ui/components";
+import { useChatReadiness } from "../chat-providers/useChatReadiness";
+import { ChatSetupCallout } from "../chat-providers/ChatSetupCallout";
 import './ThreadsPage.css';
 
 export function ThreadsPage() {
   const { threads, setSectionTitle, createThread } = useThreadsCtx();
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
-  const { showError } = useToast();
+  const { showError, showToast } = useToast();
   const { registerCommands } = useCommandPalette();
+  const { readiness, isReady: isChatReady, isLoading: isChatReadinessLoading } = useChatReadiness();
 
   // Set browser tab title
   useDocumentTitle();
@@ -29,6 +32,12 @@ export function ThreadsPage() {
   };
 
   const handleNewThread = useCallback(async () => {
+    if (!isChatReady) {
+      showToast('Thread chat unlocks in Chat Settings.', 'info');
+      navigate('/settings/chat');
+      return;
+    }
+
     try {
       const thread = await createThread();
       if (thread) {
@@ -39,7 +48,7 @@ export function ThreadsPage() {
       console.error(error);
       showError(error);
     }
-  }, [createThread, navigate, showError]);
+  }, [createThread, isChatReady, navigate, showError, showToast]);
 
   // Register page-specific commands
   useEffect(() => {
@@ -58,6 +67,15 @@ export function ThreadsPage() {
 
   return (
     <>
+      {!isChatReadinessLoading && readiness && !readiness.isReady ? (
+        <ChatSetupCallout
+          title={readiness.title}
+          description={readiness.description}
+          ctaLabel={readiness.ctaLabel}
+          onOpenSettings={() => navigate('/settings/chat')}
+        />
+      ) : null}
+
       <DataRowContainer>
         {threads.map((thread) => (
           <ThreadRow
@@ -73,6 +91,7 @@ export function ThreadsPage() {
         className={`threads-fab ${isDesktop ? 'threads-fab--desktop' : ''}`}
         type="button"
         onClick={handleNewThread}
+        disabled={!isChatReady || isChatReadinessLoading}
         aria-label="Create new thread"
       >
         {isDesktop ? (

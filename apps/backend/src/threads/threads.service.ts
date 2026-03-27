@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, QueryFailedError } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { randomUUID } from 'node:crypto';
 import { ThreadEntity } from './thread.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
 import { TaskEntity } from '../tasks/task.entity';
@@ -98,6 +99,27 @@ export class ThreadsService {
     private readonly threadTitleService: ThreadTitleService,
   ) { }
 
+  private async ensureThreadConversationSession(
+    thread: ThreadEntity,
+  ): Promise<ThreadEntity> {
+    if (thread.chatSessionId) {
+      return thread;
+    }
+
+    this.logger.warn({
+      message: 'Thread missing chat session id, recreating conversation',
+      threadId: thread.id,
+    });
+
+    const conversation = await this.chatService.createConversation({
+      threadId: thread.id,
+    });
+
+    thread.chatSessionId = conversation.id;
+
+    return await this.threadRepository.save(thread);
+  }
+
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
     this.logger.log({
       message: 'Creating thread',
@@ -131,6 +153,8 @@ export class ThreadsService {
           || ThreadsService.DEFAULT_THREAD_TITLE)
         : ThreadsService.DEFAULT_THREAD_TITLE);
 
+    await this.chatService.ensureConversationAvailable();
+
     // Create state context block for the thread
     const stateBlockContent = parentTask
       ? [
@@ -147,6 +171,7 @@ export class ThreadsService {
     });
 
     const thread = this.threadRepository.create({
+      id: randomUUID(),
       title,
       chatSessionId: null,
       createdByActorId: input.createdByActorId,
@@ -173,14 +198,19 @@ export class ThreadsService {
       savedThread.chatSessionId = conversation.id;
       await this.threadRepository.save(savedThread);
     } catch (error) {
-      this.logger.warn({
-        message: 'Failed to create chat conversation for thread',
+      await this.threadRepository.delete({ id: savedThread.id });
+      await this.contextBlockRepository.delete({ id: stateBlock.id });
+
+      this.logger.error({
+        message: 'Failed to create chat conversation for thread, rolling back thread creation',
         threadId: savedThread.id,
         error:
           error instanceof Error
-            ? { message: error.message, stack: error.stack }
+            ? { message: error.message, stack: error.stack, name: error.name }
             : String(error),
       });
+
+      throw error;
     }
 
     // Handle tags if provided
@@ -949,10 +979,9 @@ export class ThreadsService {
     if (!thread) {
       throw new ThreadNotFoundError(input.threadId);
     }
-    if (!thread.chatSessionId) {
-      // TODO: make an error. This shouldn't happen though.
-      throw new Error('Thread does not have a chat session id');
-    }
+    const threadWithConversation = await this.ensureThreadConversationSession(
+      thread,
+    );
 
     // Verify actor exists if provided
     const actor = await this.actorRepository.findOne({
@@ -1000,14 +1029,14 @@ export class ThreadsService {
 
     // Send to chat (fire-and-forget with error handling to prevent unhandled rejection)
     void this.chatService.sendMessageToThread({
-      conversationId: thread.chatSessionId,
-      threadId: thread.id,
+      conversationId: threadWithConversation.chatSessionId!,
+      threadId: threadWithConversation.id,
       message: input.content,
       actor,
     }).catch((error) => {
       this.logger.error({
         message: 'Failed to send message to chat service',
-        threadId: thread.id,
+        threadId: threadWithConversation.id,
         error: error instanceof Error
           ? { message: error.message, stack: error.stack, name: error.name }
           : String(error),

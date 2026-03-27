@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
-import { isDevelopment, isSecretsEnabled } from '../config/env.config';
+import {
+  isPlaintextSecretsInsecurelyAllowed,
+  isSecretsEnabled,
+} from '../config/env.config';
 import { SecretsFeatureDisabledError } from './errors/secrets.errors';
 
 const ALGORITHM = 'aes-256-gcm';
@@ -11,34 +14,43 @@ const KEY_LENGTH = 32; // 256 bits
 /**
  * Service for encrypting and decrypting secret values using AES-256-GCM.
  * The encryption key is sourced from the SECRETS_ENCRYPTION_KEY environment
- * variable (32-byte hex string, i.e. 64 hex characters).
+ * variable (32-byte hex string, i.e. 64 hex characters). If
+ * ALLOW_PLAINTEXT_SECRETS_INSECURE=true is set instead, values are stored
+ * without encryption.
  *
  * Encrypted format (base64-encoded): <iv>:<authTag>:<ciphertext>
  *
  * When the SECRETS_ENABLED feature flag is off (default), the service starts
- * without requiring the encryption key. Calls to encrypt/decrypt will throw
- * a SecretsFeatureDisabledError (maps to HTTP 503) until the feature is enabled.
+ * without requiring either mode. Calls to encrypt/decrypt will throw a
+ * SecretsFeatureDisabledError (maps to HTTP 503) until the feature is enabled.
+ *
+ * IMPORTANT: If both SECRETS_ENCRYPTION_KEY and ALLOW_PLAINTEXT_SECRETS_INSECURE
+ * are set, encryption takes precedence and plaintext mode is ignored.
  */
 @Injectable()
 export class SecretsEncryptionService {
   private readonly logger = new Logger(SecretsEncryptionService.name);
   private readonly key: Buffer | null;
+  private readonly allowPlaintextStorage: boolean;
 
   constructor() {
     if (!isSecretsEnabled()) {
-      // Feature flag is off — skip key initialization so the app can start
-      // without SECRETS_ENCRYPTION_KEY. Encrypt/decrypt calls will fail at
-      // runtime if someone somehow reaches them.
+      // Feature flag is off — skip storage mode initialization entirely.
+      // Encrypt/decrypt calls will fail at runtime if someone reaches them.
       this.logger.warn(
         'Secrets feature is disabled (SECRETS_ENABLED is not set to "true"). ' +
           'Secrets endpoints will return 503 until the feature is enabled.',
       );
       this.key = null;
+      this.allowPlaintextStorage = false;
       return;
     }
 
     const envKey = process.env.SECRETS_ENCRYPTION_KEY;
+    const plaintextFlagSet = isPlaintextSecretsInsecurelyAllowed();
+
     if (envKey) {
+      // Encryption key is present — use encrypted storage
       const keyBuffer = Buffer.from(envKey, 'hex');
       if (keyBuffer.length !== KEY_LENGTH) {
         throw new Error(
@@ -46,22 +58,33 @@ export class SecretsEncryptionService {
         );
       }
       this.key = keyBuffer;
-    } else if (isDevelopment()) {
-      // Development fallback: derive a fixed key from a well-known dev secret
+      this.allowPlaintextStorage = false;
+
+      // Warn if both encryption key and plaintext flag are set
+      if (plaintextFlagSet) {
+        this.logger.warn(
+          'Both SECRETS_ENCRYPTION_KEY and ALLOW_PLAINTEXT_SECRETS_INSECURE are set. ' +
+            'Encryption takes precedence. Secrets will be encrypted.',
+        );
+      }
+    } else if (plaintextFlagSet) {
+      // No encryption key, but plaintext mode is explicitly allowed
       this.logger.warn(
-        'SECRETS_ENCRYPTION_KEY is not set. Using a fixed development key. DO NOT use this in production.',
+        'ALLOW_PLAINTEXT_SECRETS_INSECURE=true is set. Secrets will be stored without encryption. DO NOT use this for high-value secrets.',
       );
-      this.key = crypto.scryptSync('taico-dev-secrets-key', 'taico-salt', KEY_LENGTH);
+      this.key = null;
+      this.allowPlaintextStorage = true;
     } else {
+      // Neither encryption key nor plaintext flag is set
       throw new Error(
-        'SECRETS_ENCRYPTION_KEY environment variable is required in production when SECRETS_ENABLED=true. ' +
-          `Set it to a ${KEY_LENGTH * 2}-character hex string (${KEY_LENGTH} bytes).`,
+        'SECRETS_ENABLED=true requires either SECRETS_ENCRYPTION_KEY or ALLOW_PLAINTEXT_SECRETS_INSECURE=true. ' +
+          `If using encryption, set SECRETS_ENCRYPTION_KEY to a ${KEY_LENGTH * 2}-character hex string (${KEY_LENGTH} bytes).`,
       );
     }
   }
 
   private assertEnabled(): void {
-    if (!this.key) {
+    if (!this.key && !this.allowPlaintextStorage) {
       throw new SecretsFeatureDisabledError();
     }
   }
@@ -73,6 +96,9 @@ export class SecretsEncryptionService {
    */
   encrypt(plaintext: string): string {
     this.assertEnabled();
+    if (this.allowPlaintextStorage) {
+      return plaintext;
+    }
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv(ALGORITHM, this.key!, iv, {
       authTagLength: TAG_LENGTH,
@@ -99,6 +125,9 @@ export class SecretsEncryptionService {
    */
   decrypt(encryptedValue: string): string {
     this.assertEnabled();
+    if (this.allowPlaintextStorage) {
+      return encryptedValue;
+    }
     const parts = encryptedValue.split(':');
     if (parts.length !== 3) {
       throw new Error('Invalid encrypted value format');

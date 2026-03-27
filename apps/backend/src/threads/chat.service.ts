@@ -9,7 +9,14 @@ import { IssuedAccessTokenService } from "src/authorization-server/issued-access
 import { ThreadsService } from "./threads.service";
 import { AgentsService } from "src/agents/agents.service";
 import { AgentResult } from "src/agents/dto/service/agents.service.types";
-import { Agent, run, setDefaultOpenAIKey } from "@openai/agents";
+import {
+  Agent,
+  OpenAIProvider,
+  Runner as OpenAIRunner,
+  run,
+  setDefaultOpenAIClient,
+  setDefaultOpenAIKey,
+} from "@openai/agents";
 import { OpenAI } from "openai";
 import { randomUUID } from "crypto";
 import { getConfig } from "src/config/env.config";
@@ -60,10 +67,6 @@ export class ChatService implements OnModuleDestroy {
     private readonly openAiMcpServerFactoryService: OpenAiMcpServerFactoryService,
     private readonly chatProvidersService: ChatProvidersService,
   ) {
-    // I absolutely hate this, but it's the only way to provide a key to the @openai/agents sdk
-    // This will be overridden with the provider-specific key at runtime
-    setDefaultOpenAIKey(getConfig().openAiKey);
-
     this.adkSessionService = new SqliteSessionService({
       filename: this.getChatDatabasePath(getConfig().databasePath),
     });
@@ -89,20 +92,28 @@ export class ChatService implements OnModuleDestroy {
   }
 
   private async getOpenAiApiKey(): Promise<string> {
-    try {
-      const config = await this.chatProvidersService.getActiveChatProviderConfig();
-      return config.apiKey;
-    } catch (error) {
-      // Fall back to environment variable if no provider is configured
-      this.logger.warn({
-        message: 'No active chat provider configured, falling back to environment variable',
-        error:
-          error instanceof Error
-            ? { message: error.message, name: error.name }
-            : String(error),
-      });
-      return getConfig().openAiKey;
+    const config = await this.chatProvidersService.getActiveChatProviderConfig();
+    return config.apiKey;
+  }
+
+  private configureOpenAiSdk(apiKey: string): OpenAIProvider {
+    const client = new OpenAI({ apiKey });
+
+    // Keep the SDK globals in sync for any code path that still reads defaults.
+    setDefaultOpenAIClient(client);
+    setDefaultOpenAIKey(apiKey);
+
+    return new OpenAIProvider({ openAIClient: client });
+  }
+
+  public async ensureConversationAvailable(): Promise<void> {
+    const self = await this.getSelf();
+
+    if (self.type === AgentType.ADK) {
+      return;
     }
+
+    await this.getOpenAiApiKey();
   }
 
   private getChatDatabasePath(databasePath: string): string {
@@ -156,14 +167,6 @@ export class ChatService implements OnModuleDestroy {
       throw error;
     }
   }
-
-  // private async getConversation({ conversationId }: { conversationId: string }) {
-  //   const client = new OpenAI({
-  //     apiKey: getConfig().openAiKey,
-  //   });
-  //   const conversation = await client.conversations.retrieve(conversationId);
-  //   return conversation;
-  // }
 
   private makeMessage({ message, actor }: MakeMessageArgs) {
     return `[${actor.displayName} @${actor.slug}] says:\n${message}`;
@@ -430,7 +433,7 @@ Operational guidance:
 
     // Make agent
     const apiKey = await this.getOpenAiApiKey();
-    setDefaultOpenAIKey(apiKey); // Set the key for this request
+    const modelProvider = this.configureOpenAiSdk(apiKey);
     const mcpServers = await this.openAiMcpServerFactoryService.createServers(token);
     const agent = new Agent({
       name: self.name,
@@ -438,10 +441,11 @@ Operational guidance:
       model: self.modelId || 'gpt-5.2-codex',
       mcpServers: mcpServers,
     });
+    const runner = new OpenAIRunner({ modelProvider });
     this.logger.log(`Sending message sent to ${conversationId}`);
 
     try {
-      const result = await run(agent, this.makeMessage({ message, actor }), {
+      const result = await runner.run(agent, this.makeMessage({ message, actor }), {
         conversationId,
         stream: true,
       });

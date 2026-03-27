@@ -4486,6 +4486,481 @@
         ]
       }
     },
+    "/api/v1/chat-providers": {
+      "post": {
+        "operationId": "ChatProvidersController_createChatProvider",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chat provider created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatProviderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new chat provider",
+        "tags": [
+          "Chat Providers"
+        ]
+      },
+      "get": {
+        "operationId": "ChatProvidersController_listChatProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of chat providers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatProviderResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all chat providers",
+        "tags": [
+          "Chat Providers"
+        ]
+      }
+    },
+    "/api/v1/chat-providers/{id}": {
+      "get": {
+        "operationId": "ChatProvidersController_getChatProvider",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Chat provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat provider details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatProviderResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chat provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get chat provider by ID",
+        "tags": [
+          "Chat Providers"
+        ]
+      },
+      "patch": {
+        "operationId": "ChatProvidersController_updateChatProvider",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Chat provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChatProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat provider updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatProviderResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chat provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update a chat provider",
+        "tags": [
+          "Chat Providers"
+        ]
+      },
+      "delete": {
+        "operationId": "ChatProvidersController_deleteChatProvider",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Chat provider identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Chat provider deleted successfully"
+          },
+          "404": {
+            "description": "Chat provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a chat provider",
+        "tags": [
+          "Chat Providers"
+        ]
+      }
+    },
+    "/api/v1/chat-providers/set-active": {
+      "post": {
+        "operationId": "ChatProvidersController_setActiveChatProvider",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveChatProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Active chat provider set successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatProviderResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chat provider not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Set the active chat provider",
+        "tags": [
+          "Chat Providers"
+        ]
+      }
+    },
+    "/api/v1/chat-providers/deactivate": {
+      "post": {
+        "operationId": "ChatProvidersController_deactivateActiveChatProvider",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Active chat provider deactivated successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Deactivate the active chat provider",
+        "tags": [
+          "Chat Providers"
+        ]
+      }
+    },
+    "/api/v1/secrets": {
+      "post": {
+        "operationId": "SecretsController_createSecret",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSecretDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Secret created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create a new secret",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "get": {
+        "operationId": "SecretsController_listSecrets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of secrets (no values)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SecretResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List all secrets - values not included",
+        "tags": [
+          "Secrets"
+        ]
+      }
+    },
+    "/api/v1/secrets/{id}": {
+      "get": {
+        "operationId": "SecretsController_getSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Secret metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get secret metadata by ID - value not included",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "patch": {
+        "operationId": "SecretsController_updateSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecretDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Secret updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Update a secret",
+        "tags": [
+          "Secrets"
+        ]
+      },
+      "delete": {
+        "operationId": "SecretsController_deleteSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Secret deleted successfully"
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete a secret",
+        "tags": [
+          "Secrets"
+        ]
+      }
+    },
+    "/api/v1/secrets/{id}/value": {
+      "get": {
+        "operationId": "SecretsController_getSecretValue",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Secret identifier",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Decrypted secret value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecretValueResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Secret not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get decrypted secret value",
+        "tags": [
+          "Secrets"
+        ]
+      }
+    },
     "/api/v1/context/blocks": {
       "post": {
         "operationId": "ContextController_createBlock",
@@ -5085,461 +5560,6 @@
         ],
         "tags": [
           "Context"
-        ]
-      }
-    },
-    "/api/v1/chat-providers": {
-      "post": {
-        "operationId": "ChatProvidersController_createChatProvider",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateChatProviderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Chat provider created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChatProviderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new chat provider",
-        "tags": [
-          "Chat Providers"
-        ]
-      },
-      "get": {
-        "operationId": "ChatProvidersController_listChatProviders",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of chat providers",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChatProviderResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List all chat providers",
-        "tags": [
-          "Chat Providers"
-        ]
-      }
-    },
-    "/api/v1/chat-providers/{id}": {
-      "get": {
-        "operationId": "ChatProvidersController_getChatProvider",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Chat provider identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Chat provider details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChatProviderResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Chat provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get chat provider by ID",
-        "tags": [
-          "Chat Providers"
-        ]
-      },
-      "patch": {
-        "operationId": "ChatProvidersController_updateChatProvider",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Chat provider identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateChatProviderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Chat provider updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChatProviderResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Chat provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Update a chat provider",
-        "tags": [
-          "Chat Providers"
-        ]
-      },
-      "delete": {
-        "operationId": "ChatProvidersController_deleteChatProvider",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Chat provider identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Chat provider deleted successfully"
-          },
-          "404": {
-            "description": "Chat provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete a chat provider",
-        "tags": [
-          "Chat Providers"
-        ]
-      }
-    },
-    "/api/v1/chat-providers/set-active": {
-      "post": {
-        "operationId": "ChatProvidersController_setActiveChatProvider",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetActiveChatProviderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Active chat provider set successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChatProviderResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Chat provider not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Set the active chat provider",
-        "tags": [
-          "Chat Providers"
-        ]
-      }
-    },
-    "/api/v1/secrets": {
-      "post": {
-        "operationId": "SecretsController_createSecret",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSecretDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Secret created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SecretResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Create a new secret",
-        "tags": [
-          "Secrets"
-        ]
-      },
-      "get": {
-        "operationId": "SecretsController_listSecrets",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of secrets (no values)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SecretResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List all secrets - values not included",
-        "tags": [
-          "Secrets"
-        ]
-      }
-    },
-    "/api/v1/secrets/{id}": {
-      "get": {
-        "operationId": "SecretsController_getSecret",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Secret identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Secret metadata",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SecretResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Secret not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get secret metadata by ID - value not included",
-        "tags": [
-          "Secrets"
-        ]
-      },
-      "patch": {
-        "operationId": "SecretsController_updateSecret",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Secret identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSecretDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Secret updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SecretResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Secret not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Update a secret",
-        "tags": [
-          "Secrets"
-        ]
-      },
-      "delete": {
-        "operationId": "SecretsController_deleteSecret",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Secret identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Secret deleted successfully"
-          },
-          "404": {
-            "description": "Secret not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Delete a secret",
-        "tags": [
-          "Secrets"
-        ]
-      }
-    },
-    "/api/v1/secrets/{id}/value": {
-      "get": {
-        "operationId": "SecretsController_getSecretValue",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "Secret identifier",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Decrypted secret value",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SecretValueResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Secret not found"
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "Get decrypted secret value",
-        "tags": [
-          "Secrets"
         ]
       }
     },
@@ -9794,6 +9814,255 @@
           "isValid"
         ]
       },
+      "CreateChatProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name for the chat provider",
+            "example": "OpenAI Production"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of chat provider",
+            "enum": [
+              "openai"
+            ],
+            "example": "openai"
+          },
+          "secretId": {
+            "type": "string",
+            "description": "ID of the secret containing the API key",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "ChatProviderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Chat provider identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the chat provider",
+            "example": "OpenAI Production"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of chat provider",
+            "enum": [
+              "openai"
+            ],
+            "example": "openai"
+          },
+          "secretId": {
+            "type": "string",
+            "description": "ID of the secret containing the API key",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this provider is currently active",
+            "example": true
+          },
+          "isConfigured": {
+            "type": "boolean",
+            "description": "Whether this provider has all required configuration",
+            "example": true
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO timestamp when the provider was created",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the provider was last updated",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "isActive",
+          "isConfigured",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateChatProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name for the chat provider",
+            "example": "OpenAI Production"
+          },
+          "secretId": {
+            "type": "string",
+            "description": "ID of the secret containing the API key",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for the chat provider. If provided, a secret will be created automatically.",
+            "example": "sk-..."
+          }
+        }
+      },
+      "SetActiveChatProviderDto": {
+        "type": "object",
+        "properties": {
+          "providerId": {
+            "type": "string",
+            "description": "ID of the chat provider to set as active",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        },
+        "required": [
+          "providerId"
+        ]
+      },
+      "CreateSecretDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique name for the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the secret",
+            "example": "OpenAI API key for agent completions"
+          },
+          "value": {
+            "type": "string",
+            "description": "The secret value (will be encrypted at rest)",
+            "example": "sk-..."
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
+      "SecretResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Secret identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description",
+            "example": "OpenAI API key for agent completions",
+            "nullable": true
+          },
+          "createdByActorId": {
+            "type": "string",
+            "description": "ID of the actor who created this secret",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "Slug of the actor who created this secret",
+            "example": "fran",
+            "nullable": true
+          },
+          "rowVersion": {
+            "type": "number",
+            "description": "Row version for optimistic locking",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO timestamp when the secret was created",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "ISO timestamp when the secret was last updated",
+            "example": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdByActorId",
+          "rowVersion",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SecretValueResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Secret identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the secret",
+            "example": "OPENAI_API_KEY"
+          },
+          "value": {
+            "type": "string",
+            "description": "The decrypted secret value",
+            "example": "sk-..."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "value"
+        ]
+      },
+      "UpdateSecretDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "New name for the secret",
+            "example": "OPENAI_API_KEY_V2"
+          },
+          "description": {
+            "type": "string",
+            "description": "New description for the secret",
+            "example": "Updated OpenAI API key",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "description": "New secret value (will be encrypted at rest)",
+            "example": "sk-..."
+          }
+        }
+      },
       "CreateBlockDto": {
         "type": "object",
         "properties": {
@@ -10166,255 +10435,6 @@
         "required": [
           "newParentId"
         ]
-      },
-      "CreateChatProviderDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Display name for the chat provider",
-            "example": "OpenAI Production"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of chat provider",
-            "enum": [
-              "openai"
-            ],
-            "example": "openai"
-          },
-          "secretId": {
-            "type": "string",
-            "description": "ID of the secret containing the API key",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          }
-        },
-        "required": [
-          "name",
-          "type"
-        ]
-      },
-      "ChatProviderResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Chat provider identifier",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Display name of the chat provider",
-            "example": "OpenAI Production"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of chat provider",
-            "enum": [
-              "openai"
-            ],
-            "example": "openai"
-          },
-          "secretId": {
-            "type": "string",
-            "description": "ID of the secret containing the API key",
-            "example": "123e4567-e89b-12d3-a456-426614174000",
-            "nullable": true
-          },
-          "isActive": {
-            "type": "boolean",
-            "description": "Whether this provider is currently active",
-            "example": true
-          },
-          "isConfigured": {
-            "type": "boolean",
-            "description": "Whether this provider has all required configuration",
-            "example": true
-          },
-          "rowVersion": {
-            "type": "number",
-            "description": "Row version for optimistic locking",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO timestamp when the provider was created",
-            "example": "2024-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "ISO timestamp when the provider was last updated",
-            "example": "2024-01-01T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "type",
-          "isActive",
-          "isConfigured",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "UpdateChatProviderDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Display name for the chat provider",
-            "example": "OpenAI Production"
-          },
-          "secretId": {
-            "type": "string",
-            "description": "ID of the secret containing the API key",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "apiKey": {
-            "type": "string",
-            "description": "API key for the chat provider. If provided, a secret will be created automatically.",
-            "example": "sk-..."
-          }
-        }
-      },
-      "SetActiveChatProviderDto": {
-        "type": "object",
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "description": "ID of the chat provider to set as active",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          }
-        },
-        "required": [
-          "providerId"
-        ]
-      },
-      "CreateSecretDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Unique name for the secret",
-            "example": "OPENAI_API_KEY"
-          },
-          "description": {
-            "type": "string",
-            "description": "Human-readable description of the secret",
-            "example": "OpenAI API key for agent completions"
-          },
-          "value": {
-            "type": "string",
-            "description": "The secret value (will be encrypted at rest)",
-            "example": "sk-..."
-          }
-        },
-        "required": [
-          "name",
-          "value"
-        ]
-      },
-      "SecretResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Secret identifier",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the secret",
-            "example": "OPENAI_API_KEY"
-          },
-          "description": {
-            "type": "string",
-            "description": "Human-readable description",
-            "example": "OpenAI API key for agent completions",
-            "nullable": true
-          },
-          "createdByActorId": {
-            "type": "string",
-            "description": "ID of the actor who created this secret",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "createdBy": {
-            "type": "string",
-            "description": "Slug of the actor who created this secret",
-            "example": "fran",
-            "nullable": true
-          },
-          "rowVersion": {
-            "type": "number",
-            "description": "Row version for optimistic locking",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "ISO timestamp when the secret was created",
-            "example": "2024-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "ISO timestamp when the secret was last updated",
-            "example": "2024-01-01T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "createdByActorId",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "SecretValueResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Secret identifier",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the secret",
-            "example": "OPENAI_API_KEY"
-          },
-          "value": {
-            "type": "string",
-            "description": "The decrypted secret value",
-            "example": "sk-..."
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "value"
-        ]
-      },
-      "UpdateSecretDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "New name for the secret",
-            "example": "OPENAI_API_KEY_V2"
-          },
-          "description": {
-            "type": "string",
-            "description": "New description for the secret",
-            "example": "Updated OpenAI API key",
-            "nullable": true
-          },
-          "value": {
-            "type": "string",
-            "description": "New secret value (will be encrypted at rest)",
-            "example": "sk-..."
-          }
-        }
       },
       "CreateTaskBlueprintDto": {
         "type": "object",

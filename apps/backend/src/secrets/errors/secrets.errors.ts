@@ -38,7 +38,7 @@ export class SecretNameConflictError extends SecretsDomainError {
 export class SecretsFeatureDisabledError extends SecretsDomainError {
   constructor() {
     super(
-      'Secrets feature is disabled. Set SECRETS_ENABLED=true and provide SECRETS_ENCRYPTION_KEY to enable it.',
+      'Secrets feature is disabled. Set SECRETS_ENABLED=true, then configure either SECRETS_ENCRYPTION_KEY or ALLOW_PLAINTEXT_SECRETS_INSECURE=true.',
       SecretsErrorCodes.SECRET_FEATURE_DISABLED,
     );
   }

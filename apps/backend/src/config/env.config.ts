@@ -44,9 +44,6 @@ export interface AppConfig {
   // Development Configuration
   vitePort: string;
 
-  // TODO: move this to a proper secret
-  openAiKey: string;
-
   // Feature Flags
   threadStateReconcilerEnabled: boolean;
   threadStateReconcilerDebounceMs: number;
@@ -112,8 +109,6 @@ export function loadConfig(): AppConfig {
     // Development Configuration
     vitePort: uiPort,
 
-    openAiKey: getOpenAiKey(),
-
     threadStateReconcilerEnabled: getThreadStateReconcilerEnabled(),
     threadStateReconcilerDebounceMs: getThreadStateReconcilerDebounceMs(),
   };
@@ -126,7 +121,6 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Callback URL: ${config.callbackUrl}`);
   logger.log(`  - Database Path: ${config.databasePath}`);
   logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
-  logger.log(`  - OpenAI Key: ${config.openAiKey.slice(0,3)}...`);
   logger.log(`  - Thread State Reconciler Enabled: ${config.threadStateReconcilerEnabled}`);
   logger.log(`  - Thread State Reconciler Debounce Ms: ${config.threadStateReconcilerDebounceMs}`);
 
@@ -162,10 +156,6 @@ function getIssuerUrl(): string {
 function getCallbackUrl(): string {
   const issuerUrl = getIssuerUrl();
   return `${issuerUrl}/api/v1/auth/callback`;
-}
-
-function getOpenAiKey(): string {
-  return process.env.OPENAI_KEY || '';
 }
 
 function getThreadStateReconcilerEnabled(): boolean {
@@ -214,10 +204,19 @@ export function isProduction(): boolean {
 /**
  * Feature flag: Secrets module.
  * Off by default. Enable by setting SECRETS_ENABLED=true in the environment.
- * When disabled, the app starts without requiring SECRETS_ENCRYPTION_KEY.
+ * When enabled, either SECRETS_ENCRYPTION_KEY or
+ * ALLOW_PLAINTEXT_SECRETS_INSECURE=true must be set.
  */
 export function isSecretsEnabled(): boolean {
   return process.env.SECRETS_ENABLED === 'true';
+}
+
+/**
+ * Dangerous escape hatch for storing secrets without encryption.
+ * Intended only for low-criticality use cases until proper key management exists.
+ */
+export function isPlaintextSecretsInsecurelyAllowed(): boolean {
+  return process.env.ALLOW_PLAINTEXT_SECRETS_INSECURE === 'true';
 }
 
 /**
