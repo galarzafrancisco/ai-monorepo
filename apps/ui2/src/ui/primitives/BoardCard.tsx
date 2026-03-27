@@ -34,7 +34,7 @@ export interface BoardCardProps {
   highlight?: boolean;
 
   /** Click handler for the row */
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent) => void;
 
   className?: string;
 }
@@ -67,8 +67,12 @@ export function BoardCard({
   const pulseClass = pulse ? "board-card--eventPulse" : "";
   const highlightClass = highlight ? "board-card--highlight": "";
 
+  const handleClick = (event: React.MouseEvent) => {
+    onClick?.(event);
+  };
+
   return (
-    <div className={`board-card__wrapper ${animationClass}`} onClick={onClick}>
+    <div className={`board-card__wrapper ${animationClass}`} onClick={handleClick}>
       <div className={`board-card ${highlightClass} ${pulseClass} ${className}`} data-component="board-card">
         <div className="board-card__header">
           <div className="board-card__headerLeft">

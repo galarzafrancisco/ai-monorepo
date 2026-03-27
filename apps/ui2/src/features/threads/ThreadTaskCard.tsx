@@ -25,8 +25,13 @@ export function ThreadTaskCard({
     });
   }
 
-  const handleClick = () => {
-    navigate(`/tasks/task/${task.id}`);
+  const handleClick = (event: React.MouseEvent) => {
+    if (event.metaKey || event.ctrlKey) {
+      event.stopPropagation();
+      window.open(`/tasks/task/${task.id}`, "_blank");
+    } else {
+      navigate(`/tasks/task/${task.id}`);
+    }
   };
 
   return (

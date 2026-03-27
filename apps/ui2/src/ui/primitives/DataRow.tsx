@@ -32,7 +32,7 @@ export interface DataRowProps {
   animation?: DataRowAnimation;
 
   /** Click handler for the row */
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent) => void;
   
   highlight?: boolean,
 
@@ -54,8 +54,12 @@ export function DataRow({
   const highlightClass = highlight ? "data-row--highlight": "";
   const clickClass = onClick ? "data-row--clickable" : "";
 
+  const handleClick = (event: React.MouseEvent) => {
+    onClick?.(event);
+  };
+
   return (
-    <div className={`data-row__wrapper ${animationClass}`} onClick={onClick}>
+    <div className={`data-row__wrapper ${animationClass}`} onClick={handleClick}>
       <div className={`data-row ${highlightClass} ${clickClass} ${className}`} data-component="data-row">
 
         {/* Leading */}
