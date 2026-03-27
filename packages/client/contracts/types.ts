@@ -1309,6 +1309,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/chat-providers/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivate the active chat provider */
+        post: operations["ChatProvidersController_deactivateActiveChatProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/secrets": {
         parameters: {
             query?: never;
@@ -8229,6 +8246,24 @@ export interface operations {
             };
             /** @description Chat provider not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChatProvidersController_deactivateActiveChatProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active chat provider deactivated successfully */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

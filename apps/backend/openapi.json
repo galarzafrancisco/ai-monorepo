@@ -4713,6 +4713,26 @@
         ]
       }
     },
+    "/api/v1/chat-providers/deactivate": {
+      "post": {
+        "operationId": "ChatProvidersController_deactivateActiveChatProvider",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Active chat provider deactivated successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Deactivate the active chat provider",
+        "tags": [
+          "Chat Providers"
+        ]
+      }
+    },
     "/api/v1/secrets": {
       "post": {
         "operationId": "SecretsController_createSecret",

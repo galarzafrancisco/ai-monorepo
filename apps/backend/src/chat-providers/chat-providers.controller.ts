@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  HttpStatus,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -121,6 +122,15 @@ export class ChatProvidersController {
       providerId: dto.providerId,
     });
     return this.mapToResponse(result);
+  }
+
+  @Post('deactivate')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequireScopes(ChatProvidersScopes.CONFIGURE.id)
+  @ApiOperation({ summary: 'Deactivate the active chat provider' })
+  @ApiNoContentResponse({ description: 'Active chat provider deactivated successfully' })
+  async deactivateActiveChatProvider(): Promise<void> {
+    await this.chatProvidersService.deactivateActiveChatProvider();
   }
 
   private mapToResponse(result: ChatProviderResult): ChatProviderResponseDto {

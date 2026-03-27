@@ -93,16 +93,25 @@ export class ChatProvidersService {
         throw new Error('createdByActorId is required when providing an API key');
       }
 
-      this.logger.log({ message: 'Creating secret for API key', providerId: id });
+      if (provider.secretId) {
+        this.logger.log({ message: 'Updating secret for API key', providerId: id });
 
-      const secret = await this.secretsService.createSecret({
-        name: `${provider.name} API Key`,
-        description: `API key for ${provider.name} chat provider`,
-        value: input.apiKey,
-        createdByActorId: input.createdByActorId,
-      });
+        await this.secretsService.updateSecret(provider.secretId, {
+          value: input.apiKey,
+          description: `API key for ${provider.name} chat provider`,
+        });
+      } else {
+        this.logger.log({ message: 'Creating secret for API key', providerId: id });
 
-      provider.secretId = secret.id;
+        const secret = await this.secretsService.createSecret({
+          name: `${provider.name} API Key`,
+          description: `API key for ${provider.name} chat provider`,
+          value: input.apiKey,
+          createdByActorId: input.createdByActorId,
+        });
+
+        provider.secretId = secret.id;
+      }
     } else if (input.secretId !== undefined) {
       // Fallback to direct secretId assignment if provided
       provider.secretId = input.secretId;
@@ -152,14 +161,35 @@ export class ChatProvidersService {
         throw new ChatProviderNotConfiguredError(input.providerId);
       }
 
-      // Deactivate all other providers
-      await repository.update({}, { isActive: false });
+      // Deactivate all other providers without relying on empty update criteria.
+      await repository
+        .createQueryBuilder()
+        .update(ChatProviderEntity)
+        .set({ isActive: false })
+        .where('id != :providerId', { providerId: input.providerId })
+        .andWhere('is_active = :isActive', { isActive: true })
+        .execute();
 
       // Activate the selected provider
       provider.isActive = true;
       const saved = await repository.save(provider);
 
       return this.mapToResult(saved);
+    });
+  }
+
+  async deactivateActiveChatProvider(): Promise<void> {
+    this.logger.log({ message: 'Deactivating active chat provider' });
+
+    await this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(ChatProviderEntity);
+
+      await repository
+        .createQueryBuilder()
+        .update(ChatProviderEntity)
+        .set({ isActive: false })
+        .where('is_active = :isActive', { isActive: true })
+        .execute();
     });
   }
 

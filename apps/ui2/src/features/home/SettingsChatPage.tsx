@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ChatProvidersService } from '@taico/client';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import '../../auth/LoginPage.css';
+import './SettingsChatPage.css';
 
 interface ChatProvider {
   id: string;
@@ -18,10 +19,28 @@ export function SettingsChatPage() {
   const { setSectionTitle } = useHomeCtx();
   const [providers, setProviders] = useState<ChatProvider[]>([]);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [apiKey, setApiKey] = useState<string>('');
   const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
+  const [providerFeedback, setProviderFeedback] = useState<{
+    providerId: string;
+    action: 'configure' | 'activate' | 'deactivate';
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!providerFeedback) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setProviderFeedback((current) =>
+        current?.providerId === providerFeedback.providerId ? null : current,
+      );
+    }, 2400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [providerFeedback]);
 
   useEffect(() => {
     setSectionTitle('Chat Settings');
@@ -47,7 +66,7 @@ export function SettingsChatPage() {
     }
 
     setError('');
-    setSuccess('');
+    setProviderFeedback(null);
 
     try {
       await ChatProvidersService.chatProvidersControllerUpdateChatProvider(
@@ -56,7 +75,11 @@ export function SettingsChatPage() {
           apiKey: apiKey,
         }
       );
-      setSuccess('Provider configured successfully');
+      setProviderFeedback({
+        providerId,
+        action: 'configure',
+        message: 'Config updated',
+      });
       setEditingProviderId(null);
       setApiKey('');
       await loadData();
@@ -73,16 +96,37 @@ export function SettingsChatPage() {
     }
 
     setError('');
-    setSuccess('');
+    setProviderFeedback(null);
 
     try {
       await ChatProvidersService.chatProvidersControllerSetActiveChatProvider({
         providerId,
       });
-      setSuccess('Active provider set successfully');
+      setProviderFeedback({
+        providerId,
+        action: 'activate',
+        message: 'Now active',
+      });
       await loadData();
     } catch (err: any) {
       setError(err?.body?.detail || 'Failed to set active provider');
+    }
+  };
+
+  const handleDeactivate = async (providerId: string) => {
+    setError('');
+    setProviderFeedback(null);
+
+    try {
+      await ChatProvidersService.chatProvidersControllerDeactivateActiveChatProvider();
+      setProviderFeedback({
+        providerId,
+        action: 'deactivate',
+        message: 'Deactivated',
+      });
+      await loadData();
+    } catch (err: any) {
+      setError(err?.body?.detail || 'Failed to deactivate provider');
     }
   };
 
@@ -104,14 +148,6 @@ export function SettingsChatPage() {
         </ErrorText>
       )}
 
-      {success && (
-        <div style={{ color: 'var(--accent)' }}>
-          <Text size="2" weight="medium">
-            {success}
-          </Text>
-        </div>
-      )}
-
       {providers.length === 0 ? (
         <Card padding="5">
           <Text tone="muted">No chat providers available. OpenAI provider should be created automatically.</Text>
@@ -121,21 +157,31 @@ export function SettingsChatPage() {
           <Card key={provider.id} padding="5">
             <Stack spacing="4">
               <Row justify="space-between" align="center">
-                <Stack spacing="1">
-                  <Text size="4" weight="semibold">
-                    {provider.name}
-                  </Text>
-                  <Text size="2" tone="muted">
-                    Type: {provider.type}
-                  </Text>
-                </Stack>
-                {provider.isConfigured && (
-                  <div style={{ color: 'var(--accent)' }}>
-                    <Text size="2" weight="medium">
-                      ✓ Configured
+                <Stack spacing="1" className="settings-chat__header-copy">
+                  <div className="settings-chat__title-row">
+                    <Text size="4" weight="semibold">
+                      {provider.name}
                     </Text>
+                    {provider.isActive ? (
+                      <span className="settings-chat__active-indicator">
+                        Active
+                      </span>
+                    ) : null}
                   </div>
-                )}
+                  {provider.type === 'openai' ? (
+                    <Text size="1" tone="muted">
+                      You can get an API key from{' '}
+                      <a
+                        href="https://platform.openai.com/api-keys"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="settings-chat__helper-link"
+                      >
+                        platform.openai.com/api-keys
+                      </a>
+                    </Text>
+                  ) : null}
+                </Stack>
               </Row>
 
               {editingProviderId === provider.id ? (
@@ -179,23 +225,55 @@ export function SettingsChatPage() {
                 </Stack>
               ) : (
                 <Row spacing="2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setEditingProviderId(provider.id)}
-                  >
-                    Configure
-                  </Button>
-                  <span title={!provider.isConfigured ? 'Configure the provider first to set it as active' : ''}>
-                    <Button
-                      variant={provider.isActive ? 'primary' : 'secondary'}
-                      size="sm"
-                      onClick={() => handleSetActive(provider.id)}
-                      disabled={provider.isActive || !provider.isConfigured}
-                    >
-                      {provider.isActive ? 'Active' : 'Set Active'}
-                    </Button>
-                  </span>
+                  {(() => {
+                    const configureFeedback =
+                      providerFeedback?.providerId === provider.id
+                      && providerFeedback.action === 'configure'
+                        ? providerFeedback.message
+                        : null;
+                    const activateFeedback =
+                      providerFeedback?.providerId === provider.id
+                      && providerFeedback.action === 'activate'
+                        ? providerFeedback.message
+                        : null;
+                    const deactivateFeedback =
+                      providerFeedback?.providerId === provider.id
+                      && providerFeedback.action === 'deactivate'
+                        ? providerFeedback.message
+                        : null;
+
+                    return (
+                      <>
+                        <Button
+                          variant={configureFeedback ? 'primary' : 'secondary'}
+                          size="sm"
+                        onClick={() => setEditingProviderId(provider.id)}
+                      >
+                        {configureFeedback || (provider.isConfigured ? 'Update Config' : 'Configure')}
+                      </Button>
+                      {provider.isActive ? (
+                        <Button
+                          variant={deactivateFeedback ? 'primary' : 'secondary'}
+                          size="sm"
+                          onClick={() => handleDeactivate(provider.id)}
+                        >
+                          {deactivateFeedback || 'Deactivate'}
+                        </Button>
+                      ) : (
+                        <span title={!provider.isConfigured ? 'Configure the provider first to set it as active' : ''}>
+                          <Button
+                            variant={activateFeedback ? 'primary' : 'secondary'}
+                            size="sm"
+                            onClick={() => handleSetActive(provider.id)}
+                            disabled={!provider.isConfigured}
+                          >
+                            {activateFeedback || 'Set Active'}
+                          </Button>
+                        </span>
+                      )}
+                      </>
+                    );
+                  })()}
                 </Row>
               )}
             </Stack>
@@ -203,20 +281,6 @@ export function SettingsChatPage() {
         ))
       )}
 
-      <Card padding="5">
-        <Stack spacing="3">
-          <Text size="3" weight="semibold">
-            Need an API Key?
-          </Text>
-          <Text tone="muted">
-            For OpenAI, you can get an API key from{' '}
-            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
-              platform.openai.com/api-keys
-            </a>
-            . Simply paste it into the configuration form above.
-          </Text>
-        </Stack>
-      </Card>
     </Stack>
   );
 }
