@@ -102,6 +102,7 @@ export function TaskBlueprintDetailPage() {
       backPath="/tasks/schedule"
       setSectionTitle={setSectionTitle}
       handlers={handlers}
+      allTasks={[]}
     />
   );
 }
