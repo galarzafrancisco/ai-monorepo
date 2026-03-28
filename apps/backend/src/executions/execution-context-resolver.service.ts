@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { TaskExecutionEntity } from './task-execution.entity';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { ThreadsService } from '../threads/threads.service';
+import { TaskExecutionNotFoundError } from './errors/executions.errors';
+import { AgentRunNotFoundError } from '../agent-runs/errors/agent-runs.errors';
 
 /**
  * Result of resolving execution context from either execution-id or run-id.
@@ -100,7 +102,7 @@ export class ExecutionContextResolverService {
     });
 
     if (!execution) {
-      throw new Error(`TaskExecution not found: ${executionId}`);
+      throw new TaskExecutionNotFoundError(executionId);
     }
 
     // Look up thread by task ID
@@ -143,7 +145,7 @@ export class ExecutionContextResolverService {
     });
 
     if (!agentRun) {
-      throw new Error(`AgentRun not found: ${runId}`);
+      throw new AgentRunNotFoundError(runId);
     }
 
     // Look up thread by parent task ID

@@ -105,6 +105,18 @@ export const ErrorCatalog: Record<
     type: '/errors/agents/slug-conflict',
     retryable: false,
   },
+  [ErrorCodes.AGENT_RUN_NOT_FOUND]: {
+    status: 404,
+    title: 'Agent run not found',
+    type: '/errors/agent-runs/not-found',
+    retryable: false,
+  },
+  [ErrorCodes.TASK_EXECUTION_NOT_FOUND]: {
+    status: 404,
+    title: 'Task execution not found',
+    type: '/errors/executions/not-found',
+    retryable: false,
+  },
   [ErrorCodes.CLIENT_ALREADY_REGISTERED]: {
     status: 409,
     title: 'Client already registered',
