@@ -4,6 +4,7 @@ import { Button, Text, Stack, Chip } from '../../ui/primitives';
 import { useContextBlock } from './useContextBlocks';
 import { useContextCtx } from './ContextProvider';
 import { ContextTagResponseDto } from "@taico/client";
+import { elapsedTime } from '../../shared/helpers/elapsedTime';
 import './ContextBlockDetailPage.css';
 
 export function ContextBlockDetailPage() {
@@ -68,6 +69,8 @@ export function ContextBlockDetailPage() {
           <Text size="2" tone="muted">by {block.createdBy || 'unknown'}</Text>
           <Text size="2" tone="muted">•</Text>
           <Text size="2" tone="muted">{new Date(block.createdAt).toDateString()}</Text>
+          <Text size="2" tone="muted">•</Text>
+          <Text size="2" tone="muted">Last edited {elapsedTime(block.updatedAt)}</Text>
         </div>
       </Stack>
 
