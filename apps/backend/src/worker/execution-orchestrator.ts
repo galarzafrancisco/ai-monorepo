@@ -183,7 +183,7 @@ export class ExecutionOrchestrator {
         taskId,
       );
     } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 404) {
+      if (this.isApiError(error) && error.status === 404) {
         return null;
       }
       if (error instanceof SyntaxError) {
@@ -243,7 +243,7 @@ export class ExecutionOrchestrator {
         );
       return project.repoUrl ?? null;
     } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 404) {
+      if (this.isApiError(error) && error.status === 404) {
         return null;
       }
       throw error;
@@ -251,7 +251,7 @@ export class ExecutionOrchestrator {
   }
 
   private errorToMessage(error: unknown): string {
-    if (error instanceof ApiError) {
+    if (this.isApiError(error)) {
       return `HTTP ${error.status} when requesting ${error.url}: ${error.statusText}`;
     }
     if (error instanceof Error) {
@@ -261,5 +261,9 @@ export class ExecutionOrchestrator {
       return error;
     }
     return String(error);
+  }
+
+  private isApiError(error: unknown): error is ApiError {
+    return error instanceof ApiError;
   }
 }
