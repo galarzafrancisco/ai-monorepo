@@ -12,7 +12,9 @@ type Theme =
   | 'mono'
   | 'terminal-amber'
   | 'oceanic'
-  | 'tribute';
+  | 'party'
+  | 'tribute'
+  | 'psychedelic';
 
 interface ThemeContextValue {
   theme: Theme;
