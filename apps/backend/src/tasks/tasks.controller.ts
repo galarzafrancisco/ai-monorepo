@@ -58,6 +58,7 @@ import { TasksScopes } from './tasks.scopes';
 import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 import { CurrentAuth } from 'src/auth/guards/decorators/current-auth.decorator';
 import { CurrentRunId } from 'src/auth/guards/decorators/current-run-id.decorator';
+import { CurrentExecutionId } from 'src/auth/guards/decorators/current-execution-id.decorator';
 
 @ApiTags('Task')
 @ApiCookieAuth('JWT-Cookie')
@@ -81,28 +82,32 @@ export class TasksController {
   async createTask(
     @Body() dto: CreateTaskDto,
     @CurrentUser() user: UserContext,
+    @CurrentExecutionId() executionId: string | undefined,
     @CurrentRunId() runId: string | undefined,
   ): Promise<TaskResponseDto> {
-    const result = runId
-      ? await this.TasksService.createTaskInThread({
-          name: dto.name,
-          description: dto.description,
-          assigneeActorId: dto.assigneeActorId,
-          sessionId: dto.sessionId,
-          tagNames: dto.tagNames,
-          createdByActorId: user.actorId,
-          dependsOnIds: dto.dependsOnIds,
-          runId,
-        })
-      : await this.TasksService.createTask({
-          name: dto.name,
-          description: dto.description,
-          assigneeActorId: dto.assigneeActorId,
-          sessionId: dto.sessionId,
-          tagNames: dto.tagNames,
-          createdByActorId: user.actorId,
-          dependsOnIds: dto.dependsOnIds,
-        });
+    // If either execution-id or run-id is present, create task in thread (with context inheritance)
+    const result =
+      executionId || runId
+        ? await this.TasksService.createTaskInThread({
+            name: dto.name,
+            description: dto.description,
+            assigneeActorId: dto.assigneeActorId,
+            sessionId: dto.sessionId,
+            tagNames: dto.tagNames,
+            createdByActorId: user.actorId,
+            dependsOnIds: dto.dependsOnIds,
+            executionId,
+            runId,
+          })
+        : await this.TasksService.createTask({
+            name: dto.name,
+            description: dto.description,
+            assigneeActorId: dto.assigneeActorId,
+            sessionId: dto.sessionId,
+            tagNames: dto.tagNames,
+            createdByActorId: user.actorId,
+            dependsOnIds: dto.dependsOnIds,
+          });
     return TaskResponseDto.fromResult(result);
   }
 
@@ -424,10 +429,18 @@ export class TasksController {
   async handleMcp(
     @CurrentUser() user: UserContext,
     @CurrentAuth() authContext: AuthContext,
+    @CurrentExecutionId() executionId: string | undefined,
     @CurrentRunId() runId: string | undefined,
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    await this.gateway.handleRequest(req, res, user, authContext, runId);
+    await this.gateway.handleRequest(
+      req,
+      res,
+      user,
+      authContext,
+      executionId,
+      runId,
+    );
   }
 }

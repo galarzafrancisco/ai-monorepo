@@ -27,7 +27,15 @@ export type CreateTaskInput = {
 };
 
 export type CreateTaskInThreadInput = CreateTaskInput & {
-  runId: string;
+  /**
+   * Execution ID (preferred, authoritative in execution-centric model)
+   */
+  executionId?: string;
+
+  /**
+   * Run ID (legacy compatibility, will be deprecated)
+   */
+  runId?: string;
 };
 
 export type UpdateTaskInput = Partial<CreateTaskInput>;

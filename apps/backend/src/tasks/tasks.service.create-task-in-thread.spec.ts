@@ -3,6 +3,16 @@ import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.er
 
 describe('TasksService.createTaskInThread', () => {
   it('attaches to existing thread when thread creation races', async () => {
+    const executionContextResolver = {
+      resolveContext: jest.fn().mockResolvedValue({
+        actorId: 'actor-1',
+        parentTaskId: 'parent-task-1',
+        parentThreadId: null,
+        executionId: null,
+        runId: 'run-1',
+      }),
+    };
+
     const agentRunsService = {
       getAgentRunById: jest.fn().mockResolvedValue({
         actorId: 'actor-1',
@@ -30,6 +40,7 @@ describe('TasksService.createTaskInThread', () => {
       {} as any,
       agentRunsService as any,
       threadsService as any,
+      executionContextResolver as any,
     );
 
     jest.spyOn(service, 'createTask').mockResolvedValue({ id: 'child-task-1' } as any);

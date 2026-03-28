@@ -15,6 +15,7 @@ import { MetaModule } from '../meta/meta.module';
 import { SearchModule } from '../search/search.module';
 import { AgentRunsModule } from '../agent-runs/agent-runs.module';
 import { ThreadsModule } from '../threads/threads.module';
+import { ExecutionsModule } from '../executions/executions.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ThreadsModule } from '../threads/threads.module';
     SearchModule,
     AgentRunsModule,
     ThreadsModule,
+    ExecutionsModule,
   ],
   controllers: [TasksController],
   providers: [TasksService, TasksGateway, TasksMcpGateway],

@@ -26,6 +26,7 @@ export class TasksMcpGateway {
   private buildServer(
     user: UserContext,
     authContext: AuthContext,
+    executionId?: string,
     runId?: string,
   ): McpServer {
     const readOnlyAnnotations = {
@@ -316,14 +317,15 @@ export class TasksMcpGateway {
         }) => {
           let task;
 
-          // If we have a run ID, create task in thread
-          if (runId) {
+          // If we have an execution ID or run ID, create task in thread (with context inheritance)
+          if (executionId || runId) {
             task = await this.tasksService.createTaskInThread({
               name,
               description,
               assigneeActorId,
               createdByActorId: user.actorId,
               dependsOnIds,
+              executionId,
               runId,
             });
           } else {
@@ -821,6 +823,7 @@ export class TasksMcpGateway {
     res: Response,
     user: UserContext,
     authContext: AuthContext,
+    executionId?: string,
     runId?: string,
   ) {
     const transport = new StreamableHTTPServerTransport({
@@ -832,7 +835,7 @@ export class TasksMcpGateway {
       transport.close();
     });
 
-    const server = this.buildServer(user, authContext, runId);
+    const server = this.buildServer(user, authContext, executionId, runId);
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   }

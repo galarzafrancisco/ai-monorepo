@@ -55,6 +55,7 @@ import { SearchService } from '../search/search.service';
 import { AgentRunsService } from '../agent-runs/agent-runs.service';
 import { ThreadsService } from '../threads/threads.service';
 import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
+import { ExecutionContextResolverService } from '../executions/execution-context-resolver.service';
 
 @Injectable()
 export class TasksService {
@@ -77,6 +78,7 @@ export class TasksService {
     private readonly searchService: SearchService,
     private readonly agentRunsService: AgentRunsService,
     private readonly threadsService: ThreadsService,
+    private readonly executionContextResolver: ExecutionContextResolverService,
   ) {}
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
@@ -185,21 +187,25 @@ export class TasksService {
     this.logger.log({
       message: 'Creating task in thread',
       name: input.name,
+      executionId: input.executionId,
       runId: input.runId,
     });
 
-    // First, retrieve the agent run
-    const agentRun = await this.agentRunsService.getAgentRunById(input.runId);
+    // Resolve execution context from either execution-id (preferred) or run-id (legacy)
+    const context = await this.executionContextResolver.resolveContext(
+      input.executionId,
+      input.runId,
+    );
 
-    // Enforce that the caller must be the actor in the agent run
-    if (agentRun.actorId !== input.createdByActorId) {
+    // Enforce that the caller must be the actor in the execution context
+    if (context.actorId !== input.createdByActorId) {
       throw new Error(
-        `Unauthorized: caller ${input.createdByActorId} is not the actor in agent run ${input.runId}`,
+        `Unauthorized: caller ${input.createdByActorId} is not the actor in execution context (execution=${context.executionId}, run=${context.runId})`,
       );
     }
 
-    // Get the parent task from the agent run
-    const parentTaskId = agentRun.parentTaskId;
+    // Get the parent task from the execution context
+    const parentTaskId = context.parentTaskId;
 
     // Create the task using the existing method
     const task = await this.createTask({
@@ -251,6 +257,7 @@ export class TasksService {
       message: 'Task created in thread',
       taskId: task.id,
       threadId: thread.id,
+      executionId: input.executionId,
       runId: input.runId,
     });
 
