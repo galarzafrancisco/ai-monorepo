@@ -15,6 +15,31 @@ import { AgentRunNotFoundError } from './errors/agent-runs.errors';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { TaskEntity } from '../tasks/task.entity';
 
+/**
+ * AgentRunsService - Legacy Compatibility Facade
+ *
+ * @deprecated This service maintains AgentRun records for backward compatibility during
+ * the migration to execution-centric runtime model. New code should interact with
+ * TaskExecution entities instead.
+ *
+ * **Migration Path**:
+ * - Old workers: Create AgentRun -> use run-id header -> resolve via ExecutionContextResolverService
+ * - New workers: Backend creates TaskExecution -> use execution-id header -> resolve directly
+ *
+ * **Current Responsibilities**:
+ * - CRUD operations on AgentRun entities (legacy run records)
+ * - Linking AgentRuns to TaskExecutions via taskExecutionId field
+ * - Logging deprecation warnings when AgentRuns are created without TaskExecution link
+ *
+ * **Not Responsible For**:
+ * - Authoritative execution state (owned by TaskExecution)
+ * - Worker assignment/claiming (owned by backend reconciler)
+ * - Execution lifecycle management (owned by TaskExecution status transitions)
+ *
+ * @see TaskExecution for authoritative execution state
+ * @see ExecutionContextResolverService for dual-stack context resolution
+ * @see /docs/AGENT_RUN_DEPRECATION.md for removal criteria
+ */
 @Injectable()
 export class AgentRunsService {
   private readonly logger = new Logger(AgentRunsService.name);
@@ -25,10 +50,23 @@ export class AgentRunsService {
   ) {}
 
   async createAgentRun(input: CreateAgentRunInput): Promise<AgentRunResult> {
+    // Log deprecation warning if creating AgentRun without TaskExecution link
+    if (!input.taskExecutionId) {
+      this.logger.warn({
+        message:
+          '[DEPRECATION] Creating AgentRun without taskExecutionId - legacy worker path in use',
+        actorId: input.actorId,
+        parentTaskId: input.parentTaskId,
+        note: 'This path will be removed once all workers migrate to execution-id. See /docs/AGENT_RUN_DEPRECATION.md',
+      });
+    }
+
     this.logger.log({
       message: 'Creating agent run',
       actorId: input.actorId,
       parentTaskId: input.parentTaskId,
+      taskExecutionId: input.taskExecutionId,
+      isLegacyPath: !input.taskExecutionId,
     });
 
     const agentRun = this.agentRunRepository.create({

@@ -31,6 +31,29 @@ import { AgentRunsScopes } from './agent-runs.scopes';
 import { CurrentUser } from 'src/auth/guards/decorators/current-user.decorator';
 import type { UserContext } from 'src/auth/guards/context/auth-context.types';
 
+/**
+ * AgentRuns Controller - Legacy Compatibility Facade
+ *
+ * @deprecated This controller provides backward compatibility for workers using the legacy
+ * run-based context model. New workers should use the execution-centric model with
+ * TaskExecution and the execution-id header.
+ *
+ * **Migration Status**: Active compatibility facade during worker migration
+ *
+ * **Removal Criteria**: See /docs/AGENT_RUN_DEPRECATION.md for detailed removal criteria.
+ * This facade will be removed once all workers are migrated to use execution-id and
+ * metrics show zero usage of run-id for 30 days.
+ *
+ * **Current Behavior**:
+ * - Maintains the `/api/v1/agent-runs` HTTP API for old workers
+ * - AgentRun records may link to TaskExecution via taskExecutionId
+ * - ExecutionContextResolverService handles dual-stack resolution (execution-id preferred, run-id fallback)
+ * - Deprecation warnings logged when run-id path is used without execution-id
+ *
+ * @see ExecutionContextResolverService for context resolution logic
+ * @see /docs/AGENT_RUN_DEPRECATION.md for deprecation plan
+ * @see /docs/worker-server-run-tracking-redesign-plan.md for migration overview
+ */
 @ApiTags('AgentRun')
 @ApiCookieAuth('JWT-Cookie')
 @Controller('agent-runs')
@@ -41,7 +64,15 @@ export class AgentRunsController {
 
   @Post()
   @RequireScopes(AgentRunsScopes.WRITE.id)
-  @ApiOperation({ summary: 'Create a new agent run' })
+  @ApiOperation({
+    summary: 'Create a new agent run',
+    deprecated: true,
+    description:
+      'DEPRECATED: This endpoint is a legacy compatibility facade. ' +
+      'New workers should use the execution-centric model (TaskExecution) instead of creating AgentRuns. ' +
+      'This endpoint will be removed once all workers migrate to execution-id. ' +
+      'See /docs/AGENT_RUN_DEPRECATION.md for details.',
+  })
   @ApiCreatedResponse({
     type: AgentRunResponseDto,
     description: 'Agent run created successfully',
@@ -99,7 +130,14 @@ export class AgentRunsController {
 
   @Patch(':runId')
   @RequireScopes(AgentRunsScopes.WRITE.id)
-  @ApiOperation({ summary: 'Update an agent run' })
+  @ApiOperation({
+    summary: 'Update an agent run',
+    deprecated: true,
+    description:
+      'DEPRECATED: This endpoint is a legacy compatibility facade. ' +
+      'Workers should update execution state via TaskExecution instead. ' +
+      'See /docs/AGENT_RUN_DEPRECATION.md for migration details.',
+  })
   @ApiOkResponse({
     type: AgentRunResponseDto,
     description: 'Agent run updated successfully',

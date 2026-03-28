@@ -3163,6 +3163,8 @@
     },
     "/api/v1/agent-runs": {
       "post": {
+        "deprecated": true,
+        "description": "DEPRECATED: This endpoint is a legacy compatibility facade. New workers should use the execution-centric model (TaskExecution) instead of creating AgentRuns. This endpoint will be removed once all workers migrate to execution-id. See /docs/AGENT_RUN_DEPRECATION.md for details.",
         "operationId": "AgentRunsController_createAgentRun",
         "parameters": [],
         "requestBody": {
@@ -3310,6 +3312,8 @@
         ]
       },
       "patch": {
+        "deprecated": true,
+        "description": "DEPRECATED: This endpoint is a legacy compatibility facade. Workers should update execution state via TaskExecution instead. See /docs/AGENT_RUN_DEPRECATION.md for migration details.",
         "operationId": "AgentRunsController_updateAgentRun",
         "parameters": [
           {

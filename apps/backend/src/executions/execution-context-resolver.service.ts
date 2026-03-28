@@ -134,6 +134,13 @@ export class ExecutionContextResolverService {
   private async resolveFromRunId(
     runId: string,
   ): Promise<ExecutionContextResult> {
+    this.logger.warn({
+      message:
+        '[DEPRECATION] Resolving context from run-id (legacy compatibility path)',
+      runId,
+      note: 'Workers should migrate to execution-id header. This path will be removed per /docs/AGENT_RUN_DEPRECATION.md',
+    });
+
     this.logger.debug({
       message: 'Resolving context from run-id (legacy compatibility)',
       runId,
