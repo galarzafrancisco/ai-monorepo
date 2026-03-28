@@ -90,6 +90,8 @@ export class ExecutionClaimService {
 
     // Perform atomic claim using guarded UPDATE
     // This ensures only one worker can successfully claim the execution
+    // Note: TypeORM doesn't auto-increment @VersionColumn in query builder,
+    // so we explicitly increment row_version and update updated_at
     const result = await this.executionRepository
       .createQueryBuilder()
       .update(TaskExecutionEntity)
@@ -98,6 +100,8 @@ export class ExecutionClaimService {
         workerSessionId: input.workerSessionId,
         claimedAt,
         leaseExpiresAt,
+        rowVersion: () => 'row_version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
       })
       .where('id = :executionId', { executionId: input.executionId })
       .andWhere('status = :readyStatus', {
@@ -115,22 +119,31 @@ export class ExecutionClaimService {
       return null;
     }
 
+    // Re-fetch the updated execution to get authoritative rowVersion and updatedAt
+    const updatedExecution = await this.executionRepository.findOne({
+      where: { id: input.executionId },
+    });
+
+    // This should never happen since we just updated it, but check for type safety
+    if (!updatedExecution) {
+      throw new TaskExecutionNotFoundError(input.executionId);
+    }
+
     this.logger.log({
       message: 'Execution claimed successfully',
       executionId: input.executionId,
       workerSessionId: input.workerSessionId,
       leaseExpiresAt,
+      rowVersion: updatedExecution.rowVersion,
     });
 
-    // Return claim result with updated state
-    // Note: We increment rowVersion manually since TypeORM doesn't auto-increment in query builder updates
     return {
       executionId: input.executionId,
-      taskId: execution.taskId,
-      agentActorId: execution.agentActorId,
-      claimedAt,
-      leaseExpiresAt,
-      rowVersion: execution.rowVersion + 1,
+      taskId: updatedExecution.taskId,
+      agentActorId: updatedExecution.agentActorId,
+      claimedAt: updatedExecution.claimedAt!,
+      leaseExpiresAt: updatedExecution.leaseExpiresAt!,
+      rowVersion: updatedExecution.rowVersion,
     };
   }
 
@@ -164,11 +177,14 @@ export class ExecutionClaimService {
 
     // Perform atomic lease renewal
     // Only succeeds if the execution is owned by the requesting worker
+    // Explicitly increment row_version and update updated_at
     const result = await this.executionRepository
       .createQueryBuilder()
       .update(TaskExecutionEntity)
       .set({
         leaseExpiresAt: newLeaseExpiresAt,
+        rowVersion: () => 'row_version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
       })
       .where('id = :executionId', { executionId: input.executionId })
       .andWhere('worker_session_id = :workerSessionId', {
@@ -188,17 +204,27 @@ export class ExecutionClaimService {
       return null;
     }
 
+    // Re-fetch to get authoritative rowVersion
+    const updatedExecution = await this.executionRepository.findOne({
+      where: { id: input.executionId },
+    });
+
+    if (!updatedExecution) {
+      throw new TaskExecutionNotFoundError(input.executionId);
+    }
+
     this.logger.log({
       message: 'Execution lease renewed successfully',
       executionId: input.executionId,
       workerSessionId: input.workerSessionId,
-      newLeaseExpiresAt,
+      newLeaseExpiresAt: updatedExecution.leaseExpiresAt!,
+      rowVersion: updatedExecution.rowVersion,
     });
 
     return {
       executionId: input.executionId,
-      leaseExpiresAt: newLeaseExpiresAt,
-      rowVersion: execution.rowVersion + 1,
+      leaseExpiresAt: updatedExecution.leaseExpiresAt!,
+      rowVersion: updatedExecution.rowVersion,
     };
   }
 
@@ -229,6 +255,7 @@ export class ExecutionClaimService {
 
     // Perform atomic release
     // Only succeeds if the execution is owned by the requesting worker
+    // Explicitly increment row_version and update updated_at
     const result = await this.executionRepository
       .createQueryBuilder()
       .update(TaskExecutionEntity)
@@ -237,6 +264,8 @@ export class ExecutionClaimService {
         workerSessionId: null,
         claimedAt: null,
         leaseExpiresAt: null,
+        rowVersion: () => 'row_version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
       })
       .where('id = :executionId', { executionId: input.executionId })
       .andWhere('worker_session_id = :workerSessionId', {
@@ -296,12 +325,15 @@ export class ExecutionClaimService {
 
     const startedAt = new Date();
 
+    // Explicitly increment row_version and update updated_at
     const result = await this.executionRepository
       .createQueryBuilder()
       .update(TaskExecutionEntity)
       .set({
         status: TaskExecutionStatus.RUNNING,
         startedAt,
+        rowVersion: () => 'row_version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
       })
       .where('id = :executionId', { executionId })
       .andWhere('worker_session_id = :workerSessionId', { workerSessionId })
