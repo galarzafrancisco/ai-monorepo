@@ -9,7 +9,6 @@ import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
-import { runWorkerMode } from './worker/worker-mode';
 
 const logger = new Logger('Bootstrap');
 
@@ -69,6 +68,7 @@ async function bootstrap() {
     if (!serverUrl) {
       throw new Error('Missing required --serverurl for worker mode');
     }
+    const { runWorkerMode } = require('./worker/worker-mode') as typeof import('./worker/worker-mode');
     await runWorkerMode({ serverUrl });
     return;
   }
