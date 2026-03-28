@@ -36,6 +36,7 @@ import { AddExecutionPersistenceTables1741500000000 } from './migrations/1741500
 import { AddTaskExecutionIdToAgentRuns1741600000000 } from './migrations/1741600000000-AddTaskExecutionIdToAgentRuns';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
+import { ExecutionsModule } from './executions/executions.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { ChatProvidersModule } from './chat-providers/chat-providers.module';
     AppInitModule,
     SecretsModule,
     ChatProvidersModule,
+    ExecutionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
