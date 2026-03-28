@@ -1,5 +1,6 @@
 import { getAuthenticatedWorkerSession } from './auth/worker-auth-client';
 import { WorkerGatewayClient } from './worker-gateway-client';
+import { ExecutionOrchestrator } from './execution-orchestrator';
 
 type WorkerModeOptions = {
   serverUrl: string;
@@ -60,23 +61,23 @@ export async function runWorkerMode(options: WorkerModeOptions): Promise<void> {
     baseUrl: serverUrl,
     accessToken: session.credentials.accessToken,
     version: process.env.npm_package_version,
-    capabilities: ['claude', 'gemini'],
+    capabilities: ['claude'], // Start with Claude only
     debug: true,
-  });
-
-  // Register handlers for run assignments and stop requests
-  gatewayClient.onRunAssigned((event) => {
-    console.log('[worker] Run assigned:', event);
-    // TODO: In future steps, this will trigger actual task execution
-  });
-
-  gatewayClient.onStopRequested((event) => {
-    console.log('[worker] Stop requested:', event);
-    // TODO: In future steps, this will cancel ongoing execution
   });
 
   await gatewayClient.start();
   console.log('[worker] Connected to workers gateway, session:', gatewayClient.getSessionId());
+
+  // Initialize execution orchestrator
+  const orchestrator = new ExecutionOrchestrator(
+    gatewayClient,
+    serverUrl,
+    session.credentials.accessToken,
+    true, // debug mode
+  );
+
+  orchestrator.start();
+  console.log('[worker] Execution orchestrator started and ready for work assignments');
 
   // Keep the worker running
   console.log('[worker] Worker is ready and waiting for work assignments...');
