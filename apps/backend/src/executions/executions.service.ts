@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskExecutionEntity } from './task-execution.entity';
+import { TaskExecutionStatus } from './enums';
 import {
   ListExecutionsInput,
   ExecutionResult,
@@ -11,8 +12,8 @@ import {
 /**
  * ExecutionsService
  *
- * Provides read-only access to TaskExecution state for debug/monitoring purposes.
- * This is primarily for the rustic debug UI to visualize the work queue.
+ * Provides access to TaskExecution state for debug/monitoring purposes
+ * and lifecycle updates from workers.
  */
 @Injectable()
 export class ExecutionsService {
@@ -97,5 +98,61 @@ export class ExecutionsService {
       page,
       limit,
     };
+  }
+
+  /**
+   * Find a task execution by ID.
+   *
+   * @param executionId - The execution ID
+   * @returns The execution entity or null if not found
+   */
+  async findById(executionId: string): Promise<TaskExecutionEntity | null> {
+    return this.executionRepository.findOne({
+      where: { id: executionId },
+    });
+  }
+
+  /**
+   * Update the status of a task execution.
+   *
+   * @param executionId - The execution ID
+   * @param status - The new status
+   * @param updates - Optional additional fields to update
+   */
+  async updateStatus(
+    executionId: string,
+    status: TaskExecutionStatus,
+    updates?: {
+      finishedAt?: Date;
+      failureReason?: string;
+    },
+  ): Promise<void> {
+    const execution = await this.executionRepository.findOne({
+      where: { id: executionId },
+    });
+
+    if (!execution) {
+      this.logger.warn({
+        message: 'Attempted to update status of unknown execution',
+        executionId,
+      });
+      return;
+    }
+
+    execution.status = status;
+    if (updates?.finishedAt) {
+      execution.finishedAt = updates.finishedAt;
+    }
+    if (updates?.failureReason) {
+      execution.failureReason = updates.failureReason;
+    }
+
+    await this.executionRepository.save(execution);
+
+    this.logger.log({
+      message: 'Execution status updated',
+      executionId,
+      status,
+    });
   }
 }
