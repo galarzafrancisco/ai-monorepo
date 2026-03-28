@@ -1,3 +1,4 @@
+import { createTaicoClient } from '@taico/client';
 import { getAuthenticatedWorkerSession } from './auth/worker-auth-client';
 import { WorkerGatewayClient } from './worker-gateway-client';
 
@@ -28,7 +29,12 @@ export async function runWorkerMode(options: WorkerModeOptions): Promise<void> {
 
   console.log('[worker] Refresh succeeded');
 
-  const agents = await listAgents(serverUrl, session.credentials.accessToken);
+  const workerApi = createTaicoClient({
+    baseUrl: serverUrl,
+    token: session.credentials.accessToken,
+  });
+
+  const agents = await listAgents(workerApi);
   console.log(`[worker] Loaded ${agents.length} agent(s)`);
 
   if (agents.length === 0) {
@@ -36,22 +42,49 @@ export async function runWorkerMode(options: WorkerModeOptions): Promise<void> {
     return;
   }
 
-  const agent = agents[0];
-  console.log(`[worker] Requesting execution token for @${agent.slug}`);
-  const executionToken = await requestAgentExecutionToken(
-    serverUrl,
-    session.credentials.accessToken,
-    agent.slug,
+  if (agents.length < 2) {
+    console.log(
+      '[worker] Need at least 2 agents for the dual-agent smoke test. Stopping.',
+    );
+    return;
+  }
+
+  const [agentOne, agentTwo] = agents;
+  console.log(`[worker] Requesting execution token for @${agentOne.slug}`);
+  const agentOneExecution = await workerApi.agents.requestExecutionToken(
+    agentOne.slug,
+    {
+      scopes: ['tasks:read', 'tasks:write'],
+      expirationSeconds: 600,
+    },
   );
 
-  const createdTask = await createSmokeTask(
-    serverUrl,
-    executionToken.token,
-    agent.actorId,
+  console.log(`[worker] Requesting execution token for @${agentTwo.slug}`);
+  const agentTwoExecution = await workerApi.agents.requestExecutionToken(
+    agentTwo.slug,
+    {
+      scopes: ['tasks:read', 'tasks:write'],
+      expirationSeconds: 600,
+    },
   );
 
+  const agentOneClient = createTaicoClient({
+    baseUrl: serverUrl,
+    token: agentOneExecution.token,
+  });
+  const agentTwoClient = createTaicoClient({
+    baseUrl: serverUrl,
+    token: agentTwoExecution.token,
+  });
+
+  const createdTask = await createSmokeTask(agentOneClient, agentOne.actorId);
   console.log(
-    `[worker] Smoke task created as @${agent.slug}: ${createdTask.id} "${createdTask.name}"`,
+    `[worker] Smoke task created as @${agentOne.slug}: ${createdTask.id} "${createdTask.name}"`,
+  );
+
+  await addSmokeComment(agentTwoClient, createdTask.id, agentTwo.slug);
+  console.log(
+    `[worker] Smoke comment added as @${agentTwo.slug} to task ${createdTask.id}`,
   );
 
   // Connect to workers gateway
@@ -86,84 +119,42 @@ export async function runWorkerMode(options: WorkerModeOptions): Promise<void> {
 }
 
 async function listAgents(
-  serverUrl: string,
-  accessToken: string,
+  taicoClient: ReturnType<typeof createTaicoClient>,
 ): Promise<AgentSummary[]> {
-  const response = await fetch(`${serverUrl}/api/v1/agents`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to list agents: ${response.status} ${response.statusText}`,
-    );
-  }
-
-  const payload = (await response.json()) as {
-    items: Array<{ actorId: string; slug: string; name: string }>;
-  };
-
-  return payload.items;
-}
-
-async function requestAgentExecutionToken(
-  serverUrl: string,
-  accessToken: string,
-  agentSlug: string,
-): Promise<{ token: string }> {
-  const response = await fetch(
-    `${serverUrl}/api/v1/agents/${agentSlug}/execution-token`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        scopes: ['tasks:read', 'tasks:write'],
-        expirationSeconds: 600,
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to request execution token: ${response.status} ${response.statusText}`,
-    );
-  }
-
-  return response.json() as Promise<{ token: string }>;
+  const response = await taicoClient.agents.list({ limit: 100 });
+  return response.items.map((agent) => ({
+    actorId: agent.actorId,
+    slug: agent.slug,
+    name: agent.name,
+  }));
 }
 
 async function createSmokeTask(
-  serverUrl: string,
-  accessToken: string,
+  taicoClient: ReturnType<typeof createTaicoClient>,
   assigneeActorId: string,
 ): Promise<{ id: string; name: string }> {
-  const response = await fetch(`${serverUrl}/api/v1/tasks/tasks`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      name: `Worker auth smoke test ${new Date().toISOString()}`,
-      description:
-        'Created by taico worker-mode OAuth smoke test to verify agent execution token flow.',
-      assigneeActorId,
-      tagNames: ['system:worker-auth-smoke'],
-    }),
+  const task = await taicoClient.tasks.create({
+    name: `Worker auth smoke test ${new Date().toISOString()}`,
+    description:
+      'Created by taico worker-mode OAuth smoke test to verify agent execution token flow.',
+    assigneeActorId,
+    tagNames: ['system:worker-auth-smoke'],
   });
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to create smoke task: ${response.status} ${response.statusText}`,
-    );
-  }
+  return {
+    id: task.id,
+    name: task.name,
+  };
+}
 
-  return response.json() as Promise<{ id: string; name: string }>;
+async function addSmokeComment(
+  taicoClient: ReturnType<typeof createTaicoClient>,
+  taskId: string,
+  agentSlug: string,
+): Promise<void> {
+  await taicoClient.tasks.addComment(taskId, {
+    content: `Worker auth smoke test comment from @${agentSlug}.`,
+  });
 }
 
 function normalizeBaseUrl(serverUrl: string): string {
