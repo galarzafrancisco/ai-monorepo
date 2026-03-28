@@ -1560,6 +1560,26 @@ export interface paths {
         patch: operations["ContextController_handleMcp_patch"];
         trace?: never;
     };
+    "/api/v1/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List task executions with optional filtering and pagination
+         * @description Returns the backend-tracked work queue showing all TaskExecution records. Useful for debugging the execution reconciler and understanding which tasks are ready to run.
+         */
+        get: operations["ExecutionsController_listExecutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/task-blueprints": {
         parameters: {
             query?: never;
@@ -4660,6 +4680,133 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             newParentId: Record<string, never> | null;
+        };
+        ExecutionResponseDto: {
+            /**
+             * @description Unique execution identifier
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description Task ID
+             * @example 123e4567-e89b-12d3-a456-426614174001
+             */
+            taskId: string;
+            /**
+             * @description Task name
+             * @example Implement feature X
+             */
+            taskName?: string | null;
+            /**
+             * @description Agent actor ID
+             * @example 123e4567-e89b-12d3-a456-426614174002
+             */
+            agentActorId: string;
+            /**
+             * @description Agent slug
+             * @example claude-dev
+             */
+            agentSlug?: string | null;
+            /**
+             * @description Agent name
+             * @example Claude Developer
+             */
+            agentName?: string | null;
+            /**
+             * @description Execution status
+             * @example READY
+             * @enum {string}
+             */
+            status: "READY" | "CLAIMED" | "RUNNING" | "STOP_REQUESTED" | "COMPLETED" | "FAILED" | "CANCELLED" | "STALE";
+            /**
+             * @description When the execution was requested
+             * @example 2026-03-28T10:30:00.000Z
+             */
+            requestedAt: string;
+            /**
+             * Format: date-time
+             * @description When the execution was claimed by a worker
+             * @example 2026-03-28T10:31:00.000Z
+             */
+            claimedAt?: string | null;
+            /**
+             * Format: date-time
+             * @description When the execution started running
+             * @example 2026-03-28T10:31:05.000Z
+             */
+            startedAt?: string | null;
+            /**
+             * Format: date-time
+             * @description When the execution finished
+             * @example 2026-03-28T10:35:00.000Z
+             */
+            finishedAt?: string | null;
+            /**
+             * @description Worker session ID that claimed this execution
+             * @example 123e4567-e89b-12d3-a456-426614174003
+             */
+            workerSessionId?: string | null;
+            /**
+             * Format: date-time
+             * @description When the worker lease expires
+             * @example 2026-03-28T10:36:00.000Z
+             */
+            leaseExpiresAt?: string | null;
+            /**
+             * Format: date-time
+             * @description When a stop was requested
+             * @example 2026-03-28T10:34:00.000Z
+             */
+            stopRequestedAt?: string | null;
+            /**
+             * @description Failure reason if execution failed
+             * @example Worker disconnected
+             */
+            failureReason?: string | null;
+            /**
+             * @description Why this execution was triggered
+             * @example Task is eligible for execution
+             */
+            triggerReason?: string | null;
+            /**
+             * @description Row version for optimistic locking
+             * @example 1
+             */
+            rowVersion: number;
+            /**
+             * @description Execution creation timestamp
+             * @example 2026-03-28T10:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description Execution last update timestamp
+             * @example 2026-03-28T10:30:00.000Z
+             */
+            updatedAt: string;
+        };
+        ExecutionListResponseDto: {
+            /** @description Array of task executions */
+            items: components["schemas"]["ExecutionResponseDto"][];
+            /**
+             * @description Total number of executions matching the filter
+             * @example 100
+             */
+            total: number;
+            /**
+             * @description Current page number (1-indexed)
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 50
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 2
+             */
+            totalPages: number;
         };
         CreateTaskBlueprintDto: {
             /**
@@ -8962,6 +9109,36 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ExecutionsController_listExecutions: {
+        parameters: {
+            query?: {
+                /** @description Filter by execution status */
+                status?: "READY" | "CLAIMED" | "RUNNING" | "STOP_REQUESTED" | "COMPLETED" | "FAILED" | "CANCELLED" | "STALE";
+                /** @description Filter by agent actor ID */
+                agentActorId?: string;
+                /** @description Filter by task ID */
+                taskId?: string;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Number of items per page */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionListResponseDto"];
+                };
             };
         };
     };

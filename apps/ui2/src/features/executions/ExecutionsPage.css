@@ -1,0 +1,129 @@
+.executions-page {
+  padding: var(--space-4);
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.executions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.executions-controls {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.status-filter,
+.refresh-button {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-2);
+  cursor: pointer;
+}
+
+.status-filter:hover,
+.refresh-button:hover {
+  opacity: 0.8;
+}
+
+.executions-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+}
+
+.executions-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+}
+
+.executions-table thead {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.executions-table th {
+  padding: var(--space-3);
+  text-align: left;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.executions-table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-2);
+}
+
+.executions-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.executions-table tbody tr:hover {
+  opacity: 0.9;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--r-1);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+}
+
+.status-ready {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+
+.status-claimed {
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+  color: var(--warning);
+}
+
+.status-running {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
+}
+
+.status-completed {
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  color: var(--success);
+}
+
+.status-failed,
+.status-cancelled,
+.status-stale {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
+
+.status-stop_requested {
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+  color: var(--warning);
+}
+
+.task-cell,
+.agent-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.error-text {
+  color: var(--danger);
+}
