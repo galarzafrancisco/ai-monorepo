@@ -54,6 +54,7 @@ export class AgentRunsController {
     const result = await this.agentRunsService.createAgentRun({
       actorId: user.actorId,
       parentTaskId: dto.parentTaskId,
+      taskExecutionId: dto.taskExecutionId,
     });
     return AgentRunResponseDto.fromResult(result);
   }
@@ -113,6 +114,7 @@ export class AgentRunsController {
       startedAt: dto.startedAt ? new Date(dto.startedAt) : undefined,
       endedAt: dto.endedAt ? new Date(dto.endedAt) : undefined,
       lastPing: dto.lastPing ? new Date(dto.lastPing) : undefined,
+      taskExecutionId: dto.taskExecutionId,
     });
     return AgentRunResponseDto.fromResult(result);
   }

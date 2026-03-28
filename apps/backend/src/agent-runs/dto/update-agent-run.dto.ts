@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsISO8601 } from 'class-validator';
+import { IsOptional, IsISO8601, IsUUID } from 'class-validator';
 
 export class UpdateAgentRunDto {
   @ApiPropertyOptional({
@@ -28,4 +28,14 @@ export class UpdateAgentRunDto {
   @IsOptional()
   @IsISO8601()
   lastPing?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'UUID of the associated TaskExecution (for new execution-centric paths)',
+    example: '123e4567-e89b-12d3-a456-426614174002',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsUUID()
+  taskExecutionId?: string;
 }
