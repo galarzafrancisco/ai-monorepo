@@ -4,6 +4,7 @@ import { TaskExecutionEntity } from './task-execution.entity';
 import { WorkerSessionEntity } from './worker-session.entity';
 import { ExecutionContextResolverService } from './execution-context-resolver.service';
 import { ExecutionReconcilerService } from './execution-reconciler.service';
+import { ExecutionClaimService } from './execution-claim.service';
 import { ExecutionsService } from './executions.service';
 import { ExecutionsController } from './executions.controller';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
@@ -32,8 +33,9 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
   providers: [
     ExecutionContextResolverService,
     ExecutionReconcilerService,
+    ExecutionClaimService,
     ExecutionsService,
   ],
-  exports: [ExecutionContextResolverService],
+  exports: [ExecutionContextResolverService, ExecutionClaimService],
 })
 export class ExecutionsModule {}
