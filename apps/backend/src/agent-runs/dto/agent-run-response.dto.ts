@@ -77,6 +77,8 @@ export class AgentRunResponseDto {
   lastPing!: string | null;
 
   @ApiPropertyOptional({
+    type: String,
+    format: 'uuid',
     description:
       'UUID of the associated TaskExecution (for new execution-centric paths)',
     example: '123e4567-e89b-12d3-a456-426614174002',

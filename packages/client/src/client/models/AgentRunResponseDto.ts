@@ -44,6 +44,6 @@ export type AgentRunResponseDto = {
     /**
      * UUID of the associated TaskExecution (for new execution-centric paths)
      */
-    taskExecutionId?: Record<string, any> | null;
+    taskExecutionId?: string | null;
 };
 

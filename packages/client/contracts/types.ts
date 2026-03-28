@@ -3391,10 +3391,11 @@ export interface components {
              */
             lastPing?: Record<string, never> | null;
             /**
+             * Format: uuid
              * @description UUID of the associated TaskExecution (for new execution-centric paths)
              * @example 123e4567-e89b-12d3-a456-426614174002
              */
-            taskExecutionId?: Record<string, never> | null;
+            taskExecutionId?: string | null;
         };
         AgentRunListResponseDto: {
             /** @description List of agent runs */
