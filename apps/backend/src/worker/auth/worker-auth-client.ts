@@ -3,6 +3,7 @@ import {
   readWorkerCredentials,
   writeWorkerCredentials,
 } from './credentials-store';
+import { INTERNAL_WORKER_AUTH_SCOPES } from '../../auth/core/constants/internal-auth-target.constant';
 import {
   bootstrapWorkerAuthorization,
   discoverAuthorizationServer,
@@ -23,8 +24,15 @@ export async function getAuthenticatedWorkerSession(input: {
   const metadata = await discoverAuthorizationServer(input.serverUrl);
   let credentials = await readWorkerCredentials(credentialsPath);
   let didBootstrap = false;
+  const requiredScopes = new Set(
+    INTERNAL_WORKER_AUTH_SCOPES.map((scope) => scope.id),
+  );
 
-  if (!credentials || credentials.serverUrl !== input.serverUrl) {
+  if (
+    !credentials ||
+    credentials.serverUrl !== input.serverUrl ||
+    !hasRequiredScopes(credentials, requiredScopes)
+  ) {
     credentials = await bootstrapWorkerAuthorization(input.serverUrl, metadata);
     await writeWorkerCredentials(credentialsPath, credentials);
     didBootstrap = true;
@@ -38,4 +46,18 @@ export async function getAuthenticatedWorkerSession(input: {
     credentialsPath,
     didBootstrap,
   };
+}
+
+function hasRequiredScopes(
+  credentials: WorkerCredentials,
+  requiredScopes: Set<string>,
+): boolean {
+  const grantedScopes = new Set(
+    credentials.scope
+      .split(/\s+/)
+      .map((scope) => scope.trim())
+      .filter(Boolean),
+  );
+
+  return Array.from(requiredScopes).every((scope) => grantedScopes.has(scope));
 }

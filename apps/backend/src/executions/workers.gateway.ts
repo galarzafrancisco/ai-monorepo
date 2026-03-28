@@ -30,6 +30,7 @@ import { WorkerSessionService } from './worker-session.service';
 import { ExecutionClaimService } from './execution-claim.service';
 import { ExecutionsService } from './executions.service';
 import { TaskExecutionStatus } from './enums';
+import { WorkersScopes } from './workers.scopes';
 import { type AuthContext } from '../auth/guards/context/auth-context.types';
 
 /**
@@ -43,7 +44,7 @@ import { type AuthContext } from '../auth/guards/context/auth-context.types';
  * execution dispatch and orchestration system relies on.
  */
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
-@RequireScopes('workers:connect')
+@RequireScopes(WorkersScopes.CONNECT.id)
 @WebSocketGateway({
   cors: {
     origin: '*',
