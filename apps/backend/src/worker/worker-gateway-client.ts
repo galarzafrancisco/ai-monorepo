@@ -57,6 +57,8 @@ export class WorkerGatewayClient {
   private heartbeatInterval?: ReturnType<typeof setInterval>;
   private started = false;
   private reconnectAttempts = 0;
+  private resolveInitialHello?: () => void;
+  private rejectInitialHello?: (error: unknown) => void;
 
   private runAssignedHandlers: RunAssignedHandler[] = [];
   private stopRequestedHandlers: StopRequestedHandler[] = [];
@@ -84,6 +86,10 @@ export class WorkerGatewayClient {
   async start(): Promise<void> {
     if (this.started) return;
     this.started = true;
+    const initialHelloPromise = new Promise<void>((resolve, reject) => {
+      this.resolveInitialHello = resolve;
+      this.rejectInitialHello = reject;
+    });
 
     const namespace = '/workers';
     const transports = ['websocket'];
@@ -121,11 +127,17 @@ export class WorkerGatewayClient {
       // Reset reconnect attempts on successful connection
       this.reconnectAttempts = 0;
 
-      // Send hello to register session
-      await this.sendHello();
-
-      // Start heartbeat
-      this.startHeartbeat();
+      try {
+        await this.sendHello();
+        this.startHeartbeat();
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        console.error('[worker-gateway] hello failed:', reason);
+        if (!this.sessionId) {
+          this.rejectInitialHello?.(error);
+          this.clearInitialHelloHandlers();
+        }
+      }
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -150,6 +162,11 @@ export class WorkerGatewayClient {
         err?.message ?? err,
       );
       if (this.options.debug) console.error(err);
+
+      if (!this.sessionId) {
+        this.rejectInitialHello?.(err);
+        this.clearInitialHelloHandlers();
+      }
     });
 
     this.socket.on('reconnect_attempt', (attemptNumber: number) => {
@@ -182,25 +199,7 @@ export class WorkerGatewayClient {
       },
     );
 
-    // Wait until first connect or error so callers can await start()
-    await new Promise<void>((resolve, reject) => {
-      const onConnect = () => {
-        cleanup();
-        resolve();
-      };
-      const onErr = (e: any) => {
-        cleanup();
-        // don't permanently kill the transport; just reject start()
-        reject(e);
-      };
-      const cleanup = () => {
-        this.socket?.off('connect', onConnect);
-        this.socket?.off('connect_error', onErr);
-      };
-
-      this.socket?.once('connect', onConnect);
-      this.socket?.once('connect_error', onErr);
-    });
+    await initialHelloPromise;
   }
 
   /**
@@ -211,6 +210,7 @@ export class WorkerGatewayClient {
     this.started = false;
 
     this.stopHeartbeat();
+    this.clearInitialHelloHandlers();
 
     if (!this.socket) return;
 
@@ -239,25 +239,40 @@ export class WorkerGatewayClient {
     };
 
     return new Promise((resolve, reject) => {
+      let settled = false;
+      const timeout = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        reject(new Error('Hello acknowledgment timeout'));
+      }, 10000);
+
       this.socket!.emit(
         WorkerWireEvents.WORKER_HELLO,
         payload,
-        (response: WorkerHelloResponse) => {
+        (response?: WorkerHelloResponse) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          clearTimeout(timeout);
+
           if (this.options.debug)
             console.log('[worker-gateway] hello response:', response);
 
+          if (!response?.sessionId) {
+            reject(new Error('Hello acknowledgment missing sessionId'));
+            return;
+          }
+
           this.sessionId = response.sessionId;
           console.log(`[worker-gateway] registered session: ${this.sessionId}`);
+          this.resolveInitialHello?.();
+          this.clearInitialHelloHandlers();
           resolve();
         },
       );
-
-      // Add timeout in case ack never arrives
-      setTimeout(() => {
-        if (!this.sessionId) {
-          reject(new Error('Hello acknowledgment timeout'));
-        }
-      }, 10000);
     });
   }
 
@@ -310,10 +325,15 @@ export class WorkerGatewayClient {
           console.warn(
             '[worker-gateway] heartbeat rejected by server, re-sending hello',
           );
-          this.sendHello();
+          void this.sendHello();
         }
       },
     );
+  }
+
+  private clearInitialHelloHandlers(): void {
+    this.resolveInitialHello = undefined;
+    this.rejectInitialHello = undefined;
   }
 
   /**
