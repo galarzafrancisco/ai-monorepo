@@ -24,7 +24,7 @@ export function ExecutionsPage() {
       setLoading(true);
       setError(null);
       const response: ExecutionListResponseDto = await ExecutionsService.executionsControllerListExecutions(
-        statusFilter as any,
+        statusFilter,
         undefined, // agentActorId
         undefined, // taskId
         1, // page
@@ -39,13 +39,13 @@ export function ExecutionsPage() {
     }
   };
 
-  const formatDate = (dateStr: any) => {
+  const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "-";
-    return new Date(String(dateStr)).toLocaleString();
+    return new Date(dateStr).toLocaleString();
   };
 
-  const getStatusClass = (status: any) => {
-    return `status-badge status-${String(status).toLowerCase()}`;
+  const getStatusClass = (status: ExecutionStatus) => {
+    return `status-badge status-${status.toLowerCase()}`;
   };
 
   return (
@@ -102,12 +102,12 @@ export function ExecutionsPage() {
                 <tr key={execution.id}>
                   <td>
                     <span className={getStatusClass(execution.status)}>
-                      {String(execution.status)}
+                      {execution.status}
                     </span>
                   </td>
                   <td>
                     <div className="task-cell">
-                      <div>{String(execution.taskName || "Unknown")}</div>
+                      <div>{execution.taskName || "Unknown"}</div>
                       <div className="text-muted">
                         {execution.taskId.substring(0, 8)}...
                       </div>
@@ -115,7 +115,7 @@ export function ExecutionsPage() {
                   </td>
                   <td>
                     <div className="agent-cell">
-                      {String(execution.agentName || execution.agentSlug || "Unknown")}
+                      {execution.agentName || execution.agentSlug || "Unknown"}
                     </div>
                   </td>
                   <td>
@@ -132,13 +132,13 @@ export function ExecutionsPage() {
                   </td>
                   <td>
                     <span className="text-muted">
-                      {String(execution.triggerReason || "-")}
+                      {execution.triggerReason || "-"}
                     </span>
                   </td>
                   <td>
                     {execution.failureReason && (
                       <span className="error-text">
-                        {String(execution.failureReason)}
+                        {execution.failureReason}
                       </span>
                     )}
                   </td>

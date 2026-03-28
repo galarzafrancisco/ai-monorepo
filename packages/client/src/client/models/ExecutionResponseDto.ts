@@ -14,7 +14,7 @@ export type ExecutionResponseDto = {
     /**
      * Task name
      */
-    taskName?: Record<string, any> | null;
+    taskName?: string | null;
     /**
      * Agent actor ID
      */
@@ -22,11 +22,11 @@ export type ExecutionResponseDto = {
     /**
      * Agent slug
      */
-    agentSlug?: Record<string, any> | null;
+    agentSlug?: string | null;
     /**
      * Agent name
      */
-    agentName?: Record<string, any> | null;
+    agentName?: string | null;
     /**
      * Execution status
      */
@@ -38,35 +38,35 @@ export type ExecutionResponseDto = {
     /**
      * When the execution was claimed by a worker
      */
-    claimedAt?: Record<string, any> | null;
+    claimedAt?: string | null;
     /**
      * When the execution started running
      */
-    startedAt?: Record<string, any> | null;
+    startedAt?: string | null;
     /**
      * When the execution finished
      */
-    finishedAt?: Record<string, any> | null;
+    finishedAt?: string | null;
     /**
      * Worker session ID that claimed this execution
      */
-    workerSessionId?: Record<string, any> | null;
+    workerSessionId?: string | null;
     /**
      * When the worker lease expires
      */
-    leaseExpiresAt?: Record<string, any> | null;
+    leaseExpiresAt?: string | null;
     /**
      * When a stop was requested
      */
-    stopRequestedAt?: Record<string, any> | null;
+    stopRequestedAt?: string | null;
     /**
      * Failure reason if execution failed
      */
-    failureReason?: Record<string, any> | null;
+    failureReason?: string | null;
     /**
      * Why this execution was triggered
      */
-    triggerReason?: Record<string, any> | null;
+    triggerReason?: string | null;
     /**
      * Row version for optimistic locking
      */

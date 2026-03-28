@@ -22,6 +22,7 @@ export class ExecutionResponseDto {
     description: 'Task name',
     example: 'Implement feature X',
     nullable: true,
+    type: String,
   })
   taskName!: string | null;
 
@@ -35,6 +36,7 @@ export class ExecutionResponseDto {
     description: 'Agent slug',
     example: 'claude-dev',
     nullable: true,
+    type: String,
   })
   agentSlug!: string | null;
 
@@ -42,6 +44,7 @@ export class ExecutionResponseDto {
     description: 'Agent name',
     example: 'Claude Developer',
     nullable: true,
+    type: String,
   })
   agentName!: string | null;
 
@@ -62,6 +65,8 @@ export class ExecutionResponseDto {
     description: 'When the execution was claimed by a worker',
     example: '2026-03-28T10:31:00.000Z',
     nullable: true,
+    type: String,
+    format: 'date-time',
   })
   claimedAt!: string | null;
 
@@ -69,6 +74,8 @@ export class ExecutionResponseDto {
     description: 'When the execution started running',
     example: '2026-03-28T10:31:05.000Z',
     nullable: true,
+    type: String,
+    format: 'date-time',
   })
   startedAt!: string | null;
 
@@ -76,6 +83,8 @@ export class ExecutionResponseDto {
     description: 'When the execution finished',
     example: '2026-03-28T10:35:00.000Z',
     nullable: true,
+    type: String,
+    format: 'date-time',
   })
   finishedAt!: string | null;
 
@@ -83,6 +92,7 @@ export class ExecutionResponseDto {
     description: 'Worker session ID that claimed this execution',
     example: '123e4567-e89b-12d3-a456-426614174003',
     nullable: true,
+    type: String,
   })
   workerSessionId!: string | null;
 
@@ -90,6 +100,8 @@ export class ExecutionResponseDto {
     description: 'When the worker lease expires',
     example: '2026-03-28T10:36:00.000Z',
     nullable: true,
+    type: String,
+    format: 'date-time',
   })
   leaseExpiresAt!: string | null;
 
@@ -97,6 +109,8 @@ export class ExecutionResponseDto {
     description: 'When a stop was requested',
     example: '2026-03-28T10:34:00.000Z',
     nullable: true,
+    type: String,
+    format: 'date-time',
   })
   stopRequestedAt!: string | null;
 
@@ -104,6 +118,7 @@ export class ExecutionResponseDto {
     description: 'Failure reason if execution failed',
     example: 'Worker disconnected',
     nullable: true,
+    type: String,
   })
   failureReason!: string | null;
 
@@ -111,6 +126,7 @@ export class ExecutionResponseDto {
     description: 'Why this execution was triggered',
     example: 'Task is eligible for execution',
     nullable: true,
+    type: String,
   })
   triggerReason!: string | null;
 

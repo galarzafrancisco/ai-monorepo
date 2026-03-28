@@ -4696,7 +4696,7 @@ export interface components {
              * @description Task name
              * @example Implement feature X
              */
-            taskName?: Record<string, never> | null;
+            taskName?: string | null;
             /**
              * @description Agent actor ID
              * @example 123e4567-e89b-12d3-a456-426614174002
@@ -4706,12 +4706,12 @@ export interface components {
              * @description Agent slug
              * @example claude-dev
              */
-            agentSlug?: Record<string, never> | null;
+            agentSlug?: string | null;
             /**
              * @description Agent name
              * @example Claude Developer
              */
-            agentName?: Record<string, never> | null;
+            agentName?: string | null;
             /**
              * @description Execution status
              * @example READY
@@ -4724,45 +4724,50 @@ export interface components {
              */
             requestedAt: string;
             /**
+             * Format: date-time
              * @description When the execution was claimed by a worker
              * @example 2026-03-28T10:31:00.000Z
              */
-            claimedAt?: Record<string, never> | null;
+            claimedAt?: string | null;
             /**
+             * Format: date-time
              * @description When the execution started running
              * @example 2026-03-28T10:31:05.000Z
              */
-            startedAt?: Record<string, never> | null;
+            startedAt?: string | null;
             /**
+             * Format: date-time
              * @description When the execution finished
              * @example 2026-03-28T10:35:00.000Z
              */
-            finishedAt?: Record<string, never> | null;
+            finishedAt?: string | null;
             /**
              * @description Worker session ID that claimed this execution
              * @example 123e4567-e89b-12d3-a456-426614174003
              */
-            workerSessionId?: Record<string, never> | null;
+            workerSessionId?: string | null;
             /**
+             * Format: date-time
              * @description When the worker lease expires
              * @example 2026-03-28T10:36:00.000Z
              */
-            leaseExpiresAt?: Record<string, never> | null;
+            leaseExpiresAt?: string | null;
             /**
+             * Format: date-time
              * @description When a stop was requested
              * @example 2026-03-28T10:34:00.000Z
              */
-            stopRequestedAt?: Record<string, never> | null;
+            stopRequestedAt?: string | null;
             /**
              * @description Failure reason if execution failed
              * @example Worker disconnected
              */
-            failureReason?: Record<string, never> | null;
+            failureReason?: string | null;
             /**
              * @description Why this execution was triggered
              * @example Task is eligible for execution
              */
-            triggerReason?: Record<string, never> | null;
+            triggerReason?: string | null;
             /**
              * @description Row version for optimistic locking
              * @example 1
