@@ -2,6 +2,7 @@ import { RunAssignedWireEvent, StopRequestedWireEvent } from '@taico/events';
 import { prepareWorkspace } from './helpers/prepare-workspace';
 import { getSession, setSession } from './helpers/session-store';
 import { ClaudeAgentRunner } from './runners/claude-agent-runner';
+import { OpencodeAgentRunner } from './runners/opencode-agent-runner';
 import { AgentRunner } from './runners/agent-runner.types';
 import { WorkerGatewayClient } from './worker-gateway-client';
 
@@ -156,6 +157,10 @@ export class ExecutionOrchestrator {
   private createRunner(agentType: string): AgentRunner {
     if (agentType === 'claude') {
       return new ClaudeAgentRunner();
+    }
+
+    if (agentType === 'opencode') {
+      return new OpencodeAgentRunner();
     }
 
     throw new Error(

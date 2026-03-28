@@ -29,7 +29,7 @@ export async function runWorkerMode(options: WorkerModeOptions): Promise<void> {
     baseUrl: serverUrl,
     accessToken: session.credentials.accessToken,
     version: process.env.npm_package_version,
-    capabilities: ['claude', 'gemini'],
+    capabilities: ['claude', 'opencode'],
     debug: true,
   });
   const orchestrator = new ExecutionOrchestrator({
