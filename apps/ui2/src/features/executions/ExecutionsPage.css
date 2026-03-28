@@ -1,0 +1,129 @@
+.executions-page {
+  padding: var(--space-4);
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.executions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.executions-controls {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.status-filter,
+.refresh-button {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.status-filter:hover,
+.refresh-button:hover {
+  background: var(--color-surface-hover);
+}
+
+.executions-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.executions-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+}
+
+.executions-table thead {
+  background: var(--color-surface-subtle);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.executions-table th {
+  padding: var(--space-3);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.executions-table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.executions-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.executions-table tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+}
+
+.status-ready {
+  background: var(--color-info-subtle);
+  color: var(--color-info);
+}
+
+.status-claimed {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.status-running {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+}
+
+.status-completed {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.status-failed,
+.status-cancelled,
+.status-stale {
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
+.status-stop_requested {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.task-cell,
+.agent-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.error-text {
+  color: var(--color-error);
+}

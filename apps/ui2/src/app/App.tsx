@@ -13,6 +13,7 @@ import { AgentsRoutes } from '../features/agents/AgentsRoutes';
 import { ThreadsRoutes } from '../features/threads/ThreadsRoutes';
 import { ToolsRoutes } from '../features/tools/ToolsRoutes';
 import { ConsentRoutes } from '../features/consent/ConsentRoutes';
+import { ExecutionsRoutes } from '../features/executions/ExecutionsRoutes';
 import { ActorsProvider } from '../features/actors';
 import { ToastProvider } from '../shared/context/ToastContext';
 import { ToastContainer, CommandPaletteProvider } from '../ui/components';
@@ -35,6 +36,7 @@ function BetaAppRoutes() {
       <Route path="/agents/*" element={<AgentsRoutes />} />
       <Route path="/threads/*" element={<ThreadsRoutes />} />
       <Route path="/tools/*" element={<ToolsRoutes />} />
+      <Route path="/executions/*" element={<ExecutionsRoutes />} />
 
     </Routes>
   );
