@@ -112,6 +112,15 @@ export class WorkerGatewayClient {
       randomizationFactor,
     });
 
+    if (this.options.debug) {
+      this.socket.onAny((event, ...args) => {
+        console.log('[worker-gateway] inbound event:', event, args);
+      });
+      this.socket.onAnyOutgoing((event, ...args) => {
+        console.log('[worker-gateway] outbound event:', event, args);
+      });
+    }
+
     // ----- lifecycle -----
     this.socket.on('connect', async () => {
       if (this.reconnectAttempts > 0) {

@@ -10,6 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   WorkerWireEvents,
   type WorkerHelloPayload,
@@ -28,8 +29,7 @@ import { WsScopesGuard } from '../auth/guards/guards/ws-scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { WorkerSessionService } from './worker-session.service';
 import { ExecutionClaimService } from './execution-claim.service';
-import { ExecutionsService } from './executions.service';
-import { TaskExecutionStatus } from './enums';
+import { WorkerAvailableForDispatchEvent } from './events/execution-dispatch.events';
 import { WorkersScopes } from './workers.scopes';
 import { type AuthContext } from '../auth/guards/context/auth-context.types';
 
@@ -65,7 +65,7 @@ export class WorkersGateway
   constructor(
     private readonly workerSessionService: WorkerSessionService,
     private readonly executionClaimService: ExecutionClaimService,
-    private readonly executionsService: ExecutionsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   afterInit() {
@@ -136,6 +136,11 @@ export class WorkersGateway
       socketId: client.id,
       oauthClientId,
     });
+
+    this.eventEmitter.emit(
+      WorkerAvailableForDispatchEvent.INTERNAL,
+      new WorkerAvailableForDispatchEvent(session.id),
+    );
 
     return {
       sessionId: session.id,
@@ -314,6 +319,11 @@ export class WorkersGateway
         };
       }
 
+      this.eventEmitter.emit(
+        WorkerAvailableForDispatchEvent.INTERNAL,
+        new WorkerAvailableForDispatchEvent(payload.sessionId),
+      );
+
       return {
         ok: true,
         executionId: payload.executionId,
@@ -387,6 +397,11 @@ export class WorkersGateway
         };
       }
 
+      this.eventEmitter.emit(
+        WorkerAvailableForDispatchEvent.INTERNAL,
+        new WorkerAvailableForDispatchEvent(payload.sessionId),
+      );
+
       return {
         ok: true,
         executionId: payload.executionId,
@@ -442,5 +457,10 @@ export class WorkersGateway
       taskId: event.taskId,
       reason: event.reason,
     });
+  }
+
+  async hasActiveSession(sessionId: string): Promise<boolean> {
+    const sockets = await this.server.in(`session:${sessionId}`).fetchSockets();
+    return sockets.length > 0;
   }
 }
