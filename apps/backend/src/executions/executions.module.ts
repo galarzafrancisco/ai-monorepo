@@ -5,6 +5,7 @@ import { WorkerSessionEntity } from './worker-session.entity';
 import { ExecutionContextResolverService } from './execution-context-resolver.service';
 import { ExecutionReconcilerService } from './execution-reconciler.service';
 import { ExecutionClaimService } from './execution-claim.service';
+import { ExecutionDispatchService } from './execution-dispatch.service';
 import { ExecutionsService } from './executions.service';
 import { WorkerSessionService } from './worker-session.service';
 import { ExecutionsController } from './executions.controller';
@@ -36,6 +37,7 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
     ExecutionContextResolverService,
     ExecutionReconcilerService,
     ExecutionClaimService,
+    ExecutionDispatchService,
     ExecutionsService,
     WorkerSessionService,
     WorkersGateway,

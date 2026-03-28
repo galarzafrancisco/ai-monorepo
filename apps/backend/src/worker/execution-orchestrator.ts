@@ -1,4 +1,12 @@
 import { RunAssignedWireEvent, StopRequestedWireEvent } from '@taico/events';
+import {
+  ApiError,
+  createTaicoClient,
+  type AgentResponseDto,
+  type ProjectResponseDto,
+  type TaskResponseDto,
+  type ThreadResponseDto,
+} from '@taico/client';
 import { prepareWorkspace } from './helpers/prepare-workspace';
 import { getSession, setSession } from './helpers/session-store';
 import { ClaudeAgentRunner } from './runners/claude-agent-runner';
@@ -12,47 +20,16 @@ type ExecutionOrchestratorOptions = {
   gatewayClient: WorkerGatewayClient;
 };
 
-type TaskTag = {
-  id: string;
-  name: string;
-};
-
-type TaskResponse = {
-  id: string;
-  name: string;
-  description?: string;
-  tags?: TaskTag[];
-};
-
-type ThreadResponse = {
-  id: string;
-  title: string;
-  parentTaskId: string;
-};
-
-type AgentResponse = {
-  actorId: string;
-  slug: string;
-  type: string;
-  systemPrompt: string;
-  providerId?: string | null;
-  modelId?: string | null;
-};
-
-type AgentListResponse = {
-  items: AgentResponse[];
-};
-
-type ProjectResponse = {
-  id: string;
-  slug: string;
-  repoUrl?: string | null;
-};
-
 export class ExecutionOrchestrator {
   private readonly activeExecutionIds = new Set<string>();
+  private readonly client;
 
-  constructor(private readonly options: ExecutionOrchestratorOptions) {}
+  constructor(private readonly options: ExecutionOrchestratorOptions) {
+    this.client = createTaicoClient({
+      baseUrl: options.serverUrl,
+      token: options.workerAccessToken,
+    });
+  }
 
   bind(): void {
     this.options.gatewayClient.onRunAssigned((event) => {
@@ -169,9 +146,9 @@ export class ExecutionOrchestrator {
   }
 
   private buildPrompt(
-    task: TaskResponse,
-    agent: AgentResponse,
-    thread: ThreadResponse | null,
+    task: TaskResponseDto,
+    agent: AgentResponseDto,
+    thread: ThreadResponseDto | null,
   ): string {
     const lines: string[] = [
       `You got triggered by new activity in task "${task.id}".`,
@@ -194,24 +171,34 @@ export class ExecutionOrchestrator {
     return lines.join('\n');
   }
 
-  private async fetchTask(taskId: string): Promise<TaskResponse> {
-    return this.fetchJson<TaskResponse>(`/api/v1/tasks/tasks/${taskId}`);
+  private async fetchTask(taskId: string): Promise<TaskResponseDto> {
+    return this.client.TaskService.tasksControllerGetTask(taskId);
   }
 
-  private async fetchThreadByTaskId(taskId: string): Promise<ThreadResponse | null> {
+  private async fetchThreadByTaskId(
+    taskId: string,
+  ): Promise<ThreadResponseDto | null> {
     try {
-      return await this.fetchJson<ThreadResponse>(`/api/v1/threads/by-task/${taskId}`);
+      return await this.client.ThreadsService.threadsControllerGetThreadByTaskId(
+        taskId,
+      );
     } catch (error: unknown) {
-      const message = this.errorToMessage(error);
-      if (message.includes('HTTP 404')) {
+      if (this.isApiError(error) && error.status === 404) {
+        return null;
+      }
+      if (error instanceof SyntaxError) {
         return null;
       }
       throw error;
     }
   }
 
-  private async fetchAgentByActorId(actorId: string): Promise<AgentResponse> {
-    const response = await this.fetchJson<AgentListResponse>('/api/v1/agents?limit=200');
+  private async fetchAgentByActorId(actorId: string): Promise<AgentResponseDto> {
+    const response = await this.client.AgentService.agentsControllerListAgents(
+      undefined,
+      1,
+      200,
+    );
     const agent = response.items.find((item) => item.actorId === actorId);
     if (!agent) {
       throw new Error(`No agent found for actor ${actorId}`);
@@ -220,21 +207,25 @@ export class ExecutionOrchestrator {
   }
 
   private async requestExecutionToken(agentSlug: string): Promise<string> {
-    const response = await this.fetchJson<{ token: string }>(
-      `/api/v1/agents/${agentSlug}/execution-token`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          scopes: ['tasks:read', 'tasks:write', 'context:read', 'context:write'],
+    const response =
+      await this.client.AgentExecutionTokensService.agentExecutionTokensControllerRequestExecutionToken(
+        agentSlug,
+        {
+          scopes: [
+            'mcp:use',
+            'tasks:read',
+            'tasks:write',
+            'context:read',
+            'context:write',
+          ],
           expirationSeconds: 3600,
-        }),
-      },
-    );
+        },
+      );
 
     return response.token;
   }
 
-  private async resolveRepoUrl(tags: TaskTag[]): Promise<string | null> {
+  private async resolveRepoUrl(tags: TaskResponseDto['tags']): Promise<string | null> {
     const projectTag = tags.find((tag) => tag.name.startsWith('project:'));
     if (!projectTag) {
       return null;
@@ -246,39 +237,23 @@ export class ExecutionOrchestrator {
     }
 
     try {
-      const project = await this.fetchJson<ProjectResponse>(
-        `/api/v1/meta/projects/by-slug/${slug}`,
-      );
+      const project =
+        await this.client.MetaProjectsService.projectsControllerGetProjectBySlug(
+          slug,
+        );
       return project.repoUrl ?? null;
     } catch (error: unknown) {
-      const message = this.errorToMessage(error);
-      if (message.includes('HTTP 404')) {
+      if (this.isApiError(error) && error.status === 404) {
         return null;
       }
       throw error;
     }
   }
 
-  private async fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(`${this.options.serverUrl}${path}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${this.options.workerAccessToken}`,
-        'Content-Type': 'application/json',
-        ...(init?.headers ?? {}),
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status} when requesting ${path}: ${response.statusText}`,
-      );
-    }
-
-    return (await response.json()) as T;
-  }
-
   private errorToMessage(error: unknown): string {
+    if (this.isApiError(error)) {
+      return `HTTP ${error.status} when requesting ${error.url}: ${error.statusText}`;
+    }
     if (error instanceof Error) {
       return error.message;
     }
@@ -286,5 +261,9 @@ export class ExecutionOrchestrator {
       return error;
     }
     return String(error);
+  }
+
+  private isApiError(error: unknown): error is ApiError {
+    return error instanceof ApiError;
   }
 }

@@ -1,13 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { Cron } from '@nestjs/schedule';
 import { TaskExecutionEntity } from './task-execution.entity';
 import { TaskExecutionStatus } from './enums';
 import { TaskEntity } from '../tasks/task.entity';
 import { ActorType } from '../identity-provider/enums';
 import { TaskStatus } from '../tasks/enums';
 import { AgentEntity } from '../agents/agent.entity';
+import { ExecutionReadyForDispatchEvent } from './events/execution-dispatch.events';
 import {
   TaskCreatedEvent,
   TaskUpdatedEvent,
@@ -46,6 +48,7 @@ export class ExecutionReconcilerService {
     private readonly taskRepository: Repository<TaskEntity>,
     @InjectRepository(AgentEntity)
     private readonly agentRepository: Repository<AgentEntity>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -128,6 +131,33 @@ export class ExecutionReconcilerService {
     });
 
     await this.reconcileTask(event.payload.taskId);
+  }
+
+  /**
+   * Periodic safety net for missed task events.
+   * Recomputes execution eligibility for all tasks every 2 minutes.
+   */
+  @Cron('*/2 * * * *')
+  async reconcileAllTasksPeriodically(): Promise<void> {
+    const taskIds = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.id', 'id')
+      .where('task.deleted_at IS NULL')
+      .getRawMany<{ id: string }>();
+
+    this.logger.debug({
+      message: 'Periodic execution reconciliation started',
+      taskCount: taskIds.length,
+    });
+
+    for (const { id } of taskIds) {
+      await this.reconcileTask(id);
+    }
+
+    this.logger.debug({
+      message: 'Periodic execution reconciliation finished',
+      taskCount: taskIds.length,
+    });
   }
 
   /**
@@ -350,7 +380,18 @@ export class ExecutionReconcilerService {
             taskId: task.id,
             reason,
           });
+        } else {
+          this.logger.debug({
+            message: 'TaskExecution already READY; re-emitting dispatch event',
+            executionId: existingExecution.id,
+            taskId: task.id,
+          });
         }
+
+        this.eventEmitter.emit(
+          ExecutionReadyForDispatchEvent.INTERNAL,
+          new ExecutionReadyForDispatchEvent(existingExecution.id),
+        );
       } else {
         // Active execution (CLAIMED, RUNNING, STOP_REQUESTED) or terminal (COMPLETED, FAILED, STALE)
         // Don't interfere with active/terminal executions
@@ -372,6 +413,10 @@ export class ExecutionReconcilerService {
       });
 
       await this.executionRepository.save(execution);
+      this.eventEmitter.emit(
+        ExecutionReadyForDispatchEvent.INTERNAL,
+        new ExecutionReadyForDispatchEvent(execution.id),
+      );
 
       this.logger.log({
         message: 'TaskExecution created',
