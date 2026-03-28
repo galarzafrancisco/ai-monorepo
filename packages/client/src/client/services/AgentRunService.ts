@@ -12,7 +12,9 @@ import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class AgentRunService {
     /**
+     * @deprecated
      * Create a new agent run
+     * DEPRECATED: This endpoint is a legacy compatibility facade. New workers should use the execution-centric model (TaskExecution) instead of creating AgentRuns. This endpoint will be removed once all workers migrate to execution-id. See /docs/AGENT_RUN_DEPRECATION.md for details.
      * @param requestBody
      * @returns AgentRunResponseDto Agent run created successfully
      * @throws ApiError
@@ -80,7 +82,9 @@ export class AgentRunService {
         });
     }
     /**
+     * @deprecated
      * Update an agent run
+     * DEPRECATED: This endpoint is a legacy compatibility facade. Workers should update execution state via TaskExecution instead. See /docs/AGENT_RUN_DEPRECATION.md for migration details.
      * @param runId Agent run ID
      * @param requestBody
      * @returns AgentRunResponseDto Agent run updated successfully

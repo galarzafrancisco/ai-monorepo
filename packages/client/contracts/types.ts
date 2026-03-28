@@ -949,7 +949,11 @@ export interface paths {
         /** List agent runs with optional filters */
         get: operations["AgentRunsController_listAgentRuns"];
         put?: never;
-        /** Create a new agent run */
+        /**
+         * Create a new agent run
+         * @deprecated
+         * @description DEPRECATED: This endpoint is a legacy compatibility facade. New workers should use the execution-centric model (TaskExecution) instead of creating AgentRuns. This endpoint will be removed once all workers migrate to execution-id. See /docs/AGENT_RUN_DEPRECATION.md for details.
+         */
         post: operations["AgentRunsController_createAgentRun"];
         delete?: never;
         options?: never;
@@ -971,7 +975,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update an agent run */
+        /**
+         * Update an agent run
+         * @deprecated
+         * @description DEPRECATED: This endpoint is a legacy compatibility facade. Workers should update execution state via TaskExecution instead. See /docs/AGENT_RUN_DEPRECATION.md for migration details.
+         */
         patch: operations["AgentRunsController_updateAgentRun"];
         trace?: never;
     };
