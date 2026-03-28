@@ -153,6 +153,18 @@ export class WorkersGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: WorkerHeartbeatPayload,
   ): Promise<WorkerHeartbeatResponse> {
+    // Validate session ownership to prevent spoofing
+    const registeredSessionId = this.socketToSession.get(client.id);
+    if (!registeredSessionId || registeredSessionId !== payload.sessionId) {
+      this.logger.warn({
+        message: 'Heartbeat session mismatch - possible spoofing attempt',
+        socketId: client.id,
+        registeredSessionId,
+        payloadSessionId: payload.sessionId,
+      });
+      return { ok: false, serverTime: Date.now() };
+    }
+
     const updated = await this.workerSessionService.updateHeartbeat({
       sessionId: payload.sessionId,
       lastSeenIp: client.handshake.address,
@@ -189,6 +201,22 @@ export class WorkersGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: RunStartedPayload,
   ): Promise<RunLifecycleAck> {
+    // Validate session ownership to prevent spoofing
+    const registeredSessionId = this.socketToSession.get(client.id);
+    if (!registeredSessionId || registeredSessionId !== payload.sessionId) {
+      this.logger.warn({
+        message: 'Run started session mismatch - possible spoofing attempt',
+        socketId: client.id,
+        registeredSessionId,
+        payloadSessionId: payload.sessionId,
+        executionId: payload.executionId,
+      });
+      return {
+        ok: false,
+        executionId: payload.executionId,
+      };
+    }
+
     this.logger.log({
       message: 'Run started',
       executionId: payload.executionId,
@@ -197,10 +225,22 @@ export class WorkersGateway
     });
 
     try {
-      await this.executionClaimService.startExecution(
+      const started = await this.executionClaimService.startExecution(
         payload.executionId,
         payload.sessionId,
       );
+
+      if (!started) {
+        this.logger.warn({
+          message: 'Failed to start execution - ownership or state check failed',
+          executionId: payload.executionId,
+          sessionId: payload.sessionId,
+        });
+        return {
+          ok: false,
+          executionId: payload.executionId,
+        };
+      }
 
       return {
         ok: true,
@@ -231,6 +271,22 @@ export class WorkersGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: RunCompletedPayload,
   ): Promise<RunLifecycleAck> {
+    // Validate session ownership to prevent spoofing
+    const registeredSessionId = this.socketToSession.get(client.id);
+    if (!registeredSessionId || registeredSessionId !== payload.sessionId) {
+      this.logger.warn({
+        message: 'Run completed session mismatch - possible spoofing attempt',
+        socketId: client.id,
+        registeredSessionId,
+        payloadSessionId: payload.sessionId,
+        executionId: payload.executionId,
+      });
+      return {
+        ok: false,
+        executionId: payload.executionId,
+      };
+    }
+
     this.logger.log({
       message: 'Run completed',
       executionId: payload.executionId,
@@ -239,26 +295,23 @@ export class WorkersGateway
     });
 
     try {
-      const execution = await this.executionsService.findById(
+      const completed = await this.executionClaimService.completeExecution(
         payload.executionId,
+        payload.sessionId,
+        new Date(payload.completedAt),
       );
 
-      if (!execution) {
+      if (!completed) {
         this.logger.warn({
-          message: 'Run completed for unknown execution',
+          message: 'Failed to complete execution - ownership or state check failed',
           executionId: payload.executionId,
+          sessionId: payload.sessionId,
         });
         return {
           ok: false,
           executionId: payload.executionId,
         };
       }
-
-      await this.executionsService.updateStatus(
-        payload.executionId,
-        TaskExecutionStatus.COMPLETED,
-        { finishedAt: new Date(payload.completedAt) },
-      );
 
       return {
         ok: true,
@@ -289,6 +342,22 @@ export class WorkersGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: RunFailedPayload,
   ): Promise<RunLifecycleAck> {
+    // Validate session ownership to prevent spoofing
+    const registeredSessionId = this.socketToSession.get(client.id);
+    if (!registeredSessionId || registeredSessionId !== payload.sessionId) {
+      this.logger.warn({
+        message: 'Run failed session mismatch - possible spoofing attempt',
+        socketId: client.id,
+        registeredSessionId,
+        payloadSessionId: payload.sessionId,
+        executionId: payload.executionId,
+      });
+      return {
+        ok: false,
+        executionId: payload.executionId,
+      };
+    }
+
     this.logger.log({
       message: 'Run failed',
       executionId: payload.executionId,
@@ -298,29 +367,24 @@ export class WorkersGateway
     });
 
     try {
-      const execution = await this.executionsService.findById(
+      const failed = await this.executionClaimService.failExecution(
         payload.executionId,
+        payload.sessionId,
+        new Date(payload.failedAt),
+        payload.reason ?? 'Unknown failure',
       );
 
-      if (!execution) {
+      if (!failed) {
         this.logger.warn({
-          message: 'Run failed for unknown execution',
+          message: 'Failed to fail execution - ownership or state check failed',
           executionId: payload.executionId,
+          sessionId: payload.sessionId,
         });
         return {
           ok: false,
           executionId: payload.executionId,
         };
       }
-
-      await this.executionsService.updateStatus(
-        payload.executionId,
-        TaskExecutionStatus.FAILED,
-        {
-          finishedAt: new Date(payload.failedAt),
-          failureReason: payload.reason ?? 'Unknown failure',
-        },
-      );
 
       return {
         ok: true,
