@@ -7,5 +7,9 @@ export type CreateAgentRunDto = {
      * UUID of the parent task being executed
      */
     parentTaskId: string;
+    /**
+     * UUID of the associated TaskExecution (for new execution-centric paths)
+     */
+    taskExecutionId?: string | null;
 };
 

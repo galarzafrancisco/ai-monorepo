@@ -37,6 +37,7 @@ export class AgentRunsService {
       startedAt: null,
       endedAt: null,
       lastPing: null,
+      taskExecutionId: input.taskExecutionId ?? null,
     });
 
     const savedAgentRun = await this.agentRunRepository.save(agentRun);
@@ -81,6 +82,8 @@ export class AgentRunsService {
     if (input.startedAt !== undefined) agentRun.startedAt = input.startedAt;
     if (input.endedAt !== undefined) agentRun.endedAt = input.endedAt;
     if (input.lastPing !== undefined) agentRun.lastPing = input.lastPing;
+    if (input.taskExecutionId !== undefined)
+      agentRun.taskExecutionId = input.taskExecutionId;
 
     const updatedAgentRun = await this.agentRunRepository.save(agentRun);
 
@@ -180,6 +183,7 @@ export class AgentRunsService {
       startedAt: agentRun.startedAt,
       endedAt: agentRun.endedAt,
       lastPing: agentRun.lastPing,
+      taskExecutionId: agentRun.taskExecutionId,
     };
   }
 

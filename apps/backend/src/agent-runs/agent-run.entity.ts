@@ -5,11 +5,14 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { TaskEntity } from '../tasks/task.entity';
+import { TaskExecutionEntity } from '../executions/task-execution.entity';
 
 @Entity({ name: 'agent_runs' })
+@Index('idx_agent_runs_task_execution_id', ['taskExecutionId'])
 export class AgentRunEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -39,4 +42,11 @@ export class AgentRunEntity {
 
   @Column({ type: 'datetime', nullable: true, name: 'last_ping' })
   lastPing!: Date | null;
+
+  @Column({ type: 'uuid', nullable: true, name: 'task_execution_id' })
+  taskExecutionId!: string | null;
+
+  @ManyToOne(() => TaskExecutionEntity, { nullable: true })
+  @JoinColumn({ name: 'task_execution_id' })
+  taskExecution?: TaskExecutionEntity | null;
 }

@@ -15,5 +15,9 @@ export type UpdateAgentRunDto = {
      * Timestamp of the last ping/heartbeat
      */
     lastPing?: string | null;
+    /**
+     * UUID of the associated TaskExecution (for new execution-centric paths)
+     */
+    taskExecutionId?: string | null;
 };
 

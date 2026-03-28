@@ -23,12 +23,14 @@ export type TaskResult = {
 export type CreateAgentRunInput = {
   actorId: string;
   parentTaskId: string;
+  taskExecutionId?: string | null;
 };
 
 export type UpdateAgentRunInput = {
   startedAt?: Date | null;
   endedAt?: Date | null;
   lastPing?: Date | null;
+  taskExecutionId?: string | null;
 };
 
 // Result types (from service methods)
@@ -42,6 +44,7 @@ export type AgentRunResult = {
   startedAt: Date | null;
   endedAt: Date | null;
   lastPing: Date | null;
+  taskExecutionId: string | null;
 };
 
 export type ListAgentRunsInput = {

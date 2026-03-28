@@ -33,6 +33,7 @@ import { McpServerProvidedIdPartialUniqueIndex1741200000000 } from './migrations
 import { AddHasSeenWalkthroughToUsers1741300000000 } from './migrations/1741300000000-AddHasSeenWalkthroughToUsers';
 import { EnforceSingleThreadPerParentTask1741400000000 } from './migrations/1741400000000-EnforceSingleThreadPerParentTask';
 import { AddExecutionPersistenceTables1741500000000 } from './migrations/1741500000000-AddExecutionPersistenceTables';
+import { AddTaskExecutionIdToAgentRuns1741600000000 } from './migrations/1741600000000-AddTaskExecutionIdToAgentRuns';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 
@@ -60,6 +61,7 @@ import { ChatProvidersModule } from './chat-providers/chat-providers.module';
         AddHasSeenWalkthroughToUsers1741300000000,
         EnforceSingleThreadPerParentTask1741400000000,
         AddExecutionPersistenceTables1741500000000,
+        AddTaskExecutionIdToAgentRuns1741600000000,
       ],
     }),
     EventEmitterModule.forRoot(),

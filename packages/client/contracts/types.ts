@@ -3332,6 +3332,11 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174001
              */
             parentTaskId: string;
+            /**
+             * @description UUID of the associated TaskExecution (for new execution-centric paths)
+             * @example 123e4567-e89b-12d3-a456-426614174002
+             */
+            taskExecutionId?: string | null;
         };
         TaskInfoDto: {
             /**
@@ -3385,6 +3390,12 @@ export interface components {
              * @example 2026-01-30T10:40:00.000Z
              */
             lastPing?: Record<string, never> | null;
+            /**
+             * Format: uuid
+             * @description UUID of the associated TaskExecution (for new execution-centric paths)
+             * @example 123e4567-e89b-12d3-a456-426614174002
+             */
+            taskExecutionId?: string | null;
         };
         AgentRunListResponseDto: {
             /** @description List of agent runs */
@@ -3421,6 +3432,11 @@ export interface components {
              * @example 2026-01-30T10:40:00.000Z
              */
             lastPing?: string | null;
+            /**
+             * @description UUID of the associated TaskExecution (for new execution-centric paths)
+             * @example 123e4567-e89b-12d3-a456-426614174002
+             */
+            taskExecutionId?: string | null;
         };
         CreateThreadDto: {
             /**

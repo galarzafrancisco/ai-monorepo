@@ -8613,6 +8613,12 @@
             "type": "string",
             "description": "UUID of the parent task being executed",
             "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "taskExecutionId": {
+            "type": "string",
+            "description": "UUID of the associated TaskExecution (for new execution-centric paths)",
+            "example": "123e4567-e89b-12d3-a456-426614174002",
+            "nullable": true
           }
         },
         "required": [
@@ -8696,6 +8702,13 @@
             "description": "Timestamp of the last ping/heartbeat",
             "example": "2026-01-30T10:40:00.000Z",
             "nullable": true
+          },
+          "taskExecutionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the associated TaskExecution (for new execution-centric paths)",
+            "example": "123e4567-e89b-12d3-a456-426614174002",
+            "nullable": true
           }
         },
         "required": [
@@ -8757,6 +8770,12 @@
             "type": "string",
             "description": "Timestamp of the last ping/heartbeat",
             "example": "2026-01-30T10:40:00.000Z",
+            "nullable": true
+          },
+          "taskExecutionId": {
+            "type": "string",
+            "description": "UUID of the associated TaskExecution (for new execution-centric paths)",
+            "example": "123e4567-e89b-12d3-a456-426614174002",
             "nullable": true
           }
         }

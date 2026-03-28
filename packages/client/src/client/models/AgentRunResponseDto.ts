@@ -41,5 +41,9 @@ export type AgentRunResponseDto = {
      * Timestamp of the last ping/heartbeat
      */
     lastPing?: Record<string, any> | null;
+    /**
+     * UUID of the associated TaskExecution (for new execution-centric paths)
+     */
+    taskExecutionId?: string | null;
 };
 
