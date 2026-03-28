@@ -1,14 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { OnEvent } from '@nestjs/event-emitter';
 import { TaskExecutionEntity } from './task-execution.entity';
 import { TaskExecutionStatus } from './enums';
 import { TaskEntity } from '../tasks/task.entity';
-import { ActorEntity } from '../identity-provider/actor.entity';
 import { ActorType } from '../identity-provider/enums';
 import { TaskStatus } from '../tasks/enums';
-import { InputRequestEntity } from '../tasks/input-request.entity';
 import { AgentEntity } from '../agents/agent.entity';
 import {
   TaskCreatedEvent,
@@ -46,12 +44,8 @@ export class ExecutionReconcilerService {
     private readonly executionRepository: Repository<TaskExecutionEntity>,
     @InjectRepository(TaskEntity)
     private readonly taskRepository: Repository<TaskEntity>,
-    @InjectRepository(ActorEntity)
-    private readonly actorRepository: Repository<ActorEntity>,
     @InjectRepository(AgentEntity)
     private readonly agentRepository: Repository<AgentEntity>,
-    @InjectRepository(InputRequestEntity)
-    private readonly inputRequestRepository: Repository<InputRequestEntity>,
   ) {}
 
   /**
@@ -157,9 +151,14 @@ export class ExecutionReconcilerService {
       }
 
       // Performance optimization: skip reconciling DONE tasks
+      // But first, cancel any READY executions since DONE tasks are never eligible
       if (task.status === TaskStatus.DONE) {
+        await this.cancelExecution(
+          task,
+          'Task is in DONE status and no longer eligible for execution',
+        );
         this.logger.debug({
-          message: 'Skipping reconciliation for DONE task',
+          message: 'Cancelled READY executions for DONE task',
           taskId,
         });
         return;
