@@ -6,7 +6,9 @@ import { ExecutionContextResolverService } from './execution-context-resolver.se
 import { ExecutionReconcilerService } from './execution-reconciler.service';
 import { ExecutionClaimService } from './execution-claim.service';
 import { ExecutionsService } from './executions.service';
+import { WorkerSessionService } from './worker-session.service';
 import { ExecutionsController } from './executions.controller';
+import { WorkersGateway } from './workers.gateway';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { ThreadsModule } from '../threads/threads.module';
 import { TaskEntity } from '../tasks/task.entity';
@@ -35,7 +37,13 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
     ExecutionReconcilerService,
     ExecutionClaimService,
     ExecutionsService,
+    WorkerSessionService,
+    WorkersGateway,
   ],
-  exports: [ExecutionContextResolverService, ExecutionClaimService],
+  exports: [
+    ExecutionContextResolverService,
+    ExecutionClaimService,
+    WorkersGateway,
+  ],
 })
 export class ExecutionsModule {}

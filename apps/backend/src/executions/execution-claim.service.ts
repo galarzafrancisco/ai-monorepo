@@ -360,4 +360,145 @@ export class ExecutionClaimService {
 
     return true;
   }
+
+  /**
+   * Transitions a running execution to COMPLETED status.
+   *
+   * This should be called when a worker successfully completes the execution.
+   * Only succeeds if the execution is owned by the requesting worker and in RUNNING status.
+   *
+   * @param executionId - ID of the execution to complete
+   * @param workerSessionId - ID of the worker session that owns the execution
+   * @param finishedAt - Timestamp when the execution finished
+   * @returns true if completed, false if not owned by this worker or not in RUNNING state
+   * @throws TaskExecutionNotFoundError if execution doesn't exist
+   */
+  async completeExecution(
+    executionId: string,
+    workerSessionId: string,
+    finishedAt: Date,
+  ): Promise<boolean> {
+    this.logger.debug({
+      message: 'Attempting to complete execution',
+      executionId,
+      workerSessionId,
+    });
+
+    const execution = await this.executionRepository.findOne({
+      where: { id: executionId },
+    });
+
+    if (!execution) {
+      throw new TaskExecutionNotFoundError(executionId);
+    }
+
+    // Perform atomic completion with ownership verification
+    // Explicitly increment row_version and update updated_at
+    const result = await this.executionRepository
+      .createQueryBuilder()
+      .update(TaskExecutionEntity)
+      .set({
+        status: TaskExecutionStatus.COMPLETED,
+        finishedAt,
+        rowVersion: () => 'row_version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
+      })
+      .where('id = :executionId', { executionId })
+      .andWhere('worker_session_id = :workerSessionId', { workerSessionId })
+      .andWhere('status = :runningStatus', {
+        runningStatus: TaskExecutionStatus.RUNNING,
+      })
+      .execute();
+
+    if ((result.affected ?? 0) === 0) {
+      this.logger.debug({
+        message: 'Failed to complete execution - not owned by this worker or not in RUNNING state',
+        executionId,
+        workerSessionId,
+      });
+      return false;
+    }
+
+    this.logger.log({
+      message: 'Execution completed successfully',
+      executionId,
+      workerSessionId,
+      finishedAt,
+    });
+
+    return true;
+  }
+
+  /**
+   * Transitions a running execution to FAILED status.
+   *
+   * This should be called when a worker encounters an error during execution.
+   * Only succeeds if the execution is owned by the requesting worker and in RUNNING status.
+   *
+   * @param executionId - ID of the execution to fail
+   * @param workerSessionId - ID of the worker session that owns the execution
+   * @param finishedAt - Timestamp when the execution failed
+   * @param failureReason - Reason for the failure
+   * @returns true if failed, false if not owned by this worker or not in RUNNING state
+   * @throws TaskExecutionNotFoundError if execution doesn't exist
+   */
+  async failExecution(
+    executionId: string,
+    workerSessionId: string,
+    finishedAt: Date,
+    failureReason: string,
+  ): Promise<boolean> {
+    this.logger.debug({
+      message: 'Attempting to fail execution',
+      executionId,
+      workerSessionId,
+      failureReason,
+    });
+
+    const execution = await this.executionRepository.findOne({
+      where: { id: executionId },
+    });
+
+    if (!execution) {
+      throw new TaskExecutionNotFoundError(executionId);
+    }
+
+    // Perform atomic failure with ownership verification
+    // Explicitly increment row_version and update updated_at
+    const result = await this.executionRepository
+      .createQueryBuilder()
+      .update(TaskExecutionEntity)
+      .set({
+        status: TaskExecutionStatus.FAILED,
+        finishedAt,
+        failureReason,
+        rowVersion: () => 'row_version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
+      })
+      .where('id = :executionId', { executionId })
+      .andWhere('worker_session_id = :workerSessionId', { workerSessionId })
+      .andWhere('status = :runningStatus', {
+        runningStatus: TaskExecutionStatus.RUNNING,
+      })
+      .execute();
+
+    if ((result.affected ?? 0) === 0) {
+      this.logger.debug({
+        message: 'Failed to fail execution - not owned by this worker or not in RUNNING state',
+        executionId,
+        workerSessionId,
+      });
+      return false;
+    }
+
+    this.logger.log({
+      message: 'Execution failed successfully',
+      executionId,
+      workerSessionId,
+      finishedAt,
+      failureReason,
+    });
+
+    return true;
+  }
 }

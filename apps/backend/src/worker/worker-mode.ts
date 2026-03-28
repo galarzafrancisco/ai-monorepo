@@ -1,4 +1,5 @@
 import { getAuthenticatedWorkerSession } from './auth/worker-auth-client';
+import { WorkerGatewayClient } from './worker-gateway-client';
 
 type WorkerModeOptions = {
   serverUrl: string;
@@ -52,6 +53,36 @@ export async function runWorkerMode(options: WorkerModeOptions): Promise<void> {
   console.log(
     `[worker] Smoke task created as @${agent.slug}: ${createdTask.id} "${createdTask.name}"`,
   );
+
+  // Connect to workers gateway
+  console.log('[worker] Connecting to workers gateway...');
+  const gatewayClient = new WorkerGatewayClient({
+    baseUrl: serverUrl,
+    accessToken: session.credentials.accessToken,
+    version: process.env.npm_package_version,
+    capabilities: ['claude', 'gemini'],
+    debug: true,
+  });
+
+  // Register handlers for run assignments and stop requests
+  gatewayClient.onRunAssigned((event) => {
+    console.log('[worker] Run assigned:', event);
+    // TODO: In future steps, this will trigger actual task execution
+  });
+
+  gatewayClient.onStopRequested((event) => {
+    console.log('[worker] Stop requested:', event);
+    // TODO: In future steps, this will cancel ongoing execution
+  });
+
+  await gatewayClient.start();
+  console.log('[worker] Connected to workers gateway, session:', gatewayClient.getSessionId());
+
+  // Keep the worker running
+  console.log('[worker] Worker is ready and waiting for work assignments...');
+
+  // Wait indefinitely (in real implementation, this would be the main event loop)
+  await new Promise(() => {});
 }
 
 async function listAgents(
