@@ -278,16 +278,46 @@ export class BaseClient {
 }
 
 function generateResource(resource: Resource): string {
+  // Collect all type references used in this resource
+  const typeRefs = new Set<string>();
+
+  for (const op of resource.operations) {
+    // Collect types from parameters
+    for (const param of op.parameters) {
+      collectTypeRefs(param.schema, typeRefs);
+    }
+    // Collect types from request body
+    if (op.requestBody?.content) {
+      for (const [, mediaType] of op.requestBody.content) {
+        collectTypeRefs(mediaType.schema, typeRefs);
+      }
+    }
+    // Collect types from responses
+    for (const [, response] of op.responses) {
+      if (response.content) {
+        for (const [, mediaType] of response.content) {
+          collectTypeRefs(mediaType.schema, typeRefs);
+        }
+      }
+    }
+  }
+
   const lines: string[] = [
     `import { BaseClient, ClientConfig } from './base-client.js';`,
-    `// Types are imported from the index, which re-exports from types.ts`,
-    '',
-    `export class ${resource.name} extends BaseClient {`,
-    `  constructor(config: ClientConfig) {`,
-    `    super(config);`,
-    `  }`,
-    '',
   ];
+
+  // Add type imports if any types are referenced
+  if (typeRefs.size > 0) {
+    const sortedTypes = Array.from(typeRefs).sort();
+    lines.push(`import type { ${sortedTypes.join(', ')} } from './types.js';`);
+  }
+
+  lines.push('');
+  lines.push(`export class ${resource.name} extends BaseClient {`);
+  lines.push(`  constructor(config: ClientConfig) {`);
+  lines.push(`    super(config);`);
+  lines.push(`  }`);
+  lines.push('');
 
   for (const op of resource.operations) {
     lines.push(generateOperation(op));
@@ -297,6 +327,23 @@ function generateResource(resource: Resource): string {
   lines.push('}');
 
   return lines.join('\n');
+}
+
+function collectTypeRefs(schema: SchemaInfo, refs: Set<string>): void {
+  if (schema.ref) {
+    refs.add(schema.ref);
+    return;
+  }
+
+  if (schema.type === 'array' && schema.items) {
+    collectTypeRefs(schema.items, refs);
+  }
+
+  if (schema.type === 'object' && schema.properties) {
+    for (const [, propSchema] of schema.properties) {
+      collectTypeRefs(propSchema, refs);
+    }
+  }
 }
 
 function generateOperation(op: Operation): string {
@@ -526,7 +573,22 @@ function generateIndex(spec: ParsedSpec): string {
 }
 
 function toCamelCase(str: string): string {
-  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+  // Convert to camelCase by:
+  // 1. Replace special chars and separators with spaces
+  // 2. Split on whitespace/separators
+  // 3. Lowercase first word, capitalize rest
+  // 4. Join without spaces
+  const words = str
+    .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
+    .split(/\s+/) // Split on whitespace
+    .filter(word => word.length > 0); // Remove empty strings
+
+  if (words.length === 0) return str;
+
+  return words[0].toLowerCase() +
+    words.slice(1)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
 }
 
 function toKebabCase(str: string): string {

@@ -15,6 +15,7 @@
     "test:api": "tsx --tsconfig test-api/tsconfig.json test-api/src/main.ts",
     "test:client": "tsx test-client/test-sdk.ts",
     "generate": "tsx src/cli.ts test-api/openapi.json test-client/generated",
+    "generate:taico": "tsx src/cli.ts ../client/contracts/openapi.json generated/taico",
     "test": "npm run build && npm run test:api & sleep 2 && npm run test:client && kill %1"
   },
   "dependencies": {
