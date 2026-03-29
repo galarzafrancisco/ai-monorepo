@@ -270,8 +270,8 @@ function generateResource(resource: Resource): string {
 function generateOperation(op: Operation): string {
   const lines: string[] = [];
 
-  // Determine if this is a streaming endpoint
-  const isStreaming = op.path.includes('stream') || op.path.includes('events');
+  // Determine if this is a streaming endpoint by checking response content-type
+  const isStreaming = isStreamingEndpoint(op);
 
   // Build method signature
   const methodName = toCamelCase(op.operationId);
@@ -318,7 +318,7 @@ function generateOperation(op: Operation): string {
   }
 
   if (params.includes('signal')) {
-    requestOptions.push('signal: params.signal');
+    requestOptions.push('signal: params?.signal');
   }
 
   if (isStreaming) {
@@ -334,6 +334,20 @@ function generateOperation(op: Operation): string {
   lines.push('  }');
 
   return lines.join('\n');
+}
+
+function isStreamingEndpoint(op: Operation): boolean {
+  // Check if any successful response has text/event-stream content type
+  for (const [status, response] of op.responses.entries()) {
+    if (status >= 200 && status < 300 && response.content) {
+      for (const contentType of response.content.keys()) {
+        if (contentType.includes('text/event-stream')) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 function buildMethodParams(op: Operation): string {
@@ -356,13 +370,20 @@ function buildMethodParams(op: Operation): string {
     if (op.requestBody) {
       const bodySchema = op.requestBody.content.get('application/json');
       if (bodySchema) {
-        paramFields.push(`body: ${schemaToTypeScript(bodySchema.schema)}`);
+        const optional = !op.requestBody.required;
+        paramFields.push(`body${optional ? '?' : ''}: ${schemaToTypeScript(bodySchema.schema)}`);
       }
     }
 
     paramFields.push('signal?: AbortSignal');
 
-    params.push(`params: { ${paramFields.join('; ')} }`);
+    // Check if params object should be optional (all fields are optional)
+    const hasRequiredParams = pathParams.some(p => p.required) ||
+                              queryParams.some(p => p.required) ||
+                              (op.requestBody?.required ?? false);
+
+    const paramsOptional = !hasRequiredParams ? '?' : '';
+    params.push(`params${paramsOptional}: { ${paramFields.join('; ')} }`);
   } else {
     params.push('params?: { signal?: AbortSignal }');
   }

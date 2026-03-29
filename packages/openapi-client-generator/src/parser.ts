@@ -46,6 +46,9 @@ function parseOperations(paths: any): Operation[] {
   const operations: Operation[] = [];
 
   for (const [path, pathItem] of Object.entries(paths)) {
+    // Parse path-level parameters (common to all operations on this path)
+    const pathLevelParams = parseParameters((pathItem as any).parameters || []);
+
     for (const [method, operation] of Object.entries(pathItem as any)) {
       if (!['get', 'post', 'put', 'patch', 'delete'].includes(method)) {
         continue;
@@ -53,8 +56,21 @@ function parseOperations(paths: any): Operation[] {
 
       const op = operation as any;
 
-      // Parse explicit parameters
-      const params = parseParameters(op.parameters || []);
+      // Merge path-level and operation-level parameters (operation takes precedence)
+      const opParams = parseParameters(op.parameters || []);
+      const params = [...pathLevelParams];
+
+      // Add operation params, overriding path-level params with same name/in combination
+      for (const opParam of opParams) {
+        const existingIndex = params.findIndex(
+          p => p.name === opParam.name && p.in === opParam.in
+        );
+        if (existingIndex >= 0) {
+          params[existingIndex] = opParam; // Operation-level takes precedence
+        } else {
+          params.push(opParam);
+        }
+      }
 
       // Extract path parameters from the path string if not already in parameters
       const pathParamMatches = path.matchAll(/\{([^}]+)\}/g);
