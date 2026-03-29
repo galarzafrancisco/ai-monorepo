@@ -275,7 +275,7 @@ function generateOperation(op: Operation): string {
 
   // Build method signature
   const methodName = toCamelCase(op.operationId);
-  const params = buildMethodParams(op);
+  const { params, isParamsOptional } = buildMethodParams(op);
   const returnType = inferReturnType(op, isStreaming);
 
   // Add JSDoc comment
@@ -291,8 +291,9 @@ function generateOperation(op: Operation): string {
   if (pathParams.length > 0) {
     // Use template literal for paths with parameters
     let path = op.path;
+    const paramsPrefix = isParamsOptional ? 'params?.' : 'params.';
     for (const param of pathParams) {
-      path = path.replace(`{${param.name}}`, `\${params.${param.name}}`);
+      path = path.replace(`{${param.name}}`, `\${${paramsPrefix}${param.name}}`);
     }
     pathExpr = `\`${path}\``;
   } else {
@@ -305,16 +306,17 @@ function generateOperation(op: Operation): string {
 
   // Build request options
   const requestOptions: string[] = [];
+  const paramsPrefix = isParamsOptional ? 'params?.' : 'params.';
 
   if (hasQueryParams) {
     const queryObj = queryParams
-      .map((p) => `${p.name}: params.${p.name}`)
+      .map((p) => `${p.name}: ${paramsPrefix}${p.name}`)
       .join(', ');
     requestOptions.push(`params: { ${queryObj} }`);
   }
 
   if (op.requestBody) {
-    requestOptions.push('body: params.body');
+    requestOptions.push(`body: ${paramsPrefix}body`);
   }
 
   if (params.includes('signal')) {
@@ -350,12 +352,14 @@ function isStreamingEndpoint(op: Operation): boolean {
   return false;
 }
 
-function buildMethodParams(op: Operation): string {
+function buildMethodParams(op: Operation): { params: string; isParamsOptional: boolean } {
   const params: string[] = [];
 
   // Collect all parameters
   const pathParams = op.parameters.filter((p) => p.in === 'path');
   const queryParams = op.parameters.filter((p) => p.in === 'query');
+
+  let isParamsOptional = false;
 
   if (pathParams.length > 0 || queryParams.length > 0 || op.requestBody) {
     const paramFields: string[] = [];
@@ -382,13 +386,15 @@ function buildMethodParams(op: Operation): string {
                               queryParams.some(p => p.required) ||
                               (op.requestBody?.required ?? false);
 
-    const paramsOptional = !hasRequiredParams ? '?' : '';
+    isParamsOptional = !hasRequiredParams;
+    const paramsOptional = isParamsOptional ? '?' : '';
     params.push(`params${paramsOptional}: { ${paramFields.join('; ')} }`);
   } else {
     params.push('params?: { signal?: AbortSignal }');
+    isParamsOptional = true;
   }
 
-  return params.join(', ');
+  return { params: params.join(', '), isParamsOptional };
 }
 
 function inferReturnType(op: Operation, isStreaming: boolean): string {
