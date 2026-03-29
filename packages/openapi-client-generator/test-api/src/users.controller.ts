@@ -12,7 +12,7 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, ApiHeader } from '@nestjs/swagger';
 
 export class CreateUserDto {
   name: string;
@@ -169,5 +169,13 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Headers echoed back' })
   checkAuth(@Headers('authorization') auth?: string): { auth: string | null } {
     return { auth: auth || null };
+  }
+
+  @Get('check/custom-header')
+  @ApiOperation({ summary: 'Test endpoint with custom header parameter' })
+  @ApiHeader({ name: 'x-request-id', required: true, description: 'Custom request ID header' })
+  @ApiResponse({ status: 200, description: 'Custom header echoed back' })
+  checkCustomHeader(@Headers('x-request-id') requestId: string): { requestId: string } {
+    return { requestId };
   }
 }

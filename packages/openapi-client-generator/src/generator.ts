@@ -291,9 +291,10 @@ function generateOperation(op: Operation): string {
   if (pathParams.length > 0) {
     // Use template literal for paths with parameters
     let path = op.path;
-    const paramsPrefix = isParamsOptional ? 'params?.' : 'params.';
     for (const param of pathParams) {
-      path = path.replace(`{${param.name}}`, `\${${paramsPrefix}${param.name}}`);
+      const accessor = needsQuoting(param.name) ? `['${param.name}']` : `.${param.name}`;
+      const paramRef = isParamsOptional ? `params?${accessor}` : `params${accessor}`;
+      path = path.replace(`{${param.name}}`, `\${${paramRef}}`);
     }
     pathExpr = `\`${path}\``;
   } else {
@@ -304,15 +305,32 @@ function generateOperation(op: Operation): string {
   const queryParams = op.parameters.filter((p) => p.in === 'query');
   const hasQueryParams = queryParams.length > 0;
 
+  // Build header parameters
+  const headerParams = op.parameters.filter((p) => p.in === 'header');
+  const hasHeaderParams = headerParams.length > 0;
+
   // Build request options
   const requestOptions: string[] = [];
   const paramsPrefix = isParamsOptional ? 'params?.' : 'params.';
 
   if (hasQueryParams) {
     const queryObj = queryParams
-      .map((p) => `${p.name}: ${paramsPrefix}${p.name}`)
+      .map((p) => {
+        const accessor = needsQuoting(p.name) ? `['${p.name}']` : `.${p.name}`;
+        return `${p.name}: ${isParamsOptional ? 'params?' : 'params'}${accessor}`;
+      })
       .join(', ');
     requestOptions.push(`params: { ${queryObj} }`);
+  }
+
+  if (hasHeaderParams) {
+    const headersObj = headerParams
+      .map((p) => {
+        const accessor = needsQuoting(p.name) ? `['${p.name}']` : `.${p.name}`;
+        return `'${p.name}': ${isParamsOptional ? 'params?' : 'params'}${accessor}`;
+      })
+      .join(', ');
+    requestOptions.push(`headers: { ${headersObj} }`);
   }
 
   if (op.requestBody) {
@@ -358,16 +376,18 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
   // Collect all parameters
   const pathParams = op.parameters.filter((p) => p.in === 'path');
   const queryParams = op.parameters.filter((p) => p.in === 'query');
+  const headerParams = op.parameters.filter((p) => p.in === 'header');
 
   let isParamsOptional = false;
 
-  if (pathParams.length > 0 || queryParams.length > 0 || op.requestBody) {
+  if (pathParams.length > 0 || queryParams.length > 0 || headerParams.length > 0 || op.requestBody) {
     const paramFields: string[] = [];
 
-    for (const param of [...pathParams, ...queryParams]) {
+    for (const param of [...pathParams, ...queryParams, ...headerParams]) {
       const optional = !param.required;
+      const quotedName = quoteIfNeeded(param.name);
       paramFields.push(
-        `${param.name}${optional ? '?' : ''}: ${schemaToTypeScript(param.schema)}`
+        `${quotedName}${optional ? '?' : ''}: ${schemaToTypeScript(param.schema)}`
       );
     }
 
@@ -384,6 +404,7 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
     // Check if params object should be optional (all fields are optional)
     const hasRequiredParams = pathParams.some(p => p.required) ||
                               queryParams.some(p => p.required) ||
+                              headerParams.some(p => p.required) ||
                               (op.requestBody?.required ?? false);
 
     isParamsOptional = !hasRequiredParams;
@@ -468,4 +489,13 @@ function toKebabCase(str: string): string {
     .replace(/([a-z])([A-Z])/g, '$1-$2')
     .replace(/[\s_]+/g, '-')
     .toLowerCase();
+}
+
+function needsQuoting(identifier: string): boolean {
+  // Check if identifier needs quoting (contains hyphens or other special chars)
+  return !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(identifier);
+}
+
+function quoteIfNeeded(identifier: string): string {
+  return needsQuoting(identifier) ? `'${identifier}'` : identifier;
 }

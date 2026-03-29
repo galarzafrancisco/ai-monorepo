@@ -87,6 +87,14 @@ async function main() {
     const authCheck = await client.users.UsersController_checkAuth({ signal: undefined });
     console.log(`  Auth header received: ${authCheck.auth?.substring(0, 20)}...`);
 
+    // Test 9b: Custom header parameter
+    console.log('\n✓ Test 9b: Custom header parameter');
+    const customHeaderCheck = await client.users.UsersController_checkCustomHeader({
+      'x-request-id': 'test-request-123',
+      signal: undefined,
+    });
+    console.log(`  Custom header received: ${customHeaderCheck.requestId}`);
+
     // Test 10: DELETE (no content response)
     console.log('\n✓ Test 10: DELETE /users/:id');
     await client.users.UsersController_deleteUser({ id: newUser.id, signal: undefined });
