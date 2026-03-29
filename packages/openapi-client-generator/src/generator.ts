@@ -316,8 +316,15 @@ function generateOperation(op: Operation): string {
   if (hasQueryParams) {
     const queryObj = queryParams
       .map((p) => {
-        const accessor = needsQuoting(p.name) ? `['${p.name}']` : `.${p.name}`;
-        return `${p.name}: ${isParamsOptional ? 'params?' : 'params'}${accessor}`;
+        const needsQuote = needsQuoting(p.name);
+        const quotedKey = quoteIfNeeded(p.name);
+        let paramRef: string;
+        if (isParamsOptional) {
+          paramRef = needsQuote ? `params?.['${p.name}']` : `params?.${p.name}`;
+        } else {
+          paramRef = needsQuote ? `params['${p.name}']` : `params.${p.name}`;
+        }
+        return `${quotedKey}: ${paramRef}`;
       })
       .join(', ');
     requestOptions.push(`params: { ${queryObj} }`);

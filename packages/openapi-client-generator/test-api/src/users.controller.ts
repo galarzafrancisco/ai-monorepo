@@ -178,4 +178,16 @@ export class UsersController {
   checkCustomHeader(@Headers('x-request-id') requestId: string): { requestId: string } {
     return { requestId };
   }
+
+  @Get('search/advanced')
+  @ApiOperation({ summary: 'Test endpoint with query parameters that have special characters' })
+  @ApiQuery({ name: 'page-size', required: false, type: Number })
+  @ApiQuery({ name: 'sort-order', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Query params echoed back' })
+  searchAdvanced(
+    @Query('page-size') pageSize?: number,
+    @Query('sort-order') sortOrder?: string,
+  ): { pageSize: number | undefined; sortOrder: string | undefined } {
+    return { pageSize, sortOrder };
+  }
 }

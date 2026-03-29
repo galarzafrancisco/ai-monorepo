@@ -95,6 +95,15 @@ async function main() {
     });
     console.log(`  Custom header received: ${customHeaderCheck.requestId}`);
 
+    // Test 9c: Query parameters with special characters (hyphens)
+    console.log('\n✓ Test 9c: Query parameters with special characters');
+    const searchResults = await client.users.UsersController_searchAdvanced({
+      'page-size': 10,
+      'sort-order': 'desc',
+      signal: undefined,
+    });
+    console.log(`  Query params received: page-size=${searchResults.pageSize}, sort-order=${searchResults.sortOrder}`);
+
     // Test 10: DELETE (no content response)
     console.log('\n✓ Test 10: DELETE /users/:id');
     await client.users.UsersController_deleteUser({ id: newUser.id, signal: undefined });
