@@ -1,0 +1,5 @@
+node_modules/
+dist/
+test-client/generated/
+test-api/openapi.json
+*.log
