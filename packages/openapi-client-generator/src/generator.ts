@@ -129,11 +129,26 @@ export class BaseClient {
       }
     }
 
-    // Build headers
-    const headers: Record<string, string> = {
-      ...this.config.headers,
-      ...options?.headers,
-    };
+    // Build headers (filter out undefined values)
+    const headers: Record<string, string> = {};
+
+    // Add config headers
+    if (this.config.headers) {
+      for (const [key, value] of Object.entries(this.config.headers)) {
+        if (value !== undefined && value !== null) {
+          headers[key] = String(value);
+        }
+      }
+    }
+
+    // Add request-specific headers
+    if (options?.headers) {
+      for (const [key, value] of Object.entries(options.headers)) {
+        if (value !== undefined && value !== null) {
+          headers[key] = String(value);
+        }
+      }
+    }
 
     // Add auth token if available
     if (this.config.getAccessToken) {
@@ -188,11 +203,28 @@ export class BaseClient {
       }
     }
 
+    // Build headers (filter out undefined values)
     const headers: Record<string, string> = {
-      ...this.config.headers,
-      ...options?.headers,
       'Accept': 'text/event-stream',
     };
+
+    // Add config headers
+    if (this.config.headers) {
+      for (const [key, value] of Object.entries(this.config.headers)) {
+        if (value !== undefined && value !== null) {
+          headers[key] = String(value);
+        }
+      }
+    }
+
+    // Add request-specific headers
+    if (options?.headers) {
+      for (const [key, value] of Object.entries(options.headers)) {
+        if (value !== undefined && value !== null) {
+          headers[key] = String(value);
+        }
+      }
+    }
 
     if (this.config.getAccessToken) {
       const token = await this.config.getAccessToken();
@@ -333,8 +365,14 @@ function generateOperation(op: Operation): string {
   if (hasHeaderParams) {
     const headersObj = headerParams
       .map((p) => {
-        const accessor = needsQuoting(p.name) ? `['${p.name}']` : `.${p.name}`;
-        return `'${p.name}': ${isParamsOptional ? 'params?' : 'params'}${accessor}`;
+        const needsQuote = needsQuoting(p.name);
+        let paramRef: string;
+        if (isParamsOptional) {
+          paramRef = needsQuote ? `params?.['${p.name}']` : `params?.${p.name}`;
+        } else {
+          paramRef = needsQuote ? `params['${p.name}']` : `params.${p.name}`;
+        }
+        return `'${p.name}': ${paramRef}`;
       })
       .join(', ');
     requestOptions.push(`headers: { ${headersObj} }`);

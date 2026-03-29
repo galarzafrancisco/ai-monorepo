@@ -190,4 +190,12 @@ export class UsersController {
   ): { pageSize: number | undefined; sortOrder: string | undefined } {
     return { pageSize, sortOrder };
   }
+
+  @Get('check/optional-header')
+  @ApiOperation({ summary: 'Test endpoint with optional header parameter' })
+  @ApiHeader({ name: 'x-tracking-id', required: false, description: 'Optional tracking ID header' })
+  @ApiResponse({ status: 200, description: 'Optional header echoed back' })
+  checkOptionalHeader(@Headers('x-tracking-id') trackingId?: string): { trackingId: string | null } {
+    return { trackingId: trackingId || null };
+  }
 }

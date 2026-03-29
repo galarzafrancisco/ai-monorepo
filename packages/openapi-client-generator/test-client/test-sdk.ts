@@ -104,6 +104,21 @@ async function main() {
     });
     console.log(`  Query params received: page-size=${searchResults.pageSize}, sort-order=${searchResults.sortOrder}`);
 
+    // Test 9d: Optional header parameter with value
+    console.log('\n✓ Test 9d: Optional header parameter (with value)');
+    const optionalHeaderWithValue = await client.users.UsersController_checkOptionalHeader({
+      'x-tracking-id': 'track-456',
+      signal: undefined,
+    });
+    console.log(`  Optional header received: ${optionalHeaderWithValue.trackingId}`);
+
+    // Test 9e: Optional header parameter without value (omitted)
+    console.log('\n✓ Test 9e: Optional header parameter (without value)');
+    const optionalHeaderWithoutValue = await client.users.UsersController_checkOptionalHeader({
+      signal: undefined,
+    });
+    console.log(`  Optional header received: ${optionalHeaderWithoutValue.trackingId} (should be null)`);
+
     // Test 10: DELETE (no content response)
     console.log('\n✓ Test 10: DELETE /users/:id');
     await client.users.UsersController_deleteUser({ id: newUser.id, signal: undefined });
