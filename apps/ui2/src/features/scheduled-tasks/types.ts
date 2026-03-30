@@ -1,4 +1,5 @@
-import type { ScheduledTaskResponseDto, TaskBlueprintResponseDto } from '@taico/client';
-
-export type ScheduledTask = ScheduledTaskResponseDto;
-export type TaskBlueprint = TaskBlueprintResponseDto;
+// Re-export types from v2 shared package
+export type {
+  ScheduledTaskResponseDto as ScheduledTask,
+  TaskBlueprintResponseDto as TaskBlueprint,
+} from '@taico/client/v2';

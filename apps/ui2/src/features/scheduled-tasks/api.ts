@@ -1,11 +1,12 @@
-import { OpenAPI, TaskBlueprintsService, ScheduledTasksService } from '@taico/client';
+import { ApiClient } from '@taico/client/v2';
 import { BFF_BASE_URL } from '../../config/api';
 
-OpenAPI.BASE = BFF_BASE_URL;
+const baseUrl = BFF_BASE_URL || window.location.origin;
 
-export { TaskBlueprintsService, ScheduledTasksService };
+const client = new ApiClient({
+  baseUrl,
+  credentials: 'include',
+});
 
-export const api = {
-  taskBlueprints: TaskBlueprintsService,
-  scheduledTasks: ScheduledTasksService,
-};
+export const TaskBlueprintsService = client.taskBlueprints;
+export const ScheduledTasksService = client.scheduledTasks;
