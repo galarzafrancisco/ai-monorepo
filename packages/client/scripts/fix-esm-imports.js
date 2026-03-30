@@ -7,7 +7,7 @@
 import { readdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 
-const CLIENT_DIR = new URL('../src/client', import.meta.url).pathname;
+const CLIENT_DIR = new URL('../src/v1/client', import.meta.url).pathname;
 
 async function* walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });

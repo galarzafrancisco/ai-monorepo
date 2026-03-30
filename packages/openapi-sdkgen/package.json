@@ -25,7 +25,6 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "prepare": "npm run build",
     "test:api": "tsx --tsconfig test/api/tsconfig.json test/api/src/main.ts",
     "test:client": "tsx test/client/test-sdk.ts",
     "generate:spec": "tsx --tsconfig test/api/tsconfig.json test/api/src/main.ts --generate-spec",
