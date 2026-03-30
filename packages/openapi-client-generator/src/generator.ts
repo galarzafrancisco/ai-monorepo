@@ -101,12 +101,29 @@ function generateBaseClient(): string {
   return `// Base client with fetch wrapper
 export interface ClientConfig {
   baseUrl: string;
+  /** Bearer token auth: sets Authorization: Bearer <token> */
   getAccessToken?: () => string | Promise<string>;
+  /** Cookie auth for Node.js: sets Cookie header directly */
+  getCookies?: () => string | Promise<string>;
+  /** Cookie auth for browsers: passed as fetch credentials option (e.g. 'include') */
+  credentials?: 'include' | 'same-origin' | 'omit';
   headers?: Record<string, string>;
 }
 
 export class BaseClient {
   constructor(protected config: ClientConfig) {}
+
+  private async buildAuthHeaders(): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
+    if (this.config.getAccessToken) {
+      const token = await this.config.getAccessToken();
+      headers['Authorization'] = \`Bearer \${token}\`;
+    }
+    if (this.config.getCookies) {
+      headers['Cookie'] = await this.config.getCookies();
+    }
+    return headers;
+  }
 
   protected async request<T>(
     method: string,
@@ -150,11 +167,8 @@ export class BaseClient {
       }
     }
 
-    // Add auth token if available
-    if (this.config.getAccessToken) {
-      const token = await this.config.getAccessToken();
-      headers['Authorization'] = \`Bearer \${token}\`;
-    }
+    // Add auth headers
+    Object.assign(headers, await this.buildAuthHeaders());
 
     // Add content type for body requests
     if (options?.body && !headers['Content-Type']) {
@@ -166,6 +180,7 @@ export class BaseClient {
       headers,
       body: options?.body ? JSON.stringify(options.body) : undefined,
       signal: options?.signal,
+      credentials: this.config.credentials,
     });
 
     if (!response.ok) {
@@ -226,15 +241,14 @@ export class BaseClient {
       }
     }
 
-    if (this.config.getAccessToken) {
-      const token = await this.config.getAccessToken();
-      headers['Authorization'] = \`Bearer \${token}\`;
-    }
+    // Add auth headers
+    Object.assign(headers, await this.buildAuthHeaders());
 
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers,
       signal: options?.signal,
+      credentials: this.config.credentials,
     });
 
     if (!response.ok) {

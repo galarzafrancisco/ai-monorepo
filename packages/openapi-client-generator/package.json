@@ -14,10 +14,11 @@
     "dev": "tsc --watch",
     "test:api": "tsx --tsconfig test/api/tsconfig.json test/api/src/main.ts",
     "test:client": "tsx test/client/test-sdk.ts",
+    "test:taico": "tsx test/taico/test-sdk.ts",
     "generate:spec": "tsx --tsconfig test/api/tsconfig.json test/api/src/main.ts --generate-spec",
     "clean": "rm -rf test/client/generated",
     "generate": "tsx src/cli.ts test/api/openapi.json test/client/generated",
-    "generate:taico": "tsx src/cli.ts ../client/contracts/openapi.json generated/taico",
+    "generate:taico": "tsx src/cli.ts ../client/contracts/openapi.json test/taico/generated",
     "lint:generated": "tsc --noEmit --project test/client/tsconfig.json",
     "test": "npm run clean && npm run generate:spec && npm run generate && npm run lint:generated && node test/run.mjs"
   },
