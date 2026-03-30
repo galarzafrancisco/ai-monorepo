@@ -803,7 +803,9 @@
             "in": "query",
             "schema": {
               "type": "array",
-              "items": {}
+              "items": {
+                "type": "number"
+              }
             }
           },
           {
@@ -812,7 +814,9 @@
             "in": "query",
             "schema": {
               "type": "array",
-              "items": {}
+              "items": {
+                "type": "string"
+              }
             }
           }
         ],
@@ -943,7 +947,9 @@
             "in": "query",
             "schema": {
               "type": "array",
-              "items": {}
+              "items": {
+                "type": "string"
+              }
             }
           },
           {
@@ -1162,7 +1168,86 @@
             "description": "Resource deleted"
           }
         },
-        "summary": "Test DELETE with path parameter",
+        "summary": "Test DELETE with path parameter returning 204",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/delete-confirmed/{id}": {
+      "delete": {
+        "operationId": "ParametersController_deleteWithConfirmation",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resource deleted with confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteConfirmationDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test DELETE returning JSON confirmation body",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/cookies": {
+      "get": {
+        "operationId": "ParametersController_cookieParams",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookieParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Test cookie parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/head-check": {
+      "head": {
+        "operationId": "ParametersController_headCheck",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Headers only, no body"
+          }
+        },
+        "summary": "Test HEAD method",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/options-check": {
+      "options": {
+        "operationId": "ParametersController_optionsCheck",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CORS preflight or available methods"
+          }
+        },
+        "summary": "Test OPTIONS method",
         "tags": [
           "parameters"
         ]
@@ -2002,7 +2087,7 @@
           "200": {
             "description": "Plain text response",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
@@ -4239,6 +4324,42 @@
           "pathId",
           "queryParam",
           "headerValue"
+        ]
+      },
+      "DeleteConfirmationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "deleted",
+          "message"
+        ]
+      },
+      "CookieParamsResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
         ]
       },
       "FlatBodyDto": {

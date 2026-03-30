@@ -256,6 +256,80 @@ async function main() {
     const eventsList = await client.polymorphism.PolymorphismController_getEventsList({ signal: undefined });
     console.log(`  Events: ${eventsList.events?.length} events`);
 
+    // Test 29: Parameters - cookie params
+    console.log('\n✓ Test 29: Parameters - cookie params endpoint');
+    const cookieParams = await client.parameters.ParametersController_cookieParams({ signal: undefined });
+    console.log(`  Cookie message: ${cookieParams.message}`);
+
+    // Test 30: Parameters - HEAD endpoint
+    console.log('\n✓ Test 30: Parameters - HEAD endpoint');
+    await client.parameters.ParametersController_headCheck({ signal: undefined });
+    console.log('  HEAD request completed');
+
+    // Test 31: Parameters - OPTIONS endpoint
+    console.log('\n✓ Test 31: Parameters - OPTIONS endpoint');
+    await client.parameters.ParametersController_optionsCheck({ signal: undefined });
+    console.log('  OPTIONS request completed');
+
+    // Test 32: Bodies - nested/array/primitive body variants
+    console.log('\n✓ Test 32: Bodies - representative body variants');
+    const nestedBody = await client.bodies.BodiesController_nestedBody({
+      body: {
+        name: 'Nested User',
+        address: {
+          street: '123 Main St',
+          city: 'Lima',
+          country: 'PE',
+          postalCode: '15001',
+        },
+        phoneNumbers: ['+51-999-111-222'],
+      },
+      signal: undefined,
+    });
+    const arrayBody = await client.bodies.BodiesController_jsonArray({
+      body: [
+        { id: 'item-1', name: 'Keyboard', quantity: 1 },
+        { id: 'item-2', name: 'Mouse', quantity: 2 },
+      ],
+      signal: undefined,
+    });
+    console.log(`  Nested name: ${nestedBody.name}, items: ${arrayBody.length}`);
+
+    // Test 33: Files - uploads and downloads
+    console.log('\n✓ Test 33: Files - representative upload/download endpoints');
+    const uploadedFile = await client.files.FilesController_uploadSingleFile({
+      body: { file: 'mock-file-content' },
+      signal: undefined,
+    });
+    const uploadWithMetadata = await client.files.FilesController_uploadFileWithMetadata({
+      body: {
+        file: 'mock-file-binary',
+        title: 'SDK test file',
+        description: 'Uploaded from generated client test',
+        tags: ['sdk', 'openapi'],
+      },
+      signal: undefined,
+    });
+    const fileInfo = await client.files.FilesController_getFileInfo({
+      filename: 'sample.bin',
+      signal: undefined,
+    });
+    const downloadedText = await client.files.FilesController_downloadTextFile({
+      filename: 'sample.txt',
+      signal: undefined,
+    });
+    console.log(`  Upload: ${uploadedFile.filename}, metadata title: ${uploadWithMetadata.title}, info: ${fileInfo.filename}, text length: ${String(downloadedText).length}`);
+
+    // Test 34: Edge-cases - naming and recursion endpoints
+    console.log('\n✓ Test 34: Edge-cases - naming/circular endpoints');
+    const version2 = await client.edgeCases.EdgeCasesController_testVersion2({ signal: undefined });
+    const acronyms = await client.edgeCases.EdgeCasesController_testAcronyms({ signal: undefined });
+    const treeNode = await client.edgeCases.EdgeCasesController_testTreeNode({ signal: undefined });
+    const collision = await client.edgeCases.EdgeCasesController_testCollision({ signal: undefined });
+    console.log(
+      `  version2: ${version2.nameV2}, acronym key: ${acronyms.apiKey}, root tree: ${treeNode.name}, collision: ${collision.username}`
+    );
+
     console.log('\n✅ All tests passed!');
   } catch (error) {
     console.error('\n❌ Test failed:', error);

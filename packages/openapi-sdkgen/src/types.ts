@@ -30,7 +30,7 @@ export interface Operation {
 
 export interface Parameter {
   name: string;
-  in: 'path' | 'query' | 'header';
+  in: 'path' | 'query' | 'header' | 'cookie';
   required: boolean;
   schema: SchemaInfo;
   description?: string;
