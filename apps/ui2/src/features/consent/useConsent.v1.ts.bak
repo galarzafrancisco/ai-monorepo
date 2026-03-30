@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AuthorizationServerService } from './api';
-import type { ConsentDecisionDto, GetConsentMetadataResponseDto } from './api';
-import { BFF_BASE_URL } from '../../config/api';
+import { ConsentDecisionDto, GetConsentMetadataResponseDto, OpenAPI } from "@taico/client";
 
 export const useConsent = () => {
   console.log('useConsent mounting');
@@ -25,7 +24,7 @@ export const useConsent = () => {
     setError(null);
 
     try {
-      const response = await AuthorizationServerService.AuthorizationController_getConsentMetadata({ flowId });
+      const response = await AuthorizationServerService.authorizationControllerGetConsentMetadata(flowId);
       setConsentMetadata(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load authorization details');
@@ -45,7 +44,7 @@ export const useConsent = () => {
         approved: approved,
       };
 
-      const bffBaseUrl = BFF_BASE_URL || window.location.origin;
+      const bffBaseUrl = OpenAPI.BASE ?? '';
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = `${bffBaseUrl}/api/v1/auth/authorize/mcp/${serverId}/0.0.0`;

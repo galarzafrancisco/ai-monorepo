@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useConsent } from "./useConsent"; // your abstraction hook
-import { GetConsentMetadataResponseDto } from "@taico/client";
+import type { GetConsentMetadataResponseDto } from "./api";
 
 // Shape this to match what pages/layout need.
 export type ConsentContextValue = {
