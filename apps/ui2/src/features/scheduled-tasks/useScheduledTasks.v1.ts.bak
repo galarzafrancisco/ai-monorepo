@@ -6,7 +6,7 @@ import type {
   CreateTaskBlueprintDto,
   UpdateScheduledTaskDto,
   UpdateTaskBlueprintDto,
-} from '@taico/client/v2';
+} from '@taico/client';
 
 const PAGE_SIZE = 100;
 
@@ -45,7 +45,7 @@ export const useScheduledTasks = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await ScheduledTasksService.ScheduledTasksController_listScheduledTasks({ page: 1, limit: PAGE_SIZE });
+      const response = await ScheduledTasksService.scheduledTasksControllerListScheduledTasks(1, PAGE_SIZE);
       setScheduledTasks(response.items);
       response.items.forEach((item) => {
         if (item.taskBlueprint) {
@@ -60,7 +60,7 @@ export const useScheduledTasks = () => {
   }, [upsertBlueprint]);
 
   const loadScheduledTask = useCallback(async (id: string) => {
-    const task = await ScheduledTasksService.ScheduledTasksController_getScheduledTask({ id });
+    const task = await ScheduledTasksService.scheduledTasksControllerGetScheduledTask(id);
     upsertScheduledTask(task);
     if (task.taskBlueprint) {
       upsertBlueprint(task.taskBlueprint);
@@ -69,7 +69,7 @@ export const useScheduledTasks = () => {
   }, [upsertScheduledTask, upsertBlueprint]);
 
   const loadBlueprint = useCallback(async (id: string) => {
-    const blueprint = await TaskBlueprintsService.TaskBlueprintsController_getTaskBlueprint({ id });
+    const blueprint = await TaskBlueprintsService.taskBlueprintsControllerGetTaskBlueprint(id);
     upsertBlueprint(blueprint);
     return blueprint;
   }, [upsertBlueprint]);
@@ -77,7 +77,7 @@ export const useScheduledTasks = () => {
   const loadBlueprints = useCallback(async () => {
     setError(null);
     try {
-      const response = await TaskBlueprintsService.TaskBlueprintsController_listTaskBlueprints({ page: 1, limit: PAGE_SIZE });
+      const response = await TaskBlueprintsService.taskBlueprintsControllerListTaskBlueprints(1, PAGE_SIZE);
       setBlueprints(response.items);
       response.items.forEach((item) => upsertBlueprint(item));
     } catch (err) {
@@ -86,19 +86,19 @@ export const useScheduledTasks = () => {
   }, [upsertBlueprint]);
 
   const createBlueprint = useCallback(async (payload: CreateTaskBlueprintDto) => {
-    const blueprint = await TaskBlueprintsService.TaskBlueprintsController_createTaskBlueprint({ body: payload });
+    const blueprint = await TaskBlueprintsService.taskBlueprintsControllerCreateTaskBlueprint(payload);
     upsertBlueprint(blueprint);
     return blueprint;
   }, [upsertBlueprint]);
 
   const updateBlueprint = useCallback(async (id: string, payload: UpdateTaskBlueprintDto) => {
-    const blueprint = await TaskBlueprintsService.TaskBlueprintsController_updateTaskBlueprint({ id, body: payload });
+    const blueprint = await TaskBlueprintsService.taskBlueprintsControllerUpdateTaskBlueprint(id, payload);
     upsertBlueprint(blueprint);
     return blueprint;
   }, [upsertBlueprint]);
 
   const createScheduledTask = useCallback(async (payload: CreateScheduledTaskDto) => {
-    const task = await ScheduledTasksService.ScheduledTasksController_createScheduledTask({ body: payload });
+    const task = await ScheduledTasksService.scheduledTasksControllerCreateScheduledTask(payload);
     upsertScheduledTask(task);
     if (task.taskBlueprint) {
       upsertBlueprint(task.taskBlueprint);
@@ -107,7 +107,7 @@ export const useScheduledTasks = () => {
   }, [upsertScheduledTask, upsertBlueprint]);
 
   const updateScheduledTask = useCallback(async (id: string, payload: UpdateScheduledTaskDto) => {
-    const task = await ScheduledTasksService.ScheduledTasksController_updateScheduledTask({ id, body: payload });
+    const task = await ScheduledTasksService.scheduledTasksControllerUpdateScheduledTask(id, payload);
     upsertScheduledTask(task);
     if (task.taskBlueprint) {
       upsertBlueprint(task.taskBlueprint);
@@ -116,12 +116,12 @@ export const useScheduledTasks = () => {
   }, [upsertScheduledTask, upsertBlueprint]);
 
   const deleteScheduledTask = useCallback(async (id: string) => {
-    await ScheduledTasksService.ScheduledTasksController_deleteScheduledTask({ id });
+    await ScheduledTasksService.scheduledTasksControllerDeleteScheduledTask(id);
     setScheduledTasks((prev) => prev.filter((task) => task.id !== id));
   }, []);
 
   const deleteBlueprint = useCallback(async (id: string) => {
-    await TaskBlueprintsService.TaskBlueprintsController_deleteTaskBlueprint({ id });
+    await TaskBlueprintsService.taskBlueprintsControllerDeleteTaskBlueprint(id);
     setBlueprints((prev) => prev.filter((item) => item.id !== id));
     setBlueprintsById((prev) => {
       const next = { ...prev };

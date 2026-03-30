@@ -8,6 +8,7 @@ import { TASKS_STATUS_NAV } from "./const";
 import { ShippedCelebration } from "./ShippedCelebration";
 import { Button } from "../../ui/primitives";
 import { ScheduledTasksService } from "../scheduled-tasks/api";
+import type { ScheduledTaskResponseDto } from "@taico/client/v2";
 import "./TasksLayout.css";
 
 export function TasksLayout(): JSX.Element {
@@ -20,11 +21,11 @@ export function TasksLayout(): JSX.Element {
     let isMounted = true;
     const loadCount = async () => {
       try {
-        const response = await ScheduledTasksService.scheduledTasksControllerListScheduledTasks(1, 50);
+        const response = await ScheduledTasksService.ScheduledTasksController_listScheduledTasks({ page: 1, limit: 50 });
         if (!isMounted) {
           return;
         }
-        const active = response.items.filter((task) => task.enabled).length;
+        const active = response.items.filter((task: ScheduledTaskResponseDto) => task.enabled).length;
         setActiveScheduleCount(active);
       } catch {
         if (isMounted) {
