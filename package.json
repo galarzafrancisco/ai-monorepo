@@ -21,6 +21,7 @@
     "typecheck": "npm -ws run typecheck || true",
     "install:dev": "npm install --only=dev",
     "test:e2e": "npm -w apps/backend run test:e2e",
+    "test:openapi-client-generator": "npm -w packages/openapi-client-generator run test",
     "test:e2e:worker-auth": "npm -w apps/backend run test:e2e:worker-auth",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
