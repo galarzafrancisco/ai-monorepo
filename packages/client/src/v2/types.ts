@@ -40,7 +40,7 @@ export interface PatchProjectDto {
 export interface RegisterClientDto {
   redirect_uris: string[];
   token_endpoint_auth_method: 'none' | 'client_secret_basic';
-  grant_types: 'authorization_code' | 'refresh_token'[];
+  grant_types: ('authorization_code' | 'refresh_token')[];
   response_types: 'code'[];
   client_name: string;
   scope?: string[];
@@ -59,7 +59,7 @@ export interface ClientRegistrationResponseDto {
   client_id: string;
   client_name: string;
   redirect_uris: string[];
-  grant_types: 'authorization_code' | 'refresh_token'[];
+  grant_types: ('authorization_code' | 'refresh_token')[];
   token_endpoint_auth_method: 'none' | 'client_secret_basic';
   scope?: string | null;
   contacts?: string[] | null;
@@ -635,7 +635,7 @@ export interface CreateAgentDto {
   systemPrompt: string;
   providerId?: string;
   modelId?: string;
-  statusTriggers?: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'[];
+  statusTriggers?: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
   tagTriggers?: string[];
   allowedTools?: string[];
   isActive?: boolean;
@@ -653,7 +653,7 @@ export interface AgentResponseDto {
   systemPrompt: string;
   providerId?: string | null;
   modelId?: string | null;
-  statusTriggers: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'[];
+  statusTriggers: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
   tagTriggers: string[];
   allowedTools: string[];
   isActive: boolean;
@@ -678,7 +678,7 @@ export interface PatchAgentDto {
   systemPrompt?: string;
   providerId?: string;
   modelId?: string;
-  statusTriggers?: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE'[];
+  statusTriggers?: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
   tagTriggers?: string[];
   type?: 'claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other';
   description?: string | null;
@@ -969,7 +969,7 @@ export interface AuthorizationServerMetadataDto {
   registration_endpoint: string;
   scopes_supported: string[];
   response_types_supported: string[];
-  grant_types_supported: 'authorization_code' | 'refresh_token'[];
+  grant_types_supported: ('authorization_code' | 'refresh_token')[];
   token_endpoint_auth_methods_supported: string[];
   code_challenge_methods_supported: string[];
 }

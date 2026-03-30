@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { PopShell } from "../../app/shells/PopShell";
 import { Text } from "../../ui/primitives";
-import { MetaService, MetaTagResponseDto } from "@taico/client";
+import type { MetaTagResponseDto } from "@taico/client/v2";
+import { MetaService } from "./api";
 import "./EditTagTriggersPop.css";
 
 type EditTagTriggersPopProps = {
@@ -26,7 +27,7 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
   useEffect(() => {
     const loadTags = async () => {
       try {
-        const tags = await MetaService.metaControllerGetAllTags();
+        const tags = await MetaService.MetaController_getAllTags({});
         setAllTags(tags);
       } catch (err) {
         console.error('Failed to load tags:', err);
@@ -111,8 +112,10 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
 
   const handleCreateNewTag = async () => {
     try {
-      const newTag = await MetaService.metaControllerCreateTag({
-        name: query.trim(),
+      const newTag = await MetaService.MetaController_createTag({
+        body: {
+          name: query.trim(),
+        }
       });
       setAllTags(prev => [...prev, newTag]);
       setSelectedTagIds(prev => new Set([...prev, newTag.id]));

@@ -5,8 +5,8 @@ import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chi
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
-import { AgentResponseDto, AuthorizationServerService, ScopeDto, MetaService, MetaTagResponseDto } from "@taico/client";
-import { AgentTokensService } from './api';
+import type { AgentResponseDto, ScopeDto, MetaTagResponseDto } from "@taico/client/v2";
+import { AgentTokensService, AuthorizationServerService, MetaService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
 import { EditTagTriggersPop } from './EditTagTriggersPop';
@@ -63,7 +63,7 @@ export function AgentDetailPage() {
     if (!slug) return;
     setTokensLoading(true);
     try {
-      const loadedTokens = await AgentTokensService.agentTokensControllerListTokens(slug);
+      const loadedTokens = await AgentTokensService.AgentTokensController_listTokens({ slug });
       setTokens(loadedTokens);
     } catch (err) {
       console.error('Failed to load tokens:', err);
@@ -76,7 +76,7 @@ export function AgentDetailPage() {
   const loadScopes = useCallback(async () => {
     setScopesLoading(true);
     try {
-      const response = await AuthorizationServerService.authorizationControllerGetScopes();
+      const response = await AuthorizationServerService.AuthorizationController_getScopes({});
       setAvailableScopes(response.scopes);
     } catch (err) {
       console.error('Failed to load scopes:', err);
@@ -89,7 +89,7 @@ export function AgentDetailPage() {
   const loadTags = useCallback(async () => {
     setTagsLoading(true);
     try {
-      const tags = await MetaService.metaControllerGetAllTags();
+      const tags = await MetaService.MetaController_getAllTags({});
       setAllTags(tags);
     } catch (err) {
       console.error('Failed to load tags:', err);
@@ -150,10 +150,13 @@ export function AgentDetailPage() {
     setIsCreatingToken(true);
     try {
       const scopes = Array.from(selectedScopes);
-      const result = await AgentTokensService.agentTokensControllerIssueToken(slug, {
-        name: tokenName.trim(),
-        scopes,
-        expirationDays: tokenExpDays,
+      const result = await AgentTokensService.AgentTokensController_issueToken({
+        slug,
+        body: {
+          name: tokenName.trim(),
+          scopes,
+          expirationDays: tokenExpDays,
+        }
       });
       setNewlyCreatedToken(result.token);
       setShowCreateForm(false);
@@ -254,7 +257,7 @@ export function AgentDetailPage() {
   };
 
   // Handle saving agent type
-  const handleSaveAgentType = async ({ type }: { type: AgentResponseDto.type }): Promise<boolean> => {
+  const handleSaveAgentType = async ({ type }: { type: AgentResponseDto['type'] }): Promise<boolean> => {
     if (!agent) return false;
     try {
       const updated = await updateAgent(agent.actorId, { type });
@@ -322,7 +325,7 @@ export function AgentDetailPage() {
       return;
     }
     try {
-      await AgentTokensService.agentTokensControllerRevokeToken(slug, tokenId);
+      await AgentTokensService.AgentTokensController_revokeToken({ slug, tokenId });
       await loadTokens();
     } catch (err) {
       console.error('Failed to revoke token:', err);
@@ -335,10 +338,13 @@ export function AgentDetailPage() {
     if (!slug) return;
     setIsCreatingToken(true);
     try {
-      const result = await AgentTokensService.agentTokensControllerIssueToken(slug, {
-        name: token.name,
-        scopes: token.scopes,
-        expirationDays: tokenExpDays,
+      const result = await AgentTokensService.AgentTokensController_issueToken({
+        slug,
+        body: {
+          name: token.name,
+          scopes: token.scopes,
+          expirationDays: tokenExpDays,
+        }
       });
       setNewlyCreatedToken(result.token);
       await loadTokens();
@@ -787,14 +793,14 @@ export function AgentDetailPage() {
   );
 }
 
-function getTypeTag(type: AgentResponseDto.type): DataRowTag {
-  const typeColors: Record<AgentResponseDto.type, DataRowTag['color']> = {
-    [AgentResponseDto.type.CLAUDE]: 'orange',
-    [AgentResponseDto.type.CODEX]: 'green',
-    [AgentResponseDto.type.OPENCODE]: 'blue',
-    [AgentResponseDto.type.ADK]: 'red',
-    [AgentResponseDto.type.GITHUBCOPILOT]: 'yellow',
-    [AgentResponseDto.type.OTHER]: 'gray',
+function getTypeTag(type: AgentResponseDto['type']): DataRowTag {
+  const typeColors: Record<AgentResponseDto['type'], DataRowTag['color']> = {
+    'claude': 'orange',
+    'codex': 'green',
+    'opencode': 'blue',
+    'adk': 'red',
+    'githubcopilot': 'yellow',
+    'other': 'gray',
   };
 
   return {

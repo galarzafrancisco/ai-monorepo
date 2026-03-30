@@ -1,14 +1,23 @@
-import { OpenAPI, AgentService, AgentTokensService } from "@taico/client";
+import { ApiClient } from '@taico/client/v2';
 import { BFF_BASE_URL } from '../../config/api';
 
-// Use centralized API configuration
-OpenAPI.BASE = BFF_BASE_URL;
+const baseUrl = BFF_BASE_URL || window.location.origin;
 
-export { AgentService as AgentsService };
-export { AgentTokensService };
+const client = new ApiClient({
+  baseUrl,
+  credentials: 'include',
+});
+
+// Export resources needed by the agents feature
+export const AgentsService = client.agent;
+export const AgentTokensService = client.agentTokens;
+export const AuthorizationServerService = client.authorizationServer;
+export const MetaService = client.meta;
 
 // Export API client for easier access to all endpoints
 export const api = {
-  agent: AgentService,
-  tokens: AgentTokensService,
+  agent: client.agent,
+  tokens: client.agentTokens,
+  authorizationServer: client.authorizationServer,
+  meta: client.meta,
 };

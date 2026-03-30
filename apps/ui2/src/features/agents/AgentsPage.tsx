@@ -5,7 +5,7 @@ import { useAgentsCtx } from "./AgentsProvider";
 import { Agent } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
-import { AgentResponseDto } from "@taico/client";
+import type { AgentResponseDto } from "@taico/client/v2";
 import { NewAgentPop } from "./NewAgentPop";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import "./AgentsPage.css";
@@ -146,14 +146,14 @@ function AgentRow({ agent, onClick }: { agent: Agent; onClick?: () => void }): J
   );
 }
 
-function getTypeTag(type: AgentResponseDto.type): DataRowTag {
-  const typeColors: Record<AgentResponseDto.type, DataRowTag['color']> = {
-    [AgentResponseDto.type.CLAUDE]: 'purple',
-    [AgentResponseDto.type.CODEX]: 'green',
-    [AgentResponseDto.type.OPENCODE]: 'blue',
-    [AgentResponseDto.type.ADK]: 'red',
-    [AgentResponseDto.type.GITHUBCOPILOT]: 'yellow',
-    [AgentResponseDto.type.OTHER]: 'gray',
+function getTypeTag(type: AgentResponseDto['type']): DataRowTag {
+  const typeColors: Record<AgentResponseDto['type'], DataRowTag['color']> = {
+    'claude': 'purple',
+    'codex': 'green',
+    'opencode': 'blue',
+    'adk': 'red',
+    'githubcopilot': 'yellow',
+    'other': 'gray',
   };
 
   return {

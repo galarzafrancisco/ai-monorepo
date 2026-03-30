@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo, useState } from "react";
 import { useAgents } from "./useAgents";
 import type { Agent } from "./types";
 import type { TaskStatus } from "../../shared/const/taskStatus";
-import type { AgentResponseDto, PatchAgentDto } from "@taico/client";
+import type { AgentResponseDto, PatchAgentDto } from "@taico/client/v2";
 
 // Shape this to match what pages/layout need.
 export type AgentsContextValue = {
