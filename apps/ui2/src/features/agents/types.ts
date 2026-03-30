@@ -4,4 +4,4 @@ export type {
   IssueAccessTokenRequestDto,
   IssueAccessTokenResponseDto,
   IssuedAccessTokenResponseDto as AgentToken,
-} from "@taico/client";
+} from "@taico/client/v2";

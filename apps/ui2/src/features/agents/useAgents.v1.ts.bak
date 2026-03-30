@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AgentsService } from './api';
 import type { Agent } from './types';
 import type { TaskStatus } from '../../shared/const/taskStatus';
-import type { AgentResponseDto, PatchAgentDto } from "@taico/client/v2";
+import type { AgentResponseDto, PatchAgentDto } from "@taico/client";
 
 export const useAgents = () => {
   // UI feedback
@@ -31,7 +31,7 @@ export const useAgents = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await AgentsService.AgentsController_listAgents({});
+      const response = await AgentsService.agentsControllerListAgents();
       setAgents(sortAgents(response.items || []));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load agents');
@@ -45,7 +45,7 @@ export const useAgents = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const agent = await AgentsService.AgentsController_getAgentBySlug({ slug });
+      const agent = await AgentsService.agentsControllerGetAgentBySlug(slug);
       return agent;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load agent details');
@@ -61,18 +61,16 @@ export const useAgents = () => {
     setError(null);
     try {
       // Create agent with mandatory fields and defaults for the rest
-      const newAgent = await AgentsService.AgentsController_createAgent({
-        body: {
-          name: params.name,
-          slug: params.slug,
-          systemPrompt: '', // Empty as per requirements
-          allowedTools: [], // Empty as per requirements
-          type: undefined, // Will use backend default
-          description: undefined,
-          statusTriggers: undefined,
-          isActive: undefined,
-          concurrencyLimit: undefined,
-        }
+      const newAgent = await AgentsService.agentsControllerCreateAgent({
+        name: params.name,
+        slug: params.slug,
+        systemPrompt: '', // Empty as per requirements
+        allowedTools: [], // Empty as per requirements
+        type: undefined, // Will use backend default
+        description: undefined,
+        statusTriggers: undefined,
+        isActive: undefined,
+        concurrencyLimit: undefined,
       });
 
       // Add to local state
@@ -97,7 +95,7 @@ export const useAgents = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const updatedAgent = await AgentsService.AgentsController_patchAgent({ actorId, body: updates });
+      const updatedAgent = await AgentsService.agentsControllerPatchAgent(actorId, updates);
 
       // Update local state
       setAgents((prevAgents) => {
@@ -121,7 +119,7 @@ export const useAgents = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await AgentsService.AgentsController_deleteAgent({ actorId });
+      await AgentsService.agentsControllerDeleteAgent(actorId);
 
       // Remove from local state
       setAgents((prevAgents) => {

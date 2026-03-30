@@ -1,26 +1,28 @@
 import React, { useState } from "react";
 import { PopShell } from "../../app/shells/PopShell";
-import { AgentResponseDto } from "@taico/client";
+import type { AgentResponseDto } from "@taico/client/v2";
 import { Text } from "../../ui/primitives";
 import "./EditAgentTypePop.css";
 
+type AgentType = AgentResponseDto['type'];
+
 type EditAgentTypePopProps = {
-  initialValue: AgentResponseDto.type;
+  initialValue: AgentType;
   onCancel?: () => void;
-  onSave: (payload: { type: AgentResponseDto.type }) => Promise<boolean>;
+  onSave: (payload: { type: AgentType }) => Promise<boolean>;
 };
 
-const AGENT_TYPES = [
-  { value: AgentResponseDto.type.CLAUDE, label: "Claude", description: "Anthropic's Claude AI" },
-  { value: AgentResponseDto.type.CODEX, label: "Codex", description: "OpenAI's Codex" },
-  { value: AgentResponseDto.type.OPENCODE, label: "OpenCode", description: "OpenCode agent" },
-  { value: AgentResponseDto.type.ADK, label: "ADK", description: "Agent Development Kit" },
-  { value: AgentResponseDto.type.GITHUBCOPILOT, label: "GitHub Copilot", description: "GitHub Copilot agent" },
-  { value: AgentResponseDto.type.OTHER, label: "Other", description: "Other agent type" },
+const AGENT_TYPES: Array<{ value: AgentType; label: string; description: string }> = [
+  { value: 'claude' as const, label: "Claude", description: "Anthropic's Claude AI" },
+  { value: 'codex' as const, label: "Codex", description: "OpenAI's Codex" },
+  { value: 'opencode' as const, label: "OpenCode", description: "OpenCode agent" },
+  { value: 'adk' as const, label: "ADK", description: "Agent Development Kit" },
+  { value: 'githubcopilot' as const, label: "GitHub Copilot", description: "GitHub Copilot agent" },
+  { value: 'other' as const, label: "Other", description: "Other agent type" },
 ];
 
 export function EditAgentTypePop({ initialValue, onCancel, onSave }: EditAgentTypePopProps) {
-  const [selectedType, setSelectedType] = useState<AgentResponseDto.type>(initialValue);
+  const [selectedType, setSelectedType] = useState<AgentType>(initialValue);
 
   async function handleSave(): Promise<boolean> {
     return onSave({ type: selectedType });

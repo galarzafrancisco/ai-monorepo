@@ -80,7 +80,13 @@ function schemaToTypeScript(schema: SchemaInfo): string {
       baseType = 'boolean';
       break;
     case 'array':
-      baseType = schema.items ? `${schemaToTypeScript(schema.items)}[]` : 'any[]';
+      if (schema.items) {
+        const itemType = schemaToTypeScript(schema.items);
+        // Wrap in parentheses if the item type contains a union (|) to ensure correct precedence
+        baseType = itemType.includes(' | ') ? `(${itemType})[]` : `${itemType}[]`;
+      } else {
+        baseType = 'any[]';
+      }
       break;
     case 'object':
       if (schema.properties) {
