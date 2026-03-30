@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { setTimeout as sleep } from 'timers/promises';
 
-const api = spawn('npm', ['run', 'test:api'], { stdio: 'inherit' });
+const api = spawn('tsx', ['--tsconfig', 'test/api/tsconfig.json', 'test/api/src/main.ts'], { stdio: 'inherit' });
 
 const cleanup = () => api.kill();
 process.on('exit', cleanup);
@@ -9,7 +9,7 @@ process.on('SIGINT', cleanup);
 
 await waitForReady('http://localhost:3456/api-json');
 
-const tests = spawn('npm', ['run', 'test:client'], { stdio: 'inherit' });
+const tests = spawn('tsx', ['test/client/test-sdk.ts'], { stdio: 'inherit' });
 const code = await onExit(tests);
 process.exit(code);
 
