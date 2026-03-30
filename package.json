@@ -22,6 +22,7 @@
     "install:dev": "npm install --only=dev",
     "test:e2e": "npm -w apps/backend run test:e2e",
     "test:openapi-sdkgen": "npm -w packages/openapi-sdkgen run test",
+    "test:openapi-client-generator": "npm run test:openapi-sdkgen",
     "test:e2e:worker-auth": "npm -w apps/backend run test:e2e:worker-auth",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
