@@ -44,6 +44,7 @@
     "release": "npm run build:prod && npm publish --access public"
   },
   "devDependencies": {
+    "@redocly/openapi-core": "^1.34.10",
     "openapi-typescript": "^7.10.1",
     "openapi-typescript-codegen": "^0.29.0",
     "typescript": "^5.6.3"

@@ -36,10 +36,10 @@
     "release": "npm run build && npm publish --access public"
   },
   "devDependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/platform-express": "^11.0.0",
-    "@nestjs/swagger": "^11.2.1",
+    "@nestjs/common": "^11.1.17",
+    "@nestjs/core": "^11.1.17",
+    "@nestjs/platform-express": "^11.1.17",
+    "@nestjs/swagger": "^11.2.6",
     "@types/node": "^20.0.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",

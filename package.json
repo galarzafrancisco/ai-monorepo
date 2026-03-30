@@ -42,9 +42,19 @@
     "release:backend": "npm run zero-to-prod && npm -w apps/backend run release"
   },
   "devDependencies": {
+    "@hono/node-server": "^1.19.10",
     "@nestjs/cli": "^11.0.10",
+    "brace-expansion": "^2.0.3",
     "concurrently": "^9.0.0",
     "dotenv-cli": "^11.0.0",
+    "express-rate-limit": "^8.2.2",
+    "fast-xml-parser": "^5.5.7",
+    "handlebars": "^4.7.9",
+    "hono": "^4.12.7",
+    "js-yaml": "^4.1.1",
+    "minimatch": "^5.1.8",
+    "path-to-regexp": "^8.4.0",
+    "socket.io-parser": "^4.2.6",
     "tsc-alias": "^1.8.16"
   },
   "repository": {
@@ -59,5 +69,10 @@
   "homepage": "https://github.com/galarzafrancisco/ai-monorepo#readme",
   "dependencies": {
     "jose": "^6.1.0"
+  },
+  "overrides": {
+    "ajv": "^8.18.0",
+    "path-to-regexp": "^8.4.0",
+    "picomatch": "^4.0.4"
   }
 }
