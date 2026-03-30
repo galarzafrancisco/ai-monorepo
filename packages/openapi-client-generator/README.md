@@ -67,16 +67,8 @@ await client.users.list({ signal: controller.signal });
 ### Instance-Based Auth
 
 ```typescript
-// Each client instance has its own config
-const client1 = new ApiClient({
-  baseUrl: 'http://api1.com',
-  getAccessToken: () => token1
-});
-
-const client2 = new ApiClient({
-  baseUrl: 'http://api2.com',
-  getAccessToken: () => token2
-});
+const client1 = new ApiClient({ baseUrl: 'http://api1.com', getAccessToken: () => token1 });
+const client2 = new ApiClient({ baseUrl: 'http://api2.com', getAccessToken: () => token2 });
 ```
 
 No global state, no singleton issues.
@@ -106,53 +98,54 @@ async *streamEvents(params): AsyncIterable<Event> {
 - Optional fields handled correctly
 - Enums generated as union types
 
-## Testing Approach
+## Testing
 
-### Test API (`test-api/`)
+The test suite is fully automated and self-contained under `test/`.
+
+```bash
+npm test
+```
+
+This runs the full pipeline:
+1. **Clean** - Remove previously generated client
+2. **Generate spec** - Start the test API in spec-generation mode, write `openapi.json`, exit
+3. **Generate client** - Run the generator against the spec
+4. **Run tests** - Start the test API server, run the test SDK against it, shut down
+
+### Test API (`test/api/`)
 
 NestJS app with endpoints exercising OpenAPI features:
-- GET with path params (`/users/:id`)
-- GET with query params (`/users?limit=10`)
-- POST with JSON body
-- PUT/PATCH updates
-- DELETE with no content
-- Nested objects
-- Arrays
+- GET with path/query params
+- POST/PUT/PATCH with JSON body
+- DELETE with no content response
+- Nested objects and arrays
 - Optional fields
-- Different status codes
 - SSE streaming (`/stream/events`)
-- Auth headers
+- Auth headers and custom header parameters
+- Query parameters with special characters
 
-The test API auto-generates `openapi.json` using `@nestjs/swagger`.
+The test API generates `openapi.json` via `--generate-spec` mode (starts, writes file, exits immediately — no server needed).
 
-### Test Client (`test-client/`)
+### Test Client (`test/client/`)
 
-Script that:
-1. Imports the generated SDK
-2. Makes real HTTP calls to test-api
-3. Validates types compile
-4. Validates runtime behavior
-5. Tests streaming
-6. Tests AbortSignal
-
-Run with: `npm test`
+`test-sdk.ts` imports the generated SDK and makes real HTTP calls to the test API, validating both types and runtime behavior including streaming and AbortSignal.
 
 ## Tradeoffs
 
 ### What We Gain
 
-✅ **No post-processing** - Generate correct code directly
-✅ **Cleaner code** - No regex hacks on generated output
-✅ **Instance config** - No global singleton
-✅ **Better DX** - Resource grouping, clear method names
-✅ **Streaming** - First-class AsyncIterable support
-✅ **Maintainability** - Simple generator, easy to understand
+✅ No post-processing — generate correct code directly
+✅ Cleaner code — no regex hacks on generated output
+✅ Instance config — no global singleton
+✅ Better DX — resource grouping, clear method names
+✅ Streaming — first-class AsyncIterable support
+✅ Maintainability — simple generator, easy to understand
 
 ### What We Lose
 
-❌ **More code** - Custom generator vs off-the-shelf tool
-❌ **Edge cases** - May not handle all OpenAPI features yet
-❌ **Battle-tested** - New code vs mature library
+❌ More code — custom generator vs off-the-shelf tool
+❌ Edge cases — may not handle all OpenAPI features yet
+❌ Battle-tested — new code vs mature library
 
 ### Comparison to Current Approach
 
@@ -166,46 +159,12 @@ Run with: `npm test`
 
 ## Limitations
 
-Current implementation is exploratory and doesn't handle:
-- All OpenAPI 3.x features
+Current implementation doesn't handle:
 - Complex schema compositions (allOf, oneOf, anyOf)
 - Custom media types beyond JSON
 - File uploads
 - Cookie parameters
 - Complex security schemes
-
-These could be added if this approach proves valuable.
-
-## Next Steps
-
-If this proves better than current approach:
-1. Add support for missing OpenAPI features
-2. Add comprehensive tests
-3. Consider replacing `@taico/client` generation
-4. Extract as standalone package
-
-## Running the Example
-
-```bash
-# Install dependencies
-npm install
-
-# Build the generator
-npm run build
-
-# Start test API (generates openapi.json)
-npm run test:api &
-
-# Wait for API to start, then generate client
-sleep 2
-npm run generate
-
-# Run tests against generated client
-npm run test:client
-
-# Or run everything
-npm test
-```
 
 ## File Structure
 
@@ -217,16 +176,18 @@ packages/openapi-client-generator/
 │   ├── generator.ts   # IR -> TypeScript
 │   ├── index.ts       # Main API
 │   └── cli.ts         # CLI tool
-├── test-api/
-│   └── src/
-│       ├── main.ts              # NestJS bootstrap
-│       ├── app.module.ts        # App module
-│       ├── users.controller.ts  # User endpoints
-│       ├── tasks.controller.ts  # Task endpoints
-│       └── stream.controller.ts # SSE endpoints
-├── test-client/
-│   ├── generated/     # Generated SDK (gitignored)
-│   └── test-sdk.ts    # Test script
+├── test/
+│   ├── api/           # NestJS test API (spec source)
+│   │   └── src/
+│   │       ├── main.ts
+│   │       ├── app.module.ts
+│   │       ├── users.controller.ts
+│   │       ├── tasks.controller.ts
+│   │       └── stream.controller.ts
+│   ├── client/        # Test SDK + generated output
+│   │   ├── generated/ # Generated SDK (gitignored)
+│   │   └── test-sdk.ts
+│   └── run.mjs        # Test orchestrator
 ├── package.json
 ├── tsconfig.json
 └── README.md
