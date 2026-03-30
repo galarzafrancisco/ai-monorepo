@@ -1,6 +1,18 @@
-# OpenAPI Client Generator (Experimental)
+# @taico/openapi-sdkgen
 
-An experimental TypeScript SDK generator from OpenAPI specs with focus on developer ergonomics and maintainability.
+A TypeScript SDK generator from OpenAPI specs with focus on developer ergonomics and maintainability.
+
+## Install
+
+```bash
+npm install @taico/openapi-sdkgen
+```
+
+## CLI
+
+```bash
+openapi-sdkgen ./openapi.json ./generated
+```
 
 ## Motivation
 
@@ -8,7 +20,7 @@ The existing `@taico/client` package uses `openapi-typescript-codegen` with mult
 - `fix-esm-imports.js` - Adds `.js` extensions for ESM compatibility
 - `make-client-instantiable.js` - Transforms static methods to accept per-instance config
 
-This approach is fragile and hard to maintain. This package explores whether we can generate better SDKs from scratch.
+This approach is fragile and hard to maintain. This package generates better SDKs from scratch instead.
 
 ## Design Goals
 
@@ -169,7 +181,7 @@ Current implementation doesn't handle:
 ## File Structure
 
 ```
-packages/openapi-client-generator/
+packages/openapi-sdkgen/
 ├── src/
 │   ├── types.ts       # Internal IR types
 │   ├── parser.ts      # OpenAPI -> IR

@@ -1,29 +1,40 @@
 {
-  "name": "@taico/openapi-client-generator",
-  "version": "0.1.0",
+  "name": "@taico/openapi-sdkgen",
+  "version": "0.1.1",
   "type": "module",
-  "private": true,
+  "private": false,
   "license": "MIT",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
-    "openapi-client-gen": "./bin/openapi-client-gen.mjs"
+    "openapi-sdkgen": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "prepare": "npm run build",
     "test:api": "tsx --tsconfig test/api/tsconfig.json test/api/src/main.ts",
     "test:client": "tsx test/client/test-sdk.ts",
-    "test:taico": "tsx test/taico/test-sdk.ts",
     "generate:spec": "tsx --tsconfig test/api/tsconfig.json test/api/src/main.ts --generate-spec",
     "clean": "rm -rf test/client/generated",
     "generate": "tsx src/cli.ts test/api/openapi.json test/client/generated",
-    "generate:taico": "tsx src/cli.ts ../client/contracts/openapi.json test/taico/generated",
     "lint:generated": "tsc --noEmit --project test/client/tsconfig.json",
-    "test": "npm run clean && npm run generate:spec && npm run generate && npm run lint:generated && node test/run.mjs"
-  },
-  "dependencies": {
-    "openapi-typescript": "^7.10.1"
+    "test": "npm run clean && npm run generate:spec && npm run generate && npm run lint:generated && node test/run.mjs",
+    "pack": "npm run build && npm pack",
+    "release": "npm run build && npm publish --access public"
   },
   "devDependencies": {
     "@nestjs/common": "^11.0.0",
@@ -33,7 +44,6 @@
     "@types/node": "^20.0.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "ts-node": "^10.9.2",
     "tsx": "^4.7.0",
     "typescript": "^5.6.3"
   }

@@ -37,13 +37,14 @@
     "copy:contracts": "mkdir -p contracts && cp ../../apps/backend/openapi.json contracts/openapi.json",
     "generate:types": "openapi-typescript contracts/openapi.json -o contracts/types.ts",
     "generate:client": "openapi --input contracts/openapi.json --output src/client --client fetch && npm run fix:esm-imports && npm run make:client-instantiable",
-    "generate:client:v2": "rm -rf src/v2 && ../openapi-client-generator/bin/openapi-client-gen.mjs contracts/openapi.json src/v2",
+    "generate:client:v2": "rm -rf src/v2 && openapi-sdkgen contracts/openapi.json src/v2",
     "fix:esm-imports": "node scripts/fix-esm-imports.js",
     "make:client-instantiable": "node scripts/make-client-instantiable.js",
     "pack": "npm run build:prod && npm pack",
     "release": "npm run build:prod && npm publish --access public"
   },
   "devDependencies": {
+    "@taico/openapi-sdkgen": "*",
     "openapi-typescript": "^7.10.1",
     "openapi-typescript-codegen": "^0.29.0",
     "typescript": "^5.6.3"
