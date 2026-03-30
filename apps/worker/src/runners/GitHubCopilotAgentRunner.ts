@@ -1,7 +1,7 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
-import { CopilotClient, MCPRemoteServerConfig } from "@github/copilot-sdk";
+import { approveAll, CopilotClient, MCPRemoteServerConfig } from "@github/copilot-sdk";
 
 export class GitHubCopilotAgentRunner extends BaseAgentRunner {
   readonly kind = 'githubcopilot';
@@ -52,6 +52,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         // Create a session for this work
         const session = await this.client.createSession({
           model: this.model,
+          onPermissionRequest: approveAll,
           mcpServers: {
             tasks: taskMcpServer,
             context: contextMcpServer,
