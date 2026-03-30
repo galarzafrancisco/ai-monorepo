@@ -1,13 +1,12 @@
-import { OpenAPI, ToolsService, AuthorizationJourneysService } from "@taico/client";
+import { ApiClient } from '@taico/client/v2';
 import { BFF_BASE_URL } from '../../config/api';
 
-// Use centralized API configuration
-OpenAPI.BASE = BFF_BASE_URL;
+const baseUrl = BFF_BASE_URL || window.location.origin;
 
-export { ToolsService, AuthorizationJourneysService };
+const client = new ApiClient({
+  baseUrl,
+  credentials: 'include',
+});
 
-// Export API client for easier access to all endpoints
-export const api = {
-  tools: ToolsService,
-  authJourneys: AuthorizationJourneysService,
-};
+export const ToolsService = client.tools;
+export const AuthorizationJourneysService = client.authorizationJourneys;

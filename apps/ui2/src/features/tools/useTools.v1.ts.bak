@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ToolsService, AuthorizationJourneysService } from './api';
 import type { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
-import { CreateServerDto } from '@taico/client/v2';
+import { CreateServerDto } from '@taico/client';
 
 const DEFAULT_HTTP_URL = 'http://localhost:3000/mcp';
 const DEFAULT_STDIO_CMD = 'npx';
@@ -60,7 +60,7 @@ export const useTools = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await ToolsService.McpRegistryController_listServers({});
+      const response = await ToolsService.mcpRegistryControllerListServers();
       setTools(sortTools(response.items || []));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tools');
@@ -74,7 +74,7 @@ export const useTools = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const tool = await ToolsService.McpRegistryController_getServer({ serverId });
+      const tool = await ToolsService.mcpRegistryControllerGetServer(serverId);
       return tool;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tool details');
@@ -87,7 +87,7 @@ export const useTools = () => {
   // Load scopes for a tool
   const loadToolScopes = useCallback(async (serverId: string): Promise<ToolScope[]> => {
     try {
-      const scopes = await ToolsService.McpRegistryController_listScopes({ serverId });
+      const scopes = await ToolsService.mcpRegistryControllerListScopes(serverId);
       return scopes;
     } catch (err) {
       console.error('Failed to load scopes:', err);
@@ -99,7 +99,7 @@ export const useTools = () => {
   const loadToolClients = useCallback(async (serverId: string): Promise<ToolClient[]> => {
     console.log(`loading clients for server ${serverId}`)
     try {
-      const clients = await ToolsService.McpRegistryController_listConnections({ serverId });
+      const clients = await ToolsService.mcpRegistryControllerListConnections(serverId);
       console.log(`clients: ${clients}`)
       return clients;
     } catch (err) {
@@ -112,7 +112,7 @@ export const useTools = () => {
   const loadToolAuthorizations = useCallback(async (serverId: string): Promise<ToolAuthorization[]> => {
     console.log(`loading authorizations for server ${serverId}`)
     try {
-      const authorizations = await AuthorizationJourneysService.AuthJourneysController_getAuthJourneys({ serverId });
+      const authorizations = await AuthorizationJourneysService.authJourneysControllerGetAuthJourneys(serverId);
       console.log(`authorizations:`, authorizations)
       return authorizations;
     } catch (err) {
@@ -126,7 +126,7 @@ export const useTools = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const client = await ToolsService.McpRegistryController_getConnection({ connectionId });
+      const client = await ToolsService.mcpRegistryControllerGetConnection(connectionId);
       return client;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load client details');
@@ -148,13 +148,16 @@ export const useTools = () => {
         providedId,
         name: params.name,
         description: `New ${params.type.toUpperCase()} MCP server`,
-        type: params.type as 'http' | 'stdio',
+        type:
+          params.type === 'http'
+            ? CreateServerDto.type.HTTP
+            : CreateServerDto.type.STDIO,
         ...(params.type === 'http'
           ? { url: DEFAULT_HTTP_URL }
           : { cmd: DEFAULT_STDIO_CMD, args: [...DEFAULT_STDIO_ARGS] }),
       };
 
-      const newTool = await ToolsService.McpRegistryController_createServer({ body: request });
+      const newTool = await ToolsService.mcpRegistryControllerCreateServer(request);
 
       setTools((previousTools) => {
         return sortTools([...previousTools, newTool]);
@@ -174,7 +177,7 @@ export const useTools = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const updatedTool = await ToolsService.McpRegistryController_updateServer({ serverId: toolId, body: updates });
+      const updatedTool = await ToolsService.mcpRegistryControllerUpdateServer(toolId, updates);
 
       setTools((previousTools) => {
         const updated = previousTools.map((tool) =>
@@ -197,7 +200,7 @@ export const useTools = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await ToolsService.McpRegistryController_deleteServer({ serverId: toolId });
+      await ToolsService.mcpRegistryControllerDeleteServer(toolId);
 
       setTools((previousTools) => {
         return previousTools.filter((tool) => tool.id !== toolId);
