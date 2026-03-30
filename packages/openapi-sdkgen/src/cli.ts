@@ -11,7 +11,9 @@ if (args.length < 2) {
 }
 
 const [inputPath, outputDir] = args;
-const invocationDir = process.env.INIT_CWD || process.cwd();
+const invocationDir = process.env.npm_lifecycle_event
+  ? process.cwd()
+  : (process.env.INIT_CWD || process.cwd());
 const resolvedInputPath = resolve(invocationDir, inputPath);
 const resolvedOutputDir = resolve(invocationDir, outputDir);
 
