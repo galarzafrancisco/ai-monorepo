@@ -39,7 +39,10 @@ export function HomePage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await TasksService.tasksControllerListTasks(undefined, undefined, undefined, 1, TASKS_PAGE_SIZE);
+        const response = await TasksService.TasksController_listTasks({
+          page: 1,
+          limit: TASKS_PAGE_SIZE,
+        });
         if (!active) {
           return;
         }
@@ -257,8 +260,8 @@ export function HomePage() {
                   <TaskRow
                     key={task.id}
                     task={task}
-                    chipLabel={TASKS_STATUS[task.status].label}
-                    chipColor={statusToChipColor(task.status)}
+                    chipLabel={TASKS_STATUS[task.status as TaskStatus].label}
+                    chipColor={statusToChipColor(task.status as TaskStatus)}
                     onClick={() => navigate(`/tasks/task/${task.id}`)}
                   />
                 ))

@@ -11,7 +11,8 @@ import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
-import { InputRequestResponseDto, MetaTagResponseDto } from "@taico/client";
+import { InputRequestResponseDto } from "@taico/client/v2";
+import { MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
@@ -436,7 +437,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         <DataRow
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
-            StatusTag({ status: task.status }),
+            StatusTag({ status: task.status as TaskStatus }),
             ...task.tags.map(tag => ({
               label: tag.name,
               onRemove: () => removeTag(tag.id),
@@ -518,7 +519,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             // Note: TaskRow component only uses tag.name, not tag.color
             const statusTag: MetaTagResponseDto = {
               id: `status-${depTask.status}`,
-              name: TASKS_STATUS[depTask.status].label,
+              name: TASKS_STATUS[depTask.status as TaskStatus].label,
               color: '', // Not used by TaskRow component
               createdAt: depTask.createdAt,
               updatedAt: depTask.updatedAt,
@@ -832,9 +833,9 @@ export function TaskDetailPage() {
     assignTask: ({ taskId, assigneeActorId }) => assignTask({ taskId, assigneeActorId }),
     assignTaskToMe: ({ taskId }) => assignTaskToMe({ taskId }),
     answerInputRequest: ({ taskId, inputRequestId, answer }) => answerInputRequest({ taskId, inputRequestId, answer }),
-    changeStatus: ({ taskId, status }) => TasksService.tasksControllerChangeStatus(taskId, { status }),
-    addTag: ({ taskId, tag }) => TasksService.tasksControllerAddTagToTask(taskId, { name: tag.name }),
-    removeTag: ({ taskId, tagId }) => TasksService.tasksControllerRemoveTagFromTask(taskId, tagId),
+    changeStatus: ({ taskId, status }) => TasksService.TasksController_changeStatus({ id: taskId, body: { status } }),
+    addTag: ({ taskId, tag }) => TasksService.TasksController_addTagToTask({ id: taskId, body: { name: tag.name } }),
+    removeTag: ({ taskId, tagId }) => TasksService.TasksController_removeTagFromTask({ id: taskId, tagId }),
   };
 
   return (

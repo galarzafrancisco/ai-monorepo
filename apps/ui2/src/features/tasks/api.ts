@@ -1,13 +1,17 @@
-import { OpenAPI, TaskService, ActorsService } from '@taico/client';
+import { ApiClient } from '@taico/client/v2';
 import { BFF_BASE_URL } from '../../config/api';
 
-// Use centralized API configuration
-OpenAPI.BASE = BFF_BASE_URL;
+const baseUrl = BFF_BASE_URL || window.location.origin;
+const client = new ApiClient({
+  baseUrl,
+  credentials: 'include',
+});
 
-export { TaskService as TasksService, ActorsService };
+export const TasksService = client.task;
+export const ActorsService = client.actors;
 
 // Export API client for easier access to all endpoints
 export const api = {
-  task: TaskService,
-  actor: ActorsService,
+  task: client.task,
+  actor: client.actors,
 };

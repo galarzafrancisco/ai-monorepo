@@ -6,7 +6,7 @@ import { TaskStatus, TASKS_STATUS } from './const';
 import type { Comment } from './types';
 import { Chip, Text, Stack, Row, Button, Divider, Avatar, ErrorText, type ChipProps, DataRow, DataRowContainer } from '../../ui/primitives';
 import './TaskDetailPage.css';
-import { ActorResponseDto } from "@taico/client";
+import type { ActorResponseDto } from "@taico/client/v2";
 import { DataRowTag } from 'src/ui/primitives/DataRow';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 
@@ -47,7 +47,7 @@ export function TaskDetailPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchActors = async () => {
-    const fetchedActors = await ActorsService.actorControllerListActors();
+    const fetchedActors = await ActorsService.ActorController_listActors();
     setActors(fetchedActors);
     return fetchedActors;
   };
@@ -183,7 +183,10 @@ export function TaskDetailPage() {
     }
     setIsLoading(true);
     try {
-      await TasksService.tasksControllerUpdateTask(task.id, { name: editValue.trim() });
+      await TasksService.TasksController_updateTask({
+        id: task.id,
+        body: { name: editValue.trim() },
+      });
       setEditingField(null);
       setError(null);
     } catch (err: unknown) {
@@ -199,7 +202,10 @@ export function TaskDetailPage() {
   const handleSaveDescription = async () => {
     setIsLoading(true);
     try {
-      await TasksService.tasksControllerUpdateTask(task.id, { description: editValue });
+      await TasksService.TasksController_updateTask({
+        id: task.id,
+        body: { description: editValue },
+      });
       setEditingField(null);
       setError(null);
     } catch (err: unknown) {
@@ -221,8 +227,11 @@ export function TaskDetailPage() {
     try {
       console.log(`selectedActor`, selectedActor);
       console.log(`selectedActor.id`, selectedActor.id);
-      await TasksService.tasksControllerAssignTask(task.id, {
-        assigneeActorId: selectedActor.id
+      await TasksService.TasksController_assignTask({
+        id: task.id,
+        body: {
+          assigneeActorId: selectedActor.id
+        },
       });
       setEditingField(null);
       setEditAssignee('');
@@ -242,7 +251,10 @@ export function TaskDetailPage() {
   const handleChangeStatus = async (newStatus: TaskStatus) => {
     setIsLoading(true);
     try {
-      await TasksService.tasksControllerChangeStatus(task.id, { status: newStatus });
+      await TasksService.TasksController_changeStatus({
+        id: task.id,
+        body: { status: newStatus },
+      });
       setError(null);
     } catch (err: unknown) {
       const errorMessage = (err as { body?: { detail?: string }; message?: string })?.body?.detail
@@ -258,7 +270,10 @@ export function TaskDetailPage() {
     if (!newComment.trim()) return;
     setIsLoading(true);
     try {
-      await TasksService.tasksControllerAddComment(task.id, { content: newComment.trim() });
+      await TasksService.TasksController_addComment({
+        id: task.id,
+        body: { content: newComment.trim() },
+      });
       setNewComment('');
       setError(null);
     } catch (err: unknown) {
@@ -290,7 +305,7 @@ export function TaskDetailPage() {
         <DataRow
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
-            StatusTag({ status: task.status }),
+            StatusTag({ status: task.status as TaskStatus }),
             ...task.tags.map(tag => ({ label: tag.name })),
           ]}
           topRight={<Text size='1' tone='muted'>{elapsedTime(task.updatedAt)}</Text>}
@@ -384,7 +399,7 @@ export function TaskDetailPage() {
         {/* Assignee */}
 
         {/* Status */}
-        <StatusChip status={task.status} />
+        <StatusChip status={task.status as TaskStatus} />
 
         {/* Tags */}
         <div className="task-detail-page__tags">

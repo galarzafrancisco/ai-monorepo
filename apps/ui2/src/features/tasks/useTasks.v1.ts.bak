@@ -6,7 +6,7 @@ import { getUIWebSocketUrl } from '../../config/api';
 import type {
   CreateTaskDto,
   AssignTaskDto,
-} from "@taico/client/v2"
+} from "@taico/client"
 import {
   TaskWireEvents,
   TaskCreatedWireEvent,
@@ -78,40 +78,33 @@ export const useTasks = () => {
 
   // Create task
   const createTask = async (task: CreateTaskDto) => {
-    return await TasksService.TasksController_createTask({ body: task });
+    return await TasksService.tasksControllerCreateTask(task);
   }
 
   // Delete tasl
   const deleteTask = async ({ taskId }: { taskId: string }) => {
-    return await TasksService.TasksController_deleteTask({ id: taskId });
+    return await TasksService.tasksControllerDeleteTask(taskId);
   }
 
   // Add comment
   const addComment = async ({ taskId, comment }: { taskId: string, comment: string }) => {
-    return await TasksService.TasksController_addComment({
-      id: taskId,
-      body: { content: comment },
-    });
+    return await TasksService.tasksControllerAddComment(taskId, { content: comment });
   }
 
   // Assign task
   const assignTask = async ({ taskId, assigneeActorId }: { taskId: string, assigneeActorId: string }) => {
     const dto: AssignTaskDto = { assigneeActorId };
-    return await TasksService.TasksController_assignTask({ id: taskId, body: dto });
+    return await TasksService.tasksControllerAssignTask(taskId, dto);
   }
 
   // Assign task to me
   const assignTaskToMe = async ({ taskId }: { taskId: string }) => {
-    return await TasksService.TasksController_assignTaskToMe({ id: taskId });
+    return await TasksService.tasksControllerAssignTaskToMe(taskId);
   }
 
   // Answer input request
   const answerInputRequest = async ({ taskId, inputRequestId, answer }: { taskId: string, inputRequestId: string, answer: string }) => {
-    return await TasksService.TasksController_answerInputRequest({
-      id: taskId,
-      inputRequestId,
-      body: { answer },
-    });
+    return await TasksService.tasksControllerAnswerInputRequest(taskId, inputRequestId, { answer });
   }
 
   // Load tasks
@@ -119,10 +112,7 @@ export const useTasks = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await TasksService.TasksController_listTasks({
-        page: 1,
-        limit: TASKS_PAGE_SIZE,
-      });
+      const response = await TasksService.tasksControllerListTasks(undefined, undefined, undefined, 1, TASKS_PAGE_SIZE);
       setTasks(sortTasks(response.items));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
@@ -199,7 +189,7 @@ export const useTasks = () => {
       console.log('task.commented', event);
       try {
         // event.payload is CommentWirePayload with taskId
-        const updatedTask = await TasksService.TasksController_getTask({ id: event.payload.taskId });
+        const updatedTask = await TasksService.tasksControllerGetTask(event.payload.taskId);
         setTasks((prev) => {
           const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
           if (existingTaskIndex === -1) {
@@ -216,7 +206,7 @@ export const useTasks = () => {
     newSocket.on(TaskWireEvents.INPUT_REQUEST_ANSWERED, async (event: InputRequestAnsweredWireEvent) => {
       console.log('input.request.answered', event);
       try {
-        const updatedTask = await TasksService.TasksController_getTask({ id: event.payload.taskId });
+        const updatedTask = await TasksService.tasksControllerGetTask(event.payload.taskId);
         setTasks((prev) => {
           const existingTaskIndex = prev.findIndex((t) => t.id === updatedTask.id);
           if (existingTaskIndex === -1) {

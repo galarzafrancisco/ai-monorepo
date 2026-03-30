@@ -53,7 +53,9 @@ export function TasksPage({ status }: { status?: TaskStatus }) {
   }, [registerCommands]);
 
   useEffect(() => {
-    return registerTaskSearch((query: string) => TasksService.tasksControllerSearchTasks(query, 5, 0.1));
+    return registerTaskSearch((query: string) =>
+      TasksService.TasksController_searchTasks({ query, limit: 5, threshold: 0.1 })
+    );
   }, [registerTaskSearch]);
 
   // Filter tasks by status

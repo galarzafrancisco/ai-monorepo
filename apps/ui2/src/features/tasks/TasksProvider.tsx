@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { useTasks } from "./useTasks"; // your abstraction hook
 import type { Task } from "./types";
 import { TaskStatus } from "./const";
-import { CommentResponseDto, CreateTaskDto, TaskResponseDto, InputRequestResponseDto } from "@taico/client";
+import { CommentResponseDto, CreateTaskDto, TaskResponseDto, InputRequestResponseDto } from "@taico/client/v2";
 import { TaskActivityWireEvent } from "@taico/events";
 
 // Animation state tracked per status (for column-based animations)
@@ -114,18 +114,18 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       for (const [id, task] of currentTasksMap) {
         const prevTask = prevTasks.get(id);
         if (!prevTask) {
-          newEnteringByStatus[task.status].add(id);
+          newEnteringByStatus[task.status as TaskStatus].add(id);
           newGlobalEntering.add(id);
         } else if (prevTask.status !== task.status) {
-          newExitingByStatus[prevTask.status].push(prevTask);
-          newEnteringByStatus[task.status].add(id);
+          newExitingByStatus[prevTask.status as TaskStatus].push(prevTask);
+          newEnteringByStatus[task.status as TaskStatus].add(id);
         }
       }
 
       // Check for deleted tasks
       for (const [id, prevTask] of prevTasks) {
         if (!currentIds.has(id)) {
-          newExitingByStatus[prevTask.status].push(prevTask);
+          newExitingByStatus[prevTask.status as TaskStatus].push(prevTask);
           newGlobalExiting.push(prevTask);
         }
       }
@@ -155,7 +155,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     let mergedGlobalExiting: Task[] = [];
 
     for (const anim of activeAnimationsRef.current) {
-      for (const status of Object.values(TaskStatus)) {
+      for (const status of Object.values(TaskStatus) as TaskStatus[]) {
         anim.enteringByStatus[status].forEach(id => mergedByStatus[status].enteringIds.add(id));
         mergedByStatus[status].exitingTasks.push(...anim.exitingByStatus[status]);
       }
