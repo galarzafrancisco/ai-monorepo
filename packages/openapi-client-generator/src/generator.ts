@@ -62,6 +62,10 @@ function schemaToTypeScript(schema: SchemaInfo): string {
     return schema.ref;
   }
 
+  if (schema.enum) {
+    return schema.enum.map((v) => `'${v}'`).join(' | ');
+  }
+
   let baseType: string;
 
   switch (schema.type) {

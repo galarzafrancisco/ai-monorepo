@@ -1,0 +1,73 @@
+import { ClientConfig } from './base-client.js';
+import { AppResource } from './app-resource.js';
+import { MetaResource } from './meta-resource.js';
+import { MetaProjectsResource } from './meta---projects-resource.js';
+import { AuthorizationServerResource } from './authorization-server-resource.js';
+import { WebAuthenticationResource } from './web-authentication-resource.js';
+import { AuthorizationJourneysResource } from './authorization-journeys-resource.js';
+import { ToolsResource } from './tools-resource.js';
+import { JwksResource } from './jwks-resource.js';
+import { ActorsResource } from './actors-resource.js';
+import { TaskResource } from './task-resource.js';
+import { AgentrunResource } from './agent-run-resource.js';
+import { ThreadsResource } from './threads-resource.js';
+import { AgentResource } from './agent-resource.js';
+import { AgentTokensResource } from './agent-tokens-resource.js';
+import { AgentExecutionTokensResource } from './agent-execution-tokens-resource.js';
+import { ChatProvidersResource } from './chat-providers-resource.js';
+import { SecretsResource } from './secrets-resource.js';
+import { ContextResource } from './context-resource.js';
+import { ExecutionsResource } from './executions-resource.js';
+import { TaskBlueprintsResource } from './task-blueprints-resource.js';
+import { ScheduledTasksResource } from './scheduled-tasks-resource.js';
+import { DiscoveryResource } from './discovery-resource.js';
+
+export class ApiClient {
+  public readonly app: AppResource;
+  public readonly meta: MetaResource;
+  public readonly metaProjects: MetaProjectsResource;
+  public readonly authorizationServer: AuthorizationServerResource;
+  public readonly webAuthentication: WebAuthenticationResource;
+  public readonly authorizationJourneys: AuthorizationJourneysResource;
+  public readonly tools: ToolsResource;
+  public readonly jwks: JwksResource;
+  public readonly actors: ActorsResource;
+  public readonly task: TaskResource;
+  public readonly agentrun: AgentrunResource;
+  public readonly threads: ThreadsResource;
+  public readonly agent: AgentResource;
+  public readonly agentTokens: AgentTokensResource;
+  public readonly agentExecutionTokens: AgentExecutionTokensResource;
+  public readonly chatProviders: ChatProvidersResource;
+  public readonly secrets: SecretsResource;
+  public readonly context: ContextResource;
+  public readonly executions: ExecutionsResource;
+  public readonly taskBlueprints: TaskBlueprintsResource;
+  public readonly scheduledTasks: ScheduledTasksResource;
+  public readonly discovery: DiscoveryResource;
+
+  constructor(config: ClientConfig) {
+    this.app = new AppResource(config);
+    this.meta = new MetaResource(config);
+    this.metaProjects = new MetaProjectsResource(config);
+    this.authorizationServer = new AuthorizationServerResource(config);
+    this.webAuthentication = new WebAuthenticationResource(config);
+    this.authorizationJourneys = new AuthorizationJourneysResource(config);
+    this.tools = new ToolsResource(config);
+    this.jwks = new JwksResource(config);
+    this.actors = new ActorsResource(config);
+    this.task = new TaskResource(config);
+    this.agentrun = new AgentrunResource(config);
+    this.threads = new ThreadsResource(config);
+    this.agent = new AgentResource(config);
+    this.agentTokens = new AgentTokensResource(config);
+    this.agentExecutionTokens = new AgentExecutionTokensResource(config);
+    this.chatProviders = new ChatProvidersResource(config);
+    this.secrets = new SecretsResource(config);
+    this.context = new ContextResource(config);
+    this.executions = new ExecutionsResource(config);
+    this.taskBlueprints = new TaskBlueprintsResource(config);
+    this.scheduledTasks = new ScheduledTasksResource(config);
+    this.discovery = new DiscoveryResource(config);
+  }
+}

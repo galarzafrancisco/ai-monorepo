@@ -25,6 +25,9 @@
       "@taico/client": [
         "../../packages/shared/dist/src/index"
       ],
+      "@taico/client/v2": [
+        "../../packages/client/dist/src/v2/index"
+      ],
       "@shared/*": [
         "../../packages/shared/dist/src/*"
       ]

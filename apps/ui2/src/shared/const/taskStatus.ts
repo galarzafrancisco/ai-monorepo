@@ -1,8 +1,13 @@
-import { TaskResponseDto } from "@taico/client";
 import { NavegationItem } from "../types/NavegationItem";
 
-export const TaskStatus = TaskResponseDto.status;
-export type TaskStatus = TaskResponseDto.status;
+export const TaskStatus = {
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  FOR_REVIEW: 'FOR_REVIEW',
+  DONE: 'DONE',
+} as const;
+
+export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
 
 export type TaskStatusNavItem = NavegationItem & {
   status: TaskStatus;
