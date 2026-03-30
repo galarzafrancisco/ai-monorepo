@@ -20,7 +20,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "openapi-sdkgenaro": "./dist/cli.js"
+    "openapi-sdkgen": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
