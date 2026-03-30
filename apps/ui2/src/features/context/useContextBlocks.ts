@@ -57,7 +57,7 @@ export function useContextBlocks() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await ContextService.contextControllerListBlocks();
+      const data = await ContextService.ContextController_listBlocks();
       setBlocks(sortBlocks(data.items));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch context blocks');
@@ -150,7 +150,7 @@ export function useContextBlock(id: string) {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await ContextService.contextControllerGetBlock(id);
+      const data = await ContextService.ContextController_getBlock({ id });
       setBlock(data);
       setIsDeleted(false);
     } catch (err) {
