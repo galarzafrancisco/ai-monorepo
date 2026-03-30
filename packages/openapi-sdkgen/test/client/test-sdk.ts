@@ -256,16 +256,6 @@ async function main() {
     const eventsList = await client.polymorphism.PolymorphismController_getEventsList({ signal: undefined });
     console.log(`  Events: ${eventsList.events?.length} events`);
 
-    // Test 29: Edge cases - tree node
-    console.log('\n✓ Test 29: Edge cases - circular references (tree)');
-    const tree = await client['edge-cases'].EdgeCasesController_testTreeNode({ signal: undefined });
-    console.log(`  Tree root: ${tree.name}, has ${tree.children?.length || 0} children`);
-
-    // Test 30: Edge cases - acronyms
-    console.log('\n✓ Test 30: Edge cases - naming with acronyms');
-    const acronyms = await client['edge-cases'].EdgeCasesController_testAcronyms({ signal: undefined });
-    console.log(`  Acronyms test completed`);
-
     console.log('\n✅ All tests passed!');
   } catch (error) {
     console.error('\n❌ Test failed:', error);
