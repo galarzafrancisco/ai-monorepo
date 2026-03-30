@@ -1,5 +1,5 @@
 import { Avatar, BoardCard } from "../../ui/primitives";
-import { TaskSummaryResponseDto } from "@taico/client";
+import { TaskSummaryResponseDto } from "@taico/client/v2";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useNavigate } from "react-router-dom";
 import "./ThreadTaskCard.css";

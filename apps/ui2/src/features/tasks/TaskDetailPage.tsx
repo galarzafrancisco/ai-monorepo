@@ -92,9 +92,11 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         return;
       }
 
-      const createdThread = await ThreadsService.createThread({
-        title: task.name,
-        parentTaskId: task.id,
+      const createdThread = await ThreadsService.ThreadsController_createThread({
+        body: {
+          title: task.name,
+          parentTaskId: task.id,
+        },
       });
       setThreadId(createdThread.id);
       navigate(`/threads/${createdThread.id}`);
@@ -114,7 +116,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     let cancelled = false;
     setIsResolvingThread(true);
 
-    void ThreadsService.getThreadForTask(task.id)
+    void ThreadsService.ThreadsController_getThreadByTaskId({ taskId: task.id })
       .then((thread) => {
         if (!cancelled) {
           setThreadId(thread?.id ?? null);

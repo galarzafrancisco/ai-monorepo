@@ -59,7 +59,7 @@ export const useThreadData = (threadId: string): UseThreadDataResult => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await ThreadsService.ThreadsController_getThread({ id: threadId });
+      const response = await ThreadsService.getThread(threadId);
       setThread(response || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load thread');
@@ -73,7 +73,7 @@ export const useThreadData = (threadId: string): UseThreadDataResult => {
     setChatIsLoading(true);
     setChatError(null);
     try {
-      const response = await ThreadsService.ThreadsController_listMessages({ id: threadId });
+      const response = await ThreadsService.listMessages(threadId);
       setMessages(sortMessages(response.items));
     } catch (err) {
       setChatError(err instanceof Error ? err.message : 'Failed to load messages');
@@ -88,7 +88,7 @@ export const useThreadData = (threadId: string): UseThreadDataResult => {
     setChatSendError(null);
     let message: Message | null = null;
     try {
-      message = await ThreadsService.ThreadsController_createMessage({ id: threadId, body: { content } });
+      message = await ThreadsService.createMessage(threadId, content);
     } catch (err) {
       setChatSendError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
@@ -98,7 +98,7 @@ export const useThreadData = (threadId: string): UseThreadDataResult => {
   }, [threadId]);
 
   const deleteThread = useCallback(async (id: string) => {
-    await ThreadsService.ThreadsController_deleteThread({ id });
+    await ThreadsService.deleteThread(id);
     setThread(null);
   }, []);
 

@@ -39,7 +39,7 @@ export const useThreads = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await ThreadsService.ThreadsController_listThreads({});
+      const response = await ThreadsService.listThreads();
       setThreads(response.items || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load threads');
@@ -50,19 +50,19 @@ export const useThreads = () => {
 
   // Get single thread with full details
   const getThread = useCallback(async (id: string): Promise<Thread> => {
-    return await ThreadsService.ThreadsController_getThread({ id });
+    return await ThreadsService.getThread(id);
   }, []);
 
   // Create a new thread
   const createThread = useCallback(async (title?: string): Promise<Thread> => {
-    const thread = await ThreadsService.ThreadsController_createThread({ body: { title } });
+    const thread = await ThreadsService.createThread({ title });
     // Add to local state optimistically
     setThreads((prev) => [thread, ...prev]);
     return thread;
   }, []);
 
   const deleteThread = useCallback(async (id: string) => {
-    await ThreadsService.ThreadsController_deleteThread({ id });
+    await ThreadsService.deleteThread(id);
     setThreads((prev) => prev.filter((thread) => thread.id !== id));
   }, []);
 
