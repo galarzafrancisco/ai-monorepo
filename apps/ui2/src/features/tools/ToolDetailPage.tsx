@@ -214,12 +214,12 @@ export function ToolDetailPage() {
     try {
       // Delete scopes
       for (const scopeId of scopesToDelete) {
-        await ToolsService.mcpRegistryControllerDeleteScope(tool.id, scopeId);
+        await ToolsService.McpRegistryController_deleteScope({ serverId: tool.id, scopeId });
       }
 
       // Create scopes
       if (scopesToCreate.length > 0) {
-        await ToolsService.mcpRegistryControllerCreateScopes(tool.id, scopesToCreate);
+        await ToolsService.McpRegistryController_createScopes({ serverId: tool.id, body: scopesToCreate });
       }
 
       // Reload scopes
