@@ -9,7 +9,7 @@ import {
   Actor as ThreadWireActor,
   ActorType as WireActorType,
 } from "@taico/events";
-import { ActorResponseDto } from '@taico/client';
+import { ActorResponseDto } from '@taico/client/v2';
 import type { Message } from './types';
 import { ActorType as DtoActorType } from './types';
 

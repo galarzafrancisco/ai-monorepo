@@ -1,5 +1,5 @@
 import { Avatar, DataRow, Text } from "../../ui/primitives";
-import type { TaskSummaryResponseDto } from "@taico/client";
+import type { TaskSummaryResponseDto } from "@taico/client/v2";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import "../tasks/TaskRow.css";
 

@@ -1,12 +1,13 @@
-// Re-export types from shared package
+// Re-export types from v2 shared package
 export type {
   ThreadResponseDto as Thread,
   ThreadListItemResponseDto as ThreadListItem,
   ThreadMessageResponseDto as Message,
-} from "@taico/client";
+  ActorResponseDto,
+} from "@taico/client/v2";
 
-import {
-  ActorResponseDto
-} from "@taico/client";
-
-export const ActorType = ActorResponseDto.type;
+// Actor type constants
+export const ActorType = {
+  HUMAN: 'human' as const,
+  AGENT: 'agent' as const,
+};
