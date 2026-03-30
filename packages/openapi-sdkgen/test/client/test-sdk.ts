@@ -151,6 +151,215 @@ async function main() {
       }
     }
 
+    // Test 13: Primitives controller - string formats
+    console.log('\n✓ Test 13: Primitives - string formats');
+    const stringFormats = await client.primitives.PrimitivesController_stringFormats({ signal: undefined });
+    console.log(`  Date: ${stringFormats.date}, UUID: ${stringFormats.uuid}`);
+
+    // Test 14: Primitives - numeric formats
+    console.log('\n✓ Test 14: Primitives - numeric formats');
+    const numericFormats = await client.primitives.PrimitivesController_numericFormats({ signal: undefined });
+    console.log(`  Int32: ${numericFormats.int32}, Float: ${numericFormats.float}`);
+
+    // Test 15: Primitives - nullable vs optional
+    console.log('\n✓ Test 15: Primitives - nullable vs optional fields');
+    const nullableOptional = await client.primitives.PrimitivesController_nullableAndOptional({ signal: undefined });
+    console.log(`  Required nullable: ${nullableOptional.requiredNullable}`);
+
+    // Test 16: Parameters - path params
+    console.log('\n✓ Test 16: Parameters - single path param');
+    const pathParam = await client.parameters.ParametersController_singlePathParam({ id: 'test-123', signal: undefined });
+    console.log(`  ID: ${pathParam.id}`);
+
+    // Test 17: Parameters - deeply nested paths
+    console.log('\n✓ Test 17: Parameters - deeply nested resource paths');
+    const nestedPath = await client.parameters.ParametersController_deeplyNestedPath({
+      orgId: 'org-1',
+      projectId: 'proj-2',
+      taskId: 'task-3',
+      signal: undefined,
+    });
+    console.log(`  Nested IDs: ${nestedPath.orgId}/${nestedPath.projectId}/${nestedPath.taskId}`);
+
+    // Test 18: Parameters - enum query param
+    console.log('\n✓ Test 18: Parameters - enum query param');
+    const enumQuery = await client.parameters.ParametersController_enumQuery({
+      sortOrder: 'asc',
+      signal: undefined,
+    });
+    console.log(`  Sort order: ${enumQuery.sortOrder}`);
+
+    // Test 19: Parameters - array query params
+    console.log('\n✓ Test 19: Parameters - array query params');
+    const arrayQuery = await client.parameters.ParametersController_arrayQuery({
+      tags: ['tag1', 'tag2'],
+      ids: [1, 2, 3],
+      signal: undefined,
+    });
+    console.log(`  Tags: ${arrayQuery.tags.join(', ')}, IDs: ${arrayQuery.ids.join(', ')}`);
+
+    // Test 20: Parameters - pagination
+    console.log('\n✓ Test 20: Parameters - pagination params');
+    const pagination = await client.parameters.ParametersController_paginationQuery({
+      page: 2,
+      limit: 20,
+      signal: undefined,
+    });
+    console.log(`  Page: ${pagination.page}, Limit: ${pagination.limit}`);
+
+    // Test 21: Parameters - custom headers
+    console.log('\n✓ Test 21: Parameters - custom headers');
+    const headerParams = await client.parameters.ParametersController_headerParams({
+      'x-request-id': 'req-456',
+      'x-api-version': 'v2',
+      signal: undefined,
+    });
+    console.log(`  Request ID: ${headerParams.requestId}, API Version: ${headerParams.apiVersion}`);
+
+    // Test 22: Parameters - mixed params (path + query + header)
+    console.log('\n✓ Test 22: Parameters - mixed params');
+    const mixedParams = await client.parameters.ParametersController_mixedParams({
+      pathId: 'path-123',
+      queryParam: 'query-value',
+      'x-custom-header': 'header-value',
+      signal: undefined,
+    });
+    console.log(`  Path: ${mixedParams.pathId}, Query: ${mixedParams.queryParam}`);
+
+    // Test 23: Parameters - no params endpoint
+    console.log('\n✓ Test 23: Parameters - no params');
+    const noParams = await client.parameters.ParametersController_noParams({ signal: undefined });
+    console.log(`  Message: ${noParams.message}`);
+
+    // Test 24: Parameters - DELETE with JSON confirmation
+    console.log('\n✓ Test 24: Parameters - DELETE with JSON confirmation');
+    const deleteConfirm = await client.parameters.ParametersController_deleteWithConfirmation({
+      id: 'delete-123',
+      signal: undefined,
+    });
+    console.log(`  Deleted: ${deleteConfirm.deleted}, Message: ${deleteConfirm.message}`);
+
+    // Test 25: Parameters - HEAD method
+    console.log('\n✓ Test 25: Parameters - HEAD method');
+    await client.parameters.ParametersController_headCheck({ signal: undefined });
+    console.log('  HEAD request completed');
+
+    // Test 26: Parameters - OPTIONS method
+    console.log('\n✓ Test 26: Parameters - OPTIONS method');
+    const options = await client.parameters.ParametersController_optionsCheck({ signal: undefined });
+    console.log(`  Available methods: ${options.methods?.join(', ')}`);
+
+    // Test 27: Bodies - flat JSON object
+    console.log('\n✓ Test 27: Bodies - flat JSON object');
+    const flatBody = await client.bodies.BodiesController_flatJsonObject({
+      body: { name: 'Test', value: 'Value' },
+      signal: undefined,
+    });
+    console.log(`  Flat body: ${flatBody.name}`);
+
+    // Test 28: Bodies - nested objects
+    console.log('\n✓ Test 28: Bodies - nested objects');
+    const nestedBody = await client.bodies.BodiesController_nestedJsonObject({
+      body: {
+        title: 'Test',
+        author: { name: 'John', email: 'john@example.com' },
+      },
+      signal: undefined,
+    });
+    console.log(`  Nested body author: ${nestedBody.author?.name}`);
+
+    // Test 29: Bodies - optional vs nullable fields
+    console.log('\n✓ Test 29: Bodies - optional vs nullable');
+    const optionalNullable = await client.bodies.BodiesController_optionalNullableFields({
+      body: {
+        requiredField: 'required',
+        nullableField: null,
+      },
+      signal: undefined,
+    });
+    console.log(`  Optional/nullable processed`);
+
+    // Test 30: Responses - 201 Created
+    console.log('\n✓ Test 30: Responses - 201 Created');
+    const created = await client.responses.ResponsesController_response201({ signal: undefined });
+    console.log(`  Created resource ID: ${created.id}`);
+
+    // Test 31: Responses - 204 No Content
+    console.log('\n✓ Test 31: Responses - 204 No Content');
+    await client.responses.ResponsesController_response204({ signal: undefined });
+    console.log('  No content response received');
+
+    // Test 32: Responses - JSON array
+    console.log('\n✓ Test 32: Responses - JSON array');
+    const jsonArray = await client.responses.ResponsesController_jsonArray({ signal: undefined });
+    console.log(`  Array length: ${jsonArray.length}`);
+
+    // Test 33: Responses - text/plain
+    console.log('\n✓ Test 33: Responses - text/plain');
+    const textPlain = await client.responses.ResponsesController_textPlain({ signal: undefined });
+    console.log(`  Plain text: ${textPlain}`);
+
+    // Test 34: Responses - with headers
+    console.log('\n✓ Test 34: Responses - with custom headers');
+    const withHeaders = await client.responses.ResponsesController_withHeaders({ signal: undefined });
+    console.log(`  Response with headers: ${withHeaders.message}`);
+
+    // Test 35: Pagination - offset-based
+    console.log('\n✓ Test 35: Pagination - offset-based');
+    const offsetPagination = await client.pagination.PaginationController_offsetPagination({
+      offset: 0,
+      limit: 10,
+      signal: undefined,
+    });
+    console.log(`  Offset pagination: ${offsetPagination.items?.length} items`);
+
+    // Test 36: Pagination - page-based
+    console.log('\n✓ Test 36: Pagination - page-based');
+    const pagePagination = await client.pagination.PaginationController_pagePagination({
+      page: 1,
+      limit: 10,
+      signal: undefined,
+    });
+    console.log(`  Page pagination: page ${pagePagination.page}, has next: ${pagePagination.hasNextPage}`);
+
+    // Test 37: Pagination - cursor-based
+    console.log('\n✓ Test 37: Pagination - cursor-based');
+    const cursorPagination = await client.pagination.PaginationController_cursorPagination({
+      limit: 10,
+      signal: undefined,
+    });
+    console.log(`  Cursor pagination: ${cursorPagination.items?.length} items, next cursor: ${cursorPagination.nextCursor || 'none'}`);
+
+    // Test 38: Polymorphism - allOf (inheritance)
+    console.log('\n✓ Test 38: Polymorphism - allOf inheritance');
+    const allOf = await client.polymorphism.PolymorphismController_allOfExample({ signal: undefined });
+    console.log(`  Extended entity: ${allOf.extendedField}`);
+
+    // Test 39: Polymorphism - oneOf with discriminator
+    console.log('\n✓ Test 39: Polymorphism - oneOf payment method');
+    const payment = await client.polymorphism.PolymorphismController_paymentMethod({ signal: undefined });
+    console.log(`  Payment type: ${payment.type}`);
+
+    // Test 40: Polymorphism - events with discriminator
+    console.log('\n✓ Test 40: Polymorphism - event union');
+    const event = await client.polymorphism.PolymorphismController_getEvent({ signal: undefined });
+    console.log(`  Event type: ${event.eventType}`);
+
+    // Test 41: Edge cases - circular references
+    console.log('\n✓ Test 41: Edge cases - circular references (tree)');
+    const tree = await client['edge-cases'].EdgeCasesController_treeStructure({ signal: undefined });
+    console.log(`  Tree root: ${tree.name}, has ${tree.children?.length || 0} children`);
+
+    // Test 42: Edge cases - reserved word properties
+    console.log('\n✓ Test 42: Edge cases - reserved words');
+    const reserved = await client['edge-cases'].EdgeCasesController_reservedWords({ signal: undefined });
+    console.log(`  Reserved word property 'default': ${reserved.default}`);
+
+    // Test 43: Edge cases - naming with acronyms
+    console.log('\n✓ Test 43: Edge cases - acronyms');
+    const acronyms = await client['edge-cases'].EdgeCasesController_acronyms({ signal: undefined });
+    console.log(`  API URL: ${acronyms.apiUrl}`);
+
     console.log('\n✅ All tests passed!');
   } catch (error) {
     console.error('\n❌ Test failed:', error);

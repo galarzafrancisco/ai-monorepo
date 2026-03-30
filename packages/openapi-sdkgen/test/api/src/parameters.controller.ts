@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Delete, Param, Query, Headers, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Head, Options, Param, Query, Headers, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiHeader, ApiProperty, ApiCookieAuth } from '@nestjs/swagger';
+import { Request } from 'express';
 
 export class PathParamsResponseDto {
   @ApiProperty({ type: String })
@@ -156,6 +157,28 @@ export class MixedParamsResponseDto {
   headerValue: string;
 }
 
+export class CookieParamsResponseDto {
+  @ApiProperty({ type: String, required: false })
+  sessionId?: string;
+
+  @ApiProperty({ type: String, required: false })
+  userId?: string;
+
+  @ApiProperty({ type: String })
+  message: string;
+}
+
+export class DeleteConfirmationDto {
+  @ApiProperty({ type: String })
+  id: string;
+
+  @ApiProperty({ type: Boolean })
+  deleted: boolean;
+
+  @ApiProperty({ type: String })
+  message: string;
+}
+
 @ApiTags('parameters')
 @Controller('parameters')
 export class ParametersController {
@@ -240,8 +263,8 @@ export class ParametersController {
 
   @Get('query/arrays')
   @ApiOperation({ summary: 'Test array query parameters' })
-  @ApiQuery({ name: 'tags', required: true, type: [String], isArray: true })
-  @ApiQuery({ name: 'ids', required: true, type: [Number], isArray: true })
+  @ApiQuery({ name: 'tags', required: true, type: String, isArray: true })
+  @ApiQuery({ name: 'ids', required: true, type: Number, isArray: true })
   @ApiResponse({ status: 200, type: ArrayQueryResponseDto })
   arrayQuery(
     @Query('tags') tags: string[],
@@ -292,7 +315,7 @@ export class ParametersController {
   @Get('query/filtering')
   @ApiOperation({ summary: 'Test filtering query parameters' })
   @ApiQuery({ name: 'status', required: false, type: String })
-  @ApiQuery({ name: 'tags', required: false, type: [String], isArray: true })
+  @ApiQuery({ name: 'tags', required: false, type: String, isArray: true })
   @ApiQuery({ name: 'createdAfter', required: false, type: String, format: 'date-time' })
   @ApiResponse({ status: 200, type: FilteringQueryResponseDto })
   filteringQuery(
@@ -385,10 +408,54 @@ export class ParametersController {
   }
 
   @Delete('delete/:id')
-  @ApiOperation({ summary: 'Test DELETE with path parameter' })
+  @ApiOperation({ summary: 'Test DELETE with path parameter returning 204' })
   @ApiResponse({ status: 204, description: 'Resource deleted' })
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteWithParam(@Param('id') id: string): void {
     // No content response
+  }
+
+  @Delete('delete-confirmed/:id')
+  @ApiOperation({ summary: 'Test DELETE returning JSON confirmation body' })
+  @ApiResponse({ status: 200, description: 'Resource deleted with confirmation', type: DeleteConfirmationDto })
+  deleteWithConfirmation(@Param('id') id: string): DeleteConfirmationDto {
+    return {
+      id,
+      deleted: true,
+      message: `Resource ${id} has been deleted`,
+    };
+  }
+
+  // Cookie parameters
+  @Get('cookies')
+  @ApiOperation({ summary: 'Test cookie parameters' })
+  @ApiCookieAuth()
+  @ApiResponse({ status: 200, type: CookieParamsResponseDto })
+  cookieParams(@Req() req: Request): CookieParamsResponseDto {
+    const sessionId = req.cookies?.sessionId;
+    const userId = req.cookies?.userId;
+    return {
+      sessionId,
+      userId,
+      message: 'Cookie parameters',
+    };
+  }
+
+  // HEAD endpoint
+  @Head('head-check')
+  @ApiOperation({ summary: 'Test HEAD method' })
+  @ApiResponse({ status: 200, description: 'Headers only, no body' })
+  headCheck(): void {
+    // HEAD returns headers only, no body
+  }
+
+  // OPTIONS endpoint
+  @Options('options-check')
+  @ApiOperation({ summary: 'Test OPTIONS method' })
+  @ApiResponse({ status: 200, description: 'CORS preflight or available methods' })
+  optionsCheck(): { methods: string[] } {
+    return {
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+    };
   }
 }

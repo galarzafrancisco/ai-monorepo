@@ -12,7 +12,7 @@ import {
   InternalServerErrorException,
   Header,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiProperty } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiProperty, ApiProduces } from '@nestjs/swagger';
 
 export class SuccessResponseDto {
   @ApiProperty({ type: String })
@@ -280,6 +280,7 @@ export class ResponsesController {
 
   @Get('text-plain')
   @ApiOperation({ summary: 'Test text/plain response' })
+  @ApiProduces('text/plain')
   @ApiResponse({ status: 200, description: 'Plain text response', schema: { type: 'string' } })
   @Header('content-type', 'text/plain')
   textPlain(): string {
