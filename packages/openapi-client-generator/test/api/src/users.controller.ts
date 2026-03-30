@@ -12,34 +12,84 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, ApiHeader } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, ApiHeader, ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
+  @ApiProperty({ type: String })
   name: string;
+
+  @ApiProperty({ type: String })
   email: string;
+
+  @ApiProperty({ type: Number, required: false })
   age?: number;
 }
 
 export class UpdateUserDto {
+  @ApiProperty({ type: String, required: false })
   name?: string;
+
+  @ApiProperty({ type: String, required: false })
   email?: string;
+
+  @ApiProperty({ type: Number, required: false })
   age?: number;
 }
 
 export class UserDto {
+  @ApiProperty({ type: String })
   id: string;
+
+  @ApiProperty({ type: String })
   name: string;
+
+  @ApiProperty({ type: String })
   email: string;
+
+  @ApiProperty({ type: Number, required: false })
   age?: number;
+
+  @ApiProperty({ type: String })
   createdAt: string;
 }
 
+class UserMetadataDto {
+  @ApiProperty({ type: String })
+  source: string;
+
+  @ApiProperty({ type: [String] })
+  tags: string[];
+}
+
 export class UserWithMetadataDto {
+  @ApiProperty({ type: () => UserDto })
   user: UserDto;
-  metadata: {
-    source: string;
-    tags: string[];
-  };
+
+  @ApiProperty({ type: () => UserMetadataDto })
+  metadata: UserMetadataDto;
+}
+
+export class AuthCheckDto {
+  @ApiProperty({ type: String, nullable: true })
+  auth: string | null;
+}
+
+export class CustomHeaderCheckDto {
+  @ApiProperty({ type: String })
+  requestId: string;
+}
+
+export class SearchAdvancedDto {
+  @ApiProperty({ type: Number, required: false })
+  pageSize?: number;
+
+  @ApiProperty({ type: String, required: false })
+  sortOrder?: string;
+}
+
+export class OptionalHeaderCheckDto {
+  @ApiProperty({ type: String, nullable: true })
+  trackingId: string | null;
 }
 
 @ApiTags('users')
@@ -166,16 +216,16 @@ export class UsersController {
   @Get('check/auth')
   @ApiOperation({ summary: 'Check authentication headers' })
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Headers echoed back' })
-  checkAuth(@Headers('authorization') auth?: string): { auth: string | null } {
+  @ApiResponse({ status: 200, description: 'Headers echoed back', type: AuthCheckDto })
+  checkAuth(@Headers('authorization') auth?: string): AuthCheckDto {
     return { auth: auth || null };
   }
 
   @Get('check/custom-header')
   @ApiOperation({ summary: 'Test endpoint with custom header parameter' })
   @ApiHeader({ name: 'x-request-id', required: true, description: 'Custom request ID header' })
-  @ApiResponse({ status: 200, description: 'Custom header echoed back' })
-  checkCustomHeader(@Headers('x-request-id') requestId: string): { requestId: string } {
+  @ApiResponse({ status: 200, description: 'Custom header echoed back', type: CustomHeaderCheckDto })
+  checkCustomHeader(@Headers('x-request-id') requestId: string): CustomHeaderCheckDto {
     return { requestId };
   }
 
@@ -183,19 +233,19 @@ export class UsersController {
   @ApiOperation({ summary: 'Test endpoint with query parameters that have special characters' })
   @ApiQuery({ name: 'page-size', required: false, type: Number })
   @ApiQuery({ name: 'sort-order', required: false, type: String })
-  @ApiResponse({ status: 200, description: 'Query params echoed back' })
+  @ApiResponse({ status: 200, description: 'Query params echoed back', type: SearchAdvancedDto })
   searchAdvanced(
     @Query('page-size') pageSize?: number,
     @Query('sort-order') sortOrder?: string,
-  ): { pageSize: number | undefined; sortOrder: string | undefined } {
+  ): SearchAdvancedDto {
     return { pageSize, sortOrder };
   }
 
   @Get('check/optional-header')
   @ApiOperation({ summary: 'Test endpoint with optional header parameter' })
   @ApiHeader({ name: 'x-tracking-id', required: false, description: 'Optional tracking ID header' })
-  @ApiResponse({ status: 200, description: 'Optional header echoed back' })
-  checkOptionalHeader(@Headers('x-tracking-id') trackingId?: string): { trackingId: string | null } {
+  @ApiResponse({ status: 200, description: 'Optional header echoed back', type: OptionalHeaderCheckDto })
+  checkOptionalHeader(@Headers('x-tracking-id') trackingId?: string): OptionalHeaderCheckDto {
     return { trackingId: trackingId || null };
   }
 }

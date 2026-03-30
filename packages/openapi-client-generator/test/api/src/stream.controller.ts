@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Sse } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiProduces, ApiProperty, ApiQuery } from '@nestjs/swagger';
 import { Observable, interval, map, take } from 'rxjs';
 
 export interface MessageEvent {
@@ -9,12 +9,25 @@ export interface MessageEvent {
   retry?: number;
 }
 
+export class StreamEventDto {
+  @ApiProperty({ type: Number })
+  index: number;
+
+  @ApiProperty({ type: String })
+  message: string;
+
+  @ApiProperty({ type: Number })
+  timestamp: number;
+}
+
 @ApiTags('stream')
 @Controller('stream')
 export class StreamController {
   @Sse('events')
   @ApiOperation({ summary: 'Stream server-sent events' })
-  @ApiResponse({ status: 200, description: 'Event stream' })
+  @ApiQuery({ name: 'count', required: false, type: Number, description: 'Number of events to stream' })
+  @ApiProduces('text/event-stream')
+  @ApiResponse({ status: 200, description: 'Event stream', type: StreamEventDto })
   streamEvents(@Query('count') count = 5): Observable<MessageEvent> {
     return interval(100).pipe(
       take(count),

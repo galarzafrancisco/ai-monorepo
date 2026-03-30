@@ -179,7 +179,7 @@ export class BaseClient {
 
     const contentType = response.headers.get('content-type');
     if (contentType?.includes('application/json')) {
-      return response.json();
+      return response.json() as Promise<T>;
     }
 
     return response.text() as any;
@@ -353,7 +353,8 @@ function generateOperation(op: Operation): string {
   const isStreaming = isStreamingEndpoint(op);
 
   // Build method signature
-  const methodName = toCamelCase(op.operationId);
+  // Use operationId directly as method name (already in desired format from OpenAPI)
+  const methodName = op.operationId;
   const { params, isParamsOptional } = buildMethodParams(op);
   const returnType = inferReturnType(op, isStreaming);
 

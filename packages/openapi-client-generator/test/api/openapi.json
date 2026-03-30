@@ -178,7 +178,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Headers echoed back"
+            "description": "Headers echoed back",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthCheckDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -208,7 +215,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Custom header echoed back"
+            "description": "Custom header echoed back",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomHeaderCheckDto"
+                }
+              }
+            }
           }
         },
         "summary": "Test endpoint with custom header parameter",
@@ -240,7 +254,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Query params echoed back"
+            "description": "Query params echoed back",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchAdvancedDto"
+                }
+              }
+            }
           }
         },
         "summary": "Test endpoint with query parameters that have special characters",
@@ -265,7 +286,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Optional header echoed back"
+            "description": "Optional header echoed back",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionalHeaderCheckDto"
+                }
+              }
+            }
           }
         },
         "summary": "Test endpoint with optional header parameter",
@@ -400,10 +428,27 @@
     "/stream/events": {
       "get": {
         "operationId": "StreamController_streamEvents",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "count",
+            "required": false,
+            "in": "query",
+            "description": "Number of events to stream",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Event stream"
+            "description": "Event stream",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreamEventDto"
+                }
+              }
+            }
           }
         },
         "summary": "Stream server-sent events",
@@ -447,31 +492,228 @@
     "schemas": {
       "UserDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "age": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "createdAt"
+        ]
+      },
+      "UserMetadataDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "source",
+          "tags"
+        ]
       },
       "UserWithMetadataDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/UserMetadataDto"
+          }
+        },
+        "required": [
+          "user",
+          "metadata"
+        ]
       },
       "CreateUserDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "age": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ]
       },
       "UpdateUserDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "age": {
+            "type": "number"
+          }
+        }
+      },
+      "AuthCheckDto": {
+        "type": "object",
+        "properties": {
+          "auth": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "auth"
+        ]
+      },
+      "CustomHeaderCheckDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ]
+      },
+      "SearchAdvancedDto": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "number"
+          },
+          "sortOrder": {
+            "type": "string"
+          }
+        }
+      },
+      "OptionalHeaderCheckDto": {
+        "type": "object",
+        "properties": {
+          "trackingId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "trackingId"
+        ]
       },
       "TaskDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "createdAt"
+        ]
       },
       "CreateTaskDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed"
+            ]
+          }
+        },
+        "required": [
+          "title"
+        ]
       },
       "UpdateTaskStatusDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "StreamEventDto": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "index",
+          "message",
+          "timestamp"
+        ]
       }
     }
   }

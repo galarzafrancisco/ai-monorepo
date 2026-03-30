@@ -7,23 +7,38 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody, ApiProperty } from '@nestjs/swagger';
 
 export class CreateTaskDto {
+  @ApiProperty({ type: String })
   title: string;
+
+  @ApiProperty({ type: String, required: false })
   description?: string;
+
+  @ApiProperty({ enum: ['pending', 'in_progress', 'completed'], required: false })
   status?: 'pending' | 'in_progress' | 'completed';
 }
 
 export class UpdateTaskStatusDto {
+  @ApiProperty({ enum: ['pending', 'in_progress', 'completed'] })
   status: 'pending' | 'in_progress' | 'completed';
 }
 
 export class TaskDto {
+  @ApiProperty({ type: String })
   id: string;
+
+  @ApiProperty({ type: String })
   title: string;
+
+  @ApiProperty({ type: String, required: false })
   description?: string;
+
+  @ApiProperty({ enum: ['pending', 'in_progress', 'completed'] })
   status: 'pending' | 'in_progress' | 'completed';
+
+  @ApiProperty({ type: String })
   createdAt: string;
 }
 
