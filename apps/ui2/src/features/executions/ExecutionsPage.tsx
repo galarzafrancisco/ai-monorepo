@@ -1,42 +1,22 @@
 import { useEffect, useState } from "react";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Text } from "../../ui/primitives";
-import { ExecutionsService } from "@taico/client";
-import type { ExecutionResponseDto, ExecutionListResponseDto } from "@taico/client";
+import { useExecutions, type ExecutionStatus } from "./useExecutions";
+import type { Execution } from "./types";
 import "./ExecutionsPage.css";
 
-type ExecutionStatus = "READY" | "CLAIMED" | "RUNNING" | "STOP_REQUESTED" | "COMPLETED" | "FAILED" | "CANCELLED" | "STALE";
-
 export function ExecutionsPage() {
-  const [executions, setExecutions] = useState<ExecutionResponseDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { executions, isLoading, error, loadExecutions } = useExecutions();
   const [statusFilter, setStatusFilter] = useState<ExecutionStatus | undefined>(undefined);
 
   useDocumentTitle();
 
   useEffect(() => {
-    loadExecutions();
-  }, [statusFilter]);
+    loadExecutions(statusFilter);
+  }, [statusFilter, loadExecutions]);
 
-  const loadExecutions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response: ExecutionListResponseDto = await ExecutionsService.executionsControllerListExecutions(
-        statusFilter,
-        undefined, // agentActorId
-        undefined, // taskId
-        1, // page
-        50 // limit
-      );
-      setExecutions(response.items || []);
-    } catch (err) {
-      console.error("Failed to load executions:", err);
-      setError(err instanceof Error ? err.message : "Failed to load executions");
-    } finally {
-      setLoading(false);
-    }
+  const handleRefresh = () => {
+    loadExecutions(statusFilter);
   };
 
   const formatDate = (dateStr: string | null | undefined) => {
@@ -68,20 +48,20 @@ export function ExecutionsPage() {
             <option value="CANCELLED">CANCELLED</option>
             <option value="STALE">STALE</option>
           </select>
-          <button onClick={loadExecutions} className="refresh-button">
+          <button onClick={handleRefresh} className="refresh-button">
             Refresh
           </button>
         </div>
       </div>
 
-      {loading && <Text>Loading executions...</Text>}
+      {isLoading && <Text>Loading executions...</Text>}
       {error && <Text className="error-text">Error: {error}</Text>}
 
-      {!loading && !error && executions.length === 0 && (
+      {!isLoading && !error && executions.length === 0 && (
         <Text>No executions found.</Text>
       )}
 
-      {!loading && !error && executions.length > 0 && (
+      {!isLoading && !error && executions.length > 0 && (
         <div className="executions-table-container">
           <table className="executions-table">
             <thead>
@@ -98,10 +78,10 @@ export function ExecutionsPage() {
               </tr>
             </thead>
             <tbody>
-              {executions.map((execution) => (
+              {executions.map((execution: Execution) => (
                 <tr key={execution.id}>
                   <td>
-                    <span className={getStatusClass(execution.status)}>
+                    <span className={getStatusClass(execution.status as ExecutionStatus)}>
                       {execution.status}
                     </span>
                   </td>
