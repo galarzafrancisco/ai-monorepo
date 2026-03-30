@@ -12,6 +12,7 @@ COPY packages/client/package*.json ./packages/client/
 COPY packages/adk-session-store/package*.json ./packages/adk-session-store/
 COPY packages/errors/package*.json ./packages/errors/
 COPY packages/events/package*.json ./packages/events/
+COPY packages/openapi-sdkgen/package*.json ./packages/openapi-sdkgen/
 
 # Install all dependencies (including dev dependencies for building)
 RUN --mount=type=cache,target=/root/.npm npm ci

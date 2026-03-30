@@ -6,7 +6,15 @@ npm-debug.log
 dist
 build
 apps/backend/dist
+apps/ui2/dist
 apps/ui/dist
+packages/adk-session-store/dist
+packages/client/dist
+packages/client/src/v1/client
+packages/client/src/v2
+packages/errors/dist
+packages/events/dist
+packages/openapi-sdkgen/dist
 
 # Git
 .git

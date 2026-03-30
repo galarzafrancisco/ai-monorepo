@@ -3,7 +3,7 @@
 import { readdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 
-const SERVICES_DIR = new URL('../src/client/services', import.meta.url).pathname;
+const SERVICES_DIR = new URL('../src/v1/client/services', import.meta.url).pathname;
 
 async function* walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
