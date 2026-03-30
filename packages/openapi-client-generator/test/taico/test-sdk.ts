@@ -78,6 +78,29 @@ async function main() {
     });
     console.log(`  Comment added by ${comment.commenterName}: "${comment.content}"`);
 
+    // Test 4: Admin adds a context block — admin user via cookie auth
+    console.log('✓ Test 4: POST block (admin, cookie auth)');
+    const block1 = await adminCookieClient.context.ContextController_createBlock({
+      body: {
+        title: "test block",
+        content: "# Hello\n\nThis is a test",
+        tagNames: ['foo']
+      }
+    });
+    console.log(`  Block created ${block1.id}`);
+
+    // Test 5: Dev adds a child block
+    console.log('✓ Test 5: POST block (dev)');
+    const block2 = await devBearerClient.context.ContextController_createBlock({
+      body: {
+        title: "test block",
+        content: "# Hello\n\nThis is a test",
+        tagNames: ['foo'],
+        parentId: block1.id
+      }
+    });
+    console.log(`  Child block created ${block2.id}`);
+
     console.log('\n✅ All tests passed!');
   } catch (error) {
     console.error('\n❌ Test failed:', error);

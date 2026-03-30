@@ -1,4 +1,4 @@
 export type {
   BlockResponseDto as ContextBlock,
   BlockSummaryDto as ContextBlockSummary,
-} from "@taico/client";
+} from "@taico/client/v2";
