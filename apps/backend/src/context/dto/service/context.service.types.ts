@@ -75,3 +75,15 @@ export interface BlockTreeResult {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type SearchBlocksInput = {
+  query: string;
+  limit?: number;
+  threshold?: number;
+};
+
+export type BlockSearchResult = {
+  id: string;
+  title: string;
+  score: number;
+};

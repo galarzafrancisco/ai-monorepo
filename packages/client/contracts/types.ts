@@ -1423,6 +1423,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/context/blocks/search/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search blocks by query string */
+        get: operations["ContextController_searchBlocks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/context/blocks/tree": {
         parameters: {
             query?: never;
@@ -1719,6 +1736,23 @@ export interface paths {
             cookie?: never;
         };
         get: operations["DiscoveryController_all"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Global search across all resources */
+        get: operations["GlobalSearchController_search"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4583,6 +4617,23 @@ export interface components {
             /** @description List of context blocks */
             items: components["schemas"]["BlockSummaryDto"][];
         };
+        BlockSearchResultDto: {
+            /**
+             * @description Block ID
+             * @example ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81
+             */
+            id: string;
+            /**
+             * @description Block title
+             * @example Authentication Guide
+             */
+            title: string;
+            /**
+             * @description Match confidence score (0-1, higher is better)
+             * @example 0.85
+             */
+            score: number;
+        };
         BlockTreeResponseDto: {
             /**
              * @description Unique identifier for the block
@@ -5137,6 +5188,34 @@ export interface components {
              * @example Tasks MCP API
              */
             resource_name: string;
+        };
+        GlobalSearchResultDto: {
+            /**
+             * @description Result ID
+             * @example ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81
+             */
+            id: string;
+            /**
+             * @description Result type
+             * @example task
+             * @enum {string}
+             */
+            type: "task" | "context_block" | "agent" | "project" | "tag";
+            /**
+             * @description Result title/name
+             * @example Implement authentication
+             */
+            title: string;
+            /**
+             * @description Match confidence score (0-1, higher is better)
+             * @example 0.85
+             */
+            score: number;
+            /**
+             * @description Frontend URL path to navigate to this resource
+             * @example /tasks/task/ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81
+             */
+            url: string;
         };
     };
     responses: never;
@@ -8750,6 +8829,33 @@ export interface operations {
             };
         };
     };
+    ContextController_searchBlocks: {
+        parameters: {
+            query: {
+                /** @description Search query string */
+                query: string;
+                /** @description Maximum number of results to return */
+                limit?: number;
+                /** @description Minimum score threshold (0-1, higher is stricter) */
+                threshold?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Search results sorted by relevance */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockSearchResultDto"][];
+                };
+            };
+        };
+    };
     ContextController_getBlockTree: {
         parameters: {
             query?: never;
@@ -9557,6 +9663,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProtectedResourceMetadataResponseDto"];
+                };
+            };
+        };
+    };
+    GlobalSearchController_search: {
+        parameters: {
+            query: {
+                /** @description Search query string */
+                query: string;
+                /** @description Maximum number of results to return per category */
+                limit?: number;
+                /** @description Minimum score threshold (0-1, higher is stricter) */
+                threshold?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Search results sorted by relevance */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalSearchResultDto"][];
                 };
             };
         };

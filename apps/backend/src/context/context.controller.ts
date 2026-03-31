@@ -39,6 +39,8 @@ import { ListBlocksQueryDto } from './dto/list-blocks-query.dto';
 import { BlockTreeResponseDto } from './dto/block-tree-response.dto';
 import { ReorderBlockDto } from './dto/reorder-block.dto';
 import { MoveBlockDto } from './dto/move-block.dto';
+import { SearchBlocksQueryDto } from './dto/search-blocks-query.dto';
+import { BlockSearchResultDto } from './dto/block-search-result.dto';
 import {
   BlockResult,
   BlockSummaryResult,
@@ -102,6 +104,28 @@ export class ContextController {
     return {
       items: items.map((item) => this.mapToSummary(item)),
     };
+  }
+
+  @Get('search/query')
+  @ApiOperation({ summary: 'Search blocks by query string' })
+  @ApiOkResponse({
+    type: [BlockSearchResultDto],
+    description: 'Search results sorted by relevance',
+  })
+  async searchBlocks(
+    @Query() query: SearchBlocksQueryDto,
+  ): Promise<BlockSearchResultDto[]> {
+    const results = await this.contextService.searchBlocks({
+      query: query.query,
+      limit: query.limit,
+      threshold: query.threshold,
+    });
+
+    return results.map((result) => ({
+      id: result.id,
+      title: result.title,
+      score: result.score,
+    }));
   }
 
   @Get('tree')

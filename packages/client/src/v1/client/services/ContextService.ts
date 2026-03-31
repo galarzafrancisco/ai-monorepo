@@ -5,6 +5,7 @@
 import type { AppendBlockDto } from '../models/AppendBlockDto.js';
 import type { BlockListResponseDto } from '../models/BlockListResponseDto.js';
 import type { BlockResponseDto } from '../models/BlockResponseDto.js';
+import type { BlockSearchResultDto } from '../models/BlockSearchResultDto.js';
 import type { BlockTreeResponseDto } from '../models/BlockTreeResponseDto.js';
 import type { CreateBlockDto } from '../models/CreateBlockDto.js';
 import type { CreateTagDto } from '../models/CreateTagDto.js';
@@ -51,6 +52,30 @@ export class ContextService {
             url: '/api/v1/context/blocks',
             query: {
                 'tag': tag,
+            },
+        });
+    }
+    /**
+     * Search blocks by query string
+     * @param query Search query string
+     * @param limit Maximum number of results to return
+     * @param threshold Minimum score threshold (0-1, higher is stricter)
+     * @returns BlockSearchResultDto Search results sorted by relevance
+     * @throws ApiError
+     */
+    public static contextControllerSearchBlocks(
+        query: string,
+        limit: number = 10,
+        threshold: number = 0.3,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<Array<BlockSearchResultDto>> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/context/blocks/search/query',
+            query: {
+                'query': query,
+                'limit': limit,
+                'threshold': threshold,
             },
         });
     }

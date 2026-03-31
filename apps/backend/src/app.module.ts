@@ -37,6 +37,7 @@ import { AddTaskExecutionIdToAgentRuns1741600000000 } from './migrations/1741600
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
+import { GlobalSearchModule } from './global-search/global-search.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { ExecutionsModule } from './executions/executions.module';
     SecretsModule,
     ChatProvidersModule,
     ExecutionsModule,
+    GlobalSearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
