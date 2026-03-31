@@ -4,6 +4,24 @@
   overflow-x: auto;
 }
 
+.connection-indicator {
+  display: flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--r-1);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+.connection-indicator.connected {
+  background-color: color-mix(in srgb, var(--success) 15%, transparent);
+  color: var(--success);
+}
+
+.connection-indicator.disconnected {
+  background-color: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+}
 .executions-header {
   display: flex;
   justify-content: space-between;
@@ -103,7 +121,8 @@
 
 .status-failed,
 .status-cancelled,
-.status-stale {
+.status-stale,
+.status-expired {
   background: color-mix(in srgb, var(--danger) 10%, transparent);
   color: var(--danger);
 }

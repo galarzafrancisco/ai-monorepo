@@ -1,43 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Text } from "../../ui/primitives";
-import { ExecutionsService } from "@taico/client";
-import type { ExecutionResponseDto, ExecutionListResponseDto } from "@taico/client";
+import { useExecutionsCtx } from "./ExecutionsProvider";
+import type { ExecutionStatus } from "./types";
 import "./ExecutionsPage.css";
 
-type ExecutionStatus = "READY" | "CLAIMED" | "RUNNING" | "STOP_REQUESTED" | "COMPLETED" | "FAILED" | "CANCELLED" | "STALE";
-
 export function ExecutionsPage() {
-  const [executions, setExecutions] = useState<ExecutionResponseDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { executions, isLoading, hasLoadedOnce, error, isConnected, loadExecutions } = useExecutionsCtx();
   const [statusFilter, setStatusFilter] = useState<ExecutionStatus | undefined>(undefined);
 
   useDocumentTitle();
 
-  useEffect(() => {
-    loadExecutions();
-  }, [statusFilter]);
-
-  const loadExecutions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response: ExecutionListResponseDto = await ExecutionsService.executionsControllerListExecutions(
-        statusFilter,
-        undefined, // agentActorId
-        undefined, // taskId
-        1, // page
-        50 // limit
-      );
-      setExecutions(response.items || []);
-    } catch (err) {
-      console.error("Failed to load executions:", err);
-      setError(err instanceof Error ? err.message : "Failed to load executions");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filteredExecutions = statusFilter
+    ? executions.filter((e) => e.status === statusFilter)
+    : executions;
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "-";
@@ -53,6 +29,9 @@ export function ExecutionsPage() {
       <div className="executions-header">
         <Text size="6" weight="bold">Work Queue (Debug)</Text>
         <div className="executions-controls">
+          <span className={`connection-indicator ${isConnected ? "connected" : "disconnected"}`}>
+            {isConnected ? "Live" : "Disconnected"}
+          </span>
           <select
             value={statusFilter || ""}
             onChange={(e) => setStatusFilter((e.target.value || undefined) as ExecutionStatus | undefined)}
@@ -62,11 +41,10 @@ export function ExecutionsPage() {
             <option value="READY">READY</option>
             <option value="CLAIMED">CLAIMED</option>
             <option value="RUNNING">RUNNING</option>
-            <option value="STOP_REQUESTED">STOP_REQUESTED</option>
             <option value="COMPLETED">COMPLETED</option>
             <option value="FAILED">FAILED</option>
             <option value="CANCELLED">CANCELLED</option>
-            <option value="STALE">STALE</option>
+            <option value="EXPIRED">EXPIRED</option>
           </select>
           <button onClick={loadExecutions} className="refresh-button">
             Refresh
@@ -74,14 +52,14 @@ export function ExecutionsPage() {
         </div>
       </div>
 
-      {loading && <Text>Loading executions...</Text>}
+      {isLoading && !hasLoadedOnce && <Text>Loading executions...</Text>}
       {error && <Text className="error-text">Error: {error}</Text>}
 
-      {!loading && !error && executions.length === 0 && (
+      {hasLoadedOnce && !error && executions.length === 0 && (
         <Text>No executions found.</Text>
       )}
 
-      {!loading && !error && executions.length > 0 && (
+      {hasLoadedOnce && !error && executions.length > 0 && (
         <div className="executions-table-container">
           <table className="executions-table">
             <thead>
@@ -98,7 +76,7 @@ export function ExecutionsPage() {
               </tr>
             </thead>
             <tbody>
-              {executions.map((execution) => (
+              {filteredExecutions.map((execution) => (
                 <tr key={execution.id}>
                   <td>
                     <span className={getStatusClass(execution.status)}>
