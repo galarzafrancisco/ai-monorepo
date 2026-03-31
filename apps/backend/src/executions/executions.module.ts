@@ -9,6 +9,7 @@ import { ExecutionsService } from './executions.service';
 import { WorkerSessionService } from './worker-session.service';
 import { ExecutionsController } from './executions.controller';
 import { WorkersGateway } from './workers.gateway';
+import { ExecutionsGateway } from './executions.gateway';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { ThreadsModule } from '../threads/threads.module';
 import { TaskEntity } from '../tasks/task.entity';
@@ -39,6 +40,7 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
     ExecutionsService,
     WorkerSessionService,
     WorkersGateway,
+    ExecutionsGateway,
   ],
   exports: [
     ExecutionContextResolverService,
