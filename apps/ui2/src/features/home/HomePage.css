@@ -29,7 +29,7 @@
 .home-search-input {
   width: 100%;
   padding: var(--space-4) var(--space-5);
-  font-size: var(--font-size-4);
+  font-size: var(--font-size-5);
   font-family: var(--font-family);
   color: var(--text);
   background: var(--card-bg);
@@ -104,6 +104,6 @@
   }
 
   .home-search-input {
-    font-size: var(--font-size-3);
+    font-size: var(--font-size-4);
   }
 }
