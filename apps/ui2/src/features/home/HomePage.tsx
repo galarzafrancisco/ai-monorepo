@@ -19,7 +19,7 @@ export function HomePage() {
   useDocumentTitle();
 
   useEffect(() => {
-    setSectionTitle("Home");
+    setSectionTitle("");
     // Auto-focus the search input on mount
     searchInputRef.current?.focus();
   }, [setSectionTitle]);

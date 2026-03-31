@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { TasksService } from '../tasks/tasks.service';
 import { ContextService } from '../context/context.service';
+import { ActorService } from '../identity-provider/actor.service';
+import { ProjectsService } from '../meta/projects.service';
 import { SearchResultType } from './dto/global-search-result.dto';
 
 export type GlobalSearchInput = {
@@ -24,6 +26,8 @@ export class GlobalSearchService {
   constructor(
     private readonly tasksService: TasksService,
     private readonly contextService: ContextService,
+    private readonly actorService: ActorService,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   async search(input: GlobalSearchInput): Promise<GlobalSearchResult[]> {
@@ -35,18 +39,29 @@ export class GlobalSearchService {
     });
 
     // Search in parallel across all modules
-    const [taskResults, blockResults] = await Promise.all([
-      this.tasksService.searchTasks({
-        query: input.query,
-        limit: input.limit,
-        threshold: input.threshold,
-      }),
-      this.contextService.searchBlocks({
-        query: input.query,
-        limit: input.limit,
-        threshold: input.threshold,
-      }),
-    ]);
+    const [taskResults, blockResults, actorResults, projectResults] =
+      await Promise.all([
+        this.tasksService.searchTasks({
+          query: input.query,
+          limit: input.limit,
+          threshold: input.threshold,
+        }),
+        this.contextService.searchBlocks({
+          query: input.query,
+          limit: input.limit,
+          threshold: input.threshold,
+        }),
+        this.actorService.searchActors({
+          query: input.query,
+          limit: input.limit,
+          threshold: input.threshold,
+        }),
+        this.projectsService.searchProjects({
+          query: input.query,
+          limit: input.limit,
+          threshold: input.threshold,
+        }),
+      ]);
 
     // Map results to global format
     const results: GlobalSearchResult[] = [];
@@ -73,6 +88,28 @@ export class GlobalSearchService {
       });
     }
 
+    // Add actor results
+    for (const actorResult of actorResults) {
+      results.push({
+        id: actorResult.item.id,
+        type: SearchResultType.AGENT,
+        title: actorResult.item.displayName,
+        score: actorResult.score,
+        url: `/agents/agent/${actorResult.item.slug}`,
+      });
+    }
+
+    // Add project results
+    for (const projectResult of projectResults) {
+      results.push({
+        id: projectResult.id,
+        type: SearchResultType.PROJECT,
+        title: projectResult.slug,
+        score: 1.0, // Projects service returns items without scores
+        url: `/settings/projects`,
+      });
+    }
+
     // Sort all results by score (highest first)
     results.sort((a, b) => b.score - a.score);
 
@@ -80,6 +117,8 @@ export class GlobalSearchService {
       message: 'Global search completed',
       taskCount: taskResults.length,
       blockCount: blockResults.length,
+      actorCount: actorResults.length,
+      projectCount: projectResults.length,
       totalCount: results.length,
     });
 
