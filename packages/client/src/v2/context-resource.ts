@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AppendBlockDto, BlockListResponseDto, BlockResponseDto, BlockTreeResponseDto, CreateBlockDto, CreateTagDto, MoveBlockDto, ReorderBlockDto, UpdateBlockDto } from './types.js';
+import type { AppendBlockDto, BlockListResponseDto, BlockResponseDto, BlockSearchResultDto, BlockTreeResponseDto, CreateBlockDto, CreateTagDto, MoveBlockDto, ReorderBlockDto, UpdateBlockDto } from './types.js';
 
 export class ContextResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -14,6 +14,11 @@ export class ContextResource extends BaseClient {
   /** List wiki pages without content */
   async ContextController_listBlocks(params?: { tag?: string; signal?: AbortSignal }): Promise<BlockListResponseDto> {
     return this.request('GET', '/api/v1/context/blocks', { params: { tag: params?.tag }, signal: params?.signal });
+  }
+
+  /** Search blocks by query string */
+  async ContextController_searchBlocks(params: { query: string; limit?: number; threshold?: number; signal?: AbortSignal }): Promise<BlockSearchResultDto[]> {
+    return this.request('GET', '/api/v1/context/blocks/search/query', { params: { query: params.query, limit: params.limit, threshold: params.threshold }, signal: params?.signal });
   }
 
   /** Get page hierarchy tree */

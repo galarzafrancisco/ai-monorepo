@@ -1,320 +1,205 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Chip, ListRow, Row, Stack, Text } from "../../ui/primitives";
 import { useHomeCtx } from "./HomeProvider";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
-import { TasksService } from "../tasks/api";
-import { Task } from "../tasks/types";
-import { TaskStatus, TASKS_STATUS } from "../tasks/const";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
-import { useAuth } from "../../auth/AuthContext";
+import { SearchService } from "./search-api";
+import type { GlobalSearchResultDto } from "@taico/client/v2";
 import "./HomePage.css";
-
-const TASKS_PAGE_SIZE = 100;
-
-const STATUS_ORDER = [
-  TaskStatus.NOT_STARTED,
-  TaskStatus.IN_PROGRESS,
-  TaskStatus.FOR_REVIEW,
-  TaskStatus.DONE,
-];
 
 export function HomePage() {
   const navigate = useNavigate();
   const { setSectionTitle } = useHomeCtx();
-  const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<GlobalSearchResultDto[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useDocumentTitle();
 
   useEffect(() => {
-    setSectionTitle("Home");
+    setSectionTitle("");
+    // Auto-focus the search input on mount
+    searchInputRef.current?.focus();
   }, [setSectionTitle]);
 
-  useEffect(() => {
-    let active = true;
-    const loadTasks = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await TasksService.TasksController_listTasks({
-          page: 1,
-          limit: TASKS_PAGE_SIZE,
-        });
-        if (!active) {
-          return;
-        }
-        setTasks(response.items ?? []);
-      } catch (err) {
-        if (!active) {
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Failed to load tasks");
-      } finally {
-        if (active) {
-          setIsLoading(false);
-        }
-      }
-    };
+  const performSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setResults([]);
+      setSelectedIndex(-1);
+      return;
+    }
 
-    loadTasks();
-    return () => {
-      active = false;
-    };
+    setIsSearching(true);
+    try {
+      const searchResults = await SearchService.GlobalSearchController_search({
+        query: searchQuery,
+        limit: 20,
+      });
+      setResults(searchResults);
+      setSelectedIndex(-1);
+    } catch (err) {
+      console.error("Search failed:", err);
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   }, []);
 
-  const taskCounts = useMemo(() => {
-    return STATUS_ORDER.reduce<Record<TaskStatus, number>>((acc, status) => {
-      acc[status] = tasks.filter(task => task.status === status).length;
-      return acc;
-    }, {
-      [TaskStatus.NOT_STARTED]: 0,
-      [TaskStatus.IN_PROGRESS]: 0,
-      [TaskStatus.FOR_REVIEW]: 0,
-      [TaskStatus.DONE]: 0,
-    });
-  }, [tasks]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      performSearch(query);
+    }, 300); // Debounce search
 
-  const needsInputTasks = useMemo(() => {
-    return tasks.filter(task => task.inputRequests?.some(request => {
-      const isOpen = !request.resolvedAt;
-      if (!isOpen) {
-        return false;
-      }
-      if (!user) {
-        return true;
-      }
-      return request.assignedToActorId === user.actorId;
-    }));
-  }, [tasks, user]);
+    return () => clearTimeout(timer);
+  }, [query, performSearch]);
 
-  const reviewTasks = useMemo(() => {
-    return tasks.filter(task => task.status === TaskStatus.FOR_REVIEW);
-  }, [tasks]);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === "Enter" && selectedIndex >= 0 && results[selectedIndex]) {
+      e.preventDefault();
+      window.open(results[selectedIndex].url, "_blank");
+    }
+  };
 
-  const inProgressTasks = useMemo(() => {
-    return tasks.filter(task => task.status === TaskStatus.IN_PROGRESS);
-  }, [tasks]);
+  const handleResultClick = (url: string) => {
+    window.open(url, "_blank");
+  };
 
-  const recentTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
-      const dateA = new Date(a.updatedAt).getTime();
-      const dateB = new Date(b.updatedAt).getTime();
-      return dateB - dateA;
-    }).slice(0, 6);
-  }, [tasks]);
+  const getTypeColor = (type: string): "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple" => {
+    switch (type) {
+      case "task":
+        return "blue";
+      case "context_block":
+        return "purple";
+      case "agent":
+        return "green";
+      case "project":
+        return "orange";
+      case "tag":
+        return "yellow";
+      default:
+        return "gray";
+    }
+  };
+
+  const getTypeLabel = (type: string): string => {
+    switch (type) {
+      case "task":
+        return "Task";
+      case "context_block":
+        return "Context";
+      case "agent":
+        return "Agent";
+      case "project":
+        return "Project";
+      case "tag":
+        return "Tag";
+      default:
+        return type;
+    }
+  };
 
   return (
-    <div className="home-page">
-      <div className="home-page__hero">
-        <Stack spacing="3">
-          <Text size="6" weight="bold">Command Center</Text>
-          <Text size="3" tone="muted">
-            A quick pulse on tasks waiting for you, active builds, and review queues.
-          </Text>
-          <Row className="home-page__hero-actions" spacing="2">
-            <Button onClick={() => navigate("/tasks")}>
-              Go to tasks
+    <div className="home-page-search">
+      <div className="home-search-container">
+        <Stack spacing="6" align="center">
+          <Stack spacing="3" align="center">
+            <Text size="6" weight="bold" className="home-search-title">
+              Find anything
+            </Text>
+            <Text size="3" tone="muted" className="home-search-subtitle">
+              Search across tasks, context, agents, and more
+            </Text>
+          </Stack>
+
+          <div className="home-search-box">
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="home-search-input"
+              placeholder="Search..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoFocus
+            />
+          </div>
+
+          {query && (
+            <Card className="home-search-results">
+              <Stack spacing="2">
+                {isSearching && (
+                  <Text tone="muted" size="2">
+                    Searching...
+                  </Text>
+                )}
+
+                {!isSearching && results.length === 0 && (
+                  <Text tone="muted" size="2">
+                    No results found
+                  </Text>
+                )}
+
+                {!isSearching && results.length > 0 && (
+                  <>
+                    <Text size="1" tone="muted">
+                      {results.length} {results.length === 1 ? "result" : "results"}
+                    </Text>
+                    <div className="home-search-results-list">
+                      {results.map((result, index) => (
+                        <ListRow
+                          key={result.id}
+                          interactive
+                          onClick={() => handleResultClick(result.url)}
+                          className={`home-search-result-row ${
+                            index === selectedIndex ? "home-search-result-row--selected" : ""
+                          }`}
+                        >
+                          <div className="home-search-result-main">
+                            <Text weight="medium" size="3">
+                              {result.title}
+                            </Text>
+                          </div>
+                          <div className="home-search-result-meta">
+                            <Chip color={getTypeColor(result.type)}>
+                              {getTypeLabel(result.type)}
+                            </Chip>
+                            <Text size="1" tone="muted">
+                              {Math.round(result.score * 100)}% match
+                            </Text>
+                          </div>
+                        </ListRow>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </Stack>
+            </Card>
+          )}
+
+          <Row spacing="2" className="home-quick-links">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/tasks")}>
+              Tasks
             </Button>
-            <Button variant="secondary" onClick={() => navigate("/agents")}>Agents</Button>
-            <Button variant="secondary" onClick={() => navigate("/context")}>Context</Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/threads")}>
+              Threads
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/agents")}>
+              Agents
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/context")}>
+              Context
+            </Button>
           </Row>
         </Stack>
-        <Card className="home-page__hero-card">
-          <Stack spacing="3">
-            <Text size="4" weight="semibold">Today’s focus</Text>
-            <Text tone="muted">
-              {needsInputTasks.length > 0
-                ? `${needsInputTasks.length} task${needsInputTasks.length === 1 ? "" : "s"} waiting on input.`
-                : "No open input requests. You’re clear to build."}
-            </Text>
-            <Row spacing="2">
-              <Chip color={needsInputTasks.length > 0 ? "orange" : "green"}>
-                {needsInputTasks.length > 0 ? "Needs input" : "All clear"}
-              </Chip>
-              <Chip color={reviewTasks.length > 0 ? "purple" : "gray"}>
-                {reviewTasks.length > 0 ? `${reviewTasks.length} ready to review` : "No reviews"}
-              </Chip>
-            </Row>
-          </Stack>
-        </Card>
-      </div>
-
-      <div className="home-page__status-grid">
-        {STATUS_ORDER.map(status => {
-          const info = TASKS_STATUS[status];
-          return (
-            <button
-              key={status}
-              className="home-status-card"
-              type="button"
-              onClick={() => navigate(info.path)}
-            >
-              <Card className="home-status-card__inner">
-                <Text size="1" tone="muted">{info.icon} {info.label}</Text>
-                <Text size="5" weight="bold">{taskCounts[status]}</Text>
-              </Card>
-            </button>
-          );
-        })}
-      </div>
-
-      {error ? (
-        <Card className="home-page__notice">
-          <Text tone="muted">Error loading tasks: {error}</Text>
-        </Card>
-      ) : null}
-
-      {isLoading && tasks.length === 0 ? (
-        <Card className="home-page__notice">
-          <Text tone="muted">Loading task activity…</Text>
-        </Card>
-      ) : null}
-
-      <div className="home-page__grid">
-        <Card className="home-panel">
-          <Stack spacing="3">
-            <Row justify="space-between" align="center">
-              <Text size="3" weight="semibold">Needs your input</Text>
-              <Button size="sm" variant="ghost" onClick={() => navigate("/tasks")}>Open</Button>
-            </Row>
-            <div className="home-list">
-              {needsInputTasks.length === 0 ? (
-                <Text tone="muted">No tasks waiting on your input.</Text>
-              ) : (
-                needsInputTasks.slice(0, 5).map(task => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    chipLabel="Input"
-                    chipColor="orange"
-                    onClick={() => navigate(`/tasks/task/${task.id}`)}
-                  />
-                ))
-              )}
-            </div>
-          </Stack>
-        </Card>
-
-        <Card className="home-panel">
-          <Stack spacing="3">
-            <Row justify="space-between" align="center">
-              <Text size="3" weight="semibold">Ready for review</Text>
-              <Button size="sm" variant="ghost" onClick={() => navigate("/tasks/in-review")}>Review</Button>
-            </Row>
-            <div className="home-list">
-              {reviewTasks.length === 0 ? (
-                <Text tone="muted">No tasks ready to review.</Text>
-              ) : (
-                reviewTasks.slice(0, 5).map(task => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    chipLabel="Review"
-                    chipColor="purple"
-                    onClick={() => navigate(`/tasks/task/${task.id}`)}
-                  />
-                ))
-              )}
-            </div>
-          </Stack>
-        </Card>
-
-        <Card className="home-panel">
-          <Stack spacing="3">
-            <Row justify="space-between" align="center">
-              <Text size="3" weight="semibold">In progress</Text>
-              <Button size="sm" variant="ghost" onClick={() => navigate("/tasks/in-progress")}>View</Button>
-            </Row>
-            <div className="home-list">
-              {inProgressTasks.length === 0 ? (
-                <Text tone="muted">No active builds right now.</Text>
-              ) : (
-                inProgressTasks.slice(0, 5).map(task => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    chipLabel="Build"
-                    chipColor="green"
-                    onClick={() => navigate(`/tasks/task/${task.id}`)}
-                  />
-                ))
-              )}
-            </div>
-          </Stack>
-        </Card>
-
-        <Card className="home-panel">
-          <Stack spacing="3">
-            <Row justify="space-between" align="center">
-              <Text size="3" weight="semibold">Recent activity</Text>
-              <Button size="sm" variant="ghost" onClick={() => navigate("/tasks")}>All tasks</Button>
-            </Row>
-            <div className="home-list">
-              {recentTasks.length === 0 ? (
-                <Text tone="muted">No recent task activity yet.</Text>
-              ) : (
-                recentTasks.map(task => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    chipLabel={TASKS_STATUS[task.status as TaskStatus].label}
-                    chipColor={statusToChipColor(task.status as TaskStatus)}
-                    onClick={() => navigate(`/tasks/task/${task.id}`)}
-                  />
-                ))
-              )}
-            </div>
-          </Stack>
-        </Card>
       </div>
     </div>
   );
-}
-
-function TaskRow({
-  task,
-  chipLabel,
-  chipColor,
-  onClick,
-}: {
-  task: Task;
-  chipLabel: string;
-  chipColor: "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple";
-  onClick: () => void;
-}) {
-  return (
-    <ListRow interactive onClick={onClick} className="home-list-row">
-      <div className="home-list-row__main">
-        <Text weight="medium" size="3">{task.name}</Text>
-        <Text size="1" tone="muted">
-          {task.description ? String(task.description) : "No description"}
-        </Text>
-      </div>
-      <div className="home-list-row__meta">
-        <Chip color={chipColor}>{chipLabel}</Chip>
-        <Text size="1" tone="muted">{elapsedTime(task.updatedAt)}</Text>
-      </div>
-    </ListRow>
-  );
-}
-
-function statusToChipColor(
-  status: TaskStatus
-): "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple" {
-  if (status === TaskStatus.DONE) {
-    return "purple";
-  }
-  if (status === TaskStatus.IN_PROGRESS) {
-    return "green";
-  }
-  if (status === TaskStatus.NOT_STARTED) {
-    return "blue";
-  }
-  if (status === TaskStatus.FOR_REVIEW) {
-    return "orange";
-  }
-  return "gray";
 }

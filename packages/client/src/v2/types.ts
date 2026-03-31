@@ -832,6 +832,12 @@ export interface BlockListResponseDto {
   items: BlockSummaryDto[];
 }
 
+export interface BlockSearchResultDto {
+  id: string;
+  title: string;
+  score: number;
+}
+
 export interface BlockTreeResponseDto {
   id: string;
   title: string;
@@ -980,4 +986,12 @@ export interface ProtectedResourceMetadataResponseDto {
   scopes_supported: string[];
   bearer_methods_supported: string[];
   resource_name: string;
+}
+
+export interface GlobalSearchResultDto {
+  id: string;
+  type: 'task' | 'context_block' | 'agent' | 'project' | 'tag';
+  title: string;
+  score: number;
+  url: string;
 }

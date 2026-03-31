@@ -6,6 +6,7 @@ import { ContextBlockEntity } from './block.entity';
 import { MetaService } from '../meta/meta.service';
 import { TagEntity } from '../meta/tag.entity';
 import { ThreadsService } from '../threads/threads.service';
+import { SearchService } from '../search/search.service';
 
 import {
   AddTagInput,
@@ -17,6 +18,8 @@ import {
   BlockTreeResult,
   TagResult,
   UpdateBlockInput,
+  SearchBlocksInput,
+  BlockSearchResult,
 } from './dto/service/context.service.types';
 import {
   BlockNotFoundError,
@@ -41,6 +44,7 @@ export class ContextService {
     private readonly metaService: MetaService,
     @Inject(forwardRef(() => ThreadsService))
     private readonly threadsService: ThreadsService,
+    private readonly searchService: SearchService,
   ) {}
 
   async createBlock(input: CreateBlockInput): Promise<BlockResult> {
@@ -532,6 +536,48 @@ export class ContextService {
     await this.blockRepository.save(block);
 
     return this.mapToResult(block);
+  }
+
+  async searchBlocks(input: SearchBlocksInput): Promise<BlockSearchResult[]> {
+    this.logger.log({
+      message: 'Searching context blocks',
+      query: input.query,
+      limit: input.limit,
+      threshold: input.threshold,
+    });
+
+    // Get all blocks - we need to search across all of them
+    const blocks = await this.blockRepository.find();
+
+    // Map blocks to searchable format
+    const searchableItems = blocks.map((block) => ({
+      id: block.id,
+      title: block.title,
+      content: block.content,
+    }));
+
+    // Use the generic search service
+    // Primary field is 'title', secondary is 'content'
+    const searchResults = this.searchService.search({
+      items: searchableItems,
+      primaryField: 'title',
+      secondaryField: 'content',
+      query: input.query,
+      limit: input.limit,
+      threshold: input.threshold,
+    });
+
+    this.logger.log({
+      message: 'Search completed',
+      resultCount: searchResults.length,
+    });
+
+    // Map search results to our output format
+    return searchResults.map((result) => ({
+      id: result.id,
+      title: result.primaryField,
+      score: result.score,
+    }));
   }
 
   private async validateNoCircularReference(

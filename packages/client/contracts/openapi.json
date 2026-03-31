@@ -5088,6 +5088,73 @@
         ]
       }
     },
+    "/api/v1/context/blocks/search/query": {
+      "get": {
+        "operationId": "ContextController_searchBlocks",
+        "parameters": [
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "description": "Search query string",
+            "schema": {
+              "example": "authentication",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of results to return",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "threshold",
+            "required": false,
+            "in": "query",
+            "description": "Minimum score threshold (0-1, higher is stricter)",
+            "schema": {
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.3,
+              "example": 0.3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results sorted by relevance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BlockSearchResultDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Search blocks by query string",
+        "tags": [
+          "Context"
+        ]
+      }
+    },
     "/api/v1/context/blocks/tree": {
       "get": {
         "operationId": "ContextController_getBlockTree",
@@ -6289,6 +6356,73 @@
         },
         "tags": [
           "Discovery"
+        ]
+      }
+    },
+    "/api/v1/search/query": {
+      "get": {
+        "operationId": "GlobalSearchController_search",
+        "parameters": [
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "description": "Search query string",
+            "schema": {
+              "example": "authentication",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of results to return per category",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "threshold",
+            "required": false,
+            "in": "query",
+            "description": "Minimum score threshold (0-1, higher is stricter)",
+            "schema": {
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.3,
+              "example": 0.3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results sorted by relevance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GlobalSearchResultDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Global search across all resources",
+        "tags": [
+          "Search"
         ]
       }
     }
@@ -10524,6 +10658,33 @@
           "items"
         ]
       },
+      "BlockSearchResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Block ID",
+            "example": "ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81"
+          },
+          "title": {
+            "type": "string",
+            "description": "Block title",
+            "example": "Authentication Guide"
+          },
+          "score": {
+            "type": "number",
+            "description": "Match confidence score (0-1, higher is better)",
+            "example": 0.85,
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "score"
+        ]
+      },
       "BlockTreeResponseDto": {
         "type": "object",
         "properties": {
@@ -11339,6 +11500,52 @@
           "scopes_supported",
           "bearer_methods_supported",
           "resource_name"
+        ]
+      },
+      "GlobalSearchResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Result ID",
+            "example": "ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81"
+          },
+          "type": {
+            "type": "string",
+            "description": "Result type",
+            "enum": [
+              "task",
+              "context_block",
+              "agent",
+              "project",
+              "tag"
+            ],
+            "example": "task"
+          },
+          "title": {
+            "type": "string",
+            "description": "Result title/name",
+            "example": "Implement authentication"
+          },
+          "score": {
+            "type": "number",
+            "description": "Match confidence score (0-1, higher is better)",
+            "example": 0.85,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "url": {
+            "type": "string",
+            "description": "Frontend URL path to navigate to this resource",
+            "example": "/tasks/task/ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "score",
+          "url"
         ]
       }
     }
