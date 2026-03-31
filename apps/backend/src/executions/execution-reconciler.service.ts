@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OnEvent } from '@nestjs/event-emitter';
+import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskExecutionEntity } from './task-execution.entity';
 import { TaskExecutionStatus } from './enums';
 import { TaskEntity } from '../tasks/task.entity';
@@ -15,6 +15,11 @@ import {
   TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
 } from '../tasks/events/tasks.events';
+import {
+  ExecutionCreatedEvent,
+  ExecutionUpdatedEvent,
+  ExecutionDeletedEvent,
+} from './events/executions.events';
 
 /**
  * ExecutionReconcilerService
@@ -46,6 +51,7 @@ export class ExecutionReconcilerService {
     private readonly taskRepository: Repository<TaskEntity>,
     @InjectRepository(AgentEntity)
     private readonly agentRepository: Repository<AgentEntity>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -342,7 +348,23 @@ export class ExecutionReconcilerService {
           existingExecution.status = TaskExecutionStatus.READY;
           existingExecution.triggerReason = reason;
           existingExecution.requestedAt = new Date();
-          await this.executionRepository.save(existingExecution);
+          const savedExecution = await this.executionRepository.save(existingExecution);
+
+          // Load execution with relations for event payload
+          const executionWithRelations = await this.executionRepository.findOne({
+            where: { id: savedExecution.id },
+            relations: ['task', 'agentActor'],
+          });
+
+          if (executionWithRelations) {
+            this.eventEmitter.emit(
+              ExecutionUpdatedEvent.INTERNAL,
+              new ExecutionUpdatedEvent(
+                { id: 'system' },
+                executionWithRelations,
+              ),
+            );
+          }
 
           this.logger.log({
             message: 'TaskExecution updated to READY',
@@ -371,7 +393,23 @@ export class ExecutionReconcilerService {
         triggerReason: reason,
       });
 
-      await this.executionRepository.save(execution);
+      const savedExecution = await this.executionRepository.save(execution);
+
+      // Load execution with relations for event payload
+      const executionWithRelations = await this.executionRepository.findOne({
+        where: { id: savedExecution.id },
+        relations: ['task', 'agentActor'],
+      });
+
+      if (executionWithRelations) {
+        this.eventEmitter.emit(
+          ExecutionCreatedEvent.INTERNAL,
+          new ExecutionCreatedEvent(
+            { id: 'system' },
+            executionWithRelations,
+          ),
+        );
+      }
 
       this.logger.log({
         message: 'TaskExecution created',
@@ -398,7 +436,23 @@ export class ExecutionReconcilerService {
     for (const execution of executions) {
       execution.status = TaskExecutionStatus.CANCELLED;
       execution.failureReason = reason;
-      await this.executionRepository.save(execution);
+      const savedExecution = await this.executionRepository.save(execution);
+
+      // Load execution with relations for event payload
+      const executionWithRelations = await this.executionRepository.findOne({
+        where: { id: savedExecution.id },
+        relations: ['task', 'agentActor'],
+      });
+
+      if (executionWithRelations) {
+        this.eventEmitter.emit(
+          ExecutionUpdatedEvent.INTERNAL,
+          new ExecutionUpdatedEvent(
+            { id: 'system' },
+            executionWithRelations,
+          ),
+        );
+      }
 
       this.logger.log({
         message: 'TaskExecution cancelled',

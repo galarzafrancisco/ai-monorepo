@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskExecutionEntity } from './task-execution.entity';
 import { TaskExecutionStatus } from './enums';
 import {
@@ -15,6 +16,7 @@ import {
   TaskExecutionNotClaimableError,
   TaskExecutionAlreadyClaimedError,
 } from './errors/executions.errors';
+import { ExecutionUpdatedEvent } from './events/executions.events';
 
 /**
  * ExecutionClaimService
@@ -35,6 +37,7 @@ export class ExecutionClaimService {
   constructor(
     @InjectRepository(TaskExecutionEntity)
     private readonly executionRepository: Repository<TaskExecutionEntity>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -137,6 +140,9 @@ export class ExecutionClaimService {
       rowVersion: updatedExecution.rowVersion,
     });
 
+    // Emit event for realtime updates
+    await this.emitExecutionUpdatedEvent(updatedExecution.id);
+
     return {
       executionId: input.executionId,
       taskId: updatedExecution.taskId,
@@ -221,6 +227,9 @@ export class ExecutionClaimService {
       rowVersion: updatedExecution.rowVersion,
     });
 
+    // Emit event for realtime updates
+    await this.emitExecutionUpdatedEvent(updatedExecution.id);
+
     return {
       executionId: input.executionId,
       leaseExpiresAt: updatedExecution.leaseExpiresAt!,
@@ -291,6 +300,9 @@ export class ExecutionClaimService {
       workerSessionId: input.workerSessionId,
     });
 
+    // Emit event for realtime updates
+    await this.emitExecutionUpdatedEvent(input.executionId);
+
     return true;
   }
 
@@ -357,6 +369,9 @@ export class ExecutionClaimService {
       workerSessionId,
       startedAt,
     });
+
+    // Emit event for realtime updates
+    await this.emitExecutionUpdatedEvent(executionId);
 
     return true;
   }
@@ -425,6 +440,9 @@ export class ExecutionClaimService {
       workerSessionId,
       finishedAt,
     });
+
+    // Emit event for realtime updates
+    await this.emitExecutionUpdatedEvent(executionId);
 
     return true;
   }
@@ -499,6 +517,37 @@ export class ExecutionClaimService {
       failureReason,
     });
 
+    // Emit event for realtime updates
+    await this.emitExecutionUpdatedEvent(executionId);
+
     return true;
+  }
+
+  /**
+   * Helper method to emit ExecutionUpdatedEvent with full entity data
+   */
+  private async emitExecutionUpdatedEvent(executionId: string): Promise<void> {
+    try {
+      const executionWithRelations = await this.executionRepository.findOne({
+        where: { id: executionId },
+        relations: ['task', 'agentActor'],
+      });
+
+      if (executionWithRelations) {
+        this.eventEmitter.emit(
+          ExecutionUpdatedEvent.INTERNAL,
+          new ExecutionUpdatedEvent(
+            { id: 'system' },
+            executionWithRelations,
+          ),
+        );
+      }
+    } catch (error) {
+      this.logger.error({
+        message: 'Failed to emit execution updated event',
+        executionId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 }
