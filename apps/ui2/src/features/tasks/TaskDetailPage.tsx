@@ -827,34 +827,24 @@ export function TaskDetailPage() {
     activityByTaskId,
   } = useTasksCtx();
 
-  const [task, setTask] = useState<Task | undefined>(undefined);
   const [isFetchingTask, setIsFetchingTask] = useState(false);
 
-  // Fetch task on mount or when taskId changes.
-  // The getTaskById function handles cache-first logic internally,
-  // so we don't need to check the cache here. This prevents race conditions
-  // and keeps the component logic simple and transparent.
+  // Derive task from the live tasks array so WebSocket updates are reflected automatically.
+  const task = taskId ? tasks.find(t => t.id === taskId) : undefined;
+
+  // On mount (or taskId change), ensure the task is in the cache.
+  // getTaskById fetches from the API and adds it to the tasks array if missing.
   useEffect(() => {
-    if (!taskId) {
-      setTask(undefined);
-      return;
-    }
+    if (!taskId) return;
 
-    const fetchTask = async () => {
-      setIsFetchingTask(true);
-      try {
-        const fetchedTask = await getTaskById(taskId);
-        setTask(fetchedTask ?? undefined);
-      } catch (err) {
-        console.error('Failed to fetch task', err);
-        setTask(undefined);
-      } finally {
-        setIsFetchingTask(false);
-      }
-    };
+    let cancelled = false;
+    setIsFetchingTask(true);
+    getTaskById(taskId)
+      .catch((err) => console.error('Failed to fetch task', err))
+      .finally(() => { if (!cancelled) setIsFetchingTask(false); });
 
-    fetchTask();
-  }, [taskId, getTaskById]); // Removed 'tasks' dependency to prevent race condition
+    return () => { cancelled = true; };
+  }, [taskId, getTaskById]);
 
   const isLoadingTask = !task && (!hasLoadedOnce || isLoading || isFetchingTask);
 
