@@ -127,7 +127,8 @@ export function ContextBlockDetailPage() {
         </Markdown>
       </div>
 
-      <DeleteWithConfirmation
+
+      <DeleteWithConfirmation className='context-block-detail__actions'
         onDelete={async () => {
           try {
             await ContextService.ContextController_deleteBlock({ id: block.id });
@@ -136,7 +137,7 @@ export function ContextBlockDetailPage() {
             showError(err);
           }
         }}
-        deleteLabel="Delete block"
+        deleteLabel="Delete"
         confirmLabel="Confirm Delete"
       />
 
