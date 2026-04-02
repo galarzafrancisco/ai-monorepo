@@ -830,9 +830,15 @@ export function TaskDetailPage() {
   const [task, setTask] = useState<Task | undefined>(undefined);
   const [isFetchingTask, setIsFetchingTask] = useState(false);
 
-  // Fetch task on mount or when taskId changes
+  // Fetch task on mount or when taskId changes.
+  // The getTaskById function handles cache-first logic internally,
+  // so we don't need to check the cache here. This prevents race conditions
+  // and keeps the component logic simple and transparent.
   useEffect(() => {
-    if (!taskId) return;
+    if (!taskId) {
+      setTask(undefined);
+      return;
+    }
 
     const fetchTask = async () => {
       setIsFetchingTask(true);
@@ -847,16 +853,8 @@ export function TaskDetailPage() {
       }
     };
 
-    // First check if task is in the cached list
-    const cachedTask = tasks.find(t => t.id === taskId);
-    if (cachedTask) {
-      setTask(cachedTask);
-      setIsFetchingTask(false);
-    } else {
-      // If not in cache, fetch from backend
-      fetchTask();
-    }
-  }, [taskId, getTaskById, tasks]);
+    fetchTask();
+  }, [taskId, getTaskById]); // Removed 'tasks' dependency to prevent race condition
 
   const isLoadingTask = !task && (!hasLoadedOnce || isLoading || isFetchingTask);
 

@@ -130,38 +130,34 @@ export function useContextBlocks() {
     };
   };
 
-  // Get a single block by ID - checks cache first, then fetches from backend
+  // Get a single block by ID - always fetches full block from backend.
+  //
+  // Note: The cached 'blocks' array contains only ContextBlockSummary objects
+  // (without the full 'content' field). When we need the complete block with
+  // content, we MUST fetch from the backend. This is intentional - the list
+  // view only needs summaries for performance, while detail views need full content.
+  //
+  // This function is wrapped in useCallback to maintain referential stability.
   const getBlockById = useCallback(async (blockId: string): Promise<ContextBlock | null> => {
-    // First check if block is in the cached list
-    const cachedBlock = blocks.find(b => b.id === blockId);
-    if (cachedBlock) {
-      // If we have a summary, fetch the full block with content
-      try {
-        const fullBlock = await ContextService.ContextController_getBlock({ id: blockId });
-        return fullBlock;
-      } catch (err) {
-        console.error('Failed to fetch full block', err);
-        return null;
-      }
-    }
-
-    // If not in cache, fetch from backend
+    // Always fetch the full block from backend (cache only has summaries)
     try {
-      const block = await ContextService.ContextController_getBlock({ id: blockId });
-      // Optionally add to cache for future lookups
+      const fullBlock = await ContextService.ContextController_getBlock({ id: blockId });
+
+      // Update cache with the full block for future reference
       setBlocks((prev) => {
         // Avoid duplicates - check if block already exists
-        if (prev.some(b => b.id === block.id)) {
-          return prev;
+        if (prev.some(b => b.id === fullBlock.id)) {
+          return prev; // Keep existing summary in cache
         }
-        return sortBlocks([block, ...prev]);
+        return sortBlocks([fullBlock, ...prev]);
       });
-      return block;
+
+      return fullBlock;
     } catch (err) {
       console.error('Failed to fetch block by ID', err);
       return null;
     }
-  }, [blocks]);
+  }, []); // No dependencies - uses functional state updates
 
   // Boot
   useEffect(() => {

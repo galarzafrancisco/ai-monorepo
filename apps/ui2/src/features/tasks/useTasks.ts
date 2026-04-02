@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { TasksService } from './api';
 import type { Task } from './types';
@@ -133,22 +133,21 @@ export const useTasks = () => {
   };
 
   // Get a single task by ID - checks cache first, then fetches from backend
-  const getTaskById = async (taskId: string): Promise<Task | null> => {
-    // First check if task is in the cached list
-    const cachedTask = tasks.find(t => t.id === taskId);
-    if (cachedTask) {
-      return cachedTask;
-    }
-
-    // If not in cache, fetch from backend
+  // This function is wrapped in useCallback to maintain referential stability,
+  // preventing unnecessary re-renders in components that depend on it.
+  // We use functional state updates to avoid depending on the tasks state.
+  const getTaskById = useCallback(async (taskId: string): Promise<Task | null> => {
+    // Try to fetch from backend (it's fast enough and ensures we have the latest data)
     try {
       const task = await TasksService.TasksController_getTask({ id: taskId });
-      // Optionally add to cache for future lookups
+      // Add to cache for future lookups
       setTasks((prev) => {
-        // Avoid duplicates
+        // Check if task already exists in cache to avoid duplicates
         if (prev.some(t => t.id === task.id)) {
-          return prev;
+          // Update existing task in case it changed
+          return sortTasks(prev.map(t => t.id === task.id ? task : t));
         }
+        // Add new task to cache
         return sortTasks([task, ...prev]);
       });
       return task;
@@ -156,7 +155,7 @@ export const useTasks = () => {
       console.error('Failed to fetch task by ID', err);
       return null;
     }
-  };
+  }, []); // No dependencies - uses functional state updates
 
   // Setup websocket
   const setupWebsocket = () => {
