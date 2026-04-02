@@ -84,6 +84,8 @@ export function HomePage() {
         return "orange";
       case "tag":
         return "yellow";
+      case "tool":
+        return "red";
       default:
         return "gray";
     }
@@ -101,6 +103,8 @@ export function HomePage() {
         return "Project";
       case "tag":
         return "Tag";
+      case "tool":
+        return "Tool";
       default:
         return type;
     }
@@ -115,7 +119,7 @@ export function HomePage() {
               Find anything
             </Text>
             <Text size="3" tone="muted" className="home-search-subtitle">
-              Search across tasks, context, agents, and more
+              Search across tasks, context, agents, tools, and more
             </Text>
           </Stack>
 

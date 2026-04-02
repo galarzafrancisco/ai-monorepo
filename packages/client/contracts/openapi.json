@@ -11518,7 +11518,8 @@
               "context_block",
               "agent",
               "project",
-              "tag"
+              "tag",
+              "tool"
             ],
             "example": "task"
           },

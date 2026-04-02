@@ -3,6 +3,7 @@ import { TasksService } from '../tasks/tasks.service';
 import { ContextService } from '../context/context.service';
 import { ActorService } from '../identity-provider/actor.service';
 import { ProjectsService } from '../meta/projects.service';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { SearchResultType } from './dto/global-search-result.dto';
 
 export type GlobalSearchInput = {
@@ -28,6 +29,7 @@ export class GlobalSearchService {
     private readonly contextService: ContextService,
     private readonly actorService: ActorService,
     private readonly projectsService: ProjectsService,
+    private readonly mcpRegistryService: McpRegistryService,
   ) {}
 
   async search(input: GlobalSearchInput): Promise<GlobalSearchResult[]> {
@@ -39,7 +41,7 @@ export class GlobalSearchService {
     });
 
     // Search in parallel across all modules
-    const [taskResults, blockResults, actorResults, projectResults] =
+    const [taskResults, blockResults, actorResults, projectResults, toolResults] =
       await Promise.all([
         this.tasksService.searchTasks({
           query: input.query,
@@ -57,6 +59,11 @@ export class GlobalSearchService {
           threshold: input.threshold,
         }),
         this.projectsService.searchProjects({
+          query: input.query,
+          limit: input.limit,
+          threshold: input.threshold,
+        }),
+        this.mcpRegistryService.searchServers({
           query: input.query,
           limit: input.limit,
           threshold: input.threshold,
@@ -110,6 +117,17 @@ export class GlobalSearchService {
       });
     }
 
+    // Add tool results
+    for (const tool of toolResults) {
+      results.push({
+        id: tool.id,
+        type: SearchResultType.TOOL,
+        title: tool.name,
+        score: tool.score,
+        url: `/tools/tool/${tool.id}`,
+      });
+    }
+
     // Sort all results by score (highest first)
     results.sort((a, b) => b.score - a.score);
 
@@ -119,6 +137,7 @@ export class GlobalSearchService {
       blockCount: blockResults.length,
       actorCount: actorResults.length,
       projectCount: projectResults.length,
+      toolCount: toolResults.length,
       totalCount: results.length,
     });
 

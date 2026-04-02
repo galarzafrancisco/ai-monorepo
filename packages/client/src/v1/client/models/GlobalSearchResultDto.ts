@@ -34,6 +34,7 @@ export namespace GlobalSearchResultDto {
         AGENT = 'agent',
         PROJECT = 'project',
         TAG = 'tag',
+        TOOL = 'tool',
     }
 }
 

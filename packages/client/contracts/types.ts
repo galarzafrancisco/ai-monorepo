@@ -5200,7 +5200,7 @@ export interface components {
              * @example task
              * @enum {string}
              */
-            type: "task" | "context_block" | "agent" | "project" | "tag";
+            type: "task" | "context_block" | "agent" | "project" | "tag" | "tool";
             /**
              * @description Result title/name
              * @example Implement authentication
