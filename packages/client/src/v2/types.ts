@@ -570,6 +570,7 @@ export interface ThreadListItemResponseDto {
   id: string;
   title: string;
   chatSessionId: string | null;
+  stateContextBlockId: string;
 }
 
 export interface ThreadListResponseDto {

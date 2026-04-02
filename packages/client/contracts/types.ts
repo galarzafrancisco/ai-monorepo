@@ -3672,6 +3672,11 @@ export interface components {
              * @example conv_123abc
              */
             chatSessionId: string | null;
+            /**
+             * @description State context block ID that tracks the evolving state of this thread
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            stateContextBlockId: string;
         };
         ThreadListResponseDto: {
             /** @description Array of thread list items */
