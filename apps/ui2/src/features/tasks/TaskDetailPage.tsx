@@ -815,6 +815,7 @@ export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const {
     tasks,
+    getTaskById,
     isLoading,
     hasLoadedOnce,
     setSectionTitle,
@@ -826,8 +827,36 @@ export function TaskDetailPage() {
     activityByTaskId,
   } = useTasksCtx();
 
-  const task = tasks.find(t => t.id === taskId);
-  const isLoadingTask = !task && (!hasLoadedOnce || isLoading);
+  const [task, setTask] = useState<Task | undefined>(undefined);
+  const [isFetchingTask, setIsFetchingTask] = useState(false);
+
+  // Fetch task on mount or when taskId changes.
+  // The getTaskById function handles cache-first logic internally,
+  // so we don't need to check the cache here. This prevents race conditions
+  // and keeps the component logic simple and transparent.
+  useEffect(() => {
+    if (!taskId) {
+      setTask(undefined);
+      return;
+    }
+
+    const fetchTask = async () => {
+      setIsFetchingTask(true);
+      try {
+        const fetchedTask = await getTaskById(taskId);
+        setTask(fetchedTask ?? undefined);
+      } catch (err) {
+        console.error('Failed to fetch task', err);
+        setTask(undefined);
+      } finally {
+        setIsFetchingTask(false);
+      }
+    };
+
+    fetchTask();
+  }, [taskId, getTaskById]); // Removed 'tasks' dependency to prevent race condition
+
+  const isLoadingTask = !task && (!hasLoadedOnce || isLoading || isFetchingTask);
 
   const handlers: TaskDetailHandlers = {
     addComment: ({ taskId, comment }) => addComment({ taskId, comment }),

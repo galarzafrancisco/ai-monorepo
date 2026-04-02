@@ -86,4 +86,12 @@ export class ContextResource extends BaseClient {
     return this.request('PATCH', '/api/v1/context/blocks/mcp', { signal: params?.signal });
   }
 
+  async ContextController_handleMcp_options(params?: { signal?: AbortSignal }): Promise<void> {
+    return this.request('OPTIONS', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+  }
+
+  async ContextController_handleMcp_head(params?: { signal?: AbortSignal }): Promise<void> {
+    return this.request('HEAD', '/api/v1/context/blocks/mcp', { signal: params?.signal });
+  }
+
 }

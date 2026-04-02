@@ -101,4 +101,12 @@ export class TaskResource extends BaseClient {
     return this.request('PATCH', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
   }
 
+  async TasksController_handleMcp_options(params?: { signal?: AbortSignal }): Promise<void> {
+    return this.request('OPTIONS', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+  }
+
+  async TasksController_handleMcp_head(params?: { signal?: AbortSignal }): Promise<void> {
+    return this.request('HEAD', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+  }
+
 }

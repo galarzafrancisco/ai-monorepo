@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useContextBlocks } from "./useContextBlocks";
-import type { ContextBlockSummary } from "./types";
+import type { ContextBlockSummary, ContextBlock } from "./types";
 
 // Shape this to match what pages/layout need.
 export type ContextContextValue = {
   blocks: ContextBlockSummary[];
+  getBlockById: (blockId: string) => Promise<ContextBlock | null>;
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
@@ -17,13 +18,14 @@ const ContextContext = createContext<ContextContextValue | null>(null);
 
 export function ContextProvider({ children }: { children: React.ReactNode }) {
   // WebSocket connection for real-time updates
-  const { blocks, isLoading, error, isConnected, reload } = useContextBlocks();
+  const { blocks, getBlockById, isLoading, error, isConnected, reload } = useContextBlocks();
   const [sectionTitle, setSectionTitle] = useState("");
 
   // Provide a stable reference to avoid pointless rerenders.
   const value = useMemo<ContextContextValue>(() => {
     return {
       blocks,
+      getBlockById,
       isLoading,
       error,
       isConnected,
@@ -33,6 +35,7 @@ export function ContextProvider({ children }: { children: React.ReactNode }) {
     };
   }, [
     blocks,
+    getBlockById,
     isLoading,
     error,
     isConnected,

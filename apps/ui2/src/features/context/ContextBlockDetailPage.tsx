@@ -11,6 +11,11 @@ export function ContextBlockDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { setSectionTitle } = useContextCtx();
+
+  // useContextBlock already implements the correct pattern:
+  // - It fetches the block from the API regardless of cache
+  // - It sets up WebSocket subscriptions for real-time updates
+  // - It handles deleted blocks appropriately
   const { block, isLoading, error, isDeleted } = useContextBlock(id || '');
 
   useEffect(() => {

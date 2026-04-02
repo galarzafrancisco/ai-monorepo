@@ -130,6 +130,35 @@ export function useContextBlocks() {
     };
   };
 
+  // Get a single block by ID - always fetches full block from backend.
+  //
+  // Note: The cached 'blocks' array contains only ContextBlockSummary objects
+  // (without the full 'content' field). When we need the complete block with
+  // content, we MUST fetch from the backend. This is intentional - the list
+  // view only needs summaries for performance, while detail views need full content.
+  //
+  // This function is wrapped in useCallback to maintain referential stability.
+  const getBlockById = useCallback(async (blockId: string): Promise<ContextBlock | null> => {
+    // Always fetch the full block from backend (cache only has summaries)
+    try {
+      const fullBlock = await ContextService.ContextController_getBlock({ id: blockId });
+
+      // Update cache with the full block for future reference
+      setBlocks((prev) => {
+        // Avoid duplicates - check if block already exists
+        if (prev.some(b => b.id === fullBlock.id)) {
+          return prev; // Keep existing summary in cache
+        }
+        return sortBlocks([fullBlock, ...prev]);
+      });
+
+      return fullBlock;
+    } catch (err) {
+      console.error('Failed to fetch block by ID', err);
+      return null;
+    }
+  }, []); // No dependencies - uses functional state updates
+
   // Boot
   useEffect(() => {
     loadBlocks();
@@ -137,7 +166,7 @@ export function useContextBlocks() {
     return cleanup;
   }, []);
 
-  return { blocks, isLoading, error, isConnected, reload: loadBlocks };
+  return { blocks, getBlockById, isLoading, error, isConnected, reload: loadBlocks };
 }
 
 export function useContextBlock(id: string) {
