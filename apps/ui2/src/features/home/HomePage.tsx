@@ -15,6 +15,7 @@ export function HomePage() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const resultRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useDocumentTitle();
 
@@ -39,6 +40,8 @@ export function HomePage() {
       });
       setResults(searchResults);
       setSelectedIndex(-1);
+      // Reset result refs array when results change
+      resultRefs.current = [];
     } catch (err) {
       console.error("Search failed:", err);
       setResults([]);
@@ -58,18 +61,38 @@ export function HomePage() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
+      setSelectedIndex((prev) => {
+        const newIndex = prev < results.length - 1 ? prev + 1 : prev;
+        // Scroll the selected result into view
+        setTimeout(() => {
+          resultRefs.current[newIndex]?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          });
+        }, 0);
+        return newIndex;
+      });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+      setSelectedIndex((prev) => {
+        const newIndex = prev > 0 ? prev - 1 : 0;
+        // Scroll the selected result into view
+        setTimeout(() => {
+          resultRefs.current[newIndex]?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          });
+        }, 0);
+        return newIndex;
+      });
     } else if (e.key === "Enter" && selectedIndex >= 0 && results[selectedIndex]) {
       e.preventDefault();
-      window.open(results[selectedIndex].url, "_blank");
+      navigate(results[selectedIndex].url);
     }
   };
 
   const handleResultClick = (url: string) => {
-    window.open(url, "_blank");
+    navigate(url);
   };
 
   const getTypeColor = (type: string): "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple" => {
@@ -158,28 +181,34 @@ export function HomePage() {
                     </Text>
                     <div className="home-search-results-list">
                       {results.map((result, index) => (
-                        <ListRow
+                        <div
                           key={result.id}
-                          interactive
-                          onClick={() => handleResultClick(result.url)}
-                          className={`home-search-result-row ${
-                            index === selectedIndex ? "home-search-result-row--selected" : ""
-                          }`}
+                          ref={(el) => {
+                            resultRefs.current[index] = el;
+                          }}
                         >
-                          <div className="home-search-result-main">
-                            <Text weight="medium" size="3">
-                              {result.title}
-                            </Text>
-                          </div>
-                          <div className="home-search-result-meta">
-                            <Chip color={getTypeColor(result.type)}>
-                              {getTypeLabel(result.type)}
-                            </Chip>
-                            <Text size="1" tone="muted">
-                              {Math.round(result.score * 100)}% match
-                            </Text>
-                          </div>
-                        </ListRow>
+                          <ListRow
+                            interactive
+                            onClick={() => handleResultClick(result.url)}
+                            className={`home-search-result-row ${
+                              index === selectedIndex ? "home-search-result-row--selected" : ""
+                            }`}
+                          >
+                            <div className="home-search-result-main">
+                              <Text weight="medium" size="3">
+                                {result.title}
+                              </Text>
+                            </div>
+                            <div className="home-search-result-meta">
+                              <Chip color={getTypeColor(result.type)}>
+                                {getTypeLabel(result.type)}
+                              </Chip>
+                              <Text size="1" tone="muted">
+                                {Math.round(result.score * 100)}% match
+                              </Text>
+                            </div>
+                          </ListRow>
+                        </div>
                       ))}
                     </div>
                   </>
