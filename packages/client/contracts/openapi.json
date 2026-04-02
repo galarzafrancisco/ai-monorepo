@@ -3616,6 +3616,45 @@
         ]
       }
     },
+    "/api/v1/threads/by-state-block/{stateBlockId}": {
+      "get": {
+        "operationId": "ThreadsController_getThreadsByStateBlockId",
+        "parameters": [
+          {
+            "name": "stateBlockId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Threads found for state block",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ThreadResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get threads by state context block ID",
+        "tags": [
+          "Threads"
+        ]
+      }
+    },
     "/api/v1/threads/{id}/tasks": {
       "post": {
         "operationId": "ThreadsController_attachTask",
@@ -9296,12 +9335,18 @@
             "description": "Provider-specific chat session/conversation ID associated with this thread",
             "example": "conv_123abc",
             "nullable": true
+          },
+          "stateContextBlockId": {
+            "type": "string",
+            "description": "State context block ID that tracks the evolving state of this thread",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
         "required": [
           "id",
           "title",
-          "chatSessionId"
+          "chatSessionId",
+          "stateContextBlockId"
         ]
       },
       "ThreadListResponseDto": {

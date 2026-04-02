@@ -87,6 +87,7 @@ export type ThreadListItemResult = {
   id: string;
   title: string;
   chatSessionId: string | null;
+  stateContextBlockId: string;
 };
 
 export type ListThreadsResult = {

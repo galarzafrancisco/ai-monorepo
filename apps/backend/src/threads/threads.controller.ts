@@ -144,6 +144,19 @@ export class ThreadsController {
     return ThreadResponseDto.fromResult(result);
   }
 
+  @Get('by-state-block/:stateBlockId')
+  @ApiOperation({ summary: 'Get threads by state context block ID' })
+  @ApiOkResponse({
+    type: [ThreadResponseDto],
+    description: 'Threads found for state block',
+  })
+  async getThreadsByStateBlockId(
+    @Param('stateBlockId') stateBlockId: string,
+  ): Promise<ThreadResponseDto[]> {
+    const results = await this.threadsService.findThreadsByStateBlockId(stateBlockId);
+    return results.map((result) => ThreadResponseDto.fromResult(result));
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a thread by ID with full details' })
   @ApiOkResponse({ type: ThreadResponseDto, description: 'Thread found' })

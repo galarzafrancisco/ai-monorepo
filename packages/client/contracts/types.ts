@@ -1037,6 +1037,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/by-state-block/{stateBlockId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get threads by state context block ID */
+        get: operations["ThreadsController_getThreadsByStateBlockId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/tasks": {
         parameters: {
             query?: never;
@@ -3672,6 +3689,11 @@ export interface components {
              * @example conv_123abc
              */
             chatSessionId: string | null;
+            /**
+             * @description State context block ID that tracks the evolving state of this thread
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            stateContextBlockId: string;
         };
         ThreadListResponseDto: {
             /** @description Array of thread list items */
@@ -7823,6 +7845,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+        };
+    };
+    ThreadsController_getThreadsByStateBlockId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stateBlockId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Threads found for state block */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"][];
                 };
             };
         };

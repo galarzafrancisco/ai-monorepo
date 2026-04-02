@@ -364,6 +364,7 @@ export class ThreadsService {
         id: thread.id,
         title: thread.title,
         chatSessionId: thread.chatSessionId ?? null,
+        stateContextBlockId: thread.stateContextBlockId,
       })),
       total,
       page: input.page,
