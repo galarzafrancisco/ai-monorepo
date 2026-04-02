@@ -11,9 +11,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@taico/events": "*",
-    "@taico/client": "*",
     "@radix-ui/react-dialog": "^1.1.15",
+    "@taico/client": "*",
+    "@taico/events": "*",
+    "marked-react": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.11.0",

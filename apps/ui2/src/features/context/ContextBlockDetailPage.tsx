@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Text, Stack, Chip } from '../../ui/primitives';
+import { Button, Text, Stack, Chip, DataRowContainer } from '../../ui/primitives';
 import { useContextBlock } from './useContextBlocks';
 import { useContextCtx } from './ContextProvider';
 import type { ContextTagResponseDto } from "@taico/client/v2";
 import { elapsedTime } from '../../shared/helpers/elapsedTime';
 import './ContextBlockDetailPage.css';
+import Markdown from 'marked-react';
+import { DeleteWithConfirmation } from 'src/ui/components';
 
 export function ContextBlockDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -57,9 +59,6 @@ export function ContextBlockDetailPage() {
 
   return (
     <div className="context-block-detail">
-      <Button variant="ghost" size="sm" onClick={() => navigate('/context/home')}>
-        ← Back to list
-      </Button>
 
       <Stack spacing="3" className="context-block-detail__header">
         {block.tags.length > 0 && (
@@ -71,7 +70,7 @@ export function ContextBlockDetailPage() {
         )}
 
         <div className="context-block-detail__meta">
-          <Text size="2" tone="muted">by {block.createdBy || 'unknown'}</Text>
+          <Text size="2" tone="muted">by @{block.createdBy || 'unknown'}</Text>
           <Text size="2" tone="muted">•</Text>
           <Text size="2" tone="muted">{new Date(block.createdAt).toDateString()}</Text>
           <Text size="2" tone="muted">•</Text>
@@ -80,8 +79,20 @@ export function ContextBlockDetailPage() {
       </Stack>
 
       <div className="context-block-detail__content">
-        <pre>{block.content}</pre>
+        <Markdown>
+          {block.content}
+        </Markdown>
       </div>
+
+      <DataRowContainer className='context-block-detail__actions'>
+        <Button
+          size='lg'
+          variant='secondary'
+          onClick={() => navigate('/context')}
+        >
+          Back to blocks
+        </Button>
+      </DataRowContainer>
     </div>
   );
 }
