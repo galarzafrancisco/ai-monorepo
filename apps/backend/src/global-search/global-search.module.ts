@@ -6,6 +6,7 @@ import { ContextModule } from '../context/context.module';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 import { MetaModule } from '../meta/meta.module';
+import { McpRegistryModule } from '../mcp-registry/mcp-registry.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { MetaModule } from '../meta/meta.module';
     ContextModule,
     IdentityProviderModule,
     MetaModule,
+    McpRegistryModule,
     AuthGuardsModule,
   ],
   controllers: [GlobalSearchController],

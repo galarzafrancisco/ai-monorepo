@@ -9,6 +9,7 @@ import {
   McpScopeMappingEntity,
 } from './entities';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
+import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
       McpScopeMappingEntity,
     ]),
     AuthGuardsModule,
+    SearchModule,
   ],
   controllers: [McpRegistryController],
   providers: [McpRegistryService],

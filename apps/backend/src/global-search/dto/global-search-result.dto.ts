@@ -6,6 +6,7 @@ export enum SearchResultType {
   AGENT = 'agent',
   PROJECT = 'project',
   TAG = 'tag',
+  TOOL = 'tool',
 }
 
 export class GlobalSearchResultDto {

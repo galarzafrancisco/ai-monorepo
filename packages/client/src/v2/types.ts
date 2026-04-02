@@ -990,7 +990,7 @@ export interface ProtectedResourceMetadataResponseDto {
 
 export interface GlobalSearchResultDto {
   id: string;
-  type: 'task' | 'context_block' | 'agent' | 'project' | 'tag';
+  type: 'task' | 'context_block' | 'agent' | 'project' | 'tag' | 'tool';
   title: string;
   score: number;
   url: string;
