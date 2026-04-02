@@ -38,6 +38,13 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
 
   const globalCommands: Command[] = useMemo(() => [
     {
+      id: 'nav-home',
+      label: 'Home',
+      description: 'Go to homepage',
+      aliases: ['home', 'search'],
+      onSelect: () => navigate('/home'),
+    },
+    {
       id: 'nav-tasks',
       label: 'Tasks',
       description: 'Go to tasks',
