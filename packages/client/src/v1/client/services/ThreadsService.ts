@@ -149,6 +149,24 @@ export class ThreadsService {
         });
     }
     /**
+     * Get threads by state context block ID
+     * @param stateBlockId
+     * @returns ThreadResponseDto Threads found for state block
+     * @throws ApiError
+     */
+    public static threadsControllerGetThreadsByStateBlockId(
+        stateBlockId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<Array<ThreadResponseDto>> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/threads/by-state-block/{stateBlockId}',
+            path: {
+                'stateBlockId': stateBlockId,
+            },
+        });
+    }
+    /**
      * Attach a task to the thread
      * @param id Thread UUID
      * @param requestBody

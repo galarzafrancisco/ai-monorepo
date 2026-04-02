@@ -36,6 +36,11 @@ export class ThreadsResource extends BaseClient {
     return this.request('GET', `/api/v1/threads/by-task/${params.taskId}`, { signal: params?.signal });
   }
 
+  /** Get threads by state context block ID */
+  async ThreadsController_getThreadsByStateBlockId(params: { stateBlockId: string; signal?: AbortSignal }): Promise<ThreadResponseDto[]> {
+    return this.request('GET', `/api/v1/threads/by-state-block/${params.stateBlockId}`, { signal: params?.signal });
+  }
+
   /** Attach a task to the thread */
   async ThreadsController_attachTask(params: { id: string; body: AttachTaskDto; signal?: AbortSignal }): Promise<ThreadResponseDto> {
     return this.request('POST', `/api/v1/threads/${params.id}/tasks`, { body: params.body, signal: params?.signal });

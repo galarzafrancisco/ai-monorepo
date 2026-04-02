@@ -44,14 +44,12 @@ export function ContextBlockDetailPage() {
     let cancelled = false;
     setIsCheckingThread(true);
 
-    // List all threads and find one where stateContextBlockId matches this block
-    ThreadsService.ThreadsController_listThreads({ page: 1, limit: 1000 })
-      .then((response) => {
+    // Use the specific endpoint to find threads by state block ID
+    ThreadsService.ThreadsController_getThreadsByStateBlockId({ stateBlockId: block.id })
+      .then((threads) => {
         if (!cancelled) {
-          const thread = response.items.find(
-            (t) => t.stateContextBlockId === block.id
-          );
-          setThreadId(thread?.id ?? null);
+          // Take the first thread if any (typically there should be only one)
+          setThreadId(threads.length > 0 ? threads[0].id : null);
         }
       })
       .catch((err: unknown) => {
@@ -130,7 +128,6 @@ export function ContextBlockDetailPage() {
       </div>
 
       <DeleteWithConfirmation
-        className='context-block-detail__actions'
         onDelete={async () => {
           try {
             await ContextService.ContextController_deleteBlock({ id: block.id });

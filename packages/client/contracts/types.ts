@@ -1037,6 +1037,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/threads/by-state-block/{stateBlockId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get threads by state context block ID */
+        get: operations["ThreadsController_getThreadsByStateBlockId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/threads/{id}/tasks": {
         parameters: {
             query?: never;
@@ -7828,6 +7845,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ThreadResponseDto"];
+                };
+            };
+        };
+    };
+    ThreadsController_getThreadsByStateBlockId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stateBlockId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Threads found for state block */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadResponseDto"][];
                 };
             };
         };
