@@ -22,6 +22,7 @@ const createEmptyAnimationByStatus = (): Record<TaskStatus, AnimationState> => (
 // Shape this to match what pages/layout need.
 export type TasksContextValue = {
   tasks: Task[];
+  getTaskById: (taskId: string) => Promise<Task | null>;
   createTask: (task: CreateTaskDto) => Promise<Task>;
   deleteTask: ({ taskId }: { taskId: string }) => Promise<void>;
   addComment: ({ taskId, comment }: {
@@ -69,7 +70,7 @@ type ActiveAnimation = {
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
-  const { tasks, isLoading, hasLoadedOnce, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasks();
+  const { tasks, getTaskById, isLoading, hasLoadedOnce, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasks();
   const [sectionTitle, setSectionTitle] = useState("");
   const [shippedCelebrationTrigger, setShippedCelebrationTrigger] = useState(0);
 
@@ -222,6 +223,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<TasksContextValue>(() => {
     return {
       tasks,
+      getTaskById,
       createTask,
       deleteTask,
       addComment,
@@ -242,6 +244,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     };
   }, [
     tasks,
+    getTaskById,
     createTask,
     deleteTask,
     addComment,

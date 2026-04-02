@@ -130,6 +130,39 @@ export function useContextBlocks() {
     };
   };
 
+  // Get a single block by ID - checks cache first, then fetches from backend
+  const getBlockById = useCallback(async (blockId: string): Promise<ContextBlock | null> => {
+    // First check if block is in the cached list
+    const cachedBlock = blocks.find(b => b.id === blockId);
+    if (cachedBlock) {
+      // If we have a summary, fetch the full block with content
+      try {
+        const fullBlock = await ContextService.ContextController_getBlock({ id: blockId });
+        return fullBlock;
+      } catch (err) {
+        console.error('Failed to fetch full block', err);
+        return null;
+      }
+    }
+
+    // If not in cache, fetch from backend
+    try {
+      const block = await ContextService.ContextController_getBlock({ id: blockId });
+      // Optionally add to cache for future lookups
+      setBlocks((prev) => {
+        // Avoid duplicates - check if block already exists
+        if (prev.some(b => b.id === block.id)) {
+          return prev;
+        }
+        return sortBlocks([block, ...prev]);
+      });
+      return block;
+    } catch (err) {
+      console.error('Failed to fetch block by ID', err);
+      return null;
+    }
+  }, [blocks]);
+
   // Boot
   useEffect(() => {
     loadBlocks();
@@ -137,7 +170,7 @@ export function useContextBlocks() {
     return cleanup;
   }, []);
 
-  return { blocks, isLoading, error, isConnected, reload: loadBlocks };
+  return { blocks, getBlockById, isLoading, error, isConnected, reload: loadBlocks };
 }
 
 export function useContextBlock(id: string) {

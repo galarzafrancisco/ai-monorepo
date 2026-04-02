@@ -815,6 +815,7 @@ export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const {
     tasks,
+    getTaskById,
     isLoading,
     hasLoadedOnce,
     setSectionTitle,
@@ -826,8 +827,38 @@ export function TaskDetailPage() {
     activityByTaskId,
   } = useTasksCtx();
 
-  const task = tasks.find(t => t.id === taskId);
-  const isLoadingTask = !task && (!hasLoadedOnce || isLoading);
+  const [task, setTask] = useState<Task | undefined>(undefined);
+  const [isFetchingTask, setIsFetchingTask] = useState(false);
+
+  // Fetch task on mount or when taskId changes
+  useEffect(() => {
+    if (!taskId) return;
+
+    const fetchTask = async () => {
+      setIsFetchingTask(true);
+      try {
+        const fetchedTask = await getTaskById(taskId);
+        setTask(fetchedTask ?? undefined);
+      } catch (err) {
+        console.error('Failed to fetch task', err);
+        setTask(undefined);
+      } finally {
+        setIsFetchingTask(false);
+      }
+    };
+
+    // First check if task is in the cached list
+    const cachedTask = tasks.find(t => t.id === taskId);
+    if (cachedTask) {
+      setTask(cachedTask);
+      setIsFetchingTask(false);
+    } else {
+      // If not in cache, fetch from backend
+      fetchTask();
+    }
+  }, [taskId, getTaskById, tasks]);
+
+  const isLoadingTask = !task && (!hasLoadedOnce || isLoading || isFetchingTask);
 
   const handlers: TaskDetailHandlers = {
     addComment: ({ taskId, comment }) => addComment({ taskId, comment }),

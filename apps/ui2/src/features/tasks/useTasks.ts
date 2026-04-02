@@ -132,6 +132,32 @@ export const useTasks = () => {
     }
   };
 
+  // Get a single task by ID - checks cache first, then fetches from backend
+  const getTaskById = async (taskId: string): Promise<Task | null> => {
+    // First check if task is in the cached list
+    const cachedTask = tasks.find(t => t.id === taskId);
+    if (cachedTask) {
+      return cachedTask;
+    }
+
+    // If not in cache, fetch from backend
+    try {
+      const task = await TasksService.TasksController_getTask({ id: taskId });
+      // Optionally add to cache for future lookups
+      setTasks((prev) => {
+        // Avoid duplicates
+        if (prev.some(t => t.id === task.id)) {
+          return prev;
+        }
+        return sortTasks([task, ...prev]);
+      });
+      return task;
+    } catch (err) {
+      console.error('Failed to fetch task by ID', err);
+      return null;
+    }
+  };
+
   // Setup websocket
   const setupWebsocket = () => {
     const newSocket = io(SOCKET_URL, {
@@ -259,6 +285,7 @@ export const useTasks = () => {
 
     // Data
     tasks,
+    getTaskById,
     createTask,
     deleteTask,
     addComment,
