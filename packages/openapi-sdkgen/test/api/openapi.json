@@ -471,6 +471,3059 @@
           "stream"
         ]
       }
+    },
+    "/primitives/string-formats": {
+      "get": {
+        "operationId": "PrimitivesController_getStringFormats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringFormatsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all string format types",
+        "tags": [
+          "primitives"
+        ]
+      }
+    },
+    "/primitives/numeric-formats": {
+      "get": {
+        "operationId": "PrimitivesController_getNumericFormats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NumericFormatsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all numeric format types",
+        "tags": [
+          "primitives"
+        ]
+      }
+    },
+    "/primitives/primitive-types": {
+      "get": {
+        "operationId": "PrimitivesController_getPrimitiveTypes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrimitiveTypesDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all primitive types",
+        "tags": [
+          "primitives"
+        ]
+      }
+    },
+    "/primitives/optional-fields": {
+      "post": {
+        "operationId": "PrimitivesController_testOptionalFields",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionalFieldsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test optional vs nullable vs default fields",
+        "tags": [
+          "primitives"
+        ]
+      }
+    },
+    "/primitives/array-primitives": {
+      "post": {
+        "operationId": "PrimitivesController_testArrayPrimitives",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrayPrimitivesDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test arrays of primitives",
+        "tags": [
+          "primitives"
+        ]
+      }
+    },
+    "/primitives/constrained-fields": {
+      "post": {
+        "operationId": "PrimitivesController_testConstrainedFields",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstrainedFieldsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test fields with validation constraints",
+        "tags": [
+          "primitives"
+        ]
+      }
+    },
+    "/parameters/path/{id}": {
+      "get": {
+        "operationId": "ParametersController_singlePathParam",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test single path parameter",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/path/{id1}/{id2}": {
+      "get": {
+        "operationId": "ParametersController_multiplePathParams",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test multiple path parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/nested/orgs/{orgId}/projects/{projectId}/tasks/{taskId}": {
+      "get": {
+        "operationId": "ParametersController_deeplyNestedPath",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultiplePathParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test deeply nested resource paths",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/query/all-types": {
+      "get": {
+        "operationId": "ParametersController_allQueryTypes",
+        "parameters": [
+          {
+            "name": "stringParam",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "integerParam",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "numberParam",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "boolParam",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "nullableParam",
+            "required": false,
+            "in": "query",
+            "allowEmptyValue": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "defaultedParam",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "default"
+            }
+          },
+          {
+            "name": "optionalParam",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requiredParam",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test all query parameter types",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/query/enum": {
+      "get": {
+        "operationId": "ParametersController_enumQuery",
+        "parameters": [
+          {
+            "name": "sortOrder",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnumQueryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test enum query parameter",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/query/arrays": {
+      "get": {
+        "operationId": "ParametersController_arrayQuery",
+        "parameters": [
+          {
+            "name": "ids",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          {
+            "name": "tags",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrayQueryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test array query parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/query/pagination": {
+      "get": {
+        "operationId": "ParametersController_paginationQuery",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginationQueryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test pagination query parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/query/sorting": {
+      "get": {
+        "operationId": "ParametersController_sortingQuery",
+        "parameters": [
+          {
+            "name": "sortOrder",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SortingQueryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test sorting query parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/query/filtering": {
+      "get": {
+        "operationId": "ParametersController_filteringQuery",
+        "parameters": [
+          {
+            "name": "createdAfter",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilteringQueryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test filtering query parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/query/search": {
+      "get": {
+        "operationId": "ParametersController_searchQuery",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchQueryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test search query parameter",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/query/datetime": {
+      "get": {
+        "operationId": "ParametersController_dateTimeQuery",
+        "parameters": [
+          {
+            "name": "datetime",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DateTimeQueryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test date/datetime query parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/headers/custom": {
+      "get": {
+        "operationId": "ParametersController_headerParams",
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-api-version",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-request-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeaderParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test custom header parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/mixed/{pathId}": {
+      "get": {
+        "operationId": "ParametersController_mixedParams",
+        "parameters": [
+          {
+            "name": "x-custom-header",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "queryParam",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MixedParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test mixed path, query, and header parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/no-params": {
+      "get": {
+        "operationId": "ParametersController_noParams",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test endpoint with no parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/delete/{id}": {
+      "delete": {
+        "operationId": "ParametersController_deleteWithParam",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Resource deleted"
+          }
+        },
+        "summary": "Test DELETE with path parameter returning 204",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/delete-confirmed/{id}": {
+      "delete": {
+        "operationId": "ParametersController_deleteWithConfirmation",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Resource deleted with confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteConfirmationDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test DELETE returning JSON confirmation body",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/cookies": {
+      "get": {
+        "operationId": "ParametersController_cookieParams",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookieParamsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Test cookie parameters",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/head-check": {
+      "head": {
+        "operationId": "ParametersController_headCheck",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Headers only, no body"
+          }
+        },
+        "summary": "Test HEAD method",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/parameters/options-check": {
+      "options": {
+        "operationId": "ParametersController_optionsCheck",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CORS preflight or available methods"
+          }
+        },
+        "summary": "Test OPTIONS method",
+        "tags": [
+          "parameters"
+        ]
+      }
+    },
+    "/bodies/flat": {
+      "post": {
+        "operationId": "BodiesController_flatBody",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlatBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlatBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test flat JSON object body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/nested": {
+      "post": {
+        "operationId": "BodiesController_nestedBody",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NestedBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NestedBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test nested JSON object body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/deeply-nested": {
+      "post": {
+        "operationId": "BodiesController_deeplyNestedBody",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeeplyNestedBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeeplyNestedBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test deeply nested JSON object body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/array-of-dtos": {
+      "post": {
+        "operationId": "BodiesController_arrayOfDtos",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArrayOfDtosBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrayOfDtosBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test array of DTOs in body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/optional-nullable": {
+      "post": {
+        "operationId": "BodiesController_optionalNullable",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptionalNullableBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionalNullableBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test optional vs nullable fields",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/default-values": {
+      "post": {
+        "operationId": "BodiesController_defaultValues",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefaultValuesBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultValuesBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test fields with default values",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/record-type": {
+      "post": {
+        "operationId": "BodiesController_recordType",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test map/record-like body with additionalProperties",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/primitive-string": {
+      "post": {
+        "operationId": "BodiesController_primitiveString",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "example": "Hello World"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrimitiveStringResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test primitive string body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/primitive-number": {
+      "post": {
+        "operationId": "BodiesController_primitiveNumber",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "number",
+                "example": 42
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrimitiveNumberResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test primitive number body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/primitive-boolean": {
+      "post": {
+        "operationId": "BodiesController_primitiveBoolean",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "boolean",
+                "example": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrimitiveBooleanResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test primitive boolean body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/nullable-body": {
+      "post": {
+        "operationId": "BodiesController_nullableBody",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "nullable": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Body echoed back"
+          }
+        },
+        "summary": "Test nullable body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/empty-body": {
+      "post": {
+        "operationId": "BodiesController_emptyBody",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test empty object body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/optional-body": {
+      "post": {
+        "operationId": "BodiesController_optionalBody",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlatBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Body echoed back or empty object"
+          }
+        },
+        "summary": "Test optional request body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/required-body": {
+      "post": {
+        "operationId": "BodiesController_requiredBody",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlatBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlatBodyDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Body is required"
+          }
+        },
+        "summary": "Test required request body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/json-array": {
+      "post": {
+        "operationId": "BodiesController_jsonArray",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ItemDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test JSON array body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/bodies/form-urlencoded": {
+      "post": {
+        "operationId": "BodiesController_formUrlEncoded",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "age": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlatBodyDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test application/x-www-form-urlencoded body",
+        "tags": [
+          "bodies"
+        ]
+      }
+    },
+    "/responses/200-ok": {
+      "get": {
+        "operationId": "ResponsesController_response200",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 200 OK response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/201-created": {
+      "post": {
+        "operationId": "ResponsesController_response201",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Resource created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 201 Created response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/202-accepted": {
+      "post": {
+        "operationId": "ResponsesController_response202",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Operation accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedOperationDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 202 Accepted response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/204-no-content": {
+      "get": {
+        "operationId": "ResponsesController_response204",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "No content"
+          }
+        },
+        "summary": "Test 204 No Content response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/400-bad-request": {
+      "get": {
+        "operationId": "ResponsesController_response400",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 400 Bad Request response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/401-unauthorized": {
+      "get": {
+        "operationId": "ResponsesController_response401",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 401 Unauthorized response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/403-forbidden": {
+      "get": {
+        "operationId": "ResponsesController_response403",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 403 Forbidden response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/404-not-found": {
+      "get": {
+        "operationId": "ResponsesController_response404",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 404 Not Found response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/409-conflict": {
+      "post": {
+        "operationId": "ResponsesController_response409",
+        "parameters": [],
+        "responses": {
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 409 Conflict response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/422-unprocessable-entity": {
+      "get": {
+        "operationId": "ResponsesController_response422",
+        "parameters": [],
+        "responses": {
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 422 Unprocessable Entity response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/429-rate-limit": {
+      "get": {
+        "operationId": "ResponsesController_response429",
+        "parameters": [],
+        "responses": {
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 429 Too Many Requests response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/500-server-error": {
+      "get": {
+        "operationId": "ResponsesController_response500",
+        "parameters": [],
+        "responses": {
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test 500 Internal Server Error response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/json-object": {
+      "get": {
+        "operationId": "ResponsesController_jsonObject",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObjectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test JSON object response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/json-array": {
+      "get": {
+        "operationId": "ResponsesController_jsonArray",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JsonArrayItemDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test JSON array response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/text-plain": {
+      "get": {
+        "operationId": "ResponsesController_textPlain",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Plain text response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test text/plain response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/empty-response": {
+      "get": {
+        "operationId": "ResponsesController_emptyResponse",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Empty response"
+          }
+        },
+        "summary": "Test empty response body",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/multiple-success/{id}": {
+      "get": {
+        "operationId": "ResponsesController_multipleSuccess",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Existing resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipleStatusDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "New resource created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipleStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test endpoint with multiple success response codes",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/problem-details": {
+      "get": {
+        "operationId": "ResponsesController_problemDetails",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "Problem details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test RFC 7807 Problem Details error format",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/with-headers": {
+      "get": {
+        "operationId": "ResponsesController_withHeaders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Request ID"
+              },
+              "X-RateLimit-Limit": {
+                "schema": {
+                  "type": "number"
+                },
+                "description": "Rate limit"
+              },
+              "X-RateLimit-Remaining": {
+                "schema": {
+                  "type": "number"
+                },
+                "description": "Remaining requests"
+              },
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Entity tag"
+              },
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource location"
+              }
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseWithHeadersDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test response with custom headers",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/retry-after": {
+      "get": {
+        "operationId": "ResponsesController_retryAfter",
+        "parameters": [],
+        "responses": {
+          "503": {
+            "description": "Service unavailable",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "number"
+                },
+                "description": "Retry after seconds"
+              }
+            }
+          }
+        },
+        "summary": "Test response with Retry-After header",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/responses/content-disposition": {
+      "get": {
+        "operationId": "ResponsesController_contentDisposition",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "File download",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Content disposition"
+              }
+            }
+          }
+        },
+        "summary": "Test response with Content-Disposition header",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/files/upload/single": {
+      "post": {
+        "operationId": "FilesController_uploadSingleFile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileUploadResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload a single file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/upload/multiple": {
+      "post": {
+        "operationId": "FilesController_uploadMultipleFiles",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipleFilesUploadResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload multiple files",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/upload/with-metadata": {
+      "post": {
+        "operationId": "FilesController_uploadFileWithMetadata",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "file",
+                  "title"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileWithMetadataResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload file with additional metadata fields",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/upload/binary": {
+      "post": {
+        "operationId": "FilesController_uploadBinary",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinaryUploadResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload binary data",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/download/{filename}": {
+      "get": {
+        "operationId": "FilesController_downloadFile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "File download",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Attachment filename"
+              }
+            }
+          }
+        },
+        "summary": "Download a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/download/text/{filename}": {
+      "get": {
+        "operationId": "FilesController_downloadTextFile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Text file download",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Attachment filename"
+              }
+            }
+          }
+        },
+        "summary": "Download a text file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/download/csv/{filename}": {
+      "get": {
+        "operationId": "FilesController_downloadCsvFile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CSV file download",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Attachment filename"
+              }
+            }
+          }
+        },
+        "summary": "Download a CSV file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/download/pdf/{filename}": {
+      "get": {
+        "operationId": "FilesController_downloadPdfFile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "PDF file download",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Attachment filename"
+              }
+            }
+          }
+        },
+        "summary": "Download a PDF file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/download/image/{filename}": {
+      "get": {
+        "operationId": "FilesController_downloadImageFile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Image file download",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Attachment filename"
+              }
+            }
+          }
+        },
+        "summary": "Download an image file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/info/{filename}": {
+      "get": {
+        "operationId": "FilesController_getFileInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileDownloadInfoDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get file information without downloading",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/polymorphism/inheritance/base": {
+      "get": {
+        "operationId": "PolymorphismController_getBaseEntity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseEntityDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get base entity (allOf pattern)",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/inheritance/extended": {
+      "get": {
+        "operationId": "PolymorphismController_getExtendedEntity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtendedEntityDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get extended entity (allOf pattern)",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/inheritance/fully-extended": {
+      "get": {
+        "operationId": "PolymorphismController_getFullyExtendedEntity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FullyExtendedEntityDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get fully extended entity (multiple allOf levels)",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/payment/card": {
+      "post": {
+        "operationId": "PolymorphismController_processCardPayment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Process card payment (oneOf with discriminator)",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/payment/bank": {
+      "post": {
+        "operationId": "PolymorphismController_processBankPayment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Process bank account payment (oneOf with discriminator)",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/payment/paypal": {
+      "post": {
+        "operationId": "PolymorphismController_processPayPalPayment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Process PayPal payment (oneOf with discriminator)",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/event/user-created": {
+      "post": {
+        "operationId": "PolymorphismController_emitUserCreatedEvent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCreatedEventDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Emit user created event",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/event/user-updated": {
+      "post": {
+        "operationId": "PolymorphismController_emitUserUpdatedEvent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserUpdatedEventDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Emit user updated event",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/event/user-deleted": {
+      "post": {
+        "operationId": "PolymorphismController_emitUserDeletedEvent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDeletedEventDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Emit user deleted event",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/events/list": {
+      "get": {
+        "operationId": "PolymorphismController_getEventsList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventListDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get list of polymorphic events",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/animal/cat": {
+      "post": {
+        "operationId": "PolymorphismController_createCat",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a cat",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/animal/dog": {
+      "post": {
+        "operationId": "PolymorphismController_createDog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DogDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a dog",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/animal/bird": {
+      "post": {
+        "operationId": "PolymorphismController_createBird",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BirdDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a bird",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/polymorphism/animals/list": {
+      "get": {
+        "operationId": "PolymorphismController_getAnimalsList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalListDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get list of polymorphic animals",
+        "tags": [
+          "polymorphism"
+        ]
+      }
+    },
+    "/pagination/offset": {
+      "get": {
+        "operationId": "PaginationController_offsetPagination",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OffsetPaginatedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Offset-based pagination",
+        "tags": [
+          "pagination"
+        ]
+      }
+    },
+    "/pagination/page": {
+      "get": {
+        "operationId": "PaginationController_pagePagination",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagePaginatedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Page-based pagination",
+        "tags": [
+          "pagination"
+        ]
+      }
+    },
+    "/pagination/cursor": {
+      "get": {
+        "operationId": "PaginationController_cursorPagination",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPaginatedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cursor-based pagination",
+        "tags": [
+          "pagination"
+        ]
+      }
+    },
+    "/pagination/token": {
+      "get": {
+        "operationId": "PaginationController_tokenPagination",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10
+            }
+          },
+          {
+            "name": "nextToken",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPaginatedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "NextToken-based pagination",
+        "tags": [
+          "pagination"
+        ]
+      }
+    },
+    "/pagination/links": {
+      "get": {
+        "operationId": "PaginationController_linkPagination",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkPaginatedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Link-based pagination",
+        "tags": [
+          "pagination"
+        ]
+      }
+    },
+    "/pagination/metadata": {
+      "get": {
+        "operationId": "PaginationController_metadataPagination",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataPaginatedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Pagination with metadata object",
+        "tags": [
+          "pagination"
+        ]
+      }
+    },
+    "/edge-cases/naming/snake-case": {
+      "post": {
+        "operationId": "EdgeCasesController_testSnakeCase",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnakeCaseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test snake_case property names",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/naming/camel-case": {
+      "post": {
+        "operationId": "EdgeCasesController_testCamelCase",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamelCaseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test camelCase property names",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/naming/kebab-case": {
+      "post": {
+        "operationId": "EdgeCasesController_testKebabCase",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KebabCaseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test kebab-case property names",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/naming/reserved-words": {
+      "post": {
+        "operationId": "EdgeCasesController_testReservedWords",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservedWordsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test reserved TypeScript words as property names",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/naming/version2": {
+      "get": {
+        "operationId": "EdgeCasesController_testVersion2",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Version2Dto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test schema names with numbers",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/naming/long-names": {
+      "get": {
+        "operationId": "EdgeCasesController_testLongNames",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VeryLongNamedDataTransferObjectForTestingPurposesDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test very long schema and property names",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/naming/acronyms": {
+      "get": {
+        "operationId": "EdgeCasesController_testAcronyms",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcronymsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test acronyms in property names",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/circular/tree": {
+      "get": {
+        "operationId": "EdgeCasesController_testTreeNode",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeNodeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test self-referential tree structure",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/circular/comment/{id}": {
+      "get": {
+        "operationId": "EdgeCasesController_testComment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test circular reference with parent pointer",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/circular/category/{id}": {
+      "get": {
+        "operationId": "EdgeCasesController_testCategory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test mutually recursive schemas",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/enum/single-value": {
+      "post": {
+        "operationId": "EdgeCasesController_testSingleValueEnum",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleValueEnumDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test single-value enum",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/enum/mixed-case": {
+      "post": {
+        "operationId": "EdgeCasesController_testMixedCaseEnum",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MixedCaseEnumDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test enum with various naming conventions",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/schema/free-form": {
+      "post": {
+        "operationId": "EdgeCasesController_testFreeForm",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeFormObjectDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test free-form object with additionalProperties",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/schema/empty": {
+      "post": {
+        "operationId": "EdgeCasesController_testEmpty",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyObjectDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test empty object schema",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/collision/test": {
+      "get": {
+        "operationId": "EdgeCasesController_testCollision",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCollisionTestDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test potential naming collisions",
+        "tags": [
+          "edge-cases"
+        ]
+      }
+    },
+    "/edge-cases/operation-id/resource": {
+      "get": {
+        "operationId": "getResource",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollisionTestDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "GET operation with potential ID collision",
+        "tags": [
+          "edge-cases"
+        ]
+      },
+      "post": {
+        "operationId": "createResource",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollisionTestDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "POST operation with potential ID collision",
+        "tags": [
+          "edge-cases"
+        ]
+      }
     }
   },
   "info": {
@@ -713,6 +3766,2025 @@
           "index",
           "message",
           "timestamp"
+        ]
+      },
+      "StringFormatsDto": {
+        "type": "object",
+        "properties": {
+          "dateField": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-15"
+          },
+          "dateTimeField": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "uuidField": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "emailField": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "uriField": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com/resource"
+          },
+          "hostnameField": {
+            "type": "string",
+            "format": "hostname",
+            "example": "example.com"
+          },
+          "ipv4Field": {
+            "type": "string",
+            "format": "ipv4",
+            "example": "192.168.1.1"
+          },
+          "ipv6Field": {
+            "type": "string",
+            "format": "ipv6",
+            "example": "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+          },
+          "byteField": {
+            "type": "string",
+            "format": "byte",
+            "example": "SGVsbG8gV29ybGQ="
+          },
+          "binaryField": {
+            "type": "string",
+            "format": "binary"
+          }
+        },
+        "required": [
+          "dateField",
+          "dateTimeField",
+          "uuidField",
+          "emailField",
+          "uriField",
+          "hostnameField",
+          "ipv4Field",
+          "ipv6Field",
+          "byteField",
+          "binaryField"
+        ]
+      },
+      "NumericFormatsDto": {
+        "type": "object",
+        "properties": {
+          "int32Field": {
+            "type": "number",
+            "format": "int32",
+            "example": 42
+          },
+          "int64Field": {
+            "type": "number",
+            "format": "int64",
+            "example": 9007199254740991
+          },
+          "floatField": {
+            "type": "number",
+            "format": "float",
+            "example": 3.14
+          },
+          "doubleField": {
+            "type": "number",
+            "format": "double",
+            "example": 3.141592653589793
+          }
+        },
+        "required": [
+          "int32Field",
+          "int64Field",
+          "floatField",
+          "doubleField"
+        ]
+      },
+      "PrimitiveTypesDto": {
+        "type": "object",
+        "properties": {
+          "stringField": {
+            "type": "string",
+            "example": "Hello"
+          },
+          "numberField": {
+            "type": "number",
+            "example": 123
+          },
+          "integerField": {
+            "type": "number",
+            "example": 456
+          },
+          "booleanField": {
+            "type": "boolean",
+            "example": true
+          },
+          "nullableString": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "nullableNumber": {
+            "type": "number",
+            "nullable": true,
+            "example": null
+          },
+          "nullableBoolean": {
+            "type": "boolean",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "stringField",
+          "numberField",
+          "integerField",
+          "booleanField",
+          "nullableString",
+          "nullableNumber",
+          "nullableBoolean"
+        ]
+      },
+      "OptionalFieldsDto": {
+        "type": "object",
+        "properties": {
+          "requiredField": {
+            "type": "string"
+          },
+          "optionalField": {
+            "type": "string"
+          },
+          "requiredNullable": {
+            "type": "string",
+            "nullable": true
+          },
+          "optionalNullable": {
+            "type": "string",
+            "nullable": true
+          },
+          "fieldWithDefault": {
+            "type": "string",
+            "default": "default-value"
+          },
+          "optionalWithDefault": {
+            "type": "number",
+            "default": 42
+          }
+        },
+        "required": [
+          "requiredField",
+          "requiredNullable",
+          "fieldWithDefault"
+        ]
+      },
+      "ArrayPrimitivesDto": {
+        "type": "object",
+        "properties": {
+          "stringArray": {
+            "example": [
+              "one",
+              "two",
+              "three"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "numberArray": {
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "booleanArray": {
+            "example": [
+              true,
+              false,
+              true
+            ],
+            "type": "array",
+            "items": {
+              "type": "boolean"
+            }
+          },
+          "optionalArray": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nullableArray": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "optionalNullableArray": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nestedArray": {
+            "example": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "c",
+                "d"
+              ]
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "a"
+              }
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "stringArray",
+          "numberArray",
+          "booleanArray",
+          "nullableArray",
+          "nestedArray"
+        ]
+      },
+      "ConstrainedFieldsDto": {
+        "type": "object",
+        "properties": {
+          "constrainedString": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 10
+          },
+          "constrainedNumber": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "constrainedArray": {
+            "minItems": 1,
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "uniqueArray": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "patternString": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$",
+            "example": "ABC"
+          }
+        },
+        "required": [
+          "constrainedString",
+          "constrainedNumber",
+          "constrainedArray",
+          "uniqueArray",
+          "patternString"
+        ]
+      },
+      "PathParamsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "message"
+        ]
+      },
+      "MultiplePathParamsResponseDto": {
+        "type": "object",
+        "properties": {
+          "orgId": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "orgId",
+          "projectId",
+          "taskId",
+          "message"
+        ]
+      },
+      "QueryParamsResponseDto": {
+        "type": "object",
+        "properties": {
+          "requiredParam": {
+            "type": "string"
+          },
+          "optionalParam": {
+            "type": "string"
+          },
+          "defaultedParam": {
+            "type": "string"
+          },
+          "nullableParam": {
+            "type": "string",
+            "nullable": true
+          },
+          "boolParam": {
+            "type": "boolean"
+          },
+          "numberParam": {
+            "type": "number"
+          },
+          "integerParam": {
+            "type": "number"
+          },
+          "stringParam": {
+            "type": "string"
+          }
+        }
+      },
+      "EnumQueryResponseDto": {
+        "type": "object",
+        "properties": {
+          "sortOrder": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sortOrder",
+          "message"
+        ]
+      },
+      "ArrayQueryResponseDto": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tags",
+          "ids",
+          "message"
+        ]
+      },
+      "PaginationQueryResponseDto": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "cursor": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "page",
+          "limit",
+          "message"
+        ]
+      },
+      "SortingQueryResponseDto": {
+        "type": "object",
+        "properties": {
+          "sortBy": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sortBy",
+          "sortOrder",
+          "message"
+        ]
+      },
+      "FilteringQueryResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAfter": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tags",
+          "message"
+        ]
+      },
+      "SearchQueryResponseDto": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "q",
+          "message"
+        ]
+      },
+      "DateTimeQueryResponseDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "datetime",
+          "message"
+        ]
+      },
+      "HeaderParamsResponseDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "apiVersion": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId",
+          "apiVersion",
+          "message"
+        ]
+      },
+      "MixedParamsResponseDto": {
+        "type": "object",
+        "properties": {
+          "pathId": {
+            "type": "string"
+          },
+          "queryParam": {
+            "type": "string"
+          },
+          "headerValue": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pathId",
+          "queryParam",
+          "headerValue"
+        ]
+      },
+      "DeleteConfirmationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "deleted",
+          "message"
+        ]
+      },
+      "CookieParamsResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "FlatBodyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "age": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "age"
+        ]
+      },
+      "AddressDto": {
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "street",
+          "city",
+          "country",
+          "postalCode"
+        ]
+      },
+      "NestedBodyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "phoneNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "address",
+          "phoneNumbers"
+        ]
+      },
+      "ContactInfoDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "phone"
+        ]
+      },
+      "CompanyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "contactInfo": {
+            "$ref": "#/components/schemas/ContactInfoDto"
+          }
+        },
+        "required": [
+          "name",
+          "address",
+          "contactInfo"
+        ]
+      },
+      "DeeplyNestedBodyDto": {
+        "type": "object",
+        "properties": {
+          "employeeName": {
+            "type": "string"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanyDto"
+          }
+        },
+        "required": [
+          "employeeName",
+          "company"
+        ]
+      },
+      "ItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "quantity"
+        ]
+      },
+      "ArrayOfDtosBodyDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "OptionalNullableBodyDto": {
+        "type": "object",
+        "properties": {
+          "requiredNonNull": {
+            "type": "string"
+          },
+          "requiredNullable": {
+            "type": "string",
+            "nullable": true
+          },
+          "optionalNonNull": {
+            "type": "string"
+          },
+          "optionalNullable": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "requiredNonNull",
+          "requiredNullable"
+        ]
+      },
+      "DefaultValuesBodyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "default": "active"
+          },
+          "count": {
+            "type": "number",
+            "default": 0
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "name",
+          "status",
+          "count",
+          "isEnabled"
+        ]
+      },
+      "RecordBodyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "key1": "value1",
+              "key2": "value2"
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "metric1": 100,
+              "metric2": 200
+            }
+          }
+        },
+        "required": [
+          "name",
+          "metadata",
+          "metrics"
+        ]
+      },
+      "PrimitiveStringResponse": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "received"
+        ]
+      },
+      "PrimitiveNumberResponse": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "received"
+        ]
+      },
+      "PrimitiveBooleanResponse": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "received"
+        ]
+      },
+      "EmptyBodyDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "data"
+        ]
+      },
+      "CreatedResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdAt"
+        ]
+      },
+      "AcceptedOperationDto": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "operationId",
+          "status",
+          "message"
+        ]
+      },
+      "ValidationErrorDto": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "validationErrors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "error",
+          "validationErrors"
+        ]
+      },
+      "ErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "error",
+          "message",
+          "statusCode"
+        ]
+      },
+      "ConflictErrorDto": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "conflictingResource": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "conflictingResource"
+        ]
+      },
+      "RateLimitErrorDto": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "retryAfter": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "error",
+          "retryAfter"
+        ]
+      },
+      "JsonObjectResponseDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ]
+      },
+      "JsonArrayItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "MultipleStatusDto": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ]
+      },
+      "ProblemDetailsDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "number"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance"
+        ]
+      },
+      "ResponseWithHeadersDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "FileUploadResponseDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "mimetype": {
+            "type": "string"
+          },
+          "uploadedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "size",
+          "mimetype",
+          "uploadedAt"
+        ]
+      },
+      "MultipleFilesUploadResponseDto": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileUploadResponseDto"
+            }
+          },
+          "totalSize": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "files",
+          "totalSize"
+        ]
+      },
+      "FileWithMetadataResponseDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "filename",
+          "title",
+          "description",
+          "tags"
+        ]
+      },
+      "BinaryUploadResponseDto": {
+        "type": "object",
+        "properties": {
+          "bytesReceived": {
+            "type": "number"
+          },
+          "contentType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bytesReceived",
+          "contentType"
+        ]
+      },
+      "FileDownloadInfoDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "filename",
+          "contentType",
+          "size"
+        ]
+      },
+      "BaseEntityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ExtendedEntityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "name",
+          "description"
+        ]
+      },
+      "FullyExtendedEntityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "category": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "name",
+          "description",
+          "tags"
+        ]
+      },
+      "PaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "paymentMethod": {
+            "type": "object",
+            "description": "Payment method details (discriminated by type field)"
+          }
+        },
+        "required": [
+          "transactionId",
+          "status",
+          "paymentMethod"
+        ]
+      },
+      "UserCreatedEventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "user_created",
+              "user_updated",
+              "user_deleted",
+              "project_created",
+              "project_archived"
+            ],
+            "default": "user_created"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "userId",
+          "userName",
+          "email"
+        ]
+      },
+      "UserUpdatedEventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "user_created",
+              "user_updated",
+              "user_deleted",
+              "project_created",
+              "project_archived"
+            ],
+            "default": "user_updated"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "changes": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "type",
+          "userId",
+          "changes"
+        ]
+      },
+      "UserDeletedEventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "user_created",
+              "user_updated",
+              "user_deleted",
+              "project_created",
+              "project_archived"
+            ],
+            "default": "user_deleted"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "deletedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "userId",
+          "deletedAt"
+        ]
+      },
+      "EventListDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "description": "Array of events (discriminated by type field)",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "CatDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "cat",
+              "dog",
+              "bird"
+            ],
+            "default": "cat"
+          },
+          "name": {
+            "type": "string"
+          },
+          "livesRemaining": {
+            "type": "number"
+          },
+          "likesLasagna": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "livesRemaining",
+          "likesLasagna"
+        ]
+      },
+      "DogDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "cat",
+              "dog",
+              "bird"
+            ],
+            "default": "dog"
+          },
+          "name": {
+            "type": "string"
+          },
+          "breed": {
+            "type": "string"
+          },
+          "isGoodBoy": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "breed",
+          "isGoodBoy"
+        ]
+      },
+      "BirdDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "cat",
+              "dog",
+              "bird"
+            ],
+            "default": "bird"
+          },
+          "name": {
+            "type": "string"
+          },
+          "wingSpan": {
+            "type": "number"
+          },
+          "canFly": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "wingSpan",
+          "canFly"
+        ]
+      },
+      "AnimalListDto": {
+        "type": "object",
+        "properties": {
+          "animals": {
+            "description": "Array of animals (discriminated by type field)",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "animals"
+        ]
+      },
+      "PaginatedItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description"
+        ]
+      },
+      "OffsetPaginatedResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaginatedItemDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ]
+      },
+      "PagePaginatedResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaginatedItemDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize",
+          "totalPages",
+          "hasNextPage",
+          "hasPreviousPage"
+        ]
+      },
+      "CursorPaginatedResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaginatedItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "previousCursor",
+          "hasMore"
+        ]
+      },
+      "TokenPaginatedResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaginatedItemDto"
+            }
+          },
+          "nextToken": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "nextToken"
+        ]
+      },
+      "PaginationLinksDto": {
+        "type": "object",
+        "properties": {
+          "first": {
+            "type": "string",
+            "nullable": true
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true
+          },
+          "next": {
+            "type": "string",
+            "nullable": true
+          },
+          "last": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "first",
+          "previous",
+          "next",
+          "last"
+        ]
+      },
+      "LinkPaginatedResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaginatedItemDto"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinksDto"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "links",
+          "total"
+        ]
+      },
+      "PaginationMetadataDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "page",
+          "pageSize",
+          "totalPages"
+        ]
+      },
+      "MetadataPaginatedResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaginatedItemDto"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMetadataDto"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ]
+      },
+      "SnakeCaseDto": {
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "email_address": {
+            "type": "string"
+          },
+          "age_in_years": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "first_name",
+          "last_name",
+          "email_address",
+          "age_in_years"
+        ]
+      },
+      "CamelCaseDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "emailAddress": {
+            "type": "string"
+          },
+          "ageInYears": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "emailAddress",
+          "ageInYears"
+        ]
+      },
+      "KebabCaseDto": {
+        "type": "object",
+        "properties": {
+          "first-name": {
+            "type": "string"
+          },
+          "last-name": {
+            "type": "string"
+          },
+          "age-in-years": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "first-name",
+          "last-name",
+          "age-in-years"
+        ]
+      },
+      "ReservedWordsDto": {
+        "type": "object",
+        "properties": {
+          "default": {
+            "type": "string"
+          },
+          "class": {
+            "type": "string"
+          },
+          "function": {
+            "type": "string"
+          },
+          "package": {
+            "type": "string"
+          },
+          "export": {
+            "type": "string"
+          },
+          "import": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "default",
+          "class",
+          "function",
+          "package",
+          "export",
+          "import"
+        ]
+      },
+      "Version2Dto": {
+        "type": "object",
+        "properties": {
+          "nameV2": {
+            "type": "string"
+          },
+          "value2": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nameV2",
+          "value2"
+        ]
+      },
+      "VeryLongNamedDataTransferObjectForTestingPurposesDto": {
+        "type": "object",
+        "properties": {
+          "aVeryLongPropertyNameThatExceedsNormalLengthExpectations": {
+            "type": "string"
+          },
+          "anotherExcessivelyLongPropertyNameForTestingEdgeCases": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "aVeryLongPropertyNameThatExceedsNormalLengthExpectations",
+          "anotherExcessivelyLongPropertyNameForTestingEdgeCases"
+        ]
+      },
+      "AcronymsDto": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "urlPath": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "oauthToken": {
+            "type": "string"
+          },
+          "httpMethod": {
+            "type": "string"
+          },
+          "xmlData": {
+            "type": "string"
+          },
+          "jsonResponse": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey",
+          "urlPath",
+          "userId",
+          "oauthToken",
+          "httpMethod",
+          "xmlData",
+          "jsonResponse"
+        ]
+      },
+      "TreeNodeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TreeNodeDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "CommentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "parent": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommentDto"
+              }
+            ]
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommentDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ]
+      },
+      "ProductDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryDto"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "CategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "subcategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryDto"
+            }
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "SingleValueEnumDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "only_value"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "MixedCaseEnumDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "enum": [
+              "UPPERCASE",
+              "lowercase",
+              "snake_case",
+              "kebab-case",
+              "camelCase",
+              "PascalCase"
+            ]
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "FreeFormObjectDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "dynamicData": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "dynamicData"
+        ]
+      },
+      "EmptyObjectDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CollisionTestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UserCollisionTestDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/CollisionTestDto"
+          }
+        },
+        "required": [
+          "username",
+          "profile"
         ]
       }
     }

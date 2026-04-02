@@ -50,7 +50,7 @@ function parseOperations(paths: any): Operation[] {
     const pathLevelParams = parseParameters((pathItem as any).parameters || []);
 
     for (const [method, operation] of Object.entries(pathItem as any)) {
-      if (!['get', 'post', 'put', 'patch', 'delete'].includes(method)) {
+      if (!['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(method)) {
         continue;
       }
 

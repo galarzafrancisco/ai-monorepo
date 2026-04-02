@@ -44,7 +44,8 @@ function generateTypeDefinition(name: string, schema: SchemaInfo): string {
     for (const [propName, propSchema] of schema.properties) {
       const optional = !schema.required?.includes(propName);
       const propType = schemaToTypeScript(propSchema);
-      props.push(`  ${propName}${optional ? '?' : ''}: ${propType};`);
+      const quotedPropName = quoteIfNeeded(propName);
+      props.push(`  ${quotedPropName}${optional ? '?' : ''}: ${propType};`);
     }
     return `export interface ${name} {\n${props.join('\n')}\n}`;
   }
@@ -93,7 +94,8 @@ function schemaToTypeScript(schema: SchemaInfo): string {
         const props: string[] = [];
         for (const [propName, propSchema] of schema.properties) {
           const optional = !schema.required?.includes(propName);
-          props.push(`${propName}${optional ? '?' : ''}: ${schemaToTypeScript(propSchema)}`);
+          const quotedPropName = quoteIfNeeded(propName);
+          props.push(`${quotedPropName}${optional ? '?' : ''}: ${schemaToTypeScript(propSchema)}`);
         }
         baseType = `{ ${props.join('; ')} }`;
       } else {
@@ -509,7 +511,9 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
     }
 
     if (op.requestBody) {
-      const bodySchema = op.requestBody.content.get('application/json');
+      // Try to get the body schema from any content type (prefer application/json)
+      const bodySchema = op.requestBody.content.get('application/json') ||
+                         Array.from(op.requestBody.content.values())[0];
       if (bodySchema) {
         const optional = !op.requestBody.required;
         paramFields.push(`body${optional ? '?' : ''}: ${schemaToTypeScript(bodySchema.schema)}`);
