@@ -1,14 +1,34 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import {
+  ConflictException,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiCookieAuth,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentAuth } from '../../auth/guards/decorators/current-auth.decorator';
 import { AccessTokenGuard } from '../../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decorator';
+import type { AuthContext } from '../../auth/guards/context/auth-context.types';
 import { TasksScopes } from '../../tasks/tasks.scopes';
+import { TaskNotFoundError } from '../../tasks/errors/tasks.errors';
+import { WorkersScopes } from '../../executions/workers.scopes';
+import { ActiveTaskExecutionResponseDto } from '../active/dto/http/active-task-execution-response.dto';
+import { ActiveTaskExecutionService } from '../active/active-task-execution.service';
+import {
+  TaskAlreadyClaimedError,
+  TaskExecutionQueueEntryNotFoundError,
+} from '../errors/executions-v2.errors';
 import { TaskExecutionQueueService } from './task-execution-queue.service';
 import { TaskExecutionQueueEntryResponseDto } from './dto/http/task-execution-queue-entry-response.dto';
 
@@ -20,6 +40,7 @@ import { TaskExecutionQueueEntryResponseDto } from './dto/http/task-execution-qu
 export class TaskExecutionQueueController {
   constructor(
     private readonly taskExecutionQueueService: TaskExecutionQueueService,
+    private readonly activeTaskExecutionService: ActiveTaskExecutionService,
   ) {}
 
   @Get()
@@ -35,5 +56,42 @@ export class TaskExecutionQueueController {
     return queue.map((entry) =>
       TaskExecutionQueueEntryResponseDto.fromEntity(entry),
     );
+  }
+
+  @Post(':taskId/claim')
+  @RequireScopes(WorkersScopes.CONNECT.id)
+  @ApiOperation({
+    summary: 'Claim a specific task from the execution queue',
+    description:
+      'Atomically removes the task from the queue and inserts it into the active execution table.',
+  })
+  @ApiParam({ name: 'taskId', description: 'Task ID to claim' })
+  @ApiCreatedResponse({ type: ActiveTaskExecutionResponseDto })
+  async claimTask(
+    @Param('taskId') taskId: string,
+    @CurrentAuth() auth: AuthContext,
+  ): Promise<ActiveTaskExecutionResponseDto> {
+    try {
+      const execution = await this.activeTaskExecutionService.claimTask({
+        taskId,
+        workerClientId: auth.claims.client_id,
+      });
+
+      return ActiveTaskExecutionResponseDto.fromEntity(execution);
+    } catch (error) {
+      if (error instanceof TaskNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+
+      if (error instanceof TaskExecutionQueueEntryNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+
+      if (error instanceof TaskAlreadyClaimedError) {
+        throw new ConflictException(error.message);
+      }
+
+      throw error;
+    }
   }
 }

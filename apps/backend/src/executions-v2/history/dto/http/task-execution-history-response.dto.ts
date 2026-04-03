@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TaskStatus } from '../../../../tasks/enums';
 import { TaskExecutionHistoryEntity } from '../../task-execution-history.entity';
+import { TaskExecutionHistoryErrorCode } from '../../task-execution-history-error-code.enum';
+import { TaskExecutionHistoryStatus } from '../../task-execution-history-status.enum';
 
 export class TaskExecutionHistoryResponseDto {
   @ApiProperty({
@@ -29,6 +31,43 @@ export class TaskExecutionHistoryResponseDto {
   })
   taskStatus!: TaskStatus | null;
 
+  @ApiProperty({
+    description: 'When the task was originally claimed',
+    example: '2026-04-03T08:25:00.000Z',
+  })
+  claimedAt!: string;
+
+  @ApiProperty({
+    description: 'When the active execution transitioned into history',
+    example: '2026-04-03T08:40:00.000Z',
+  })
+  transitionedAt!: string;
+
+  @ApiProperty({
+    description: 'Actor id of the agent that worked on the task',
+    example: '19dc147c-6051-49e3-bf7a-404e3bb575d3',
+  })
+  agentActorId!: string;
+
+  @ApiProperty({
+    description: 'OAuth client id of the worker that executed the task',
+    example: '24f52f295c990c1d6cdc6034fa3d1900',
+  })
+  workerClientId!: string;
+
+  @ApiProperty({
+    description: 'Terminal execution status',
+    enum: TaskExecutionHistoryStatus,
+  })
+  status!: TaskExecutionHistoryStatus;
+
+  @ApiProperty({
+    description: 'Optional failure code when execution ended with an error',
+    enum: TaskExecutionHistoryErrorCode,
+    nullable: true,
+  })
+  errorCode!: TaskExecutionHistoryErrorCode | null;
+
   static fromEntity(
     entity: TaskExecutionHistoryEntity,
   ): TaskExecutionHistoryResponseDto {
@@ -37,6 +76,12 @@ export class TaskExecutionHistoryResponseDto {
       taskId: entity.taskId,
       taskName: entity.task?.name ?? null,
       taskStatus: entity.task?.status ?? null,
+      claimedAt: entity.claimedAt.toISOString(),
+      transitionedAt: entity.transitionedAt.toISOString(),
+      agentActorId: entity.agentActorId,
+      workerClientId: entity.workerClientId,
+      status: entity.status,
+      errorCode: entity.errorCode,
     };
   }
 }
