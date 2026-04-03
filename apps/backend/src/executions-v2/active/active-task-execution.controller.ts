@@ -71,7 +71,6 @@ export class ActiveTaskExecutionController {
       const historyEntry = await this.activeTaskExecutionService.stopTask({
         taskId,
         workerClientId: auth.claims.client_id,
-        agentActorId: dto.agentActorId,
         status: dto.status,
         errorCode: dto.errorCode,
       });

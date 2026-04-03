@@ -10,7 +10,10 @@ import { TaskExecutionHistoryErrorCode } from '../history/task-execution-history
 import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
 import { TaskEntity } from '../../tasks/task.entity';
 import { TaskExecutionQueueEntity } from '../queue/task-execution-queue.entity';
-import { TaskNotFoundError } from '../../tasks/errors/tasks.errors';
+import {
+  TaskNotAssignedError,
+  TaskNotFoundError,
+} from '../../tasks/errors/tasks.errors';
 import {
   ActiveTaskExecutionNotFoundError,
   TaskAlreadyClaimedError,
@@ -25,7 +28,6 @@ export type ClaimTaskExecutionInput = {
 export type StopTaskExecutionInput = {
   taskId: string;
   workerClientId: string;
-  agentActorId: string;
   status: TaskExecutionHistoryStatus;
   errorCode?: TaskExecutionHistoryErrorCode | null;
 };
@@ -77,6 +79,11 @@ export class ActiveTaskExecutionService {
         throw new TaskExecutionQueueEntryNotFoundError(input.taskId);
       }
 
+      const assigneeActorId = task.assigneeActorId;
+      if (!assigneeActorId) {
+        throw new TaskNotAssignedError(task.id);
+      }
+
       const activeExecution = manager.create(ActiveTaskExecutionEntity, {
         taskId: task.id,
         claimedAt: new Date(),
@@ -87,6 +94,8 @@ export class ActiveTaskExecutionService {
             name: tag.name,
           }),
         ),
+        taskAssigneeActorIdBeforeClaim: assigneeActorId,
+        agentActorId: assigneeActorId,
         workerClientId: input.workerClientId,
       });
 
@@ -125,7 +134,7 @@ export class ActiveTaskExecutionService {
         taskId: activeExecution.taskId,
         claimedAt: activeExecution.claimedAt,
         transitionedAt: new Date(),
-        agentActorId: input.agentActorId,
+        agentActorId: activeExecution.agentActorId,
         workerClientId: input.workerClientId,
         status: input.status,
         errorCode: input.errorCode ?? null,

@@ -79,6 +79,19 @@ export class ActiveTaskExecutionResponseDto {
   })
   workerClientId!: string;
 
+  @ApiProperty({
+    description: 'Task assignee actor id before the task was claimed',
+    example: '19dc147c-6051-49e3-bf7a-404e3bb575d3',
+    nullable: true,
+  })
+  taskAssigneeActorIdBeforeClaim!: string | null;
+
+  @ApiProperty({
+    description: 'Agent actor id that picked up the task',
+    example: '19dc147c-6051-49e3-bf7a-404e3bb575d3',
+  })
+  agentActorId!: string;
+
   static fromEntity(
     entity: ActiveTaskExecutionEntity,
   ): ActiveTaskExecutionResponseDto {
@@ -93,6 +106,8 @@ export class ActiveTaskExecutionResponseDto {
         ActiveTaskExecutionTagSnapshotResponseDto.fromSnapshot(tag),
       ),
       workerClientId: entity.workerClientId,
+      taskAssigneeActorIdBeforeClaim: entity.taskAssigneeActorIdBeforeClaim,
+      agentActorId: entity.agentActorId,
     };
   }
 }

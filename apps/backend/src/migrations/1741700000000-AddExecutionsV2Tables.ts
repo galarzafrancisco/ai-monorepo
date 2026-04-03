@@ -24,14 +24,23 @@ export class AddExecutionsV2Tables1741700000000
         task_status_before_claim text NOT NULL
           CHECK (task_status_before_claim IN ('NOT_STARTED', 'IN_PROGRESS', 'FOR_REVIEW', 'DONE')),
         task_tags_before_claim text NOT NULL,
+        task_assignee_actor_id_before_claim text,
+        agent_actor_id text NOT NULL,
         worker_client_id text NOT NULL,
         row_version integer NOT NULL DEFAULT 1,
         created_at datetime NOT NULL DEFAULT (datetime('now')),
         updated_at datetime NOT NULL DEFAULT (datetime('now')),
         deleted_at datetime,
         CONSTRAINT fk_active_task_executions_v2_task_id
-          FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+          FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+        CONSTRAINT fk_active_task_executions_v2_agent_actor_id
+          FOREIGN KEY (agent_actor_id) REFERENCES agents(actor_id)
       )
+    `);
+
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS idx_active_task_executions_v2_agent_actor_id
+      ON active_task_executions_v2 (agent_actor_id)
     `);
 
     await queryRunner.query(`
@@ -105,6 +114,9 @@ export class AddExecutionsV2Tables1741700000000
 
     await queryRunner.query(
       'DROP INDEX IF EXISTS idx_active_task_executions_v2_claimed_at',
+    );
+    await queryRunner.query(
+      'DROP INDEX IF EXISTS idx_active_task_executions_v2_agent_actor_id',
     );
     await queryRunner.query(
       'DROP INDEX IF EXISTS idx_active_task_executions_v2_worker_client_id',
