@@ -7,14 +7,14 @@ import {
   TaskStatusChangedEvent,
   TaskUpdatedEvent,
 } from '../../tasks/events/tasks.events';
-import { TaskEligibilityReconcilerService } from './task-eligibility-reconciler.service';
+import { TaskExecutionQueuePopulatorService } from './task-execution-queue-populator.service';
 
 @Injectable()
 export class TaskEligibilityEventSourceService {
   private readonly logger = new Logger(TaskEligibilityEventSourceService.name);
 
   constructor(
-    private readonly taskEligibilityReconcilerService: TaskEligibilityReconcilerService,
+    private readonly taskExecutionQueuePopulatorService: TaskExecutionQueuePopulatorService,
   ) {}
 
   @OnEvent(TaskCreatedEvent.INTERNAL)
@@ -46,11 +46,11 @@ export class TaskEligibilityEventSourceService {
 
   private async reconcileTask(taskId: string, trigger: string): Promise<void> {
     this.logger.debug({
-      message: 'Task eligibility reconciliation triggered by event',
+      message: 'Task execution queue population triggered by event',
       taskId,
       trigger,
     });
 
-    await this.taskEligibilityReconcilerService.reconcileTask(taskId);
+    await this.taskExecutionQueuePopulatorService.populateTask(taskId);
   }
 }
