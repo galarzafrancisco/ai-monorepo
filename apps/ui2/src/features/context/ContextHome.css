@@ -3,6 +3,92 @@
   min-height: 0;
   overflow-y: auto;
   padding-right: var(--space-1);
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+.context-home__search {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.context-home__search-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.context-home__search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.context-home__search-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.context-home__results {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+
+.context-home__results-status {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+}
+
+.context-home__results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.context-home__result-row {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  color: inherit;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-home__results-list li:last-child .context-home__result-row {
+  border-bottom: 0;
+}
+
+.context-home__result-row:hover {
+  background: color-mix(in srgb, var(--surface) 70%, var(--card-bg));
+}
+
+.context-home__result-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.context-home__result-title {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-medium);
+}
+
+.context-home__result-score {
+  color: var(--text-muted);
+  font-size: var(--fs-2);
+  white-space: nowrap;
 }
 
 .context-home__loading,
@@ -19,4 +105,11 @@
 
 .context-home__empty {
   color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .context-home__result-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
