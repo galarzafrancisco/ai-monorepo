@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Text, Stack, Chip, DataRowContainer } from '../../ui/primitives';
 import { useContextBlock } from './useContextBlocks';
@@ -11,12 +11,26 @@ import { useToast } from '../../shared/context/ToastContext';
 import './ContextBlockDetailPage.css';
 import Markdown from 'marked-react';
 import { DeleteWithConfirmation } from '../../ui/components';
+import { useIsDesktop } from '../../app/hooks/useIsDesktop';
+
+function normalizeParentId(parentId: { id?: string } | string | null | undefined): string | null {
+  if (typeof parentId === 'string') {
+    return parentId;
+  }
+
+  if (parentId && typeof parentId === 'object' && typeof parentId.id === 'string') {
+    return parentId.id;
+  }
+
+  return null;
+}
 
 export function ContextBlockDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { setSectionTitle } = useContextCtx();
+  const { setSectionTitle, blocks } = useContextCtx();
   const { showError } = useToast();
+  const isDesktop = useIsDesktop();
 
   // useContextBlock already implements the correct pattern:
   // - It fetches the block from the API regardless of cache
@@ -30,9 +44,9 @@ export function ContextBlockDetailPage() {
 
   useEffect(() => {
     if (block) {
-      setSectionTitle(block.title);
+      setSectionTitle(isDesktop ? 'Context' : block.title);
     }
-  }, [block, setSectionTitle]);
+  }, [block, isDesktop, setSectionTitle]);
 
   // Check if this block is a thread's state memory
   useEffect(() => {
@@ -76,6 +90,27 @@ export function ContextBlockDetailPage() {
     }
   }, [isDeleted, navigate]);
 
+  const breadcrumbs = useMemo(() => {
+    if (!block) {
+      return [];
+    }
+
+    const summaryById = new Map(blocks.map((summary) => [summary.id, summary]));
+    const trail: Array<{ id: string; title: string }> = [];
+    let currentId: string | null = block.id;
+
+    while (currentId) {
+      const currentBlock = currentId === block.id ? block : summaryById.get(currentId);
+      if (!currentBlock) {
+        break;
+      }
+      trail.unshift({ id: currentBlock.id, title: currentBlock.title });
+      currentId = normalizeParentId(currentBlock.parentId);
+    }
+
+    return trail;
+  }, [block, blocks]);
+
   if (isLoading) {
     return (
       <div className="context-block-detail__loading">
@@ -102,8 +137,34 @@ export function ContextBlockDetailPage() {
 
   return (
     <div className="context-block-detail">
-
       <Stack spacing="3" className="context-block-detail__header">
+        {isDesktop ? (
+          <div className="context-block-detail__breadcrumbs" aria-label="Breadcrumb">
+            <button type="button" className="context-block-detail__breadcrumb" onClick={() => navigate('/context/home')}>
+              Home
+            </button>
+            {breadcrumbs.map((crumb, index) => (
+              <div key={crumb.id} className="context-block-detail__breadcrumb-segment">
+                <span className="context-block-detail__breadcrumb-separator">›</span>
+                <button
+                  type="button"
+                  className={`context-block-detail__breadcrumb ${index === breadcrumbs.length - 1 ? 'context-block-detail__breadcrumb--current' : ''}`}
+                  onClick={() => navigate(`/context/block/${crumb.id}`)}
+                  disabled={index === breadcrumbs.length - 1}
+                >
+                  {crumb.title}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {isDesktop ? (
+          <div className="context-block-detail__title-wrap">
+            <h1 className="context-block-detail__title">{block.title}</h1>
+          </div>
+        ) : null}
+
         {block.tags.length > 0 && (
           <div className="context-block-detail__tags">
             {block.tags.map((tag: ContextTagResponseDto) => (
@@ -152,13 +213,15 @@ export function ContextBlockDetailPage() {
             Go to thread
           </Button>
         )}
-        <Button
-          size='lg'
-          variant='secondary'
-          onClick={() => navigate('/context')}
-        >
-          Back to blocks
-        </Button>
+        {!isDesktop ? (
+          <Button
+            size='lg'
+            variant='secondary'
+            onClick={() => navigate('/context')}
+          >
+            Back to blocks
+          </Button>
+        ) : null}
       </DataRowContainer>
     </div>
   );

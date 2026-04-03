@@ -41,6 +41,12 @@
   padding-bottom: 0;
 }
 
+/* Context desktop uses its own full-height split layout. */
+.beta-shell__desktop__main:has(.context-desktop) {
+  padding: 0;
+  overflow: hidden;
+}
+
 /* All pages automatically expand horizontally */
 .beta-shell__desktop__main>* {
   flex: 1;
@@ -162,9 +168,9 @@
 .beta-shell__desktop__sidebar--toggle {
   margin-top: auto;
   padding: var(--space-2);
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-2);
+  background-color: var(--app-surface);
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
   color: var(--text);
   cursor: pointer;
   font-size: var(--fs-3);
@@ -173,7 +179,7 @@
 }
 
 .beta-shell__desktop__sidebar--toggle:hover {
-  background-color: var(--border);
+  background-color: color-mix(in srgb, var(--app-surface) 84%, var(--surface));
 }
 
 /* --------------------------------------------------------

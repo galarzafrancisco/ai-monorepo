@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Text } from "../../ui/primitives";
-import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import type { ContextBlockSummary } from "./types";
 import "./ContextBlockTree.css";
 
@@ -15,6 +14,8 @@ const MAX_DEPTH = 6;
 type ContextBlockTreeProps = {
   blocks: ContextBlockSummary[];
   onOpenBlock: (blockId: string) => void;
+  selectedBlockId?: string;
+  compact?: boolean;
 };
 
 function normalizeParentId(parentId: ContextBlockSummary["parentId"]): string | null {
@@ -115,12 +116,16 @@ function TreeBranch({
   onOpenBlock,
   collapsedIds,
   onToggleNode,
+  selectedBlockId,
+  compact = false,
 }: {
   nodes: TreeNode[];
   depth: number;
   onOpenBlock: (blockId: string) => void;
   collapsedIds: Set<string>;
   onToggleNode: (blockId: string) => void;
+  selectedBlockId?: string;
+  compact?: boolean;
 }) {
   return (
     <ul className="context-tree__branch" role={depth === 0 ? "tree" : "group"}>
@@ -128,11 +133,12 @@ function TreeBranch({
         const hasChildren = node.children.length > 0;
         const isExpanded = hasChildren ? !collapsedIds.has(node.block.id) : false;
         const clampedDepth = Math.min(depth, MAX_DEPTH);
+        const isSelected = selectedBlockId === node.block.id;
 
         return (
           <li key={node.block.id} className="context-tree__item" role="treeitem" aria-expanded={hasChildren ? isExpanded : undefined}>
             <div
-              className="context-tree__row"
+              className={`context-tree__row ${isSelected ? "context-tree__row--selected" : ""} ${compact ? "context-tree__row--compact" : ""}`}
               style={{ ["--tree-depth" as string]: clampedDepth }}
             >
               {hasChildren ? (
@@ -152,16 +158,22 @@ function TreeBranch({
               )}
               <button type="button" className="context-tree__open" onClick={() => onOpenBlock(node.block.id)}>
                 <div className="context-tree__main">
-                  <Text weight="semibold" size="3" tone="default">
+                  <Text
+                    weight={isSelected ? "bold" : "medium"}
+                    size={compact ? "2" : "3"}
+                    tone="default"
+                    className="context-tree__title"
+                  >
                     {node.block.title}
                   </Text>
-                  <div className="context-tree__meta">
-                    <span className="context-tree__id">#{node.block.id.slice(0, 6)}</span>
-                    <span>{node.block.createdBy || "unknown"}</span>
-                    <span>{elapsedTime(node.block.updatedAt)}</span>
-                  </div>
+                  {!compact ? (
+                    <div className="context-tree__meta">
+                      <span className="context-tree__id">#{node.block.id.slice(0, 6)}</span>
+                      <span>{node.block.createdBy || "unknown"}</span>
+                    </div>
+                  ) : null}
                 </div>
-                {node.block.tags.length > 0 ? (
+                {!compact && node.block.tags.length > 0 ? (
                   <div className="context-tree__tags" aria-label="Block tags">
                     {node.block.tags.slice(0, 2).map((tag) => (
                       <span key={`${node.block.id}-${tag.id}`} className="context-tree__tag">
@@ -183,6 +195,8 @@ function TreeBranch({
                 onOpenBlock={onOpenBlock}
                 collapsedIds={collapsedIds}
                 onToggleNode={onToggleNode}
+                selectedBlockId={selectedBlockId}
+                compact={compact}
               />
             ) : null}
           </li>
@@ -208,7 +222,12 @@ function getAllParentIds(tree: TreeNode[]): Set<string> {
   return parentIds;
 }
 
-export function ContextBlockTree({ blocks, onOpenBlock }: ContextBlockTreeProps): JSX.Element {
+export function ContextBlockTree({
+  blocks,
+  onOpenBlock,
+  selectedBlockId,
+  compact = false,
+}: ContextBlockTreeProps): JSX.Element {
   const tree = useMemo(() => buildTree(blocks), [blocks]);
   // Start with all parent nodes collapsed
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => getAllParentIds(tree));
@@ -223,6 +242,34 @@ export function ContextBlockTree({ blocks, onOpenBlock }: ContextBlockTreeProps)
     }
   }, [tree]);
 
+  useEffect(() => {
+    if (!selectedBlockId) {
+      return;
+    }
+
+    const parentById = new Map<string, string | null>();
+    blocks.forEach((block) => {
+      parentById.set(block.id, normalizeParentId(block.parentId));
+    });
+
+    const ancestorIds = new Set<string>();
+    let currentParentId = parentById.get(selectedBlockId) ?? null;
+    while (currentParentId) {
+      ancestorIds.add(currentParentId);
+      currentParentId = parentById.get(currentParentId) ?? null;
+    }
+
+    if (ancestorIds.size === 0) {
+      return;
+    }
+
+    setCollapsedIds((previous) => {
+      const next = new Set(previous);
+      ancestorIds.forEach((ancestorId) => next.delete(ancestorId));
+      return next;
+    });
+  }, [blocks, selectedBlockId]);
+
   const handleToggleNode = (blockId: string) => {
     setCollapsedIds((previous) => {
       const next = new Set(previous);
@@ -236,13 +283,15 @@ export function ContextBlockTree({ blocks, onOpenBlock }: ContextBlockTreeProps)
   };
 
   return (
-    <section className="context-tree">
+    <section className={`context-tree ${compact ? "context-tree--compact" : ""}`}>
       <TreeBranch
         nodes={tree}
         depth={0}
         onOpenBlock={onOpenBlock}
         collapsedIds={collapsedIds}
         onToggleNode={handleToggleNode}
+        selectedBlockId={selectedBlockId}
+        compact={compact}
       />
     </section>
   );

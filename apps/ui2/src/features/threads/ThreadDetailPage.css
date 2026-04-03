@@ -172,7 +172,8 @@
   margin-top: auto;
   padding: var(--space-2);
   background-color: var(--surface);
-  border-top: 0;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
   color: var(--text);
   cursor: pointer;
   font-size: var(--fs-3);
