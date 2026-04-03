@@ -6,6 +6,7 @@ import { TasksScopes } from 'src/tasks/tasks.scopes';
 import { Scope } from '../types/scope.type';
 
 export const INTERNAL_WORKER_AUTH_TARGET_ID = 'taico-worker';
+export const INTERNAL_WORKER_AUTH_TARGET_VERSION = '0.0.0';
 
 export const INTERNAL_WORKER_AUTH_TARGET_NAME = 'Taico Worker';
 

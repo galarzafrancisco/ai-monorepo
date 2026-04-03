@@ -88,8 +88,8 @@ export class RegisterClientDto {
 
   @ApiPropertyOptional({
     description: 'Requested scopes for the client',
-    example: ['data:read', 'data:write'],
-    type: [String],
+    example: 'data:read data:write',
+    type: String,
   })
   @IsString()
   @IsOptional()

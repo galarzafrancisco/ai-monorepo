@@ -1761,6 +1761,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/executions-v2/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the current task execution work queue
+         * @description Returns the tasks currently present in the v2 execution queue. Presence means the task is ready to be picked by the executor.
+         */
+        get: operations["TaskExecutionQueueController_listQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/executions-v2/queue/{taskId}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim a specific task from the execution queue
+         * @description Atomically removes the task from the queue and inserts it into the active execution table.
+         */
+        post: operations["TaskExecutionQueueController_claimTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/executions-v2/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List active task executions
+         * @description Returns the tasks currently being worked on in the v2 execution system.
+         */
+        get: operations["ActiveTaskExecutionController_listActiveExecutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/executions-v2/active/{taskId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop an active task execution and move it to history
+         * @description Atomically removes the task from the active execution table and inserts it into the history table.
+         */
+        post: operations["ActiveTaskExecutionController_stopTaskExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/executions-v2/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List task execution history
+         * @description Returns the persisted execution history rows in the v2 execution system.
+         */
+        get: operations["TaskExecutionHistoryController_listHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/search/query": {
         parameters: {
             query?: never;
@@ -1934,12 +2034,9 @@ export interface components {
             client_name: string;
             /**
              * @description Requested scopes for the client
-             * @example [
-             *       "data:read",
-             *       "data:write"
-             *     ]
+             * @example data:read data:write
              */
-            scope?: string[];
+            scope?: string;
             /**
              * @description Contact emails for the client registration
              * @example [
@@ -5210,6 +5307,150 @@ export interface components {
              * @example Tasks MCP API
              */
             resource_name: string;
+        };
+        TaskExecutionQueueEntryResponseDto: {
+            /**
+             * @description Task ID present in the execution queue
+             * @example 8c9d2c6c-2e2f-49eb-a7f7-5d483b7f0f1f
+             */
+            taskId: string;
+            /**
+             * @description Task name at the time of retrieval
+             * @example Investigate worker auth flow
+             */
+            taskName: Record<string, never> | null;
+            /**
+             * @description Current task status
+             * @enum {string|null}
+             */
+            taskStatus: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE" | null;
+        };
+        ActiveTaskExecutionTagSnapshotResponseDto: {
+            /**
+             * @description Tag ID at the time the task was claimed
+             * @example d2dce6f1-24ec-47cc-b7fd-11a4e2672ad7
+             */
+            id: string;
+            /**
+             * @description Tag name at the time the task was claimed
+             * @example backend
+             */
+            name: string;
+        };
+        ActiveTaskExecutionResponseDto: {
+            /**
+             * @description Execution ID
+             * @example b8f98a43-a5d1-42a5-a64d-934da729e8f8
+             */
+            id: string;
+            /**
+             * @description Task ID for the active execution
+             * @example 8c9d2c6c-2e2f-49eb-a7f7-5d483b7f0f1f
+             */
+            taskId: string;
+            /**
+             * @description Task name at the time of retrieval
+             * @example Investigate worker auth flow
+             */
+            taskName: Record<string, never> | null;
+            /**
+             * @description Current task status
+             * @enum {string|null}
+             */
+            taskStatus: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE" | null;
+            /**
+             * @description When the task was claimed into the active table
+             * @example 2026-04-03T08:25:00.000Z
+             */
+            claimedAt: string;
+            /**
+             * @description Task status before the task was claimed
+             * @enum {string}
+             */
+            taskStatusBeforeClaim: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE";
+            /** @description Task tags before the task was claimed */
+            taskTagsBeforeClaim: components["schemas"]["ActiveTaskExecutionTagSnapshotResponseDto"][];
+            /**
+             * @description OAuth client id of the worker that claimed the task
+             * @example 24f52f295c990c1d6cdc6034fa3d1900
+             */
+            workerClientId: string;
+            /**
+             * @description Task assignee actor id before the task was claimed
+             * @example 19dc147c-6051-49e3-bf7a-404e3bb575d3
+             */
+            taskAssigneeActorIdBeforeClaim: Record<string, never> | null;
+            /**
+             * @description Agent actor id that picked up the task
+             * @example 19dc147c-6051-49e3-bf7a-404e3bb575d3
+             */
+            agentActorId: string;
+        };
+        StopActiveTaskExecutionDto: {
+            /**
+             * @description Terminal execution status
+             * @example SUCCEEDED
+             * @enum {string}
+             */
+            status: "SUCCEEDED" | "FAILED" | "STALE" | "CANCELLED";
+            /**
+             * @description Optional error code for failed execution outcomes
+             * @example OUT_OF_QUOTA
+             * @enum {string|null}
+             */
+            errorCode?: "OUT_OF_QUOTA" | "UNKNOWN" | null;
+        };
+        TaskExecutionHistoryResponseDto: {
+            /**
+             * @description History row ID
+             * @example dfc3932c-a151-4f67-9959-c720fed08d90
+             */
+            id: string;
+            /**
+             * @description Task ID for the historical execution
+             * @example 8c9d2c6c-2e2f-49eb-a7f7-5d483b7f0f1f
+             */
+            taskId: string;
+            /**
+             * @description Task name at the time of retrieval
+             * @example Investigate worker auth flow
+             */
+            taskName: Record<string, never> | null;
+            /**
+             * @description Current task status
+             * @enum {string|null}
+             */
+            taskStatus: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE" | null;
+            /**
+             * @description When the task was originally claimed
+             * @example 2026-04-03T08:25:00.000Z
+             */
+            claimedAt: string;
+            /**
+             * @description When the active execution transitioned into history
+             * @example 2026-04-03T08:40:00.000Z
+             */
+            transitionedAt: string;
+            /**
+             * @description Actor id of the agent that worked on the task
+             * @example 19dc147c-6051-49e3-bf7a-404e3bb575d3
+             */
+            agentActorId: string;
+            /**
+             * @description OAuth client id of the worker that executed the task
+             * @example 24f52f295c990c1d6cdc6034fa3d1900
+             */
+            workerClientId: string;
+            /**
+             * @description Terminal execution status
+             * @enum {string}
+             */
+            status: "SUCCEEDED" | "FAILED" | "STALE" | "CANCELLED";
+            /**
+             * @description Optional failure code when execution ended with an error
+             * @enum {string|null}
+             */
+            errorCode: "OUT_OF_QUOTA" | "UNKNOWN" | null;
         };
         GlobalSearchResultDto: {
             /**
@@ -9707,6 +9948,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProtectedResourceMetadataResponseDto"];
+                };
+            };
+        };
+    };
+    TaskExecutionQueueController_listQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskExecutionQueueEntryResponseDto"][];
+                };
+            };
+        };
+    };
+    TaskExecutionQueueController_claimTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task ID to claim */
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveTaskExecutionResponseDto"];
+                };
+            };
+        };
+    };
+    ActiveTaskExecutionController_listActiveExecutions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveTaskExecutionResponseDto"][];
+                };
+            };
+        };
+    };
+    ActiveTaskExecutionController_stopTaskExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Task ID to stop */
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StopActiveTaskExecutionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskExecutionHistoryResponseDto"];
+                };
+            };
+        };
+    };
+    TaskExecutionHistoryController_listHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskExecutionHistoryResponseDto"][];
                 };
             };
         };

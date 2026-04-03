@@ -21,6 +21,7 @@ import { ExecutionsResource } from './executions-resource.js';
 import { TaskBlueprintsResource } from './task-blueprints-resource.js';
 import { ScheduledTasksResource } from './scheduled-tasks-resource.js';
 import { DiscoveryResource } from './discovery-resource.js';
+import { ExecutionsV2Resource } from './executions-v2-resource.js';
 import { SearchResource } from './search-resource.js';
 
 export class ApiClient {
@@ -46,6 +47,7 @@ export class ApiClient {
   public readonly taskBlueprints: TaskBlueprintsResource;
   public readonly scheduledTasks: ScheduledTasksResource;
   public readonly discovery: DiscoveryResource;
+  public readonly executionsV2: ExecutionsV2Resource;
   public readonly search: SearchResource;
 
   constructor(config: ClientConfig) {
@@ -71,6 +73,7 @@ export class ApiClient {
     this.taskBlueprints = new TaskBlueprintsResource(config);
     this.scheduledTasks = new ScheduledTasksResource(config);
     this.discovery = new DiscoveryResource(config);
+    this.executionsV2 = new ExecutionsV2Resource(config);
     this.search = new SearchResource(config);
   }
 }

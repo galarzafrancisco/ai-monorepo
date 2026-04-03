@@ -26,7 +26,7 @@ export type RegisterClientDto = {
     /**
      * Requested scopes for the client
      */
-    scope?: Array<string>;
+    scope?: string;
     /**
      * Contact emails for the client registration
      */

@@ -309,6 +309,24 @@ export const ErrorCatalog: Record<
     type: '/errors/token/invalid-code-verifier',
     retryable: false,
   },
+  [ErrorCodes.INVALID_REFRESH_TOKEN]: {
+    status: 401,
+    title: 'Invalid refresh token',
+    type: '/errors/token/invalid-refresh-token',
+    retryable: false,
+  },
+  [ErrorCodes.REFRESH_TOKEN_EXPIRED]: {
+    status: 401,
+    title: 'Refresh token expired',
+    type: '/errors/token/refresh-token-expired',
+    retryable: false,
+  },
+  [ErrorCodes.REFRESH_TOKEN_REVOKED]: {
+    status: 401,
+    title: 'Refresh token revoked',
+    type: '/errors/token/refresh-token-revoked',
+    retryable: false,
+  },
   [ErrorCodes.MISSING_ACCESS_TOKEN]: {
     status: 401,
     title: 'Missing access token',
