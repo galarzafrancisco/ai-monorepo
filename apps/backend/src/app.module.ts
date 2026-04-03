@@ -15,7 +15,7 @@ import { ThreadsModule } from './threads/threads.module';
 import { IdentityProviderModule } from './identity-provider/identity-provider.module';
 import { MetaModule } from './meta/meta.module';
 import { AgentRunsModule } from './agent-runs/agent-runs.module';
-import { getConfig } from './config/env.config';
+import { getConfig, isTypeormSchemaSyncEnabled } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
 import { TaskBlueprintsModule } from './task-blueprints/task-blueprints.module';
 import { BaselineSchema1700000000000 } from './migrations/1700000000000-BaselineSchema';
@@ -34,9 +34,11 @@ import { AddHasSeenWalkthroughToUsers1741300000000 } from './migrations/17413000
 import { EnforceSingleThreadPerParentTask1741400000000 } from './migrations/1741400000000-EnforceSingleThreadPerParentTask';
 import { AddExecutionPersistenceTables1741500000000 } from './migrations/1741500000000-AddExecutionPersistenceTables';
 import { AddTaskExecutionIdToAgentRuns1741600000000 } from './migrations/1741600000000-AddTaskExecutionIdToAgentRuns';
+import { AddExecutionsV2Tables1741700000000 } from './migrations/1741700000000-AddExecutionsV2Tables';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
+import { ExecutionsV2Module } from './executions-v2/executions-v2.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 
 @Module({
@@ -45,8 +47,8 @@ import { GlobalSearchModule } from './global-search/global-search.module';
       type: 'sqlite',
       database: getConfig().databasePath,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: false,
-      migrationsRun: true,
+      synchronize: isTypeormSchemaSyncEnabled(),
+      migrationsRun: !isTypeormSchemaSyncEnabled(),
       migrations: [
         BaselineSchema1700000000000,
         AlignConnectionAuthFlowColumns1700000000001,
@@ -64,6 +66,7 @@ import { GlobalSearchModule } from './global-search/global-search.module';
         EnforceSingleThreadPerParentTask1741400000000,
         AddExecutionPersistenceTables1741500000000,
         AddTaskExecutionIdToAgentRuns1741600000000,
+        AddExecutionsV2Tables1741700000000,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -84,6 +87,7 @@ import { GlobalSearchModule } from './global-search/global-search.module';
     SecretsModule,
     ChatProvidersModule,
     ExecutionsModule,
+    ExecutionsV2Module,
     GlobalSearchModule,
   ],
   controllers: [AppController],

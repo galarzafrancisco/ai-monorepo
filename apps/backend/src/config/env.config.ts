@@ -12,6 +12,7 @@ import 'dotenv/config';
 const logger = new Logger('EnvConfig');
 
 export type NodeEnv = 'development' | 'production';
+export type TypeormSchemaMode = 'migrate' | 'sync';
 /**
  * Configuration interface for type safety
  */
@@ -26,6 +27,7 @@ export interface AppConfig {
 
   // Database Configuration
   databasePath: string;
+  typeormSchemaMode: TypeormSchemaMode;
 
   // Security Configuration
   clientSecretLength: number;
@@ -69,6 +71,7 @@ export function loadConfig(): AppConfig {
 
     // Database Configuration
     databasePath: process.env.DATABASE_PATH || 'data/database.sqlite',
+    typeormSchemaMode: getTypeormSchemaMode(),
 
     // Security Configuration
     clientSecretLength: parseInt(process.env.CLIENT_SECRET_LENGTH || '32', 10),
@@ -120,6 +123,7 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Issuer URL: ${config.issuerUrl}`);
   logger.log(`  - Callback URL: ${config.callbackUrl}`);
   logger.log(`  - Database Path: ${config.databasePath}`);
+  logger.log(`  - TypeORM Schema Mode: ${config.typeormSchemaMode}`);
   logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
   logger.log(`  - Thread State Reconciler Enabled: ${config.threadStateReconcilerEnabled}`);
   logger.log(`  - Thread State Reconciler Debounce Ms: ${config.threadStateReconcilerDebounceMs}`);
@@ -140,6 +144,10 @@ function getEnv(): NodeEnv {
 
 function getUiPort(): string {
   return process.env.UI_PORT || '2000';
+}
+
+function getTypeormSchemaMode(): TypeormSchemaMode {
+  return process.env.TYPEORM_SCHEMA_MODE === 'sync' ? 'sync' : 'migrate';
 }
 
 function getIssuerUrl(): string {
@@ -195,6 +203,10 @@ export function getConfig(): AppConfig {
  */
 export function isDevelopment(): boolean {
   return getConfig().nodeEnv !== 'production';
+}
+
+export function isTypeormSchemaSyncEnabled(): boolean {
+  return getConfig().typeormSchemaMode === 'sync';
 }
 
 export function isProduction(): boolean {
