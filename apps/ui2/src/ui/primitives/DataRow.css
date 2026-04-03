@@ -27,6 +27,11 @@
   background: var(--border-subtle);
 }
 
+.data-row:not(:has(.data-row__leading))::after,
+.data-row__wrapper:first-child .data-row:not(:has(.data-row__leading)):before {
+  left: var(--space-0);
+}
+
 /* First row gets a top border */
 .data-row__wrapper:first-child .data-row:before {
   content: "";
