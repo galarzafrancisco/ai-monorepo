@@ -48,8 +48,7 @@ export class ReadinessCandidateRepository {
   async countActiveExecutionsForAgent(agentActorId: string): Promise<number> {
     return this.activeTaskExecutionRepository
       .createQueryBuilder('execution')
-      .innerJoin('execution.task', 'task')
-      .where('task.assignee_actor_id = :agentActorId', { agentActorId })
+      .where('execution.agent_actor_id = :agentActorId', { agentActorId })
       .getCount();
   }
 }
