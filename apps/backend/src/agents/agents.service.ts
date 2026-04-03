@@ -176,6 +176,30 @@ export class AgentsService {
     return this.mapAgentToResult(agent, agent.actor);
   }
 
+  async getActiveAgentsByActorIds({
+    actorIds,
+  }: {
+    actorIds: string[];
+  }): Promise<AgentResult[]> {
+    if (actorIds.length === 0) {
+      return [];
+    }
+
+    const agents = await this.agentRepository.find({
+      where: actorIds.map((actorId) => ({
+        actorId,
+        isActive: true,
+      })),
+      relations: ['actor'],
+    });
+
+    return agents
+      .filter((agent): agent is AgentEntity & { actor: ActorEntity } =>
+        Boolean(agent.actor),
+      )
+      .map((agent) => this.mapAgentToResult(agent, agent.actor));
+  }
+
   // async updateAgent(
   //   actorId: string,
   //   input: UpdateAgentInput,

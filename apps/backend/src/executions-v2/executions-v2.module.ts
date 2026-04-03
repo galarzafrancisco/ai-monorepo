@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AgentEntity } from '../agents/agent.entity';
+import { AgentsModule } from '../agents/agents.module';
 import { TaskEntity } from '../tasks/task.entity';
 import { ActiveTaskExecutionEntity } from './active/active-task-execution.entity';
 import { ActiveTaskExecutionController } from './active/active-task-execution.controller';
@@ -21,11 +21,11 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
   imports: [
     TypeOrmModule.forFeature([
       TaskEntity,
-      AgentEntity,
       TaskExecutionQueueEntity,
       ActiveTaskExecutionEntity,
       TaskExecutionHistoryEntity,
     ]),
+    AgentsModule,
     AuthGuardsModule,
   ],
   controllers: [
