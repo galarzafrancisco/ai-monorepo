@@ -832,7 +832,9 @@ export function TaskDetailPage() {
 
   // Derive task from the live tasks array so WebSocket updates are reflected automatically.
   // Fall back to fetchedTask if not in the live array (prevents flicker during state updates).
-  const task = taskId ? (tasks.find(t => t.id === taskId) || fetchedTask) : undefined;
+  // Only use fetchedTask if it matches the current taskId to prevent showing stale data.
+  const fallbackTask = fetchedTask?.id === taskId ? fetchedTask : undefined;
+  const task = taskId ? (tasks.find(t => t.id === taskId) || fallbackTask) : undefined;
 
   // On mount (or taskId change), ensure the task is in the cache.
   // getTaskById fetches from the API and adds it to the tasks array if missing.
@@ -841,6 +843,9 @@ export function TaskDetailPage() {
       setFetchedTask(undefined);
       return;
     }
+
+    // Clear fetchedTask when taskId changes to prevent stale fallback data
+    setFetchedTask(undefined);
 
     let cancelled = false;
     setIsFetchingTask(true);
