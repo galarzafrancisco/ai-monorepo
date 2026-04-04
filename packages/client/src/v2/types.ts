@@ -87,8 +87,8 @@ export interface GetConsentMetadataResponseDto {
   status: 'CLIENT_NOT_REGISTERED' | 'CLIENT_REGISTERED' | 'AUTHORIZATION_REQUEST_STARTED' | 'USER_CONSENT_OK' | 'USER_CONSENT_REJECTED' | 'WAITING_ON_DOWNSTREAM_AUTH' | 'AUTHORIZATION_CODE_ISSUED' | 'AUTHORIZATION_CODE_EXCHANGED';
   scopes?: string[];
   resource?: string;
-  server: any;
-  client: any;
+  server: FlowServerDto;
+  client: FlowClientDto;
   redirectUri: string;
   createdAt: string;
 }
@@ -175,7 +175,7 @@ export interface UserResponseDto {
 }
 
 export interface LoginResponseDto {
-  user: any;
+  user: UserResponseDto;
   expiresIn: number;
 }
 
@@ -232,8 +232,8 @@ export interface ConnectionFlowResponseDto {
 export interface AuthJourneyResponseDto {
   id: string;
   status: 'not_started' | 'USER_CONSENT_REJECTED' | 'mcp_auth_flow_started' | 'mcp_auth_flow_completed' | 'connections_flow_started' | 'connections_flow_completed' | 'authorization_code_issued' | 'authorization_code_exchanged';
-  actor: any | null;
-  mcpAuthorizationFlow: any;
+  actor: ActorResponseDto;
+  mcpAuthorizationFlow: McpFlowResponseDto;
   connectionAuthorizationFlows: ConnectionFlowResponseDto[];
   createdAt: string;
   updatedAt: string;
@@ -382,7 +382,7 @@ export interface CommentResponseDto {
   id: string;
   taskId: string;
   commenterName: string;
-  commenterActor?: any | null;
+  commenterActor?: ActorResponseDto;
   content: string;
   createdAt: string;
 }
@@ -418,14 +418,14 @@ export interface TaskResponseDto {
   name: string;
   description: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
-  assignee?: Record<string, any> | null;
-  assigneeActor?: any | null;
+  assignee?: string | null;
+  assigneeActor?: ActorResponseDto;
   sessionId?: string | null;
   comments: CommentResponseDto[];
   artefacts: ArtefactResponseDto[];
   inputRequests: InputRequestResponseDto[];
   tags: TagResponseDto[];
-  createdByActor: any;
+  createdByActor: ActorResponseDto;
   dependsOnIds: string[];
   createdAt: string;
   updatedAt: string;
@@ -495,9 +495,9 @@ export interface TaskInfoDto {
 export interface AgentRunResponseDto {
   id: string;
   actorId: string;
-  actor?: any | null;
+  actor?: ActorResponseDto;
   parentTaskId: string;
-  parentTask?: any | null;
+  parentTask?: TaskInfoDto;
   createdAt: string;
   startedAt?: Record<string, any> | null;
   endedAt?: Record<string, any> | null;
@@ -533,8 +533,8 @@ export interface TaskSummaryResponseDto {
   name: string;
   description: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
-  assigneeActor?: any | null;
-  createdByActor: any;
+  assigneeActor?: ActorResponseDto;
+  createdByActor: ActorResponseDto;
   tags: TagResponseDto[];
   commentCount: number;
   inputRequests: InputRequestResponseDto[];
@@ -550,7 +550,7 @@ export interface ThreadResponseDto {
   id: string;
   title: string;
   chatSessionId: string | null;
-  createdByActor: any;
+  createdByActor: ActorResponseDto;
   parentTaskId?: string | null;
   stateContextBlockId: string;
   tasks: TaskSummaryResponseDto[];
@@ -614,7 +614,7 @@ export interface ThreadMessageResponseDto {
   threadId: string;
   content: string;
   createdByActorId?: string | null;
-  createdByActor?: any | null;
+  createdByActor?: ActorResponseDto;
   createdAt: string;
   updatedAt: string;
 }
@@ -914,10 +914,10 @@ export interface TaskBlueprintResponseDto {
   name: string;
   description: string;
   assigneeActorId?: Record<string, any> | null;
-  assigneeActor?: any | null;
+  assigneeActor?: ActorResponseDto;
   tags: TagResponseDto[];
   dependsOnIds: string[];
-  createdByActor: any;
+  createdByActor: ActorResponseDto;
   rowVersion: number;
   createdAt: string;
   updatedAt: string;
@@ -947,7 +947,7 @@ export interface CreateScheduledTaskDto {
 export interface ScheduledTaskResponseDto {
   id: string;
   taskBlueprintId: string;
-  taskBlueprint?: any;
+  taskBlueprint?: TaskBlueprintResponseDto;
   cronExpression: string;
   enabled: boolean;
   lastRunAt?: Record<string, any> | null;

@@ -1,5 +1,7 @@
 .ai
 .reference
+.tmp
+tmp
 .DS_Store
 
 # Logs

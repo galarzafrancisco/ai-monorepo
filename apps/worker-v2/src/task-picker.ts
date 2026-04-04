@@ -1,10 +1,19 @@
 import { ApiClient } from '@taico/client/v2';
-import { runPlaceholderTask } from './placeholder-task-runner.js';
+import { executeTask } from './task-runner.js';
 
-export async function pickTask(
-  client: ApiClient,
-  taskId: string,
-): Promise<void> {
+type PickTaskParams = {
+  client: ApiClient;
+  taskId: string;
+  baseDir: string;
+  baseUrl: string;
+}
+
+export async function pickTask({
+  client,
+  taskId,
+  baseDir,
+  baseUrl,
+}: PickTaskParams): Promise<void> {
   console.log(`[worker] Attempting to claim task ${taskId}.`);
 
   const execution =
@@ -20,7 +29,13 @@ export async function pickTask(
   let stopErrorCode: 'UNKNOWN' | undefined;
 
   try {
-    await runPlaceholderTask(execution.taskId, execution.id);
+    await executeTask({
+      taskId: execution.taskId,
+      executionId: execution.id,
+      workerClient: client,
+      baseDir: baseDir,
+      baseUrl,
+    });
   } catch (error) {
     stopStatus = 'FAILED';
     stopErrorCode = 'UNKNOWN';

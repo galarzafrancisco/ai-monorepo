@@ -8,6 +8,7 @@ const STARTUP_RETRY_DELAY_MS = 2_000;
 export type WorkerOptions = {
   serverUrl: string;
   credentialsPath?: string;
+  workingDirectory: string;
 };
 
 type WorkerBootstrapResult = Awaited<
@@ -21,6 +22,9 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
   });
 
   console.log(`[worker] Starting worker mode against ${auth.serverUrl}`);
+  console.log(
+    `[worker] Using working directory ${options.workingDirectory}`,
+  );
 
   let bootstrap: WorkerBootstrapResult;
   try {
@@ -46,7 +50,7 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
 
   console.log('[worker] Connectivity check succeeded.');
 
-  await runTaskClaimWorker(client);
+  await runTaskClaimWorker(client, options.workingDirectory, auth.serverUrl);
 }
 
 async function ensureAuthenticatedWithRetry(auth: WorkerAuth): Promise<{
