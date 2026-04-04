@@ -50,7 +50,7 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
 
   console.log('[worker] Connectivity check succeeded.');
 
-  await runTaskClaimWorker(client, options.workingDirectory);
+  await runTaskClaimWorker(client, options.workingDirectory, auth.serverUrl);
 }
 
 async function ensureAuthenticatedWithRetry(auth: WorkerAuth): Promise<{

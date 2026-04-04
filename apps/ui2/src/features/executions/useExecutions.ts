@@ -44,8 +44,8 @@ export const useExecutions = () => {
       ]);
 
       setQueue(nextQueue);
-      setActive(nextActive);
-      setHistory(nextHistory);
+      setActive(nextActive.sort((a, b) => b.claimedAt.localeCompare(a.claimedAt)));
+      setHistory(nextHistory.sort((a, b) => b.transitionedAt.localeCompare(a.transitionedAt)));
       setLastUpdatedAt(new Date().toISOString());
       setError(null);
     } catch (err) {

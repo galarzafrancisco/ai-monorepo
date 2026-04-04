@@ -4,7 +4,7 @@ export const WorkersScopes = {
   CONNECT: {
     id: 'workers:connect',
     description:
-      'Allows worker clients to connect to the Workers WebSocket gateway.',
+      'Allows workers to pick up tasks, work on them, and finish execution.',
   },
 } as const satisfies Record<string, Scope>;
 

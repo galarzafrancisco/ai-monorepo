@@ -5,9 +5,15 @@ type PickTaskParams = {
   client: ApiClient;
   taskId: string;
   baseDir: string;
+  baseUrl: string;
 }
 
-export async function pickTask({ client, taskId, baseDir }: PickTaskParams): Promise<void> {
+export async function pickTask({
+  client,
+  taskId,
+  baseDir,
+  baseUrl,
+}: PickTaskParams): Promise<void> {
   console.log(`[worker] Attempting to claim task ${taskId}.`);
 
   const execution =
@@ -28,6 +34,7 @@ export async function pickTask({ client, taskId, baseDir }: PickTaskParams): Pro
       executionId: execution.id,
       workerClient: client,
       baseDir: baseDir,
+      baseUrl,
     });
   } catch (error) {
     stopStatus = 'FAILED';

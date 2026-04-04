@@ -1,6 +1,15 @@
 import { ApiClient } from '@taico/client/v2';
 import { setTimeout as sleep } from 'timers/promises';
+import { DEFAULT_AGENT_TOKEN_SCOPES } from '@taico/shared';
 import { prepareWorkspace } from './helpers/prepareWorkspace.js';
+import { BaseAgentRunner } from './runners/BaseAgentRunner.js';
+import { AgentModelConfig } from './runners/AgentRunner.js';
+import { ClaudeAgentRunner } from './runners/ClaudeAgentRunner.js';
+import { OpencodeAgentRunner } from './runners/OpenCodeAgentRunner.js';
+import { ADKAgentRunner } from './runners/ADKAgentRunner.js';
+import { GitHubCopilotAgentRunner } from './runners/GitHubCopilotAgentRunner.js';
+import { buildPrompt } from './prompt.js';
+import { InputRequestLike, RunMode } from './types.js';
 
 const SIMULATED_WORK_DURATION_MS = 5_000;
 
@@ -9,9 +18,20 @@ type ExecuteTaskParams = {
   executionId: string;
   workerClient: ApiClient;
   baseDir: string;
+  baseUrl: string;
+  mode?: RunMode;
+  inputRequest?: InputRequestLike;
 }
 
-export async function executeTask({ taskId, executionId, workerClient, baseDir }: ExecuteTaskParams): Promise<void> {
+export async function executeTask({
+  taskId,
+  executionId,
+  workerClient,
+  baseDir,
+  baseUrl,
+  mode = 'normal',
+  inputRequest,
+}: ExecuteTaskParams): Promise<void> {
   console.log(
     `[worker] Placeholder run for task ${taskId} (execution ${executionId}). Simulating work for ${SIMULATED_WORK_DURATION_MS / 1000}s.`,
   );
@@ -44,18 +64,85 @@ export async function executeTask({ taskId, executionId, workerClient, baseDir }
   }
 
   // Prepare the workspace
-  await prepareWorkspace({
+  const workDir = await prepareWorkspace({
     taskId,
     agentId: agent.actorId,
     baseDir,
     repoUrl: repoUrl,
   });
 
-  // NOTE: the old worker has the concept of a run id. We don't have that here yet. Do we need it?
-  
-  // Create runner
+  const thread = await workerClient.threads.ThreadsController_getThreadByTaskId({ taskId });
 
-  // Pipe results
+  // NOTE: the old worker has the concept of a run id. We don't have that here yet. Do we need it?
+
+  // Get an access token for the agent
+  const agentToken = await workerClient.agentExecutionTokens.AgentExecutionTokensController_requestExecutionToken({
+    slug: agent.slug,
+    body: {
+      scopes: [...DEFAULT_AGENT_TOKEN_SCOPES],
+      expirationSeconds: 60 * 60, // 1 hour? what's a sensible ttl?
+    }
+  });
+
+  // Create runner
+  let runner: BaseAgentRunner | null = null;
+  const modelConfig: AgentModelConfig = {
+    providerId: agent.providerId ?? undefined,
+    modelId: agent.modelId ?? undefined,
+  };
+  if (agent.type === 'claude') {
+    runner = new ClaudeAgentRunner(modelConfig);
+  } else if (agent.type === 'opencode') {
+    runner = new OpencodeAgentRunner(modelConfig);
+  } else if (agent.type === 'adk') {
+    runner = new ADKAgentRunner(modelConfig);
+  } else if (agent.type === 'githubcopilot') {
+    runner = new GitHubCopilotAgentRunner(modelConfig);
+  }
+
+  if (!runner) {
+    // Type of runner we don't support yet. We need to release the task.
+    // What should we return?
+    return;
+  }
+
+  // Run and pipe results
+  try {
+    const results = await runner.run(
+      {
+        taskId,
+        prompt: buildPrompt(task, agent, mode, inputRequest, thread),
+        cwd: workDir,
+        baseUrl,
+        accessToken: agentToken.token,
+        runId: '123',
+        resume: undefined,
+        agentSlug: agent.slug,
+      },
+      {
+        onEvent: (message: string) => {
+          console.log(`[agent message] ⤵️`);
+          console.log(message);
+          console.log('[end of agent message] ⤴️');
+          // TODO: send this via websocket or something
+        },
+        onSession: (runnerSessionId: string) => {
+          // TODO: we could add session id to execution? is it useful?
+        },
+        onError: (error: { message: string; rawMessage?: any }) => {
+          console.log('Error detected');
+          console.log('error message:', error.message);
+          console.log('raw message', error.rawMessage);
+          // TODO: The agent returned a message that is an error. What do we do?
+        }
+      }
+    );
+  } catch (error) {
+    // TODO: Something went wrong with the runner in a way we didn't expect
+    // Should restore the task?
+  } finally {
+
+  }
 
   await sleep(SIMULATED_WORK_DURATION_MS);
 }

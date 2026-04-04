@@ -11,8 +11,9 @@ export const INTERNAL_WORKER_AUTH_TARGET_DESCRIPTION =
 
 export const INTERNAL_WORKER_AUTH_SCOPES: Scope[] = [
   {
-    id: 'agents:read',
-    description: 'Allows users to view agents.',
+    id: 'workers:connect',
+    description:
+      'Allows workers to pick up tasks, work on them, and finish execution.',
   },
   {
     id: 'agents:act_as',
@@ -23,15 +24,36 @@ export const INTERNAL_WORKER_AUTH_SCOPES: Scope[] = [
     description: 'Allows users to read tasks, tags, comments, etc from Tasks.',
   },
   {
-    id: 'meta:read',
-    description: 'Read meta information (tags, etc.)',
-  },
-  {
     id: 'context:read',
     description: 'Allows users to read context blocks',
   },
   {
-    id: 'workers:connect',
-    description: 'Allows worker clients to connect to the Workers WebSocket gateway.',
+    id: 'threads:read',
+    description: 'Allows users to read threads.',
+  },
+  {
+    id: 'agents:read',
+    description: 'Allows users to view agents.',
+  },
+  {
+    id: 'meta:read',
+    description: 'Read meta information (tags, etc.)',
   },
 ];
+
+export const DEFAULT_AGENT_TOKEN_SCOPES = [
+  'meta:read',
+  'meta:write',
+  'tasks:read',
+  'tasks:write',
+  'context:read',
+  'context:write',
+  'agents:read',
+  'run:read',
+  'run:write',
+  'threads:read',
+  'threads:write',
+  'mcp-registry:read',
+  'mcp:use',
+  'secret:read',
+] as const;
