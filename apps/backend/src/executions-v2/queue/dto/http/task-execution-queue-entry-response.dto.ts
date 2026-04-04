@@ -10,6 +10,7 @@ export class TaskExecutionQueueEntryResponseDto {
   taskId!: string;
 
   @ApiProperty({
+    type: String,
     description: 'Task name at the time of retrieval',
     example: 'Investigate worker auth flow',
     nullable: true,
