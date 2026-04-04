@@ -1821,7 +1821,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/executions-v2/active/{taskId}/stop": {
+    "/api/v1/executions-v2/active/{executionId}/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -1832,7 +1832,7 @@ export interface paths {
         put?: never;
         /**
          * Stop an active task execution and move it to history
-         * @description Atomically removes the task from the active execution table and inserts it into the history table.
+         * @description Atomically removes the execution from the active execution table and inserts it into the history table.
          */
         post: operations["ActiveTaskExecutionController_stopTaskExecution"];
         delete?: never;
@@ -10017,8 +10017,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Task ID to stop */
-                taskId: string;
+                /** @description Execution ID to stop */
+                executionId: string;
             };
             cookie?: never;
         };

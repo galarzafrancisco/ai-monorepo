@@ -22,8 +22,8 @@ export class ExecutionsV2Resource extends BaseClient {
   }
 
   /** Stop an active task execution and move it to history */
-  async ActiveTaskExecutionController_stopTaskExecution(params: { taskId: string; body: StopActiveTaskExecutionDto; signal?: AbortSignal }): Promise<TaskExecutionHistoryResponseDto> {
-    return this.request('POST', `/api/v1/executions-v2/active/${params.taskId}/stop`, { body: params.body, signal: params?.signal });
+  async ActiveTaskExecutionController_stopTaskExecution(params: { executionId: string; body: StopActiveTaskExecutionDto; signal?: AbortSignal }): Promise<TaskExecutionHistoryResponseDto> {
+    return this.request('POST', `/api/v1/executions-v2/active/${params.executionId}/stop`, { body: params.body, signal: params?.signal });
   }
 
   /** List task execution history */
