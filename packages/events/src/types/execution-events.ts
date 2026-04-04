@@ -19,6 +19,8 @@ export const ExecutionWireEvents = {
   EXECUTION_CREATED: 'execution.created',
   EXECUTION_UPDATED: 'execution.updated',
   EXECUTION_DELETED: 'execution.deleted',
+  EXECUTION_ACTIVITY: 'execution.activity',
+  EXECUTION_ACTIVITY_POST: 'execution.activity.post',
 } as const;
 
 export type ExecutionWireEventName =
@@ -79,13 +81,41 @@ export interface ExecutionDeletedWireEvent {
   actor: MinimalEventActor;
 }
 
+export interface ExecutionActivityPayload {
+  executionId: string;
+  taskId: string;
+  agentActorId: string;
+  kind: string;
+  message?: string;
+  ts: number;
+  runnerSessionId?: string | null;
+}
+
+export interface PostExecutionActivityPayload {
+  executionId: string;
+  kind?: string;
+  message?: string;
+  ts?: number;
+  runnerSessionId?: string | null;
+}
+
+/**
+ * Execution activity event
+ * Emitted for real-time activity updates from workers/runners
+ */
+export interface ExecutionActivityWireEvent {
+  payload: ExecutionActivityPayload;
+  actor: MinimalEventActor;
+}
+
 /**
  * Union type of all execution wire events
  */
 export type ExecutionWireEvent =
   | ExecutionCreatedWireEvent
   | ExecutionUpdatedWireEvent
-  | ExecutionDeletedWireEvent;
+  | ExecutionDeletedWireEvent
+  | ExecutionActivityWireEvent;
 
 /**
  * Type guards for event identification

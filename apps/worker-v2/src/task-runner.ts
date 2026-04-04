@@ -10,6 +10,7 @@ import { ADKAgentRunner } from './runners/ADKAgentRunner.js';
 import { GitHubCopilotAgentRunner } from './runners/GitHubCopilotAgentRunner.js';
 import { buildPrompt } from './prompt.js';
 import { InputRequestLike, RunMode } from './types.js';
+import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 
 const SIMULATED_WORK_DURATION_MS = 5_000;
 
@@ -19,6 +20,7 @@ type ExecuteTaskParams = {
   workerClient: ApiClient;
   baseDir: string;
   baseUrl: string;
+  activityGatewayClient: ExecutionActivityGatewayClient;
   mode?: RunMode;
   inputRequest?: InputRequestLike;
 }
@@ -29,6 +31,7 @@ export async function executeTask({
   workerClient,
   baseDir,
   baseUrl,
+  activityGatewayClient,
   mode = 'normal',
   inputRequest,
 }: ExecuteTaskParams): Promise<void> {
@@ -106,6 +109,7 @@ export async function executeTask({
 
   // Run and pipe results
   try {
+    let latestRunnerSessionId: string | null = null;
     const results = await runner.run(
       {
         taskId,
@@ -118,14 +122,19 @@ export async function executeTask({
         agentSlug: agent.slug,
       },
       {
-        onEvent: (message: string) => {
+        onEvent: async (message: string) => {
           console.log(`[agent message] ⤵️`);
           console.log(message);
           console.log('[end of agent message] ⤴️');
-          // TODO: send this via websocket or something
+          await activityGatewayClient.publishActivity({
+            executionId,
+            message,
+            ts: Date.now(),
+            runnerSessionId: latestRunnerSessionId,
+          });
         },
         onSession: (runnerSessionId: string) => {
-          // TODO: we could add session id to execution? is it useful?
+          latestRunnerSessionId = runnerSessionId;
         },
         onError: (error: { message: string; rawMessage?: any }) => {
           console.log('Error detected');

@@ -1,0 +1,52 @@
+import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ActiveTaskExecutionEntity } from './active/active-task-execution.entity';
+import { ActiveTaskExecutionNotFoundError } from './errors/executions-v2.errors';
+import { ExecutionActivityEvent } from './events/execution-activity.events';
+
+export type PublishExecutionActivityInput = {
+  executionId: string;
+  kind?: string;
+  message?: string;
+  ts?: number;
+  runnerSessionId?: string | null;
+};
+
+@Injectable()
+export class ExecutionActivityService {
+  constructor(
+    @InjectRepository(ActiveTaskExecutionEntity)
+    private readonly activeTaskExecutionRepository: Repository<ActiveTaskExecutionEntity>,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
+
+  async publishActivity(
+    input: PublishExecutionActivityInput,
+  ): Promise<void> {
+    const execution = await this.activeTaskExecutionRepository.findOne({
+      where: { id: input.executionId },
+    });
+
+    if (!execution) {
+      throw new ActiveTaskExecutionNotFoundError(input.executionId);
+    }
+
+    this.eventEmitter.emit(
+      ExecutionActivityEvent.INTERNAL,
+      new ExecutionActivityEvent(
+        { id: execution.agentActorId },
+        {
+          executionId: execution.id,
+          taskId: execution.taskId,
+          agentActorId: execution.agentActorId,
+          kind: input.kind ?? 'worker.activity',
+          message: input.message,
+          ts: input.ts ?? Date.now(),
+          runnerSessionId: input.runnerSessionId ?? null,
+        },
+      ),
+    );
+  }
+}

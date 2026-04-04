@@ -19,6 +19,9 @@ import { TaskExecutionQueuePopulatorService } from './readiness/task-execution-q
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { ThreadsModule } from '../threads/threads.module';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
+import { ExecutionActivityService } from './execution-activity.service';
+import { TaskActivityProjectionService } from './task-activity-projection.service';
+import { ExecutionsV2WorkerGateway } from './executions-v2-worker.gateway';
 
 @Module({
   imports: [
@@ -43,6 +46,9 @@ import { AgentRunEntity } from '../agent-runs/agent-run.entity';
     ActiveTaskExecutionService,
     ActiveExecutionContextResolverService,
     TaskExecutionHistoryService,
+    ExecutionActivityService,
+    TaskActivityProjectionService,
+    ExecutionsV2WorkerGateway,
     ReadinessCandidateRepository,
     TaskExecutionQueuePopulatorService,
     TaskEligibilityEventSourceService,

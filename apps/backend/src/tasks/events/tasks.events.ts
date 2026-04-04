@@ -90,3 +90,19 @@ export class InputRequestAnsweredEvent extends TaskDomainEvent<InputRequestEntit
     super(actor, inputRequest);
   }
 }
+
+export type TaskActivityPayload = {
+  taskId: string;
+  kind: string;
+  message?: string;
+  ts: number;
+  by?: string;
+};
+
+export class TaskActivityEvent extends TaskDomainEvent<TaskActivityPayload> {
+  static readonly INTERNAL = Symbol('tasks.TaskActivityEvent');
+
+  constructor(actor: EventActor, payload: TaskActivityPayload) {
+    super(actor, payload);
+  }
+}

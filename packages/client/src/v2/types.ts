@@ -871,34 +871,46 @@ export interface MoveBlockDto {
   newParentId: Record<string, any> | null;
 }
 
-export interface ExecutionResponseDto {
-  id: string;
+export interface TaskExecutionQueueEntryResponseDto {
   taskId: string;
-  taskName?: string | null;
-  agentActorId: string;
-  agentSlug?: string | null;
-  agentName?: string | null;
-  status: 'READY' | 'CLAIMED' | 'RUNNING' | 'STOP_REQUESTED' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'STALE';
-  requestedAt: string;
-  claimedAt?: string | null;
-  startedAt?: string | null;
-  finishedAt?: string | null;
-  workerSessionId?: string | null;
-  leaseExpiresAt?: string | null;
-  stopRequestedAt?: string | null;
-  failureReason?: string | null;
-  triggerReason?: string | null;
-  rowVersion: number;
-  createdAt: string;
-  updatedAt: string;
+  taskName: string | null;
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
 }
 
-export interface ExecutionListResponseDto {
-  items: ExecutionResponseDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+export interface ActiveTaskExecutionTagSnapshotResponseDto {
+  id: string;
+  name: string;
+}
+
+export interface ActiveTaskExecutionResponseDto {
+  id: string;
+  taskId: string;
+  taskName: string | null;
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  claimedAt: string;
+  taskStatusBeforeClaim: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  taskTagsBeforeClaim: ActiveTaskExecutionTagSnapshotResponseDto[];
+  workerClientId: string;
+  taskAssigneeActorIdBeforeClaim: string | null;
+  agentActorId: string;
+}
+
+export interface StopActiveTaskExecutionDto {
+  status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
+  errorCode?: 'OUT_OF_QUOTA' | 'UNKNOWN';
+}
+
+export interface TaskExecutionHistoryResponseDto {
+  id: string;
+  taskId: string;
+  taskName: string | null;
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  claimedAt: string;
+  transitionedAt: string;
+  agentActorId: string;
+  workerClientId: string;
+  status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
+  errorCode: 'OUT_OF_QUOTA' | 'UNKNOWN';
 }
 
 export interface CreateTaskBlueprintDto {
@@ -989,46 +1001,34 @@ export interface ProtectedResourceMetadataResponseDto {
   resource_name: string;
 }
 
-export interface TaskExecutionQueueEntryResponseDto {
-  taskId: string;
-  taskName: string | null;
-  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
-}
-
-export interface ActiveTaskExecutionTagSnapshotResponseDto {
-  id: string;
-  name: string;
-}
-
-export interface ActiveTaskExecutionResponseDto {
+export interface ExecutionResponseDto {
   id: string;
   taskId: string;
-  taskName: string | null;
-  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
-  claimedAt: string;
-  taskStatusBeforeClaim: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
-  taskTagsBeforeClaim: ActiveTaskExecutionTagSnapshotResponseDto[];
-  workerClientId: string;
-  taskAssigneeActorIdBeforeClaim: string | null;
+  taskName?: string | null;
   agentActorId: string;
+  agentSlug?: string | null;
+  agentName?: string | null;
+  status: 'READY' | 'CLAIMED' | 'RUNNING' | 'STOP_REQUESTED' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'STALE';
+  requestedAt: string;
+  claimedAt?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  workerSessionId?: string | null;
+  leaseExpiresAt?: string | null;
+  stopRequestedAt?: string | null;
+  failureReason?: string | null;
+  triggerReason?: string | null;
+  rowVersion: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface StopActiveTaskExecutionDto {
-  status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
-  errorCode?: 'OUT_OF_QUOTA' | 'UNKNOWN';
-}
-
-export interface TaskExecutionHistoryResponseDto {
-  id: string;
-  taskId: string;
-  taskName: string | null;
-  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
-  claimedAt: string;
-  transitionedAt: string;
-  agentActorId: string;
-  workerClientId: string;
-  status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
-  errorCode: 'OUT_OF_QUOTA' | 'UNKNOWN';
+export interface ExecutionListResponseDto {
+  items: ExecutionResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface GlobalSearchResultDto {

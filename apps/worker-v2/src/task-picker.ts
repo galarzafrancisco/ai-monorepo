@@ -1,11 +1,13 @@
 import { ApiClient } from '@taico/client/v2';
 import { executeTask } from './task-runner.js';
+import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 
 type PickTaskParams = {
   client: ApiClient;
   taskId: string;
   baseDir: string;
   baseUrl: string;
+  activityGatewayClient: ExecutionActivityGatewayClient;
 }
 
 export async function pickTask({
@@ -13,6 +15,7 @@ export async function pickTask({
   taskId,
   baseDir,
   baseUrl,
+  activityGatewayClient,
 }: PickTaskParams): Promise<void> {
   console.log(`[worker] Attempting to claim task ${taskId}.`);
 
@@ -35,6 +38,7 @@ export async function pickTask({
       workerClient: client,
       baseDir: baseDir,
       baseUrl,
+      activityGatewayClient,
     });
   } catch (error) {
     stopStatus = 'FAILED';

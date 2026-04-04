@@ -20,6 +20,7 @@ import {
   ArtefactAddedEvent,
   TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
+  TaskActivityEvent,
 } from './events/tasks.events';
 import { TaskWireEvents } from "@taico/events";
 import type {
@@ -47,8 +48,8 @@ const TASKS_ROOM = 'tasks';
 type TaskActivityPayload = {
   taskId: string;
   kind?: string;
-  message: string;
-  ts: number;
+  message?: string;
+  ts?: number;
 };
 
 /**
@@ -260,6 +261,20 @@ export class TasksGateway
       taskId: event.payload.taskId,
       actorId: event.actor.id,
     });
+  }
+
+  @OnEvent(TaskActivityEvent.INTERNAL)
+  handleTaskActivity(event: TaskActivityEvent) {
+    const wireEvent: TaskActivityWireEvent = {
+      taskId: event.payload.taskId,
+      kind: event.payload.kind,
+      message: event.payload.message,
+      ts: event.payload.ts,
+      by: event.payload.by,
+    };
+
+    this.logger.log(wireEvent);
+    this.server.to(TASKS_ROOM).emit(TaskWireEvents.TASK_ACTIVITY, wireEvent);
   }
 
   // Listen to incoming messages
