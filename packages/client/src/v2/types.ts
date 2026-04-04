@@ -991,7 +991,7 @@ export interface ProtectedResourceMetadataResponseDto {
 
 export interface TaskExecutionQueueEntryResponseDto {
   taskId: string;
-  taskName: Record<string, any> | null;
+  taskName: string | null;
   taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
 }
 
@@ -1003,13 +1003,13 @@ export interface ActiveTaskExecutionTagSnapshotResponseDto {
 export interface ActiveTaskExecutionResponseDto {
   id: string;
   taskId: string;
-  taskName: Record<string, any> | null;
+  taskName: string | null;
   taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
   claimedAt: string;
   taskStatusBeforeClaim: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
   taskTagsBeforeClaim: ActiveTaskExecutionTagSnapshotResponseDto[];
   workerClientId: string;
-  taskAssigneeActorIdBeforeClaim: Record<string, any> | null;
+  taskAssigneeActorIdBeforeClaim: string | null;
   agentActorId: string;
 }
 
@@ -1021,7 +1021,7 @@ export interface StopActiveTaskExecutionDto {
 export interface TaskExecutionHistoryResponseDto {
   id: string;
   taskId: string;
-  taskName: Record<string, any> | null;
+  taskName: string | null;
   taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
   claimedAt: string;
   transitionedAt: string;

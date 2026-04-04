@@ -42,6 +42,7 @@ export class ActiveTaskExecutionResponseDto {
   taskId!: string;
 
   @ApiProperty({
+    type: String,
     description: 'Task name at the time of retrieval',
     example: 'Investigate worker auth flow',
     nullable: true,
@@ -80,6 +81,7 @@ export class ActiveTaskExecutionResponseDto {
   workerClientId!: string;
 
   @ApiProperty({
+    type: String,
     description: 'Task assignee actor id before the task was claimed',
     example: '19dc147c-6051-49e3-bf7a-404e3bb575d3',
     nullable: true,

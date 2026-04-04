@@ -7,4 +7,4 @@ const client = new ApiClient({
   credentials: 'include',
 });
 
-export const ExecutionsService = client.executions;
+export const ExecutionsService = client.executionsV2;
