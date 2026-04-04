@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Button, Card, Text } from "../../ui/primitives";
 import { useExecutions } from "./useExecutions";
@@ -28,6 +28,21 @@ export function ExecutionsPage() {
     [history],
   );
   const historyFailureCount = history.length - historySuccessCount;
+  const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const toggleHistoryMessage = (historyId: string) => {
+    setExpandedHistoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(historyId)) {
+        next.delete(historyId);
+      } else {
+        next.add(historyId);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="executions-page">
@@ -157,6 +172,13 @@ export function ExecutionsPage() {
                 columns={["Result", "Task", "Transitioned", "Task status", "Worker", "Error"]}
                 rows={history.map((entry) => ({
                   key: entry.id,
+                  expandedContent:
+                    entry.errorMessage && expandedHistoryIds.has(entry.id) ? (
+                      <ExecutionErrorMessage
+                        status={entry.status}
+                        message={entry.errorMessage}
+                      />
+                    ) : null,
                   cells: [
                     <StatusPill key="result" tone={entry.status === "SUCCEEDED" ? "success" : "danger"}>
                       {entry.status}
@@ -167,9 +189,13 @@ export function ExecutionsPage() {
                       {entry.taskStatus ?? "Unknown"}
                     </StatusPill>,
                     <CodeCell key="worker" value={entry.workerClientId} />,
-                    <span key="error" className={entry.errorCode ? "executions-error-copy" : "executions-muted-copy"}>
-                      {entry.errorCode ?? "None"}
-                    </span>,
+                    <ErrorCell
+                      key="error"
+                      errorCode={entry.errorCode}
+                      errorMessage={entry.errorMessage}
+                      expanded={expandedHistoryIds.has(entry.id)}
+                      onToggle={() => toggleHistoryMessage(entry.id)}
+                    />,
                   ],
                   mobile: (
                     <ExecutionMobileCard
@@ -182,6 +208,9 @@ export function ExecutionsPage() {
                         { label: "Task status", value: entry.taskStatus ?? "Unknown" },
                         { label: "Worker", value: shortId(entry.workerClientId), mono: true },
                         { label: "Error", value: entry.errorCode ?? "None" },
+                        ...(entry.errorMessage
+                          ? [{ label: "Message", value: entry.errorMessage }]
+                          : []),
                       ]}
                     />
                   ),
@@ -261,6 +290,7 @@ function ExecutionTable({
     key: string;
     cells: React.ReactNode[];
     mobile: React.ReactNode;
+    expandedContent?: React.ReactNode;
   }>;
 }) {
   return (
@@ -276,11 +306,18 @@ function ExecutionTable({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.key}>
-                {row.cells.map((cell, index) => (
-                  <td key={`${row.key}-${index}`}>{cell}</td>
-                ))}
-              </tr>
+              <Fragment key={row.key}>
+                <tr>
+                  {row.cells.map((cell, index) => (
+                    <td key={`${row.key}-${index}`}>{cell}</td>
+                  ))}
+                </tr>
+                {row.expandedContent ? (
+                  <tr className="executions-table-detail-row">
+                    <td colSpan={columns.length}>{row.expandedContent}</td>
+                  </tr>
+                ) : null}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -326,6 +363,63 @@ function CodeCell({ value }: { value: string }) {
     <Text as="span" size="1" style="mono" className="executions-code-copy">
       {shortId(value)}
     </Text>
+  );
+}
+
+function ErrorCell({
+  errorCode,
+  errorMessage,
+  expanded,
+  onToggle,
+}: {
+  errorCode: TaskExecutionHistoryResponseDto["errorCode"];
+  errorMessage: string | null;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const hasMessage = Boolean(errorMessage);
+
+  return (
+    <div className="executions-error-cell">
+      <span className={errorCode ? "executions-error-copy" : "executions-muted-copy"}>
+        {errorCode ?? "None"}
+      </span>
+      {hasMessage ? (
+        <button
+          type="button"
+          className="executions-error-toggle"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-label={expanded ? "Hide error message" : "Show error message"}
+          title={expanded ? "Hide error message" : "Show error message"}
+        >
+          !
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function ExecutionErrorMessage({
+  status,
+  message,
+}: {
+  status: TaskExecutionHistoryResponseDto["status"];
+  message: string;
+}) {
+  return (
+    <div className="executions-error-detail">
+      <Text
+        as="div"
+        size="1"
+        weight="medium"
+        tone={status === "CANCELLED" ? "muted" : "default"}
+        className={status === "CANCELLED" ? undefined : "executions-error-detail__label"}
+      >
+        {status === "CANCELLED" ? "Cancellation message" : "Failure message"}
+      </Text>
+      <Text as="div" size="2" wrap>{message}</Text>
+    </div>
   );
 }
 

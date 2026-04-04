@@ -175,6 +175,14 @@
   background: color-mix(in srgb, var(--surface) 45%, var(--card-bg));
 }
 
+.executions-table-detail-row:hover {
+  background: transparent;
+}
+
+.executions-table-detail-row td {
+  padding-top: 0;
+}
+
 .executions-status-pill {
   display: inline-flex;
   align-items: center;
@@ -237,6 +245,49 @@
 .executions-error-copy {
   color: var(--danger);
   font-size: var(--fs-2);
+}
+
+.executions-error-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.executions-error-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--danger) 10%, var(--card-bg));
+  color: var(--danger);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+
+.executions-error-toggle:hover {
+  background: color-mix(in srgb, var(--danger) 16%, var(--card-bg));
+}
+
+.executions-error-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.executions-error-detail {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--r-3);
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 12%, var(--border-subtle));
+}
+
+.executions-error-detail__label {
+  color: var(--danger);
 }
 
 .executions-mobile-list {

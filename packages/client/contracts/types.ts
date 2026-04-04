@@ -4947,6 +4947,11 @@ export interface components {
              * @enum {string|null}
              */
             errorCode?: "OUT_OF_QUOTA" | "UNKNOWN" | null;
+            /**
+             * @description Optional human-readable error message for failed or cancelled executions
+             * @example ADK runner failed: 429 quota exceeded.
+             */
+            errorMessage?: string | null;
         };
         TaskExecutionHistoryResponseDto: {
             /**
@@ -4999,6 +5004,11 @@ export interface components {
              * @enum {string|null}
              */
             errorCode: "OUT_OF_QUOTA" | "UNKNOWN" | null;
+            /**
+             * @description Optional human-readable error message for failed or cancelled executions
+             * @example ADK runner failed: 429 quota exceeded.
+             */
+            errorMessage: string | null;
         };
         CreateTaskBlueprintDto: {
             /**

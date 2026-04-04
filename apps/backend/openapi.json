@@ -11209,6 +11209,13 @@
             ],
             "nullable": true,
             "example": "OUT_OF_QUOTA"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Optional human-readable error message for failed or cancelled executions",
+            "nullable": true,
+            "example": "ADK runner failed: 429 quota exceeded.",
+            "maxLength": 1000
           }
         },
         "required": [
@@ -11283,6 +11290,12 @@
               "UNKNOWN"
             ],
             "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Optional human-readable error message for failed or cancelled executions",
+            "nullable": true,
+            "example": "ADK runner failed: 429 quota exceeded."
           }
         },
         "required": [
@@ -11295,7 +11308,8 @@
           "agentActorId",
           "workerClientId",
           "status",
-          "errorCode"
+          "errorCode",
+          "errorMessage"
         ]
       },
       "CreateTaskBlueprintDto": {

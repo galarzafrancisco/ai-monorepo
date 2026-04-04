@@ -10,6 +10,12 @@ import { GitHubCopilotAgentRunner } from './runners/GitHubCopilotAgentRunner.js'
 import { buildPrompt } from './prompt.js';
 import { InputRequestLike, RunMode } from './types.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
+import {
+  TaskExecutionPreconditionError,
+  UnsupportedAgentTypeError,
+  classifyAgentError,
+  classifyRunnerError,
+} from './task-execution-errors.js';
 
 type ExecuteTaskParams = {
   taskId: string;
@@ -41,14 +47,16 @@ export async function executeTask({
   // Get the agent assigned to the task
   const actor = task.assigneeActor;
   if (!actor?.slug) {
-    // This should be an error really. If a task made it to the queue, it should be assigned.
-    // Unless it got unassigned in the time it took us to pick it up.
-    // Think about how we want to hanlde this. Should we cancel the execution?
-    console.log(`- Task ${task.id} not assigned or missing actor slug.`);
-    return;
+    throw new TaskExecutionPreconditionError(
+      `Task ${task.id} is not assigned or is missing an assignee slug.`,
+    );
   }
   const agent = await workerClient.agent.AgentsController_getAgentBySlug({ slug: actor.slug });
-  // TODO: what happens if the agent doesn't exist for whatever reason?
+  if (!agent) {
+    throw new TaskExecutionPreconditionError(
+      `Assigned agent @${actor.slug} was not found for task ${task.id}.`,
+    );
+  }
 
   // See if the task needs a repo cloned
   let repoUrl: string | undefined = undefined;
@@ -97,9 +105,9 @@ export async function executeTask({
   }
 
   if (!runner) {
-    // Type of runner we don't support yet. We need to release the task.
-    // What should we return?
-    return;
+    throw new UnsupportedAgentTypeError(
+      `Agent type "${agent.type}" is not supported by worker-v2.`,
+    );
   }
 
   // Run and pipe results
@@ -138,14 +146,11 @@ export async function executeTask({
           console.log('Error detected');
           console.log('error message:', error.message);
           console.log('raw message', error.rawMessage);
-          // TODO: The agent returned a message that is an error. What do we do?
+          throw classifyAgentError(error);
         }
       }
     );
   } catch (error) {
-    // TODO: Something went wrong with the runner in a way we didn't expect
-    // Should restore the task?
-  } finally {
-
+    throw classifyRunnerError(error);
   }
 }

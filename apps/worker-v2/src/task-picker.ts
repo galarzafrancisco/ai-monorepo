@@ -1,6 +1,7 @@
 import { ApiClient } from '@taico/client/v2';
 import { executeTask } from './task-runner.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
+import { TaskExecutionError } from './task-execution-errors.js';
 
 type PickTaskParams = {
   client: ApiClient;
@@ -28,8 +29,9 @@ export async function pickTask({
     `[worker] Claimed task ${execution.taskId} as execution ${execution.id}.`,
   );
 
-  let stopStatus: 'SUCCEEDED' | 'FAILED' = 'SUCCEEDED';
-  let stopErrorCode: 'UNKNOWN' | undefined;
+  let stopStatus: 'SUCCEEDED' | 'FAILED' | 'CANCELLED' = 'SUCCEEDED';
+  let stopErrorCode: 'OUT_OF_QUOTA' | 'UNKNOWN' | undefined;
+  let stopErrorMessage: string | undefined;
 
   try {
     await executeTask({
@@ -41,8 +43,16 @@ export async function pickTask({
       activityGatewayClient,
     });
   } catch (error) {
-    stopStatus = 'FAILED';
-    stopErrorCode = 'UNKNOWN';
+    if (error instanceof TaskExecutionError) {
+      stopStatus = error.kind === 'cancelled' ? 'CANCELLED' : 'FAILED';
+      stopErrorCode = error.kind === 'cancelled' ? undefined : error.errorCode;
+      stopErrorMessage = error.displayMessage;
+    } else {
+      stopStatus = 'FAILED';
+      stopErrorCode = 'UNKNOWN';
+      stopErrorMessage =
+        error instanceof Error ? error.message : String(error);
+    }
     throw error;
   } finally {
     const historyEntry =
@@ -51,6 +61,7 @@ export async function pickTask({
         body: {
           status: stopStatus,
           errorCode: stopErrorCode,
+          errorMessage: stopErrorMessage,
         },
       });
 

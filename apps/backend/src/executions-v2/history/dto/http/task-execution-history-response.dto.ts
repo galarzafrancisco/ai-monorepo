@@ -69,6 +69,14 @@ export class TaskExecutionHistoryResponseDto {
   })
   errorCode!: TaskExecutionHistoryErrorCode | null;
 
+  @ApiProperty({
+    type: String,
+    description: 'Optional human-readable error message for failed or cancelled executions',
+    nullable: true,
+    example: 'ADK runner failed: 429 quota exceeded.',
+  })
+  errorMessage!: string | null;
+
   static fromEntity(
     entity: TaskExecutionHistoryEntity,
   ): TaskExecutionHistoryResponseDto {
@@ -83,6 +91,7 @@ export class TaskExecutionHistoryResponseDto {
       workerClientId: entity.workerClientId,
       status: entity.status,
       errorCode: entity.errorCode,
+      errorMessage: entity.errorMessage,
     };
   }
 }

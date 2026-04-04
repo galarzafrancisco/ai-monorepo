@@ -41,6 +41,7 @@ export abstract class BaseAgentRunner implements AgentRunner {
       result = await this.runInternal(ctx, emit, setSession, onError);
     } catch (err: any) {
       await emit(`❌ Agent error: ${err?.message ?? String(err)}`);
+      throw err;
     } finally {
       clearInterval(heartbeatTimer);
     }

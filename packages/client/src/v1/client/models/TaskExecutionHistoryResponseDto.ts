@@ -43,6 +43,10 @@ export type TaskExecutionHistoryResponseDto = {
      * Optional failure code when execution ended with an error
      */
     errorCode: TaskExecutionHistoryResponseDto.errorCode | null;
+    /**
+     * Optional human-readable error message for failed or cancelled executions
+     */
+    errorMessage: string | null;
 };
 export namespace TaskExecutionHistoryResponseDto {
     /**

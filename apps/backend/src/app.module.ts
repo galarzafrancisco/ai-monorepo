@@ -36,6 +36,7 @@ import { AddExecutionPersistenceTables1741500000000 } from './migrations/1741500
 import { AddTaskExecutionIdToAgentRuns1741600000000 } from './migrations/1741600000000-AddTaskExecutionIdToAgentRuns';
 import { AddExecutionsV2Tables1741700000000 } from './migrations/1741700000000-AddExecutionsV2Tables';
 import { AddLastHeartbeatAtToActiveExecutionsV21741800000000 } from './migrations/1741800000000-AddLastHeartbeatAtToActiveExecutionsV2';
+import { AddErrorMessageToTaskExecutionHistoryV21741900000000 } from './migrations/1741900000000-AddErrorMessageToTaskExecutionHistoryV2';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -69,6 +70,7 @@ import { GlobalSearchModule } from './global-search/global-search.module';
         AddTaskExecutionIdToAgentRuns1741600000000,
         AddExecutionsV2Tables1741700000000,
         AddLastHeartbeatAtToActiveExecutionsV21741800000000,
+        AddErrorMessageToTaskExecutionHistoryV21741900000000,
       ],
     }),
     EventEmitterModule.forRoot(),

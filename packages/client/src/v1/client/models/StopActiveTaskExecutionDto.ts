@@ -11,6 +11,10 @@ export type StopActiveTaskExecutionDto = {
      * Optional error code for failed execution outcomes
      */
     errorCode?: StopActiveTaskExecutionDto.errorCode | null;
+    /**
+     * Optional human-readable error message for failed or cancelled executions
+     */
+    errorMessage?: string | null;
 };
 export namespace StopActiveTaskExecutionDto {
     /**

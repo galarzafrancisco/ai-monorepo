@@ -73,6 +73,7 @@ export class ActiveTaskExecutionController {
         workerClientId: auth.claims.client_id,
         status: dto.status,
         errorCode: dto.errorCode,
+        errorMessage: dto.errorMessage,
       });
 
       return TaskExecutionHistoryResponseDto.fromEntity(historyEntry);

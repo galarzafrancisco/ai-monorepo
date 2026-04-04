@@ -56,6 +56,13 @@ export class TaskExecutionHistoryEntity {
   })
   errorCode!: TaskExecutionHistoryErrorCode | null;
 
+  @Column({
+    type: 'text',
+    name: 'error_message',
+    nullable: true,
+  })
+  errorMessage!: string | null;
+
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 

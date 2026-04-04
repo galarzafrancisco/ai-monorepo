@@ -30,6 +30,7 @@ export type StopTaskExecutionInput = {
   workerClientId: string;
   status: TaskExecutionHistoryStatus;
   errorCode?: TaskExecutionHistoryErrorCode | null;
+  errorMessage?: string | null;
 };
 
 @Injectable()
@@ -139,6 +140,7 @@ export class ActiveTaskExecutionService {
         workerClientId: input.workerClientId,
         status: input.status,
         errorCode: input.errorCode ?? null,
+        errorMessage: input.errorMessage ?? null,
       });
 
       const savedHistoryEntry = await manager.save(historyEntry);

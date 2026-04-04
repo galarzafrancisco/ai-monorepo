@@ -899,6 +899,7 @@ export interface ActiveTaskExecutionResponseDto {
 export interface StopActiveTaskExecutionDto {
   status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
   errorCode?: 'OUT_OF_QUOTA' | 'UNKNOWN';
+  errorMessage?: string | null;
 }
 
 export interface TaskExecutionHistoryResponseDto {
@@ -912,6 +913,7 @@ export interface TaskExecutionHistoryResponseDto {
   workerClientId: string;
   status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
   errorCode: 'OUT_OF_QUOTA' | 'UNKNOWN';
+  errorMessage: string | null;
 }
 
 export interface CreateTaskBlueprintDto {
