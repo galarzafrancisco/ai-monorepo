@@ -15,7 +15,7 @@ export type ActiveTaskExecutionResponseDto = {
     /**
      * Task name at the time of retrieval
      */
-    taskName: Record<string, any> | null;
+    taskName: string | null;
     /**
      * Current task status
      */
@@ -39,7 +39,7 @@ export type ActiveTaskExecutionResponseDto = {
     /**
      * Task assignee actor id before the task was claimed
      */
-    taskAssigneeActorIdBeforeClaim: Record<string, any> | null;
+    taskAssigneeActorIdBeforeClaim: string | null;
     /**
      * Agent actor id that picked up the task
      */

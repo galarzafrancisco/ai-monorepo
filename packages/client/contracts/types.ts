@@ -5318,7 +5318,7 @@ export interface components {
              * @description Task name at the time of retrieval
              * @example Investigate worker auth flow
              */
-            taskName: Record<string, never> | null;
+            taskName: string | null;
             /**
              * @description Current task status
              * @enum {string|null}
@@ -5352,7 +5352,7 @@ export interface components {
              * @description Task name at the time of retrieval
              * @example Investigate worker auth flow
              */
-            taskName: Record<string, never> | null;
+            taskName: string | null;
             /**
              * @description Current task status
              * @enum {string|null}
@@ -5379,7 +5379,7 @@ export interface components {
              * @description Task assignee actor id before the task was claimed
              * @example 19dc147c-6051-49e3-bf7a-404e3bb575d3
              */
-            taskAssigneeActorIdBeforeClaim: Record<string, never> | null;
+            taskAssigneeActorIdBeforeClaim: string | null;
             /**
              * @description Agent actor id that picked up the task
              * @example 19dc147c-6051-49e3-bf7a-404e3bb575d3
@@ -5415,7 +5415,7 @@ export interface components {
              * @description Task name at the time of retrieval
              * @example Investigate worker auth flow
              */
-            taskName: Record<string, never> | null;
+            taskName: string | null;
             /**
              * @description Current task status
              * @enum {string|null}

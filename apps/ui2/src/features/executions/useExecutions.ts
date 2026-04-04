@@ -1,154 +1,84 @@
-import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ExecutionsService } from './api';
-import type { Execution } from './types';
-import { getUIWebSocketUrl } from '../../config/api';
-import {
-  ExecutionWireEvents,
-  ExecutionCreatedWireEvent,
-  ExecutionUpdatedWireEvent,
-  ExecutionDeletedWireEvent,
-} from '@taico/events';
+import type {
+  ActiveTaskExecutionResponseDto,
+  TaskExecutionHistoryResponseDto,
+  TaskExecutionQueueEntryResponseDto,
+} from './types';
 
-// Use centralized API configuration
-const SOCKET_URL = getUIWebSocketUrl('/executions');
-const EXECUTIONS_PAGE_SIZE = 100;
+const EXECUTIONS_POLL_INTERVAL_MS = 5000;
 
 export const useExecutions = () => {
-  // UI feedback
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Data store
-  const [executions, setExecutions] = useState<Execution[]>([]);
+  const [queue, setQueue] = useState<TaskExecutionQueueEntryResponseDto[]>([]);
+  const [active, setActive] = useState<ActiveTaskExecutionResponseDto[]>([]);
+  const [history, setHistory] = useState<TaskExecutionHistoryResponseDto[]>([]);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
-  // Transport
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const loadExecutions = useCallback(async (options?: { silent?: boolean }) => {
+    if (inFlightRef.current) {
+      return;
+    }
 
-  // Boot
-  useEffect(() => {
-    loadExecutions();
-    const cleanup = setupWebsocket();
-    return cleanup;
-  }, []);
+    inFlightRef.current = true;
 
-  // Sort executions by updatedAt (newest first)
-  const sortExecutions = (executions: Execution[]): Execution[] => {
-    return [...executions].sort((a, b) => {
-      const dateA = new Date(a.updatedAt).getTime();
-      const dateB = new Date(b.updatedAt).getTime();
-      return dateB - dateA; // Descending order (newest first)
-    });
-  };
+    const firstLoad = !hasLoadedOnce;
+    const silent = options?.silent ?? false;
 
-  // Load executions
-  const loadExecutions = async () => {
-    setIsLoading(true);
-    setError(null);
+    if (firstLoad) {
+      setIsLoading(true);
+    } else if (!silent) {
+      setIsRefreshing(true);
+    }
+
     try {
-      const response = await ExecutionsService.ExecutionsController_listExecutions({
-        page: 1,
-        limit: EXECUTIONS_PAGE_SIZE,
-      });
-      setExecutions(sortExecutions(response.items as Execution[]));
+      const [nextQueue, nextActive, nextHistory] = await Promise.all([
+        ExecutionsService.TaskExecutionQueueController_listQueue(),
+        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions(),
+        ExecutionsService.TaskExecutionHistoryController_listHistory(),
+      ]);
+
+      setQueue(nextQueue);
+      setActive(nextActive);
+      setHistory(nextHistory);
+      setLastUpdatedAt(new Date().toISOString());
+      setError(null);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Failed to load executions'
       );
     } finally {
+      inFlightRef.current = false;
       setHasLoadedOnce(true);
       setIsLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, [hasLoadedOnce]);
 
-  // Setup websocket
-  const setupWebsocket = () => {
-    const newSocket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
-    });
+  useEffect(() => {
+    void loadExecutions();
 
-    newSocket.on('connect', () => {
-      console.log('Connected to executions websocket');
-      newSocket.emit('executions.subscribe', {}, (ack: any) => {
-        if (ack.ok) {
-          console.log(ack);
-          console.log('Subscribed to room:', ack.room);
-          setIsConnected(true);
-        } else {
-          console.error('Failed to subscribe to executions room');
-          setIsConnected(false);
-        }
-      });
-      loadExecutions();
-    });
+    const timer = window.setInterval(() => {
+      void loadExecutions({ silent: true });
+    }, EXECUTIONS_POLL_INTERVAL_MS);
 
-    newSocket.on('disconnect', () => {
-      console.log('Executions WebSocket disconnected');
-      setIsConnected(false);
-    });
-
-    // Handle execution created event
-    newSocket.on(
-      ExecutionWireEvents.EXECUTION_CREATED,
-      (event: ExecutionCreatedWireEvent) => {
-        console.log('execution.created', event);
-        setExecutions((prev) => {
-          // Avoid duplicates - check if execution already exists
-          if (prev.some((e) => e.id === event.payload.id)) {
-            return prev;
-          }
-          return sortExecutions([event.payload as Execution, ...prev]);
-        });
-      }
-    );
-
-    // Handle execution updated event
-    newSocket.on(
-      ExecutionWireEvents.EXECUTION_UPDATED,
-      (event: ExecutionUpdatedWireEvent) => {
-        console.log('execution.updated', event);
-        setExecutions((prev) =>
-          sortExecutions(
-            prev.map((e) =>
-              e.id === event.payload.id ? (event.payload as Execution) : e
-            )
-          )
-        );
-      }
-    );
-
-    // Handle execution deleted event
-    newSocket.on(
-      ExecutionWireEvents.EXECUTION_DELETED,
-      (event: ExecutionDeletedWireEvent) => {
-        console.log('execution.deleted', event);
-        setExecutions((prev) =>
-          prev.filter((e) => e.id !== event.payload.executionId)
-        );
-      }
-    );
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.close();
-    };
-  };
+    return () => window.clearInterval(timer);
+  }, [loadExecutions]);
 
   return {
-    // UI feedback
     isLoading,
+    isRefreshing,
     hasLoadedOnce,
     error,
-
-    // Data
-    executions,
+    queue,
+    active,
+    history,
     loadExecutions,
-
-    // Transport
-    isConnected,
+    lastUpdatedAt,
   };
 };

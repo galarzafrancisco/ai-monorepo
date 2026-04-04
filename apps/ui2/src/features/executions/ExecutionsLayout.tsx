@@ -2,11 +2,10 @@ import { Outlet } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { DesktopShell } from "../../app/shells/DesktopShell";
 import { IosShell } from "../../app/shells/IosShell";
-import { useExecutionsCtx } from "./ExecutionsProvider";
 
 export function ExecutionsLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
-  const { sectionTitle } = useExecutionsCtx();
+  const sectionTitle = "Executions";
 
   const navItems: { path: string; label: string; icon: string }[] = [];
 

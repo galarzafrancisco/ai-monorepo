@@ -10,7 +10,7 @@ export type TaskExecutionQueueEntryResponseDto = {
     /**
      * Task name at the time of retrieval
      */
-    taskName: Record<string, any> | null;
+    taskName: string | null;
     /**
      * Current task status
      */

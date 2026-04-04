@@ -11729,7 +11729,7 @@
             "example": "8c9d2c6c-2e2f-49eb-a7f7-5d483b7f0f1f"
           },
           "taskName": {
-            "type": "object",
+            "type": "string",
             "description": "Task name at the time of retrieval",
             "example": "Investigate worker auth flow",
             "nullable": true
@@ -11785,7 +11785,7 @@
             "example": "8c9d2c6c-2e2f-49eb-a7f7-5d483b7f0f1f"
           },
           "taskName": {
-            "type": "object",
+            "type": "string",
             "description": "Task name at the time of retrieval",
             "example": "Investigate worker auth flow",
             "nullable": true
@@ -11829,7 +11829,7 @@
             "example": "24f52f295c990c1d6cdc6034fa3d1900"
           },
           "taskAssigneeActorIdBeforeClaim": {
-            "type": "object",
+            "type": "string",
             "description": "Task assignee actor id before the task was claimed",
             "example": "19dc147c-6051-49e3-bf7a-404e3bb575d3",
             "nullable": true
@@ -11896,7 +11896,7 @@
             "example": "8c9d2c6c-2e2f-49eb-a7f7-5d483b7f0f1f"
           },
           "taskName": {
-            "type": "object",
+            "type": "string",
             "description": "Task name at the time of retrieval",
             "example": "Investigate worker auth flow",
             "nullable": true
