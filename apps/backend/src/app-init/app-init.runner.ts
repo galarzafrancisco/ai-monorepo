@@ -12,7 +12,6 @@ import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { createTasks, createTasksScopes } from './mcp/tasks.mcp';
 import { CreateServerInput, ServerRecord } from 'src/mcp-registry/dto';
 import {
-  ScopeAlreadyExistsError,
   ServerAlreadyExistsError,
 } from 'src/mcp-registry/errors/mcp-registry.errors';
 import {
@@ -299,21 +298,34 @@ export class AppInitRunner implements OnApplicationBootstrap {
       }
     }
     if (server.type === 'http') {
-      try {
-        this.logger.log(`Ensuring scopes for MCP Server ${server.name}`);
-        await this.mcpRegistryService.createScopes(server.id, scopesConfig);
-        this.logger.log(`Scopes ensured for MCP Server ${server.name}`);
-      } catch (error) {
-        if (!(error instanceof ScopeAlreadyExistsError)) {
-          this.logger.error(
-            `Error ensuring scopes for MCP Server ${server.name}`,
-          );
-          throw error;
-        }
-        this.logger.log(`Scopes already exist for MCP Server ${server.name}`);
-      }
+      await this.ensureMcpServerScopes(server, scopesConfig);
     }
     return server;
+  }
+
+  private async ensureMcpServerScopes(
+    server: ServerRecord,
+    scopesConfig: Scope[],
+  ): Promise<void> {
+    this.logger.log(`Ensuring scopes for MCP Server ${server.name}`);
+
+    const existingScopes = await this.mcpRegistryService.listScopesByServer(
+      server.id,
+    );
+    const existingScopeIds = new Set(existingScopes.map((scope) => scope.id));
+    const missingScopes = scopesConfig.filter(
+      (scope) => !existingScopeIds.has(scope.id),
+    );
+
+    if (missingScopes.length === 0) {
+      this.logger.log(`Scopes already exist for MCP Server ${server.name}`);
+      return;
+    }
+
+    await this.mcpRegistryService.createScopes(server.id, missingScopes);
+    this.logger.log(
+      `Added ${missingScopes.length} missing scope(s) for MCP Server ${server.name}`,
+    );
   }
 
   async ensureUserExists(
