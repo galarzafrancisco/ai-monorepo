@@ -43,7 +43,7 @@ export interface RegisterClientDto {
   grant_types: ('authorization_code' | 'refresh_token')[];
   response_types: 'code'[];
   client_name: string;
-  scope?: string[];
+  scope?: string;
   contacts?: string[];
   tos_uri?: string;
   client_uri?: string;
@@ -987,6 +987,48 @@ export interface ProtectedResourceMetadataResponseDto {
   scopes_supported: string[];
   bearer_methods_supported: string[];
   resource_name: string;
+}
+
+export interface TaskExecutionQueueEntryResponseDto {
+  taskId: string;
+  taskName: Record<string, any> | null;
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+}
+
+export interface ActiveTaskExecutionTagSnapshotResponseDto {
+  id: string;
+  name: string;
+}
+
+export interface ActiveTaskExecutionResponseDto {
+  id: string;
+  taskId: string;
+  taskName: Record<string, any> | null;
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  claimedAt: string;
+  taskStatusBeforeClaim: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  taskTagsBeforeClaim: ActiveTaskExecutionTagSnapshotResponseDto[];
+  workerClientId: string;
+  taskAssigneeActorIdBeforeClaim: Record<string, any> | null;
+  agentActorId: string;
+}
+
+export interface StopActiveTaskExecutionDto {
+  status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
+  errorCode?: 'OUT_OF_QUOTA' | 'UNKNOWN';
+}
+
+export interface TaskExecutionHistoryResponseDto {
+  id: string;
+  taskId: string;
+  taskName: Record<string, any> | null;
+  taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
+  claimedAt: string;
+  transitionedAt: string;
+  agentActorId: string;
+  workerClientId: string;
+  status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
+  errorCode: 'OUT_OF_QUOTA' | 'UNKNOWN';
 }
 
 export interface GlobalSearchResultDto {

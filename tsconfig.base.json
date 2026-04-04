@@ -18,7 +18,13 @@
     // Alias
     "paths": {
       "@taico/client": [
-        "packages/client/src/index.ts"
+        "packages/client/src/v1/index.ts"
+      ],
+      "@taico/client/v2": [
+        "packages/client/src/v2/index.ts"
+      ],
+      "@taico/shared": [
+        "packages/shared/src/index.ts"
       ],
       "@taico/events": [
         "packages/events/src/index.ts"
