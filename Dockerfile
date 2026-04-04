@@ -56,10 +56,10 @@ RUN mkdir -p /workdir/data
 
 # Set environment variables
 # NODE_ENV defaults to production (no need to set explicitly)
-ENV PORT=2000
+ENV PORT=3000
 
 # Expose the application port
-EXPOSE 2000
+EXPOSE 3000
 
 # Start the application
 CMD ["npm", "run", "start"]
