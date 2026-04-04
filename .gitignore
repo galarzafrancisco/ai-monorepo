@@ -170,3 +170,6 @@ ENV/
 .ruff_cache/
 *.pyc
 uv.lock
+
+# Generated directories from task runs
+*/repo

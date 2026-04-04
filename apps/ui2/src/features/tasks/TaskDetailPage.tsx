@@ -828,18 +828,28 @@ export function TaskDetailPage() {
   } = useTasksCtx();
 
   const [isFetchingTask, setIsFetchingTask] = useState(false);
+  const [fetchedTask, setFetchedTask] = useState<Task | undefined>(undefined);
 
   // Derive task from the live tasks array so WebSocket updates are reflected automatically.
-  const task = taskId ? tasks.find(t => t.id === taskId) : undefined;
+  // Fall back to fetchedTask if not in the live array (prevents flicker during state updates).
+  const task = taskId ? (tasks.find(t => t.id === taskId) || fetchedTask) : undefined;
 
   // On mount (or taskId change), ensure the task is in the cache.
   // getTaskById fetches from the API and adds it to the tasks array if missing.
   useEffect(() => {
-    if (!taskId) return;
+    if (!taskId) {
+      setFetchedTask(undefined);
+      return;
+    }
 
     let cancelled = false;
     setIsFetchingTask(true);
     getTaskById(taskId)
+      .then((task) => {
+        if (!cancelled && task) {
+          setFetchedTask(task);
+        }
+      })
       .catch((err) => console.error('Failed to fetch task', err))
       .finally(() => { if (!cancelled) setIsFetchingTask(false); });
 
