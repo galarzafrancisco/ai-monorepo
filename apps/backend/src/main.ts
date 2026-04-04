@@ -3,12 +3,13 @@ import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { writeFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
+import { runWorker } from './worker-v2/worker';
 
 const logger = new Logger('Bootstrap');
 
@@ -48,7 +49,6 @@ function isAddressInUseError(error: unknown): boolean {
 async function bootstrap() {
   const args = process.argv.slice(2);
   const help = args.includes('--help') || args.includes('-h');
-  const generateSpec = args.includes('--generate-spec');
   const serverMode = args.includes('--server');
   const workerMode = args.includes('--worker');
 
@@ -68,10 +68,6 @@ async function bootstrap() {
     if (!serverUrl) {
       throw new Error('Missing required --serverurl for worker mode');
     }
-    // Keep worker loading lazy for now: backend build generates OpenAPI, which generates
-    // @taico/client/v2, and worker code depends on that client. We should decouple the
-    // worker from the backend package later so this build-order constraint disappears.
-    const { runWorker } = await import('./worker-v2/worker.js');
     await runWorker({ serverUrl });
     return;
   }
@@ -126,14 +122,6 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
 
-  if (generateSpec) {
-    // Write OpenAPI spec to file and exit
-    const outputPath = join(__dirname, '..', 'openapi.json');
-    writeFileSync(outputPath, JSON.stringify(document, null, 2));
-    console.log(`OpenAPI specification written to ${outputPath}`);
-    process.exit(0);
-  }
-
   SwaggerModule.setup('api/v1/docs', app, document);
 
   // Serve static files from the UI build (in production)
@@ -185,9 +173,6 @@ function printUsage(): void {
 
   taico --worker --serverurl <url>
     Start worker mode against an existing Taico server.
-
-  taico --generate-spec
-    Generate the OpenAPI specification and exit.
 `);
 }
 
