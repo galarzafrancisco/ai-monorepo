@@ -2,7 +2,7 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
-import { RUN_ID_HEADER } from "../helpers/config.js";
+import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
@@ -35,7 +35,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
             url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
             headers: {
               Authorization: `Bearer ${ctx.accessToken}`,
-              [RUN_ID_HEADER]: ctx.runId,
+              [EXECUTION_ID_HEADER]: ctx.executionId,
             },
           },
           context: {
@@ -43,7 +43,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
             url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
             headers: {
               Authorization: `Bearer ${ctx.accessToken}`,
-              [RUN_ID_HEADER]: ctx.runId,
+              [EXECUTION_ID_HEADER]: ctx.executionId,
             },
           }
         },

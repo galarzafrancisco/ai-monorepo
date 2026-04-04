@@ -1,5 +1,5 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
-import { RUN_ID_HEADER } from "../helpers/config.js";
+import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 import { approveAll, CopilotClient, MCPRemoteServerConfig } from "@github/copilot-sdk";
 
@@ -34,7 +34,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
           headers: {
             Authorization: `Bearer ${ctx.accessToken}`,
-            [RUN_ID_HEADER]: ctx.runId,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
           },
           tools: ["*"],
         };
@@ -44,7 +44,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
           headers: {
             Authorization: `Bearer ${ctx.accessToken}`,
-            [RUN_ID_HEADER]: ctx.runId,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
           },
           tools: ["*"],
         };

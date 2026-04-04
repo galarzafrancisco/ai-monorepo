@@ -85,7 +85,6 @@ export class TasksController {
     @CurrentExecutionId() executionId: string | undefined,
     @CurrentRunId() runId: string | undefined,
   ): Promise<TaskResponseDto> {
-    // If either execution-id or run-id is present, create task in thread (with context inheritance)
     const result =
       executionId || runId
         ? await this.TasksService.createTaskInThread({

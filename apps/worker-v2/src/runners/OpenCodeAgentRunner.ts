@@ -2,7 +2,7 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { createOpencode, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
 import { OpencodeAsyncMessageFormatter, opencodePartToText } from "../formatters/OpencodeMessageFormatter.js";
-import { RUN_ID_HEADER } from "../helpers/config.js";
+import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
@@ -29,12 +29,12 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   private static readonly CHDIR_TIMEOUT_MS = 60_000; // 1 min — if we wait longer, something is stuck
 
   async initBullshit({
-    runId,
+    executionId,
     cwd,
     baseUrl,
     accessToken,
   }: {
-    runId: string;
+    executionId: string;
     cwd: string;
     baseUrl: string;
     accessToken: string;
@@ -66,7 +66,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     const originalCwd = process.cwd();
     process.chdir(cwd);
     try {
-      await this.init({ runId, baseUrl, accessToken });
+      await this.init({ executionId, baseUrl, accessToken });
     } finally {
       process.chdir(originalCwd);
       release();
@@ -82,11 +82,11 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   }
 
   async init({
-    runId,
+    executionId,
     baseUrl,
     accessToken,
   }: {
-    runId: string;
+    executionId: string;
     baseUrl: string;
     accessToken: string;
   }) {
@@ -113,7 +113,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
                 url: `${baseUrl}/api/v1/tasks/tasks/mcp`,
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
-                  [RUN_ID_HEADER]: runId,
+                  [EXECUTION_ID_HEADER]: executionId,
                 },
                 enabled: true,
               },
@@ -122,7 +122,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
                 url: `${baseUrl}/api/v1/context/blocks/mcp`,
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
-                  [RUN_ID_HEADER]: runId,
+                  [EXECUTION_ID_HEADER]: executionId,
                 },
                 enabled: true,
               }
@@ -153,12 +153,12 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
     // Start client
     await this.initBullshit({
-      runId: ctx.runId,
+      executionId: ctx.executionId,
       cwd: ctx.cwd,
       baseUrl: ctx.baseUrl,
       accessToken: ctx.accessToken,
     });
-    // await this.init({ runId: ctx.runId });
+    // await this.init({ executionId: ctx.executionId });
 
     if (!this.client) {
       throw new Error("Failed to create Opencode client");

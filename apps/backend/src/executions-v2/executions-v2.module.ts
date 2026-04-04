@@ -5,6 +5,7 @@ import { TaskEntity } from '../tasks/task.entity';
 import { ActiveTaskExecutionEntity } from './active/active-task-execution.entity';
 import { ActiveTaskExecutionController } from './active/active-task-execution.controller';
 import { ActiveTaskExecutionService } from './active/active-task-execution.service';
+import { ActiveExecutionContextResolverService } from './active/active-execution-context-resolver.service';
 import { TaskExecutionHistoryController } from './history/task-execution-history.controller';
 import { TaskExecutionHistoryEntity } from './history/task-execution-history.entity';
 import { TaskExecutionHistoryService } from './history/task-execution-history.service';
@@ -16,6 +17,8 @@ import { ReadinessCandidateRepository } from './readiness/readiness-candidate.re
 import { TaskEligibilitySchedulerService } from './readiness/task-eligibility-scheduler.service';
 import { TaskExecutionQueuePopulatorService } from './readiness/task-execution-queue-populator.service';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
+import { ThreadsModule } from '../threads/threads.module';
+import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 
 @Module({
   imports: [
@@ -24,8 +27,10 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
       TaskExecutionQueueEntity,
       ActiveTaskExecutionEntity,
       TaskExecutionHistoryEntity,
+      AgentRunEntity,
     ]),
     AgentsModule,
+    ThreadsModule,
     AuthGuardsModule,
   ],
   controllers: [
@@ -36,11 +41,13 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
   providers: [
     TaskExecutionQueueService,
     ActiveTaskExecutionService,
+    ActiveExecutionContextResolverService,
     TaskExecutionHistoryService,
     ReadinessCandidateRepository,
     TaskExecutionQueuePopulatorService,
     TaskEligibilityEventSourceService,
     TaskEligibilitySchedulerService,
   ],
+  exports: [ActiveExecutionContextResolverService],
 })
 export class ExecutionsV2Module {}

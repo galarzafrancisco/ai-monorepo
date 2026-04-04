@@ -8,8 +8,8 @@ describe('TasksService.createTaskInThread', () => {
         actorId: 'actor-1',
         parentTaskId: 'parent-task-1',
         parentThreadId: null,
-        executionId: null,
-        runId: 'run-1',
+        executionId: 'execution-1',
+        runId: null,
       }),
     };
 
@@ -49,7 +49,7 @@ describe('TasksService.createTaskInThread', () => {
       name: 'Child task',
       description: 'Child description',
       createdByActorId: 'actor-1',
-      runId: 'run-1',
+      executionId: 'execution-1',
     });
 
     expect(threadsService.createThread).toHaveBeenCalledWith({

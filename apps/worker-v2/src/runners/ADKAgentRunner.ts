@@ -8,7 +8,7 @@ import {
   BaseTool,
 } from "@google/adk";
 import { ADKMessageFormatter } from "../formatters/ADKMessageFormatter.js";
-import { RUN_ID_HEADER } from "../helpers/config.js";
+import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 
 class NamespacedTool extends BaseTool {
@@ -101,7 +101,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
           url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
           header: {
             Authorization: `Bearer ${ctx.accessToken}`,
-            [RUN_ID_HEADER]: ctx.runId,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
           },
         }, 'tasks'),
         new NamespacedMCPToolset({
@@ -109,7 +109,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
           url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
           header: {
             Authorization: `Bearer ${ctx.accessToken}`,
-            [RUN_ID_HEADER]: ctx.runId,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
           },
         }, 'context')
       ]

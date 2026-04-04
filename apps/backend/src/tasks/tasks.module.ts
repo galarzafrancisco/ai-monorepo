@@ -15,7 +15,7 @@ import { MetaModule } from '../meta/meta.module';
 import { SearchModule } from '../search/search.module';
 import { AgentRunsModule } from '../agent-runs/agent-runs.module';
 import { ThreadsModule } from '../threads/threads.module';
-import { ExecutionsModule } from '../executions/executions.module';
+import { ExecutionsV2Module } from '../executions-v2/executions-v2.module';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ import { ExecutionsModule } from '../executions/executions.module';
     SearchModule,
     AgentRunsModule,
     ThreadsModule,
-    ExecutionsModule,
+    ExecutionsV2Module,
   ],
   controllers: [TasksController],
   providers: [TasksService, TasksGateway, TasksMcpGateway],

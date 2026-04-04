@@ -55,7 +55,7 @@ import { SearchService } from '../search/search.service';
 import { AgentRunsService } from '../agent-runs/agent-runs.service';
 import { ThreadsService } from '../threads/threads.service';
 import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
-import { ExecutionContextResolverService } from '../executions/execution-context-resolver.service';
+import { ActiveExecutionContextResolverService } from '../executions-v2/active/active-execution-context-resolver.service';
 
 @Injectable()
 export class TasksService {
@@ -78,7 +78,7 @@ export class TasksService {
     private readonly searchService: SearchService,
     private readonly agentRunsService: AgentRunsService,
     private readonly threadsService: ThreadsService,
-    private readonly executionContextResolver: ExecutionContextResolverService,
+    private readonly executionContextResolver: ActiveExecutionContextResolverService,
   ) {}
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
@@ -191,7 +191,6 @@ export class TasksService {
       runId: input.runId,
     });
 
-    // Resolve execution context from either execution-id (preferred) or run-id (legacy)
     const context = await this.executionContextResolver.resolveContext(
       input.executionId,
       input.runId,

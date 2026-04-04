@@ -73,8 +73,6 @@ export async function executeTask({
 
   const thread = await workerClient.threads.ThreadsController_getThreadByTaskId({ taskId });
 
-  // NOTE: the old worker has the concept of a run id. We don't have that here yet. Do we need it?
-
   // Get an access token for the agent
   const agentToken = await workerClient.agentExecutionTokens.AgentExecutionTokensController_requestExecutionToken({
     slug: agent.slug,
@@ -115,7 +113,7 @@ export async function executeTask({
         cwd: workDir,
         baseUrl,
         accessToken: agentToken.token,
-        runId: '123',
+        executionId,
         resume: undefined,
         agentSlug: agent.slug,
       },

@@ -316,8 +316,6 @@ export class TasksMcpGateway {
           dependsOnIds,
         }) => {
           let task;
-
-          // If we have an execution ID or run ID, create task in thread (with context inheritance)
           if (executionId || runId) {
             task = await this.tasksService.createTaskInThread({
               name,
@@ -329,7 +327,6 @@ export class TasksMcpGateway {
               runId,
             });
           } else {
-            // Otherwise, create task normally
             task = await this.tasksService.createTask({
               name,
               description,
