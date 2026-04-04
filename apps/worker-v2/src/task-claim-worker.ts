@@ -4,14 +4,17 @@ import { pickTask } from './task-picker.js';
 
 const QUEUE_POLL_INTERVAL_MS = 1_000;
 
-export async function runTaskClaimWorker(client: ApiClient): Promise<void> {
+export async function runTaskClaimWorker(
+  client: ApiClient,
+  workingDirectory: string,
+): Promise<void> {
   console.log(
     `[worker] Polling executions-v2 queue every ${QUEUE_POLL_INTERVAL_MS / 1000}s.`,
   );
 
   while (true) {
     try {
-      await processNextQueuedTask(client);
+      await processNextQueuedTask(client, workingDirectory);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`[worker] Queue poll failed: ${message}`);
@@ -21,7 +24,10 @@ export async function runTaskClaimWorker(client: ApiClient): Promise<void> {
   }
 }
 
-async function processNextQueuedTask(client: ApiClient): Promise<void> {
+async function processNextQueuedTask(
+  client: ApiClient,
+  workingDirectory: string,
+): Promise<void> {
   const queue = await client.executionsV2.TaskExecutionQueueController_listQueue();
   console.log(`[worker] Queue poll succeeded. ${queue.length} task(s) ready.`);
 
@@ -30,7 +36,11 @@ async function processNextQueuedTask(client: ApiClient): Promise<void> {
     return;
   }
 
-  void pickTask(client, nextTask.taskId)
+  void pickTask({
+    client,
+    taskId: nextTask.taskId,
+    baseDir: workingDirectory,
+  })
     .catch((error) => {
       const message = error instanceof Error ? error.message : String(error);
       console.error(

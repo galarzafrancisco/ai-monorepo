@@ -203,7 +203,7 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
                 <label>Assignee</label>
                 <input
                   type="text"
-                  value={task.assignee ? `@${task.assignee.slug}` : '@'}
+                  value={task.assignee ? `@${task.assignee}` : '@'}
                   onChange={(e) => setAssigneeId(e.target.value)}
                   placeholder="Enter assignee name"
                 />

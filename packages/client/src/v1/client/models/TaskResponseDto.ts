@@ -27,7 +27,7 @@ export type TaskResponseDto = {
     /**
      * Slug of the assignee (for backward compatibility)
      */
-    assignee?: Record<string, any> | null;
+    assignee?: string | null;
     /**
      * Actor assigned to this task
      */

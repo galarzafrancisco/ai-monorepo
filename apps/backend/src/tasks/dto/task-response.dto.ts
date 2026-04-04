@@ -36,6 +36,7 @@ export class TaskResponseDto {
   status!: TaskStatus;
 
   @ApiPropertyOptional({
+    type: String,
     description: 'Slug of the assignee (for backward compatibility)',
     example: 'agent-alpha',
     nullable: true,

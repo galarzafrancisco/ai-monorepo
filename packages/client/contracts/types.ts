@@ -3323,7 +3323,7 @@ export interface components {
              * @description Slug of the assignee (for backward compatibility)
              * @example agent-alpha
              */
-            assignee?: Record<string, never> | null;
+            assignee?: string | null;
             /** @description Actor assigned to this task */
             assigneeActor?: components["schemas"]["ActorResponseDto"] | null;
             /**

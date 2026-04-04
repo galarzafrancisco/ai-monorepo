@@ -157,6 +157,15 @@ function parseSchema(schema: any): SchemaInfo {
     return { type: 'any' };
   }
 
+  if (schema.allOf?.length === 1) {
+    const merged = parseSchema(schema.allOf[0]);
+
+    return {
+      ...merged,
+      nullable: schema.nullable ?? merged.nullable,
+    };
+  }
+
   if (schema.$ref) {
     return {
       type: 'ref',

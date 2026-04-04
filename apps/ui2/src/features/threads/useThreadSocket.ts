@@ -24,8 +24,10 @@ type ThreadsSubscribeAck = {
 /**
  * Converts wire actor type to DTO actor type
  */
-const convertWireActorToDto = (wireActor: ThreadWireActor | null): ActorResponseDto | null => {
-  if (!wireActor) return null;
+const convertWireActorToDto = (
+  wireActor: ThreadWireActor | null,
+): ActorResponseDto | undefined => {
+  if (!wireActor) return undefined;
 
   if (wireActor.type === WireActorType.HUMAN) {
     return { ...wireActor, type: DtoActorType.HUMAN };
@@ -33,7 +35,7 @@ const convertWireActorToDto = (wireActor: ThreadWireActor | null): ActorResponse
   if (wireActor.type === WireActorType.AGENT) {
     return { ...wireActor, type: DtoActorType.AGENT };
   }
-  return null;
+  return undefined;
 };
 
 export interface UseThreadSocketResult {
@@ -139,7 +141,7 @@ export const useThreadSocket = (threadId: string): UseThreadSocketResult => {
       const createdByActorDto = convertWireActorToDto(event.payload.createdByActor);
       const incomingMessage: Message = {
         ...event.payload,
-        createdByActor: createdByActorDto
+        createdByActor: createdByActorDto,
       };
 
       // Notify handler if registered

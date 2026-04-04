@@ -8740,7 +8740,7 @@
             "example": "NOT_STARTED"
           },
           "assignee": {
-            "type": "object",
+            "type": "string",
             "description": "Slug of the assignee (for backward compatibility)",
             "example": "agent-alpha",
             "nullable": true

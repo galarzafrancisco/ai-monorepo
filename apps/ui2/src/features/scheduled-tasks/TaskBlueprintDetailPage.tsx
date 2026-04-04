@@ -45,7 +45,7 @@ export function TaskBlueprintDetailPage() {
       description: blueprint.description,
       status: TaskStatus.NOT_STARTED,
       assignee: null,
-      assigneeActor: blueprint.assigneeActor ?? null,
+      assigneeActor: blueprint.assigneeActor ?? undefined,
       sessionId: null,
       comments: [],
       artefacts: [],
