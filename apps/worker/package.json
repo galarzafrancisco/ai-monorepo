@@ -30,8 +30,8 @@
     "start:gemini": "dotenv -e .env.gemini npm run start",
     "start:all": "concurrently -n claude,codex,reviewer,qwen,gemini -c auto \"npm run start:claude\" \"npm run start:codex\" \"npm run start:reviewer\" \"npm run start:qwen\" \"npm run start:gemini\"",
     "dev": "dotenv -e .env.gemini tsx src/dev.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "build:prod": "npm ci && npm run build",
+    "build": "../../node_modules/.bin/tsc -p tsconfig.build.json",
+    "build:prod": "npm run build",
     "pack": "npm run build && npm pack",
     "release": "npm run build && npm publish --access public"
   },

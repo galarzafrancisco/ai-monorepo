@@ -1,0 +1,41 @@
+{
+  "name": "@taico/worker-v2",
+  "version": "0.1.0",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "taico-worker-v2": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "build:prod": "npm run build",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "pack": "npm run build && npm pack",
+    "release": "npm run build && npm publish --access public"
+  },
+  "dependencies": {
+    "@taico/client": "*",
+    "@taico/shared": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "4.21.0",
+    "typescript": "^5.7.3"
+  }
+}

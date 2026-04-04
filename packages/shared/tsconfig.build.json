@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "noEmit": false,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "ES2023"
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

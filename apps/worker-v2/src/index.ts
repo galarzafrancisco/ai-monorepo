@@ -1,6 +1,8 @@
+#!/usr/bin/env node
+
 import { setTimeout as sleep } from 'timers/promises';
 import { ApiClient } from '@taico/client/v2';
-import { WorkerAuth } from './auth/worker-auth';
+import { WorkerAuth } from './auth/worker-auth.js';
 
 const QUEUE_POLL_INTERVAL_MS = 60_000;
 const STARTUP_RETRY_DELAY_MS = 2_000;
@@ -9,6 +11,28 @@ type WorkerOptions = {
   serverUrl: string;
   credentialsPath?: string;
 };
+
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const help = args.includes('--help') || args.includes('-h');
+
+  if (help) {
+    printUsage();
+    return;
+  }
+
+  const serverUrl = readCliOption(args, '--serverurl');
+  if (!serverUrl) {
+    throw new Error('Missing required --serverurl');
+  }
+
+  const credentialsPath = readCliOption(args, '--credentials-path') ?? undefined;
+
+  await runWorker({
+    serverUrl,
+    credentialsPath,
+  });
+}
 
 export async function runWorker(options: WorkerOptions): Promise<void> {
   const auth = new WorkerAuth({
@@ -183,3 +207,22 @@ class WorkerStartupCanceledError extends Error {
     this.name = 'WorkerStartupCanceledError';
   }
 }
+
+function printUsage(): void {
+  console.log(`taico-worker-v2 usage:
+
+  taico-worker-v2 --serverurl <url> [--credentials-path <path>]
+    Start worker mode against an existing Taico server.
+`);
+}
+
+function readCliOption(args: string[], name: string): string | null {
+  const index = args.indexOf(name);
+  if (index === -1) {
+    return null;
+  }
+
+  return args[index + 1] ?? null;
+}
+
+void main();

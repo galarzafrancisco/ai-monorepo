@@ -3,13 +3,12 @@ import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { existsSync } from 'fs';
+import { existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
-import { runWorker } from './worker-v2/worker';
 
 const logger = new Logger('Bootstrap');
 
@@ -50,77 +49,27 @@ async function bootstrap() {
   const args = process.argv.slice(2);
   const help = args.includes('--help') || args.includes('-h');
   const serverMode = args.includes('--server');
-  const workerMode = args.includes('--worker');
+  const generateOpenApiMode = args.includes('--generate-openapi');
 
   if (help) {
     printUsage();
     return;
   }
 
-  if (serverMode && workerMode) {
+  if (serverMode && generateOpenApiMode) {
     throw new Error(
-      'Cannot start both --server and --worker in the same process yet.',
+      'Cannot start both --server and --generate-openapi in the same process.',
     );
   }
 
-  if (workerMode) {
-    const serverUrl = readCliOption(args, '--serverurl');
-    if (!serverUrl) {
-      throw new Error('Missing required --serverurl for worker mode');
-    }
-    await runWorker({ serverUrl });
+  const app = await createConfiguredApp();
+
+  if (generateOpenApiMode) {
+    await generateOpenApi(app);
     return;
   }
 
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-
-  // Cookie parser for session management
-  app.use(cookieParser());
-
-  // Enable CORS with credentials
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
-
-  // Global validation pipe with transformation and strict validation
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  // Global exception filter for RFC 7807 Problem Details
-  app.useGlobalFilters(new ProblemDetailsFilter());
-
-  // Set global prefix for API routes
-  app.setGlobalPrefix('api/v1', {
-    exclude: [
-      {
-        path: '/.well-known/*path',
-        method: RequestMethod.ALL,
-      },
-    ],
-  });
-
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('taico API')
-    .setDescription('taico API description')
-    .setVersion('1.0')
-    .addTag('taico')
-    .addCookieAuth(
-      'access_token',
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      },
-      'JWT-Cookie',
-    )
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = createSwaggerDocument(app);
 
   SwaggerModule.setup('api/v1/docs', app, document);
 
@@ -162,6 +111,64 @@ async function bootstrap() {
   logger.log(`Application is running on: http://localhost:${port}`);
 }
 
+async function createConfiguredApp(): Promise<NestExpressApplication> {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  app.use(cookieParser());
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+  app.useGlobalFilters(new ProblemDetailsFilter());
+  app.setGlobalPrefix('api/v1', {
+    exclude: [
+      {
+        path: '/.well-known/*path',
+        method: RequestMethod.ALL,
+      },
+    ],
+  });
+
+  return app;
+}
+
+function createSwaggerDocument(app: NestExpressApplication) {
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('taico API')
+    .setDescription('taico API description')
+    .setVersion('1.0')
+    .addTag('taico')
+    .addCookieAuth(
+      'access_token',
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'JWT-Cookie',
+    )
+    .build();
+
+  return SwaggerModule.createDocument(app, swaggerConfig);
+}
+
+async function generateOpenApi(
+  app: NestExpressApplication,
+): Promise<void> {
+  const outputPath = join(__dirname, '..', 'openapi.json');
+  const document = createSwaggerDocument(app);
+  writeFileSync(outputPath, JSON.stringify(document, null, 2));
+  logger.log(`OpenAPI specification written to ${outputPath}`);
+  await app.close();
+}
+
 function printUsage(): void {
   console.log(`taico usage:
 
@@ -171,8 +178,8 @@ function printUsage(): void {
   taico --server [--port <port>]
     Start the server explicitly.
 
-  taico --worker --serverurl <url>
-    Start worker mode against an existing Taico server.
+  taico --generate-openapi
+    Generate openapi.json without starting the server.
 `);
 }
 

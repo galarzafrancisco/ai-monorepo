@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { dirname, join } from 'path';
 import { homedir } from 'os';
-import type { WorkerCredentials } from './worker-auth.types';
+import type { WorkerCredentials } from './worker-auth.types.js';
 
 export const DEFAULT_WORKER_CREDENTIALS_PATH = join(
   homedir(),

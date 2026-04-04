@@ -4,14 +4,14 @@ import {
   INTERNAL_WORKER_AUTH_SCOPES,
   INTERNAL_WORKER_AUTH_TARGET_ID,
   INTERNAL_WORKER_AUTH_TARGET_VERSION,
-} from '../../auth/core/constants/internal-auth-target.constant';
-import { createOAuthCallbackServer } from './callback-server';
+} from '@taico/shared';
+import { createOAuthCallbackServer } from './callback-server.js';
 import {
   DEFAULT_WORKER_CREDENTIALS_PATH,
   readWorkerCredentials,
   writeWorkerCredentials,
-} from './credentials-store';
-import type { WorkerCredentials } from './worker-auth.types';
+} from './credentials-store.js';
+import type { WorkerCredentials } from './worker-auth.types.js';
 
 const REFRESH_SKEW_MS = 60_000;
 
