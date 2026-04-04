@@ -6,6 +6,7 @@ WORKDIR /workdir
 # Copy package files
 COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
+COPY apps/worker-v2/package*.json ./apps/worker-v2/
 COPY apps/ui/package*.json ./apps/ui/
 COPY apps/ui2/package*.json ./apps/ui2/
 COPY packages/shared/package*.json ./packages/shared/
@@ -32,6 +33,7 @@ WORKDIR /workdir
 # Copy package files for production install
 COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
+COPY apps/worker-v2/package*.json ./apps/worker-v2/
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/client/package*.json ./packages/client/
 COPY packages/adk-session-store/package*.json ./packages/adk-session-store/
@@ -43,6 +45,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 
 # Copy built files from builder
 COPY --from=builder /workdir/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /workdir/apps/worker-v2/dist ./apps/worker-v2/dist
 COPY --from=builder /workdir/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /workdir/packages/adk-session-store/dist ./packages/adk-session-store/dist
 COPY --from=builder /workdir/packages/errors/dist ./packages/errors/dist
