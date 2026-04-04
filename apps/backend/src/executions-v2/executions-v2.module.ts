@@ -22,6 +22,9 @@ import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { ExecutionActivityService } from './execution-activity.service';
 import { TaskActivityProjectionService } from './task-activity-projection.service';
 import { ExecutionsV2WorkerGateway } from './executions-v2-worker.gateway';
+import { StaleActiveTaskExecutionDetectorService } from './staleness/stale-active-task-execution-detector.service';
+import { StaleActiveTaskExecutionPrunerService } from './staleness/stale-active-task-execution-pruner.service';
+import { StaleActiveTaskExecutionSchedulerService } from './staleness/stale-active-task-execution-scheduler.service';
 
 @Module({
   imports: [
@@ -53,6 +56,9 @@ import { ExecutionsV2WorkerGateway } from './executions-v2-worker.gateway';
     TaskExecutionQueuePopulatorService,
     TaskEligibilityEventSourceService,
     TaskEligibilitySchedulerService,
+    StaleActiveTaskExecutionDetectorService,
+    StaleActiveTaskExecutionPrunerService,
+    StaleActiveTaskExecutionSchedulerService,
   ],
   exports: [ActiveExecutionContextResolverService],
 })
