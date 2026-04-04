@@ -6,6 +6,8 @@ import {
 } from '../active/active-task-execution.entity';
 import { TagEntity } from '../../meta/tag.entity';
 import { TaskEntity } from '../../tasks/task.entity';
+import { TaskExecutionHistoryEntity } from '../history/task-execution-history.entity';
+import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
 
 @Injectable()
 export class StaleActiveTaskExecutionPrunerService {
@@ -51,6 +53,18 @@ export class StaleActiveTaskExecutionPrunerService {
 
       await manager.save(TaskEntity, task);
       await manager.delete(ActiveTaskExecutionEntity, { id: activeExecution.id });
+      await manager.save(
+        TaskExecutionHistoryEntity,
+        manager.create(TaskExecutionHistoryEntity, {
+          taskId: activeExecution.taskId,
+          claimedAt: activeExecution.claimedAt,
+          transitionedAt: new Date(),
+          agentActorId: activeExecution.agentActorId,
+          workerClientId: activeExecution.workerClientId,
+          status: TaskExecutionHistoryStatus.STALE,
+          errorCode: null,
+        }),
+      );
 
       return true;
     });
