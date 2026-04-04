@@ -68,6 +68,9 @@ async function bootstrap() {
     if (!serverUrl) {
       throw new Error('Missing required --serverurl for worker mode');
     }
+    // Keep worker loading lazy for now: backend build generates OpenAPI, which generates
+    // @taico/client/v2, and worker code depends on that client. We should decouple the
+    // worker from the backend package later so this build-order constraint disappears.
     const { runWorker } = await import('./worker-v2/worker.js');
     await runWorker({ serverUrl });
     return;
