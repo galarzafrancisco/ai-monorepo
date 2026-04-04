@@ -26,7 +26,7 @@ export type ClaimTaskExecutionInput = {
 };
 
 export type StopTaskExecutionInput = {
-  taskId: string;
+  executionId: string;
   workerClientId: string;
   status: TaskExecutionHistoryStatus;
   errorCode?: TaskExecutionHistoryErrorCode | null;
@@ -119,11 +119,11 @@ export class ActiveTaskExecutionService {
   ): Promise<TaskExecutionHistoryEntity> {
     return this.dataSource.transaction(async (manager) => {
       const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {
-        where: { taskId: input.taskId },
+        where: { id: input.executionId },
       });
 
       if (!activeExecution) {
-        throw new ActiveTaskExecutionNotFoundError(input.taskId);
+        throw new ActiveTaskExecutionNotFoundError(input.executionId);
       }
 
       await manager.delete(ActiveTaskExecutionEntity, {

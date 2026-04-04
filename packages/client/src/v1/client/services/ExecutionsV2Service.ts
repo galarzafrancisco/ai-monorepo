@@ -56,22 +56,22 @@ export class ExecutionsV2Service {
     }
     /**
      * Stop an active task execution and move it to history
-     * Atomically removes the task from the active execution table and inserts it into the history table.
-     * @param taskId Task ID to stop
+     * Atomically removes the execution from the active execution table and inserts it into the history table.
+     * @param executionId Execution ID to stop
      * @param requestBody
      * @returns TaskExecutionHistoryResponseDto
      * @throws ApiError
      */
     public static activeTaskExecutionControllerStopTaskExecution(
-        taskId: string,
+        executionId: string,
         requestBody: StopActiveTaskExecutionDto,
         config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskExecutionHistoryResponseDto> {
         return __request(config, {
             method: 'POST',
-            url: '/api/v1/executions-v2/active/{taskId}/stop',
+            url: '/api/v1/executions-v2/active/{executionId}/stop',
             path: {
-                'taskId': taskId,
+                'executionId': executionId,
             },
             body: requestBody,
             mediaType: 'application/json',

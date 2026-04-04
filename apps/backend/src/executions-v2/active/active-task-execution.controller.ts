@@ -53,23 +53,23 @@ export class ActiveTaskExecutionController {
     );
   }
 
-  @Post(':taskId/stop')
+  @Post(':executionId/stop')
   @RequireScopes(WorkersScopes.CONNECT.id)
   @ApiOperation({
     summary: 'Stop an active task execution and move it to history',
     description:
-      'Atomically removes the task from the active execution table and inserts it into the history table.',
+      'Atomically removes the execution from the active execution table and inserts it into the history table.',
   })
-  @ApiParam({ name: 'taskId', description: 'Task ID to stop' })
+  @ApiParam({ name: 'executionId', description: 'Execution ID to stop' })
   @ApiCreatedResponse({ type: TaskExecutionHistoryResponseDto })
   async stopTaskExecution(
-    @Param('taskId') taskId: string,
+    @Param('executionId') executionId: string,
     @Body() dto: StopActiveTaskExecutionDto,
     @CurrentAuth() auth: AuthContext,
   ): Promise<TaskExecutionHistoryResponseDto> {
     try {
       const historyEntry = await this.activeTaskExecutionService.stopTask({
-        taskId,
+        executionId,
         workerClientId: auth.claims.client_id,
         status: dto.status,
         errorCode: dto.errorCode,

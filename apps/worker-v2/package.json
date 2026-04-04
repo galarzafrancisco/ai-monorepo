@@ -34,7 +34,7 @@
     "@taico/shared": "*"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.12.2",
     "tsx": "4.21.0",
     "typescript": "^5.7.3"
   }

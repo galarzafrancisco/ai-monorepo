@@ -18,7 +18,7 @@ export class TaskAlreadyClaimedError extends ExecutionsV2Error {
 }
 
 export class ActiveTaskExecutionNotFoundError extends ExecutionsV2Error {
-  constructor(taskId: string) {
-    super('Task does not have an active execution.', { taskId });
+  constructor(executionId: string) {
+    super('Active execution was not found.', { executionId });
   }
 }

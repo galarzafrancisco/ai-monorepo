@@ -6498,16 +6498,16 @@
         ]
       }
     },
-    "/api/v1/executions-v2/active/{taskId}/stop": {
+    "/api/v1/executions-v2/active/{executionId}/stop": {
       "post": {
-        "description": "Atomically removes the task from the active execution table and inserts it into the history table.",
+        "description": "Atomically removes the execution from the active execution table and inserts it into the history table.",
         "operationId": "ActiveTaskExecutionController_stopTaskExecution",
         "parameters": [
           {
-            "name": "taskId",
+            "name": "executionId",
             "required": true,
             "in": "path",
-            "description": "Task ID to stop",
+            "description": "Execution ID to stop",
             "schema": {
               "type": "string"
             }
