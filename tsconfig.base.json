@@ -20,6 +20,9 @@
       "@taico/client": [
         "packages/client/src/index.ts"
       ],
+      "@taico/client/v2": [
+        "packages/client/src/v2/index.ts"
+      ],
       "@taico/events": [
         "packages/events/src/index.ts"
       ],
