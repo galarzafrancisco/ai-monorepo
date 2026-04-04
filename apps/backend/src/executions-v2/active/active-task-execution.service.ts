@@ -97,6 +97,7 @@ export class ActiveTaskExecutionService {
         taskAssigneeActorIdBeforeClaim: assigneeActorId,
         agentActorId: assigneeActorId,
         workerClientId: input.workerClientId,
+        lastHeartbeatAt: null,
       });
 
       const savedExecution = await manager.save(activeExecution);

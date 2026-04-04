@@ -11,6 +11,7 @@ import { Logger, UseGuards } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import {
   ExecutionWireEvents,
+  type PostExecutionHeartbeatPayload,
   type PostExecutionActivityPayload,
 } from '@taico/events';
 import { WsAccessTokenGuard } from '../auth/guards/guards/ws-access-token-guard';
@@ -80,6 +81,31 @@ export class ExecutionsV2WorkerGateway
 
       this.logger.error({
         message: 'Failed to forward execution activity',
+        socketId: client.id,
+        executionId: body.executionId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { ok: false, error: 'internal error' };
+    }
+  }
+
+  @SubscribeMessage(ExecutionWireEvents.EXECUTION_HEARTBEAT_POST)
+  async postExecutionHeartbeat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: PostExecutionHeartbeatPayload,
+  ) {
+    if (!body?.executionId) {
+      return { ok: false, error: 'executionId required' };
+    }
+
+    try {
+      await this.executionActivityService.touchHeartbeat({
+        executionId: body.executionId,
+      });
+      return { ok: true };
+    } catch (error) {
+      this.logger.error({
+        message: 'Failed to process execution heartbeat',
         socketId: client.id,
         executionId: body.executionId,
         error: error instanceof Error ? error.message : String(error),

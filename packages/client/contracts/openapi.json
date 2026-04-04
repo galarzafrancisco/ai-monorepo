@@ -11132,6 +11132,12 @@
             "description": "When the task was claimed into the active table",
             "example": "2026-04-03T08:25:00.000Z"
           },
+          "lastHeartbeatAt": {
+            "type": "string",
+            "description": "Latest worker heartbeat received for this active execution",
+            "example": "2026-04-03T08:25:10.000Z",
+            "nullable": true
+          },
           "taskStatusBeforeClaim": {
             "type": "string",
             "description": "Task status before the task was claimed",
@@ -11172,6 +11178,7 @@
           "taskName",
           "taskStatus",
           "claimedAt",
+          "lastHeartbeatAt",
           "taskStatusBeforeClaim",
           "taskTagsBeforeClaim",
           "workerClientId",

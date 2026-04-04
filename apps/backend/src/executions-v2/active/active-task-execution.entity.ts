@@ -60,6 +60,9 @@ export class ActiveTaskExecutionEntity {
   @Column({ type: 'text', name: 'worker_client_id' })
   workerClientId!: string;
 
+  @Column({ type: 'datetime', name: 'last_heartbeat_at', nullable: true })
+  lastHeartbeatAt!: Date | null;
+
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 

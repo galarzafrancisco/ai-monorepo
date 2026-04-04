@@ -25,6 +25,10 @@ export type ActiveTaskExecutionResponseDto = {
      */
     claimedAt: string;
     /**
+     * Latest worker heartbeat received for this active execution
+     */
+    lastHeartbeatAt: string | null;
+    /**
      * Task status before the task was claimed
      */
     taskStatusBeforeClaim: ActiveTaskExecutionResponseDto.taskStatusBeforeClaim;

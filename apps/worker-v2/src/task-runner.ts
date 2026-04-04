@@ -1,5 +1,4 @@
 import { ApiClient } from '@taico/client/v2';
-import { setTimeout as sleep } from 'timers/promises';
 import { DEFAULT_AGENT_TOKEN_SCOPES } from '@taico/shared';
 import { prepareWorkspace } from './helpers/prepareWorkspace.js';
 import { BaseAgentRunner } from './runners/BaseAgentRunner.js';
@@ -11,8 +10,6 @@ import { GitHubCopilotAgentRunner } from './runners/GitHubCopilotAgentRunner.js'
 import { buildPrompt } from './prompt.js';
 import { InputRequestLike, RunMode } from './types.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
-
-const SIMULATED_WORK_DURATION_MS = 5_000;
 
 type ExecuteTaskParams = {
   taskId: string;
@@ -35,9 +32,7 @@ export async function executeTask({
   mode = 'normal',
   inputRequest,
 }: ExecuteTaskParams): Promise<void> {
-  console.log(
-    `[worker] Placeholder run for task ${taskId} (execution ${executionId}). Simulating work for ${SIMULATED_WORK_DURATION_MS / 1000}s.`,
-  );
+  console.log(`[worker] Starting execution ${executionId} for task ${taskId}.`);
 
   // Get the task
   const task = await workerClient.task.TasksController_getTask({ id: taskId });
@@ -110,7 +105,7 @@ export async function executeTask({
   // Run and pipe results
   try {
     let latestRunnerSessionId: string | null = null;
-    const results = await runner.run(
+    await runner.run(
       {
         taskId,
         prompt: buildPrompt(task, agent, mode, inputRequest, thread),
@@ -122,6 +117,9 @@ export async function executeTask({
         agentSlug: agent.slug,
       },
       {
+        onHeartbeat: async () => {
+          await activityGatewayClient.publishHeartbeat({ executionId });
+        },
         onEvent: async (message: string) => {
           console.log(`[agent message] ⤵️`);
           console.log(message);
@@ -150,6 +148,4 @@ export async function executeTask({
   } finally {
 
   }
-
-  await sleep(SIMULATED_WORK_DURATION_MS);
 }

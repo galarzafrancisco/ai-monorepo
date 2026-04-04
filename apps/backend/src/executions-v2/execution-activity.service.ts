@@ -14,6 +14,10 @@ export type PublishExecutionActivityInput = {
   runnerSessionId?: string | null;
 };
 
+export type TouchExecutionHeartbeatInput = {
+  executionId: string;
+};
+
 @Injectable()
 export class ExecutionActivityService {
   constructor(
@@ -48,5 +52,19 @@ export class ExecutionActivityService {
         },
       ),
     );
+  }
+
+  async touchHeartbeat(input: TouchExecutionHeartbeatInput): Promise<boolean> {
+    return this.activeTaskExecutionRepository
+      .createQueryBuilder()
+      .update(ActiveTaskExecutionEntity)
+      .set({
+        lastHeartbeatAt: () => 'CURRENT_TIMESTAMP',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
+        rowVersion: () => 'row_version + 1',
+      })
+      .where('id = :executionId', { executionId: input.executionId })
+      .execute()
+      .then((result) => (result.affected ?? 0) > 0);
   }
 }

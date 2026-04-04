@@ -113,7 +113,7 @@ export function ExecutionsPage() {
             emptyMessage="No active executions right now."
             table={
               <ExecutionTable
-                columns={["State", "Task", "Worker", "Agent", "Claimed", "Before claim"]}
+                columns={["State", "Task", "Worker", "Agent", "Claimed", "Latest heartbeat", "Before claim"]}
                 rows={active.map((entry) => ({
                   key: entry.id,
                   cells: [
@@ -122,6 +122,7 @@ export function ExecutionsPage() {
                     <CodeCell key="worker" value={entry.workerClientId} />,
                     <CodeCell key="agent" value={entry.agentActorId} />,
                     <TimeCell key="claimed" value={entry.claimedAt} />,
+                    <TimeCell key="heartbeat" value={entry.lastHeartbeatAt} />,
                     <StatusPill key="before" tone={taskStatusTone(entry.taskStatusBeforeClaim)}>
                       {entry.taskStatusBeforeClaim}
                     </StatusPill>,
@@ -134,6 +135,7 @@ export function ExecutionsPage() {
                       badge="Active"
                       lines={[
                         { label: "Claimed", value: formatDateTime(entry.claimedAt) },
+                        { label: "Latest heartbeat", value: formatDateTime(entry.lastHeartbeatAt) },
                         { label: "Worker", value: shortId(entry.workerClientId), mono: true },
                         { label: "Agent", value: shortId(entry.agentActorId), mono: true },
                         { label: "Before claim", value: entry.taskStatusBeforeClaim },

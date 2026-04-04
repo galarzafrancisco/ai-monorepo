@@ -4907,6 +4907,11 @@ export interface components {
              */
             claimedAt: string;
             /**
+             * @description Latest worker heartbeat received for this active execution
+             * @example 2026-04-03T08:25:10.000Z
+             */
+            lastHeartbeatAt: string | null;
+            /**
              * @description Task status before the task was claimed
              * @enum {string}
              */

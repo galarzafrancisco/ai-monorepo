@@ -63,6 +63,14 @@ export class ActiveTaskExecutionResponseDto {
   claimedAt!: string;
 
   @ApiProperty({
+    type: String,
+    description: 'Latest worker heartbeat received for this active execution',
+    example: '2026-04-03T08:25:10.000Z',
+    nullable: true,
+  })
+  lastHeartbeatAt!: string | null;
+
+  @ApiProperty({
     description: 'Task status before the task was claimed',
     enum: TaskStatus,
   })
@@ -103,6 +111,7 @@ export class ActiveTaskExecutionResponseDto {
       taskName: entity.task?.name ?? null,
       taskStatus: entity.task?.status ?? null,
       claimedAt: entity.claimedAt.toISOString(),
+      lastHeartbeatAt: entity.lastHeartbeatAt?.toISOString() ?? null,
       taskStatusBeforeClaim: entity.taskStatusBeforeClaim,
       taskTagsBeforeClaim: entity.taskTagsBeforeClaim.map((tag) =>
         ActiveTaskExecutionTagSnapshotResponseDto.fromSnapshot(tag),

@@ -888,6 +888,7 @@ export interface ActiveTaskExecutionResponseDto {
   taskName: string | null;
   taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
   claimedAt: string;
+  lastHeartbeatAt: string | null;
   taskStatusBeforeClaim: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
   taskTagsBeforeClaim: ActiveTaskExecutionTagSnapshotResponseDto[];
   workerClientId: string;

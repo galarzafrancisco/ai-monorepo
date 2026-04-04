@@ -21,6 +21,7 @@ export const ExecutionWireEvents = {
   EXECUTION_DELETED: 'execution.deleted',
   EXECUTION_ACTIVITY: 'execution.activity',
   EXECUTION_ACTIVITY_POST: 'execution.activity.post',
+  EXECUTION_HEARTBEAT_POST: 'execution.heartbeat.post',
 } as const;
 
 export type ExecutionWireEventName =
@@ -97,6 +98,10 @@ export interface PostExecutionActivityPayload {
   message?: string;
   ts?: number;
   runnerSessionId?: string | null;
+}
+
+export interface PostExecutionHeartbeatPayload {
+  executionId: string;
 }
 
 /**

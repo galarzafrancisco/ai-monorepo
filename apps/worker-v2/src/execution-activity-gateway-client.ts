@@ -7,6 +7,11 @@ import { WorkerAuth } from './auth/worker-auth.js';
 
 const DEFAULT_TOKEN_REFRESH_SKEW_MS = 60_000;
 const ACK_TIMEOUT_MS = 5_000;
+const EXECUTION_HEARTBEAT_POST_EVENT = 'execution.heartbeat.post';
+
+type PostExecutionHeartbeatPayload = {
+  executionId: string;
+};
 
 type ActivityAck = {
   ok: boolean;
@@ -71,10 +76,29 @@ export class ExecutionActivityGatewayClient {
   async publishActivity(
     payload: PostExecutionActivityPayload,
   ): Promise<boolean> {
+    return this.emitWithAck(
+      ExecutionWireEvents.EXECUTION_ACTIVITY_POST,
+      payload,
+    );
+  }
+
+  async publishHeartbeat(
+    payload: PostExecutionHeartbeatPayload,
+  ): Promise<boolean> {
+    return this.emitWithAck(
+      EXECUTION_HEARTBEAT_POST_EVENT,
+      payload,
+    );
+  }
+
+  private async emitWithAck(
+    eventName: string,
+    payload: PostExecutionActivityPayload | PostExecutionHeartbeatPayload,
+  ): Promise<boolean> {
     if (!this.socket || !this.socket.connected) {
       if (this.options.debug) {
         console.warn(
-          '[execution-activity] publishActivity called while disconnected',
+          `[execution-activity] ${eventName} called while disconnected`,
           payload,
         );
       }
@@ -92,7 +116,7 @@ export class ExecutionActivityGatewayClient {
       }, ACK_TIMEOUT_MS);
 
       this.socket!.emit(
-        ExecutionWireEvents.EXECUTION_ACTIVITY_POST,
+        eventName,
         payload,
         (ack?: ActivityAck) => {
           if (settled) {
@@ -102,7 +126,7 @@ export class ExecutionActivityGatewayClient {
           clearTimeout(timeout);
 
           if (this.options.debug) {
-            console.log('[execution-activity] publish ack:', ack);
+            console.log(`[execution-activity] ${eventName} ack:`, ack);
           }
 
           resolve(Boolean(ack?.ok));

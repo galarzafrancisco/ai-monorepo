@@ -40,6 +40,9 @@ export type AgentRunContext = {
 };
 
 export type AgentRunCallbacks = {
+  /** Called periodically while the runner is actively executing */
+  onHeartbeat: () => void | Promise<void>;
+
   /** Called once when a session/run ID is known */
   onSession?: (sessionId: string) => void | Promise<void>;
 
