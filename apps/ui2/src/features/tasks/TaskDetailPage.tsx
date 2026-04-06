@@ -428,7 +428,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     } catch (err: unknown) {
       const message = err instanceof Error
         ? err.message
-        : 'Failed to load executions for this task';
+        : 'Failed to load runs for this task';
       setExecutionsError(message);
     } finally {
       setIsLoadingExecutions(false);
@@ -793,15 +793,15 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </div>
       </DataRowContainer>
 
-      <DataRowContainer title="Executions" className='task-detail-page__section'>
+      <DataRowContainer title="Runs" className='task-detail-page__section'>
         {isLoadingExecutions && executions.length === 0 ? (
-          <Text className="task-detail-page__executions-state" tone='muted'>Loading executions...</Text>
+          <Text className="task-detail-page__executions-state" tone='muted'>Loading runs...</Text>
         ) : null}
         {executionsError ? (
-          <Text className="task-detail-page__executions-state" tone='muted'>Failed to load executions: {executionsError}</Text>
+          <Text className="task-detail-page__executions-state" tone='muted'>Failed to load runs: {executionsError}</Text>
         ) : null}
         {!isLoadingExecutions && !executionsError && executions.length === 0 ? (
-          <Text className="task-detail-page__executions-state" tone='muted'>No executions yet for this task.</Text>
+          <Text className="task-detail-page__executions-state" tone='muted'>No runs yet for this task.</Text>
         ) : null}
         {executions.map((execution) => {
           const actor = actors.find((candidate) => candidate.id === execution.agentActorId);
@@ -809,7 +809,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           const actorSlug = actor?.slug;
           const statusTag = getExecutionStatusTag(execution.status);
           const sourceTag: DataRowTag = {
-            label: execution.source === 'active' ? 'active table' : 'history table',
+            label: execution.source === 'active' ? 'active' : 'history',
             color: 'gray',
           };
 
@@ -830,7 +830,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                   </Text>
                 </div>
                 <Text as='span' tone='muted' size='2'>
-                  {execution.source === 'active' ? 'execution' : 'history'} #{shortId(execution.executionId)}
+                  run #{shortId(execution.executionId)}
                 </Text>
               </Stack>
             </DataRow>
