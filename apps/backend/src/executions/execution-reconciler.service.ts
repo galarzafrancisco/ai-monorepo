@@ -31,7 +31,7 @@ import {
  * Eligibility criteria:
  * - Task must be assigned to an agent actor (not human)
  * - Task status must match one of the agent's statusTriggers
- * - Task must have at least one tag matching agent's tagTriggers (if agent has tagTriggers configured)
+ * - Task must include all of the agent's tagTriggers (if agent has tagTriggers configured)
  * - All dependency tasks (dependsOn) must be DONE
  * - No blocking input requests (all must be answered or none exist)
  * - Task must not be in DONE status (performance optimization - avoid reconciling completed tasks)
@@ -274,10 +274,10 @@ export class ExecutionReconcilerService {
       };
     }
 
-    // If agent has tagTriggers configured, task must have at least one matching tag
+    // If agent has tagTriggers configured, task must include all of them.
     if (agent.tagTriggers && agent.tagTriggers.length > 0) {
       const taskTagNames = task.tags?.map((tag) => tag.name) || [];
-      const hasMatchingTag = agent.tagTriggers.some((triggerTag) =>
+      const hasMatchingTag = agent.tagTriggers.every((triggerTag) =>
         taskTagNames.includes(triggerTag),
       );
 

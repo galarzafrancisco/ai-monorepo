@@ -22,21 +22,18 @@ export class TaskExecutionQueuePopulatorService {
     const task = await this.readinessCandidateRepository.findCandidateTaskById(
       taskId,
     );
-    this.logger.debug(task);
-    this.logger.debug("A");
     if (!task) {
+      this.logger.debug(`Task ${taskId} is not a readiness candidate; removing queue entry`);
       await this.deleteQueueEntry(taskId);
       return;
     }
-    this.logger.debug("B");
 
     await this.reconcileTask(task);
   }
 
   async populateAllTasks(): Promise<void> {
     const tasks = await this.readinessCandidateRepository.listCandidateTasks();
-    this.logger.debug("CANDIDATE TASKS");
-    this.logger.debug(tasks);
+    this.logger.debug(`Reconciling queue eligibility for ${tasks.length} candidate tasks`);
 
     const agentsByActorId = await this.loadAgentsByActorId(tasks);
 
@@ -59,14 +56,15 @@ export class TaskExecutionQueuePopulatorService {
     task: TaskEntity,
     agentsByActorId?: Map<string, AgentResult>,
   ): Promise<void> {
-    this.logger.debug(`RECONCILING TASK "${task.name}"`)
     const shouldBeQueued = await this.shouldQueueTask(task, agentsByActorId);
-    this.logger.debug(`should it be queued? ${shouldBeQueued}`);
+
     if (shouldBeQueued) {
+      this.logger.debug(`Queueing task ${task.id} (${task.name})`);
       await this.upsertQueueEntry(task.id);
       return;
     }
 
+    this.logger.debug(`Not queueing task ${task.id} (${task.name})`);
     await this.deleteQueueEntry(task.id);
   }
 
@@ -74,7 +72,6 @@ export class TaskExecutionQueuePopulatorService {
     task: TaskEntity,
     agentsByActorId?: Map<string, AgentResult>,
   ): Promise<boolean> {
-    this.logger.debug(`checking if task should be queued...`);
     const agent =
       agentsByActorId?.get(task.assigneeActorId!) ??
       (
@@ -84,17 +81,23 @@ export class TaskExecutionQueuePopulatorService {
       )[0];
 
     if (!agent) {
-      this.logger.debug(`couldn't find agent "${task.assigneeActorId}"`);
+      this.logger.debug(
+        `Task ${task.id} is not queueable: no active agent for actor ${task.assigneeActorId}`,
+      );
       return false;
     }
 
     if (!agent.statusTriggers.includes(task.status)) {
-      this.logger.debug(`agent ${agent.slug} does not react to status ${task.status}`);
+      this.logger.debug(
+        `Task ${task.id} is not queueable: agent ${agent.slug} does not react to status ${task.status}`,
+      );
       return false;
     }
 
     if (!this.matchesTagTriggers(task, agent)) {
-      this.logger.debug(`agent ${agent.slug} tags trigger don't match tasks tags.`)
+      this.logger.debug(
+        `Task ${task.id} is not queueable: task tags do not satisfy agent ${agent.slug} tag triggers`,
+      );
       return false;
     }
 
@@ -107,6 +110,9 @@ export class TaskExecutionQueuePopulatorService {
       agent.concurrencyLimit !== null &&
       agentActiveExecutionCount >= agent.concurrencyLimit
     ) {
+      this.logger.debug(
+        `Task ${task.id} is not queueable: agent ${agent.slug} is at concurrency limit ${agent.concurrencyLimit}`,
+      );
       return false;
     }
 
@@ -119,7 +125,7 @@ export class TaskExecutionQueuePopulatorService {
     }
 
     const taskTagNames = new Set(task.tags.map((tag) => tag.name));
-    return agent.tagTriggers.some((tagTrigger) => taskTagNames.has(tagTrigger));
+    return agent.tagTriggers.every((tagTrigger) => taskTagNames.has(tagTrigger));
   }
 
   private async loadAgentsByActorId(
