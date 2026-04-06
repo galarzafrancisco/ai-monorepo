@@ -161,11 +161,11 @@ The current queue population logic uses these rules:
 3. task status must match the agent's `statusTriggers`
 4. task tags must match the agent's `tagTriggers`
 5. if the agent has no `tagTriggers`, it reacts to all tags
-6. agent concurrency must not be exceeded based on current active executions
+6. all dependency tasks must already be `DONE`
+7. agent concurrency must not be exceeded based on current active executions
 
 Still pending:
 
-- dependency checks
 - open input request / open questions checks
 - stale execution handling
 
