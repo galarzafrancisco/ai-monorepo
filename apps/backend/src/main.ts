@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './config/cli-env';
 import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -67,7 +68,7 @@ async function bootstrap() {
     );
   }
 
-  const app = await createConfiguredApp();
+  const app = await createConfiguredApp(AppModule);
 
   if (generateOpenApiMode) {
     await generateOpenApi(app);
@@ -115,7 +116,9 @@ async function bootstrap() {
   logger.log(`Application is running on: http://localhost:${port}`);
 }
 
-async function createConfiguredApp(): Promise<NestExpressApplication> {
+async function createConfiguredApp(
+  AppModule: typeof import('./app.module').AppModule,
+): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());

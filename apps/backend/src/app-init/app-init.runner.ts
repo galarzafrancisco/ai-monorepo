@@ -203,19 +203,19 @@ export class AppInitRunner implements OnApplicationBootstrap {
   async ensureMcpServers() {
     try {
       await this.ensureMcpServerExists(
-        createInternalWorkerAuthTarget,
+        createInternalWorkerAuthTarget(),
         createInternalWorkerAuthScopes,
       );
     } catch (error) {
       this.logger.error('Error ensuring internal worker auth target exists');
     }
     try {
-      await this.ensureMcpServerExists(createTasks, createTasksScopes);
+      await this.ensureMcpServerExists(createTasks(), createTasksScopes);
     } catch (error) {
       this.logger.error('Error ensuring Tasks MCP Server exists');
     }
     try {
-      await this.ensureMcpServerExists(createContext, createContextScopes);
+      await this.ensureMcpServerExists(createContext(), createContextScopes);
     } catch (error) {
       this.logger.error('Error ensuring Context MCP Server exists');
     }

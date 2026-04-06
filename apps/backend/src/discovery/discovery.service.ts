@@ -30,11 +30,11 @@ export class DiscoveryService {
 
   private populateSystemServers() {
     this.populateSystemServer(
-      createInternalWorkerAuthTarget,
+      createInternalWorkerAuthTarget(),
       createInternalWorkerAuthScopes,
     );
-    this.populateSystemServer(createTasks, createTasksScopes);
-    this.populateSystemServer(createContext, createContextScopes);
+    this.populateSystemServer(createTasks(), createTasksScopes);
+    this.populateSystemServer(createContext(), createContextScopes);
   }
 
   private populateSystemServer(server: CreateServerInput, scopes: Scope[]) {
