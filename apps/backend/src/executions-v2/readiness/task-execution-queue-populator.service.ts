@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AgentsService } from '../../agents/agents.service';
@@ -9,8 +9,6 @@ import { ReadinessCandidateRepository } from './readiness-candidate.repository';
 
 @Injectable()
 export class TaskExecutionQueuePopulatorService {
-  private readonly logger = new Logger(TaskExecutionQueuePopulatorService.name);
-
   constructor(
     @InjectRepository(TaskExecutionQueueEntity)
     private readonly taskExecutionQueueRepository: Repository<TaskExecutionQueueEntity>,
@@ -22,21 +20,17 @@ export class TaskExecutionQueuePopulatorService {
     const task = await this.readinessCandidateRepository.findCandidateTaskById(
       taskId,
     );
-    this.logger.debug(task);
-    this.logger.debug("A");
+
     if (!task) {
       await this.deleteQueueEntry(taskId);
       return;
     }
-    this.logger.debug("B");
 
     await this.reconcileTask(task);
   }
 
   async populateAllTasks(): Promise<void> {
     const tasks = await this.readinessCandidateRepository.listCandidateTasks();
-    this.logger.debug("CANDIDATE TASKS");
-    this.logger.debug(tasks);
 
     const agentsByActorId = await this.loadAgentsByActorId(tasks);
 
@@ -59,9 +53,8 @@ export class TaskExecutionQueuePopulatorService {
     task: TaskEntity,
     agentsByActorId?: Map<string, AgentResult>,
   ): Promise<void> {
-    this.logger.debug(`RECONCILING TASK "${task.name}"`)
     const shouldBeQueued = await this.shouldQueueTask(task, agentsByActorId);
-    this.logger.debug(`should it be queued? ${shouldBeQueued}`);
+
     if (shouldBeQueued) {
       await this.upsertQueueEntry(task.id);
       return;
@@ -74,7 +67,6 @@ export class TaskExecutionQueuePopulatorService {
     task: TaskEntity,
     agentsByActorId?: Map<string, AgentResult>,
   ): Promise<boolean> {
-    this.logger.debug(`checking if task should be queued...`);
     const agent =
       agentsByActorId?.get(task.assigneeActorId!) ??
       (
@@ -84,17 +76,14 @@ export class TaskExecutionQueuePopulatorService {
       )[0];
 
     if (!agent) {
-      this.logger.debug(`couldn't find agent "${task.assigneeActorId}"`);
       return false;
     }
 
     if (!agent.statusTriggers.includes(task.status)) {
-      this.logger.debug(`agent ${agent.slug} does not react to status ${task.status}`);
       return false;
     }
 
     if (!this.matchesTagTriggers(task, agent)) {
-      this.logger.debug(`agent ${agent.slug} tags trigger don't match tasks tags.`)
       return false;
     }
 
@@ -114,12 +103,29 @@ export class TaskExecutionQueuePopulatorService {
   }
 
   private matchesTagTriggers(task: TaskEntity, agent: AgentResult): boolean {
-    if (agent.tagTriggers.length === 0) {
+    const normalizedTagTriggers = new Set(
+      agent.tagTriggers
+        .map((tagTrigger) => this.normalizeTag(tagTrigger))
+        .filter((tagTrigger): tagTrigger is string => tagTrigger.length > 0),
+    );
+
+    if (normalizedTagTriggers.size === 0) {
       return true; // no tags triggers means it reacts to all tags
     }
 
-    const taskTagNames = new Set(task.tags.map((tag) => tag.name));
-    return agent.tagTriggers.some((tagTrigger) => taskTagNames.has(tagTrigger));
+    const taskTagNames = new Set(
+      task.tags
+        .map((tag) => this.normalizeTag(tag.name))
+        .filter((tagName): tagName is string => tagName.length > 0),
+    );
+
+    return [...normalizedTagTriggers].some((tagTrigger) =>
+      taskTagNames.has(tagTrigger),
+    );
+  }
+
+  private normalizeTag(tag: string): string {
+    return tag.trim().toLowerCase();
   }
 
   private async loadAgentsByActorId(
