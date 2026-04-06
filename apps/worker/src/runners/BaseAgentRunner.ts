@@ -1,15 +1,27 @@
 import { AgentRunResult, AgentRunCallbacks, AgentRunContext, AgentRunner } from "./AgentRunner.js";
 
 export abstract class BaseAgentRunner implements AgentRunner {
+  private static readonly HEARTBEAT_INTERVAL_MS = 10_000;
+  private static readonly DEFAULT_CALLBACKS: AgentRunCallbacks = {
+    onHeartbeat: () => undefined,
+  };
+
   abstract readonly kind: string;
 
   async run(
     ctx: AgentRunContext,
-    cb: AgentRunCallbacks = {}
+    cb: AgentRunCallbacks = BaseAgentRunner.DEFAULT_CALLBACKS
   ): Promise<AgentRunResult> {
     const events: string[] = [];
     let sessionId: string | null = null;
     let result = '';
+    const heartbeatTimer = setInterval(() => {
+      void Promise.resolve(cb.onHeartbeat()).catch((error) => {
+        console.warn(
+          `[agent-runner:${this.kind}] heartbeat callback failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+    }, BaseAgentRunner.HEARTBEAT_INTERVAL_MS);
 
     const emit = async (msg: string) => {
       events.push(msg);
@@ -29,6 +41,9 @@ export abstract class BaseAgentRunner implements AgentRunner {
       result = await this.runInternal(ctx, emit, setSession, onError);
     } catch (err: any) {
       await emit(`❌ Agent error: ${err?.message ?? String(err)}`);
+      throw err;
+    } finally {
+      clearInterval(heartbeatTimer);
     }
 
     return { sessionId, events, result };

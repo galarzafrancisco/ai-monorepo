@@ -1,5 +1,5 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
-import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "../helpers/config.js";
+import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
 import { approveAll, CopilotClient, MCPRemoteServerConfig } from "@github/copilot-sdk";
 
@@ -31,20 +31,20 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
 
         const taskMcpServer: MCPRemoteServerConfig = {
           type: "http",
-          url: `${BASE_URL}/api/v1/tasks/tasks/mcp`,
+          url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
           headers: {
-            Authorization: `Bearer ${ACCESS_TOKEN}`,
-            [RUN_ID_HEADER]: ctx.runId,
+            Authorization: `Bearer ${ctx.accessToken}`,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
           },
           tools: ["*"],
         };
 
         const contextMcpServer: MCPRemoteServerConfig = {
           type: "http",
-          url: `${BASE_URL}/api/v1/context/blocks/mcp`,
+          url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
           headers: {
-            Authorization: `Bearer ${ACCESS_TOKEN}`,
-            [RUN_ID_HEADER]: ctx.runId,
+            Authorization: `Bearer ${ctx.accessToken}`,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
           },
           tools: ["*"],
         };

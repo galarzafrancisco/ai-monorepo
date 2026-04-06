@@ -1,11 +1,7 @@
+// git.ts
 import { exec } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-
-type EnsureRepoProps = {
-  repo: string;
-  dir: string;
-}
 
 function sh(cmd: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -19,7 +15,7 @@ function sh(cmd: string): Promise<void> {
   });
 }
 
-export async function ensureRepo({ repo, dir }: EnsureRepoProps) {
+export async function ensureRepo(repo: string, dir: string) {
   const gitDir = join(dir, ".git");
 
   if (!existsSync(gitDir)) {

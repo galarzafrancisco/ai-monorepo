@@ -7,7 +7,7 @@ Public npm packages under the `@taico` scope.
 | `@taico/client` | Auto-generated API client and TypeScript types from the backend OpenAPI spec | [npm](https://www.npmjs.com/package/@taico/client) |
 | `@taico/events` | Shared event type definitions for WebSocket communication | [npm](https://www.npmjs.com/package/@taico/events) |
 | `@taico/errors` | Shared error classes and error codes | [npm](https://www.npmjs.com/package/@taico/errors) |
-| `@taico/adk-session-store` | SQLite-backed Google ADK session service compatible with `BaseSessionService` | - |
+| `@taico/adk-session-store` | SQLite-backed Google ADK session service compatible with `BaseSessionService` | [npm](https://www.npmjs.com/package/@taico/adk-session-store) |
 | `@taico/taico` | Taico backend server (NestJS + bundled UIs) | [npm](https://www.npmjs.com/package/@taico/taico) |
 
 ## Prerequisites
@@ -45,6 +45,7 @@ Bump the version in `package.json`, then:
 ```bash
 npm -w packages/events run release
 npm -w packages/errors run release
+npm -w packages/adk-session-store run release
 npm -w packages/client run release
 npm -w apps/backend run release
 ```

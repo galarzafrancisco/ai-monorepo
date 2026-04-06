@@ -9,7 +9,6 @@
   "files": [
     "dist",
     "README.md",
-    "examples",
     "package.json"
   ],
   "exports": {
@@ -22,6 +21,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "pack": "npm run build && npm pack",
     "release": "npm run build && npm publish --access public"
   },

@@ -3,10 +3,16 @@ import { dirname, join } from 'path';
 import { homedir } from 'os';
 import type { WorkerCredentials } from './worker-auth.types.js';
 
+export const DEFAULT_TAICO_DIRECTORY = join(homedir(), '.taico');
+
 export const DEFAULT_WORKER_CREDENTIALS_PATH = join(
-  homedir(),
-  '.taico',
+  DEFAULT_TAICO_DIRECTORY,
   'worker-credentials.json',
+);
+
+export const DEFAULT_WORKER_WORKSPACES_PATH = join(
+  DEFAULT_TAICO_DIRECTORY,
+  'workspaces',
 );
 
 export async function readWorkerCredentials(

@@ -106,7 +106,7 @@ export async function executeTask({
 
   if (!runner) {
     throw new UnsupportedAgentTypeError(
-      `Agent type "${agent.type}" is not supported by worker-v2.`,
+      `Agent type "${agent.type}" is not supported by this worker.`,
     );
   }
 

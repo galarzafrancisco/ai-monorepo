@@ -18,20 +18,14 @@ export type AgentRunContext = {
   /** Working directory or sandbox */
   cwd: string;
 
-  /** Taico server base URL for MCP endpoints */
-  baseUrl: string;
-
-  /** Short-lived agent execution token for MCP access */
-  accessToken: string;
-
   /** Resume a previous run if supported */
   resume?: string;
 
   /** Arbitrary agent-specific config */
   options?: Record<string, any>;
 
-  /** For backend traceability and MCP context */
-  executionId: string;
+  /** For backend traceability */
+  runId: string;
 
   model?: Model;
 
@@ -40,9 +34,6 @@ export type AgentRunContext = {
 };
 
 export type AgentRunCallbacks = {
-  /** Called periodically while the runner is actively executing */
-  onHeartbeat: () => void | Promise<void>;
-
   /** Called once when a session/run ID is known */
   onSession?: (sessionId: string) => void | Promise<void>;
 

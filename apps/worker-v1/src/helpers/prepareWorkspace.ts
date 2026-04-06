@@ -2,16 +2,17 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { ensureRepo } from "./ensureRepo.js";
+import { WORK_DIR } from "./config.js";
 
-type PrepareWorkspaceProps = {
-  taskId: string;
-  agentId: string;
-  baseDir: string;
-  repoUrl?: string;
-}
-export async function prepareWorkspace({ taskId, agentId, baseDir, repoUrl }: PrepareWorkspaceProps) {
+const BASE_DIR = WORK_DIR;
+
+export async function prepareWorkspace(
+  taskId: string,
+  agentId: string,
+  repoUrl?: string | null,
+) {
   console.log(`prepping workspace for agent '${agentId}' to work on task '${taskId}'`);
-  let workDir = join(baseDir, taskId, agentId);
+  let workDir = join(BASE_DIR, taskId, agentId);
 
   // Ensure base directory exists
   mkdirSync(workDir, { recursive: true });
@@ -27,10 +28,7 @@ export async function prepareWorkspace({ taskId, agentId, baseDir, repoUrl }: Pr
   console.log(`using repo: ${repoUrl}`);
 
   // Ensure repo exists at the workDir location
-  await ensureRepo({
-    repo: repoUrl,
-    dir: workDir,
-  });
+  await ensureRepo(repoUrl, workDir);
 
   return workDir;
 }

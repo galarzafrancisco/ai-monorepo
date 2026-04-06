@@ -10,8 +10,8 @@ rm -rf apps/ui/dist
 rm -rf apps/ui/node_modules
 rm -rf apps/worker/dist
 rm -rf apps/worker/node_modules
-rm -rf apps/worker-v2/dist
-rm -rf apps/worker-v2/node_modules
+rm -rf apps/worker-v1/dist
+rm -rf apps/worker-v1/node_modules
 
 rm -rf packages/client/dist
 rm -rf packages/client/node_modules

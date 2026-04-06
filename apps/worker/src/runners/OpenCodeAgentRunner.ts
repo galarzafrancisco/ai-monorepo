@@ -2,7 +2,7 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { createOpencode, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
 import { OpencodeAsyncMessageFormatter, opencodePartToText } from "../formatters/OpencodeMessageFormatter.js";
-import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "../helpers/config.js";
+import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
@@ -28,7 +28,17 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
   private static readonly CHDIR_TIMEOUT_MS = 60_000; // 1 min — if we wait longer, something is stuck
 
-  async initBullshit({ runId, cwd }: { runId: string, cwd: string }) {
+  async initBullshit({
+    executionId,
+    cwd,
+    baseUrl,
+    accessToken,
+  }: {
+    executionId: string;
+    cwd: string;
+    baseUrl: string;
+    accessToken: string;
+  }) {
     // Disgusting hack to start the server in the working directory
     // because Opencode has a bug where running a session in a different
     // folder breaks realtime events (???)
@@ -56,7 +66,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     const originalCwd = process.cwd();
     process.chdir(cwd);
     try {
-      await this.init({ runId });
+      await this.init({ executionId, baseUrl, accessToken });
     } finally {
       process.chdir(originalCwd);
       release();
@@ -71,7 +81,15 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     this.close();
   }
 
-  async init({ runId }: { runId: string }) {
+  async init({
+    executionId,
+    baseUrl,
+    accessToken,
+  }: {
+    executionId: string;
+    baseUrl: string;
+    accessToken: string;
+  }) {
 
     console.log('Starting Opencode client');
 
@@ -92,19 +110,19 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
             mcp: {
               tasks: {
                 type: "remote",
-                url: `${BASE_URL}/api/v1/tasks/tasks/mcp`,
+                url: `${baseUrl}/api/v1/tasks/tasks/mcp`,
                 headers: {
-                  Authorization: `Bearer ${ACCESS_TOKEN}`,
-                  [RUN_ID_HEADER]: runId,
+                  Authorization: `Bearer ${accessToken}`,
+                  [EXECUTION_ID_HEADER]: executionId,
                 },
                 enabled: true,
               },
               context: {
                 type: "remote",
-                url: `${BASE_URL}/api/v1/context/blocks/mcp`,
+                url: `${baseUrl}/api/v1/context/blocks/mcp`,
                 headers: {
-                  Authorization: `Bearer ${ACCESS_TOKEN}`,
-                  [RUN_ID_HEADER]: runId,
+                  Authorization: `Bearer ${accessToken}`,
+                  [EXECUTION_ID_HEADER]: executionId,
                 },
                 enabled: true,
               }
@@ -134,8 +152,13 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
 
     // Start client
-    await this.initBullshit({ runId: ctx.runId, cwd: ctx.cwd });
-    // await this.init({ runId: ctx.runId });
+    await this.initBullshit({
+      executionId: ctx.executionId,
+      cwd: ctx.cwd,
+      baseUrl: ctx.baseUrl,
+      accessToken: ctx.accessToken,
+    });
+    // await this.init({ executionId: ctx.executionId });
 
     if (!this.client) {
       throw new Error("Failed to create Opencode client");
