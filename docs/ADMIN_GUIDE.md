@@ -12,15 +12,11 @@ The fastest way to get Taico running. No cloning required — just npm packages.
 npx -y @taico/taico
 ```
 
-By default the server runs in **development mode**, which seeds the database with test users (see [Environments](#environments) below). This is convenient for getting started, but development mode assumes the backend is being proxied by Vite on a separate port. Since there's no Vite proxy when running via npx, you need to tell the server its own URL explicitly:
+By default the server runs in **production mode**. With no environment variables set, it listens on `http://localhost:2000` and defaults `ISSUER_URL` to that same URL, so `npx @taico/taico` works out of the box.
 
-```bash
-BACKEND_PORT=3000 ISSUER_URL=http://localhost:3000 npx -y @taico/taico
-```
+If you override `BACKEND_PORT`, `PORT`, or `--port`, set `ISSUER_URL` explicitly when you need a public URL that differs from the local default.
 
-`BACKEND_PORT` and `ISSUER_URL` must be consistent — the issuer URL is the base URL that the OAuth/OIDC server advertises, and it must match the port the server is actually listening on. If they don't match, login will fail.
-
-Open `http://localhost:3000` in your browser.
+Open `http://localhost:2000` in your browser.
 
 ### 2. Start a worker
 
@@ -61,11 +57,13 @@ Taico has two modes, controlled by the `NODE_ENV` environment variable:
 
 Production mode is the default when `NODE_ENV` is not set. This ensures `npx @taico/taico` works out of the box. No users are seeded. On first startup, if no admin exists, Taico prompts you to create the first admin user through onboarding.
 
-`ISSUER_URL` defaults to `http://localhost:<UI_PORT>` (default 2000) for ease of use. Serious production deployments should set `ISSUER_URL` explicitly to match the public URL.
+`ISSUER_URL` defaults to `http://localhost:<BACKEND_PORT>` in production. If `BACKEND_PORT` is not set, production defaults to port `2000`. Serious production deployments should set `ISSUER_URL` explicitly to match the public URL.
 
 ### Development
 
 Set `NODE_ENV=development` to enable development mode. The database is seeded with two test users:
+
+In development, `ISSUER_URL` defaults to `http://localhost:<UI_PORT>` because the backend is typically accessed through the Vite dev server proxy. If `UI_PORT` is not set, it defaults to `2000`.
 
 | Email | Password | Role |
 |---|---|---|

@@ -50,6 +50,11 @@ async function bootstrap() {
   const help = args.includes('--help') || args.includes('-h');
   const serverMode = args.includes('--server');
   const generateOpenApiMode = args.includes('--generate-openapi');
+  const cliPort = readCliOption(args, '--port');
+
+  if (cliPort && !process.env.ISSUER_URL) {
+    process.env.BACKEND_PORT = cliPort;
+  }
 
   if (help) {
     printUsage();
@@ -104,7 +109,6 @@ async function bootstrap() {
   }
 
   const config = getConfig();
-  const cliPort = readCliOption(args, '--port');
   const port = cliPort ? Number(cliPort) : config.port;
 
   await app.listen(port);

@@ -56,8 +56,7 @@ export interface AppConfig {
  * This should be called once at application startup
  */
 export function loadConfig(): AppConfig {
-  const backendPortValue =
-    process.env.BACKEND_PORT || '3000';
+  const backendPortValue = getBackendPort();
   const uiPort = getUiPort();
 
   const config: AppConfig = {
@@ -146,6 +145,16 @@ function getUiPort(): string {
   return process.env.UI_PORT || '2000';
 }
 
+function getBackendPort(): string {
+  if (process.env.BACKEND_PORT) {
+    return process.env.BACKEND_PORT;
+  }
+  if (process.env.PORT) {
+    return process.env.PORT;
+  }
+  return getEnv() === 'development' ? '3000' : '2000';
+}
+
 function getTypeormSchemaMode(): TypeormSchemaMode {
   return process.env.TYPEORM_SCHEMA_MODE === 'sync' ? 'sync' : 'migrate';
 }
@@ -155,10 +164,12 @@ function getIssuerUrl(): string {
   if (issuerUrl) {
     return issuerUrl;
   }
-  // Default to localhost for ease of use (npx @taico/taico just works).
-  // Serious production deployments should set ISSUER_URL explicitly.
-  logger.warn(`ISSUER_URL not set, defaulting to http://localhost:${getUiPort()}`);
-  return `http://localhost:${getUiPort()}`;
+  const defaultPort = getEnv() === 'development' ? getUiPort() : getBackendPort();
+  // Development mode is typically proxied through Vite, so the issuer should
+  // point at the UI port. Production mode serves the built UI from the backend,
+  // so the issuer should point at the backend port.
+  logger.warn(`ISSUER_URL not set, defaulting to http://localhost:${defaultPort}`);
+  return `http://localhost:${defaultPort}`;
 }
 
 function getCallbackUrl(): string {
