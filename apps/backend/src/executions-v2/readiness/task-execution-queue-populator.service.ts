@@ -120,12 +120,26 @@ export class TaskExecutionQueuePopulatorService {
   }
 
   private matchesTagTriggers(task: TaskEntity, agent: AgentResult): boolean {
-    if (agent.tagTriggers.length === 0) {
+    const normalizedTagTriggers = agent.tagTriggers
+      .map((tagTrigger) => this.normalizeTagName(tagTrigger))
+      .filter((tagTrigger): tagTrigger is string => tagTrigger !== null);
+
+    if (normalizedTagTriggers.length === 0) {
       return true; // no tags triggers means it reacts to all tags
     }
 
-    const taskTagNames = new Set(task.tags.map((tag) => tag.name));
-    return agent.tagTriggers.every((tagTrigger) => taskTagNames.has(tagTrigger));
+    const taskTagNames = new Set(
+      task.tags
+        .map((tag) => this.normalizeTagName(tag.name))
+        .filter((tagName): tagName is string => tagName !== null),
+    );
+
+    return normalizedTagTriggers.some((tagTrigger) => taskTagNames.has(tagTrigger));
+  }
+
+  private normalizeTagName(tagName: string): string | null {
+    const normalized = tagName.trim().toLowerCase();
+    return normalized.length > 0 ? normalized : null;
   }
 
   private async loadAgentsByActorId(
