@@ -36,7 +36,8 @@ function BetaAppRoutes() {
       <Route path="/agents/*" element={<AgentsRoutes />} />
       <Route path="/threads/*" element={<ThreadsRoutes />} />
       <Route path="/tools/*" element={<ToolsRoutes />} />
-      <Route path="/executions/*" element={<ExecutionsRoutes />} />
+      <Route path="/runs/*" element={<ExecutionsRoutes />} />
+      <Route path="/executions/*" element={<Navigate to="/runs" replace />} />
 
     </Routes>
   );

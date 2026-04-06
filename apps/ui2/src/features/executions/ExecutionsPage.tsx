@@ -48,7 +48,7 @@ export function ExecutionsPage() {
     <div className="executions-page">
       <div className="executions-hero">
         <div className="executions-hero__copy">
-          <Text as="div" size="6" weight="bold">Execution Monitor</Text>
+          <Text as="div" size="6" weight="bold">Runs</Text>
           <Text as="div" size="3" tone="muted" wrap>
             Queue, active work, and recent history in one place. The view refreshes automatically every 5 seconds.
           </Text>

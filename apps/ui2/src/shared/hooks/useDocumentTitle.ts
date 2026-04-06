@@ -62,6 +62,10 @@ export function useDocumentTitle(routeData?: RouteData) {
     else if (path.startsWith('/threads')) {
       title = '🧵 threads';
     }
+    // Runs view
+    else if (path.startsWith('/runs') || path.startsWith('/executions')) {
+      title = '⚡ runs';
+    }
 
     document.title = title;
   }, [location.pathname, routeData]);

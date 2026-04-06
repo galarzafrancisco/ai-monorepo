@@ -80,6 +80,13 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
       onSelect: () => navigate('/tools'),
     },
     {
+      id: 'nav-runs',
+      label: 'Runs',
+      description: 'Go to runs',
+      aliases: ['executions', 'execution', 'work queue'],
+      onSelect: () => navigate('/runs'),
+    },
+    {
       id: 'nav-schedule',
       label: 'Schedule',
       description: 'Go to schedule',

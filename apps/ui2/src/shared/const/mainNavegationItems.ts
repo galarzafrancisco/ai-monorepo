@@ -8,7 +8,7 @@ export const MAIN_NAVEGATION_ITEMS: NavegationItem[] = [
   { path: '/agents', label: 'Agents', icon: '🦄' },
   { path: '/threads', label: 'Threads', icon: '🧵' },
   { path: '/tools', label: 'Tools', icon: '🧰' },
-  { path: '/executions', label: 'Work Queue', icon: '⚡' },
+  { path: '/runs', label: 'Runs', icon: '⚡' },
   { path: '/settings', label: 'Settings', icon: '⚙️' },
   { path: '/logout', label: 'Logout', icon: '🔓' },
 ];

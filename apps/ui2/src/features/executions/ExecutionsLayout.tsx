@@ -5,7 +5,7 @@ import { IosShell } from "../../app/shells/IosShell";
 
 export function ExecutionsLayout(): JSX.Element {
   const isDesktop = useIsDesktop();
-  const sectionTitle = "Executions";
+  const sectionTitle = "Runs";
 
   const navItems: { path: string; label: string; icon: string }[] = [];
 
@@ -17,7 +17,7 @@ export function ExecutionsLayout(): JSX.Element {
         </DesktopShell>
         :
         <IosShell
-          appTitle="Executions"
+          appTitle="Runs"
           sectionTitle={sectionTitle}
           navItems={navItems}
         >
