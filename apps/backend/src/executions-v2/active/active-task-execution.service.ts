@@ -19,6 +19,7 @@ import {
   TaskAlreadyClaimedError,
   TaskExecutionQueueEntryNotFoundError,
 } from '../errors/executions-v2.errors';
+import { ExecutionActivityService } from '../execution-activity.service';
 
 export type ClaimTaskExecutionInput = {
   taskId: string;
@@ -39,6 +40,7 @@ export class ActiveTaskExecutionService {
     @InjectRepository(ActiveTaskExecutionEntity)
     private readonly activeTaskExecutionRepository: Repository<ActiveTaskExecutionEntity>,
     private readonly dataSource: DataSource,
+    private readonly executionActivityService: ExecutionActivityService,
   ) {}
 
   async listActiveExecutions(): Promise<ActiveTaskExecutionEntity[]> {
@@ -51,7 +53,7 @@ export class ActiveTaskExecutionService {
   async claimTask(
     input: ClaimTaskExecutionInput,
   ): Promise<ActiveTaskExecutionEntity> {
-    return this.dataSource.transaction(async (manager) => {
+    const execution = await this.dataSource.transaction(async (manager) => {
       const task = await manager.findOne(TaskEntity, {
         where: { id: input.taskId },
         relations: ['tags'],
@@ -114,12 +116,22 @@ export class ActiveTaskExecutionService {
 
       return hydratedExecution;
     });
+
+    this.executionActivityService.publishSystemActivity({
+      executionId: execution.id,
+      taskId: execution.taskId,
+      agentActorId: execution.agentActorId,
+      kind: 'execution.started',
+      message: 'Execution started',
+    });
+
+    return execution;
   }
 
   async stopTask(
     input: StopTaskExecutionInput,
   ): Promise<TaskExecutionHistoryEntity> {
-    return this.dataSource.transaction(async (manager) => {
+    const historyEntry = await this.dataSource.transaction(async (manager) => {
       const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {
         where: { id: input.executionId },
       });
@@ -161,5 +173,23 @@ export class ActiveTaskExecutionService {
 
       return hydratedHistoryEntry;
     });
+
+    this.executionActivityService.publishSystemActivity({
+      executionId: input.executionId,
+      taskId: historyEntry.taskId,
+      agentActorId: historyEntry.agentActorId,
+      kind: 'execution.stopped',
+      message: `Execution stopped (${historyEntry.status.toLowerCase()})`,
+    });
+
+    this.executionActivityService.publishSystemActivity({
+      executionId: input.executionId,
+      taskId: historyEntry.taskId,
+      agentActorId: historyEntry.agentActorId,
+      kind: 'execution.history.added',
+      message: `Execution history recorded (${historyEntry.status.toLowerCase()})`,
+    });
+
+    return historyEntry;
   }
 }

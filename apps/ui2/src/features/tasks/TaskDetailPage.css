@@ -185,6 +185,11 @@
   animation: task-detail-activity-out 0.22s ease-in forwards;
 }
 
+.task-detail-page__executions-state {
+  display: block;
+  padding: 0 var(--space-3) var(--space-3);
+}
+
 @keyframes task-detail-activity-in {
   from {
     opacity: 0;

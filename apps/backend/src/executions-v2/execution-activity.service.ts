@@ -14,6 +14,15 @@ export type PublishExecutionActivityInput = {
   runnerSessionId?: string | null;
 };
 
+export type PublishSystemExecutionActivityInput = {
+  executionId: string;
+  taskId: string;
+  agentActorId: string;
+  kind: string;
+  message?: string;
+  ts?: number;
+};
+
 export type TouchExecutionHeartbeatInput = {
   executionId: string;
 };
@@ -37,21 +46,27 @@ export class ExecutionActivityService {
       throw new ActiveTaskExecutionNotFoundError(input.executionId);
     }
 
-    this.eventEmitter.emit(
-      ExecutionActivityEvent.INTERNAL,
-      new ExecutionActivityEvent(
-        { id: execution.agentActorId },
-        {
-          executionId: execution.id,
-          taskId: execution.taskId,
-          agentActorId: execution.agentActorId,
-          kind: input.kind ?? 'worker.activity',
-          message: input.message,
-          ts: input.ts ?? Date.now(),
-          runnerSessionId: input.runnerSessionId ?? null,
-        },
-      ),
-    );
+    this.emitExecutionActivity({
+      executionId: execution.id,
+      taskId: execution.taskId,
+      agentActorId: execution.agentActorId,
+      kind: input.kind ?? 'worker.activity',
+      message: input.message,
+      ts: input.ts,
+      runnerSessionId: input.runnerSessionId ?? null,
+    });
+  }
+
+  publishSystemActivity(input: PublishSystemExecutionActivityInput): void {
+    this.emitExecutionActivity({
+      executionId: input.executionId,
+      taskId: input.taskId,
+      agentActorId: input.agentActorId,
+      kind: input.kind,
+      message: input.message,
+      ts: input.ts,
+      runnerSessionId: null,
+    });
   }
 
   async touchHeartbeat(input: TouchExecutionHeartbeatInput): Promise<boolean> {
@@ -66,5 +81,31 @@ export class ExecutionActivityService {
       .where('id = :executionId', { executionId: input.executionId })
       .execute()
       .then((result) => (result.affected ?? 0) > 0);
+  }
+
+  private emitExecutionActivity(input: {
+    executionId: string;
+    taskId: string;
+    agentActorId: string;
+    kind: string;
+    message?: string;
+    ts?: number;
+    runnerSessionId?: string | null;
+  }): void {
+    this.eventEmitter.emit(
+      ExecutionActivityEvent.INTERNAL,
+      new ExecutionActivityEvent(
+        { id: input.agentActorId },
+        {
+          executionId: input.executionId,
+          taskId: input.taskId,
+          agentActorId: input.agentActorId,
+          kind: input.kind,
+          message: input.message,
+          ts: input.ts ?? Date.now(),
+          runnerSessionId: input.runnerSessionId ?? null,
+        },
+      ),
+    );
   }
 }

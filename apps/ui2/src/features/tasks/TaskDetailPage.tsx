@@ -11,12 +11,17 @@ import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
-import { InputRequestResponseDto } from "@taico/client/v2";
+import {
+  InputRequestResponseDto,
+  ActiveTaskExecutionResponseDto,
+  TaskExecutionHistoryResponseDto,
+} from "@taico/client/v2";
 import { MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
 import { ThreadsService } from '../threads/api';
+import { ExecutionsService } from '../executions/api';
 import type { Task } from './types';
 import { useChatReadiness } from '../chat-providers/useChatReadiness';
 import { ChatSetupCallout } from '../chat-providers/ChatSetupCallout';
@@ -42,6 +47,15 @@ export type TaskDetailViewProps = {
   activityByTaskId?: Record<string, TaskActivityWireEvent>;
   handlers: TaskDetailHandlers;
   allTasks: Task[];
+};
+
+type TaskExecutionListItem = {
+  id: string;
+  executionId: string;
+  agentActorId: string;
+  status: 'ACTIVE' | TaskExecutionHistoryResponseDto['status'];
+  source: 'active' | 'history';
+  timestamp: string;
 };
 
 export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks }: TaskDetailViewProps) {
@@ -240,6 +254,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [executions, setExecutions] = useState<TaskExecutionListItem[]>([]);
+  const [isLoadingExecutions, setIsLoadingExecutions] = useState(false);
+  const [executionsError, setExecutionsError] = useState<string | null>(null);
 
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
@@ -371,6 +388,74 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   }
 
   const activity = task ? activityByTaskId[task.id] : null;
+
+  const loadExecutionsForTask = useCallback(async (taskId: string) => {
+    setIsLoadingExecutions(true);
+    try {
+      const [activeExecutions, historyExecutions] = await Promise.all([
+        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions(),
+        ExecutionsService.TaskExecutionHistoryController_listHistory(),
+      ]);
+
+      const taskActiveItems = activeExecutions
+        .filter((entry: ActiveTaskExecutionResponseDto) => entry.taskId === taskId)
+        .map((entry: ActiveTaskExecutionResponseDto): TaskExecutionListItem => ({
+          id: `active-${entry.id}`,
+          executionId: entry.id,
+          agentActorId: entry.agentActorId,
+          status: 'ACTIVE',
+          source: 'active',
+          timestamp: entry.claimedAt,
+        }));
+
+      const taskHistoryItems = historyExecutions
+        .filter((entry: TaskExecutionHistoryResponseDto) => entry.taskId === taskId)
+        .map((entry: TaskExecutionHistoryResponseDto): TaskExecutionListItem => ({
+          id: `history-${entry.id}`,
+          executionId: entry.id,
+          agentActorId: entry.agentActorId,
+          status: entry.status,
+          source: 'history',
+          timestamp: entry.transitionedAt,
+        }));
+
+      const sorted = [...taskActiveItems, ...taskHistoryItems].sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+
+      setExecutions(sorted);
+      setExecutionsError(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error
+        ? err.message
+        : 'Failed to load executions for this task';
+      setExecutionsError(message);
+    } finally {
+      setIsLoadingExecutions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!task) {
+      setExecutions([]);
+      setExecutionsError(null);
+      return;
+    }
+
+    void loadExecutionsForTask(task.id);
+  }, [task, loadExecutionsForTask]);
+
+  useEffect(() => {
+    if (!task || !activity) {
+      return;
+    }
+
+    if (!activity.kind.startsWith('execution.')) {
+      return;
+    }
+
+    void loadExecutionsForTask(task.id);
+  }, [activity, task, loadExecutionsForTask]);
 
   useEffect(() => {
     if (!task || !activity || !activity.message) {
@@ -708,6 +793,51 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </div>
       </DataRowContainer>
 
+      <DataRowContainer title="Executions" className='task-detail-page__section'>
+        {isLoadingExecutions && executions.length === 0 ? (
+          <Text className="task-detail-page__executions-state" tone='muted'>Loading executions...</Text>
+        ) : null}
+        {executionsError ? (
+          <Text className="task-detail-page__executions-state" tone='muted'>Failed to load executions: {executionsError}</Text>
+        ) : null}
+        {!isLoadingExecutions && !executionsError && executions.length === 0 ? (
+          <Text className="task-detail-page__executions-state" tone='muted'>No executions yet for this task.</Text>
+        ) : null}
+        {executions.map((execution) => {
+          const actor = actors.find((candidate) => candidate.id === execution.agentActorId);
+          const actorName = actor?.displayName ?? shortId(execution.agentActorId);
+          const actorSlug = actor?.slug;
+          const statusTag = getExecutionStatusTag(execution.status);
+          const sourceTag: DataRowTag = {
+            label: execution.source === 'active' ? 'active table' : 'history table',
+            color: 'gray',
+          };
+
+          return (
+            <DataRow
+              key={execution.id}
+              leading={<Avatar size={'sm'} name={actorName} src={actor?.avatarUrl || undefined} />}
+              tags={[statusTag, sourceTag]}
+              topRight={<Text size='1' tone='muted'>{elapsedTime(execution.timestamp)}</Text>}
+            >
+              <Stack spacing='1'>
+                <div>
+                  <Text as='span' weight='medium' size='3'>
+                    {actorName}
+                  </Text>
+                  <Text as='span' weight='normal' tone='muted' size='3'>
+                    {actorSlug ? ` @${actorSlug}` : ''}
+                  </Text>
+                </div>
+                <Text as='span' tone='muted' size='2'>
+                  {execution.source === 'active' ? 'execution' : 'history'} #{shortId(execution.executionId)}
+                </Text>
+              </Stack>
+            </DataRow>
+          );
+        })}
+      </DataRowContainer>
+
       <DataRowContainer className='task-detail-page__status-buttons'>
         {Object.entries(TASKS_STATUS).map(([status, info]) => (
           <Button
@@ -922,6 +1052,36 @@ function StatusTag({ status }: { status: TaskStatus }): DataRowTag {
     label,
     color,
   }
+}
+
+function getExecutionStatusTag(
+  status: 'ACTIVE' | TaskExecutionHistoryResponseDto['status'],
+): DataRowTag {
+  if (status === 'ACTIVE') {
+    return { label: 'active', color: 'blue' };
+  }
+
+  if (status === 'SUCCEEDED') {
+    return { label: 'succeeded', color: 'green' };
+  }
+
+  if (status === 'FAILED') {
+    return { label: 'failed', color: 'red' };
+  }
+
+  if (status === 'STALE') {
+    return { label: 'stale', color: 'orange' };
+  }
+
+  return { label: 'cancelled', color: 'gray' };
+}
+
+function shortId(value: string): string {
+  if (value.length <= 12) {
+    return value;
+  }
+
+  return `${value.slice(0, 8)}…${value.slice(-4)}`;
 }
 
 function isTextInputTarget(target: EventTarget | null): boolean {
