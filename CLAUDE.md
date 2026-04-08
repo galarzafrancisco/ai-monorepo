@@ -38,15 +38,25 @@ If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a differen
 
 ```
 apps/
-├── backend/     # NestJS 11 API server (SQLite + TypeORM)
-├── ui2/         # React 19 + Vite frontend (active development)
-├── ui/          # DEPRECATED - only needs to compile
-└── agents/      # AI agent runners (Claude, Gemini, CodeX)
+├── agent-api/       # Agent-facing API service
+├── backend/         # NestJS 11 API server (SQLite + TypeORM)
+├── llm-benchmarker/ # LLM benchmark and evaluation tooling
+├── ui2/             # React 19 + Vite frontend (active development)
+├── ui/              # DEPRECATED - only needs to compile
+├── worker/          # Current worker runtime
+└── worker-v1/       # Legacy worker runtime (being phased out)
 packages/
-└── shared/      # Auto-generated types and API client from OpenAPI
+├── adk-session-store/ # SQLite-backed Google ADK session service
+├── client/            # Generated TypeScript API client package (`@taico/client`)
+├── errors/            # Shared error classes and codes
+├── events/            # Shared real-time event contracts
+├── openapi-sdkgen/    # OpenAPI SDK generation tooling and tests
+└── shared/            # Shared generated artifacts used by builds
 ```
 
-**Important**: All UI work should be done in `apps/ui2`. The `apps/ui` package is deprecated and only maintained to ensure it compiles.
+**Important**:
+- All UI work should be done in `apps/ui2`. The `apps/ui` package is deprecated and only maintained to ensure it compiles.
+- Use `apps/worker` for new worker changes. `apps/worker-v1` is legacy and should only be touched for maintenance or migration work.
 
 ### Backend Modules
 
@@ -82,11 +92,11 @@ Controller (HTTP/Transport) → Service (Business Logic) → Repository (Data)
 
 ### API Generation Pipeline
 
-The shared package auto-generates TypeScript types from the backend's OpenAPI spec:
+OpenAPI artifacts are generated from the backend spec and flow through `packages/openapi-sdkgen`, then into consumable packages:
 1. Backend builds and outputs `openapi.json`
-2. `openapi-typescript` generates types
-3. `openapi-typescript-codegen` generates fetch-based API client
-4. Frontend imports these for type-safe API calls
+2. `openapi-sdkgen` runs generation and validation for SDK artifacts
+3. Generated outputs are published/consumed via `packages/client` (and supporting shared artifacts)
+4. Frontend and other consumers import these packages for type-safe API calls
 
 ## Key Technologies
 
