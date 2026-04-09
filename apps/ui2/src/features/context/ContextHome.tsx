@@ -4,7 +4,7 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useContextCtx } from "./ContextProvider";
 import { ContextBlockTree } from "./ContextBlockTree";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { DataRow, Text } from "../../ui/primitives";
+import { DataRow, Text, Button } from "../../ui/primitives";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import "./ContextHome.css";
 
@@ -47,6 +47,15 @@ export function ContextHome(): JSX.Element {
 
   return (
     <div className="context-home">
+      <div className="context-home__header">
+        <Button
+          size="lg"
+          variant="primary"
+          onClick={() => navigate('/context/new')}
+        >
+          + Create Block
+        </Button>
+      </div>
       <ContextBlockTree blocks={blocks} onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)} />
     </div>
   );
@@ -87,6 +96,13 @@ function DesktopContextHome({
         <Text as="div" size="6" weight="bold" className="context-home-desktop__title">
           Blocks
         </Text>
+        <Button
+          size="md"
+          variant="primary"
+          onClick={() => onOpenBlock('new')}
+        >
+          + Create Block
+        </Button>
       </div>
 
       <div className="context-home-desktop__search-box">

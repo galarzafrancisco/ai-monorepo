@@ -1,0 +1,125 @@
+.context-block-create {
+  padding: var(--space-4);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.context-block-create__breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-2);
+}
+
+.context-block-create__breadcrumb {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.context-block-create__breadcrumb:hover:not(.context-block-create__breadcrumb--current) {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.context-block-create__breadcrumb--current {
+  color: var(--text);
+  cursor: default;
+}
+
+.context-block-create__breadcrumb-separator {
+  color: var(--text-muted);
+}
+
+.context-block-create__form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--space-4);
+}
+
+.context-block-create__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.context-block-create__label {
+  display: block;
+}
+
+.context-block-create__input,
+.context-block-create__textarea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--fs-3);
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.context-block-create__input:focus,
+.context-block-create__textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.context-block-create__textarea {
+  resize: vertical;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  font-size: var(--fs-2);
+  line-height: 1.5;
+}
+
+.context-block-create__file-input {
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.context-block-create__file-input::-webkit-file-upload-button {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  margin-right: var(--space-2);
+}
+
+.context-block-create__file-input::-webkit-file-upload-button:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+
+.context-block-create__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .context-block-create {
+    padding: var(--space-3);
+  }
+
+  .context-block-create__actions {
+    flex-direction: column;
+  }
+
+  .context-block-create__actions button {
+    width: 100%;
+  }
+}
