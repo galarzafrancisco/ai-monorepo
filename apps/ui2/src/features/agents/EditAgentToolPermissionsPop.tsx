@@ -20,6 +20,7 @@ type EditAgentToolPermissionsPopProps = {
   currentPermissions: ToolPermission[];
   onCancel?: () => void;
   onSave: () => Promise<void>;
+  editingPermission?: ToolPermission | null;
 };
 
 export function EditAgentToolPermissionsPop({
@@ -27,15 +28,19 @@ export function EditAgentToolPermissionsPop({
   currentPermissions,
   onCancel,
   onSave,
+  editingPermission = null,
 }: EditAgentToolPermissionsPopProps) {
   const [availableTools, setAvailableTools] = useState<ServerResponseDto[]>([]);
   const [loadingTools, setLoadingTools] = useState(true);
-  const [selectedToolId, setSelectedToolId] = useState<string>('');
+  const [selectedToolId, setSelectedToolId] = useState<string>(editingPermission?.serverId || '');
   const [availableScopes, setAvailableScopes] = useState<ScopeResponseDto[]>([]);
   const [loadingScopes, setLoadingScopes] = useState(false);
-  const [selectedScopes, setSelectedScopes] = useState<Set<string>>(new Set());
-  const [selectAllScopes, setSelectAllScopes] = useState(false);
+  const [selectedScopes, setSelectedScopes] = useState<Set<string>>(
+    editingPermission ? new Set(editingPermission.scopeIds) : new Set()
+  );
+  const [selectAllScopes, setSelectAllScopes] = useState(editingPermission?.hasAllScopes || false);
   const [isSaving, setIsSaving] = useState(false);
+  const isEditMode = !!editingPermission;
 
   // Load available tools
   useEffect(() => {
@@ -63,6 +68,11 @@ export function EditAgentToolPermissionsPop({
       ToolsService.McpRegistryController_listScopes({ serverId: selectedToolId })
         .then(scopes => {
           setAvailableScopes(scopes);
+          // In edit mode, preserve the selected scopes after loading available scopes
+          if (editingPermission && editingPermission.serverId === selectedToolId) {
+            setSelectedScopes(new Set(editingPermission.scopeIds));
+            setSelectAllScopes(editingPermission.hasAllScopes);
+          }
         })
         .catch(err => {
           console.error('Failed to load scopes:', err);
@@ -73,10 +83,13 @@ export function EditAgentToolPermissionsPop({
         });
     } else {
       setAvailableScopes([]);
+      // Only reset scopes if not in edit mode
+      if (!isEditMode) {
+        setSelectedScopes(new Set());
+        setSelectAllScopes(false);
+      }
     }
-    setSelectedScopes(new Set());
-    setSelectAllScopes(false);
-  }, [selectedToolId, isHttpTool]);
+  }, [selectedToolId, isHttpTool, editingPermission, isEditMode]);
 
   // Handle "All scopes" toggle
   const handleAllScopesToggle = () => {
@@ -133,13 +146,15 @@ export function EditAgentToolPermissionsPop({
     }
   };
 
-  // Filter out tools that already have permissions
+  // Filter out tools that already have permissions (except when editing)
   const assignedToolIds = new Set(currentPermissions.map(p => p.serverId));
-  const unassignedTools = availableTools.filter(t => !assignedToolIds.has(t.id));
+  const unassignedTools = availableTools.filter(t =>
+    !assignedToolIds.has(t.id) || (isEditMode && t.id === editingPermission.serverId)
+  );
 
   return (
     <PopShell
-      title="Manage Tool Permissions"
+      title={isEditMode ? "Edit Tool Permission" : "Manage Tool Permissions"}
       onCancel={onCancel}
       headerRight={
         <div onClick={onCancel}>
@@ -151,9 +166,9 @@ export function EditAgentToolPermissionsPop({
     >
       <div className="edit-agent-tool-permissions-pop__wrapper">
         <Stack spacing="4">
-          {/* Add new tool */}
+          {/* Add/Edit tool */}
           <div>
-            <Text size="3" weight="medium">Add Tool Permission</Text>
+            <Text size="3" weight="medium">{isEditMode ? "Edit Tool Permission" : "Add Tool Permission"}</Text>
             <Stack spacing="2">
               {loadingTools ? (
                 <Text size="2" tone="muted">Loading available tools...</Text>
@@ -165,6 +180,7 @@ export function EditAgentToolPermissionsPop({
                     className="edit-agent-tool-permissions-pop__select"
                     value={selectedToolId}
                     onChange={(e) => setSelectedToolId(e.target.value)}
+                    disabled={isEditMode}
                   >
                     <option value="">Select a tool...</option>
                     {unassignedTools.map(tool => (
@@ -222,7 +238,7 @@ export function EditAgentToolPermissionsPop({
                       onClick={handleAddPermission}
                       disabled={isSaving || (isHttpTool && selectedScopes.size === 0)}
                     >
-                      {isSaving ? 'Adding...' : 'Add Permission'}
+                      {isSaving ? (isEditMode ? 'Saving...' : 'Adding...') : (isEditMode ? 'Save Changes' : 'Add Permission')}
                     </Button>
                   )}
                 </>

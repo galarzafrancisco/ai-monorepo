@@ -63,6 +63,7 @@ export function AgentDetailPage() {
   const [showEditModelPop, setShowEditModelPop] = useState(false);
   const [showEditConcurrencyLimitPop, setShowEditConcurrencyLimitPop] = useState(false);
   const [showEditToolPermissionsPop, setShowEditToolPermissionsPop] = useState(false);
+  const [editingToolPermission, setEditingToolPermission] = useState<AgentToolPermissionResponseDto | null>(null);
 
   // Load tokens for this agent
   const loadTokens = useCallback(async () => {
@@ -358,21 +359,10 @@ export function AgentDetailPage() {
     }
   };
 
-  // Handle editing a tool permission (upsert scopes)
-  const handleEditToolPermission = async (serverId: string, scopeIds: string[]) => {
-    if (!agent) return;
-
-    try {
-      await AgentToolPermissionsService.AgentToolPermissionsController_upsertAgentToolPermission({
-        actorId: agent.actorId,
-        serverId,
-        body: { scopeIds },
-      });
-      await loadToolPermissions();
-    } catch (err) {
-      console.error('Failed to update tool permission:', err);
-      showError(err);
-    }
+  // Handle opening edit modal for a tool permission
+  const handleOpenEditToolPermission = (permission: AgentToolPermissionResponseDto) => {
+    setEditingToolPermission(permission);
+    setShowEditToolPermissionsPop(true);
   };
 
   // Handle revoking a token
@@ -625,9 +615,12 @@ export function AgentDetailPage() {
                                 <Text size="2" weight="medium">{permission.server.name}</Text>
                                 <Text size="1" tone="muted">{permission.server.description}</Text>
                               </div>
-                              <Chip color={permission.server.type === 'http' ? 'green' : 'orange'}>
-                                {permission.server.type}
-                              </Chip>
+                              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <Chip color="purple">System Tool</Chip>
+                                <Chip color={permission.server.type === 'http' ? 'green' : 'orange'}>
+                                  {permission.server.type}
+                                </Chip>
+                              </div>
                             </div>
                             {permission.server.type === 'http' && permission.availableScopes.length > 0 && (
                               <div className="agent-detail-page__tool-scopes">
@@ -661,13 +654,22 @@ export function AgentDetailPage() {
                         <DataRow
                           key={permission.server.id}
                           topRight={
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleDeleteToolPermission(permission.server.id)}
-                            >
-                              Remove
-                            </Button>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleOpenEditToolPermission(permission)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleDeleteToolPermission(permission.server.id)}
+                              >
+                                Remove
+                              </Button>
+                            </div>
                           }
                         >
                           <div className="agent-detail-page__tool-permission">
@@ -976,10 +978,23 @@ export function AgentDetailPage() {
             availableScopes: p.availableScopes,
             hasAllScopes: p.hasAllScopes,
           }))}
-          onCancel={() => setShowEditToolPermissionsPop(false)}
+          editingPermission={editingToolPermission ? {
+            serverId: editingToolPermission.server.id,
+            serverName: editingToolPermission.server.name,
+            serverProvidedId: editingToolPermission.server.providedId,
+            serverType: editingToolPermission.server.type as 'http' | 'stdio',
+            scopeIds: editingToolPermission.grantedScopes.map(s => s.id),
+            availableScopes: editingToolPermission.availableScopes,
+            hasAllScopes: editingToolPermission.hasAllScopes,
+          } : null}
+          onCancel={() => {
+            setShowEditToolPermissionsPop(false);
+            setEditingToolPermission(null);
+          }}
           onSave={async () => {
             await loadToolPermissions();
             setShowEditToolPermissionsPop(false);
+            setEditingToolPermission(null);
           }}
         />
       )}
