@@ -203,6 +203,13 @@ export function ContextBlockDetailPage() {
       />
 
       <DataRowContainer className='context-block-detail__actions'>
+        <Button
+          size='lg'
+          variant='secondary'
+          onClick={() => navigate(`/context/block/${block.id}/edit`)}
+        >
+          Edit
+        </Button>
         {threadId && (
           <Button
             size='lg'

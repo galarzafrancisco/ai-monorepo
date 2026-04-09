@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { Button, Text } from '../../ui/primitives';
 import { useContextCtx } from './ContextProvider';
 import { ContextService } from './api';
@@ -7,7 +7,12 @@ import { useToast } from '../../shared/context/ToastContext';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import './ContextBlockCreatePage.css';
 
+// Used for both create (/context/new) and edit (/context/block/:id/edit).
+// Edit mode is detected by the presence of the :id route param.
 export function ContextBlockCreatePage() {
+  const { id: editId } = useParams<{ id?: string }>();
+  const isEditMode = Boolean(editId);
+
   const { setSectionTitle } = useContextCtx();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -20,11 +25,29 @@ export function ContextBlockCreatePage() {
   const [content, setContent] = useState('');
   const [tagNames] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingBlock, setIsLoadingBlock] = useState(isEditMode);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
+  // Load existing block in edit mode
   useEffect(() => {
-    setSectionTitle(isDesktop ? 'Context' : 'New Block');
-  }, [setSectionTitle, isDesktop]);
+    if (!editId) return;
+
+    setIsLoadingBlock(true);
+    ContextService.ContextController_getBlock({ id: editId })
+      .then((block) => {
+        setTitle(block.title);
+        setContent(block.content);
+      })
+      .catch((err) => {
+        showError(err);
+        navigate('/context/home');
+      })
+      .finally(() => setIsLoadingBlock(false));
+  }, [editId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setSectionTitle(isDesktop ? 'Context' : isEditMode ? 'Edit Block' : 'New Block');
+  }, [setSectionTitle, isDesktop, isEditMode]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -67,23 +90,44 @@ export function ContextBlockCreatePage() {
     setIsSubmitting(true);
 
     try {
-      const block = await ContextService.ContextController_createBlock({
-        body: {
-          title: title.trim(),
-          content: content.trim(),
-          tagNames: tagNames.length > 0 ? tagNames : undefined,
-          parentId,
-        },
-      });
-
-      showToast('Context block created successfully', 'success');
-      navigate(`/context/block/${block.id}`);
+      if (isEditMode && editId) {
+        await ContextService.ContextController_updateBlock({
+          id: editId,
+          body: {
+            title: title.trim(),
+            content: content.trim(),
+          },
+        });
+        showToast('Context block updated', 'success');
+        navigate(`/context/block/${editId}`);
+      } else {
+        const block = await ContextService.ContextController_createBlock({
+          body: {
+            title: title.trim(),
+            content: content.trim(),
+            tagNames: tagNames.length > 0 ? tagNames : undefined,
+            parentId,
+          },
+        });
+        showToast('Context block created', 'success');
+        navigate(`/context/block/${block.id}`);
+      }
     } catch (err) {
       showError(err);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const cancelTarget = isEditMode && editId ? `/context/block/${editId}` : '/context/home';
+
+  if (isLoadingBlock) {
+    return (
+      <div className="context-block-create">
+        <Text tone="muted">Loading…</Text>
+      </div>
+    );
+  }
 
   return (
     <div className="context-block-create">
@@ -99,7 +143,7 @@ export function ContextBlockCreatePage() {
           </button>
           <span className="context-block-create__breadcrumb-separator">›</span>
           <span className="context-block-create__breadcrumb context-block-create__breadcrumb--current">
-            New Block
+            {isEditMode ? 'Edit Block' : 'New Block'}
           </span>
         </div>
       )}
@@ -154,7 +198,7 @@ export function ContextBlockCreatePage() {
             type="button"
             size="lg"
             variant="secondary"
-            onClick={() => navigate('/context/home')}
+            onClick={() => navigate(cancelTarget)}
             disabled={isSubmitting}
           >
             Cancel
@@ -166,7 +210,7 @@ export function ContextBlockCreatePage() {
             onClick={handleSubmit}
             disabled={isSubmitting || !title.trim() || !content.trim()}
           >
-            {isSubmitting ? 'Creating…' : 'Create'}
+            {isSubmitting ? (isEditMode ? 'Saving…' : 'Creating…') : isEditMode ? 'Save' : 'Create'}
           </Button>
         </div>
       </div>

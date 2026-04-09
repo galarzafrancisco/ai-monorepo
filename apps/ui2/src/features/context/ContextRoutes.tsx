@@ -14,6 +14,7 @@ export function ContextRoutes() {
           <Route path="home" element={<ContextHome />} />
           <Route path="new" element={<ContextBlockCreatePage />} />
           <Route path="block/:id" element={<ContextBlockDetailPage />} />
+          <Route path="block/:id/edit" element={<ContextBlockCreatePage />} />
         </Route>
       </Routes >
     </ContextProvider>
