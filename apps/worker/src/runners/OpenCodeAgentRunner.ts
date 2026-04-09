@@ -1,7 +1,7 @@
-// ClaudeAgentRunner.ts
+// OpenCodeAgentRunner.ts
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { createOpencode, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
-import { OpencodeAsyncMessageFormatter, opencodePartToText } from "../formatters/OpencodeMessageFormatter.js";
+import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 
@@ -207,6 +207,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       }
     })
 
+    console.log("--------- STARTING EVENT LOOP ---------");
     try {
       for await (const event of events.stream) {
         // Detect end of session
@@ -223,8 +224,11 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     } catch (error) {
       console.error(error);
     }
+    console.log("--------- ENDING EVENT LOOP ---------");
 
+    console.log('shutting down Opencode client');
     this.shutdown();
+    console.log('returning final result');
 
     return finalResult;
   }
