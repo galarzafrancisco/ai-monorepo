@@ -116,6 +116,7 @@ export function ExecutionsPage() {
                         { label: "Task status", value: entry.taskStatus ?? "Unknown" },
                         { label: "Task ID", value: shortId(entry.taskId), mono: true },
                       ]}
+                      onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
                   ),
                 }))}
@@ -157,6 +158,7 @@ export function ExecutionsPage() {
                         { label: "Agent", value: shortId(entry.agentActorId), mono: true },
                         { label: "Before claim", value: entry.taskStatusBeforeClaim },
                       ]}
+                      onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
                   ),
                 }))}
@@ -214,6 +216,7 @@ export function ExecutionsPage() {
                           ? [{ label: "Message", value: entry.errorMessage }]
                           : []),
                       ]}
+                      onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
                   ),
                 }))}
@@ -354,12 +357,22 @@ function TaskCell({
   taskName: string | null;
   onClick?: () => void;
 }) {
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className="executions-task-cell executions-task-cell--clickable"
+        onClick={onClick}
+        aria-label={`Navigate to task: ${taskName ?? "Untitled task"}`}
+      >
+        <Text as="div" size="2" weight="semibold">{taskName ?? "Untitled task"}</Text>
+        <Text as="div" size="1" tone="muted" style="mono">{shortId(taskId)}</Text>
+      </button>
+    );
+  }
+
   return (
-    <div
-      className="executions-task-cell"
-      onClick={onClick}
-      style={{ cursor: onClick ? 'pointer' : 'default' }}
-    >
+    <div className="executions-task-cell">
       <Text as="div" size="2" weight="semibold">{taskName ?? "Untitled task"}</Text>
       <Text as="div" size="1" tone="muted" style="mono">{shortId(taskId)}</Text>
     </div>
@@ -449,14 +462,20 @@ function ExecutionMobileCard({
   badge,
   tone,
   lines,
+  onClick,
 }: {
   title: string;
   badge: string;
   tone: "accent" | "warning" | "success" | "danger";
   lines: Array<{ label: string; value: string; mono?: boolean }>;
+  onClick?: () => void;
 }) {
-  return (
-    <div className="executions-mobile-card">
+  const className = onClick
+    ? "executions-mobile-card executions-mobile-card--clickable"
+    : "executions-mobile-card";
+
+  const CardContent = (
+    <>
       <div className="executions-mobile-card__header">
         <Text as="div" size="3" weight="semibold" wrap>{title}</Text>
         <StatusPill tone={tone}>{badge}</StatusPill>
@@ -476,6 +495,25 @@ function ExecutionMobileCard({
           </div>
         ))}
       </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={className}
+        onClick={onClick}
+        aria-label={`Navigate to task: ${title}`}
+      >
+        {CardContent}
+      </button>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {CardContent}
     </div>
   );
 }
