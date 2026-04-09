@@ -31,7 +31,18 @@ export function ContextHome(): JSX.Element {
   }
 
   if (blocks.length === 0) {
-    return <div className="context-home__empty">No context blocks found</div>;
+    return (
+      <div className="context-home__empty">
+        <div className="context-home__empty-message">No context blocks found</div>
+        <Button
+          size="lg"
+          variant="primary"
+          onClick={() => navigate('/context/new')}
+        >
+          + Create Block
+        </Button>
+      </div>
+    );
   }
 
   if (isDesktop) {
@@ -72,6 +83,7 @@ function DesktopContextHome({
   onSearchQueryChange: (value: string) => void;
   onOpenBlock: (blockId: string) => void;
 }): JSX.Element {
+  const navigate = useNavigate();
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredBlocks = useMemo(() => {
     if (!normalizedQuery) {
@@ -99,7 +111,7 @@ function DesktopContextHome({
         <Button
           size="md"
           variant="primary"
-          onClick={() => onOpenBlock('new')}
+          onClick={() => navigate('/context/new')}
         >
           + Create Block
         </Button>
