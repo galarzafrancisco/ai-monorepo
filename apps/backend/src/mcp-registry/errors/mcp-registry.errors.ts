@@ -107,7 +107,7 @@ export class MappingNotFoundError extends McpRegistryDomainError {
 export class ServerHasDependenciesError extends McpRegistryDomainError {
   constructor(serverId: string) {
     super(
-      `Cannot delete server '${serverId}' because it still has scopes, connections, or mappings.`,
+      `Cannot delete server '${serverId}' because it still has dependent records.`,
       McpRegistryErrorCodes.SERVER_HAS_DEPENDENCIES,
       { serverId },
     );

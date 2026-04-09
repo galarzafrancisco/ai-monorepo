@@ -690,6 +690,30 @@ export interface PatchAgentDto {
   concurrencyLimit?: number | null;
 }
 
+export interface AgentToolPermissionServerResponseDto {
+  id: string;
+  providedId: string;
+  name: string;
+  description: string;
+  type: 'http' | 'stdio';
+}
+
+export interface AgentToolPermissionScopeResponseDto {
+  id: string;
+  description: string;
+}
+
+export interface AgentToolPermissionResponseDto {
+  server: AgentToolPermissionServerResponseDto;
+  availableScopes: AgentToolPermissionScopeResponseDto[];
+  grantedScopes: AgentToolPermissionScopeResponseDto[];
+  hasAllScopes: boolean;
+}
+
+export interface UpsertAgentToolPermissionDto {
+  scopeIds?: string[];
+}
+
 export interface IssueAccessTokenRequestDto {
   name: string;
   scopes: string[];

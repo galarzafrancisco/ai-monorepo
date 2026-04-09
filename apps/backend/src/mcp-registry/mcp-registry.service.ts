@@ -40,6 +40,7 @@ import {
   InvalidServerConfigurationError,
 } from './errors/mcp-registry.errors';
 import { Scope } from 'src/auth/core/types/scope.type';
+import { AgentToolPermissionEntity } from 'src/agents/agent-tool-permission.entity';
 import {
   MCP_SERVER_TYPE_HTTP,
   MCP_SERVER_TYPE_STDIO,
@@ -282,8 +283,14 @@ export class McpRegistryService {
     const connectionCount = await this.connectionRepository.count({
       where: { serverId: id },
     });
+    const agentPermissionCount = await this.serverRepository.manager.count(
+      AgentToolPermissionEntity,
+      {
+        where: { serverId: id },
+      },
+    );
 
-    if (scopeCount > 0 || connectionCount > 0) {
+    if (scopeCount > 0 || connectionCount > 0 || agentPermissionCount > 0) {
       throw new ServerHasDependenciesError(id);
     }
 

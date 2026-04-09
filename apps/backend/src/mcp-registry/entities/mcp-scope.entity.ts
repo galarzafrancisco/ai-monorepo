@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { McpServerEntity } from './mcp-server.entity';
 import { McpScopeMappingEntity } from './mcp-scope-mapping.entity';
+import { AgentToolPermissionScopeEntity } from 'src/agents/agent-tool-permission-scope.entity';
 
 @Entity('mcp_scopes')
 export class McpScopeEntity {
@@ -31,6 +32,12 @@ export class McpScopeEntity {
 
   @OneToMany(() => McpScopeMappingEntity, (mapping) => mapping.scope)
   mappings!: McpScopeMappingEntity[];
+
+  @OneToMany(
+    () => AgentToolPermissionScopeEntity,
+    (permissionScope) => permissionScope.scope,
+  )
+  agentToolPermissionScopes!: AgentToolPermissionScopeEntity[];
 
   @CreateDateColumn()
   createdAt!: Date;

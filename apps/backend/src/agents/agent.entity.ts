@@ -9,9 +9,11 @@ import {
   VersionColumn,
   OneToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { ActorEntity } from '../identity-provider/actor.entity';
 import { AgentType } from './enums';
+import { AgentToolPermissionEntity } from './agent-tool-permission.entity';
 
 @Entity({ name: 'agents' })
 export class AgentEntity {
@@ -24,6 +26,9 @@ export class AgentEntity {
   @OneToOne(() => ActorEntity, (actor) => actor.agent)
   @JoinColumn({ name: 'actor_id' })
   actor?: ActorEntity;
+
+  @OneToMany(() => AgentToolPermissionEntity, (permission) => permission.agent)
+  toolPermissions!: AgentToolPermissionEntity[];
 
   @Column({ type: 'text', enum: AgentType, default: AgentType.CLAUDE })
   type!: AgentType;

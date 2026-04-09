@@ -4398,6 +4398,138 @@
         ]
       }
     },
+    "/api/v1/agents/{actorId}/tool-permissions": {
+      "get": {
+        "operationId": "AgentToolPermissionsController_listAgentToolPermissions",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "description": "Agent actor ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentToolPermissionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List tool permissions for an agent",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
+    "/api/v1/agents/{actorId}/tool-permissions/{serverId}": {
+      "put": {
+        "operationId": "AgentToolPermissionsController_upsertAgentToolPermission",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "description": "MCP server UUID used by this assignment",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertAgentToolPermissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentToolPermissionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Create or replace an agent tool permission assignment",
+        "tags": [
+          "Agent"
+        ]
+      },
+      "delete": {
+        "operationId": "AgentToolPermissionsController_deleteAgentToolPermission",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serverId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Delete an agent tool permission assignment",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
     "/api/v1/agents/{slug}/tokens": {
       "post": {
         "operationId": "AgentTokensController_issueToken",
@@ -10150,6 +10282,116 @@
             "description": "Max number of tasks this agent can process in parallel",
             "example": 5,
             "nullable": true
+          }
+        }
+      },
+      "AgentToolPermissionServerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "MCP server UUID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "providedId": {
+            "type": "string",
+            "description": "MCP server provided identifier",
+            "example": "tasks"
+          },
+          "name": {
+            "type": "string",
+            "description": "MCP server name",
+            "example": "Tasks"
+          },
+          "description": {
+            "type": "string",
+            "description": "MCP server description",
+            "example": "Task operations exposed via MCP"
+          },
+          "type": {
+            "type": "string",
+            "description": "MCP server transport type",
+            "enum": [
+              "http",
+              "stdio"
+            ],
+            "example": "http"
+          }
+        },
+        "required": [
+          "id",
+          "providedId",
+          "name",
+          "description",
+          "type"
+        ]
+      },
+      "AgentToolPermissionScopeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Scope identifier",
+            "example": "tasks:read"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable scope description",
+            "example": "Read task details"
+          }
+        },
+        "required": [
+          "id",
+          "description"
+        ]
+      },
+      "AgentToolPermissionResponseDto": {
+        "type": "object",
+        "properties": {
+          "server": {
+            "$ref": "#/components/schemas/AgentToolPermissionServerResponseDto"
+          },
+          "availableScopes": {
+            "description": "All scopes currently available on this MCP server",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentToolPermissionScopeResponseDto"
+            }
+          },
+          "grantedScopes": {
+            "description": "Subset of scopes granted to this agent for this server",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentToolPermissionScopeResponseDto"
+            }
+          },
+          "hasAllScopes": {
+            "type": "boolean",
+            "description": "True when this assignment grants every currently available scope on the server",
+            "example": false
+          }
+        },
+        "required": [
+          "server",
+          "availableScopes",
+          "grantedScopes",
+          "hasAllScopes"
+        ]
+      },
+      "UpsertAgentToolPermissionDto": {
+        "type": "object",
+        "properties": {
+          "scopeIds": {
+            "description": "Subset of scope IDs granted for this tool assignment. Leave empty for unscoped tools or no scope grants.",
+            "example": [
+              "tasks:read",
+              "tasks:write"
+            ],
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

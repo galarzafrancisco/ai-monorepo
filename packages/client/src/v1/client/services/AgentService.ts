@@ -4,8 +4,10 @@
 /* eslint-disable */
 import type { AgentListResponseDto } from '../models/AgentListResponseDto.js';
 import type { AgentResponseDto } from '../models/AgentResponseDto.js';
+import type { AgentToolPermissionResponseDto } from '../models/AgentToolPermissionResponseDto.js';
 import type { CreateAgentDto } from '../models/CreateAgentDto.js';
 import type { PatchAgentDto } from '../models/PatchAgentDto.js';
+import type { UpsertAgentToolPermissionDto } from '../models/UpsertAgentToolPermissionDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
 import type { OpenAPIConfig } from '../core/OpenAPI.js';
@@ -107,6 +109,70 @@ export class AgentService {
             url: '/api/v1/agents/{actorId}',
             path: {
                 'actorId': actorId,
+            },
+        });
+    }
+    /**
+     * List tool permissions for an agent
+     * @param actorId Agent actor ID
+     * @returns AgentToolPermissionResponseDto
+     * @throws ApiError
+     */
+    public static agentToolPermissionsControllerListAgentToolPermissions(
+        actorId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<Array<AgentToolPermissionResponseDto>> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/agents/{actorId}/tool-permissions',
+            path: {
+                'actorId': actorId,
+            },
+        });
+    }
+    /**
+     * Create or replace an agent tool permission assignment
+     * @param actorId
+     * @param serverId MCP server UUID used by this assignment
+     * @param requestBody
+     * @returns AgentToolPermissionResponseDto
+     * @throws ApiError
+     */
+    public static agentToolPermissionsControllerUpsertAgentToolPermission(
+        actorId: string,
+        serverId: string,
+        requestBody: UpsertAgentToolPermissionDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<AgentToolPermissionResponseDto> {
+        return __request(config, {
+            method: 'PUT',
+            url: '/api/v1/agents/{actorId}/tool-permissions/{serverId}',
+            path: {
+                'actorId': actorId,
+                'serverId': serverId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Delete an agent tool permission assignment
+     * @param actorId
+     * @param serverId
+     * @returns void
+     * @throws ApiError
+     */
+    public static agentToolPermissionsControllerDeleteAgentToolPermission(
+        actorId: string,
+        serverId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/agents/{actorId}/tool-permissions/{serverId}',
+            path: {
+                'actorId': actorId,
+                'serverId': serverId,
             },
         });
     }

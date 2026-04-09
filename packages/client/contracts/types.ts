@@ -1245,6 +1245,41 @@ export interface paths {
         patch: operations["AgentsController_patchAgent"];
         trace?: never;
     };
+    "/api/v1/agents/{actorId}/tool-permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tool permissions for an agent */
+        get: operations["AgentToolPermissionsController_listAgentToolPermissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agents/{actorId}/tool-permissions/{serverId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Create or replace an agent tool permission assignment */
+        put: operations["AgentToolPermissionsController_upsertAgentToolPermission"];
+        post?: never;
+        /** Delete an agent tool permission assignment */
+        delete: operations["AgentToolPermissionsController_deleteAgentToolPermission"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agents/{slug}/tokens": {
         parameters: {
             query?: never;
@@ -4217,6 +4252,69 @@ export interface components {
              * @example 5
              */
             concurrencyLimit?: number | null;
+        };
+        AgentToolPermissionServerResponseDto: {
+            /**
+             * @description MCP server UUID
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id: string;
+            /**
+             * @description MCP server provided identifier
+             * @example tasks
+             */
+            providedId: string;
+            /**
+             * @description MCP server name
+             * @example Tasks
+             */
+            name: string;
+            /**
+             * @description MCP server description
+             * @example Task operations exposed via MCP
+             */
+            description: string;
+            /**
+             * @description MCP server transport type
+             * @example http
+             * @enum {string}
+             */
+            type: "http" | "stdio";
+        };
+        AgentToolPermissionScopeResponseDto: {
+            /**
+             * @description Scope identifier
+             * @example tasks:read
+             */
+            id: string;
+            /**
+             * @description Human-readable scope description
+             * @example Read task details
+             */
+            description: string;
+        };
+        AgentToolPermissionResponseDto: {
+            server: components["schemas"]["AgentToolPermissionServerResponseDto"];
+            /** @description All scopes currently available on this MCP server */
+            availableScopes: components["schemas"]["AgentToolPermissionScopeResponseDto"][];
+            /** @description Subset of scopes granted to this agent for this server */
+            grantedScopes: components["schemas"]["AgentToolPermissionScopeResponseDto"][];
+            /**
+             * @description True when this assignment grants every currently available scope on the server
+             * @example false
+             */
+            hasAllScopes: boolean;
+        };
+        UpsertAgentToolPermissionDto: {
+            /**
+             * @description Subset of scope IDs granted for this tool assignment. Leave empty for unscoped tools or no scope grants.
+             * @default []
+             * @example [
+             *       "tasks:read",
+             *       "tasks:write"
+             *     ]
+             */
+            scopeIds: string[];
         };
         IssueAccessTokenRequestDto: {
             /**
@@ -8623,6 +8721,75 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AgentResponseDto"];
                 };
+            };
+        };
+    };
+    AgentToolPermissionsController_listAgentToolPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Agent actor ID */
+                actorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentToolPermissionResponseDto"][];
+                };
+            };
+        };
+    };
+    AgentToolPermissionsController_upsertAgentToolPermission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                actorId: string;
+                /** @description MCP server UUID used by this assignment */
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertAgentToolPermissionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentToolPermissionResponseDto"];
+                };
+            };
+        };
+    };
+    AgentToolPermissionsController_deleteAgentToolPermission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                actorId: string;
+                serverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

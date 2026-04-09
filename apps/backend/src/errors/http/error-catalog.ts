@@ -105,6 +105,12 @@ export const ErrorCatalog: Record<
     type: '/errors/agents/slug-conflict',
     retryable: false,
   },
+  [ErrorCodes.AGENT_TOOL_PERMISSION_NOT_FOUND]: {
+    status: 404,
+    title: 'Agent tool permission not found',
+    type: '/errors/agents/tool-permission-not-found',
+    retryable: false,
+  },
   [ErrorCodes.AGENT_RUN_NOT_FOUND]: {
     status: 404,
     title: 'Agent run not found',

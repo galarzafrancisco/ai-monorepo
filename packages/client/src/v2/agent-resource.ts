@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AgentListResponseDto, AgentResponseDto, CreateAgentDto, PatchAgentDto } from './types.js';
+import type { AgentListResponseDto, AgentResponseDto, AgentToolPermissionResponseDto, CreateAgentDto, PatchAgentDto, UpsertAgentToolPermissionDto } from './types.js';
 
 export class AgentResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -29,6 +29,21 @@ export class AgentResource extends BaseClient {
   /** Delete an agent */
   async AgentsController_deleteAgent(params: { actorId: string; signal?: AbortSignal }): Promise<void> {
     return this.request('DELETE', `/api/v1/agents/${params.actorId}`, { signal: params?.signal });
+  }
+
+  /** List tool permissions for an agent */
+  async AgentToolPermissionsController_listAgentToolPermissions(params: { actorId: string; signal?: AbortSignal }): Promise<AgentToolPermissionResponseDto[]> {
+    return this.request('GET', `/api/v1/agents/${params.actorId}/tool-permissions`, { signal: params?.signal });
+  }
+
+  /** Create or replace an agent tool permission assignment */
+  async AgentToolPermissionsController_upsertAgentToolPermission(params: { actorId: string; serverId: string; body: UpsertAgentToolPermissionDto; signal?: AbortSignal }): Promise<AgentToolPermissionResponseDto> {
+    return this.request('PUT', `/api/v1/agents/${params.actorId}/tool-permissions/${params.serverId}`, { body: params.body, signal: params?.signal });
+  }
+
+  /** Delete an agent tool permission assignment */
+  async AgentToolPermissionsController_deleteAgentToolPermission(params: { actorId: string; serverId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('DELETE', `/api/v1/agents/${params.actorId}/tool-permissions/${params.serverId}`, { signal: params?.signal });
   }
 
 }

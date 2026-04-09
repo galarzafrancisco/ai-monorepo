@@ -16,6 +16,9 @@ export type { AgentListResponseDto } from './models/AgentListResponseDto.js';
 export { AgentResponseDto } from './models/AgentResponseDto.js';
 export type { AgentRunListResponseDto } from './models/AgentRunListResponseDto.js';
 export type { AgentRunResponseDto } from './models/AgentRunResponseDto.js';
+export type { AgentToolPermissionResponseDto } from './models/AgentToolPermissionResponseDto.js';
+export type { AgentToolPermissionScopeResponseDto } from './models/AgentToolPermissionScopeResponseDto.js';
+export { AgentToolPermissionServerResponseDto } from './models/AgentToolPermissionServerResponseDto.js';
 export type { AnswerInputRequestDto } from './models/AnswerInputRequestDto.js';
 export type { AppendBlockDto } from './models/AppendBlockDto.js';
 export type { AppendThreadStateDto } from './models/AppendThreadStateDto.js';
@@ -134,6 +137,7 @@ export type { UpdateTaskBlueprintDto } from './models/UpdateTaskBlueprintDto.js'
 export type { UpdateTaskDto } from './models/UpdateTaskDto.js';
 export type { UpdateThreadDto } from './models/UpdateThreadDto.js';
 export type { UpdateThreadStateDto } from './models/UpdateThreadStateDto.js';
+export type { UpsertAgentToolPermissionDto } from './models/UpsertAgentToolPermissionDto.js';
 export { UserResponseDto } from './models/UserResponseDto.js';
 
 export { ActorsService } from './services/ActorsService.js';

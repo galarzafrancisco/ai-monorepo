@@ -11,6 +11,7 @@ import { McpScopeEntity } from './mcp-scope.entity';
 import { McpConnectionEntity } from './mcp-connection.entity';
 import { MCP_SERVER_TYPE_HTTP } from '../mcp-server.types';
 import type { McpServerType } from '../mcp-server.types';
+import { AgentToolPermissionEntity } from 'src/agents/agent-tool-permission.entity';
 
 @Entity('mcp_servers')
 export class McpServerEntity {
@@ -45,6 +46,12 @@ export class McpServerEntity {
     cascade: true,
   })
   connections!: McpConnectionEntity[];
+
+  @OneToMany(
+    () => AgentToolPermissionEntity,
+    (permission) => permission.server,
+  )
+  agentToolPermissions!: AgentToolPermissionEntity[];
 
   @CreateDateColumn()
   createdAt!: Date;
