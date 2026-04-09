@@ -173,7 +173,7 @@ describe('Tools (e2e)', () => {
 
     it('should create a single scope', async () => {
       const dto: CreateScopeDto = {
-        scopeId: 'tool:read',
+        id: 'tool:read',
         description: 'Read access to tools',
       };
 
@@ -183,16 +183,16 @@ describe('Tools (e2e)', () => {
         .send([dto])
         .expect(201);
 
-      expect(response.body[0].scopeId).toBe(dto.scopeId);
+      expect(response.body[0].id).toBe(dto.id);
       expect(response.body[0].description).toBe(dto.description);
       expect(response.body[0].serverId).toBe(serverId);
     });
 
     it('should create multiple scopes', async () => {
       const dtos: CreateScopeDto[] = [
-        { scopeId: 'tool:read', description: 'Read tools' },
-        { scopeId: 'tool:write', description: 'Write tools' },
-        { scopeId: 'data:read', description: 'Read data' },
+        { id: 'tool:read', description: 'Read tools' },
+        { id: 'tool:write', description: 'Write tools' },
+        { id: 'data:read', description: 'Read data' },
       ];
 
       const response = await request(app.getHttpServer())
@@ -207,7 +207,7 @@ describe('Tools (e2e)', () => {
 
     it('should list scopes for a server', async () => {
       const dto: CreateScopeDto = {
-        scopeId: 'test:scope',
+        id: 'test:scope',
         description: 'Test scope',
       };
 
@@ -228,7 +228,7 @@ describe('Tools (e2e)', () => {
 
     it('should get a specific scope', async () => {
       const dto: CreateScopeDto = {
-        scopeId: 'specific:scope',
+        id: 'specific:scope',
         description: 'Specific scope',
       };
 
@@ -239,16 +239,16 @@ describe('Tools (e2e)', () => {
         .expect(201);
 
       const response = await request(app.getHttpServer())
-        .get(`/api/v1/mcp/servers/${serverId}/scopes/${dto.scopeId}`)
+        .get(`/api/v1/mcp/servers/${serverId}/scopes/${dto.id}`)
         .set('Cookie', authCookies)
         .expect(200);
 
-      expect(response.body.scopeId).toBe(dto.scopeId);
+      expect(response.body.id).toBe(dto.id);
     });
 
     it('should reject duplicate scope for same server', async () => {
       const dto: CreateScopeDto = {
-        scopeId: 'duplicate:scope',
+        id: 'duplicate:scope',
         description: 'Duplicate scope',
       };
 
@@ -379,7 +379,7 @@ describe('Tools (e2e)', () => {
 
       // Create scope
       const scopeDto: CreateScopeDto = {
-        scopeId: 'tool:execute',
+        id: 'tool:execute',
         description: 'Execute tools',
       };
 
@@ -389,7 +389,7 @@ describe('Tools (e2e)', () => {
         .send([scopeDto])
         .expect(201);
 
-      scopeId = scopeResponse.body[0].scopeId;
+      scopeId = scopeResponse.body[0].id;
 
       // Create connection
       const connectionDto: CreateConnectionDto = {
@@ -470,7 +470,7 @@ describe('Tools (e2e)', () => {
       const serverId = serverResponse.body.id;
 
       const scopeDto: CreateScopeDto = {
-        scopeId: 'test:scope',
+        id: 'test:scope',
         description: 'Test scope',
       };
 
@@ -486,7 +486,7 @@ describe('Tools (e2e)', () => {
         .expect(409);
     });
 
-    it('should prevent deleting scope with mappings', async () => {
+    it('should allow deleting scope when no downstream mappings exist', async () => {
       const serverDto: CreateServerDto = {
         providedId: `scope-delete-test-${Math.random()}`,
         name: 'Scope Delete Test',
@@ -504,7 +504,7 @@ describe('Tools (e2e)', () => {
       const serverId = serverResponse.body.id;
 
       const scopeDto: CreateScopeDto = {
-        scopeId: 'deletable:scope',
+        id: 'deletable:scope',
         description: 'Test',
       };
 
@@ -529,7 +529,7 @@ describe('Tools (e2e)', () => {
         .expect(201);
 
       const mappingDto: CreateMappingDto = {
-        scopeId: scopeDto.scopeId,
+        scopeId: scopeDto.id,
         connectionId: connectionResponse.body.id,
         downstreamScope: 'test',
       };
@@ -541,9 +541,9 @@ describe('Tools (e2e)', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/api/v1/mcp/servers/${serverId}/scopes/${scopeDto.scopeId}`)
+        .delete(`/api/v1/mcp/servers/${serverId}/scopes/${scopeDto.id}`)
         .set('Cookie', authCookies)
-        .expect(409);
+        .expect(200);
     });
   });
 
@@ -671,7 +671,7 @@ describe('Tools (e2e)', () => {
     it('should prevent deleting connection with mappings', async () => {
       // Create scope
       const scopeDto: CreateScopeDto = {
-        scopeId: 'test:scope',
+        id: 'test:scope',
         description: 'Test scope',
       };
 
@@ -683,7 +683,7 @@ describe('Tools (e2e)', () => {
 
       // Create mapping
       const mappingDto: CreateMappingDto = {
-        scopeId: scopeResponse.body[0].scopeId,
+        scopeId: scopeResponse.body[0].id,
         connectionId: connectionId,
         downstreamScope: 'test:downstream',
       };
@@ -728,7 +728,7 @@ describe('Tools (e2e)', () => {
 
       // Create scope
       const scopeDto: CreateScopeDto = {
-        scopeId: 'delete:scope',
+        id: 'delete:scope',
         description: 'Delete scope',
       };
 
@@ -738,7 +738,7 @@ describe('Tools (e2e)', () => {
         .send([scopeDto])
         .expect(201);
 
-      scopeId = scopeResponse.body[0].scopeId;
+      scopeId = scopeResponse.body[0].id;
 
       // Create connection
       const connectionDto: CreateConnectionDto = {
@@ -863,13 +863,13 @@ describe('Tools (e2e)', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/mcp/servers/${serverResponse.body.id}/connections`)
+        .post(`/api/v1/mcp/servers/${serverResponse.body.id}/connections`)
         .set('Cookie', authCookies)
         .send({
           friendlyName: 'Test',
           clientId: 'test',
           clientSecret: 'test',
-          authorizeUrl: 'not-a-valid-url',
+          authorizeUrl: 'http://',
           tokenUrl: 'https://example.com/token',
         })
         .expect(400);

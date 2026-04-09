@@ -22,7 +22,6 @@ import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
 import { AgentsScopes } from './agents.scopes';
 import { AgentActorParamsDto } from './dto/agent-actor-params.dto';
-import { AgentToolPermissionParamsDto } from './dto/agent-tool-permission-params.dto';
 import { UpsertAgentToolPermissionDto } from './dto/upsert-agent-tool-permission.dto';
 import { AgentToolPermissionResponseDto } from './dto/agent-tool-permission-response.dto';
 import { AgentToolPermissionsService } from './agent-tool-permissions.service';
@@ -58,13 +57,13 @@ export class AgentToolPermissionsController {
   @ApiOkResponse({ type: AgentToolPermissionResponseDto })
   async upsertAgentToolPermission(
     @Param('actorId', ParseUUIDPipe) actorId: string,
-    @Param() serverParams: AgentToolPermissionParamsDto,
+    @Param('serverId', ParseUUIDPipe) serverId: string,
     @Body() dto: UpsertAgentToolPermissionDto,
   ): Promise<AgentToolPermissionResponseDto> {
     const permission =
       await this.agentToolPermissionsService.upsertAgentToolPermission(
         actorId,
-        serverParams.serverId,
+        serverId,
         {
           scopeIds: dto.scopeIds,
         },
