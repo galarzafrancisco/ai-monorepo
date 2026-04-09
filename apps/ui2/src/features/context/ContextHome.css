@@ -10,6 +10,202 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* ── Unified layout wrapper (replaces old .context-desktop) ── */
+.context-layout {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Desktop: row — sidebar | main */
+.context-layout--desktop {
+  flex-direction: row;
+}
+
+/* Mobile: column — header / main */
+.context-layout--mobile {
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Shared main content area */
+.context-layout__main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Mobile header ─────────────────────────────────────────── */
+.context-layout__mobile-header {
+  flex-shrink: 0;
+  padding: var(--space-2);
+  padding-top: calc(env(safe-area-inset-top) + var(--space-2));
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  z-index: 10;
+}
+
+.context-layout__mobile-section-title {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+
+.context-layout__hamburger {
+  background: none;
+  border: none;
+  font-size: var(--fs-4);
+  cursor: pointer;
+  color: var(--text);
+  padding: var(--space-1);
+  line-height: 1;
+}
+
+/* ── Mobile drawer ─────────────────────────────────────────── */
+.context-layout__drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.context-layout__drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+
+.context-layout__drawer--open {
+  transform: translateX(0);
+}
+
+.context-layout__drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  padding-top: calc(env(safe-area-inset-top) + var(--space-4));
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.context-layout__drawer-close {
+  background: none;
+  border: none;
+  font-size: var(--fs-3);
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: var(--space-1);
+  line-height: 1;
+}
+
+.context-layout__drawer-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2) 0;
+}
+
+.context-layout__drawer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  text-decoration: none;
+  color: var(--text);
+  font-size: var(--fs-3);
+  transition: background 0.15s;
+}
+
+.context-layout__drawer-item:hover {
+  background: var(--surface);
+}
+
+.context-layout__drawer-item--active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: var(--fw-medium);
+}
+
+.context-layout__drawer-icon {
+  font-size: var(--fs-4);
+  width: 1.5rem;
+  text-align: center;
+}
+
+/* ── FAB ───────────────────────────────────────────────────── */
+.context-fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+  z-index: 999;
+
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+
+  border: 0;
+  background: var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--accent-contrast);
+
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.context-fab:hover {
+  background-color: var(--accent-hover);
+}
+
+.context-fab:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+.context-fab--desktop {
+  width: auto;
+  height: 44px;
+  padding: 0 14px;
+  gap: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.context-fab__plus {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.context-fab__label {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Keep old .context-desktop class working for any remaining references */
 .context-desktop {
   height: 100%;
   min-height: 0;

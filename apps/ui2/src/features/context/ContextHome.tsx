@@ -4,7 +4,7 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useContextCtx } from "./ContextProvider";
 import { ContextBlockTree } from "./ContextBlockTree";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
-import { DataRow, Text, Button } from "../../ui/primitives";
+import { DataRow, Text } from "../../ui/primitives";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import "./ContextHome.css";
 
@@ -32,43 +32,52 @@ export function ContextHome(): JSX.Element {
 
   if (blocks.length === 0) {
     return (
-      <div className="context-home__empty">
-        <div className="context-home__empty-message">No context blocks found</div>
-        <Button
-          size="lg"
-          variant="primary"
-          onClick={() => navigate('/context/new')}
-        >
-          + Create Block
-        </Button>
-      </div>
+      <>
+        <div className="context-home__empty">
+          <div className="context-home__empty-message">No context blocks found</div>
+        </div>
+        <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
+      </>
     );
   }
 
   if (isDesktop) {
     return (
-      <DesktopContextHome
-        blocks={blocks}
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
-      />
+      <>
+        <DesktopContextHome
+          blocks={blocks}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
+        />
+        <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
+      </>
     );
   }
 
   return (
-    <div className="context-home">
-      <div className="context-home__header">
-        <Button
-          size="lg"
-          variant="primary"
-          onClick={() => navigate('/context/new')}
-        >
-          + Create Block
-        </Button>
+    <>
+      <div className="context-home">
+        <ContextBlockTree blocks={blocks} onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)} />
       </div>
-      <ContextBlockTree blocks={blocks} onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)} />
-    </div>
+      <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
+    </>
+  );
+}
+
+function ContextFab({ onClick, isDesktop }: { onClick: () => void; isDesktop: boolean }): JSX.Element {
+  if (isDesktop) {
+    return (
+      <button className="context-fab context-fab--desktop" type="button" onClick={onClick}>
+        <span className="context-fab__plus">+</span>
+        <span className="context-fab__label">New block</span>
+      </button>
+    );
+  }
+  return (
+    <button className="context-fab" type="button" onClick={onClick} aria-label="Create new block">
+      +
+    </button>
   );
 }
 
@@ -83,7 +92,6 @@ function DesktopContextHome({
   onSearchQueryChange: (value: string) => void;
   onOpenBlock: (blockId: string) => void;
 }): JSX.Element {
-  const navigate = useNavigate();
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredBlocks = useMemo(() => {
     if (!normalizedQuery) {
@@ -108,13 +116,6 @@ function DesktopContextHome({
         <Text as="div" size="6" weight="bold" className="context-home-desktop__title">
           Blocks
         </Text>
-        <Button
-          size="md"
-          variant="primary"
-          onClick={() => navigate('/context/new')}
-        >
-          + Create Block
-        </Button>
       </div>
 
       <div className="context-home-desktop__search-box">

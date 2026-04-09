@@ -42,7 +42,8 @@
 }
 
 /* Context desktop uses its own full-height split layout. */
-.beta-shell__desktop__main:has(.context-desktop) {
+.beta-shell__desktop__main:has(.context-desktop),
+.beta-shell__desktop__main:has(.context-layout) {
   padding: 0;
   overflow: hidden;
 }

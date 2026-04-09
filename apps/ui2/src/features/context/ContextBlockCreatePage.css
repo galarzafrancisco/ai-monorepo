@@ -1,30 +1,35 @@
+/* Full-height editor layout — flex column, fills the main panel */
 .context-block-create {
-  padding: var(--space-4);
-  max-width: 800px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: var(--space-5);
+  gap: var(--space-3);
+  overflow: hidden;
 }
 
+/* ── Breadcrumbs ─────────────────────────────────────────── */
 .context-block-create__breadcrumbs {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
   font-size: var(--fs-2);
+  flex-shrink: 0;
 }
 
 .context-block-create__breadcrumb {
   background: none;
   border: none;
   padding: 0;
-  color: var(--accent);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: inherit;
   font-family: inherit;
 }
 
 .context-block-create__breadcrumb:hover:not(.context-block-create__breadcrumb--current) {
-  color: var(--accent-hover);
-  text-decoration: underline;
+  color: var(--text);
 }
 
 .context-block-create__breadcrumb--current {
@@ -36,83 +41,92 @@
   color: var(--text-muted);
 }
 
-.context-block-create__form {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-3);
-  padding: var(--space-4);
-}
-
-.context-block-create__field {
+/* ── Title row ───────────────────────────────────────────── */
+.context-block-create__title-row {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
 }
 
-.context-block-create__label {
-  display: block;
-}
-
-.context-block-create__input,
-.context-block-create__textarea {
-  width: 100%;
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-2);
-  background: var(--bg);
-  color: var(--text);
-  font-size: var(--fs-3);
-  font-family: inherit;
-  transition: border-color 0.2s;
-}
-
-.context-block-create__input:focus,
-.context-block-create__textarea:focus {
+.context-block-create__title-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
   outline: none;
-  border-color: var(--accent);
+  color: var(--text);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: var(--fw-bold);
+  font-family: inherit;
+  padding: 0 0 var(--space-1) 0;
+  transition: border-color 0.15s;
 }
 
-.context-block-create__textarea {
-  resize: vertical;
+.context-block-create__title-input:focus {
+  outline: none;
+  border-bottom-color: transparent;
+}
+
+.context-block-create__title-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Hidden real file input */
+.context-block-create__file-input-hidden {
+  display: none;
+}
+
+
+/* ── Markdown editor — fills available space ─────────────── */
+.context-block-create__editor {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  padding: var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--text);
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
   font-size: var(--fs-2);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
-.context-block-create__file-input {
-  padding: var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-2);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
+.context-block-create__editor:focus {
+  outline: none;
 }
 
-.context-block-create__file-input::-webkit-file-upload-button {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-2);
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  margin-right: var(--space-2);
+/* ── Bottom bar ──────────────────────────────────────────── */
+.context-block-create__bottom-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-.context-block-create__file-input::-webkit-file-upload-button:hover {
-  background: var(--accent);
-  color: var(--accent-contrast);
-  border-color: var(--accent);
-}
 
 .context-block-create__actions {
   display: flex;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
+  gap: var(--space-2);
+  flex-shrink: 0;
 }
 
+/* ── Mobile tweaks ───────────────────────────────────────── */
 @media (max-width: 768px) {
   .context-block-create {
     padding: var(--space-3);
+  }
+
+  .context-block-create__title-input {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+
+  .context-block-create__bottom-bar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .context-block-create__actions {
