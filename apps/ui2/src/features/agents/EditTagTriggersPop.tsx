@@ -6,7 +6,7 @@ import { MetaService } from "./api";
 import "./EditTagTriggersPop.css";
 
 type EditTagTriggersPopProps = {
-  initialValue: string[]; // Array of tag IDs
+  initialValue: string[]; // Array of tag names
   onCancel?: () => void;
   onSave: (payload: { tagTriggers: string[] }) => Promise<boolean>;
 };
@@ -14,7 +14,7 @@ type EditTagTriggersPopProps = {
 export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTriggersPopProps) {
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
-  const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(
+  const [selectedTagNames, setSelectedTagNames] = useState<Set<string>>(
     new Set(initialValue)
   );
   const [query, setQuery] = useState("");
@@ -98,13 +98,13 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
     }
   }, [highlightedIndex, filteredTags.length, canCreateNew]);
 
-  const toggleTag = (tagId: string) => {
-    setSelectedTagIds((prev) => {
+  const toggleTag = (tagName: string) => {
+    setSelectedTagNames((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(tagId)) {
-        newSet.delete(tagId);
+      if (newSet.has(tagName)) {
+        newSet.delete(tagName);
       } else {
-        newSet.add(tagId);
+        newSet.add(tagName);
       }
       return newSet;
     });
@@ -118,7 +118,7 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
         }
       });
       setAllTags(prev => [...prev, newTag]);
-      setSelectedTagIds(prev => new Set([...prev, newTag.id]));
+      setSelectedTagNames(prev => new Set([...prev, newTag.name]));
       setQuery("");
       inputRef.current?.focus();
     } catch (err) {
@@ -145,7 +145,7 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
         e.preventDefault();
         if (highlightedIndex < filteredTags.length) {
           // Toggle the highlighted tag
-          toggleTag(filteredTags[highlightedIndex].id);
+          toggleTag(filteredTags[highlightedIndex].name);
         } else if (canCreateNew && highlightedIndex === filteredTags.length) {
           // Create new tag
           handleCreateNewTag();
@@ -161,8 +161,13 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
   }, [filteredTags, highlightedIndex, canCreateNew, query]);
 
   async function handleSave(): Promise<boolean> {
-    return onSave({ tagTriggers: Array.from(selectedTagIds) });
+    return onSave({ tagTriggers: Array.from(selectedTagNames) });
   }
+
+  const selectedTags = useMemo(
+    () => Array.from(selectedTagNames).sort((a, b) => a.localeCompare(b)),
+    [selectedTagNames],
+  );
 
   return (
     <PopShell
@@ -172,8 +177,14 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
     >
       <div className="edit-tag-triggers-pop__content">
         <Text size="2" tone="muted" className="edit-tag-triggers-pop__description">
-          Select which tags will trigger this agent to activate when added to a task ({selectedTagIds.size} selected)
+          Select which tag names will trigger this agent to activate when added to a task ({selectedTagNames.size} selected)
         </Text>
+
+        {selectedTags.length > 0 && (
+          <Text size="2" tone="muted" className="edit-tag-triggers-pop__description">
+            Selected: {selectedTags.join(', ')}
+          </Text>
+        )}
 
         <input
           ref={inputRef}
@@ -204,8 +215,8 @@ export function EditTagTriggersPop({ initialValue, onCancel, onSave }: EditTagTr
                 >
                   <input
                     type="checkbox"
-                    checked={selectedTagIds.has(tag.id)}
-                    onChange={() => toggleTag(tag.id)}
+                    checked={selectedTagNames.has(tag.name)}
+                    onChange={() => toggleTag(tag.name)}
                     className="edit-tag-triggers-pop__checkbox"
                   />
                   <div

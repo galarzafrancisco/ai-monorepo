@@ -398,6 +398,7 @@ export function AgentDetailPage() {
   const concurrencyLimit = typeof concurrencyValue === 'number' && Number.isFinite(concurrencyValue) && concurrencyValue > 0
     ? Math.floor(concurrencyValue)
     : null;
+  const tagColorsByName = new Map(allTags.map((tag) => [tag.name, tag.color]));
 
   return (
     <div className="agent-detail-page">
@@ -505,13 +506,11 @@ export function AgentDetailPage() {
               {tagsLoading ? (
                 <Text tone="muted">Loading tags...</Text>
               ) : (
-                allTags
-                  .filter(tag => agent.tagTriggers.includes(tag.id))
-                  .map(tag => (
-                    <Chip key={tag.id} color={getChipColorFromHex(tag.color)}>
-                      {tag.name}
-                    </Chip>
-                  ))
+                agent.tagTriggers.map((tagTrigger) => (
+                  <Chip key={tagTrigger} color={getChipColorFromHex(tagColorsByName.get(tagTrigger))}>
+                    {tagTrigger}
+                  </Chip>
+                ))
               )}
             </div>
           ) : (
