@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Button, Card, Text } from "../../ui/primitives";
 import { useExecutions } from "./useExecutions";
@@ -10,6 +11,7 @@ import type {
 import "./ExecutionsPage.css";
 
 export function ExecutionsPage() {
+  const navigate = useNavigate();
   const {
     queue,
     active,
@@ -98,7 +100,7 @@ export function ExecutionsPage() {
                   key: entry.taskId,
                   cells: [
                     <StatusPill key="state" tone="accent">Queued</StatusPill>,
-                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} />,
+                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
                     <StatusPill key="status" tone={taskStatusTone(entry.taskStatus)}>
                       {entry.taskStatus ?? "Unknown"}
                     </StatusPill>,
@@ -133,7 +135,7 @@ export function ExecutionsPage() {
                   key: entry.id,
                   cells: [
                     <StatusPill key="state" tone="warning">Active</StatusPill>,
-                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} />,
+                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
                     <CodeCell key="worker" value={entry.workerClientId} />,
                     <CodeCell key="agent" value={entry.agentActorId} />,
                     <TimeCell key="claimed" value={entry.claimedAt} />,
@@ -183,7 +185,7 @@ export function ExecutionsPage() {
                     <StatusPill key="result" tone={entry.status === "SUCCEEDED" ? "success" : "danger"}>
                       {entry.status}
                     </StatusPill>,
-                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} />,
+                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
                     <TimeCell key="transitioned" value={entry.transitionedAt} />,
                     <StatusPill key="task-status" tone={taskStatusTone(entry.taskStatus)}>
                       {entry.taskStatus ?? "Unknown"}
@@ -346,12 +348,18 @@ function StatusPill({
 function TaskCell({
   taskId,
   taskName,
+  onClick,
 }: {
   taskId: string;
   taskName: string | null;
+  onClick?: () => void;
 }) {
   return (
-    <div className="executions-task-cell">
+    <div
+      className="executions-task-cell"
+      onClick={onClick}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
+    >
       <Text as="div" size="2" weight="semibold">{taskName ?? "Untitled task"}</Text>
       <Text as="div" size="1" tone="muted" style="mono">{shortId(taskId)}</Text>
     </div>

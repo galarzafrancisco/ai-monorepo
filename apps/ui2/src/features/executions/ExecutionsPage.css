@@ -233,6 +233,11 @@
   gap: var(--space-1);
 }
 
+.executions-task-cell[style*="cursor: pointer"]:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .executions-code-copy {
   color: var(--text-muted);
 }
