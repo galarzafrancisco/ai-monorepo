@@ -166,6 +166,28 @@
   background: color-mix(in srgb, var(--accent) 16%, var(--surface));
 }
 
+/* ── Add-child hover button ─────────────────────────────── */
+.context-tree__add-child {
+  flex-shrink: 0;
+  opacity: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-4);
+  line-height: 1;
+  padding: 0 var(--space-2);
+  cursor: pointer;
+  transition: opacity 0.1s, color 0.1s;
+}
+
+.context-tree__row:hover .context-tree__add-child {
+  opacity: 1;
+}
+
+.context-tree__add-child:hover {
+  color: var(--accent);
+}
+
 @media (max-width: 640px) {
   .context-tree__tags {
     grid-column: 2;

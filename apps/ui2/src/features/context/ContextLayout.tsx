@@ -108,7 +108,18 @@ export function ContextLayout(): JSX.Element {
                 >
                   <Text as="span" size="2" weight="semibold">Context</Text>
                 </button>
-                <Text as="div" size="1" tone="muted">{blocks.length}</Text>
+                <div className="context-desktop__sidebar-header-actions">
+                  <Text as="div" size="1" tone="muted">{blocks.length}</Text>
+                  <button
+                    type="button"
+                    className="context-desktop__sidebar-new"
+                    onClick={() => navigate("/context/new")}
+                    aria-label="New block"
+                    title="New block"
+                  >
+                    +
+                  </button>
+                </div>
               </>
             ) : (
               <Text as="div" size="1" tone="muted">{blocks.length}</Text>
@@ -127,6 +138,7 @@ export function ContextLayout(): JSX.Element {
                 <ContextBlockTree
                   blocks={blocks}
                   onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
+                  onAddChild={(parentId) => navigate(`/context/new?parentId=${parentId}`)}
                   selectedBlockId={selectedBlockId}
                   compact
                 />

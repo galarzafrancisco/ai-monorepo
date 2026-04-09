@@ -58,7 +58,11 @@ export function ContextHome(): JSX.Element {
   return (
     <>
       <div className="context-home">
-        <ContextBlockTree blocks={blocks} onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)} />
+        <ContextBlockTree
+          blocks={blocks}
+          onOpenBlock={(blockId) => navigate(`/context/block/${blockId}`)}
+          onAddChild={(parentId) => navigate(`/context/new?parentId=${parentId}`)}
+        />
       </div>
       <ContextFab onClick={() => navigate('/context/new')} isDesktop={isDesktop} />
     </>

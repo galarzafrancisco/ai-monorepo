@@ -14,6 +14,7 @@ const MAX_DEPTH = 6;
 type ContextBlockTreeProps = {
   blocks: ContextBlockSummary[];
   onOpenBlock: (blockId: string) => void;
+  onAddChild?: (parentBlockId: string) => void;
   selectedBlockId?: string;
   compact?: boolean;
 };
@@ -114,6 +115,7 @@ function TreeBranch({
   nodes,
   depth,
   onOpenBlock,
+  onAddChild,
   collapsedIds,
   onToggleNode,
   selectedBlockId,
@@ -122,6 +124,7 @@ function TreeBranch({
   nodes: TreeNode[];
   depth: number;
   onOpenBlock: (blockId: string) => void;
+  onAddChild?: (parentBlockId: string) => void;
   collapsedIds: Set<string>;
   onToggleNode: (blockId: string) => void;
   selectedBlockId?: string;
@@ -186,6 +189,16 @@ function TreeBranch({
                   </div>
                 ) : null}
               </button>
+              {onAddChild ? (
+                <button
+                  type="button"
+                  className="context-tree__add-child"
+                  aria-label={`Add child block under ${node.block.title}`}
+                  onClick={(e) => { e.stopPropagation(); onAddChild(node.block.id); }}
+                >
+                  +
+                </button>
+              ) : null}
             </div>
 
             {hasChildren && isExpanded ? (
@@ -193,6 +206,7 @@ function TreeBranch({
                 nodes={node.children}
                 depth={depth + 1}
                 onOpenBlock={onOpenBlock}
+                onAddChild={onAddChild}
                 collapsedIds={collapsedIds}
                 onToggleNode={onToggleNode}
                 selectedBlockId={selectedBlockId}
@@ -225,6 +239,7 @@ function getAllParentIds(tree: TreeNode[]): Set<string> {
 export function ContextBlockTree({
   blocks,
   onOpenBlock,
+  onAddChild,
   selectedBlockId,
   compact = false,
 }: ContextBlockTreeProps): JSX.Element {
@@ -288,6 +303,7 @@ export function ContextBlockTree({
         nodes={tree}
         depth={0}
         onOpenBlock={onOpenBlock}
+        onAddChild={onAddChild}
         collapsedIds={collapsedIds}
         onToggleNode={handleToggleNode}
         selectedBlockId={selectedBlockId}

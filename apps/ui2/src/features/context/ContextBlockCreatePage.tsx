@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Text } from '../../ui/primitives';
 import { useContextCtx } from './ContextProvider';
 import { ContextService } from './api';
@@ -10,6 +10,8 @@ import './ContextBlockCreatePage.css';
 export function ContextBlockCreatePage() {
   const { setSectionTitle } = useContextCtx();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const parentId = searchParams.get('parentId') ?? undefined;
   const { showError, showToast } = useToast();
   const isDesktop = useIsDesktop();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +72,7 @@ export function ContextBlockCreatePage() {
           title: title.trim(),
           content: content.trim(),
           tagNames: tagNames.length > 0 ? tagNames : undefined,
+          parentId,
         },
       });
 
