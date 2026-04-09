@@ -4455,9 +4455,7 @@
             "name": "serverId",
             "required": true,
             "in": "path",
-            "description": "MCP server UUID used by this assignment",
             "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }

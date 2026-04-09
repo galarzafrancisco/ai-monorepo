@@ -133,7 +133,7 @@ export class AgentService {
     /**
      * Create or replace an agent tool permission assignment
      * @param actorId
-     * @param serverId MCP server UUID used by this assignment
+     * @param serverId
      * @param requestBody
      * @returns AgentToolPermissionResponseDto
      * @throws ApiError

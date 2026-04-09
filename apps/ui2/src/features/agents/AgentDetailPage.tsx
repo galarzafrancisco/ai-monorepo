@@ -5,8 +5,8 @@ import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chi
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { Agent, AgentToken } from './types';
-import type { AgentResponseDto, ScopeDto, MetaTagResponseDto } from "@taico/client/v2";
-import { AgentTokensService, AuthorizationServerService, MetaService } from './api';
+import type { AgentResponseDto, ScopeDto, MetaTagResponseDto, AgentToolPermissionResponseDto } from "@taico/client/v2";
+import { AgentTokensService, AgentToolPermissionsService, AuthorizationServerService, MetaService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
 import { EditTagTriggersPop } from './EditTagTriggersPop';
@@ -14,6 +14,7 @@ import { EditIntroductionPop } from './EditIntroductionPop';
 import { EditAgentTypePop } from './EditAgentTypePop';
 import { EditAgentModelPop } from './EditAgentModelPop';
 import { EditConcurrencyLimitPop } from './EditConcurrencyLimitPop';
+import { EditAgentToolPermissionsPop } from './EditAgentToolPermissionsPop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
@@ -49,6 +50,10 @@ export function AgentDetailPage() {
   const [allTags, setAllTags] = useState<MetaTagResponseDto[]>([]);
   const [tagsLoading, setTagsLoading] = useState(false);
 
+  // Tool permissions state
+  const [toolPermissions, setToolPermissions] = useState<AgentToolPermissionResponseDto[]>([]);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+
   // Edit agent state
   const [showEditSystemPromptPop, setShowEditSystemPromptPop] = useState(false);
   const [showEditStatusTriggersPop, setShowEditStatusTriggersPop] = useState(false);
@@ -57,6 +62,7 @@ export function AgentDetailPage() {
   const [showEditIntroductionPop, setShowEditIntroductionPop] = useState(false);
   const [showEditModelPop, setShowEditModelPop] = useState(false);
   const [showEditConcurrencyLimitPop, setShowEditConcurrencyLimitPop] = useState(false);
+  const [showEditToolPermissionsPop, setShowEditToolPermissionsPop] = useState(false);
 
   // Load tokens for this agent
   const loadTokens = useCallback(async () => {
@@ -98,6 +104,22 @@ export function AgentDetailPage() {
     }
   }, []);
 
+  // Load tool permissions for this agent
+  const loadToolPermissions = useCallback(async () => {
+    if (!agent) return;
+    setPermissionsLoading(true);
+    try {
+      const permissions = await AgentToolPermissionsService.AgentToolPermissionsController_listAgentToolPermissions({
+        actorId: agent.actorId,
+      });
+      setToolPermissions(permissions);
+    } catch (err) {
+      console.error('Failed to load tool permissions:', err);
+    } finally {
+      setPermissionsLoading(false);
+    }
+  }, [agent]);
+
   // Load agent details if not in list
   useEffect(() => {
     if (!agentFromList && slug) {
@@ -114,13 +136,14 @@ export function AgentDetailPage() {
     }
   }, [slug, agentFromList, loadAgentDetails]);
 
-  // Load tokens when agent is loaded
+  // Load tokens, tags, and permissions when agent is loaded
   useEffect(() => {
     if (agent) {
       loadTokens();
       loadTags();
+      loadToolPermissions();
     }
-  }, [agent, loadTokens, loadTags]);
+  }, [agent, loadTokens, loadTags, loadToolPermissions]);
 
   // Load available scopes when create form is shown
   useEffect(() => {
@@ -315,6 +338,40 @@ export function AgentDetailPage() {
       console.error('Failed to update concurrency limit:', err);
       showError(err);
       return false;
+    }
+  };
+
+  // Handle deleting a tool permission
+  const handleDeleteToolPermission = async (serverId: string) => {
+    if (!agent) return;
+    if (!confirm('Remove this tool permission?')) return;
+
+    try {
+      await AgentToolPermissionsService.AgentToolPermissionsController_deleteAgentToolPermission({
+        actorId: agent.actorId,
+        serverId,
+      });
+      await loadToolPermissions();
+    } catch (err) {
+      console.error('Failed to delete tool permission:', err);
+      showError(err);
+    }
+  };
+
+  // Handle editing a tool permission (upsert scopes)
+  const handleEditToolPermission = async (serverId: string, scopeIds: string[]) => {
+    if (!agent) return;
+
+    try {
+      await AgentToolPermissionsService.AgentToolPermissionsController_upsertAgentToolPermission({
+        actorId: agent.actorId,
+        serverId,
+        body: { scopeIds },
+      });
+      await loadToolPermissions();
+    } catch (err) {
+      console.error('Failed to update tool permission:', err);
+      showError(err);
     }
   };
 
@@ -520,19 +577,138 @@ export function AgentDetailPage() {
         </DataRow>
       </DataRowContainer>
 
-      {/* Allowed Tools */}
-      {agent.allowedTools.length > 0 && (
-        <DataRowContainer className="agent-detail-page__section">
+      {/* Tool Permissions */}
+      <DataRowContainer
+        title="Tool Permissions"
+        className="agent-detail-page__section"
+        action={
+          <Button size="sm" onClick={() => setShowEditToolPermissionsPop(true)}>
+            Manage
+          </Button>
+        }
+      >
+        {permissionsLoading ? (
           <DataRow>
-            <Text as="span" weight="medium" size="3">
-              Allowed Tools ({agent.allowedTools.length})
-            </Text>
-            <Text tone="muted" size="2">
-              {agent.allowedTools.join(', ')}
-            </Text>
+            <Text tone="muted" size="2">Loading permissions...</Text>
           </DataRow>
-        </DataRowContainer>
-      )}
+        ) : toolPermissions.length === 0 ? (
+          <DataRow>
+            <Text tone="muted" size="2">No tool permissions configured</Text>
+          </DataRow>
+        ) : (
+          <>
+            {/* Separate core system tools from additional tools */}
+            {(() => {
+              const coreTools = toolPermissions.filter(p =>
+                p.server.providedId === 'tasks' || p.server.providedId === 'context'
+              );
+              const additionalTools = toolPermissions.filter(p =>
+                p.server.providedId !== 'tasks' && p.server.providedId !== 'context'
+              );
+
+              return (
+                <>
+                  {/* Core System Tools */}
+                  {coreTools.length > 0 && (
+                    <>
+                      <DataRow>
+                        <Text size="2" weight="medium" tone="muted">Core System Tools</Text>
+                        <Text size="1" tone="muted">
+                          These tools are always available to agents
+                        </Text>
+                      </DataRow>
+                      {coreTools.map(permission => (
+                        <DataRow key={permission.server.id}>
+                          <div className="agent-detail-page__tool-permission">
+                            <div className="agent-detail-page__tool-header">
+                              <div>
+                                <Text size="2" weight="medium">{permission.server.name}</Text>
+                                <Text size="1" tone="muted">{permission.server.description}</Text>
+                              </div>
+                              <Chip color={permission.server.type === 'http' ? 'green' : 'orange'}>
+                                {permission.server.type}
+                              </Chip>
+                            </div>
+                            {permission.server.type === 'http' && permission.availableScopes.length > 0 && (
+                              <div className="agent-detail-page__tool-scopes">
+                                <Text size="1" tone="muted">
+                                  {permission.hasAllScopes
+                                    ? 'All scopes granted'
+                                    : `${permission.grantedScopes.length} of ${permission.availableScopes.length} scopes granted`}
+                                </Text>
+                                <div className="agent-detail-page__scope-badge">
+                                  {permission.grantedScopes.map(scope => (
+                                    <Chip key={scope.id} color="blue">
+                                      {scope.id}
+                                    </Chip>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </DataRow>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Additional Tools */}
+                  {additionalTools.length > 0 && (
+                    <>
+                      <DataRow>
+                        <Text size="2" weight="medium" tone="muted">Additional Tools</Text>
+                      </DataRow>
+                      {additionalTools.map(permission => (
+                        <DataRow
+                          key={permission.server.id}
+                          topRight={
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleDeleteToolPermission(permission.server.id)}
+                            >
+                              Remove
+                            </Button>
+                          }
+                        >
+                          <div className="agent-detail-page__tool-permission">
+                            <div className="agent-detail-page__tool-header">
+                              <div>
+                                <Text size="2" weight="medium">{permission.server.name}</Text>
+                                <Text size="1" tone="muted">{permission.server.description}</Text>
+                              </div>
+                              <Chip color={permission.server.type === 'http' ? 'green' : 'orange'}>
+                                {permission.server.type}
+                              </Chip>
+                            </div>
+                            {permission.server.type === 'http' && permission.availableScopes.length > 0 ? (
+                              <div className="agent-detail-page__tool-scopes">
+                                <Text size="1" tone="muted">
+                                  {permission.hasAllScopes
+                                    ? 'All scopes granted'
+                                    : `${permission.grantedScopes.length} of ${permission.availableScopes.length} scopes granted`}
+                                </Text>
+                                <div className="agent-detail-page__scope-badge">
+                                  {permission.grantedScopes.map(scope => (
+                                    <Chip key={scope.id} color="blue">
+                                      {scope.id}
+                                    </Chip>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : permission.server.type === 'stdio' ? (
+                              <Text size="1" tone="muted">No scopes required (STDIO tool)</Text>
+                            ) : null}
+                          </div>
+                        </DataRow>
+                      ))}
+                    </>
+                  )}
+                </>
+              );
+            })()}
+          </>
+        )}
+      </DataRowContainer>
 
       {/* Newly Created Token Alert */}
       {newlyCreatedToken && (
@@ -786,6 +962,25 @@ export function AgentDetailPage() {
           initialValue={concurrencyLimit}
           onCancel={() => setShowEditConcurrencyLimitPop(false)}
           onSave={handleSaveConcurrencyLimit}
+        />
+      )}
+      {showEditToolPermissionsPop && agent && (
+        <EditAgentToolPermissionsPop
+          agentActorId={agent.actorId}
+          currentPermissions={toolPermissions.map(p => ({
+            serverId: p.server.id,
+            serverName: p.server.name,
+            serverProvidedId: p.server.providedId,
+            serverType: p.server.type as 'http' | 'stdio',
+            scopeIds: p.grantedScopes.map(s => s.id),
+            availableScopes: p.availableScopes,
+            hasAllScopes: p.hasAllScopes,
+          }))}
+          onCancel={() => setShowEditToolPermissionsPop(false)}
+          onSave={async () => {
+            await loadToolPermissions();
+            setShowEditToolPermissionsPop(false);
+          }}
         />
       )}
     </div>

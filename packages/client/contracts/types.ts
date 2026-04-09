@@ -8752,7 +8752,6 @@ export interface operations {
             header?: never;
             path: {
                 actorId: string;
-                /** @description MCP server UUID used by this assignment */
                 serverId: string;
             };
             cookie?: never;

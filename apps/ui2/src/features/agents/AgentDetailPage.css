@@ -135,6 +135,36 @@
   flex-wrap: wrap;
 }
 
+/* Tool permissions */
+.agent-detail-page__tool-permission {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.agent-detail-page__tool-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.agent-detail-page__tool-scopes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--surface);
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-subtle);
+}
+
+.agent-detail-page__scope-badge {
+  display: inline-flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .agent-detail-page__system-prompt {
