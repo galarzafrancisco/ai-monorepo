@@ -160,6 +160,29 @@ export async function executeTask({
         },
         onSession: (runnerSessionId: string) => {
           latestRunnerSessionId = runnerSessionId;
+          return workerClient.executionsV2
+            .ActiveTaskExecutionController_updateRunnerSessionId({
+              executionId,
+              body: {
+                sessionId: runnerSessionId,
+              },
+            })
+            .catch((error) => {
+              console.warn(
+                `[worker] failed to persist runner session id for execution ${executionId}: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            });
+        },
+        onToolCall: (toolName: string) => {
+          return workerClient.executionsV2
+            .ActiveTaskExecutionController_incrementToolCallCount({
+              executionId,
+            })
+            .catch((error) => {
+              console.warn(
+                `[worker] failed to increment tool call count for execution ${executionId} (tool=${toolName}): ${error instanceof Error ? error.message : String(error)}`,
+              );
+            });
         },
         onError: (error: { message: string; rawMessage?: any }) => {
           console.log('Error detected');

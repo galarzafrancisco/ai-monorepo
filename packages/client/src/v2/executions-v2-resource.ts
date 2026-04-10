@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { ActiveTaskExecutionResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueEntryResponseDto } from './types.js';
+import type { ActiveTaskExecutionResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueEntryResponseDto, UpdateRunnerSessionIdDto } from './types.js';
 
 export class ExecutionsV2Resource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -24,6 +24,16 @@ export class ExecutionsV2Resource extends BaseClient {
   /** Stop an active task execution and move it to history */
   async ActiveTaskExecutionController_stopTaskExecution(params: { executionId: string; body: StopActiveTaskExecutionDto; signal?: AbortSignal }): Promise<TaskExecutionHistoryResponseDto> {
     return this.request('POST', `/api/v1/executions-v2/active/${params.executionId}/stop`, { body: params.body, signal: params?.signal });
+  }
+
+  /** Attach the runner session id to an active execution */
+  async ActiveTaskExecutionController_updateRunnerSessionId(params: { executionId: string; body: UpdateRunnerSessionIdDto; signal?: AbortSignal }): Promise<void> {
+    return this.request('PATCH', `/api/v1/executions-v2/active/${params.executionId}/session`, { body: params.body, signal: params?.signal });
+  }
+
+  /** Increment tool call count for an active execution */
+  async ActiveTaskExecutionController_incrementToolCallCount(params: { executionId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('PATCH', `/api/v1/executions-v2/active/${params.executionId}/tool-calls/increment`, { signal: params?.signal });
   }
 
   /** List task execution history */

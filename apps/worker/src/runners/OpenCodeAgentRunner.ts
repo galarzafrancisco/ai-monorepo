@@ -142,6 +142,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
+    onToolCall?: (toolName: string) => void | Promise<void>,
   ): Promise<string> {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
     this.runtimeMcpServers = ctx.mcpServers;
@@ -173,6 +174,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       this.shutdown();
       throw new Error("Failed to create Opencode session");
     }
+    await setSession(session.id);
     console.log(`created session ${session.id} in ${session.directory}`);
     // Session is created in the right dir ✅
 
@@ -209,6 +211,14 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
         if (event.type == 'session.idle') {
           console.log('session.idle');
           break;
+        }
+
+        if (
+          event.type === 'message.part.updated' &&
+          !event.properties.delta &&
+          event.properties.part.type === 'tool'
+        ) {
+          await onToolCall?.(event.properties.part.tool);
         }
 
         const message = formatter.format(event);

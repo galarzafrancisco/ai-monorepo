@@ -71,6 +71,20 @@ export class ActiveTaskExecutionResponseDto {
   lastHeartbeatAt!: string | null;
 
   @ApiProperty({
+    type: String,
+    description: 'Agent runtime session identifier associated with this execution',
+    example: 'session_01JZ0SMM85FBFA8Y82M8VREY2A',
+    nullable: true,
+  })
+  runnerSessionId!: string | null;
+
+  @ApiProperty({
+    description: 'Number of tool calls made during this execution so far',
+    example: 7,
+  })
+  toolCallCount!: number;
+
+  @ApiProperty({
     description: 'Task status before the task was claimed',
     enum: TaskStatus,
   })
@@ -112,6 +126,8 @@ export class ActiveTaskExecutionResponseDto {
       taskStatus: entity.task?.status ?? null,
       claimedAt: entity.claimedAt.toISOString(),
       lastHeartbeatAt: entity.lastHeartbeatAt?.toISOString() ?? null,
+      runnerSessionId: entity.runnerSessionId,
+      toolCallCount: entity.toolCallCount,
       taskStatusBeforeClaim: entity.taskStatusBeforeClaim,
       taskTagsBeforeClaim: entity.taskTagsBeforeClaim.map((tag) =>
         ActiveTaskExecutionTagSnapshotResponseDto.fromSnapshot(tag),

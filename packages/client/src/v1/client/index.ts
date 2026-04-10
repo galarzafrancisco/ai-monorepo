@@ -130,6 +130,7 @@ export type { UpdateAgentRunDto } from './models/UpdateAgentRunDto.js';
 export type { UpdateBlockDto } from './models/UpdateBlockDto.js';
 export type { UpdateChatProviderDto } from './models/UpdateChatProviderDto.js';
 export type { UpdateConnectionDto } from './models/UpdateConnectionDto.js';
+export type { UpdateRunnerSessionIdDto } from './models/UpdateRunnerSessionIdDto.js';
 export type { UpdateScheduledTaskDto } from './models/UpdateScheduledTaskDto.js';
 export type { UpdateSecretDto } from './models/UpdateSecretDto.js';
 export { UpdateServerDto } from './models/UpdateServerDto.js';

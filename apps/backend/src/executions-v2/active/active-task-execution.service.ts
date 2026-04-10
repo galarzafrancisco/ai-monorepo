@@ -34,6 +34,15 @@ export type StopTaskExecutionInput = {
   errorMessage?: string | null;
 };
 
+export type UpdateRunnerSessionIdInput = {
+  executionId: string;
+  runnerSessionId: string;
+};
+
+export type IncrementToolCallCountInput = {
+  executionId: string;
+};
+
 @Injectable()
 export class ActiveTaskExecutionService {
   constructor(
@@ -101,6 +110,8 @@ export class ActiveTaskExecutionService {
         agentActorId: assigneeActorId,
         workerClientId: input.workerClientId,
         lastHeartbeatAt: null,
+        runnerSessionId: null,
+        toolCallCount: 0,
       });
 
       const savedExecution = await manager.save(activeExecution);
@@ -150,6 +161,8 @@ export class ActiveTaskExecutionService {
         transitionedAt: new Date(),
         agentActorId: activeExecution.agentActorId,
         workerClientId: input.workerClientId,
+        runnerSessionId: activeExecution.runnerSessionId,
+        toolCallCount: activeExecution.toolCallCount,
         status: input.status,
         errorCode: input.errorCode ?? null,
         errorMessage: input.errorMessage ?? null,
@@ -191,5 +204,49 @@ export class ActiveTaskExecutionService {
     });
 
     return historyEntry;
+  }
+
+  async updateRunnerSessionId(input: UpdateRunnerSessionIdInput): Promise<void> {
+    const result = await this.activeTaskExecutionRepository
+      .createQueryBuilder()
+      .update(ActiveTaskExecutionEntity)
+      .set({
+        runnerSessionId: input.runnerSessionId,
+        rowVersion: () => 'row_version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
+      })
+      .where('id = :executionId', { executionId: input.executionId })
+      .andWhere('runner_session_id IS NULL')
+      .execute();
+
+    if ((result.affected ?? 0) > 0) {
+      return;
+    }
+
+    const existing = await this.activeTaskExecutionRepository.findOne({
+      where: { id: input.executionId },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new ActiveTaskExecutionNotFoundError(input.executionId);
+    }
+  }
+
+  async incrementToolCallCount(input: IncrementToolCallCountInput): Promise<void> {
+    const result = await this.activeTaskExecutionRepository
+      .createQueryBuilder()
+      .update(ActiveTaskExecutionEntity)
+      .set({
+        toolCallCount: () => 'tool_call_count + 1',
+        rowVersion: () => 'row_version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
+      })
+      .where('id = :executionId', { executionId: input.executionId })
+      .execute();
+
+    if ((result.affected ?? 0) === 0) {
+      throw new ActiveTaskExecutionNotFoundError(input.executionId);
+    }
   }
 }

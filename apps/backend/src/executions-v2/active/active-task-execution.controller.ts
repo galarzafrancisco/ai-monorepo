@@ -1,10 +1,11 @@
 import {
   Body,
-  ConflictException,
   Controller,
   Get,
+  HttpCode,
   NotFoundException,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -27,6 +28,7 @@ import { ActiveTaskExecutionNotFoundError } from '../errors/executions-v2.errors
 import { ActiveTaskExecutionService } from './active-task-execution.service';
 import { ActiveTaskExecutionResponseDto } from './dto/http/active-task-execution-response.dto';
 import { StopActiveTaskExecutionDto } from './dto/http/stop-active-task-execution.dto';
+import { UpdateRunnerSessionIdDto } from './dto/http/update-runner-session-id.dto';
 import { TaskExecutionHistoryResponseDto } from '../history/dto/http/task-execution-history-response.dto';
 
 @ApiTags('Executions V2')
@@ -77,6 +79,58 @@ export class ActiveTaskExecutionController {
       });
 
       return TaskExecutionHistoryResponseDto.fromEntity(historyEntry);
+    } catch (error) {
+      if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+
+      throw error;
+    }
+  }
+
+  @Patch(':executionId/session')
+  @HttpCode(204)
+  @RequireScopes(WorkersScopes.CONNECT.id)
+  @ApiOperation({
+    summary: 'Attach the runner session id to an active execution',
+    description:
+      'Stores the runtime session identifier emitted by the agent harness so it can be propagated to execution history.',
+  })
+  @ApiParam({ name: 'executionId', description: 'Execution ID to update' })
+  async updateRunnerSessionId(
+    @Param('executionId') executionId: string,
+    @Body() dto: UpdateRunnerSessionIdDto,
+  ): Promise<void> {
+    try {
+      await this.activeTaskExecutionService.updateRunnerSessionId({
+        executionId,
+        runnerSessionId: dto.sessionId,
+      });
+    } catch (error) {
+      if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+
+      throw error;
+    }
+  }
+
+  @Patch(':executionId/tool-calls/increment')
+  @HttpCode(204)
+  @RequireScopes(WorkersScopes.CONNECT.id)
+  @ApiOperation({
+    summary: 'Increment tool call count for an active execution',
+    description:
+      'Atomically increments the active execution tool-call counter without touching other mutable execution fields.',
+  })
+  @ApiParam({ name: 'executionId', description: 'Execution ID to update' })
+  async incrementToolCallCount(
+    @Param('executionId') executionId: string,
+  ): Promise<void> {
+    try {
+      await this.activeTaskExecutionService.incrementToolCallCount({
+        executionId,
+      });
     } catch (error) {
       if (error instanceof ActiveTaskExecutionNotFoundError) {
         throw new NotFoundException(error.message);

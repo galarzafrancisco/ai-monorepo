@@ -6,6 +6,7 @@ import type { ActiveTaskExecutionResponseDto } from '../models/ActiveTaskExecuti
 import type { StopActiveTaskExecutionDto } from '../models/StopActiveTaskExecutionDto.js';
 import type { TaskExecutionHistoryResponseDto } from '../models/TaskExecutionHistoryResponseDto.js';
 import type { TaskExecutionQueueEntryResponseDto } from '../models/TaskExecutionQueueEntryResponseDto.js';
+import type { UpdateRunnerSessionIdDto } from '../models/UpdateRunnerSessionIdDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
 import type { OpenAPIConfig } from '../core/OpenAPI.js';
@@ -75,6 +76,48 @@ export class ExecutionsV2Service {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Attach the runner session id to an active execution
+     * Stores the runtime session identifier emitted by the agent harness so it can be propagated to execution history.
+     * @param executionId Execution ID to update
+     * @param requestBody
+     * @returns void
+     * @throws ApiError
+     */
+    public static activeTaskExecutionControllerUpdateRunnerSessionId(
+        executionId: string,
+        requestBody: UpdateRunnerSessionIdDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'PATCH',
+            url: '/api/v1/executions-v2/active/{executionId}/session',
+            path: {
+                'executionId': executionId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Increment tool call count for an active execution
+     * Atomically increments the active execution tool-call counter without touching other mutable execution fields.
+     * @param executionId Execution ID to update
+     * @returns void
+     * @throws ApiError
+     */
+    public static activeTaskExecutionControllerIncrementToolCallCount(
+        executionId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'PATCH',
+            url: '/api/v1/executions-v2/active/{executionId}/tool-calls/increment',
+            path: {
+                'executionId': executionId,
+            },
         });
     }
     /**

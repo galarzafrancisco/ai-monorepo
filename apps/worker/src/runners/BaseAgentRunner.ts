@@ -36,9 +36,15 @@ export abstract class BaseAgentRunner implements AgentRunner {
     };
 
     const onError = cb.onError;
+    const onToolCall = async (toolName: string) => {
+      if (!cb.onToolCall) {
+        return;
+      }
+      await cb.onToolCall(toolName);
+    };
 
     try {
-      result = await this.runInternal(ctx, emit, setSession, onError);
+      result = await this.runInternal(ctx, emit, setSession, onError, onToolCall);
     } catch (err: any) {
       await emit(`❌ Agent error: ${err?.message ?? String(err)}`);
       throw err;
@@ -58,5 +64,6 @@ export abstract class BaseAgentRunner implements AgentRunner {
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
+    onToolCall?: (toolName: string) => void | Promise<void>,
   ): Promise<string>;
 }
