@@ -90,6 +90,35 @@ export function ContextBlockDetailPage() {
     }
   }, [isDeleted, navigate]);
 
+  // Handle markdown download
+  const handleDownload = () => {
+    if (!block) return;
+
+    // Sanitize the title to create a safe filename
+    const sanitizedTitle = block.title
+      .replace(/[^a-z0-9]/gi, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase();
+
+    const filename = `${sanitizedTitle || 'context-block'}.md`;
+
+    // Create blob with markdown content
+    const blob = new Blob([block.content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+
+    // Create temporary link and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const breadcrumbs = useMemo(() => {
     if (!block) {
       return [];
@@ -209,6 +238,13 @@ export function ContextBlockDetailPage() {
           onClick={() => navigate(`/context/block/${block.id}/edit`)}
         >
           Edit
+        </Button>
+        <Button
+          size='lg'
+          variant='secondary'
+          onClick={handleDownload}
+        >
+          Download as Markdown
         </Button>
         {threadId && (
           <Button
