@@ -17,6 +17,7 @@ const THEMES = [
   { value: 'oceanic', label: 'Oceanic', description: 'Cool blues and teals' },
   { value: 'party', label: 'Party', description: 'Playful warm palette' },
   { value: 'tribute', label: 'Tribute', description: 'Inspired by the old UI\'s dark sidebar' },
+  { value: 'psychedelic', label: 'Psychedelic', description: 'Balls to the walls! Vibrant neon colors with glow effects' },
 ] as const;
 
 export function SettingsAppearancePage() {
