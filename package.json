@@ -71,6 +71,9 @@
   "dependencies": {
     "jose": "^6.1.0"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-arm64-gnu": "4.60.1"
+  },
   "overrides": {
     "ajv": "^8.18.0",
     "path-to-regexp": "^8.4.0",
