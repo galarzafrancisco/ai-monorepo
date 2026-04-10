@@ -52,6 +52,14 @@ export class ReadinessCandidateRepository {
             AND prerequisite.deleted_at IS NULL
             AND prerequisite.status != :doneStatus
         )`,
+      )
+      .andWhere(
+        `NOT EXISTS (
+          SELECT 1
+          FROM task_input_requests input_request
+          WHERE input_request.task_id = task.id
+            AND input_request.resolved_at IS NULL
+        )`,
       );
   }
 
