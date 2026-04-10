@@ -1,6 +1,6 @@
 {
   "name": "@taico/shared",
-  "version": "0.2.1",
+  "version": "0.2.6",
   "type": "module",
   "private": false,
   "license": "MIT",

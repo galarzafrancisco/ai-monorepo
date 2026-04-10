@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
-    "@taico/client": "*",
-    "@taico/events": "*",
-    "@taico/shared": "*",
+    "@taico/client": "^0.2.6",
+    "@taico/events": "^0.2.6",
+    "@taico/shared": "^0.2.6",
     "marked-react": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
