@@ -139,26 +139,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           timeout: 20 * 3600,
           signal: this.abortController.signal,
           config: {
-            mcp: {
-              tasks: {
-                type: 'remote',
-                url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
-                headers: {
-                  Authorization: `Bearer ${ctx.accessToken}`,
-                  [EXECUTION_ID_HEADER]: ctx.executionId,
-                },
-                enabled: true,
-              },
-              context: {
-                type: 'remote',
-                url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
-                headers: {
-                  Authorization: `Bearer ${ctx.accessToken}`,
-                  [EXECUTION_ID_HEADER]: ctx.executionId,
-                },
-                enabled: true,
-              },
-            },
+            mcp: this.buildMcpConfig(ctx),
           },
         });
 
@@ -205,5 +186,59 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       providerID,
       modelID,
     };
+  }
+
+  private buildMcpConfig(ctx: AgentRunContext): Record<
+    string,
+    {
+      type: 'remote';
+      url: string;
+      headers: Record<string, string>;
+      enabled: true;
+    }
+  > {
+    const runtimeMcpServers =
+      ctx.mcpServers ?? {
+        tasks: {
+          type: 'http' as const,
+          url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
+          headers: {
+            Authorization: `Bearer ${ctx.accessToken}`,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
+          },
+        },
+        context: {
+          type: 'http' as const,
+          url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
+          headers: {
+            Authorization: `Bearer ${ctx.accessToken}`,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
+          },
+        },
+      };
+
+    const config: Record<
+      string,
+      {
+        type: 'remote';
+        url: string;
+        headers: Record<string, string>;
+        enabled: true;
+      }
+    > = {};
+    for (const [providedId, server] of Object.entries(runtimeMcpServers)) {
+      if (server.type !== 'http') {
+        continue;
+      }
+
+      config[providedId] = {
+        type: 'remote',
+        url: server.url,
+        headers: server.headers,
+        enabled: true,
+      };
+    }
+
+    return config;
   }
 }

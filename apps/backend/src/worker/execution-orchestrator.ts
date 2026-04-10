@@ -1,10 +1,12 @@
 import { RunAssignedWireEvent, StopRequestedWireEvent } from '@taico/events';
 import { prepareWorkspace } from './helpers/prepare-workspace';
 import { getSession, setSession } from './helpers/session-store';
+import { EXECUTION_ID_HEADER } from '../auth/guards/constants/headers.constants';
 import { ClaudeAgentRunner } from './runners/claude-agent-runner';
 import { OpencodeAgentRunner } from './runners/opencode-agent-runner';
-import { AgentRunner } from './runners/agent-runner.types';
+import { AgentRunner, RuntimeMcpServerConfig } from './runners/agent-runner.types';
 import { WorkerGatewayClient } from './worker-gateway-client';
+import { deriveAllowedToolsFromProvidedIds } from '@taico/shared';
 
 type ExecutionOrchestratorOptions = {
   serverUrl: string;
@@ -41,6 +43,25 @@ type AgentResponse = {
 
 type AgentListResponse = {
   items: AgentResponse[];
+};
+
+type AgentToolPermissionScopeResponse = {
+  id: string;
+  description: string;
+};
+
+type AgentToolPermissionResponse = {
+  server: {
+    id: string;
+    providedId: string;
+    type: 'http' | 'stdio';
+    url?: string;
+    cmd?: string;
+    args?: string[];
+  };
+  availableScopes: AgentToolPermissionScopeResponse[];
+  grantedScopes: AgentToolPermissionScopeResponse[];
+  hasAllScopes: boolean;
 };
 
 type ProjectResponse = {
@@ -110,7 +131,16 @@ export class ExecutionOrchestrator {
       throw new Error(`Agent @${agent.slug} has no system prompt configured`);
     }
 
+    const permissions = await this.fetchAgentToolPermissions(agent.actorId);
     const executionToken = await this.requestExecutionToken(agent.slug);
+    const runtimeMcpServers = this.buildRuntimeMcpServers(
+      permissions,
+      executionToken,
+      event.executionId,
+    );
+    const allowedTools = deriveAllowedToolsFromProvidedIds(
+      Object.keys(runtimeMcpServers),
+    );
     const repoUrl = await this.resolveRepoUrl(task.tags ?? []);
     const workspaceDir = await prepareWorkspace(task.id, agent.actorId, repoUrl);
     const thread = await this.fetchThreadByTaskId(task.id);
@@ -130,6 +160,8 @@ export class ExecutionOrchestrator {
         baseUrl: this.options.serverUrl,
         resume: getSession(agent.actorId, task.id) ?? undefined,
         agentSlug: agent.slug,
+        mcpServers: runtimeMcpServers,
+        allowedTools,
         options: {
           model:
             agent.providerId && agent.modelId
@@ -225,13 +257,53 @@ export class ExecutionOrchestrator {
       {
         method: 'POST',
         body: JSON.stringify({
-          scopes: ['tasks:read', 'tasks:write', 'context:read', 'context:write'],
           expirationSeconds: 3600,
         }),
       },
     );
 
     return response.token;
+  }
+
+  private async fetchAgentToolPermissions(
+    actorId: string,
+  ): Promise<AgentToolPermissionResponse[]> {
+    return this.fetchJson<AgentToolPermissionResponse[]>(
+      `/api/v1/agents/${actorId}/tool-permissions`,
+    );
+  }
+
+  private buildRuntimeMcpServers(
+    permissions: AgentToolPermissionResponse[],
+    accessToken: string,
+    executionId: string,
+  ): Record<string, RuntimeMcpServerConfig> {
+    const runtimeMcpServers: Record<string, RuntimeMcpServerConfig> = {};
+
+    for (const permission of permissions) {
+      const providedId = permission.server.providedId;
+      if (permission.server.type === 'http' && permission.server.url) {
+        runtimeMcpServers[providedId] = {
+          type: 'http',
+          url: permission.server.url,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            [EXECUTION_ID_HEADER]: executionId,
+          },
+        };
+        continue;
+      }
+
+      if (permission.server.type === 'stdio' && permission.server.cmd) {
+        runtimeMcpServers[providedId] = {
+          type: 'stdio',
+          command: permission.server.cmd,
+          args: permission.server.args ?? [],
+        };
+      }
+    }
+
+    return runtimeMcpServers;
   }
 
   private async resolveRepoUrl(tags: TaskTag[]): Promise<string | null> {

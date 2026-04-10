@@ -8,6 +8,18 @@ export type AgentModelConfig = {
   modelId?: string | null;
 }
 
+export type RuntimeMcpServerConfig =
+  | {
+      type: 'http';
+      url: string;
+      headers: Record<string, string>;
+    }
+  | {
+      type: 'stdio';
+      command: string;
+      args: string[];
+    };
+
 export type AgentRunContext = {
   /** Task / job identity */
   taskId: string;
@@ -37,6 +49,12 @@ export type AgentRunContext = {
 
   /** Agent slug for personalized activity messages */
   agentSlug?: string;
+
+  /** Runtime MCP servers that should be mounted for this run */
+  mcpServers?: Record<string, RuntimeMcpServerConfig>;
+
+  /** Allowed tool list for SDKs that support tool filtering */
+  allowedTools?: string[];
 };
 
 export type AgentRunCallbacks = {

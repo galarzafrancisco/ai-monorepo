@@ -10314,6 +10314,27 @@
               "stdio"
             ],
             "example": "http"
+          },
+          "url": {
+            "type": "string",
+            "description": "HTTP endpoint for servers with http transport",
+            "example": "https://example.com/mcp"
+          },
+          "cmd": {
+            "type": "string",
+            "description": "Command for servers with stdio transport",
+            "example": "npx"
+          },
+          "args": {
+            "description": "Command arguments for servers with stdio transport",
+            "example": [
+              "-y",
+              "@taico/example-mcp"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -10572,7 +10593,7 @@
         "type": "object",
         "properties": {
           "scopes": {
-            "description": "Scopes to grant to the short-lived execution token.",
+            "description": "Scopes to grant to the short-lived execution token. When omitted, scopes are derived from baseline system access plus assigned tool permissions.",
             "example": [
               "tasks:read",
               "tasks:write"
@@ -10589,10 +10610,7 @@
             "minimum": 1,
             "maximum": 3600
           }
-        },
-        "required": [
-          "scopes"
-        ]
+        }
       },
       "AgentExecutionTokenResponseDto": {
         "type": "object",

@@ -4,6 +4,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
+import { DEFAULT_AGENT_ALLOWED_TOOLS } from '@taico/shared';
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
@@ -21,6 +22,26 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
     const formatter = new ClaudeMessageFormatter(ctx.agentSlug);
 
     let finalResult = '';
+    const mcpServers =
+      ctx.mcpServers ?? {
+        tasks: {
+          type: 'http',
+          url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
+          headers: {
+            Authorization: `Bearer ${ctx.accessToken}`,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
+          },
+        },
+        context: {
+          type: 'http',
+          url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
+          headers: {
+            Authorization: `Bearer ${ctx.accessToken}`,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
+          },
+        },
+      };
+
     const stream = query({
       prompt: ctx.prompt,
       options: {
@@ -29,33 +50,8 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         persistSession: true,
         settingSources: ['user', 'project', 'local'],
         ...(ctx.options ?? {}),
-        mcpServers: {
-          tasks: {
-            type: "http",
-            url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
-            headers: {
-              Authorization: `Bearer ${ctx.accessToken}`,
-              [EXECUTION_ID_HEADER]: ctx.executionId,
-            },
-          },
-          context: {
-            type: "http",
-            url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
-            headers: {
-              Authorization: `Bearer ${ctx.accessToken}`,
-              [EXECUTION_ID_HEADER]: ctx.executionId,
-            },
-          }
-        },
-        allowedTools: [
-          'mcp__tasks__*',
-          'mcp__context__*',
-          'SlashCommand',
-          'Bash',
-          'Read',
-          'Write',
-          'Edit',
-        ],
+        mcpServers,
+        allowedTools: ctx.allowedTools ?? [...DEFAULT_AGENT_ALLOWED_TOOLS],
       },
     });
 

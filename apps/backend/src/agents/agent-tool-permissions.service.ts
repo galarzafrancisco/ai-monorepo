@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AgentEntity } from './agent.entity';
 import { AgentNotFoundError } from './errors/agents.errors';
 import { McpServerEntity } from '../mcp-registry/entities/mcp-server.entity';
@@ -16,6 +16,7 @@ import {
   AgentToolPermissionNotFoundError,
   InvalidAgentToolPermissionScopeError,
 } from './errors/agents.errors';
+import { BASELINE_SYSTEM_TOOL_PROVIDED_IDS } from '@taico/shared';
 
 @Injectable()
 export class AgentToolPermissionsService {
@@ -41,13 +42,35 @@ export class AgentToolPermissionsService {
       },
     });
 
-    return permissions
+    const explicitPermissions = permissions
       .filter(
         (permission): permission is AgentToolPermissionEntity & {
           server: McpServerEntity;
         } => Boolean(permission.server),
       )
       .map((permission) => this.mapPermissionToRecord(permission));
+
+    const permissionsByProvidedId = new Map(
+      explicitPermissions.map((permission) => [permission.serverProvidedId, permission]),
+    );
+
+    const baselineServers = await this.serverRepository.find({
+      where: {
+        providedId: In([...BASELINE_SYSTEM_TOOL_PROVIDED_IDS]),
+      },
+      relations: ['scopes'],
+    });
+
+    for (const baselineServer of baselineServers) {
+      permissionsByProvidedId.set(
+        baselineServer.providedId,
+        this.mapBaselineServerToRecord(baselineServer),
+      );
+    }
+
+    return [...permissionsByProvidedId.values()].sort((a, b) =>
+      a.serverName.localeCompare(b.serverName),
+    );
   }
 
   async upsertAgentToolPermission(
@@ -109,6 +132,9 @@ export class AgentToolPermissionsService {
       serverName: server.name,
       serverDescription: server.description,
       serverType: server.type,
+      serverUrl: server.url,
+      serverCommand: server.cmd,
+      serverArgs: server.args ?? undefined,
       availableScopes: availableScopes.map((scope) => ({
         id: scope.id,
         description: scope.description,
@@ -183,10 +209,36 @@ export class AgentToolPermissionsService {
       serverName: permission.server.name,
       serverDescription: permission.server.description,
       serverType: permission.server.type,
+      serverUrl: permission.server.url,
+      serverCommand: permission.server.cmd,
+      serverArgs: permission.server.args ?? undefined,
       availableScopes,
       grantedScopes,
       hasAllScopes:
         availableScopes.length > 0 && grantedScopes.length === availableScopes.length,
+    };
+  }
+
+  private mapBaselineServerToRecord(server: McpServerEntity): AgentToolPermissionRecord {
+    const availableScopes: AgentToolPermissionScopeRecord[] = (server.scopes ?? [])
+      .map((scope) => ({
+        id: scope.id,
+        description: scope.description,
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    return {
+      serverId: server.id,
+      serverProvidedId: server.providedId,
+      serverName: server.name,
+      serverDescription: server.description,
+      serverType: server.type,
+      serverUrl: server.url,
+      serverCommand: server.cmd,
+      serverArgs: server.args ?? undefined,
+      availableScopes,
+      grantedScopes: availableScopes,
+      hasAllScopes: true,
     };
   }
 }

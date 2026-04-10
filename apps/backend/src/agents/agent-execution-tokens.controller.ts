@@ -17,6 +17,9 @@ import { ActorService } from '../identity-provider/actor.service';
 import { IssuedAccessTokenService } from '../authorization-server/issued-access-token.service';
 import { AgentExecutionTokenResponseDto } from './dto/agent-execution-token-response.dto';
 import { RequestAgentExecutionTokenDto } from './dto/request-agent-execution-token.dto';
+import { AgentToolPermissionsService } from './agent-tool-permissions.service';
+import { deriveExecutionScopesFromToolPermissions } from '@taico/shared';
+import { AgentToolPermissionRecord } from './dto/service/agent-tool-permissions.service.types';
 
 @ApiTags('Agent Execution Tokens')
 @ApiCookieAuth('JWT-Cookie')
@@ -28,6 +31,7 @@ export class AgentExecutionTokensController {
     private readonly agentsService: AgentsService,
     private readonly actorService: ActorService,
     private readonly issuedAccessTokenService: IssuedAccessTokenService,
+    private readonly agentToolPermissionsService: AgentToolPermissionsService,
   ) {}
 
   @Post()
@@ -56,19 +60,48 @@ export class AgentExecutionTokensController {
       );
     }
 
+    const scopes =
+      dto.scopes && dto.scopes.length > 0
+        ? dto.scopes
+        : deriveExecutionScopesFromToolPermissions(
+            (
+              await this.agentToolPermissionsService.listAgentToolPermissions(
+                agent.actorId,
+              )
+            ).map((permission) => this.toRuntimePermission(permission)),
+          );
+
     const issuedToken = await this.issuedAccessTokenService.issueSystemToken({
       subjectActor,
       issuedByActor,
-      scopes: dto.scopes,
+      scopes,
       expirationSeconds: dto.expirationSeconds,
     });
 
     return {
       token: issuedToken.token,
-      scopes: dto.scopes,
+      scopes,
       expiresAt: issuedToken.expiresAt.toISOString(),
       agentSlug: subjectActor.slug,
       requestedByClientId: auth.claims.client_id,
+    };
+  }
+
+  private toRuntimePermission(permission: AgentToolPermissionRecord): {
+    server: { providedId: string };
+    availableScopes: { id: string }[];
+    grantedScopes: { id: string }[];
+  } {
+    return {
+      server: {
+        providedId: permission.serverProvidedId,
+      },
+      availableScopes: permission.availableScopes.map((scope) => ({
+        id: scope.id,
+      })),
+      grantedScopes: permission.grantedScopes.map((scope) => ({
+        id: scope.id,
+      })),
     };
   }
 }

@@ -57,3 +57,5 @@ export const DEFAULT_AGENT_TOKEN_SCOPES = [
   'mcp:use',
   'secret:read',
 ] as const;
+
+export * from './agent-runtime-permissions.js';

@@ -1,22 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class RequestAgentExecutionTokenDto {
-  @ApiProperty({
-    description: 'Scopes to grant to the short-lived execution token.',
+  @ApiPropertyOptional({
+    description:
+      'Scopes to grant to the short-lived execution token. When omitted, scopes are derived from baseline system access plus assigned tool permissions.',
     example: ['tasks:read', 'tasks:write'],
     type: [String],
   })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  scopes!: string[];
+  scopes?: string[];
 
   @ApiPropertyOptional({
     description:

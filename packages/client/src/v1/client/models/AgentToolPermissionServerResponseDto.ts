@@ -23,6 +23,18 @@ export type AgentToolPermissionServerResponseDto = {
      * MCP server transport type
      */
     type: AgentToolPermissionServerResponseDto.type;
+    /**
+     * HTTP endpoint for servers with http transport
+     */
+    url?: string;
+    /**
+     * Command for servers with stdio transport
+     */
+    cmd?: string;
+    /**
+     * Command arguments for servers with stdio transport
+     */
+    args?: Array<string>;
 };
 export namespace AgentToolPermissionServerResponseDto {
     /**

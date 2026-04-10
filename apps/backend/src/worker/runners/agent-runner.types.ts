@@ -1,3 +1,15 @@
+export type RuntimeMcpServerConfig =
+  | {
+      type: 'http';
+      url: string;
+      headers: Record<string, string>;
+    }
+  | {
+      type: 'stdio';
+      command: string;
+      args: string[];
+    };
+
 export type AgentRunContext = {
   taskId: string;
   prompt: string;
@@ -8,6 +20,8 @@ export type AgentRunContext = {
   resume?: string;
   options?: Record<string, unknown>;
   agentSlug?: string;
+  mcpServers?: Record<string, RuntimeMcpServerConfig>;
+  allowedTools?: string[];
 };
 
 export type AgentRunCallbacks = {

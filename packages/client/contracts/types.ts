@@ -4280,6 +4280,24 @@ export interface components {
              * @enum {string}
              */
             type: "http" | "stdio";
+            /**
+             * @description HTTP endpoint for servers with http transport
+             * @example https://example.com/mcp
+             */
+            url?: string;
+            /**
+             * @description Command for servers with stdio transport
+             * @example npx
+             */
+            cmd?: string;
+            /**
+             * @description Command arguments for servers with stdio transport
+             * @example [
+             *       "-y",
+             *       "@taico/example-mcp"
+             *     ]
+             */
+            args?: string[];
         };
         AgentToolPermissionScopeResponseDto: {
             /**
@@ -4444,13 +4462,13 @@ export interface components {
         };
         RequestAgentExecutionTokenDto: {
             /**
-             * @description Scopes to grant to the short-lived execution token.
+             * @description Scopes to grant to the short-lived execution token. When omitted, scopes are derived from baseline system access plus assigned tool permissions.
              * @example [
              *       "tasks:read",
              *       "tasks:write"
              *     ]
              */
-            scopes: string[];
+            scopes?: string[];
             /**
              * @description Lifetime of the short-lived execution token in seconds. Defaults to the server MCP access token duration.
              * @example 600
