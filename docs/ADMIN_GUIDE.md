@@ -1,154 +1,108 @@
 # Admin Guide
 
-This guide covers operating a Taico instance — user management, running agent workers, and system configuration.
+This guide covers operating a Taico instance and the recommended way to run the server and worker.
 
-## Quick Start via npx
+## Recommended Topology
 
-The fastest way to get Taico running. No cloning required — just npm packages.
+For a typical self-hosted setup:
 
-### 1. Start the server
+- run the Taico server in Docker so it is stable and restarts automatically
+- run the worker directly on your machine via `npx` so it can use the local tools and provider logins you already have
 
-```bash
-npx -y @taico/taico
-```
+The helper scripts in [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh) and [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh) reflect that setup.
 
-By default the server runs in **production mode**. With no environment variables set, it listens on `http://localhost:2000` and defaults `ISSUER_URL` to that same URL, so `npx @taico/taico` works out of the box.
+## Server
 
-If you override `BACKEND_PORT`, `PORT`, or `--port`, set `ISSUER_URL` explicitly when you need a public URL that differs from the local default.
-
-Open `http://localhost:2000` in your browser.
-
-### 2. Start a worker
-
-Workers connect to the server and run AI agents on tasks. Each worker represents one agent.
-
-Create the agent in the UI and generate an access token (Agents > your agent > Create Token). The token needs scopes: `task:*`, `meta:*`, `context:*`, `agents:read`, `mcp:use`.
-
-Create a `.env` file:
-
-```env
-AGENT_SLUG=claude
-BASE_URL=http://localhost:3000
-ACCESS_TOKEN=your-token-here
-WORK_DIR=/absolute/path/to/workdir
-```
-
-Then start the worker:
+Start the server with:
 
 ```bash
-npx -y @taico/worker
+./helpers/start-server.sh
 ```
 
-To run multiple agents, create a `.env` file per agent and start each in its own terminal:
+Before running it, review and adjust:
+
+- `IMAGE`: keep the image tag current
+- `PORT`: choose the port you want to expose
+- `DATABASE_PATH`: point this at a persistent directory you control
+
+The script runs the container with `--restart unless-stopped`, which is recommended so Taico comes back with the machine.
+
+## First Login And Accounts
+
+You no longer need a separate admin bootstrap script to create users.
+
+When Taico starts for the first time, the app itself guides you through creating the first account. After that, sign in through the UI normally.
+
+Any documentation or workflow that refers to manually creating users with a script is outdated.
+
+## Worker
+
+Start the worker with:
 
 ```bash
-# Terminal 1
-env $(cat .env.claude | xargs) npx -y @taico/worker
-
-# Terminal 2
-env $(cat .env.reviewer | xargs) npx -y @taico/worker
+./helpers/start-worker.sh
 ```
 
-## Environments
+The helper uses:
 
-Taico has two modes, controlled by the `NODE_ENV` environment variable:
-
-### Production (Default)
-
-Production mode is the default when `NODE_ENV` is not set. This ensures `npx @taico/taico` works out of the box. No users are seeded. On first startup, if no admin exists, Taico prompts you to create the first admin user through onboarding.
-
-`ISSUER_URL` defaults to `http://localhost:<BACKEND_PORT>` in production. If `BACKEND_PORT` is not set, production defaults to port `2000`. Serious production deployments should set `ISSUER_URL` explicitly to match the public URL.
-
-### Development
-
-Set `NODE_ENV=development` to enable development mode. The database is seeded with two test users:
-
-In development, `ISSUER_URL` defaults to `http://localhost:<UI_PORT>` because the backend is typically accessed through the Vite dev server proxy. If `UI_PORT` is not set, it defaults to `2000`.
-
-| Email | Password | Role |
-|---|---|---|
-| `dev@test.com` | `dev` | Developer |
-| `admin@test.com` | `admin` | Admin |
-
-These are for testing only. Do not use them in production.
-
-## User Management
-
-There is no self-service user creation yet. The first admin is created through onboarding. To create additional admin users:
-
-**Kubernetes:**
 ```bash
-kubectl -n taico exec -it deployment/taico -- node apps/backend/dist/scripts/create-admin-user.js
+npx @taico/worker --serverurl http://localhost:$PORT
 ```
 
-**Running locally (from the monorepo):**
-```bash
-npm -w apps/backend run create-admin
-```
+This is the recommended path because the worker then runs on the same machine that already has your:
 
-Both commands prompt you interactively for email and password.
+- provider authentication
+- developer toolchain
+- shells and CLIs
+- local repository access
 
-## Running Agent Workers
+That is powerful, but it is also a risk boundary. The worker can launch agents with direct access to what the host machine can access. Only run it where you are comfortable with that.
 
-The Taico backend manages tasks, agents, and the UI. But agents don't execute on the backend — they run in separate **worker** processes. This is intentional: the backend is centralised, workers are distributed.
+## Worker Authentication
 
-You can run workers on the same machine as the backend, on a different server, or in Kubernetes. Each worker represents one agent. To run multiple agents, start multiple workers.
+The worker authenticates with the server and stores credentials locally. On first run it will guide you through browser-based authorization and then reuse stored credentials on later runs.
 
-### Worker Setup
+You do not need to provision a long-lived token per agent just to get the worker connected.
 
-If you're using the npm packages, see [Quick Start via npx](#quick-start-via-npx) above.
+## Agents
 
-If you're running from the monorepo, full instructions are in [apps/worker/README.md](../apps/worker/README.md). The short version:
+Taico can come with agents pre-populated so a fresh instance is immediately usable.
 
-1. **Create an agent** in the UI (or use a pre-populated one). Configure its system prompt, agent type, and triggers.
-2. **Create an access token** from the agent's page. The token needs scopes: `task:*`, `meta:*`, `context:*`, `agents:read`, `mcp:use`.
-3. **Configure a `.env` file** for the worker:
-   ```env
-   AGENT_SLUG="claude"
-   BASE_URL="http://localhost:3000"
-   ACCESS_TOKEN="your-token-here"
-   WORK_DIR="/absolute/path/to/workspace"
-   ```
-4. **Start the worker:**
-   ```bash
-   npm -w apps/worker run start
-   ```
+Those agents are editable. Operators can change:
 
-### Running Multiple Workers
+- prompts
+- model/provider configuration
+- triggers
+- tool permissions
 
-Create a separate `.env` file per agent (e.g., `.env.claude`, `.env.reviewer`) and start each worker with the corresponding env file.
+You can keep the defaults, adapt them, or replace them entirely.
 
-### Supported Agent Types
+## Projects And Repositories
 
-| Type | Runtime | Host Requirements |
-|---|---|---|
-| `claude` | Claude Agent SDK | Claude Code installed and authenticated |
-| `opencode` | OpenCode SDK | OpenCode installed. Preferred for flexibility — supports multiple LLM providers. |
-| `adk` | Google ADK | None (runs in-process). No tools — suited for general tasks like reading the board. |
-| `githubcopilot` | GitHub Copilot SDK | GitHub Copilot set up on the machine |
+Projects are associated to tasks through `project:slug` tags.
 
-Workers have access to whatever is on the host machine. If Claude Code is installed and logged in, the `claude` runner can use it. Same for OpenCode and GitHub Copilot.
+After a project exists, configure its repository in the UI. When a worker executes a task with that tag, it can prepare the workspace from that repository.
 
-### A Note on Access Tokens
+## Executions
 
-The current token-based authentication for workers is a temporary solution. The UI for creating and copying tokens is deliberately minimal because this flow will be replaced. Eventually, workers will be able to securely impersonate agents automatically — no manual token management needed. For now, you copy-paste tokens from the UI.
+Taico now uses **executions** as the runtime record for work claimed by workers.
 
-## Projects and Repositories
+If you see older documentation referring to agent runs or an orchestrator, treat that as historical language. The current model is:
 
-Projects are created by users when they add a `project:slug` tag to a task. As an admin, you configure projects by going to **Settings > Projects** and adding the git repository URL.
+- backend decides work eligibility
+- worker claims work
+- worker starts an execution
+- execution activity and outcome are reported back to Taico
 
-When a worker picks up a task tagged with a project, it clones the repo into a clean workspace before the agent starts working.
+## Threads And Shared State
 
-## Tools and MCP Servers
+Threads are more than just grouping.
 
-Tools are MCP servers that agents can call. Every agent has an identity, every action is traceable, and tool access is gated by scopes via the built-in authorization server.
+Each thread has a parent goal and a shared context block that acts as thread state. As attached tasks change, a middle-manager process extracts the thread-relevant information and reconciles it into that shared state so related agents can stay aligned.
 
-Built-in tools let agents interact with Taico (tasks, context). The backend supports registering additional MCP servers, but there's no UI for this yet.
+## Security Notes
 
-### OAuth Token Bridge
-
-For MCP servers that authenticate against downstream systems (Google Cloud, Slack, etc.), Taico supports the OAuth token bridge pattern. The backend handles token exchange so agents get scoped access to external services without holding raw credentials. A UI for managing this is planned.
-
-### Authorization Model
-
-Under the hood, Taico runs a full OAuth 2.1 authorization server. Every agent has an identity. Every action performed through any interface (REST, WebSocket, MCP) is attributable to an actor. Access control is granular: you can define which actor can use which tool with which permissions. This infrastructure is in place even though the admin UI for it is still coming.
+- Running the server in Docker is recommended for durability and isolation.
+- Running the worker locally is recommended for convenience and tool access.
+- Those recommendations intentionally split trust boundaries: the server stays stable, while the worker stays close to your real tools.
+- Review what provider logins, repositories, shell access, and credentials are available on the worker host.

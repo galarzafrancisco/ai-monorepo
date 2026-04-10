@@ -1,49 +1,41 @@
 # Developer Guide
 
-This guide covers setting up the development environment, understanding the architecture, and contributing to Taico.
+This guide covers local development, architecture, and validation.
 
 ## Prerequisites
 
 - Node.js 24+
 - npm 10+
 
-## Getting Started
+## Local Development
 
-### One-Command Setup
+Build everything:
 
 ```bash
 npm run build:dev
 ```
 
-This installs dependencies, generates API clients from the OpenAPI spec, and builds all packages including the worker in the correct order.
-
-### Development Mode
+Run a dev stack:
 
 ```bash
 npm run dev
 ```
 
-Starts the backend and frontend with hot reload. The app runs in `development` mode by default, which seeds the database with test users (see [Getting Started](GETTING_STARTED.md#users)).
-
-If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a different stack.
-
-### Running Multiple Stacks
-
-Each stack has its own env file (`stack[1-5].env`) with isolated ports and a separate SQLite database:
+If ports are busy, use one of the stack scripts:
 
 ```bash
-npm run dev:1   # UI :2000, Legacy UI :2001, Backend :2003
-npm run dev:2   # UI :2004, Legacy UI :2005, Backend :2006
-npm run dev:3   # UI :2008, Legacy UI :2009, Backend :2010
-npm run dev:4   # See stack4.env
-npm run dev:5   # See stack5.env
+npm run dev:1
+npm run dev:2
+npm run dev:3
+npm run dev:4
+npm run dev:5
 ```
 
-You can also set `UI_PORT`, `LEGACY_UI_PORT`, and `BACKEND_PORT` env vars directly.
+Each stack has its own ports and SQLite database via `stack[1-5].env`.
 
-### Running Worker Mode Against a Dev Stack
+## Worker Against A Dev Stack
 
-Use the existing stack-based `dev:[1-5]` scripts for the watched server and UI, then start the worker against the same stack in a second terminal:
+Run the app stack in one terminal, then run the worker in another:
 
 ```bash
 npm run dev:1
@@ -55,84 +47,100 @@ Then:
 npm run taico:worker:1
 ```
 
-Equivalent worker scripts exist for stacks `2` through `5`.
+Equivalent scripts exist for stacks `2` through `5`.
 
 This split is intentional:
 
-- `npm run dev:[1-5]` keeps the backend in Nest watch mode
-- `npm run taico:worker:[1-5]` runs the worker from built output against the stack's `ISSUER_URL`
+- `dev:[1-5]` keeps backend and UI in watch mode
+- `taico:worker:[1-5]` runs the worker against that stack
 
-Running two separate backend watch processes from the same package is not recommended because they rebuild the same output and can interfere with each other.
+## Validation
 
-## After Making Changes
+After changes:
 
-1. `npm run build:dev` — verify everything compiles
-2. `npm run test:e2e` — run end-to-end tests
-3. `npm run test:e2e:worker-auth` — run the worker OAuth and execution-token backend coverage
-4. `npm run dev` — verify the app starts and works
+1. `npm run build:dev`
+2. `npm run test:e2e`
+3. `npm run test:e2e:worker-auth`
+4. `npm run dev`
 
 ## Architecture
 
 ### Package Structure
 
-```
+```text
 apps/
-├── backend/     # NestJS 11 API server (SQLite + TypeORM)
-├── ui2/         # React 19 + Vite frontend (active development)
-├── ui/          # DEPRECATED — only needs to compile
-└── worker/      # AI agent workers (see apps/worker/README.md)
+├── backend/         # NestJS 11 API server
+├── ui2/             # Active React frontend
+├── ui/              # Deprecated frontend, compile-only
+├── worker/          # Current worker runtime
+└── worker-v1/       # Legacy worker runtime
 packages/
-└── shared/      # Auto-generated types and API client from OpenAPI
+├── client/          # Generated API client
+├── openapi-sdkgen/  # SDK generation tooling
+└── shared/          # Shared contracts and generated artifacts
 ```
 
-All UI work goes in `apps/ui2`. The `apps/ui` package is deprecated.
+All new UI work goes in `apps/ui2`. All new worker work goes in `apps/worker`.
 
-### Layered Architecture
+### Layering
 
-The backend follows strict layering:
+The backend follows:
 
+```text
+Controller -> Service -> Repository
 ```
-Controller (HTTP/Transport) → Service (Business Logic) → Repository (Data)
-```
 
-Key principles:
-- **Transport independence** — Services never import HTTP exceptions. They throw domain errors (e.g., `TaskNotFoundError`) that exception filters map to HTTP responses.
-- **Thin controllers** — Controllers handle routing, validation, and DTO transformation. Business logic lives in services.
-- **Type separation** — `dto/http/` for request/response DTOs, `dto/service/` for plain types, `errors/` for domain errors.
+Key rules:
 
-### API Generation Pipeline
+- controllers stay thin
+- services stay transport-independent
+- DTOs and domain types stay separated
 
-The shared package auto-generates TypeScript types from the backend's OpenAPI spec:
+See:
 
-1. Backend builds and outputs `openapi.json`
-2. `openapi-typescript` generates types
-3. `openapi-typescript-codegen` generates a fetch-based API client
-4. Frontend imports these for type-safe API calls
+- [Controller Responsibilities](/Users/franciscogalarza/github/ai-monorepo/docs/architecture/controller-responsibilities.md)
+- [Service Transport Independence](/Users/franciscogalarza/github/ai-monorepo/docs/architecture/service-transport-independence.md)
+- [DTO Mapping Patterns](/Users/franciscogalarza/github/ai-monorepo/docs/architecture/dto-mapping-patterns.md)
+- [Enum Management](/Users/franciscogalarza/github/ai-monorepo/docs/architecture/enum-management.md)
 
-This runs automatically as part of `npm run build:dev`. No manual steps needed.
+### Execution Model
 
-### Real-Time Communication
+The current runtime model is execution-centric.
 
-Socket.io WebSocket gateways per feature module. The agent workers use this to react to task events in real time.
+- the backend decides task eligibility
+- workers claim tasks from execution state
+- workers start and update executions
+- execution activity is the runtime trace
 
-For implementation details and conventions, see [Real-Time Events Guide](how-to-guides/realtime-events.md).
+If older docs mention agent runs or an orchestrator, treat that as historical terminology.
 
-## Key Technologies
+### Threads
 
-- **Backend**: NestJS 11, TypeORM, SQLite, Socket.io, MCP SDK
-- **Frontend**: React 19, Vite, React Router 7, Radix UI
-- **Testing**: Jest (backend), Vitest (frontend)
-- **Agents**: Claude Agent SDK, OpenCode SDK, Google ADK, GitHub Copilot SDK
+Threads carry a parent goal plus a required state context block.
 
-## Backend Development
+As attached tasks evolve, thread-level reconciliation updates that shared state so agents working inside the thread can read the current parent goal and shared context rather than relying only on their local task history.
 
-Follow the guides in `docs/architecture/` and `docs/review-guides/`:
+### API Generation
 
-- [Controller Responsibilities](architecture/controller-responsibilities.md)
-- [Service Transport Independence](architecture/service-transport-independence.md)
-- [DTO Mapping Patterns](architecture/dto-mapping-patterns.md)
-- [Enum Management](architecture/enum-management.md)
+The OpenAPI pipeline is:
+
+1. backend emits `openapi.json`
+2. SDK generation runs
+3. generated artifacts flow into `packages/client` and shared outputs
+4. consumers import generated types and client code
+
+`npm run build:dev` handles this in the normal development flow.
+
+### Real-Time
+
+Socket.io gateways provide real-time behavior across the app. Workers also use realtime channels alongside execution APIs.
+
+For implementation details, see [Realtime Events](/Users/franciscogalarza/github/ai-monorepo/docs/how-to-guides/realtime-events.md).
 
 ## UI Development
 
-For UI work, read `apps/ui2/CLAUDE.md` first. It covers styling (tokens.css), primitives, shell patterns, and feature structure.
+Read [`apps/ui2/CLAUDE.md`](/Users/franciscogalarza/github/ai-monorepo/apps/ui2/CLAUDE.md) before making UI changes.
+
+## Backend Development
+
+Follow the architecture and review guides under `docs/architecture/` and `docs/review-guides/`.

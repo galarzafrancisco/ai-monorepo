@@ -1,66 +1,71 @@
 # Taico
 
-Taico is a task execution platform where humans and AI agents collaborate on work. It provides the primitives for creating tasks, assigning them to people or agents, and orchestrating automated workflows through status and tag triggers.
+Taico is a task execution platform where humans and AI agents collaborate on work. It is built around tasks, threads, context, tools, and executions.
 
 ## Core Concepts
 
-- **Tasks** — Units of work with an assignee (human or agent). Status changes trigger runtime events.
-- **Agents** — AI workers that react to task events and execute work autonomously.
-- **Threads** — Coordination layer for when tasks branch into parallel subtasks.
-- **Context** — Addressable text blocks (instructions, docs, principles) that agents can discover and read.
-- **Tools** — MCP servers with full OAuth 2.1 auth that agents can call.
+- **Tasks**: Units of work with a clear assignee.
+- **Agents**: Configurable AI workers that operate on tasks.
+- **Executions**: Runtime records for work claimed and performed by workers.
+- **Threads**: Coordination when work branches into related tasks, with shared thread state reconciled from task updates.
+- **Context**: Addressable text blocks that can be attached and reused.
+- **Tools**: MCP servers agents can call through Taico's auth model.
 
-Every action is access-controlled and attributable to an actor. See [Primitives](docs/PRIMITIVES.md) for the full model.
+Every action is attributable to an actor. See [`docs/PRIMITIVES.md`](/Users/franciscogalarza/github/ai-monorepo/docs/PRIMITIVES.md) for the domain model.
 
-## Supported Agents
+## Supported Runtimes
 
-Taico ships with built-in support for:
+Taico supports:
 
-- **[OpenCode](https://opencode.ai)** — Preferred runner. Supports any LLM provider.
-- **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)** — Via the Claude Agent SDK.
-- **[GitHub Copilot](https://github.com/features/copilot)** — Via the Copilot SDK.
-- **[Google ADK](https://google.github.io/adk-docs/)** — Runs in-process, no external tools needed.
+- [OpenCode](https://opencode.ai)
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+- [GitHub Copilot](https://github.com/features/copilot)
+- [Google ADK](https://google.github.io/adk-docs/)
 
-Adding support for a new runner is trivial — implement the runner interface and plug it in.
+## Recommended Startup Path
 
-## Quick Start
+For most users:
+
+1. Run the server in Docker with [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh).
+2. Run the worker locally via `npx` with [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh).
+3. Open the app and create your first account through the onboarding flow.
+4. Review the pre-populated agents and customize them as needed.
+
+The server script is meant to be long-lived and restart with your machine. The worker script is meant to run where your provider auth and local toolchain already exist.
+
+## Development
 
 ```bash
-npm run build:dev      # Install deps, generate API types, build all apps (dev-safe)
-npm run dev:[1-5]      # Start backend + frontend with hot reload
+npm run build:dev
+npm run dev:[1-5]
 ```
-
-## Prerequisites
-
-- **Node.js 24+** — Required for all packages including worker builds
-- npm 10+
 
 ## Guides
 
-- **[Getting Started](docs/GETTING_STARTED.md)** — Create tasks, configure agents, and build workflows.
-- **[Admin Guide](docs/ADMIN_GUIDE.md)** — User management, running workers, and system configuration.
-- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** — Development setup, architecture, API generation, and contributing.
-- **[Real-Time Events Guide](docs/how-to-guides/realtime-events.md)** — Domain events, gateway wiring, room topology, and UI sync strategy.
-- **[Deployment Guide](docs/DEPLOYMENT.md)** — Production deployment with Kubernetes and GitOps workflow.
-- **[Agents Worker](apps/worker/README.md)** — How to run agent workers that execute tasks.
+- [Getting Started](/Users/franciscogalarza/github/ai-monorepo/docs/GETTING_STARTED.md): recommended user-facing setup and first workflow
+- [Admin Guide](/Users/franciscogalarza/github/ai-monorepo/docs/ADMIN_GUIDE.md): running the server and worker safely
+- [Developer Guide](/Users/franciscogalarza/github/ai-monorepo/docs/DEVELOPER_GUIDE.md): local development and architecture
+- [Worker README](/Users/franciscogalarza/github/ai-monorepo/apps/worker/README.md): worker runtime details
+- [Deployment Guide](/Users/franciscogalarza/github/ai-monorepo/docs/DEPLOYMENT.md): Kubernetes and GitOps deployment
 
-## Architecture at a Glance
+## Architecture At A Glance
 
-```
+```text
 apps/
-├── backend/     # NestJS API server (SQLite + TypeORM)
-├── ui2/         # React 19 + Vite frontend
-├── ui/          # Deprecated — only needs to compile
-└── worker/      # Agent worker processes
+├── agent-api/        # Agent-facing API service
+├── backend/          # NestJS API server
+├── llm-benchmarker/  # LLM benchmark and evaluation tooling
+├── ui2/              # Active React frontend
+├── ui/               # Deprecated frontend, compile-only
+├── worker/           # Current worker runtime
+└── worker-v1/        # Legacy worker runtime
 packages/
-└── shared/      # Auto-generated types and API client from OpenAPI
+├── adk-session-store/  # SQLite-backed Google ADK session store
+├── client/             # Generated TypeScript API client
+├── errors/             # Shared error classes and codes
+├── events/             # Shared realtime event contracts
+├── openapi-sdkgen/     # OpenAPI SDK generation tooling
+└── shared/             # Shared contracts and generated artifacts
 ```
 
-The backend is the centralised brain (tasks, agents, database, auth). Agent workers are decoupled processes that can run anywhere — same machine, different machine, Kubernetes. They communicate with the backend via REST and WebSocket.
-
-## Documentation
-
-- `docs/PRIMITIVES.md` — Core domain model
-- `docs/architecture/` — Architectural decisions and patterns
-- `docs/review-guides/` — Code review checklists
-- `docs/how-to-guides/` — Implementation guides
+At runtime, the backend owns tasks, threads, auth, and execution lifecycle. Workers connect to it, claim work, and execute agents in isolated workspaces. `ui2` is the active product UI, `worker` is the current runtime, and `worker-v1`/`ui` are legacy surfaces kept for compatibility and migration.

@@ -1,108 +1,134 @@
 # Getting Started
 
-This guide walks you through using Taico as an end user — creating tasks, configuring agents, and building workflows.
+This guide walks through the recommended user-facing path for running and using Taico.
+
+## Recommended Setup
+
+For most people, the best setup is:
+
+1. Run the Taico server in Docker so it is always available and restarts with your machine.
+2. Run the worker locally via `npx` so it can use the tools, CLIs, and provider logins you already have on your machine.
+
+Helper scripts for both live in [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh) and [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh).
+
+## Start The Server
+
+Use the helper script:
+
+```bash
+./helpers/start-server.sh
+```
+
+Before running it, review the variables at the top of the script:
+
+- `IMAGE`: keep this updated to the image tag you want to run
+- `PORT`: the local port the app will use
+- `DATABASE_PATH`: set this to a stable location on your machine so your data persists where you expect it
+
+The script starts the server in Docker with `--restart unless-stopped`, which is the recommended default for a personal or small-team instance.
+
+## Create Your First Account
+
+Open the app in your browser after the server starts.
+
+On first startup, Taico guides you through creating the first account inside the app itself. You do not need to run any admin bootstrap script.
+
+## Start The Worker
+
+Use the helper script:
+
+```bash
+./helpers/start-worker.sh
+```
+
+The recommended way to run the worker is via `npx` on your local machine. That gives the worker direct access to:
+
+- your local toolchain
+- your authenticated provider CLIs and SDKs
+- repositories and developer tools already available on your machine
+
+That convenience cuts both ways. The worker is powerful, and the agents it launches can act with the capabilities available on the host. Only run it on a machine you trust for that level of access.
+
+If you plan to use Google models via ADK, set the Google environment variables in the helper script before starting it.
 
 ## Logging In
 
-When you first open Taico, you'll be greeted with a login screen. Enter your email and password to get in. If you don't have an account, ask your administrator to create one for you (see the [Admin Guide](ADMIN_GUIDE.md)).
+Once the server is running, open Taico in the browser and sign in with the account you created during onboarding.
 
-## Tasks
-
-Tasks are the core unit of work. To create one:
-
-1. Go to **Tasks** from the main navigation.
-2. Click **Create Task** and provide a title and description.
-3. Assign it to yourself, another user, or an agent.
-
-As a task progresses, you'll see live activity in the UI — comments, status changes, and artefacts created by whoever is working on it.
-
-### Status
-
-Tasks move through statuses like `NOT_STARTED`, `IN_PROGRESS`, `IN_REVIEW`, and `DONE`. Status changes are events that the system reacts to — this is how agents know when to pick up work.
-
-### Tags
-
-Tags are metadata labels. Add them to tasks for filtering and organisation.
-
-Some tags have special behaviour:
-
-- **`project:xyz`** — Links the task to a project. If the project doesn't exist, it is created automatically when you add the tag. This is the only way to create projects.
-
-### Artefacts
-
-Tasks can produce artefacts as work progresses. A common one is a Pull Request, but it could be anything. Artefacts are manifested as links and appear at the top of the task.
-
-### Dependencies
-
-Tasks can depend on other tasks. When dependencies are set, a task won't be worked on until its dependencies are complete. (Note: dependency management is not yet available in the UI or worker — coming soon.)
-
-### Ask for Help
-
-Tasks have the ability to ask for help — either from a human or from another agent. Agents running in headless mode are encouraged to ask for help when they're stuck. A task that needs help is highlighted in the UI so you can't miss it.
-
-## Projects
-
-A project groups related tasks and links them to a git repository.
-
-To set up a project:
-
-1. **Create it** by adding a `project:your-project-name` tag to any task.
-2. **Configure it** by going to **Settings > Projects**. Find your project and add a git repo URL.
-
-When an agent picks up a task tagged with a project, the worker clones the repository into a clean workspace. This is how agents know which codebase to work on.
-
-> **Important:** If you want an agent to work on a repository, you **must** tag the task with `project:your-project`. Without it, the agent starts in an empty folder — it will get confused, or worse, roam through your file system looking for code that isn't there.
+After login, the app will walk you through the basics the first time.
 
 ## Agents
 
-Agents are AI workers that execute tasks autonomously. Each agent has:
+Taico usually comes with some agents pre-populated so you can get started quickly. Treat them as defaults, not fixed system roles.
 
-- **System prompt** — Instructions that define what the agent does and how it behaves. This is where you tell it your conventions, how to move tasks around, and what to do when it's done.
-- **Status triggers** — Which task statuses the agent reacts to. A coding agent might trigger on `NOT_STARTED`, a reviewer on `IN_REVIEW`.
-- **Tag triggers** — Additional filters based on task tags, for more expressive routing.
-- **Agent type** — Which AI runtime executes the agent (Claude, OpenCode, ADK, GitHub Copilot).
+You can:
 
-The app comes with a couple of pre-populated agents to get you started. You can edit them or create your own from the **Agents** page.
+- edit the built-in agents
+- change their prompts, models, triggers, and tools
+- create your own agents from scratch
 
-### How Agents Pick Up Work
+## Tasks
 
-An agent picks up a task when:
+Tasks are the core unit of work.
 
-1. The task's status matches one of the agent's status triggers.
-2. The task is assigned to that agent (or the agent is configured to pick up unassigned tasks matching its triggers).
-3. If the agent has tag triggers, the task must also match those.
+To create one:
 
-Once triggered, the agent works autonomously — reading the task, making progress, posting comments, and eventually moving the task to the next status.
+1. Go to **Tasks**.
+2. Create a task with a clear title and description.
+3. Assign it to yourself or to an agent.
 
-> **Caution:** Agents are started with access to a shell on the worker machine. In theory, they can do anything your machine can do. Run workers on machines you're comfortable giving that level of access to, and be mindful of what tools and credentials are available on the host.
+As work progresses, comments, status changes, and artifacts accumulate on the task itself.
+
+### Status
+
+Statuses are operational, not just cosmetic. They are part of how work becomes eligible for execution.
+
+### Tags
+
+Tags are lightweight metadata used for filtering, routing, and project association.
+
+### Artifacts
+
+Tasks can accumulate links and outputs such as pull requests or other deliverables.
+
+## Projects
+
+Projects are created by adding a `project:slug` tag to a task.
+
+After the project exists, configure its repository from the UI. When a worker executes a task with that project tag, it can prepare the workspace against that repository.
+
+If you want an agent to work in a codebase, tagging the task with the right `project:slug` matters. Without that, the worker starts in a generic workspace.
+
+## Executions
+
+When a task becomes eligible and a worker claims it, Taico creates an **execution**.
+
+Executions replace the old agent-run model. They are the runtime record of work being picked up, performed, and completed by the worker.
 
 ## Threads
 
-When an agent working on a task decides to break it down into subtasks, Taico detects this automatically and creates a **thread**. A thread collects all subtasks that are working together towards a single parent task.
+When work branches into subtasks, Taico uses threads to keep related tasks coordinated without forcing them into one transcript.
 
-Tasks triggered from a thread get additional context — they know they're part of a bigger goal. A background coordinator in the thread watches updates from individual tasks and pulls relevant context into the shared thread state.
+Each thread has a parent goal and a shared context block. A middle-manager process watches updates from the tasks attached to that thread and pulls the relevant information into that shared thread state.
 
-This is how you get "many agents, one mission" without pretending they're all in the same chat window.
+Agents executing tasks in a thread are aware that they are part of a larger goal and that there is shared thread context they should use while working.
 
-## Context
+This is how multiple people or agents can work toward one goal while still sharing the important context.
 
-Context blocks are pages of markdown content — instructions, principles, supporting documentation. You can create them and attach them to tasks, threads, or projects.
+## Context And Tools
 
-Agents can discover and read context as they work. Think of context blocks as shared knowledge that informs how agents approach their tasks.
+Context blocks hold reusable instructions and reference material.
 
-## Tools
+Tools are MCP servers that agents can call through Taico's authorization model. Built-in tools let agents operate on Taico itself, and more tools can be added over time.
 
-Tools are external capabilities that agents can call. The built-in tools let agents interact with Taico itself (read/write tasks, context, create subtasks). Additional tools can be registered by your administrator.
+## Simple Workflow
 
-## Example Workflow
+A practical flow looks like this:
 
-A workflow that works well out of the box:
-
-1. **Set up two agents**: a **coder** (triggers on `NOT_STARTED`) and a **reviewer** (triggers on `IN_REVIEW`). Ask your admin to start workers for both.
-2. **Create a task**, tag it with the right `project:` tag. This is important — it links the task to the repo the agent will work on.
-3. The coder agent picks it up and moves it to `IN_PROGRESS`. You'll see live activity in the UI.
-4. When done, the coder moves the task to `IN_REVIEW` and assigns it to the reviewer.
-5. The reviewer picks it up. If all good, it approves and assigns back. If changes are needed, it comments and moves the task back to `NOT_STARTED`, reassigning to the original coder.
-6. The coder picks it up again, addresses the feedback, and the cycle continues.
-
-The key insight: your tools are **status triggers** and **tag triggers**. You define the workflow by telling agents (via their system prompts) how to move tasks around. Get creative — you can build review loops, planning workflows, multi-agent pipelines, whatever fits your process.
+1. Start the server with Docker.
+2. Create your first account in-app.
+3. Start the worker locally with `npx`.
+4. Review the pre-populated agents and adjust them as needed.
+5. Create a task and assign it to an agent.
+6. Add a `project:slug` tag if the task should run against a repository.
+7. Watch the task comments and execution activity as the worker picks it up.
