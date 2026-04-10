@@ -5,6 +5,19 @@ import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageForm
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
 
+type OpenCodeMcpServerConfig =
+  | {
+      type: 'remote';
+      url: string;
+      headers: Record<string, string>;
+      enabled: true;
+    }
+  | {
+      type: 'local';
+      command: string[];
+      enabled: true;
+    };
+
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind = 'opencode';
 
@@ -224,15 +237,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     executionId: string;
     baseUrl: string;
     accessToken: string;
-  }): Record<
-    string,
-    {
-      type: 'remote';
-      url: string;
-      headers: Record<string, string>;
-      enabled: true;
-    }
-  > {
+  }): Record<string, OpenCodeMcpServerConfig> {
     const runtimeMcpServers =
       this.runtimeMcpServers ?? {
         tasks: {
@@ -253,24 +258,21 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
         },
       };
 
-    const config: Record<
-      string,
-      {
-        type: 'remote';
-        url: string;
-        headers: Record<string, string>;
-        enabled: true;
-      }
-    > = {};
+    const config: Record<string, OpenCodeMcpServerConfig> = {};
     for (const [providedId, server] of Object.entries(runtimeMcpServers)) {
-      if (server.type !== 'http') {
+      if (server.type === 'http') {
+        config[providedId] = {
+          type: 'remote',
+          url: server.url,
+          headers: server.headers,
+          enabled: true,
+        };
         continue;
       }
 
       config[providedId] = {
-        type: 'remote',
-        url: server.url,
-        headers: server.headers,
+        type: 'local',
+        command: [server.command, ...server.args],
         enabled: true,
       };
     }

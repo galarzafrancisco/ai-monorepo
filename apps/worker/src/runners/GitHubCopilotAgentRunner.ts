@@ -1,7 +1,11 @@
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
-import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
-import { approveAll, CopilotClient, MCPRemoteServerConfig } from "@github/copilot-sdk";
+import {
+  AgentModelConfig,
+  AgentRunContext,
+  RuntimeMcpServerConfig,
+} from "./AgentRunner.js";
+import { approveAll, CopilotClient, MCPRemoteServerConfig, MCPLocalServerConfig } from "@github/copilot-sdk";
 
 export class GitHubCopilotAgentRunner extends BaseAgentRunner {
   readonly kind = 'githubcopilot';
@@ -29,34 +33,13 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         });
         await this.client.start();
 
-        const taskMcpServer: MCPRemoteServerConfig = {
-          type: "http",
-          url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
-          headers: {
-            Authorization: `Bearer ${ctx.accessToken}`,
-            [EXECUTION_ID_HEADER]: ctx.executionId,
-          },
-          tools: ["*"],
-        };
-
-        const contextMcpServer: MCPRemoteServerConfig = {
-          type: "http",
-          url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
-          headers: {
-            Authorization: `Bearer ${ctx.accessToken}`,
-            [EXECUTION_ID_HEADER]: ctx.executionId,
-          },
-          tools: ["*"],
-        };
+        const mcpServers = this.buildMcpServers(ctx);
 
         // Create a session for this work
         const session = await this.client.createSession({
           model: this.model,
           onPermissionRequest: approveAll,
-          mcpServers: {
-            tasks: taskMcpServer,
-            context: contextMcpServer,
-          },
+          mcpServers,
         });
 
         if (session?.sessionId) {
@@ -106,5 +89,56 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         reject(err);
       }
     });
+  }
+
+  private buildMcpServers(
+    ctx: AgentRunContext,
+  ): Record<string, MCPRemoteServerConfig | MCPLocalServerConfig> {
+    const runtimeMcpServers =
+      ctx.mcpServers ?? {
+        tasks: {
+          type: 'http' as const,
+          url: `${ctx.baseUrl}/api/v1/tasks/tasks/mcp`,
+          headers: {
+            Authorization: `Bearer ${ctx.accessToken}`,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
+          },
+        },
+        context: {
+          type: 'http' as const,
+          url: `${ctx.baseUrl}/api/v1/context/blocks/mcp`,
+          headers: {
+            Authorization: `Bearer ${ctx.accessToken}`,
+            [EXECUTION_ID_HEADER]: ctx.executionId,
+          },
+        },
+      };
+
+    return Object.fromEntries(
+      Object.entries(runtimeMcpServers).map(([serverName, serverConfig]) => [
+        serverName,
+        this.toCopilotMcpServerConfig(serverConfig),
+      ]),
+    );
+  }
+
+  private toCopilotMcpServerConfig(
+    serverConfig: RuntimeMcpServerConfig,
+  ): MCPRemoteServerConfig | MCPLocalServerConfig {
+    if (serverConfig.type === 'http') {
+      return {
+        type: "http",
+        url: serverConfig.url,
+        headers: serverConfig.headers,
+        tools: ["*"],
+      };
+    }
+
+    return {
+      type: "local",
+      command: serverConfig.command,
+      args: serverConfig.args,
+      tools: ["*"],
+    };
   }
 }
