@@ -120,6 +120,10 @@
     padding: var(--space-3);
   }
 
+  .context-block-create__editor {
+    font-size: var(--fs-input-mobile-safe);
+  }
+
   .context-block-create__title-input {
     font-size: clamp(1.5rem, 6vw, 2rem);
   }
