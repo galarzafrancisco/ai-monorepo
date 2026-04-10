@@ -5998,6 +5998,78 @@
         ]
       }
     },
+    "/api/v1/executions-v2/active/{executionId}/session": {
+      "patch": {
+        "description": "Stores the runtime session identifier emitted by the agent harness so it can be propagated to execution history.",
+        "operationId": "ActiveTaskExecutionController_updateRunnerSessionId",
+        "parameters": [
+          {
+            "name": "executionId",
+            "required": true,
+            "in": "path",
+            "description": "Execution ID to update",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRunnerSessionIdDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Attach the runner session id to an active execution",
+        "tags": [
+          "Executions V2"
+        ]
+      }
+    },
+    "/api/v1/executions-v2/active/{executionId}/tool-calls/increment": {
+      "patch": {
+        "description": "Atomically increments the active execution tool-call counter without touching other mutable execution fields.",
+        "operationId": "ActiveTaskExecutionController_incrementToolCallCount",
+        "parameters": [
+          {
+            "name": "executionId",
+            "required": true,
+            "in": "path",
+            "description": "Execution ID to update",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Increment tool call count for an active execution",
+        "tags": [
+          "Executions V2"
+        ]
+      }
+    },
     "/api/v1/executions-v2/history": {
       "get": {
         "description": "Returns the persisted execution history rows in the v2 execution system.",
@@ -11367,6 +11439,17 @@
             "example": "2026-04-03T08:25:10.000Z",
             "nullable": true
           },
+          "runnerSessionId": {
+            "type": "string",
+            "description": "Agent runtime session identifier associated with this execution",
+            "example": "session_01JZ0SMM85FBFA8Y82M8VREY2A",
+            "nullable": true
+          },
+          "toolCallCount": {
+            "type": "number",
+            "description": "Number of tool calls made during this execution so far",
+            "example": 7
+          },
           "taskStatusBeforeClaim": {
             "type": "string",
             "description": "Task status before the task was claimed",
@@ -11408,6 +11491,8 @@
           "taskStatus",
           "claimedAt",
           "lastHeartbeatAt",
+          "runnerSessionId",
+          "toolCallCount",
           "taskStatusBeforeClaim",
           "taskTagsBeforeClaim",
           "workerClientId",
@@ -11501,6 +11586,17 @@
             "description": "OAuth client id of the worker that executed the task",
             "example": "24f52f295c990c1d6cdc6034fa3d1900"
           },
+          "runnerSessionId": {
+            "type": "string",
+            "description": "Agent runtime session identifier associated with this execution",
+            "example": "session_01JZ0SMM85FBFA8Y82M8VREY2A",
+            "nullable": true
+          },
+          "toolCallCount": {
+            "type": "number",
+            "description": "Number of tool calls made during the execution",
+            "example": 12
+          },
           "status": {
             "type": "string",
             "description": "Terminal execution status",
@@ -11536,9 +11632,25 @@
           "transitionedAt",
           "agentActorId",
           "workerClientId",
+          "runnerSessionId",
+          "toolCallCount",
           "status",
           "errorCode",
           "errorMessage"
+        ]
+      },
+      "UpdateRunnerSessionIdDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "Agent runtime session identifier for this execution",
+            "example": "session_01JZ0SMM85FBFA8Y82M8VREY2A",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "sessionId"
         ]
       },
       "CreateTaskBlueprintDto": {

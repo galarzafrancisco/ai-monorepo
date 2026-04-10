@@ -29,6 +29,14 @@ export type ActiveTaskExecutionResponseDto = {
      */
     lastHeartbeatAt: string | null;
     /**
+     * Agent runtime session identifier associated with this execution
+     */
+    runnerSessionId: string | null;
+    /**
+     * Number of tool calls made during this execution so far
+     */
+    toolCallCount: number;
+    /**
      * Task status before the task was claimed
      */
     taskStatusBeforeClaim: ActiveTaskExecutionResponseDto.taskStatusBeforeClaim;

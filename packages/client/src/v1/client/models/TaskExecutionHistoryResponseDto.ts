@@ -36,6 +36,14 @@ export type TaskExecutionHistoryResponseDto = {
      */
     workerClientId: string;
     /**
+     * Agent runtime session identifier associated with this execution
+     */
+    runnerSessionId: string | null;
+    /**
+     * Number of tool calls made during the execution
+     */
+    toolCallCount: number;
+    /**
      * Terminal execution status
      */
     status: TaskExecutionHistoryResponseDto.status;

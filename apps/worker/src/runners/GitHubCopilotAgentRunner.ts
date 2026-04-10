@@ -22,6 +22,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
+    onToolCall?: (toolName: string) => void | Promise<void>,
   ): Promise<string> {
     const agentLabel = ctx.agentSlug ? `@${ctx.agentSlug}` : 'Assistant';
 
@@ -66,6 +67,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           void emit(`💬 ${agentLabel}: ${message.data.content}`);
         });
         session.on('tool.execution_start', (toolCall) => {
+          void onToolCall?.(toolCall.data.toolName);
           void emit(`🔧 ${agentLabel} Tool call: ${toolCall.data.toolName}`);
         });
         session.on('tool.execution_complete', () => {

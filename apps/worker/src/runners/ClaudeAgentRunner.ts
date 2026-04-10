@@ -18,6 +18,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
+    onToolCall?: (toolName: string) => void | Promise<void>,
   ): Promise<string> {
     const formatter = new ClaudeMessageFormatter(ctx.agentSlug);
 
@@ -63,6 +64,14 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         typeof msg.session_id === 'string'
       ) {
         await setSession(msg.session_id);
+      }
+
+      if (msg?.type === 'assistant' && Array.isArray(msg.message?.content)) {
+        for (const part of msg.message.content) {
+          if (part.type === 'tool_use' && typeof part.name === 'string') {
+            await onToolCall?.(part.name);
+          }
+        }
       }
 
       // map → string

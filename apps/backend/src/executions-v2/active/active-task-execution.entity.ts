@@ -63,6 +63,12 @@ export class ActiveTaskExecutionEntity {
   @Column({ type: 'datetime', name: 'last_heartbeat_at', nullable: true })
   lastHeartbeatAt!: Date | null;
 
+  @Column({ type: 'text', name: 'runner_session_id', nullable: true })
+  runnerSessionId!: string | null;
+
+  @Column({ type: 'integer', name: 'tool_call_count', default: 0 })
+  toolCallCount!: number;
+
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 

@@ -42,6 +42,12 @@ export class TaskExecutionHistoryEntity {
   @Column({ type: 'text', name: 'worker_client_id' })
   workerClientId!: string;
 
+  @Column({ type: 'text', name: 'runner_session_id', nullable: true })
+  runnerSessionId!: string | null;
+
+  @Column({ type: 'integer', name: 'tool_call_count', default: 0 })
+  toolCallCount!: number;
+
   @Column({
     type: 'text',
     enum: TaskExecutionHistoryStatus,

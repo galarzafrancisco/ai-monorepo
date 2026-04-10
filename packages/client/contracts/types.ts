@@ -1709,6 +1709,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/executions-v2/active/{executionId}/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Attach the runner session id to an active execution
+         * @description Stores the runtime session identifier emitted by the agent harness so it can be propagated to execution history.
+         */
+        patch: operations["ActiveTaskExecutionController_updateRunnerSessionId"];
+        trace?: never;
+    };
+    "/api/v1/executions-v2/active/{executionId}/tool-calls/increment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Increment tool call count for an active execution
+         * @description Atomically increments the active execution tool-call counter without touching other mutable execution fields.
+         */
+        patch: operations["ActiveTaskExecutionController_incrementToolCallCount"];
+        trace?: never;
+    };
     "/api/v1/executions-v2/history": {
         parameters: {
             query?: never;
@@ -5008,6 +5048,16 @@ export interface components {
              */
             lastHeartbeatAt: string | null;
             /**
+             * @description Agent runtime session identifier associated with this execution
+             * @example session_01JZ0SMM85FBFA8Y82M8VREY2A
+             */
+            runnerSessionId: string | null;
+            /**
+             * @description Number of tool calls made during this execution so far
+             * @example 7
+             */
+            toolCallCount: number;
+            /**
              * @description Task status before the task was claimed
              * @enum {string}
              */
@@ -5091,6 +5141,16 @@ export interface components {
              */
             workerClientId: string;
             /**
+             * @description Agent runtime session identifier associated with this execution
+             * @example session_01JZ0SMM85FBFA8Y82M8VREY2A
+             */
+            runnerSessionId: string | null;
+            /**
+             * @description Number of tool calls made during the execution
+             * @example 12
+             */
+            toolCallCount: number;
+            /**
              * @description Terminal execution status
              * @enum {string}
              */
@@ -5105,6 +5165,13 @@ export interface components {
              * @example ADK runner failed: 429 quota exceeded.
              */
             errorMessage: string | null;
+        };
+        UpdateRunnerSessionIdDto: {
+            /**
+             * @description Agent runtime session identifier for this execution
+             * @example session_01JZ0SMM85FBFA8Y82M8VREY2A
+             */
+            sessionId: string;
         };
         CreateTaskBlueprintDto: {
             /**
@@ -9765,6 +9832,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaskExecutionHistoryResponseDto"];
                 };
+            };
+        };
+    };
+    ActiveTaskExecutionController_updateRunnerSessionId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Execution ID to update */
+                executionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRunnerSessionIdDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ActiveTaskExecutionController_incrementToolCallCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Execution ID to update */
+                executionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

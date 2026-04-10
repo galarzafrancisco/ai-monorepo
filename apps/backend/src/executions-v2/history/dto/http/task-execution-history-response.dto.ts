@@ -57,6 +57,20 @@ export class TaskExecutionHistoryResponseDto {
   workerClientId!: string;
 
   @ApiProperty({
+    type: String,
+    description: 'Agent runtime session identifier associated with this execution',
+    example: 'session_01JZ0SMM85FBFA8Y82M8VREY2A',
+    nullable: true,
+  })
+  runnerSessionId!: string | null;
+
+  @ApiProperty({
+    description: 'Number of tool calls made during the execution',
+    example: 12,
+  })
+  toolCallCount!: number;
+
+  @ApiProperty({
     description: 'Terminal execution status',
     enum: TaskExecutionHistoryStatus,
   })
@@ -89,6 +103,8 @@ export class TaskExecutionHistoryResponseDto {
       transitionedAt: entity.transitionedAt.toISOString(),
       agentActorId: entity.agentActorId,
       workerClientId: entity.workerClientId,
+      runnerSessionId: entity.runnerSessionId,
+      toolCallCount: entity.toolCallCount,
       status: entity.status,
       errorCode: entity.errorCode,
       errorMessage: entity.errorMessage,

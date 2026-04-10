@@ -912,6 +912,8 @@ export interface ActiveTaskExecutionResponseDto {
   taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
   claimedAt: string;
   lastHeartbeatAt: string | null;
+  runnerSessionId: string | null;
+  toolCallCount: number;
   taskStatusBeforeClaim: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
   taskTagsBeforeClaim: ActiveTaskExecutionTagSnapshotResponseDto[];
   workerClientId: string;
@@ -934,9 +936,15 @@ export interface TaskExecutionHistoryResponseDto {
   transitionedAt: string;
   agentActorId: string;
   workerClientId: string;
+  runnerSessionId: string | null;
+  toolCallCount: number;
   status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
   errorCode: 'OUT_OF_QUOTA' | 'UNKNOWN';
   errorMessage: string | null;
+}
+
+export interface UpdateRunnerSessionIdDto {
+  sessionId: string;
 }
 
 export interface CreateTaskBlueprintDto {

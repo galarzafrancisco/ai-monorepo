@@ -82,6 +82,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
+    onToolCall?: (toolName: string) => void | Promise<void>,
   ): Promise<string> {
     const formatter = new ADKMessageFormatter(ctx.agentSlug);
 
@@ -93,6 +94,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
       sessionId: 'session-123',
       userId: 'user-123',
     });
+    await setSession(session.id);
 
     const mcpServers =
       ctx.mcpServers ?? {
@@ -150,6 +152,14 @@ export class ADKAgentRunner extends BaseAgentRunner {
     });
 
     for await (const msg of stream) {
+      if (msg.content?.parts) {
+        for (const part of msg.content.parts) {
+          if (part.functionCall?.name) {
+            await onToolCall?.(part.functionCall.name);
+          }
+        }
+      }
+
       // map → string
       const messages = formatter.format(msg);
       messages.forEach(async (message) => {
