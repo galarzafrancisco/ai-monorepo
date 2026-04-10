@@ -1,0 +1,54 @@
+.agent-tools-page {
+  background: var(--bg);
+}
+
+.agent-tools-page__section {
+  margin: var(--space-5) 0;
+}
+
+.agent-tools-page__actions {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 8px;
+  margin: var(--space-3);
+}
+
+.agent-tools-page__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.agent-tools-page__row-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.agent-tools-page__row-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.agent-tools-page__chips {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+  .agent-tools-page__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .agent-tools-page__row-title {
+    align-items: flex-start;
+  }
+}

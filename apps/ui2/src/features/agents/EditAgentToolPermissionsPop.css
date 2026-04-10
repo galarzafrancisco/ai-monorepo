@@ -1,21 +1,10 @@
-.edit-agent-tool-permissions-pop__wrapper {
-  padding: var(--space-4);
-}
-
-.edit-agent-tool-permissions-pop__select {
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--fs-2);
-  color: var(--text);
-  background-color: var(--surface);
-  border: 1px solid var(--border);
+.edit-agent-tool-permissions-pop__selected-tool {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--r-2);
-  font-family: inherit;
-}
-
-.edit-agent-tool-permissions-pop__select:focus {
-  outline: none;
-  border-color: var(--accent);
 }
 
 .edit-agent-tool-permissions-pop__scopes {
