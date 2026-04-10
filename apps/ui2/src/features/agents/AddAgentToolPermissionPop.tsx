@@ -165,6 +165,49 @@ export function AddAgentToolPermissionPop({
     }
   }, [isSaving, loadingScopes, onCancel, onConfigureScopedTool, onSaveUnscopedTool, selectedTool, selectedToolScopes]);
 
+  const handleSelectTool = useCallback(async (tool: ServerResponseDto, index: number) => {
+    if (isSaving) {
+      return;
+    }
+
+    setSelectedToolId(tool.id);
+    setHighlightedIndex(index);
+
+    if (tool.type !== "http") {
+      setIsSaving(true);
+      try {
+        await onSaveUnscopedTool(tool);
+        onCancel?.();
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+
+    setLoadingScopes(true);
+    try {
+      const scopes = await ToolsService.McpRegistryController_listScopes({ serverId: tool.id });
+
+      if (scopes.length > 0) {
+        onConfigureScopedTool(tool, scopes);
+        onCancel?.();
+        return;
+      }
+
+      setIsSaving(true);
+      try {
+        await onSaveUnscopedTool(tool);
+        onCancel?.();
+      } finally {
+        setIsSaving(false);
+      }
+    } catch (err) {
+      console.error("Failed to load scopes:", err);
+    } finally {
+      setLoadingScopes(false);
+    }
+  }, [isSaving, onCancel, onConfigureScopedTool, onSaveUnscopedTool]);
+
   const primaryLabel = selectedTool?.type === "http" && selectedToolScopes.length > 0 ? "next" : (isSaving ? "saving" : "save");
 
   return (
@@ -223,11 +266,10 @@ export function AddAgentToolPermissionPop({
                       aria-selected={isSelected}
                       className={`actor-search-pop__item ${(isHighlighted || isSelected) ? "actor-search-pop__item--highlighted" : ""}`}
                       onClick={() => {
-                        setSelectedToolId(tool.id);
-                        setHighlightedIndex(index);
+                        void handleSelectTool(tool, index);
                       }}
                       onMouseEnter={() => setHighlightedIndex(index)}
-                      disabled={isSaving}
+                      disabled={isSaving || loadingScopes}
                     >
                       <Avatar name={tool.name} size="sm" />
                       <div className="actor-search-pop__item-info">
