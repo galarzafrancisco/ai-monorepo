@@ -23,6 +23,14 @@ export type WorkerCredentials = {
   expiresAt: string;
 };
 
+/**
+ * Multi-server credentials storage format.
+ * Maps normalized server URLs to their respective credentials.
+ */
+export type MultiServerCredentials = {
+  servers: Record<string, WorkerCredentials>;
+};
+
 export type TokenResponse = {
   access_token: string;
   token_type: string;

@@ -1,7 +1,7 @@
 import {
   DEFAULT_WORKER_CREDENTIALS_PATH,
-  readWorkerCredentials,
-  writeWorkerCredentials,
+  readServerCredentials,
+  writeServerCredentials,
 } from './credentials-store';
 import { INTERNAL_WORKER_AUTH_SCOPES } from '../../auth/core/constants/internal-auth-target.constant';
 import {
@@ -22,7 +22,7 @@ export async function getAuthenticatedWorkerSession(input: {
   const credentialsPath =
     input.credentialsPath ?? DEFAULT_WORKER_CREDENTIALS_PATH;
   const metadata = await discoverAuthorizationServer(input.serverUrl);
-  let credentials = await readWorkerCredentials(credentialsPath);
+  let credentials = await readServerCredentials(credentialsPath, input.serverUrl);
   let didBootstrap = false;
   const requiredScopes = new Set(
     INTERNAL_WORKER_AUTH_SCOPES.map((scope) => scope.id),
@@ -30,16 +30,15 @@ export async function getAuthenticatedWorkerSession(input: {
 
   if (
     !credentials ||
-    credentials.serverUrl !== input.serverUrl ||
     !hasRequiredScopes(credentials, requiredScopes)
   ) {
     credentials = await bootstrapWorkerAuthorization(input.serverUrl, metadata);
-    await writeWorkerCredentials(credentialsPath, credentials);
+    await writeServerCredentials(credentialsPath, input.serverUrl, credentials);
     didBootstrap = true;
   }
 
   credentials = await refreshWorkerToken(credentials);
-  await writeWorkerCredentials(credentialsPath, credentials);
+  await writeServerCredentials(credentialsPath, input.serverUrl, credentials);
 
   return {
     credentials,
