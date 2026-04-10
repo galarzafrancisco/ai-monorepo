@@ -190,6 +190,50 @@
   padding: 0 var(--space-3) var(--space-3);
 }
 
+.task-detail-page__execution-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.task-detail-page__execution-error-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  color: var(--danger);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.task-detail-page__execution-error-toggle:hover {
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+}
+
+.task-detail-page__execution-error-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.task-detail-page__execution-error-detail {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--r-2);
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 12%, var(--border-subtle));
+}
+
+.task-detail-page__execution-error-code {
+  color: var(--danger);
+}
+
 @keyframes task-detail-activity-in {
   from {
     opacity: 0;

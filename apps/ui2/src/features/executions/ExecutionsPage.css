@@ -233,6 +233,15 @@
   gap: var(--space-1);
 }
 
+.executions-actor-cell {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.executions-actor-slug {
+  color: var(--text-muted);
+}
+
 .executions-task-cell--clickable {
   background: none;
   border: none;

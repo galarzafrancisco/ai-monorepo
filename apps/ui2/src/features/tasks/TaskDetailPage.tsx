@@ -56,6 +56,8 @@ type TaskExecutionListItem = {
   status: 'ACTIVE' | TaskExecutionHistoryResponseDto['status'];
   source: 'active' | 'history';
   timestamp: string;
+  errorCode: TaskExecutionHistoryResponseDto['errorCode'] | null;
+  errorMessage: string | null;
 };
 
 export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks }: TaskDetailViewProps) {
@@ -257,11 +259,24 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [executions, setExecutions] = useState<TaskExecutionListItem[]>([]);
   const [isLoadingExecutions, setIsLoadingExecutions] = useState(false);
   const [executionsError, setExecutionsError] = useState<string | null>(null);
+  const [expandedExecutionErrorIds, setExpandedExecutionErrorIds] = useState<Set<string>>(new Set());
 
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
   const [showTagPop, setShowTagPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
+
+  const toggleExecutionErrorDetails = useCallback((executionId: string) => {
+    setExpandedExecutionErrorIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(executionId)) {
+        next.delete(executionId);
+      } else {
+        next.add(executionId);
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -406,6 +421,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           status: 'ACTIVE',
           source: 'active',
           timestamp: entry.claimedAt,
+          errorCode: null,
+          errorMessage: null,
         }));
 
       const taskHistoryItems = historyExecutions
@@ -417,6 +434,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           status: entry.status,
           source: 'history',
           timestamp: entry.transitionedAt,
+          errorCode: entry.errorCode,
+          errorMessage: entry.errorMessage,
         }));
 
       const sorted = [...taskActiveItems, ...taskHistoryItems].sort(
@@ -439,9 +458,11 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     if (!task) {
       setExecutions([]);
       setExecutionsError(null);
+      setExpandedExecutionErrorIds(new Set());
       return;
     }
 
+    setExpandedExecutionErrorIds(new Set());
     void loadExecutionsForTask(task.id);
   }, [task, loadExecutionsForTask]);
 
@@ -808,6 +829,9 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           const actorName = actor?.displayName ?? shortId(execution.agentActorId);
           const actorSlug = actor?.slug;
           const statusTag = getExecutionStatusTag(execution.status);
+          const hasFailureDetails =
+            execution.status === 'FAILED' && Boolean(execution.errorCode || execution.errorMessage);
+          const isFailureDetailsExpanded = expandedExecutionErrorIds.has(execution.id);
           const sourceTag: DataRowTag = {
             label: execution.source === 'active' ? 'active' : 'history',
             color: 'gray',
@@ -830,8 +854,36 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                   </Text>
                 </div>
                 <Text as='span' tone='muted' size='2'>
-                  run #{shortId(execution.executionId)}
+                  <span className='task-detail-page__execution-meta'>
+                    run #{shortId(execution.executionId)}
+                    {hasFailureDetails ? (
+                      <button
+                        type='button'
+                        className='task-detail-page__execution-error-toggle'
+                        onClick={() => toggleExecutionErrorDetails(execution.id)}
+                        aria-label={isFailureDetailsExpanded ? 'Hide failure details' : 'Show failure details'}
+                        aria-expanded={isFailureDetailsExpanded}
+                        title={isFailureDetailsExpanded ? 'Hide failure details' : 'Show failure details'}
+                      >
+                        i
+                      </button>
+                    ) : null}
+                  </span>
                 </Text>
+                {hasFailureDetails && isFailureDetailsExpanded ? (
+                  <div className='task-detail-page__execution-error-detail'>
+                    {execution.errorCode ? (
+                      <Text as='span' size='1' style='mono' className='task-detail-page__execution-error-code'>
+                        {execution.errorCode}
+                      </Text>
+                    ) : null}
+                    {execution.errorMessage ? (
+                      <Text as='span' size='2' wrap>
+                        {execution.errorMessage}
+                      </Text>
+                    ) : null}
+                  </div>
+                ) : null}
               </Stack>
             </DataRow>
           );

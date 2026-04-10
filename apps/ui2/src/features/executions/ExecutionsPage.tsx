@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Button, Card, Text } from "../../ui/primitives";
+import { useActorsCtx } from "../actors";
 import { useExecutions } from "./useExecutions";
 import type {
   TaskExecutionQueueEntryResponseDto,
@@ -12,6 +13,7 @@ import "./ExecutionsPage.css";
 
 export function ExecutionsPage() {
   const navigate = useNavigate();
+  const { actors } = useActorsCtx();
   const {
     queue,
     active,
@@ -132,20 +134,28 @@ export function ExecutionsPage() {
             table={
               <ExecutionTable
                 columns={["State", "Task", "Worker", "Agent", "Claimed", "Latest heartbeat", "Before claim"]}
-                rows={active.map((entry) => ({
-                  key: entry.id,
-                  cells: [
+                rows={active.map((entry) => {
+                  const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
+
+                  return {
+                    key: entry.id,
+                    cells: [
                     <StatusPill key="state" tone="warning">Active</StatusPill>,
                     <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
                     <CodeCell key="worker" value={entry.workerClientId} />,
-                    <CodeCell key="agent" value={entry.agentActorId} />,
+                    <ActorCell
+                      key="agent"
+                      actorId={entry.agentActorId}
+                      actorName={actor?.displayName}
+                      actorSlug={actor?.slug}
+                    />,
                     <TimeCell key="claimed" value={entry.claimedAt} />,
                     <TimeCell key="heartbeat" value={entry.lastHeartbeatAt} />,
                     <StatusPill key="before" tone={taskStatusTone(entry.taskStatusBeforeClaim)}>
                       {entry.taskStatusBeforeClaim}
                     </StatusPill>,
-                  ],
-                  mobile: (
+                    ],
+                    mobile: (
                     <ExecutionMobileCard
                       key={`active-mobile-${entry.id}`}
                       tone="warning"
@@ -155,13 +165,14 @@ export function ExecutionsPage() {
                         { label: "Claimed", value: formatDateTime(entry.claimedAt) },
                         { label: "Latest heartbeat", value: formatDateTime(entry.lastHeartbeatAt) },
                         { label: "Worker", value: shortId(entry.workerClientId), mono: true },
-                        { label: "Agent", value: shortId(entry.agentActorId), mono: true },
+                        { label: "Agent", value: actor?.slug ? `@${actor.slug}` : shortId(entry.agentActorId), mono: true },
                         { label: "Before claim", value: entry.taskStatusBeforeClaim },
                       ]}
                       onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
-                  ),
-                }))}
+                    ),
+                  };
+                })}
               />
             }
           />
@@ -173,17 +184,20 @@ export function ExecutionsPage() {
             emptyMessage="No historical executions yet."
             table={
               <ExecutionTable
-                columns={["Result", "Task", "Transitioned", "Task status", "Worker", "Error"]}
-                rows={history.map((entry) => ({
-                  key: entry.id,
-                  expandedContent:
+                columns={["Result", "Task", "Transitioned", "Task status", "Agent", "Worker", "Error"]}
+                rows={history.map((entry) => {
+                  const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
+
+                  return {
+                    key: entry.id,
+                    expandedContent:
                     entry.errorMessage && expandedHistoryIds.has(entry.id) ? (
                       <ExecutionErrorMessage
                         status={entry.status}
                         message={entry.errorMessage}
                       />
                     ) : null,
-                  cells: [
+                    cells: [
                     <StatusPill key="result" tone={entry.status === "SUCCEEDED" ? "success" : "danger"}>
                       {entry.status}
                     </StatusPill>,
@@ -192,6 +206,12 @@ export function ExecutionsPage() {
                     <StatusPill key="task-status" tone={taskStatusTone(entry.taskStatus)}>
                       {entry.taskStatus ?? "Unknown"}
                     </StatusPill>,
+                    <ActorCell
+                      key="agent"
+                      actorId={entry.agentActorId}
+                      actorName={actor?.displayName}
+                      actorSlug={actor?.slug}
+                    />,
                     <CodeCell key="worker" value={entry.workerClientId} />,
                     <ErrorCell
                       key="error"
@@ -200,8 +220,8 @@ export function ExecutionsPage() {
                       expanded={expandedHistoryIds.has(entry.id)}
                       onToggle={() => toggleHistoryMessage(entry.id)}
                     />,
-                  ],
-                  mobile: (
+                    ],
+                    mobile: (
                     <ExecutionMobileCard
                       key={`history-mobile-${entry.id}`}
                       tone={entry.status === "SUCCEEDED" ? "success" : "danger"}
@@ -210,6 +230,7 @@ export function ExecutionsPage() {
                       lines={[
                         { label: "Transitioned", value: formatDateTime(entry.transitionedAt) },
                         { label: "Task status", value: entry.taskStatus ?? "Unknown" },
+                        { label: "Agent", value: actor?.slug ? `@${actor.slug}` : shortId(entry.agentActorId), mono: true },
                         { label: "Worker", value: shortId(entry.workerClientId), mono: true },
                         { label: "Error", value: entry.errorCode ?? "None" },
                         ...(entry.errorMessage
@@ -218,8 +239,9 @@ export function ExecutionsPage() {
                       ]}
                       onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
-                  ),
-                }))}
+                    ),
+                  };
+                })}
               />
             }
           />
@@ -384,6 +406,25 @@ function CodeCell({ value }: { value: string }) {
     <Text as="span" size="1" style="mono" className="executions-code-copy">
       {shortId(value)}
     </Text>
+  );
+}
+
+function ActorCell({
+  actorId,
+  actorName,
+  actorSlug,
+}: {
+  actorId: string;
+  actorName?: string;
+  actorSlug?: string;
+}) {
+  return (
+    <div className="executions-actor-cell">
+      <Text as="div" size="2" weight="semibold">{actorName ?? shortId(actorId)}</Text>
+      <Text as="div" size="1" tone="muted" style="mono" className="executions-actor-slug">
+        {actorSlug ? `@${actorSlug}` : shortId(actorId)}
+      </Text>
+    </div>
   );
 }
 
