@@ -11,10 +11,6 @@ export type AgentToolPermissionRecord = {
   serverName: string;
   serverDescription: string;
   serverType: McpServerType;
-  serverUrl?: string;
-  serverCommand?: string;
-  serverArgs?: string[];
-  availableScopes: AgentToolPermissionScopeRecord[];
   grantedScopes: AgentToolPermissionScopeRecord[];
   hasAllScopes: boolean;
 };

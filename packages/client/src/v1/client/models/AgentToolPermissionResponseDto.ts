@@ -7,10 +7,6 @@ import type { AgentToolPermissionServerResponseDto } from './AgentToolPermission
 export type AgentToolPermissionResponseDto = {
     server: AgentToolPermissionServerResponseDto;
     /**
-     * All scopes currently available on this MCP server
-     */
-    availableScopes: Array<AgentToolPermissionScopeResponseDto>;
-    /**
      * Subset of scopes granted to this agent for this server
      */
     grantedScopes: Array<AgentToolPermissionScopeResponseDto>;

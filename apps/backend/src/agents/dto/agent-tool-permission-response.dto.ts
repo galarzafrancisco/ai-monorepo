@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { MCP_SERVER_TYPES } from '../../mcp-registry/mcp-server.types';
 import type {
   AgentToolPermissionRecord,
@@ -59,36 +59,11 @@ class AgentToolPermissionServerResponseDto {
     example: 'http',
   })
   type!: string;
-
-  @ApiPropertyOptional({
-    description: 'HTTP endpoint for servers with http transport',
-    example: 'https://example.com/mcp',
-  })
-  url?: string;
-
-  @ApiPropertyOptional({
-    description: 'Command for servers with stdio transport',
-    example: 'npx',
-  })
-  cmd?: string;
-
-  @ApiPropertyOptional({
-    description: 'Command arguments for servers with stdio transport',
-    type: [String],
-    example: ['-y', '@taico/example-mcp'],
-  })
-  args?: string[];
 }
 
 export class AgentToolPermissionResponseDto {
   @ApiProperty({ type: AgentToolPermissionServerResponseDto })
   server!: AgentToolPermissionServerResponseDto;
-
-  @ApiProperty({
-    description: 'All scopes currently available on this MCP server',
-    type: [AgentToolPermissionScopeResponseDto],
-  })
-  availableScopes!: AgentToolPermissionScopeResponseDto[];
 
   @ApiProperty({
     description: 'Subset of scopes granted to this agent for this server',
@@ -111,13 +86,7 @@ export class AgentToolPermissionResponseDto {
         name: record.serverName,
         description: record.serverDescription,
         type: record.serverType,
-        url: record.serverUrl,
-        cmd: record.serverCommand,
-        args: record.serverArgs,
       },
-      availableScopes: record.availableScopes.map((scope) =>
-        AgentToolPermissionScopeResponseDto.fromRecord(scope),
-      ),
       grantedScopes: record.grantedScopes.map((scope) =>
         AgentToolPermissionScopeResponseDto.fromRecord(scope),
       ),

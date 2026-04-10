@@ -55,13 +55,18 @@ type AgentToolPermissionResponse = {
     id: string;
     providedId: string;
     type: 'http' | 'stdio';
-    url?: string;
-    cmd?: string;
-    args?: string[];
   };
-  availableScopes: AgentToolPermissionScopeResponse[];
   grantedScopes: AgentToolPermissionScopeResponse[];
   hasAllScopes: boolean;
+};
+
+type McpServerResponse = {
+  id: string;
+  providedId: string;
+  type: 'http' | 'stdio';
+  url?: string;
+  cmd?: string;
+  args?: string[];
 };
 
 type ProjectResponse = {
@@ -132,9 +137,11 @@ export class ExecutionOrchestrator {
     }
 
     const permissions = await this.fetchAgentToolPermissions(agent.actorId);
+    const serversById = await this.fetchMcpServersById(permissions);
     const executionToken = await this.requestExecutionToken(agent.slug);
     const runtimeMcpServers = this.buildRuntimeMcpServers(
       permissions,
+      serversById,
       executionToken,
       event.executionId,
     );
@@ -273,8 +280,23 @@ export class ExecutionOrchestrator {
     );
   }
 
+  private async fetchMcpServersById(
+    permissions: AgentToolPermissionResponse[],
+  ): Promise<Map<string, McpServerResponse>> {
+    const serverIds = Array.from(
+      new Set(permissions.map((permission) => permission.server.id)),
+    );
+    const servers = await Promise.all(
+      serverIds.map((serverId) =>
+        this.fetchJson<McpServerResponse>(`/api/v1/mcp/servers/${serverId}`),
+      ),
+    );
+    return new Map(servers.map((server) => [server.id, server]));
+  }
+
   private buildRuntimeMcpServers(
     permissions: AgentToolPermissionResponse[],
+    serversById: Map<string, McpServerResponse>,
     accessToken: string,
     executionId: string,
   ): Record<string, RuntimeMcpServerConfig> {
@@ -282,10 +304,15 @@ export class ExecutionOrchestrator {
 
     for (const permission of permissions) {
       const providedId = permission.server.providedId;
-      if (permission.server.type === 'http' && permission.server.url) {
+      const server = serversById.get(permission.server.id);
+      if (!server) {
+        continue;
+      }
+
+      if (server.type === 'http' && server.url) {
         runtimeMcpServers[providedId] = {
           type: 'http',
-          url: permission.server.url,
+          url: server.url,
           headers: {
             Authorization: `Bearer ${accessToken}`,
             [EXECUTION_ID_HEADER]: executionId,
@@ -294,11 +321,11 @@ export class ExecutionOrchestrator {
         continue;
       }
 
-      if (permission.server.type === 'stdio' && permission.server.cmd) {
+      if (server.type === 'stdio' && server.cmd) {
         runtimeMcpServers[providedId] = {
           type: 'stdio',
-          command: permission.server.cmd,
-          args: permission.server.args ?? [],
+          command: server.cmd,
+          args: server.args ?? [],
         };
       }
     }

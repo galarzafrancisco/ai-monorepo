@@ -12,7 +12,6 @@ type ToolPermission = {
   serverProvidedId: string;
   serverType: 'http' | 'stdio';
   scopeIds: string[];
-  availableScopes: Array<{ id: string; description: string }>;
   hasAllScopes: boolean;
 };
 

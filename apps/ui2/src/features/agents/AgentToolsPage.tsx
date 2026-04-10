@@ -20,15 +20,11 @@ function getScopeSummary(permission: AgentToolPermissionResponseDto) {
     return 'No scopes required';
   }
 
-  if (permission.availableScopes.length === 0) {
-    return 'No scopes available';
-  }
-
   if (permission.hasAllScopes) {
     return 'All scopes';
   }
 
-  return `${permission.grantedScopes.length} of ${permission.availableScopes.length} scopes`;
+  return `${permission.grantedScopes.length} scope${permission.grantedScopes.length === 1 ? '' : 's'} granted`;
 }
 
 export function AgentToolsPage() {
@@ -50,7 +46,6 @@ export function AgentToolsPage() {
     serverName: string;
     serverProvidedId: string;
     serverType: 'http' | 'stdio';
-    availableScopes: Array<{ id: string; description: string }>;
   } | null>(null);
 
   const loadToolPermissions = useCallback(async (actorId: string) => {
@@ -265,16 +260,12 @@ export function AgentToolsPage() {
             });
             await loadToolPermissions(agent.actorId);
           }}
-          onConfigureScopedTool={(tool, scopes) => {
+          onConfigureScopedTool={(tool, _scopes) => {
             setPendingScopedTool({
               serverId: tool.id,
               serverName: tool.name,
               serverProvidedId: tool.providedId,
               serverType: tool.type,
-              availableScopes: scopes.map((scope) => ({
-                id: scope.id,
-                description: scope.description,
-              })),
             });
           }}
         />
@@ -289,10 +280,6 @@ export function AgentToolsPage() {
             serverProvidedId: permission.server.providedId,
             serverType: permission.server.type,
             scopeIds: permission.grantedScopes.map((scope) => scope.id),
-            availableScopes: permission.availableScopes.map((scope) => ({
-              id: scope.id,
-              description: scope.description,
-            })),
             hasAllScopes: permission.hasAllScopes,
           }))}
           editingPermission={editingToolPermission ? {
@@ -301,10 +288,6 @@ export function AgentToolsPage() {
             serverProvidedId: editingToolPermission.server.providedId,
             serverType: editingToolPermission.server.type,
             scopeIds: editingToolPermission.grantedScopes.map((scope) => scope.id),
-            availableScopes: editingToolPermission.availableScopes.map((scope) => ({
-              id: scope.id,
-              description: scope.description,
-            })),
             hasAllScopes: editingToolPermission.hasAllScopes,
           } : null}
           onCancel={() => {
@@ -331,10 +314,6 @@ export function AgentToolsPage() {
             serverProvidedId: permission.server.providedId,
             serverType: permission.server.type,
             scopeIds: permission.grantedScopes.map((scope) => scope.id),
-            availableScopes: permission.availableScopes.map((scope) => ({
-              id: scope.id,
-              description: scope.description,
-            })),
             hasAllScopes: permission.hasAllScopes,
           }))}
           fixedTool={pendingScopedTool}

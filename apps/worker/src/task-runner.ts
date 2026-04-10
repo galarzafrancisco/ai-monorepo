@@ -1,5 +1,5 @@
 import { ApiClient } from '@taico/client/v2';
-import { AgentToolPermissionResponseDto } from '@taico/client/v2';
+import { AgentToolPermissionResponseDto, ServerResponseDto } from '@taico/client/v2';
 import { deriveAllowedToolsFromProvidedIds } from '@taico/shared';
 import { prepareWorkspace } from './helpers/prepareWorkspace.js';
 import { EXECUTION_ID_HEADER } from './helpers/config.js';
@@ -85,8 +85,10 @@ export async function executeTask({
     await workerClient.agent.AgentToolPermissionsController_listAgentToolPermissions({
       actorId: agent.actorId,
     });
+  const serversById = await fetchMcpServersById(workerClient, permissions);
   const runtimeMcpServers = buildRuntimeMcpServers(
     permissions,
+    serversById,
     executionId,
   );
   const allowedTools = deriveAllowedToolsFromProvidedIds(
@@ -174,16 +176,22 @@ export async function executeTask({
 
 function buildRuntimeMcpServers(
   permissions: AgentToolPermissionResponseDto[],
+  serversById: Map<string, ServerResponseDto>,
   executionId: string,
 ): Record<string, RuntimeMcpServerConfig> {
   const mcpServers: Record<string, RuntimeMcpServerConfig> = {};
 
   for (const permission of permissions) {
     const providedId = permission.server.providedId;
-    if (permission.server.type === 'http' && permission.server.url) {
+    const server = serversById.get(permission.server.id);
+    if (!server) {
+      continue;
+    }
+
+    if (server.type === 'http' && server.url) {
       mcpServers[providedId] = {
         type: 'http',
-        url: permission.server.url,
+        url: server.url,
         headers: {
           [EXECUTION_ID_HEADER]: executionId,
         },
@@ -191,16 +199,31 @@ function buildRuntimeMcpServers(
       continue;
     }
 
-    if (permission.server.type === 'stdio' && permission.server.cmd) {
+    if (server.type === 'stdio' && server.cmd) {
       mcpServers[providedId] = {
         type: 'stdio',
-        command: permission.server.cmd,
-        args: permission.server.args ?? [],
+        command: server.cmd,
+        args: server.args ?? [],
       };
     }
   }
 
   return mcpServers;
+}
+
+async function fetchMcpServersById(
+  workerClient: ApiClient,
+  permissions: AgentToolPermissionResponseDto[],
+): Promise<Map<string, ServerResponseDto>> {
+  const serverIds = Array.from(
+    new Set(permissions.map((permission) => permission.server.id)),
+  );
+  const servers = await Promise.all(
+    serverIds.map((serverId) =>
+      workerClient.tools.McpRegistryController_getServer({ serverId }),
+    ),
+  );
+  return new Map(servers.map((server) => [server.id, server]));
 }
 
 function attachRuntimeAuthHeaders(

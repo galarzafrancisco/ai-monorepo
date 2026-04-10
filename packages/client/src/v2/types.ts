@@ -696,9 +696,6 @@ export interface AgentToolPermissionServerResponseDto {
   name: string;
   description: string;
   type: 'http' | 'stdio';
-  url?: string;
-  cmd?: string;
-  args?: string[];
 }
 
 export interface AgentToolPermissionScopeResponseDto {
@@ -708,7 +705,6 @@ export interface AgentToolPermissionScopeResponseDto {
 
 export interface AgentToolPermissionResponseDto {
   server: AgentToolPermissionServerResponseDto;
-  availableScopes: AgentToolPermissionScopeResponseDto[];
   grantedScopes: AgentToolPermissionScopeResponseDto[];
   hasAllScopes: boolean;
 }

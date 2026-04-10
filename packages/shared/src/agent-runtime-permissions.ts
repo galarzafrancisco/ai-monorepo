@@ -17,11 +17,6 @@ export const DEFAULT_AGENT_ALLOWED_TOOLS = [
   'Edit',
 ] as const;
 
-const BASELINE_SCOPES_BY_PROVIDED_ID: Record<string, readonly string[]> = {
-  tasks: ['tasks:read', 'tasks:write'],
-  context: ['context:read', 'context:write'],
-};
-
 export type AgentRuntimeScopeLike = {
   id: string;
 };
@@ -30,15 +25,8 @@ export type AgentRuntimeToolPermissionLike = {
   server: {
     providedId: string;
   };
-  availableScopes: AgentRuntimeScopeLike[];
   grantedScopes: AgentRuntimeScopeLike[];
 };
-
-export function isBaselineSystemTool(providedId: string): boolean {
-  return BASELINE_SYSTEM_TOOL_PROVIDED_IDS.includes(
-    providedId as (typeof BASELINE_SYSTEM_TOOL_PROVIDED_IDS)[number],
-  );
-}
 
 export function deriveExecutionScopesFromToolPermissions(
   permissions: AgentRuntimeToolPermissionLike[],
@@ -46,18 +34,6 @@ export function deriveExecutionScopesFromToolPermissions(
   const scopes = new Set<string>(BASELINE_AGENT_EXECUTION_SCOPES);
 
   for (const permission of permissions) {
-    const providedId = permission.server.providedId;
-    if (isBaselineSystemTool(providedId)) {
-      const availableScopeIds = permission.availableScopes.map((scope) => scope.id);
-      const fallbackScopes = BASELINE_SCOPES_BY_PROVIDED_ID[providedId] ?? [];
-      const baselineScopes = availableScopeIds.length > 0 ? availableScopeIds : fallbackScopes;
-
-      for (const scopeId of baselineScopes) {
-        scopes.add(scopeId);
-      }
-      continue;
-    }
-
     for (const scope of permission.grantedScopes) {
       scopes.add(scope.id);
     }

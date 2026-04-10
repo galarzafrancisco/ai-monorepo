@@ -132,13 +132,6 @@ export class AgentToolPermissionsService {
       serverName: server.name,
       serverDescription: server.description,
       serverType: server.type,
-      serverUrl: server.url,
-      serverCommand: server.cmd,
-      serverArgs: server.args ?? undefined,
-      availableScopes: availableScopes.map((scope) => ({
-        id: scope.id,
-        description: scope.description,
-      })),
       grantedScopes: normalizedScopeIds.map((scopeId) => {
         const scope = scopeById.get(scopeId);
         return {
@@ -209,10 +202,6 @@ export class AgentToolPermissionsService {
       serverName: permission.server.name,
       serverDescription: permission.server.description,
       serverType: permission.server.type,
-      serverUrl: permission.server.url,
-      serverCommand: permission.server.cmd,
-      serverArgs: permission.server.args ?? undefined,
-      availableScopes,
       grantedScopes,
       hasAllScopes:
         availableScopes.length > 0 && grantedScopes.length === availableScopes.length,
@@ -233,10 +222,6 @@ export class AgentToolPermissionsService {
       serverName: server.name,
       serverDescription: server.description,
       serverType: server.type,
-      serverUrl: server.url,
-      serverCommand: server.cmd,
-      serverArgs: server.args ?? undefined,
-      availableScopes,
       grantedScopes: availableScopes,
       hasAllScopes: true,
     };

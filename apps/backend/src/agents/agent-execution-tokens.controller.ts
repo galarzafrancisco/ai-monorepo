@@ -89,16 +89,12 @@ export class AgentExecutionTokensController {
 
   private toRuntimePermission(permission: AgentToolPermissionRecord): {
     server: { providedId: string };
-    availableScopes: { id: string }[];
     grantedScopes: { id: string }[];
   } {
     return {
       server: {
         providedId: permission.serverProvidedId,
       },
-      availableScopes: permission.availableScopes.map((scope) => ({
-        id: scope.id,
-      })),
       grantedScopes: permission.grantedScopes.map((scope) => ({
         id: scope.id,
       })),

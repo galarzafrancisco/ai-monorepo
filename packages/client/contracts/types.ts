@@ -4280,24 +4280,6 @@ export interface components {
              * @enum {string}
              */
             type: "http" | "stdio";
-            /**
-             * @description HTTP endpoint for servers with http transport
-             * @example https://example.com/mcp
-             */
-            url?: string;
-            /**
-             * @description Command for servers with stdio transport
-             * @example npx
-             */
-            cmd?: string;
-            /**
-             * @description Command arguments for servers with stdio transport
-             * @example [
-             *       "-y",
-             *       "@taico/example-mcp"
-             *     ]
-             */
-            args?: string[];
         };
         AgentToolPermissionScopeResponseDto: {
             /**
@@ -4313,8 +4295,6 @@ export interface components {
         };
         AgentToolPermissionResponseDto: {
             server: components["schemas"]["AgentToolPermissionServerResponseDto"];
-            /** @description All scopes currently available on this MCP server */
-            availableScopes: components["schemas"]["AgentToolPermissionScopeResponseDto"][];
             /** @description Subset of scopes granted to this agent for this server */
             grantedScopes: components["schemas"]["AgentToolPermissionScopeResponseDto"][];
             /**
