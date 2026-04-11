@@ -1,0 +1,123 @@
+.landing-page {
+  min-height: 100vh;
+  background: var(--app-surface);
+  padding: var(--space-6) var(--space-4);
+  overflow-y: auto;
+}
+
+.landing-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.landing-hero {
+  text-align: center;
+  padding: var(--space-7) 0;
+}
+
+.landing-title {
+  font-size: var(--fs-6);
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.landing-subtitle {
+  max-width: 700px;
+  line-height: var(--lh-relaxed);
+}
+
+.landing-task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.landing-task-item {
+  /* TaskCard already has proper styling */
+}
+
+.landing-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.landing-feature-card {
+  padding: var(--space-5);
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
+  border-radius: var(--r-3);
+  transition: all 0.2s ease;
+}
+
+.landing-feature-card:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-2);
+}
+
+.landing-flexibility-card {
+  padding: var(--space-5);
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
+  border-radius: var(--r-3);
+}
+
+.landing-setup-card {
+  padding: var(--space-5);
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
+  border-radius: var(--r-3);
+}
+
+.landing-code-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+
+.landing-code-block pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  line-height: var(--lh-relaxed);
+  color: var(--text);
+}
+
+.landing-code-block code {
+  font-family: var(--font-mono);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .landing-page {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .landing-hero {
+    padding: var(--space-5) 0;
+  }
+
+  .landing-title {
+    font-size: var(--fs-5);
+  }
+
+  .landing-subtitle {
+    font-size: var(--fs-3);
+  }
+
+  .landing-task-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-code-block {
+    font-size: var(--fs-1);
+  }
+}
