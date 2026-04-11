@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 
 /**
  * ProtectedRoute component
- * Redirects to /login if user is not authenticated
+ * Redirects to landing page if user is not authenticated
  * Preserves the original destination to redirect back after login
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
@@ -19,9 +19,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return null;
   }
 
-  // Redirect to login if not authenticated
+  // Redirect to landing page if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   // User is authenticated, render the protected content

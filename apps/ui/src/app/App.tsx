@@ -4,6 +4,7 @@ import { AuthProvider, LoginPage, OnboardingPage, WalkthroughPage, ProtectedRout
 import { OnboardingChecker } from '../auth/OnboardingChecker';
 import { BetaShell } from './shells/BetaShell';
 import { HomeRoutes } from '../features/home/HomeRoutes';
+import { LandingPage } from '../features/home/LandingPage';
 import { BASE_PATH } from '../shared/const/base';
 import './App.css';
 import { TasksRoutes } from '../features/tasks/TasksRoutes';
@@ -52,6 +53,7 @@ export function App() {
             <ActorsProvider>
               <CommandPaletteProvider>
                 <Routes>
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/onboarding" element={<OnboardingPage />} />
                   <Route path="/login" element={
                     <OnboardingChecker>
