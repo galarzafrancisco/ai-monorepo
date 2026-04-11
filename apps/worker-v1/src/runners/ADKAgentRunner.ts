@@ -7,6 +7,7 @@ import {
   MCPToolset,
   BaseTool,
 } from "@google/adk";
+import { randomUUID } from "node:crypto";
 import { ADKMessageFormatter } from "../formatters/ADKMessageFormatter.js";
 import { ACCESS_TOKEN, BASE_URL, RUN_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
@@ -86,9 +87,10 @@ export class ADKAgentRunner extends BaseAgentRunner {
     // Init a session
     const session = await this.sessionService.createSession({
       appName: 'app-123',
-      sessionId: 'session-123',
+      sessionId: `adk-${randomUUID()}`,
       userId: 'user-123',
     });
+    await setSession(session.id);
 
     const agent = new LlmAgent({
       name: 'agent',

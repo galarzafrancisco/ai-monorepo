@@ -14,6 +14,7 @@ import {
   AgentRunContext,
   RuntimeMcpServerConfig,
 } from "./AgentRunner.js";
+import { randomUUID } from "node:crypto";
 
 class NamespacedTool extends BaseTool {
   constructor(
@@ -91,7 +92,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
     // Init a session
     const session = await this.sessionService.createSession({
       appName: 'app-123',
-      sessionId: 'session-123',
+      sessionId: `adk-${randomUUID()}`,
       userId: 'user-123',
     });
     await setSession(session.id);
