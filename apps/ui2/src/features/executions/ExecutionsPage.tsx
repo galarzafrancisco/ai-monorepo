@@ -133,7 +133,7 @@ export function ExecutionsPage() {
             emptyMessage="No active executions right now."
             table={
               <ExecutionTable
-                columns={["State", "Task", "Worker", "Agent", "Claimed", "Latest heartbeat", "Before claim"]}
+                columns={["State", "Task", "Worker", "Agent", "Session", "Tools", "Claimed", "Latest heartbeat", "Before claim"]}
                 rows={active.map((entry) => {
                   const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
 
@@ -149,6 +149,8 @@ export function ExecutionsPage() {
                       actorName={actor?.displayName}
                       actorSlug={actor?.slug}
                     />,
+                    <SessionCell key="session" value={entry.runnerSessionId} />,
+                    <ToolCountCell key="tool-count" value={entry.toolCallCount} />,
                     <TimeCell key="claimed" value={entry.claimedAt} />,
                     <TimeCell key="heartbeat" value={entry.lastHeartbeatAt} />,
                     <StatusPill key="before" tone={taskStatusTone(entry.taskStatusBeforeClaim)}>
@@ -166,6 +168,8 @@ export function ExecutionsPage() {
                         { label: "Latest heartbeat", value: formatDateTime(entry.lastHeartbeatAt) },
                         { label: "Worker", value: shortId(entry.workerClientId), mono: true },
                         { label: "Agent", value: actor?.slug ? `@${actor.slug}` : shortId(entry.agentActorId), mono: true },
+                        { label: "Session", value: formatSession(entry.runnerSessionId), mono: true },
+                        { label: "Tool calls", value: String(entry.toolCallCount) },
                         { label: "Before claim", value: entry.taskStatusBeforeClaim },
                       ]}
                       onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
@@ -184,7 +188,7 @@ export function ExecutionsPage() {
             emptyMessage="No historical executions yet."
             table={
               <ExecutionTable
-                columns={["Result", "Task", "Transitioned", "Task status", "Agent", "Worker", "Error"]}
+                columns={["Result", "Task", "Transitioned", "Task status", "Agent", "Worker", "Session", "Tools", "Error"]}
                 rows={history.map((entry) => {
                   const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
 
@@ -213,6 +217,8 @@ export function ExecutionsPage() {
                       actorSlug={actor?.slug}
                     />,
                     <CodeCell key="worker" value={entry.workerClientId} />,
+                    <SessionCell key="session" value={entry.runnerSessionId} />,
+                    <ToolCountCell key="tool-count" value={entry.toolCallCount} />,
                     <ErrorCell
                       key="error"
                       errorCode={entry.errorCode}
@@ -232,6 +238,8 @@ export function ExecutionsPage() {
                         { label: "Task status", value: entry.taskStatus ?? "Unknown" },
                         { label: "Agent", value: actor?.slug ? `@${actor.slug}` : shortId(entry.agentActorId), mono: true },
                         { label: "Worker", value: shortId(entry.workerClientId), mono: true },
+                        { label: "Session", value: formatSession(entry.runnerSessionId), mono: true },
+                        { label: "Tool calls", value: String(entry.toolCallCount) },
                         { label: "Error", value: entry.errorCode ?? "None" },
                         ...(entry.errorMessage
                           ? [{ label: "Message", value: entry.errorMessage }]
@@ -498,6 +506,22 @@ function TimeCell({ value }: { value: string | null }) {
   );
 }
 
+function SessionCell({ value }: { value: string | null }) {
+  return (
+    <Text as="span" size="1" style="mono" className="executions-code-copy">
+      {formatSession(value)}
+    </Text>
+  );
+}
+
+function ToolCountCell({ value }: { value: number }) {
+  return (
+    <Text as="span" size="2" weight="semibold">
+      {value}
+    </Text>
+  );
+}
+
 function ExecutionMobileCard({
   title,
   badge,
@@ -610,4 +634,12 @@ function formatRelativeTime(value: string) {
 
 function shortId(value: string) {
   return value.length > 12 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
+}
+
+function formatSession(value: string | null): string {
+  if (!value) {
+    return 'pending';
+  }
+
+  return shortId(value);
 }

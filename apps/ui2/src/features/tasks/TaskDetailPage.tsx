@@ -56,6 +56,8 @@ type TaskExecutionListItem = {
   status: 'ACTIVE' | TaskExecutionHistoryResponseDto['status'];
   source: 'active' | 'history';
   timestamp: string;
+  runnerSessionId: string | null;
+  toolCallCount: number;
   errorCode: TaskExecutionHistoryResponseDto['errorCode'] | null;
   errorMessage: string | null;
 };
@@ -421,6 +423,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           status: 'ACTIVE',
           source: 'active',
           timestamp: entry.claimedAt,
+          runnerSessionId: entry.runnerSessionId,
+          toolCallCount: entry.toolCallCount,
           errorCode: null,
           errorMessage: null,
         }));
@@ -434,6 +438,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           status: entry.status,
           source: 'history',
           timestamp: entry.transitionedAt,
+          runnerSessionId: entry.runnerSessionId,
+          toolCallCount: entry.toolCallCount,
           errorCode: entry.errorCode,
           errorMessage: entry.errorMessage,
         }));
@@ -868,6 +874,13 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                         i
                       </button>
                     ) : null}
+                  </span>
+                </Text>
+                <Text as='span' size='1' tone='muted'>
+                  <span className='task-detail-page__execution-stats'>
+                    tools: {execution.toolCallCount}
+                    <span className='task-detail-page__execution-stats-separator'>|</span>
+                    session: {execution.runnerSessionId ? shortId(execution.runnerSessionId) : 'pending'}
                   </span>
                 </Text>
                 {hasFailureDetails && isFailureDetailsExpanded ? (
