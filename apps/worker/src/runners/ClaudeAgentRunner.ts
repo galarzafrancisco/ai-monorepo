@@ -66,12 +66,9 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         await setSession(msg.session_id);
       }
 
-      if (msg?.type === 'assistant' && Array.isArray(msg.message?.content)) {
-        for (const part of msg.message.content) {
-          if (part.type === 'tool_use' && typeof part.name === 'string') {
-            await onToolCall?.(part.name);
-          }
-        }
+      const toolCalls = formatter.extractToolCallNames(msg);
+      for (const toolName of toolCalls) {
+        await onToolCall?.(toolName);
       }
 
       // map → string

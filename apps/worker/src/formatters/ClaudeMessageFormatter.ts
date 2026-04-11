@@ -12,6 +12,26 @@ import {
 export class ClaudeMessageFormatter {
   constructor(private agentSlug?: string) {}
 
+  extractToolCallNames(message: SDKMessage): string[] {
+    if (message.type !== 'assistant') {
+      return [];
+    }
+
+    const content = message.message?.content;
+    if (!Array.isArray(content)) {
+      return [];
+    }
+
+    const toolNames: string[] = [];
+    for (const part of content) {
+      if (part.type === 'tool_use' && typeof part.name === 'string') {
+        toolNames.push(part.name);
+      }
+    }
+
+    return toolNames;
+  }
+
   format(message: SDKMessage): string | null {
     switch (message.type) {
       case 'assistant':
