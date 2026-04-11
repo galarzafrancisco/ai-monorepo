@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, type Location } from "react-router-dom";
 import { Button, Card, Stack, Text, Row } from "../../ui/primitives";
 import { TaskCard } from "../tasks/TaskCard";
 import { Task } from "../tasks/types";
@@ -139,6 +139,10 @@ const mockTasks: Task[] = [
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Preserve the 'from' location if redirected from a protected route
+  const from = (location.state as { from?: Location })?.from;
 
   return (
     <div className="landing-page">
@@ -288,7 +292,7 @@ npx @taico/worker@0.2.8 --serverurl http://localhost:$PORT`}</code></pre>
                   </Button>
                   <Button
                     variant="secondary"
-                    onClick={() => navigate('/login')}
+                    onClick={() => navigate('/login', { state: { from } })}
                   >
                     Sign In
                   </Button>
