@@ -83,4 +83,19 @@ export interface AccessTokenClaims {
    * Used for audit trail when a human issues a token for an agent.
    */
   issued_by?: string;
+
+  /**
+   * Token kind discriminator. Omitted for legacy/non tool-specific access tokens.
+   */
+  token_kind?: 'tool';
+
+  /**
+   * MCP server providedId this token is constrained to when token_kind is `tool`.
+   */
+  tool_id?: string;
+
+  /**
+   * Tool-local scopes authorized for this token when token_kind is `tool`.
+   */
+  tool_scopes?: string[];
 }
