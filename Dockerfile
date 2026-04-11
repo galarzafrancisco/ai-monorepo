@@ -7,8 +7,8 @@ WORKDIR /workdir
 COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
 COPY apps/worker/package*.json ./apps/worker/
+COPY apps/ui-v1/package*.json ./apps/ui-v1/
 COPY apps/ui/package*.json ./apps/ui/
-COPY apps/ui2/package*.json ./apps/ui2/
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/client/package*.json ./packages/client/
 COPY packages/adk-session-store/package*.json ./packages/adk-session-store/

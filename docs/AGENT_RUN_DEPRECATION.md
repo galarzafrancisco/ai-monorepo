@@ -10,6 +10,6 @@ Current model:
 - workers start and update executions
 - execution identity is the runtime identity for agent work
 
-If you are working on current code, use the executions surfaces under [`apps/backend/src/executions-v2`](/Users/franciscogalarza/github/ai-monorepo/apps/backend/src/executions-v2) and the current worker under [`apps/worker`](/Users/franciscogalarza/github/ai-monorepo/apps/worker).
+If you are working on current code, use the executions surfaces under [`apps/backend/src/executions`](/Users/franciscogalarza/github/ai-monorepo/apps/backend/src/executions) and the current worker under [`apps/worker`](/Users/franciscogalarza/github/ai-monorepo/apps/worker).
 
 Any references to `agent-runs`, `run-id`, or orchestrator-era behavior should be treated as legacy migration context only.

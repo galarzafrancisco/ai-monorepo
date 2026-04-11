@@ -54,7 +54,7 @@ Note: `@taico/client` uses `build:prod` which runs the full OpenAPI codegen pipe
 
 ### `@taico/taico` (backend)
 
-The backend package includes the compiled NestJS server and both UI builds (`dist/public/` and `dist/public/beta/`). Because `nest build` deletes `dist/` before compiling, the `pack` and `release` scripts **do not** rebuild — they assume `dist/` is already fully populated.
+The backend package includes the compiled NestJS server, the active UI build at `dist/public/`, and the ui-v1 build at `dist/public/beta/`. Because `nest build` deletes `dist/` before compiling, the `pack` and `release` scripts **do not** rebuild — they assume `dist/` is already fully populated.
 
 Always pack/release from the repo root after a full build:
 

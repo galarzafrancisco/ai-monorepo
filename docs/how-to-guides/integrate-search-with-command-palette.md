@@ -110,7 +110,7 @@ public static tasksControllerSearchTasks(
 
 ### 3. Frontend: Modify CommandPalette Component
 
-Location: `apps/ui2/src/ui/components/CommandPalette/CommandPalette.tsx`
+Location: `apps/ui/src/ui/components/CommandPalette/CommandPalette.tsx`
 
 **3.1. Add Imports**
 
@@ -288,7 +288,7 @@ function closeAndReset() {
 
 ### 4. Add CSS (Optional Styling)
 
-Location: `apps/ui2/src/ui/components/CommandPalette/CommandPalette.css`
+Location: `apps/ui/src/ui/components/CommandPalette/CommandPalette.css`
 
 ```css
 .command-palette-searching {

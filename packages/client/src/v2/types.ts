@@ -1035,36 +1035,6 @@ export interface ProtectedResourceMetadataResponseDto {
   resource_name: string;
 }
 
-export interface ExecutionResponseDto {
-  id: string;
-  taskId: string;
-  taskName?: string | null;
-  agentActorId: string;
-  agentSlug?: string | null;
-  agentName?: string | null;
-  status: 'READY' | 'CLAIMED' | 'RUNNING' | 'STOP_REQUESTED' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'STALE';
-  requestedAt: string;
-  claimedAt?: string | null;
-  startedAt?: string | null;
-  finishedAt?: string | null;
-  workerSessionId?: string | null;
-  leaseExpiresAt?: string | null;
-  stopRequestedAt?: string | null;
-  failureReason?: string | null;
-  triggerReason?: string | null;
-  rowVersion: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ExecutionListResponseDto {
-  items: ExecutionResponseDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
 export interface GlobalSearchResultDto {
   id: string;
   type: 'task' | 'context_block' | 'agent' | 'project' | 'tag' | 'tool';

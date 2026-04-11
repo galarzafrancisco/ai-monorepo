@@ -81,7 +81,7 @@ async function bootstrap() {
 
   // Serve static files from the UI build (in production)
   const staticPath = join(__dirname, 'public');
-  const betaStaticPath = join(__dirname, 'public/beta'); // new UI build
+  const betaStaticPath = join(__dirname, 'public/beta'); // ui-v1 build
   if (existsSync(staticPath)) {
     app.useStaticAssets(staticPath);
     console.log(`Serving static files from ${staticPath}`);
@@ -100,11 +100,11 @@ async function bootstrap() {
       ) {
         return next();
       }
-      // Serve Beta UI
+      // Serve ui-v1 under /beta.
       if (req.path.startsWith('/beta')) {
         return res.sendFile(join(betaStaticPath, 'index.html'));
       }
-      // Serve legacy UI for all other routes
+      // Serve active UI for all other routes.
       return res.sendFile(join(staticPath, 'index.html'));
     });
   }

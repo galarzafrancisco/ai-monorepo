@@ -12,7 +12,7 @@ export async function runTaskClaimWorker(
   activityGatewayClient: ExecutionActivityGatewayClient,
 ): Promise<void> {
   console.log(
-    `[worker] Polling executions-v2 queue every ${QUEUE_POLL_INTERVAL_MS / 1000}s.`,
+    `[worker] Polling executions queue every ${QUEUE_POLL_INTERVAL_MS / 1000}s.`,
   );
 
   while (true) {
@@ -38,7 +38,7 @@ async function processNextQueuedTask(
   baseUrl: string,
   activityGatewayClient: ExecutionActivityGatewayClient,
 ): Promise<void> {
-  const queue = await client.executionsV2.TaskExecutionQueueController_listQueue();
+  const queue = await client.executions.TaskExecutionQueueController_listQueue();
   console.log(`[worker] Queue poll succeeded. ${queue.length} task(s) ready.`);
 
   const nextTask = queue[0];

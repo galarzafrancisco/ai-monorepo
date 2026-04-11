@@ -33,7 +33,7 @@ export type CreateTaskInThreadInput = CreateTaskInput & {
   executionId?: string;
 
   /**
-   * Run ID (legacy compatibility during v1 -> v2 migration)
+   * Run ID compatibility path for agent-run context.
    */
   runId?: string;
 };

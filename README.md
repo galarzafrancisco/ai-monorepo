@@ -52,11 +52,10 @@ npm run dev:[1-5]
 
 ```text
 apps/
-├── agent-api/        # Agent-facing API service
 ├── backend/          # NestJS API server
 ├── llm-benchmarker/  # LLM benchmark and evaluation tooling
-├── ui2/              # Active React frontend
-├── ui/               # Deprecated frontend, compile-only
+├── ui/              # Active React frontend
+├── ui-v1/           # Deprecated frontend, compile-only
 ├── worker/           # Current worker runtime
 └── worker-v1/        # Legacy worker runtime
 packages/
@@ -68,4 +67,4 @@ packages/
 └── shared/             # Shared contracts and generated artifacts
 ```
 
-At runtime, the backend owns tasks, threads, auth, and execution lifecycle. Workers connect to it, claim work, and execute agents in isolated workspaces. `ui2` is the active product UI, `worker` is the current runtime, and `worker-v1`/`ui` are legacy surfaces kept for compatibility and migration.
+At runtime, the backend owns tasks, threads, auth, and execution lifecycle. Workers connect to it, claim work, and execute agents in isolated workspaces. `ui` is the active product UI, `worker` is the current runtime, and `worker-v1`/`ui-v1` are legacy surfaces kept for compatibility and migration.

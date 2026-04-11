@@ -70,17 +70,17 @@ After changes:
 ```text
 apps/
 ├── backend/         # NestJS 11 API server
-├── ui2/             # Active React frontend
-├── ui/              # Deprecated frontend, compile-only
+├── ui/             # Active React frontend
+├── ui-v1/          # Deprecated frontend, compile-only
 ├── worker/          # Current worker runtime
-└── worker-v1/       # Legacy worker runtime
+└── worker-v1/       # Historical worker runtime
 packages/
 ├── client/          # Generated API client
 ├── openapi-sdkgen/  # SDK generation tooling
 └── shared/          # Shared contracts and generated artifacts
 ```
 
-All new UI work goes in `apps/ui2`. All new worker work goes in `apps/worker`.
+All new UI work goes in `apps/ui`. All new worker work goes in `apps/worker`.
 
 ### Layering
 
@@ -139,7 +139,7 @@ For implementation details, see [Realtime Events](/Users/franciscogalarza/github
 
 ## UI Development
 
-Read [`apps/ui2/CLAUDE.md`](/Users/franciscogalarza/github/ai-monorepo/apps/ui2/CLAUDE.md) before making UI changes.
+Read [`apps/ui/CLAUDE.md`](/Users/franciscogalarza/github/ai-monorepo/apps/ui/CLAUDE.md) before making UI changes.
 
 ## Backend Development
 

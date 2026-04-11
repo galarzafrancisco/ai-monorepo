@@ -14,7 +14,7 @@ export class AgentRunService {
     /**
      * @deprecated
      * Create a new agent run
-     * DEPRECATED: This endpoint is a legacy compatibility facade. New workers should use the execution-centric model (TaskExecution) instead of creating AgentRuns. This endpoint will be removed once all workers migrate to execution-id. See /docs/AGENT_RUN_DEPRECATION.md for details.
+     * Compatibility endpoint for contexts that still create AgentRun records. Execution id is the authoritative runtime identity.
      * @param requestBody
      * @returns AgentRunResponseDto Agent run created successfully
      * @throws ApiError
@@ -84,7 +84,7 @@ export class AgentRunService {
     /**
      * @deprecated
      * Update an agent run
-     * DEPRECATED: This endpoint is a legacy compatibility facade. Workers should update execution state via TaskExecution instead. See /docs/AGENT_RUN_DEPRECATION.md for migration details.
+     * Compatibility endpoint for updating AgentRun records. Execution lifecycle state is owned by executions.
      * @param runId Agent run ID
      * @param requestBody
      * @returns AgentRunResponseDto Agent run updated successfully

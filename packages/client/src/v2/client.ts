@@ -17,11 +17,10 @@ import { AgentExecutionTokensResource } from './agent-execution-tokens-resource.
 import { ChatProvidersResource } from './chat-providers-resource.js';
 import { SecretsResource } from './secrets-resource.js';
 import { ContextResource } from './context-resource.js';
-import { ExecutionsV2Resource } from './executions-v2-resource.js';
+import { ExecutionsResource } from './executions-resource.js';
 import { TaskBlueprintsResource } from './task-blueprints-resource.js';
 import { ScheduledTasksResource } from './scheduled-tasks-resource.js';
 import { DiscoveryResource } from './discovery-resource.js';
-import { ExecutionsResource } from './executions-resource.js';
 import { SearchResource } from './search-resource.js';
 
 export class ApiClient {
@@ -43,11 +42,10 @@ export class ApiClient {
   public readonly chatProviders: ChatProvidersResource;
   public readonly secrets: SecretsResource;
   public readonly context: ContextResource;
-  public readonly executionsV2: ExecutionsV2Resource;
+  public readonly executions: ExecutionsResource;
   public readonly taskBlueprints: TaskBlueprintsResource;
   public readonly scheduledTasks: ScheduledTasksResource;
   public readonly discovery: DiscoveryResource;
-  public readonly executions: ExecutionsResource;
   public readonly search: SearchResource;
 
   constructor(config: ClientConfig) {
@@ -69,11 +67,10 @@ export class ApiClient {
     this.chatProviders = new ChatProvidersResource(config);
     this.secrets = new SecretsResource(config);
     this.context = new ContextResource(config);
-    this.executionsV2 = new ExecutionsV2Resource(config);
+    this.executions = new ExecutionsResource(config);
     this.taskBlueprints = new TaskBlueprintsResource(config);
     this.scheduledTasks = new ScheduledTasksResource(config);
     this.discovery = new DiscoveryResource(config);
-    this.executions = new ExecutionsResource(config);
     this.search = new SearchResource(config);
   }
 }

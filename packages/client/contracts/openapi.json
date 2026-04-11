@@ -3164,7 +3164,7 @@
     "/api/v1/agent-runs": {
       "post": {
         "deprecated": true,
-        "description": "DEPRECATED: This endpoint is a legacy compatibility facade. New workers should use the execution-centric model (TaskExecution) instead of creating AgentRuns. This endpoint will be removed once all workers migrate to execution-id. See /docs/AGENT_RUN_DEPRECATION.md for details.",
+        "description": "Compatibility endpoint for contexts that still create AgentRun records. Execution id is the authoritative runtime identity.",
         "operationId": "AgentRunsController_createAgentRun",
         "parameters": [],
         "requestBody": {
@@ -3313,7 +3313,7 @@
       },
       "patch": {
         "deprecated": true,
-        "description": "DEPRECATED: This endpoint is a legacy compatibility facade. Workers should update execution state via TaskExecution instead. See /docs/AGENT_RUN_DEPRECATION.md for migration details.",
+        "description": "Compatibility endpoint for updating AgentRun records. Execution lifecycle state is owned by executions.",
         "operationId": "AgentRunsController_updateAgentRun",
         "parameters": [
           {
@@ -5850,9 +5850,9 @@
         ]
       }
     },
-    "/api/v1/executions-v2/queue": {
+    "/api/v1/executions/queue": {
       "get": {
-        "description": "Returns the tasks currently present in the v2 execution queue. Presence means the task is ready to be picked by the executor.",
+        "description": "Returns the tasks currently present in the execution queue. Presence means the task is ready to be picked by the executor.",
         "operationId": "TaskExecutionQueueController_listQueue",
         "parameters": [],
         "responses": {
@@ -5877,11 +5877,11 @@
         ],
         "summary": "List the current task execution work queue",
         "tags": [
-          "Executions V2"
+          "Executions"
         ]
       }
     },
-    "/api/v1/executions-v2/queue/{taskId}/claim": {
+    "/api/v1/executions/queue/{taskId}/claim": {
       "post": {
         "description": "Atomically removes the task from the queue and inserts it into the active execution table.",
         "operationId": "TaskExecutionQueueController_claimTask",
@@ -5915,13 +5915,13 @@
         ],
         "summary": "Claim a specific task from the execution queue",
         "tags": [
-          "Executions V2"
+          "Executions"
         ]
       }
     },
-    "/api/v1/executions-v2/active": {
+    "/api/v1/executions/active": {
       "get": {
-        "description": "Returns the tasks currently being worked on in the v2 execution system.",
+        "description": "Returns the tasks currently being worked on in the execution system.",
         "operationId": "ActiveTaskExecutionController_listActiveExecutions",
         "parameters": [],
         "responses": {
@@ -5946,11 +5946,11 @@
         ],
         "summary": "List active task executions",
         "tags": [
-          "Executions V2"
+          "Executions"
         ]
       }
     },
-    "/api/v1/executions-v2/active/{executionId}/stop": {
+    "/api/v1/executions/active/{executionId}/stop": {
       "post": {
         "description": "Atomically removes the execution from the active execution table and inserts it into the history table.",
         "operationId": "ActiveTaskExecutionController_stopTaskExecution",
@@ -5994,11 +5994,11 @@
         ],
         "summary": "Stop an active task execution and move it to history",
         "tags": [
-          "Executions V2"
+          "Executions"
         ]
       }
     },
-    "/api/v1/executions-v2/active/{executionId}/session": {
+    "/api/v1/executions/active/{executionId}/session": {
       "patch": {
         "description": "Stores the runtime session identifier emitted by the agent harness so it can be propagated to execution history.",
         "operationId": "ActiveTaskExecutionController_updateRunnerSessionId",
@@ -6035,11 +6035,11 @@
         ],
         "summary": "Attach the runner session id to an active execution",
         "tags": [
-          "Executions V2"
+          "Executions"
         ]
       }
     },
-    "/api/v1/executions-v2/active/{executionId}/tool-calls/increment": {
+    "/api/v1/executions/active/{executionId}/tool-calls/increment": {
       "patch": {
         "description": "Atomically increments the active execution tool-call counter without touching other mutable execution fields.",
         "operationId": "ActiveTaskExecutionController_incrementToolCallCount",
@@ -6066,13 +6066,13 @@
         ],
         "summary": "Increment tool call count for an active execution",
         "tags": [
-          "Executions V2"
+          "Executions"
         ]
       }
     },
-    "/api/v1/executions-v2/history": {
+    "/api/v1/executions/history": {
       "get": {
-        "description": "Returns the persisted execution history rows in the v2 execution system.",
+        "description": "Returns the persisted execution history rows in the execution system.",
         "operationId": "TaskExecutionHistoryController_listHistory",
         "parameters": [],
         "responses": {
@@ -6097,7 +6097,7 @@
         ],
         "summary": "List task execution history",
         "tags": [
-          "Executions V2"
+          "Executions"
         ]
       }
     },
@@ -6684,98 +6684,6 @@
         },
         "tags": [
           "Discovery"
-        ]
-      }
-    },
-    "/api/v1/executions": {
-      "get": {
-        "description": "Returns the backend-tracked work queue showing all TaskExecution records. Useful for debugging the execution reconciler and understanding which tasks are ready to run.",
-        "operationId": "ExecutionsController_listExecutions",
-        "parameters": [
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "description": "Filter by execution status",
-            "schema": {
-              "example": "READY",
-              "type": "string",
-              "enum": [
-                "READY",
-                "CLAIMED",
-                "RUNNING",
-                "STOP_REQUESTED",
-                "COMPLETED",
-                "FAILED",
-                "CANCELLED",
-                "STALE"
-              ]
-            }
-          },
-          {
-            "name": "agentActorId",
-            "required": false,
-            "in": "query",
-            "description": "Filter by agent actor ID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174000",
-              "type": "string"
-            }
-          },
-          {
-            "name": "taskId",
-            "required": false,
-            "in": "query",
-            "description": "Filter by task ID",
-            "schema": {
-              "example": "123e4567-e89b-12d3-a456-426614174001",
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "Page number (1-indexed)",
-            "schema": {
-              "minimum": 1,
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of items per page",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "example": 50,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExecutionListResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "JWT-Cookie": []
-          }
-        ],
-        "summary": "List task executions with optional filtering and pagination",
-        "tags": [
-          "Executions"
         ]
       }
     },
@@ -12150,181 +12058,6 @@
           "scopes_supported",
           "bearer_methods_supported",
           "resource_name"
-        ]
-      },
-      "ExecutionResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique execution identifier",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "taskId": {
-            "type": "string",
-            "description": "Task ID",
-            "example": "123e4567-e89b-12d3-a456-426614174001"
-          },
-          "taskName": {
-            "type": "string",
-            "description": "Task name",
-            "example": "Implement feature X",
-            "nullable": true
-          },
-          "agentActorId": {
-            "type": "string",
-            "description": "Agent actor ID",
-            "example": "123e4567-e89b-12d3-a456-426614174002"
-          },
-          "agentSlug": {
-            "type": "string",
-            "description": "Agent slug",
-            "example": "claude-dev",
-            "nullable": true
-          },
-          "agentName": {
-            "type": "string",
-            "description": "Agent name",
-            "example": "Claude Developer",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "description": "Execution status",
-            "enum": [
-              "READY",
-              "CLAIMED",
-              "RUNNING",
-              "STOP_REQUESTED",
-              "COMPLETED",
-              "FAILED",
-              "CANCELLED",
-              "STALE"
-            ],
-            "example": "READY"
-          },
-          "requestedAt": {
-            "type": "string",
-            "description": "When the execution was requested",
-            "example": "2026-03-28T10:30:00.000Z"
-          },
-          "claimedAt": {
-            "type": "string",
-            "description": "When the execution was claimed by a worker",
-            "example": "2026-03-28T10:31:00.000Z",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "startedAt": {
-            "type": "string",
-            "description": "When the execution started running",
-            "example": "2026-03-28T10:31:05.000Z",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "finishedAt": {
-            "type": "string",
-            "description": "When the execution finished",
-            "example": "2026-03-28T10:35:00.000Z",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "workerSessionId": {
-            "type": "string",
-            "description": "Worker session ID that claimed this execution",
-            "example": "123e4567-e89b-12d3-a456-426614174003",
-            "nullable": true
-          },
-          "leaseExpiresAt": {
-            "type": "string",
-            "description": "When the worker lease expires",
-            "example": "2026-03-28T10:36:00.000Z",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "stopRequestedAt": {
-            "type": "string",
-            "description": "When a stop was requested",
-            "example": "2026-03-28T10:34:00.000Z",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "failureReason": {
-            "type": "string",
-            "description": "Failure reason if execution failed",
-            "example": "Worker disconnected",
-            "nullable": true
-          },
-          "triggerReason": {
-            "type": "string",
-            "description": "Why this execution was triggered",
-            "example": "Task is eligible for execution",
-            "nullable": true
-          },
-          "rowVersion": {
-            "type": "number",
-            "description": "Row version for optimistic locking",
-            "example": 1
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Execution creation timestamp",
-            "example": "2026-03-28T10:30:00.000Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "description": "Execution last update timestamp",
-            "example": "2026-03-28T10:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "taskId",
-          "agentActorId",
-          "status",
-          "requestedAt",
-          "rowVersion",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "ExecutionListResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "Array of task executions",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ExecutionResponseDto"
-            }
-          },
-          "total": {
-            "type": "number",
-            "description": "Total number of executions matching the filter",
-            "example": 100
-          },
-          "page": {
-            "type": "number",
-            "description": "Current page number (1-indexed)",
-            "example": 1
-          },
-          "limit": {
-            "type": "number",
-            "description": "Number of items per page",
-            "example": 50
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "Total number of pages",
-            "example": 2
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "limit",
-          "totalPages"
         ]
       },
       "GlobalSearchResultDto": {

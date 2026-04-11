@@ -44,7 +44,7 @@ npm -w apps/backend run test:e2e
 
 - The runtime model is execution-centric.
 - `apps/worker` is the current worker runtime.
-- `apps/worker-v1` is legacy.
+- `apps/worker-v1` is the historical worker runtime.
 
 See the repo-level guides for broader setup and architecture:
 

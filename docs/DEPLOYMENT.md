@@ -14,7 +14,7 @@ Taico uses a two-repository GitOps approach for deployments:
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          Application Repo                            │
-│  • Source code (apps/backend, apps/ui2, etc.)                       │
+│  • Source code (apps/backend, apps/ui, etc.)                       │
 │  • Kubernetes manifest templates (install/manifests/)               │
 │  • CI/CD pipeline (.github/workflows/)                              │
 └─────────────────────────────────────────────────────────────────────┘

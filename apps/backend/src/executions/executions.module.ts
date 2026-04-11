@@ -1,51 +1,65 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TaskExecutionEntity } from './task-execution.entity';
-import { WorkerSessionEntity } from './worker-session.entity';
-import { ExecutionContextResolverService } from './execution-context-resolver.service';
-import { ExecutionReconcilerService } from './execution-reconciler.service';
-import { ExecutionClaimService } from './execution-claim.service';
-import { ExecutionsService } from './executions.service';
-import { WorkerSessionService } from './worker-session.service';
-import { ExecutionsController } from './executions.controller';
-import { WorkersGateway } from './workers.gateway';
-import { ExecutionsGateway } from './executions.gateway';
-import { AgentRunEntity } from '../agent-runs/agent-run.entity';
-import { ThreadsModule } from '../threads/threads.module';
+import { AgentsModule } from '../agents/agents.module';
 import { TaskEntity } from '../tasks/task.entity';
-import { InputRequestEntity } from '../tasks/input-request.entity';
-import { ActorEntity } from '../identity-provider/actor.entity';
-import { AgentEntity } from '../agents/agent.entity';
+import { ActiveTaskExecutionEntity } from './active/active-task-execution.entity';
+import { ActiveTaskExecutionController } from './active/active-task-execution.controller';
+import { ActiveTaskExecutionService } from './active/active-task-execution.service';
+import { ActiveExecutionContextResolverService } from './active/active-execution-context-resolver.service';
+import { TaskExecutionHistoryController } from './history/task-execution-history.controller';
+import { TaskExecutionHistoryEntity } from './history/task-execution-history.entity';
+import { TaskExecutionHistoryService } from './history/task-execution-history.service';
+import { TaskEligibilityEventSourceService } from './readiness/task-eligibility-event-source.service';
+import { TaskExecutionQueueEntity } from './queue/task-execution-queue.entity';
+import { TaskExecutionQueueController } from './queue/task-execution-queue.controller';
+import { TaskExecutionQueueService } from './queue/task-execution-queue.service';
+import { ReadinessCandidateRepository } from './readiness/readiness-candidate.repository';
+import { TaskEligibilitySchedulerService } from './readiness/task-eligibility-scheduler.service';
+import { TaskExecutionQueuePopulatorService } from './readiness/task-execution-queue-populator.service';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
+import { ThreadsModule } from '../threads/threads.module';
+import { AgentRunEntity } from '../agent-runs/agent-run.entity';
+import { ExecutionActivityService } from './execution-activity.service';
+import { TaskActivityProjectionService } from './task-activity-projection.service';
+import { ExecutionsWorkerGateway } from './executions-worker.gateway';
+import { StaleActiveTaskExecutionDetectorService } from './staleness/stale-active-task-execution-detector.service';
+import { StaleActiveTaskExecutionPrunerService } from './staleness/stale-active-task-execution-pruner.service';
+import { StaleActiveTaskExecutionSchedulerService } from './staleness/stale-active-task-execution-scheduler.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      TaskExecutionEntity,
-      WorkerSessionEntity,
-      AgentRunEntity,
       TaskEntity,
-      InputRequestEntity,
-      ActorEntity,
-      AgentEntity,
+      TaskExecutionQueueEntity,
+      ActiveTaskExecutionEntity,
+      TaskExecutionHistoryEntity,
+      AgentRunEntity,
     ]),
-    forwardRef(() => ThreadsModule),
+    AgentsModule,
+    ThreadsModule,
     AuthGuardsModule,
   ],
-  controllers: [ExecutionsController],
+  controllers: [
+    TaskExecutionQueueController,
+    ActiveTaskExecutionController,
+    TaskExecutionHistoryController,
+  ],
   providers: [
-    ExecutionContextResolverService,
-    ExecutionReconcilerService,
-    ExecutionClaimService,
-    ExecutionsService,
-    WorkerSessionService,
-    WorkersGateway,
-    ExecutionsGateway,
+    TaskExecutionQueueService,
+    ActiveTaskExecutionService,
+    ActiveExecutionContextResolverService,
+    TaskExecutionHistoryService,
+    ExecutionActivityService,
+    TaskActivityProjectionService,
+    ExecutionsWorkerGateway,
+    ReadinessCandidateRepository,
+    TaskExecutionQueuePopulatorService,
+    TaskEligibilityEventSourceService,
+    TaskEligibilitySchedulerService,
+    StaleActiveTaskExecutionDetectorService,
+    StaleActiveTaskExecutionPrunerService,
+    StaleActiveTaskExecutionSchedulerService,
   ],
-  exports: [
-    ExecutionContextResolverService,
-    ExecutionClaimService,
-    WorkersGateway,
-  ],
+  exports: [ActiveExecutionContextResolverService],
 })
 export class ExecutionsModule {}

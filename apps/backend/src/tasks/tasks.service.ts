@@ -55,7 +55,7 @@ import { SearchService } from '../search/search.service';
 import { AgentRunsService } from '../agent-runs/agent-runs.service';
 import { ThreadsService } from '../threads/threads.service';
 import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
-import { ActiveExecutionContextResolverService } from '../executions-v2/active/active-execution-context-resolver.service';
+import { ActiveExecutionContextResolverService } from '../executions/active/active-execution-context-resolver.service';
 
 @Injectable()
 export class TasksService {

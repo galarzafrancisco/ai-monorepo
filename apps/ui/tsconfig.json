@@ -21,16 +21,10 @@
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "paths": {
-      "@taico/client": [
-        "../../packages/shared/dist/src/index"
-      ],
-      "@shared/*": [
-        "../../packages/shared/dist/src/*"
-      ]
-    },
     "types": [
-      "vite/client"
+      "vite/client",
+      "react",
+      "react-dom"
     ]
   }
 }

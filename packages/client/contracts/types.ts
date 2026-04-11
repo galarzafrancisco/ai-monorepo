@@ -952,7 +952,7 @@ export interface paths {
         /**
          * Create a new agent run
          * @deprecated
-         * @description DEPRECATED: This endpoint is a legacy compatibility facade. New workers should use the execution-centric model (TaskExecution) instead of creating AgentRuns. This endpoint will be removed once all workers migrate to execution-id. See /docs/AGENT_RUN_DEPRECATION.md for details.
+         * @description Compatibility endpoint for contexts that still create AgentRun records. Execution id is the authoritative runtime identity.
          */
         post: operations["AgentRunsController_createAgentRun"];
         delete?: never;
@@ -978,7 +978,7 @@ export interface paths {
         /**
          * Update an agent run
          * @deprecated
-         * @description DEPRECATED: This endpoint is a legacy compatibility facade. Workers should update execution state via TaskExecution instead. See /docs/AGENT_RUN_DEPRECATION.md for migration details.
+         * @description Compatibility endpoint for updating AgentRun records. Execution lifecycle state is owned by executions.
          */
         patch: operations["AgentRunsController_updateAgentRun"];
         trace?: never;
@@ -1629,7 +1629,7 @@ export interface paths {
         patch: operations["ContextController_handleMcp_patch"];
         trace?: never;
     };
-    "/api/v1/executions-v2/queue": {
+    "/api/v1/executions/queue": {
         parameters: {
             query?: never;
             header?: never;
@@ -1638,7 +1638,7 @@ export interface paths {
         };
         /**
          * List the current task execution work queue
-         * @description Returns the tasks currently present in the v2 execution queue. Presence means the task is ready to be picked by the executor.
+         * @description Returns the tasks currently present in the execution queue. Presence means the task is ready to be picked by the executor.
          */
         get: operations["TaskExecutionQueueController_listQueue"];
         put?: never;
@@ -1649,7 +1649,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/executions-v2/queue/{taskId}/claim": {
+    "/api/v1/executions/queue/{taskId}/claim": {
         parameters: {
             query?: never;
             header?: never;
@@ -1669,7 +1669,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/executions-v2/active": {
+    "/api/v1/executions/active": {
         parameters: {
             query?: never;
             header?: never;
@@ -1678,7 +1678,7 @@ export interface paths {
         };
         /**
          * List active task executions
-         * @description Returns the tasks currently being worked on in the v2 execution system.
+         * @description Returns the tasks currently being worked on in the execution system.
          */
         get: operations["ActiveTaskExecutionController_listActiveExecutions"];
         put?: never;
@@ -1689,7 +1689,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/executions-v2/active/{executionId}/stop": {
+    "/api/v1/executions/active/{executionId}/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -1709,7 +1709,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/executions-v2/active/{executionId}/session": {
+    "/api/v1/executions/active/{executionId}/session": {
         parameters: {
             query?: never;
             header?: never;
@@ -1729,7 +1729,7 @@ export interface paths {
         patch: operations["ActiveTaskExecutionController_updateRunnerSessionId"];
         trace?: never;
     };
-    "/api/v1/executions-v2/active/{executionId}/tool-calls/increment": {
+    "/api/v1/executions/active/{executionId}/tool-calls/increment": {
         parameters: {
             query?: never;
             header?: never;
@@ -1749,7 +1749,7 @@ export interface paths {
         patch: operations["ActiveTaskExecutionController_incrementToolCallCount"];
         trace?: never;
     };
-    "/api/v1/executions-v2/history": {
+    "/api/v1/executions/history": {
         parameters: {
             query?: never;
             header?: never;
@@ -1758,7 +1758,7 @@ export interface paths {
         };
         /**
          * List task execution history
-         * @description Returns the persisted execution history rows in the v2 execution system.
+         * @description Returns the persisted execution history rows in the execution system.
          */
         get: operations["TaskExecutionHistoryController_listHistory"];
         put?: never;
@@ -1908,26 +1908,6 @@ export interface paths {
             cookie?: never;
         };
         get: operations["DiscoveryController_all"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List task executions with optional filtering and pagination
-         * @description Returns the backend-tracked work queue showing all TaskExecution records. Useful for debugging the execution reconciler and understanding which tasks are ready to run.
-         */
-        get: operations["ExecutionsController_listExecutions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5502,133 +5482,6 @@ export interface components {
              * @example Tasks MCP API
              */
             resource_name: string;
-        };
-        ExecutionResponseDto: {
-            /**
-             * @description Unique execution identifier
-             * @example 123e4567-e89b-12d3-a456-426614174000
-             */
-            id: string;
-            /**
-             * @description Task ID
-             * @example 123e4567-e89b-12d3-a456-426614174001
-             */
-            taskId: string;
-            /**
-             * @description Task name
-             * @example Implement feature X
-             */
-            taskName?: string | null;
-            /**
-             * @description Agent actor ID
-             * @example 123e4567-e89b-12d3-a456-426614174002
-             */
-            agentActorId: string;
-            /**
-             * @description Agent slug
-             * @example claude-dev
-             */
-            agentSlug?: string | null;
-            /**
-             * @description Agent name
-             * @example Claude Developer
-             */
-            agentName?: string | null;
-            /**
-             * @description Execution status
-             * @example READY
-             * @enum {string}
-             */
-            status: "READY" | "CLAIMED" | "RUNNING" | "STOP_REQUESTED" | "COMPLETED" | "FAILED" | "CANCELLED" | "STALE";
-            /**
-             * @description When the execution was requested
-             * @example 2026-03-28T10:30:00.000Z
-             */
-            requestedAt: string;
-            /**
-             * Format: date-time
-             * @description When the execution was claimed by a worker
-             * @example 2026-03-28T10:31:00.000Z
-             */
-            claimedAt?: string | null;
-            /**
-             * Format: date-time
-             * @description When the execution started running
-             * @example 2026-03-28T10:31:05.000Z
-             */
-            startedAt?: string | null;
-            /**
-             * Format: date-time
-             * @description When the execution finished
-             * @example 2026-03-28T10:35:00.000Z
-             */
-            finishedAt?: string | null;
-            /**
-             * @description Worker session ID that claimed this execution
-             * @example 123e4567-e89b-12d3-a456-426614174003
-             */
-            workerSessionId?: string | null;
-            /**
-             * Format: date-time
-             * @description When the worker lease expires
-             * @example 2026-03-28T10:36:00.000Z
-             */
-            leaseExpiresAt?: string | null;
-            /**
-             * Format: date-time
-             * @description When a stop was requested
-             * @example 2026-03-28T10:34:00.000Z
-             */
-            stopRequestedAt?: string | null;
-            /**
-             * @description Failure reason if execution failed
-             * @example Worker disconnected
-             */
-            failureReason?: string | null;
-            /**
-             * @description Why this execution was triggered
-             * @example Task is eligible for execution
-             */
-            triggerReason?: string | null;
-            /**
-             * @description Row version for optimistic locking
-             * @example 1
-             */
-            rowVersion: number;
-            /**
-             * @description Execution creation timestamp
-             * @example 2026-03-28T10:30:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @description Execution last update timestamp
-             * @example 2026-03-28T10:30:00.000Z
-             */
-            updatedAt: string;
-        };
-        ExecutionListResponseDto: {
-            /** @description Array of task executions */
-            items: components["schemas"]["ExecutionResponseDto"][];
-            /**
-             * @description Total number of executions matching the filter
-             * @example 100
-             */
-            total: number;
-            /**
-             * @description Current page number (1-indexed)
-             * @example 1
-             */
-            page: number;
-            /**
-             * @description Number of items per page
-             * @example 50
-             */
-            limit: number;
-            /**
-             * @description Total number of pages
-             * @example 2
-             */
-            totalPages: number;
         };
         GlobalSearchResultDto: {
             /**
@@ -10313,36 +10166,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProtectedResourceMetadataResponseDto"];
-                };
-            };
-        };
-    };
-    ExecutionsController_listExecutions: {
-        parameters: {
-            query?: {
-                /** @description Filter by execution status */
-                status?: "READY" | "CLAIMED" | "RUNNING" | "STOP_REQUESTED" | "COMPLETED" | "FAILED" | "CANCELLED" | "STALE";
-                /** @description Filter by agent actor ID */
-                agentActorId?: string;
-                /** @description Filter by task ID */
-                taskId?: string;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Number of items per page */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExecutionListResponseDto"];
                 };
             };
         };

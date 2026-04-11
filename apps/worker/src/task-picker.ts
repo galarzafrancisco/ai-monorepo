@@ -21,7 +21,7 @@ export async function pickTask({
   console.log(`[worker] Attempting to claim task ${taskId}.`);
 
   const execution =
-    await client.executionsV2.TaskExecutionQueueController_claimTask({
+    await client.executions.TaskExecutionQueueController_claimTask({
       taskId,
     });
 
@@ -56,7 +56,7 @@ export async function pickTask({
     throw error;
   } finally {
     const historyEntry =
-      await client.executionsV2.ActiveTaskExecutionController_stopTaskExecution({
+      await client.executions.ActiveTaskExecutionController_stopTaskExecution({
         executionId: execution.id,
         body: {
           status: stopStatus,

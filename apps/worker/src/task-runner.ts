@@ -160,7 +160,7 @@ export async function executeTask({
         },
         onSession: (runnerSessionId: string) => {
           latestRunnerSessionId = runnerSessionId;
-          return workerClient.executionsV2
+          return workerClient.executions
             .ActiveTaskExecutionController_updateRunnerSessionId({
               executionId,
               body: {
@@ -174,7 +174,7 @@ export async function executeTask({
             });
         },
         onToolCall: (toolName: string) => {
-          return workerClient.executionsV2
+          return workerClient.executions
             .ActiveTaskExecutionController_incrementToolCallCount({
               executionId,
             })

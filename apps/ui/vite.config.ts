@@ -1,17 +1,21 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { checker } from 'vite-plugin-checker';
 
-// If you prefer no plugin, you can omit react() and rely on default.
-// The plugin adds fast refresh and sensible defaults.
+// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  base: '/beta/',
+  plugins: [react(), checker({ typescript: true })],
+  resolve: {
+    // Fix multiple React instances in monorepo by deduplicating
+    dedupe: ['react', 'react-dom', 'react-router-dom'],
+  },
   server: {
     host: true,
     allowedHosts: [
-      'air.local'
+      'air.local',
+      'debug.taico.app'
     ],
-    port: Number(process.env.LEGACY_UI_PORT) || 2001,
+    port: Number(process.env.UI_PORT) || 2000,
     proxy: {
       "/api": {
         target: `http://localhost:${process.env.BACKEND_PORT || 3000}`,
@@ -36,5 +40,5 @@ export default defineConfig({
     emptyOutDir: true,
   },
   clearScreen: false,
-  
+
 });

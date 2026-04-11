@@ -65,9 +65,9 @@ Reference:
 - Re-fetch via REST when an event implies a complex projection (for example comment-driven task updates).
 
 Reference:
-- `apps/ui2/src/features/threads/useThreads.ts`
-- `apps/ui2/src/features/threads/useThreadSocket.ts`
-- `apps/ui2/src/features/tasks/useTasks.ts`
+- `apps/ui/src/features/threads/useThreads.ts`
+- `apps/ui/src/features/threads/useThreadSocket.ts`
+- `apps/ui/src/features/tasks/useTasks.ts`
 
 ## Payload Guidance
 

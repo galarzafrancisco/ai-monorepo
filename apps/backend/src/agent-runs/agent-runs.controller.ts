@@ -32,27 +32,18 @@ import { CurrentUser } from 'src/auth/guards/decorators/current-user.decorator';
 import type { UserContext } from 'src/auth/guards/context/auth-context.types';
 
 /**
- * AgentRuns Controller - Legacy Compatibility Facade
+ * AgentRuns Controller - agent-run compatibility facade
  *
- * @deprecated This controller provides backward compatibility for workers using the legacy
- * run-based context model. New workers should use the execution-centric model with
- * TaskExecution and the execution-id header.
- *
- * **Migration Status**: Active compatibility facade during worker migration
- *
- * **Removal Criteria**: See /docs/AGENT_RUN_DEPRECATION.md for detailed removal criteria.
- * This facade will be removed once all workers are migrated to use execution-id and
- * metrics show zero usage of run-id for 30 days.
+ * This controller keeps the `/api/v1/agent-runs` HTTP API available for
+ * contexts that still identify work by run id. Execution id remains the
+ * authoritative runtime identity.
  *
  * **Current Behavior**:
- * - Maintains the `/api/v1/agent-runs` HTTP API for old workers
- * - AgentRun records may link to TaskExecution via taskExecutionId
- * - ExecutionContextResolverService handles dual-stack resolution (execution-id preferred, run-id fallback)
- * - Deprecation warnings logged when run-id path is used without execution-id
+ * - Maintains the `/api/v1/agent-runs` HTTP API
+ * - AgentRun records may link to an execution id via taskExecutionId
+ * - ActiveExecutionContextResolverService resolves execution-id and run-id contexts
  *
- * @see ExecutionContextResolverService for context resolution logic
- * @see /docs/AGENT_RUN_DEPRECATION.md for deprecation plan
- * @see /docs/worker-server-run-tracking-redesign-plan.md for migration overview
+ * @see ActiveExecutionContextResolverService for context resolution logic
  */
 @ApiTags('AgentRun')
 @ApiCookieAuth('JWT-Cookie')
@@ -68,10 +59,8 @@ export class AgentRunsController {
     summary: 'Create a new agent run',
     deprecated: true,
     description:
-      'DEPRECATED: This endpoint is a legacy compatibility facade. ' +
-      'New workers should use the execution-centric model (TaskExecution) instead of creating AgentRuns. ' +
-      'This endpoint will be removed once all workers migrate to execution-id. ' +
-      'See /docs/AGENT_RUN_DEPRECATION.md for details.',
+      'Compatibility endpoint for contexts that still create AgentRun records. ' +
+      'Execution id is the authoritative runtime identity.',
   })
   @ApiCreatedResponse({
     type: AgentRunResponseDto,
@@ -134,9 +123,8 @@ export class AgentRunsController {
     summary: 'Update an agent run',
     deprecated: true,
     description:
-      'DEPRECATED: This endpoint is a legacy compatibility facade. ' +
-      'Workers should update execution state via TaskExecution instead. ' +
-      'See /docs/AGENT_RUN_DEPRECATION.md for migration details.',
+      'Compatibility endpoint for updating AgentRun records. ' +
+      'Execution lifecycle state is owned by executions.',
   })
   @ApiOkResponse({
     type: AgentRunResponseDto,

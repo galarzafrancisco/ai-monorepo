@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { WebAuthenticationService, type AuthUser } from './api';
 
 /**
@@ -45,12 +46,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     WebAuthenticationService.webAuthControllerMe()
       .then((userData) => {
-        console.log(`found me`)
         setUser(userData);
       })
       .catch(() => {
         // Not authenticated or session expired
-        console.log(`not me`)
         setUser(null);
       })
       .finally(() => {

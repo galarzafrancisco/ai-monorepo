@@ -65,8 +65,6 @@ export type { DeleteConnectionResponseDto } from './models/DeleteConnectionRespo
 export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto.js';
 export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto.js';
 export type { DeleteServerResponseDto } from './models/DeleteServerResponseDto.js';
-export type { ExecutionListResponseDto } from './models/ExecutionListResponseDto.js';
-export { ExecutionResponseDto } from './models/ExecutionResponseDto.js';
 export type { FlowClientDto } from './models/FlowClientDto.js';
 export type { FlowServerDto } from './models/FlowServerDto.js';
 export { GetConsentMetadataResponseDto } from './models/GetConsentMetadataResponseDto.js';
@@ -153,7 +151,6 @@ export { ChatProvidersService } from './services/ChatProvidersService.js';
 export { ContextService } from './services/ContextService.js';
 export { DiscoveryService } from './services/DiscoveryService.js';
 export { ExecutionsService } from './services/ExecutionsService.js';
-export { ExecutionsV2Service } from './services/ExecutionsV2Service.js';
 export { JwksService } from './services/JwksService.js';
 export { MetaService } from './services/MetaService.js';
 export { MetaProjectsService } from './services/MetaProjectsService.js';

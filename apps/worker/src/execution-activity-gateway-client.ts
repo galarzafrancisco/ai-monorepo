@@ -137,7 +137,7 @@ export class ExecutionActivityGatewayClient {
 
   private async connectWithFreshToken(): Promise<void> {
     const credentials = await this.options.auth.getCredentials();
-    const namespace = '/executions-v2/worker';
+    const namespace = '/executions/worker';
     const url = `${this.options.baseUrl}${namespace}`;
     const transports = ['websocket'];
     const reconnection = this.options.reconnection ?? true;

@@ -38,11 +38,10 @@ If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a differen
 
 ```
 apps/
-├── agent-api/       # Agent-facing API service
 ├── backend/         # NestJS 11 API server (SQLite + TypeORM)
 ├── llm-benchmarker/ # LLM benchmark and evaluation tooling
-├── ui2/             # React 19 + Vite frontend (active development)
-├── ui/              # DEPRECATED - only needs to compile
+├── ui/              # React 19 + Vite frontend (active development)
+├── ui-v1/           # DEPRECATED - only needs to compile
 ├── worker/          # Current worker runtime
 └── worker-v1/       # Legacy worker runtime (being phased out)
 packages/
@@ -55,7 +54,7 @@ packages/
 ```
 
 **Important**:
-- All UI work should be done in `apps/ui2`. The `apps/ui` package is deprecated and only maintained to ensure it compiles.
+- All UI work should be done in `apps/ui`. The `apps/ui-v1` package is deprecated and only maintained to ensure it compiles.
 - Use `apps/worker` for new worker changes. `apps/worker-v1` is legacy and should only be touched for maintenance or migration work.
 
 ### Backend Modules
@@ -101,13 +100,13 @@ OpenAPI artifacts are generated from the backend spec and flow through `packages
 ## Key Technologies
 
 - **Backend**: NestJS 11, TypeORM, SQLite, Socket.io, MCP SDK
-- **Frontend**: React 19 (ui2), Vite, React Router 7, Radix UI
+- **Frontend**: React 19 (ui), Vite, React Router 7, Radix UI
 - **Testing**: Jest (backend), Vitest (frontend)
 - **Real-time**: Socket.io WebSocket gateways per feature
 
 ## UI Development
 
-For UI work, read `apps/ui2/CLAUDE.md` first. It covers styling (tokens.css), primitives, shell patterns, and feature structure.
+For UI work, read `apps/ui/CLAUDE.md` first. It covers styling (tokens.css), primitives, shell patterns, and feature structure.
 
 ## Backend Development
 
