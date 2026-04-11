@@ -14,7 +14,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
-    this.model = modelConfig.modelId ?? 'gpt-5.2-codex';
+    this.model = modelConfig.modelId ?? 'gpt-5.3-codex';
   }
 
   protected async runInternal(

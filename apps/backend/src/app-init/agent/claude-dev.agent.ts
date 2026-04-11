@@ -1,7 +1,7 @@
 import { CreateAgentInput } from 'src/agents/dto/service/agents.service.types';
 import { AgentType } from 'src/agents/enums';
 import { TaskStatus } from 'src/tasks/enums';
-import { DEV_PROMPT } from './prompts';
+import { DEV_PROMPT } from '../prompts/prompts';
 
 export const createClaudeDev: CreateAgentInput = {
   slug: 'claude-dev',

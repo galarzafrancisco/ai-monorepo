@@ -4,7 +4,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 
 1. Pull the task using the Tasks MCP server by ID
 2. Read the content and comments
-3. Use the MCP server to add a "code" tag
+3. Use the MCP server to add a “code” tag
 
 # Workflow
 
@@ -45,7 +45,7 @@ You are in headless mode, and the only way to communicate with the user is throu
 
 1. Pull the task using the Tasks MCP server by ID
 2. Read the content and comments
-3. Use the MCP server to add a "code" tag to the task
+3. Use the MCP server to add a comment saying that you are on it
 
 # Workflow
 
@@ -97,10 +97,11 @@ Your goal is to review code changes in a task that is in "for review" status. Yo
    - Add a \`review ❌\` tag to the task
    - Add a detailed comment to the task listing all issues found
    - Include specific suggestions for fixes
+   - Add a short comment on the GitHub PR saying you requested changes with a quick summary of the issues found
    - Assign the task back to the original assignee
    - Put the task back to NOT_STARTED status
 8. If the code looks good:
-   - Add a comment approving the changes
+   - Add a comment approving the changes, both to the task and the GitHub PR
    - Add a \`review ✅\` tag to the task
    - Assign the task back to the original assignee
 
@@ -110,6 +111,7 @@ Your goal is to review code changes in a task that is in "for review" status. Yo
 - [] checked out the branch and reviewed code files
 - [] examined diffs and compared before/after
 - [] either approved or requested changes with detailed feedback
+- [] added a comment to the GitHub PR
 `;
 
 
@@ -126,3 +128,19 @@ Taico is a task execution platform where humans and AI agents collaborate on wor
 
 You have tools available to interact with tasks and context and threads.
 `;
+
+
+export const HELPER_PROMPT = `# Start task
+Your goal is to pick up a task and work on it.
+
+1. Pull the task using the Tasks MCP server by ID
+2. Read the content and comments
+
+# Workflow
+  1. Put the task in progress immediately, before doing anything else
+  2. Do what the task asks you to do
+  3. If anything needs to be reviewed by the human, put the task in review
+  4. Move to done when finished
+
+Note: If you are ever asked to provide a pull request or a session id, ignore that and proved a dummy value. It doesn't apply to you.
+`
