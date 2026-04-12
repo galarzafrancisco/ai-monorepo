@@ -297,17 +297,21 @@ async function main() {
 
     // Test 33: Files - uploads and downloads
     console.log('\n✓ Test 33: Files - representative upload/download endpoints');
+    const singleFileBody = new FormData();
+    singleFileBody.append('file', 'mock-file-content');
     const uploadedFile = await client.files.FilesController_uploadSingleFile({
-      body: { file: 'mock-file-content' },
+      body: singleFileBody,
       signal: undefined,
     });
+
+    const fileWithMetadataBody = new FormData();
+    fileWithMetadataBody.append('file', 'mock-file-binary');
+    fileWithMetadataBody.append('title', 'SDK test file');
+    fileWithMetadataBody.append('description', 'Uploaded from generated client test');
+    fileWithMetadataBody.append('tags', 'sdk');
+    fileWithMetadataBody.append('tags', 'openapi');
     const uploadWithMetadata = await client.files.FilesController_uploadFileWithMetadata({
-      body: {
-        file: 'mock-file-binary',
-        title: 'SDK test file',
-        description: 'Uploaded from generated client test',
-        tags: ['sdk', 'openapi'],
-      },
+      body: fileWithMetadataBody,
       signal: undefined,
     });
     const fileInfo = await client.files.FilesController_getFileInfo({

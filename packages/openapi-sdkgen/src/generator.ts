@@ -288,15 +288,15 @@ export class BaseClient {
     // Add auth headers
     Object.assign(headers, await this.buildAuthHeaders());
 
-    let requestBody: BodyInit | undefined;
+    let requestBody: any;
     if (options?.body !== undefined) {
       const bodyType = options.bodyType ?? 'json';
 
       if (bodyType === 'form-data') {
-        requestBody = options.body as BodyInit;
+        requestBody = options.body;
         this.removeHeader(headers, 'Content-Type');
       } else if (bodyType === 'raw') {
-        requestBody = options.body as BodyInit;
+        requestBody = options.body;
       } else {
         if (!this.hasHeader(headers, 'Content-Type')) {
           headers['Content-Type'] = 'application/json';
@@ -573,7 +573,7 @@ function generateOperation(op: Operation): string {
     }
   }
 
-  if (responseMode !== 'auto') {
+  if (!isStreaming && responseMode !== 'auto') {
     requestOptions.push(`responseType: '${responseMode}'`);
   }
 

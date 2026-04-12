@@ -11,6 +11,7 @@ import {
   UploadedFile,
   UploadedFiles,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiProperty } from '@nestjs/swagger';
 
 export class FileUploadResponseDto {
@@ -98,7 +99,8 @@ export class FilesController {
   })
   @ApiResponse({ status: 201, type: FileUploadResponseDto })
   @HttpCode(HttpStatus.CREATED)
-  uploadSingleFile(@Body() body: any): FileUploadResponseDto {
+  @UseInterceptors(FileInterceptor('file'))
+  uploadSingleFile(@UploadedFile() _file: any): FileUploadResponseDto {
     // Mock response - in real implementation would use multer or similar
     return {
       filename: 'uploaded-file.txt',
@@ -166,7 +168,11 @@ export class FilesController {
   })
   @ApiResponse({ status: 201, type: FileWithMetadataResponseDto })
   @HttpCode(HttpStatus.CREATED)
-  uploadFileWithMetadata(@Body() body: any): FileWithMetadataResponseDto {
+  @UseInterceptors(FileInterceptor('file'))
+  uploadFileWithMetadata(
+    @UploadedFile() _file: any,
+    @Body() body: any,
+  ): FileWithMetadataResponseDto {
     // Mock response
     return {
       filename: 'document.pdf',
