@@ -28,6 +28,7 @@ import {
   CircularReferenceError,
   BlockIsThreadStateError,
   InvalidContextArchiveError,
+  BlockHasChildrenError,
 } from './errors/context.errors';
 import {
   BlockCreatedEvent,
@@ -302,6 +303,16 @@ export class ContextService {
 
     if (!block) {
       throw new BlockNotFoundError(blockId);
+    }
+
+    // Check if block has children
+    const children = await this.blockRepository.find({
+      where: { parentId: blockId },
+      select: ['id'],
+    });
+
+    if (children.length > 0) {
+      throw new BlockHasChildrenError(blockId, children.length);
     }
 
     // Check if block is a state block for any threads

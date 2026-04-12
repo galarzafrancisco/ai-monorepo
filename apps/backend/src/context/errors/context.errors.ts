@@ -5,6 +5,7 @@ export const ContextErrorCodes = {
   PARENT_BLOCK_NOT_FOUND: ErrorCodes.PARENT_PAGE_NOT_FOUND,
   CIRCULAR_REFERENCE: ErrorCodes.CIRCULAR_REFERENCE,
   BLOCK_IS_THREAD_STATE: ErrorCodes.BLOCK_IS_THREAD_STATE,
+  BLOCK_HAS_CHILDREN: ErrorCodes.BLOCK_HAS_CHILDREN,
   INVALID_ARCHIVE: ErrorCodes.VALIDATION_FAILED,
 } as const;
 
@@ -62,5 +63,15 @@ export class BlockIsThreadStateError extends ContextDomainError {
 export class InvalidContextArchiveError extends ContextDomainError {
   constructor() {
     super('Invalid zip archive.', ContextErrorCodes.INVALID_ARCHIVE);
+  }
+}
+
+export class BlockHasChildrenError extends ContextDomainError {
+  constructor(blockId: string, childCount: number) {
+    super(
+      `Cannot delete context block because it has ${childCount} child block${childCount > 1 ? 's' : ''}.`,
+      ContextErrorCodes.BLOCK_HAS_CHILDREN,
+      { blockId, childCount },
+    );
   }
 }

@@ -93,6 +93,12 @@ export const ErrorCatalog: Record<
     type: '/errors/context/block-is-thread-state',
     retryable: false,
   },
+  [ErrorCodes.BLOCK_HAS_CHILDREN]: {
+    status: 409,
+    title: 'Context block has children',
+    type: '/errors/context/block-has-children',
+    retryable: false,
+  },
   [ErrorCodes.AGENT_NOT_FOUND]: {
     status: 404,
     title: 'Agent not found',
