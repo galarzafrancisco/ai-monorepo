@@ -27,6 +27,7 @@ import {
   ParentBlockNotFoundError,
   CircularReferenceError,
   BlockIsThreadStateError,
+  InvalidContextArchiveError,
 } from './errors/context.errors';
 import {
   BlockCreatedEvent,
@@ -628,7 +629,12 @@ export class ContextService {
   ): Promise<{ importedCount: number }> {
     this.logger.log({ message: 'Importing context blocks from zip archive' });
 
-    const zip = await JSZip.loadAsync(archiveBuffer);
+    let zip: JSZip;
+    try {
+      zip = await JSZip.loadAsync(archiveBuffer);
+    } catch {
+      throw new InvalidContextArchiveError();
+    }
     const root = this.createArchiveDirectory('');
 
     for (const [rawPath, entry] of Object.entries(zip.files)) {

@@ -28,7 +28,7 @@ export class AgentResource extends BaseClient {
 
   /** Delete an agent */
   async AgentsController_deleteAgent(params: { actorId: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/agents/${params.actorId}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/agents/${params.actorId}`, { responseType: 'void', signal: params?.signal });
   }
 
   /** List tool permissions for an agent */
@@ -43,7 +43,7 @@ export class AgentResource extends BaseClient {
 
   /** Delete an agent tool permission assignment */
   async AgentToolPermissionsController_deleteAgentToolPermission(params: { actorId: string; serverId: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/agents/${params.actorId}/tool-permissions/${params.serverId}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/agents/${params.actorId}/tool-permissions/${params.serverId}`, { responseType: 'void', signal: params?.signal });
   }
 
 }

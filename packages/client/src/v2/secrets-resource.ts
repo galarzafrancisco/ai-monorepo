@@ -28,7 +28,7 @@ export class SecretsResource extends BaseClient {
 
   /** Delete a secret */
   async SecretsController_deleteSecret(params: { id: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/secrets/${params.id}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/secrets/${params.id}`, { responseType: 'void', signal: params?.signal });
   }
 
   /** Get decrypted secret value */

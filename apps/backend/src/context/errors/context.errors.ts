@@ -5,6 +5,7 @@ export const ContextErrorCodes = {
   PARENT_BLOCK_NOT_FOUND: ErrorCodes.PARENT_PAGE_NOT_FOUND,
   CIRCULAR_REFERENCE: ErrorCodes.CIRCULAR_REFERENCE,
   BLOCK_IS_THREAD_STATE: ErrorCodes.BLOCK_IS_THREAD_STATE,
+  INVALID_ARCHIVE: ErrorCodes.VALIDATION_FAILED,
 } as const;
 
 type ContextErrorCode =
@@ -55,5 +56,11 @@ export class BlockIsThreadStateError extends ContextDomainError {
       ContextErrorCodes.BLOCK_IS_THREAD_STATE,
       { blockId, threadCount },
     );
+  }
+}
+
+export class InvalidContextArchiveError extends ContextDomainError {
+  constructor() {
+    super('Invalid zip archive.', ContextErrorCodes.INVALID_ARCHIVE);
   }
 }

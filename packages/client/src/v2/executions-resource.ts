@@ -28,12 +28,12 @@ export class ExecutionsResource extends BaseClient {
 
   /** Attach the runner session id to an active execution */
   async ActiveTaskExecutionController_updateRunnerSessionId(params: { executionId: string; body: UpdateRunnerSessionIdDto; signal?: AbortSignal }): Promise<void> {
-    return this.request('PATCH', `/api/v1/executions/active/${params.executionId}/session`, { body: params.body, signal: params?.signal });
+    return this.request('PATCH', `/api/v1/executions/active/${params.executionId}/session`, { body: params.body, responseType: 'void', signal: params?.signal });
   }
 
   /** Increment tool call count for an active execution */
   async ActiveTaskExecutionController_incrementToolCallCount(params: { executionId: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('PATCH', `/api/v1/executions/active/${params.executionId}/tool-calls/increment`, { signal: params?.signal });
+    return this.request('PATCH', `/api/v1/executions/active/${params.executionId}/tool-calls/increment`, { responseType: 'void', signal: params?.signal });
   }
 
   /** List task execution history */

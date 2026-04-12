@@ -28,7 +28,7 @@ export class ThreadsResource extends BaseClient {
 
   /** Delete a thread */
   async ThreadsController_deleteThread(params: { id: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/threads/${params.id}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/threads/${params.id}`, { responseType: 'void', signal: params?.signal });
   }
 
   /** Get a thread by task ID */

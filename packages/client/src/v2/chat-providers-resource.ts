@@ -28,7 +28,7 @@ export class ChatProvidersResource extends BaseClient {
 
   /** Delete a chat provider */
   async ChatProvidersController_deleteChatProvider(params: { id: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/chat-providers/${params.id}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/chat-providers/${params.id}`, { responseType: 'void', signal: params?.signal });
   }
 
   /** Set the active chat provider */
@@ -38,7 +38,7 @@ export class ChatProvidersResource extends BaseClient {
 
   /** Deactivate the active chat provider */
   async ChatProvidersController_deactivateActiveChatProvider(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('POST', '/api/v1/chat-providers/deactivate', { signal: params?.signal });
+    return this.request('POST', '/api/v1/chat-providers/deactivate', { responseType: 'void', signal: params?.signal });
   }
 
 }

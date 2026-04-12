@@ -23,7 +23,7 @@ export class TaskResource extends BaseClient {
 
   /** Delete a task */
   async TasksController_deleteTask(params: { id: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/tasks/tasks/${params.id}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/tasks/tasks/${params.id}`, { responseType: 'void', signal: params?.signal });
   }
 
   /** Get a task by ID */
@@ -82,31 +82,31 @@ export class TaskResource extends BaseClient {
   }
 
   async TasksController_handleMcp_get(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('GET', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+    return this.request('GET', '/api/v1/tasks/tasks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async TasksController_handleMcp_post(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('POST', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+    return this.request('POST', '/api/v1/tasks/tasks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async TasksController_handleMcp_put(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('PUT', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+    return this.request('PUT', '/api/v1/tasks/tasks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async TasksController_handleMcp_delete(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+    return this.request('DELETE', '/api/v1/tasks/tasks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async TasksController_handleMcp_patch(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('PATCH', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+    return this.request('PATCH', '/api/v1/tasks/tasks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async TasksController_handleMcp_options(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('OPTIONS', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+    return this.request('OPTIONS', '/api/v1/tasks/tasks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
   async TasksController_handleMcp_head(params?: { signal?: AbortSignal }): Promise<void> {
-    return this.request('HEAD', '/api/v1/tasks/tasks/mcp', { signal: params?.signal });
+    return this.request('HEAD', '/api/v1/tasks/tasks/mcp', { responseType: 'void', signal: params?.signal });
   }
 
 }

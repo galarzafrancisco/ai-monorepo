@@ -60,9 +60,34 @@ export class ApiError extends Error {
 export class BaseClient {
   constructor(protected config: ClientConfig) {}
 
-  private async parseResponseBody(response: Response): Promise<unknown> {
+  private async parseResponseBody(
+    response: Response,
+    responseType: 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void' = 'auto'
+  ): Promise<unknown> {
+    if (responseType === 'void') {
+      return undefined;
+    }
+
     if (response.status === 204 || response.headers.get('content-length') === '0') {
       return undefined;
+    }
+
+    if (responseType === 'json') {
+      try {
+        return await response.json();
+      } catch {
+        return undefined;
+      }
+    }
+
+    if (responseType === 'text') {
+      const text = await response.text();
+      return text.length > 0 ? text : undefined;
+    }
+
+    if (responseType === 'arrayBuffer') {
+      const arrayBuffer = await response.arrayBuffer();
+      return arrayBuffer.byteLength > 0 ? arrayBuffer : undefined;
     }
 
     const contentType = response.headers.get('content-type');
@@ -76,6 +101,20 @@ export class BaseClient {
 
     const text = await response.text();
     return text.length > 0 ? text : undefined;
+  }
+
+  private hasHeader(headers: Record<string, string>, headerName: string): boolean {
+    const target = headerName.toLowerCase();
+    return Object.keys(headers).some((key) => key.toLowerCase() === target);
+  }
+
+  private removeHeader(headers: Record<string, string>, headerName: string): void {
+    const target = headerName.toLowerCase();
+    for (const key of Object.keys(headers)) {
+      if (key.toLowerCase() === target) {
+        delete headers[key];
+      }
+    }
   }
 
   private async buildAuthHeaders(): Promise<Record<string, string>> {
@@ -96,6 +135,8 @@ export class BaseClient {
     options?: {
       params?: Record<string, any>;
       body?: any;
+      bodyType?: 'json' | 'form-data' | 'raw';
+      responseType?: 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void';
       headers?: Record<string, string>;
       signal?: AbortSignal;
     }
@@ -135,25 +176,37 @@ export class BaseClient {
     // Add auth headers
     Object.assign(headers, await this.buildAuthHeaders());
 
-    // Add content type for body requests
-    if (options?.body && !headers['Content-Type']) {
-      headers['Content-Type'] = 'application/json';
+    let requestBody: BodyInit | undefined;
+    if (options?.body !== undefined) {
+      const bodyType = options.bodyType ?? 'json';
+
+      if (bodyType === 'form-data') {
+        requestBody = options.body as BodyInit;
+        this.removeHeader(headers, 'Content-Type');
+      } else if (bodyType === 'raw') {
+        requestBody = options.body as BodyInit;
+      } else {
+        if (!this.hasHeader(headers, 'Content-Type')) {
+          headers['Content-Type'] = 'application/json';
+        }
+        requestBody = JSON.stringify(options.body);
+      }
     }
 
     const response = await fetch(url.toString(), {
       method,
       headers,
-      body: options?.body ? JSON.stringify(options.body) : undefined,
+      body: requestBody,
       signal: options?.signal,
       credentials: this.config.credentials,
     });
 
     if (!response.ok) {
-      const errorBody = await this.parseResponseBody(response);
+      const errorBody = await this.parseResponseBody(response, 'auto');
       throw new ApiError(response, errorBody);
     }
 
-    return await this.parseResponseBody(response) as T;
+    return await this.parseResponseBody(response, options?.responseType ?? 'auto') as T;
   }
 
   protected async *streamEvents<T = any>(

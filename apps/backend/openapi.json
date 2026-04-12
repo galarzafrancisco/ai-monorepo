@@ -5360,7 +5360,15 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Context blocks archive downloaded successfully"
+            "description": "Context blocks archive downloaded successfully",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           }
         },
         "security": [

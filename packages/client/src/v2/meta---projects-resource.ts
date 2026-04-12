@@ -38,7 +38,7 @@ export class MetaProjectsResource extends BaseClient {
 
   /** Delete a project */
   async ProjectsController_deleteProject(params: { projectId: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/meta/projects/${params.projectId}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/meta/projects/${params.projectId}`, { responseType: 'void', signal: params?.signal });
   }
 
 }

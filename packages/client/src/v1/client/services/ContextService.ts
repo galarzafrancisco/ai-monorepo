@@ -93,10 +93,10 @@ export class ContextService {
     }
     /**
      * Export all context blocks as markdown zip
-     * @returns any Context blocks archive downloaded successfully
+     * @returns binary Context blocks archive downloaded successfully
      * @throws ApiError
      */
-    public static contextControllerExportBlocks(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+    public static contextControllerExportBlocks(config: OpenAPIConfig = OpenAPI): CancelablePromise<Blob> {
         return __request(config, {
             method: 'GET',
             url: '/api/v1/context/blocks/export',

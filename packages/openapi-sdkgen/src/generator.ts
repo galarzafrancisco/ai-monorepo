@@ -71,7 +71,7 @@ function schemaToTypeScript(schema: SchemaInfo): string {
 
   switch (schema.type) {
     case 'string':
-      baseType = 'string';
+      baseType = schema.format === 'binary' ? 'Blob' : 'string';
       break;
     case 'number':
     case 'integer':
@@ -172,9 +172,34 @@ export class ApiError extends Error {
 export class BaseClient {
   constructor(protected config: ClientConfig) {}
 
-  private async parseResponseBody(response: Response): Promise<unknown> {
+  private async parseResponseBody(
+    response: Response,
+    responseType: 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void' = 'auto'
+  ): Promise<unknown> {
+    if (responseType === 'void') {
+      return undefined;
+    }
+
     if (response.status === 204 || response.headers.get('content-length') === '0') {
       return undefined;
+    }
+
+    if (responseType === 'json') {
+      try {
+        return await response.json();
+      } catch {
+        return undefined;
+      }
+    }
+
+    if (responseType === 'text') {
+      const text = await response.text();
+      return text.length > 0 ? text : undefined;
+    }
+
+    if (responseType === 'arrayBuffer') {
+      const arrayBuffer = await response.arrayBuffer();
+      return arrayBuffer.byteLength > 0 ? arrayBuffer : undefined;
     }
 
     const contentType = response.headers.get('content-type');
@@ -188,6 +213,20 @@ export class BaseClient {
 
     const text = await response.text();
     return text.length > 0 ? text : undefined;
+  }
+
+  private hasHeader(headers: Record<string, string>, headerName: string): boolean {
+    const target = headerName.toLowerCase();
+    return Object.keys(headers).some((key) => key.toLowerCase() === target);
+  }
+
+  private removeHeader(headers: Record<string, string>, headerName: string): void {
+    const target = headerName.toLowerCase();
+    for (const key of Object.keys(headers)) {
+      if (key.toLowerCase() === target) {
+        delete headers[key];
+      }
+    }
   }
 
   private async buildAuthHeaders(): Promise<Record<string, string>> {
@@ -208,6 +247,8 @@ export class BaseClient {
     options?: {
       params?: Record<string, any>;
       body?: any;
+      bodyType?: 'json' | 'form-data' | 'raw';
+      responseType?: 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void';
       headers?: Record<string, string>;
       signal?: AbortSignal;
     }
@@ -247,25 +288,37 @@ export class BaseClient {
     // Add auth headers
     Object.assign(headers, await this.buildAuthHeaders());
 
-    // Add content type for body requests
-    if (options?.body && !headers['Content-Type']) {
-      headers['Content-Type'] = 'application/json';
+    let requestBody: BodyInit | undefined;
+    if (options?.body !== undefined) {
+      const bodyType = options.bodyType ?? 'json';
+
+      if (bodyType === 'form-data') {
+        requestBody = options.body as BodyInit;
+        this.removeHeader(headers, 'Content-Type');
+      } else if (bodyType === 'raw') {
+        requestBody = options.body as BodyInit;
+      } else {
+        if (!this.hasHeader(headers, 'Content-Type')) {
+          headers['Content-Type'] = 'application/json';
+        }
+        requestBody = JSON.stringify(options.body);
+      }
     }
 
     const response = await fetch(url.toString(), {
       method,
       headers,
-      body: options?.body ? JSON.stringify(options.body) : undefined,
+      body: requestBody,
       signal: options?.signal,
       credentials: this.config.credentials,
     });
 
     if (!response.ok) {
-      const errorBody = await this.parseResponseBody(response);
+      const errorBody = await this.parseResponseBody(response, 'auto');
       throw new ApiError(response, errorBody);
     }
 
-    return await this.parseResponseBody(response) as T;
+    return await this.parseResponseBody(response, options?.responseType ?? 'auto') as T;
   }
 
   protected async *streamEvents<T = any>(
@@ -434,12 +487,13 @@ function generateOperation(op: Operation): string {
 
   // Determine if this is a streaming endpoint by checking response content-type
   const isStreaming = isStreamingEndpoint(op);
+  const responseMode = inferResponseMode(op);
 
   // Build method signature
   // Use operationId directly as method name (already in desired format from OpenAPI)
   const methodName = op.operationId;
   const { params, isParamsOptional } = buildMethodParams(op);
-  const returnType = inferReturnType(op, isStreaming);
+  const returnType = inferReturnType(op, isStreaming, responseMode);
 
   // Add JSDoc comment
   if (op.summary) {
@@ -511,6 +565,16 @@ function generateOperation(op: Operation): string {
 
   if (op.requestBody) {
     requestOptions.push(`body: ${paramsPrefix}body`);
+    const requestBodyContentType = getPreferredRequestBodyContentType(op);
+    if (requestBodyContentType === 'multipart/form-data') {
+      requestOptions.push(`bodyType: 'form-data'`);
+    } else if (requestBodyContentType && requestBodyContentType !== 'application/json') {
+      requestOptions.push(`bodyType: 'raw'`);
+    }
+  }
+
+  if (responseMode !== 'auto') {
+    requestOptions.push(`responseType: '${responseMode}'`);
   }
 
   if (params.includes('signal')) {
@@ -568,12 +632,20 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
     }
 
     if (op.requestBody) {
-      // Try to get the body schema from any content type (prefer application/json)
-      const bodySchema = op.requestBody.content.get('application/json') ||
-                         Array.from(op.requestBody.content.values())[0];
+      const requestBodyContentType = getPreferredRequestBodyContentType(op);
+      const bodySchema =
+        (requestBodyContentType
+          ? op.requestBody.content.get(requestBodyContentType)
+          : undefined)
+        || op.requestBody.content.get('application/json')
+        || Array.from(op.requestBody.content.values())[0];
       if (bodySchema) {
         const optional = !op.requestBody.required;
-        paramFields.push(`body${optional ? '?' : ''}: ${schemaToTypeScript(bodySchema.schema)}`);
+        const bodyType =
+          requestBodyContentType === 'multipart/form-data'
+            ? 'FormData'
+            : schemaToTypeScript(bodySchema.schema);
+        paramFields.push(`body${optional ? '?' : ''}: ${bodyType}`);
       }
     }
 
@@ -596,11 +668,23 @@ function buildMethodParams(op: Operation): { params: string; isParamsOptional: b
   return { params: params.join(', '), isParamsOptional };
 }
 
-function inferReturnType(op: Operation, isStreaming: boolean): string {
+function inferReturnType(
+  op: Operation,
+  isStreaming: boolean,
+  responseMode: 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void'
+): string {
   const successResponse = op.responses.get(200) || op.responses.get(201);
 
   if (!successResponse?.content) {
     return isStreaming ? 'AsyncIterable<any>' : 'Promise<void>';
+  }
+
+  if (responseMode === 'arrayBuffer') {
+    return isStreaming ? 'AsyncIterable<any>' : 'Promise<ArrayBuffer>';
+  }
+
+  if (responseMode === 'text') {
+    return isStreaming ? 'AsyncIterable<any>' : 'Promise<string>';
   }
 
   const jsonContent = successResponse.content.get('application/json');
@@ -615,6 +699,56 @@ function inferReturnType(op: Operation, isStreaming: boolean): string {
   }
 
   return `Promise<${tsType}>`;
+}
+
+function getPreferredRequestBodyContentType(op: Operation): string | undefined {
+  if (!op.requestBody) {
+    return undefined;
+  }
+
+  if (op.requestBody.content.has('application/json')) {
+    return 'application/json';
+  }
+
+  if (op.requestBody.content.has('multipart/form-data')) {
+    return 'multipart/form-data';
+  }
+
+  if (op.requestBody.content.has('application/x-www-form-urlencoded')) {
+    return 'application/x-www-form-urlencoded';
+  }
+
+  return op.requestBody.content.keys().next().value;
+}
+
+function inferResponseMode(op: Operation): 'auto' | 'json' | 'text' | 'arrayBuffer' | 'void' {
+  const successResponse = op.responses.get(200) || op.responses.get(201);
+  if (!successResponse?.content) {
+    return 'void';
+  }
+
+  for (const contentType of successResponse.content.keys()) {
+    const lowered = contentType.toLowerCase();
+    if (lowered.includes('application/json')) {
+      return 'auto';
+    }
+  }
+
+  for (const contentType of successResponse.content.keys()) {
+    const lowered = contentType.toLowerCase();
+    if (lowered.startsWith('text/')) {
+      return 'text';
+    }
+  }
+
+  for (const contentType of successResponse.content.keys()) {
+    const lowered = contentType.toLowerCase();
+    if (lowered.includes('zip') || lowered.includes('octet-stream')) {
+      return 'arrayBuffer';
+    }
+  }
+
+  return 'auto';
 }
 
 function generateMainClient(spec: ParsedSpec): string {

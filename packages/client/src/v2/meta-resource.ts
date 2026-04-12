@@ -23,7 +23,7 @@ export class MetaResource extends BaseClient {
 
   /** Delete a tag from the system */
   async MetaController_deleteTag(params: { tagId: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/meta/tags/${params.tagId}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/meta/tags/${params.tagId}`, { responseType: 'void', signal: params?.signal });
   }
 
 }

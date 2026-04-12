@@ -27,6 +27,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -148,8 +149,13 @@ export class ContextController {
 
   @Get('export')
   @ApiOperation({ summary: 'Export all context blocks as markdown zip' })
+  @ApiProduces('application/zip')
   @ApiOkResponse({
     description: 'Context blocks archive downloaded successfully',
+    schema: {
+      type: 'string',
+      format: 'binary',
+    },
   })
   async exportBlocks(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     const archive = await this.contextService.exportBlocksAsZip();

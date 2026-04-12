@@ -28,7 +28,7 @@ export class TaskBlueprintsResource extends BaseClient {
 
   /** Delete a task blueprint */
   async TaskBlueprintsController_deleteTaskBlueprint(params: { id: string; signal?: AbortSignal }): Promise<void> {
-    return this.request('DELETE', `/api/v1/task-blueprints/${params.id}`, { signal: params?.signal });
+    return this.request('DELETE', `/api/v1/task-blueprints/${params.id}`, { responseType: 'void', signal: params?.signal });
   }
 
   /** Create a task from a blueprint */
