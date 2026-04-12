@@ -653,13 +653,17 @@ export class ContextService {
         .replace(/^\/+/, '')
         .replace(/\/+$/, '');
 
-      if (!normalizedPath.toLowerCase().endsWith('.md')) {
+      const parts = normalizedPath.split('/').filter(Boolean);
+      if (parts.length === 0 || this.shouldIgnoreArchivePath(parts)) {
         continue;
       }
 
-      const parts = normalizedPath.split('/').filter(Boolean);
       const fileName = parts.pop();
       if (!fileName) {
+        continue;
+      }
+
+      if (!fileName.toLowerCase().endsWith('.md')) {
         continue;
       }
 
@@ -882,6 +886,21 @@ export class ContextService {
   private normalizeImportedTitle(name: string): string {
     const normalized = name.trim();
     return normalized.length > 0 ? normalized : 'untitled';
+  }
+
+  private shouldIgnoreArchivePath(pathParts: string[]): boolean {
+    return pathParts.some((part) => this.isIgnoredArchiveSegment(part));
+  }
+
+  private isIgnoredArchiveSegment(segment: string): boolean {
+    const normalized = segment.trim().toLowerCase();
+    return (
+      normalized.length === 0 ||
+      normalized === '__macosx' ||
+      normalized === '.ds_store' ||
+      normalized === 'thumbs.db' ||
+      normalized.startsWith('._')
+    );
   }
 
   private mapToResult(block: ContextBlockEntity): BlockResult {
