@@ -50,6 +50,13 @@ export function SettingsPage() {
         aliases: ['chat', 'openai', 'providers', 'chat providers'],
         onSelect: () => navigate('/settings/chat'),
       },
+      {
+        id: 'settings-data',
+        label: 'Import / Export',
+        description: 'Import and export workspace data',
+        aliases: ['data', 'export', 'import', 'backup', 'restore'],
+        onSelect: () => navigate('/settings/data'),
+      },
     ];
 
     return registerCommands(commands);
@@ -132,6 +139,25 @@ export function SettingsPage() {
               onClick={() => navigate('/settings/chat')}
             >
               Configure Chat
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
+
+      <Card padding="5">
+        <Stack spacing="3">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">Import / Export</Text>
+            <Text tone="muted">Back up and restore workspace data</Text>
+          </Stack>
+          <Row justify="space-between" align="center">
+            <Text size="2" tone="muted">Export blocks and import archive files</Text>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/settings/data')}
+            >
+              Manage Data
             </Button>
           </Row>
         </Stack>

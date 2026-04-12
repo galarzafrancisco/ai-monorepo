@@ -1,0 +1,27 @@
+.settings-data__file-label {
+  font-size: var(--fs-2);
+  color: var(--text);
+  font-weight: var(--fw-medium);
+}
+
+.settings-data__file-input {
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  color: var(--text);
+  padding: var(--space-2);
+}
+
+.settings-data__file-input::file-selector-button {
+  margin-right: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--card-bg);
+  color: var(--text);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+}
+
+.settings-data__success {
+  color: var(--success);
+}

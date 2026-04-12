@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AppendBlockDto, BlockListResponseDto, BlockResponseDto, BlockSearchResultDto, BlockTreeResponseDto, CreateBlockDto, CreateTagDto, MoveBlockDto, ReorderBlockDto, UpdateBlockDto } from './types.js';
+import type { AppendBlockDto, BlockListResponseDto, BlockResponseDto, BlockSearchResultDto, BlockTreeResponseDto, CreateBlockDto, CreateTagDto, ImportBlocksResponseDto, MoveBlockDto, ReorderBlockDto, UpdateBlockDto } from './types.js';
 
 export class ContextResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -24,6 +24,16 @@ export class ContextResource extends BaseClient {
   /** Get page hierarchy tree */
   async ContextController_getBlockTree(params?: { signal?: AbortSignal }): Promise<BlockTreeResponseDto[]> {
     return this.request('GET', '/api/v1/context/blocks/tree', { signal: params?.signal });
+  }
+
+  /** Export all context blocks as markdown zip */
+  async ContextController_exportBlocks(params?: { signal?: AbortSignal }): Promise<void> {
+    return this.request('GET', '/api/v1/context/blocks/export', { signal: params?.signal });
+  }
+
+  /** Import context blocks from markdown zip */
+  async ContextController_importBlocks(params: { body: { file: string }; signal?: AbortSignal }): Promise<ImportBlocksResponseDto> {
+    return this.request('POST', '/api/v1/context/blocks/import', { body: params.body, signal: params?.signal });
   }
 
   /** Fetch a wiki page by ID */

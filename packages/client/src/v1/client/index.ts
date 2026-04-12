@@ -69,6 +69,7 @@ export type { FlowClientDto } from './models/FlowClientDto.js';
 export type { FlowServerDto } from './models/FlowServerDto.js';
 export { GetConsentMetadataResponseDto } from './models/GetConsentMetadataResponseDto.js';
 export { GlobalSearchResultDto } from './models/GlobalSearchResultDto.js';
+export type { ImportBlocksResponseDto } from './models/ImportBlocksResponseDto.js';
 export type { InputRequestResponseDto } from './models/InputRequestResponseDto.js';
 export { IntrospectTokenRequestDto } from './models/IntrospectTokenRequestDto.js';
 export { IntrospectTokenResponseDto } from './models/IntrospectTokenResponseDto.js';

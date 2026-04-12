@@ -2,6 +2,7 @@ import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import JSZip from 'jszip';
 import { ContextBlockEntity } from './block.entity';
 import { MetaService } from '../meta/meta.service';
 import { TagEntity } from '../meta/tag.entity';
@@ -33,9 +34,17 @@ import {
   BlockDeletedEvent,
 } from './events/context.events';
 
+interface ArchiveDirectory {
+  name: string;
+  directories: Map<string, ArchiveDirectory>;
+  files: Map<string, string>;
+}
+
 @Injectable()
 export class ContextService {
   private readonly logger = new Logger(ContextService.name);
+
+  private static readonly ROOT_PARENT_KEY = '__root__';
 
   constructor(
     @InjectRepository(ContextBlockEntity)
@@ -580,6 +589,96 @@ export class ContextService {
     }));
   }
 
+  async exportBlocksAsZip(): Promise<Buffer> {
+    this.logger.log({ message: 'Exporting context blocks to zip archive' });
+
+    const allBlocks = await this.blockRepository.find({
+      order: { order: 'ASC', createdAt: 'ASC' },
+    });
+
+    const childrenByParentId = new Map<string, ContextBlockEntity[]>();
+    for (const block of allBlocks) {
+      const key = block.parentId ?? ContextService.ROOT_PARENT_KEY;
+      const siblings = childrenByParentId.get(key) ?? [];
+      siblings.push(block);
+      childrenByParentId.set(key, siblings);
+    }
+
+    const zip = new JSZip();
+    this.addBlocksToArchive(zip, '', childrenByParentId, ContextService.ROOT_PARENT_KEY);
+
+    const archive = await zip.generateAsync({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 9 },
+    });
+
+    this.logger.log({
+      message: 'Exported context blocks to zip archive',
+      bytes: archive.byteLength,
+      blockCount: allBlocks.length,
+    });
+
+    return archive;
+  }
+
+  async importBlocksFromZip(
+    archiveBuffer: Buffer,
+    createdByActorId: string,
+  ): Promise<{ importedCount: number }> {
+    this.logger.log({ message: 'Importing context blocks from zip archive' });
+
+    const zip = await JSZip.loadAsync(archiveBuffer);
+    const root = this.createArchiveDirectory('');
+
+    for (const [rawPath, entry] of Object.entries(zip.files)) {
+      if (entry.dir) {
+        continue;
+      }
+
+      const normalizedPath = rawPath
+        .replace(/\\/g, '/')
+        .replace(/^\/+/, '')
+        .replace(/\/+$/, '');
+
+      if (!normalizedPath.toLowerCase().endsWith('.md')) {
+        continue;
+      }
+
+      const parts = normalizedPath.split('/').filter(Boolean);
+      const fileName = parts.pop();
+      if (!fileName) {
+        continue;
+      }
+
+      let currentDirectory = root;
+      for (const part of parts) {
+        let childDirectory = currentDirectory.directories.get(part);
+        if (!childDirectory) {
+          childDirectory = this.createArchiveDirectory(part);
+          currentDirectory.directories.set(part, childDirectory);
+        }
+        currentDirectory = childDirectory;
+      }
+
+      const content = await entry.async('string');
+      currentDirectory.files.set(fileName, content);
+    }
+
+    const importedCount = await this.importArchiveDirectory(
+      root,
+      null,
+      createdByActorId,
+    );
+
+    this.logger.log({
+      message: 'Imported context blocks from zip archive',
+      importedCount,
+    });
+
+    return { importedCount };
+  }
+
   private async validateNoCircularReference(
     blockId: string,
     newParentId: string,
@@ -612,6 +711,140 @@ export class ContextService {
 
       currentId = current.parentId ?? null;
     }
+  }
+
+  private addBlocksToArchive(
+    zip: JSZip,
+    currentPath: string,
+    childrenByParentId: Map<string, ContextBlockEntity[]>,
+    parentIdKey: string,
+  ): void {
+    const siblings = (childrenByParentId.get(parentIdKey) ?? []).slice();
+    siblings.sort((a, b) => {
+      if (a.order !== b.order) {
+        return a.order - b.order;
+      }
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+
+    const usedNames = new Set<string>();
+    for (const block of siblings) {
+      const sanitizedTitle = this.sanitizeNameForFs(block.title);
+      const uniqueBaseName = this.makeUniqueName(usedNames, sanitizedTitle);
+      const childKey = block.id;
+      const children = childrenByParentId.get(childKey) ?? [];
+
+      if (children.length > 0) {
+        const folderPath = `${currentPath}${uniqueBaseName}/`;
+        zip.file(`${folderPath}index.md`, block.content ?? '');
+        this.addBlocksToArchive(zip, folderPath, childrenByParentId, childKey);
+      } else {
+        zip.file(`${currentPath}${uniqueBaseName}.md`, block.content ?? '');
+      }
+    }
+  }
+
+  private createArchiveDirectory(name: string): ArchiveDirectory {
+    return {
+      name,
+      directories: new Map<string, ArchiveDirectory>(),
+      files: new Map<string, string>(),
+    };
+  }
+
+  private async importArchiveDirectory(
+    directory: ArchiveDirectory,
+    parentId: string | null,
+    createdByActorId: string,
+  ): Promise<number> {
+    let importedCount = 0;
+
+    const leafFiles = [...directory.files.entries()]
+      .filter(([fileName]) => fileName.toLowerCase() !== 'index.md')
+      .sort(([left], [right]) => left.localeCompare(right));
+
+    for (const [fileName, content] of leafFiles) {
+      const title = this.extractTitleFromMarkdownFileName(fileName);
+      await this.createBlock({
+        title,
+        content,
+        createdByActorId,
+        parentId,
+      });
+      importedCount += 1;
+    }
+
+    const childDirectories = [...directory.directories.entries()].sort(
+      ([left], [right]) => left.localeCompare(right),
+    );
+
+    for (const [directoryName, childDirectory] of childDirectories) {
+      const indexEntry = [...childDirectory.files.entries()].find(
+        ([fileName]) => fileName.toLowerCase() === 'index.md',
+      );
+      const content = indexEntry?.[1] ?? '';
+
+      const block = await this.createBlock({
+        title: this.normalizeImportedTitle(directoryName),
+        content,
+        createdByActorId,
+        parentId,
+      });
+      importedCount += 1;
+
+      importedCount += await this.importArchiveDirectory(
+        childDirectory,
+        block.id,
+        createdByActorId,
+      );
+    }
+
+    return importedCount;
+  }
+
+  private sanitizeNameForFs(name: string): string {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return 'untitled';
+    }
+
+    const sanitized = trimmed
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/[. ]+$/g, '')
+      .trim();
+
+    return sanitized || 'untitled';
+  }
+
+  private makeUniqueName(usedNames: Set<string>, baseName: string): string {
+    if (!usedNames.has(baseName)) {
+      usedNames.add(baseName);
+      return baseName;
+    }
+
+    let suffix = 2;
+    let candidate = `${baseName} (${suffix})`;
+    while (usedNames.has(candidate)) {
+      suffix += 1;
+      candidate = `${baseName} (${suffix})`;
+    }
+    usedNames.add(candidate);
+    return candidate;
+  }
+
+  private extractTitleFromMarkdownFileName(fileName: string): string {
+    if (!fileName.toLowerCase().endsWith('.md')) {
+      return this.normalizeImportedTitle(fileName);
+    }
+
+    const baseName = fileName.slice(0, -3);
+    return this.normalizeImportedTitle(baseName);
+  }
+
+  private normalizeImportedTitle(name: string): string {
+    const normalized = name.trim();
+    return normalized.length > 0 ? normalized : 'untitled';
   }
 
   private mapToResult(block: ContextBlockEntity): BlockResult {

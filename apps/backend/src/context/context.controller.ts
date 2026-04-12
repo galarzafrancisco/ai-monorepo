@@ -13,11 +13,16 @@ import {
   Query,
   Req,
   Res,
+  StreamableFile,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiCookieAuth,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -25,6 +30,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ContextService } from './context.service';
 import { CreateBlockDto } from './dto/create-block.dto';
 import { BlockResponseDto } from './dto/block-response.dto';
@@ -41,6 +47,7 @@ import { ReorderBlockDto } from './dto/reorder-block.dto';
 import { MoveBlockDto } from './dto/move-block.dto';
 import { SearchBlocksQueryDto } from './dto/search-blocks-query.dto';
 import { BlockSearchResultDto } from './dto/block-search-result.dto';
+import { ImportBlocksResponseDto } from './dto/import-blocks-response.dto';
 import {
   BlockResult,
   BlockSummaryResult,
@@ -137,6 +144,75 @@ export class ContextController {
   async getBlockTree(): Promise<BlockTreeResponseDto[]> {
     const result = await this.contextService.getBlockTree();
     return result.map((node) => this.mapToTreeResponse(node));
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Export all context blocks as markdown zip' })
+  @ApiOkResponse({
+    description: 'Context blocks archive downloaded successfully',
+  })
+  async exportBlocks(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
+    const archive = await this.contextService.exportBlocksAsZip();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `context-blocks-${timestamp}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', archive.byteLength.toString());
+
+    return new StreamableFile(archive);
+  }
+
+  @Post('import')
+  @RequireScopes(ContextScopes.WRITE.id)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Import context blocks from markdown zip' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Zip file exported from context blocks',
+        },
+      },
+    },
+  })
+  @ApiCreatedResponse({
+    type: ImportBlocksResponseDto,
+    description: 'Context blocks imported successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'No archive file uploaded or invalid file type',
+  })
+  async importBlocks(
+    @UploadedFile()
+    file:
+      | {
+          buffer: Buffer;
+          originalname: string;
+          mimetype: string;
+        }
+      | undefined,
+    @CurrentUser() user: UserContext,
+  ): Promise<ImportBlocksResponseDto> {
+    if (!file) {
+      throw new BadRequestException('A zip file is required');
+    }
+
+    const lowerName = file.originalname.toLowerCase();
+    const isZipMime =
+      file.mimetype === 'application/zip'
+      || file.mimetype === 'application/x-zip-compressed'
+      || file.mimetype === 'application/octet-stream';
+    if (!lowerName.endsWith('.zip') && !isZipMime) {
+      throw new BadRequestException('Only .zip archives are supported');
+    }
+
+    return this.contextService.importBlocksFromZip(file.buffer, user.actorId);
   }
 
   @Get(':id')

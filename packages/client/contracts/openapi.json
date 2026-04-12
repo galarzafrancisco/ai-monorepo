@@ -5354,6 +5354,76 @@
         ]
       }
     },
+    "/api/v1/context/blocks/export": {
+      "get": {
+        "operationId": "ContextController_exportBlocks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Context blocks archive downloaded successfully"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Export all context blocks as markdown zip",
+        "tags": [
+          "Context"
+        ]
+      }
+    },
+    "/api/v1/context/blocks/import": {
+      "post": {
+        "operationId": "ContextController_importBlocks",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Zip file exported from context blocks"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Context blocks imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBlocksResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No archive file uploaded or invalid file type"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Import context blocks from markdown zip",
+        "tags": [
+          "Context"
+        ]
+      }
+    },
     "/api/v1/context/blocks/{id}": {
       "get": {
         "operationId": "ContextController_getBlock",
@@ -11176,6 +11246,19 @@
           "children",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "ImportBlocksResponseDto": {
+        "type": "object",
+        "properties": {
+          "importedCount": {
+            "type": "number",
+            "description": "Number of context blocks imported from the archive",
+            "example": 12
+          }
+        },
+        "required": [
+          "importedCount"
         ]
       },
       "UpdateBlockDto": {

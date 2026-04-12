@@ -72,6 +72,7 @@
     "cookie-parser": "^1.4.7",
     "cron-parser": "^5.5.0",
     "fuse.js": "^7.1.0",
+    "jszip": "^3.10.1",
     "ollama": "^0.6.3",
     "openai": "^6.22.0",
     "reflect-metadata": "^0.2.2",

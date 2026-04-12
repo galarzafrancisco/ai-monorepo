@@ -874,6 +874,10 @@ export interface BlockTreeResponseDto {
   updatedAt: string;
 }
 
+export interface ImportBlocksResponseDto {
+  importedCount: number;
+}
+
 export interface UpdateBlockDto {
   title?: string;
   content?: string;

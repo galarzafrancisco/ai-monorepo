@@ -1509,6 +1509,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/context/blocks/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export all context blocks as markdown zip */
+        get: operations["ContextController_exportBlocks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/context/blocks/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import context blocks from markdown zip */
+        post: operations["ContextController_importBlocks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/context/blocks/{id}": {
         parameters: {
             query?: never;
@@ -4915,6 +4949,13 @@ export interface components {
              * @example 2025-01-02T15:30:00.000Z
              */
             updatedAt: string;
+        };
+        ImportBlocksResponseDto: {
+            /**
+             * @description Number of context blocks imported from the archive
+             * @example 12
+             */
+            importedCount: number;
         };
         UpdateBlockDto: {
             /**
@@ -9257,6 +9298,61 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BlockTreeResponseDto"][];
                 };
+            };
+        };
+    };
+    ContextController_exportBlocks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Context blocks archive downloaded successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ContextController_importBlocks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Zip file exported from context blocks
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Context blocks imported successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportBlocksResponseDto"];
+                };
+            };
+            /** @description No archive file uploaded or invalid file type */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

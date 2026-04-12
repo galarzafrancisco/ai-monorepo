@@ -9,6 +9,7 @@ import type { BlockSearchResultDto } from '../models/BlockSearchResultDto.js';
 import type { BlockTreeResponseDto } from '../models/BlockTreeResponseDto.js';
 import type { CreateBlockDto } from '../models/CreateBlockDto.js';
 import type { CreateTagDto } from '../models/CreateTagDto.js';
+import type { ImportBlocksResponseDto } from '../models/ImportBlocksResponseDto.js';
 import type { MoveBlockDto } from '../models/MoveBlockDto.js';
 import type { ReorderBlockDto } from '../models/ReorderBlockDto.js';
 import type { UpdateBlockDto } from '../models/UpdateBlockDto.js';
@@ -88,6 +89,42 @@ export class ContextService {
         return __request(config, {
             method: 'GET',
             url: '/api/v1/context/blocks/tree',
+        });
+    }
+    /**
+     * Export all context blocks as markdown zip
+     * @returns any Context blocks archive downloaded successfully
+     * @throws ApiError
+     */
+    public static contextControllerExportBlocks(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/context/blocks/export',
+        });
+    }
+    /**
+     * Import context blocks from markdown zip
+     * @param formData
+     * @returns ImportBlocksResponseDto Context blocks imported successfully
+     * @throws ApiError
+     */
+    public static contextControllerImportBlocks(
+        formData: {
+            /**
+             * Zip file exported from context blocks
+             */
+            file: Blob;
+        },
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ImportBlocksResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/context/blocks/import',
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                400: `No archive file uploaded or invalid file type`,
+            },
         });
     }
     /**
