@@ -606,7 +606,13 @@ export class ContextService {
     }
 
     const zip = new JSZip();
-    this.addBlocksToArchive(zip, '', childrenByParentId, ContextService.ROOT_PARENT_KEY);
+    const rootFolderName = this.createArchiveRootFolderName();
+    this.addBlocksToArchive(
+      zip,
+      `${rootFolderName}/`,
+      childrenByParentId,
+      ContextService.ROOT_PARENT_KEY,
+    );
 
     const archive = await zip.generateAsync({
       type: 'nodebuffer',
@@ -671,11 +677,8 @@ export class ContextService {
       currentDirectory.files.set(fileName, content);
     }
 
-    const importedCount = await this.importArchiveDirectory(
-      root,
-      null,
-      createdByActorId,
-    );
+    const importRoot = this.resolveImportRootDirectory(root);
+    const importedCount = await this.importArchiveDirectory(importRoot, null, createdByActorId);
 
     this.logger.log({
       message: 'Imported context blocks from zip archive',
@@ -758,6 +761,34 @@ export class ContextService {
     };
   }
 
+  private createArchiveRootFolderName(): string {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    return `context-blocks-${timestamp}`;
+  }
+
+  private resolveImportRootDirectory(root: ArchiveDirectory): ArchiveDirectory {
+    if (root.files.size > 0 || root.directories.size !== 1) {
+      return root;
+    }
+
+    const [directoryName, directory] = [...root.directories.entries()][0];
+    const normalizedName = directoryName.toLowerCase();
+    const isExpectedArchiveRoot =
+      normalizedName === 'context-blocks' || normalizedName.startsWith('context-blocks-');
+    if (!isExpectedArchiveRoot) {
+      return root;
+    }
+
+    const hasIndexFile = [...directory.files.keys()].some(
+      (fileName) => fileName.toLowerCase() === 'index.md',
+    );
+    if (hasIndexFile) {
+      return root;
+    }
+
+    return directory;
+  }
+
   private async importArchiveDirectory(
     directory: ArchiveDirectory,
     parentId: string | null,
@@ -788,7 +819,7 @@ export class ContextService {
       const indexEntry = [...childDirectory.files.entries()].find(
         ([fileName]) => fileName.toLowerCase() === 'index.md',
       );
-      const content = indexEntry?.[1] ?? '';
+      const content = indexEntry?.[1] ?? '.';
 
       const block = await this.createBlock({
         title: this.normalizeImportedTitle(directoryName),
