@@ -25,6 +25,7 @@ import { ExecutionsWorkerGateway } from './executions-worker.gateway';
 import { StaleActiveTaskExecutionDetectorService } from './staleness/stale-active-task-execution-detector.service';
 import { StaleActiveTaskExecutionPrunerService } from './staleness/stale-active-task-execution-pruner.service';
 import { StaleActiveTaskExecutionSchedulerService } from './staleness/stale-active-task-execution-scheduler.service';
+import { WorkersModule } from '../workers/workers.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { StaleActiveTaskExecutionSchedulerService } from './staleness/stale-acti
     AgentsModule,
     ThreadsModule,
     AuthGuardsModule,
+    WorkersModule,
   ],
   controllers: [
     TaskExecutionQueueController,

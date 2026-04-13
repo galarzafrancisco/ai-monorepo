@@ -21,6 +21,7 @@ import { WorkersScopes } from './workers.scopes';
 import { ExecutionActivityService } from './execution-activity.service';
 import { ActiveTaskExecutionNotFoundError } from './errors/executions.errors';
 import { AuthContext } from '../auth/guards/context/auth-context.types';
+import { WorkersService } from '../workers/workers.service';
 
 const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
 
@@ -40,6 +41,7 @@ export class ExecutionsWorkerGateway
 
   constructor(
     private readonly executionActivityService: ExecutionActivityService,
+    private readonly workersService: WorkersService,
   ) {}
 
   afterInit() {
@@ -48,6 +50,13 @@ export class ExecutionsWorkerGateway
 
   handleConnection(client: Socket) {
     this.logger.log(`Worker client connected: ${client.id}`);
+    void this.recordWorkerSeen(client).catch((error: unknown) => {
+      this.logger.warn({
+        message: 'Failed to record worker connection liveness',
+        socketId: client.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
     this.scheduleTokenExpiryDisconnect(client);
   }
 
@@ -102,6 +111,7 @@ export class ExecutionsWorkerGateway
       await this.executionActivityService.touchHeartbeat({
         executionId: body.executionId,
       });
+      await this.recordWorkerSeen(client);
       return { ok: true };
     } catch (error) {
       this.logger.error({
@@ -145,5 +155,27 @@ export class ExecutionsWorkerGateway
     }
     clearTimeout(timer);
     this.socketExpiryTimers.delete(socketId);
+  }
+
+  private async recordWorkerSeen(client: Socket): Promise<void> {
+    const oauthClientId = this.getOauthClientId(client);
+    if (!oauthClientId) {
+      return;
+    }
+
+    await this.workersService.recordWorkerSeen({ oauthClientId });
+  }
+
+  private getOauthClientId(client: Socket): string | null {
+    const auth = client.data.auth as AuthContext | undefined;
+    const oauthClientId = auth?.claims?.client_id;
+    if (!oauthClientId) {
+      this.logger.warn(
+        `Worker socket ${client.id} is missing client_id in auth claims`,
+      );
+      return null;
+    }
+
+    return oauthClientId;
   }
 }

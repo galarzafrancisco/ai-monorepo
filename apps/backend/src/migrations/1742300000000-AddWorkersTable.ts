@@ -11,7 +11,7 @@ export class AddWorkersTable1742300000000 implements MigrationInterface {
         row_version integer NOT NULL DEFAULT 1,
         created_at datetime NOT NULL DEFAULT (datetime('now')),
         updated_at datetime NOT NULL DEFAULT (datetime('now')),
-        deleted_at datetime
+        FOREIGN KEY (oauth_client_id) REFERENCES registered_clients(client_id) ON DELETE CASCADE
       )
     `);
 

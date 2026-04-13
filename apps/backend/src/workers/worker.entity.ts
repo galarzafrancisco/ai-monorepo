@@ -1,9 +1,11 @@
 import { AgentType } from 'src/agents/enums';
+import { RegisteredClientEntity } from 'src/authorization-server/entities/registered-client.entity';
 import {
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   VersionColumn,
@@ -16,6 +18,10 @@ export class WorkerEntity {
 
   @Column({ type: 'text', name: 'oauth_client_id', unique: true })
   oauthClientId!: string;
+
+  @ManyToOne(() => RegisteredClientEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'oauth_client_id', referencedColumnName: 'clientId' })
+  oauthClient?: RegisteredClientEntity;
 
   @Column({ type: 'datetime', name: 'last_seen_at' })
   lastSeenAt!: Date;
@@ -31,7 +37,4 @@ export class WorkerEntity {
 
   @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
   updatedAt!: Date;
-
-  @DeleteDateColumn({ type: 'datetime', name: 'deleted_at', nullable: true })
-  deletedAt?: Date | null;
 }
