@@ -1,0 +1,69 @@
+.settings-workers__command-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--surface);
+  border-radius: var(--r-2);
+  border: 1px solid var(--border);
+}
+
+.settings-workers__command {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  color: var(--text);
+  line-height: var(--lh-normal);
+  word-break: break-all;
+}
+
+.settings-workers__copy-button {
+  white-space: nowrap;
+}
+
+.settings-workers__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.settings-workers__status-indicator {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--r-2);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+}
+
+.settings-workers__status-indicator--connected {
+  background: var(--surface);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.settings-workers__status-indicator--disconnected {
+  background: var(--surface);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.settings-workers__harnesses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.settings-workers__harness-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--fs-1);
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}

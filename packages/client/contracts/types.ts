@@ -1803,6 +1803,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all workers */
+        get: operations["WorkersController_listWorkers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/task-blueprints": {
         parameters: {
             query?: never;
@@ -5193,6 +5210,18 @@ export interface components {
              * @example session_01JZ0SMM85FBFA8Y82M8VREY2A
              */
             sessionId: string;
+        };
+        WorkerResponseDto: {
+            /** Format: uuid */
+            id: string;
+            oauthClientId: string;
+            /** Format: date-time */
+            lastSeenAt: string;
+            harnesses: ("claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other")[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         CreateTaskBlueprintDto: {
             /**
@@ -9845,6 +9874,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskExecutionHistoryResponseDto"][];
+                };
+            };
+        };
+    };
+    WorkersController_listWorkers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of all registered workers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkerResponseDto"][];
                 };
             };
         };

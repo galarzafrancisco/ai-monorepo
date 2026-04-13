@@ -951,6 +951,15 @@ export interface UpdateRunnerSessionIdDto {
   sessionId: string;
 }
 
+export interface WorkerResponseDto {
+  id: string;
+  oauthClientId: string;
+  lastSeenAt: string;
+  harnesses: ('claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other')[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateTaskBlueprintDto {
   name: string;
   description: string;

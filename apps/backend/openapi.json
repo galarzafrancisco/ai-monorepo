@@ -6179,6 +6179,31 @@
         ]
       }
     },
+    "/api/v1/workers": {
+      "get": {
+        "operationId": "WorkersController_listWorkers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all registered workers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkerResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all workers",
+        "tags": [
+          "workers"
+        ]
+      }
+    },
     "/api/v1/task-blueprints": {
       "post": {
         "operationId": "TaskBlueprintsController_createTaskBlueprint",
@@ -11650,6 +11675,52 @@
         },
         "required": [
           "sessionId"
+        ]
+      },
+      "WorkerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "oauthClientId": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "harnesses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "claude",
+                "codex",
+                "opencode",
+                "adk",
+                "githubcopilot",
+                "other"
+              ]
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "oauthClientId",
+          "lastSeenAt",
+          "harnesses",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "CreateTaskBlueprintDto": {

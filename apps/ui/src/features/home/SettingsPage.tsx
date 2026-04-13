@@ -51,6 +51,13 @@ export function SettingsPage() {
         onSelect: () => navigate('/settings/chat'),
       },
       {
+        id: 'settings-workers',
+        label: 'Workers Settings',
+        description: 'Configure and manage background workers',
+        aliases: ['workers', 'background', 'execution'],
+        onSelect: () => navigate('/settings/workers'),
+      },
+      {
         id: 'settings-data',
         label: 'Import / Export',
         description: 'Import and export workspace data',
@@ -139,6 +146,25 @@ export function SettingsPage() {
               onClick={() => navigate('/settings/chat')}
             >
               Configure Chat
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
+
+      <Card padding="5">
+        <Stack spacing="3">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">Workers</Text>
+            <Text tone="muted">Configure and manage background workers</Text>
+          </Stack>
+          <Row justify="space-between" align="center">
+            <Text size="2" tone="muted">Set up workers for task execution</Text>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/settings/workers')}
+            >
+              Manage Workers
             </Button>
           </Row>
         </Stack>

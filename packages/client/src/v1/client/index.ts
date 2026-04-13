@@ -139,6 +139,7 @@ export type { UpdateThreadDto } from './models/UpdateThreadDto.js';
 export type { UpdateThreadStateDto } from './models/UpdateThreadStateDto.js';
 export type { UpsertAgentToolPermissionDto } from './models/UpsertAgentToolPermissionDto.js';
 export { UserResponseDto } from './models/UserResponseDto.js';
+export type { WorkerResponseDto } from './models/WorkerResponseDto.js';
 
 export { ActorsService } from './services/ActorsService.js';
 export { AgentService } from './services/AgentService.js';
@@ -163,3 +164,4 @@ export { TaskBlueprintsService } from './services/TaskBlueprintsService.js';
 export { ThreadsService } from './services/ThreadsService.js';
 export { ToolsService } from './services/ToolsService.js';
 export { WebAuthenticationService } from './services/WebAuthenticationService.js';
+export { WorkersService } from './services/WorkersService.js';

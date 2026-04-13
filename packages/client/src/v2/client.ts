@@ -18,6 +18,7 @@ import { ChatProvidersResource } from './chat-providers-resource.js';
 import { SecretsResource } from './secrets-resource.js';
 import { ContextResource } from './context-resource.js';
 import { ExecutionsResource } from './executions-resource.js';
+import { WorkersResource } from './workers-resource.js';
 import { TaskBlueprintsResource } from './task-blueprints-resource.js';
 import { ScheduledTasksResource } from './scheduled-tasks-resource.js';
 import { DiscoveryResource } from './discovery-resource.js';
@@ -43,6 +44,7 @@ export class ApiClient {
   public readonly secrets: SecretsResource;
   public readonly context: ContextResource;
   public readonly executions: ExecutionsResource;
+  public readonly workers: WorkersResource;
   public readonly taskBlueprints: TaskBlueprintsResource;
   public readonly scheduledTasks: ScheduledTasksResource;
   public readonly discovery: DiscoveryResource;
@@ -68,6 +70,7 @@ export class ApiClient {
     this.secrets = new SecretsResource(config);
     this.context = new ContextResource(config);
     this.executions = new ExecutionsResource(config);
+    this.workers = new WorkersResource(config);
     this.taskBlueprints = new TaskBlueprintsResource(config);
     this.scheduledTasks = new ScheduledTasksResource(config);
     this.discovery = new DiscoveryResource(config);
