@@ -38,6 +38,7 @@ import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './prompts/prompts';
 import { createTaico } from './agent/taico.agent';
 import { createPlaywright } from './mcp/playwright.mcp';
+import { createChromeDevTools } from './mcp/chrome-devtools.mcp';
 import { createElen } from './mcp/elen.mcp';
 import { ChatProvidersService } from 'src/chat-providers/chat-providers.service';
 import { ChatProviderType } from 'src/chat-providers/enums';
@@ -217,6 +218,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureMcpServerExists(createPlaywright, []);
     } catch (error) {
       this.logger.error('Error ensuring Playwright MCP Server exists');
+    }
+    try {
+      await this.ensureMcpServerExists(createChromeDevTools, []);
+    } catch (error) {
+      this.logger.error('Error ensuring Chrome DevTools MCP Server exists');
     }
     try {
       await this.ensureMcpServerExists(createElen, []);
