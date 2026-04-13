@@ -40,10 +40,12 @@ import { AddErrorMessageToTaskExecutionHistoryV21741900000000 } from './migratio
 import { AddAgentToolPermissions1742000000000 } from './migrations/1742000000000-AddAgentToolPermissions';
 import { AddExecutionEnrichmentFieldsV21742100000000 } from './migrations/1742100000000-AddExecutionEnrichmentFieldsV2';
 import { RenameExecutionTables1742200000000 } from './migrations/1742200000000-RenameExecutionTables';
+import { AddWorkersTable1742300000000 } from './migrations/1742300000000-AddWorkersTable';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
+import { WorkersModule } from './workers/workers.module';
 
 @Module({
   imports: [
@@ -76,6 +78,7 @@ import { GlobalSearchModule } from './global-search/global-search.module';
         AddAgentToolPermissions1742000000000,
         AddExecutionEnrichmentFieldsV21742100000000,
         RenameExecutionTables1742200000000,
+        AddWorkersTable1742300000000,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -96,6 +99,7 @@ import { GlobalSearchModule } from './global-search/global-search.module';
     SecretsModule,
     ChatProvidersModule,
     ExecutionsModule,
+    WorkersModule,
     GlobalSearchModule,
   ],
   controllers: [AppController],
