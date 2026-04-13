@@ -8,6 +8,7 @@ import { SettingsAppearancePage } from "./SettingsAppearancePage";
 import { SettingsProjectsPage } from "./SettingsProjectsPage";
 import { SettingsChatPage } from "./SettingsChatPage";
 import { SettingsDataPage } from './SettingsDataPage';
+import { SettingsWorkersPage } from './SettingsWorkersPage';
 
 export function HomeRoutes() {
   return (
@@ -20,6 +21,7 @@ export function HomeRoutes() {
           <Route path="/settings/appearance" element={<SettingsAppearancePage />} />
           <Route path="/settings/projects" element={<SettingsProjectsPage />} />
           <Route path="/settings/chat" element={<SettingsChatPage />} />
+          <Route path="/settings/workers" element={<SettingsWorkersPage />} />
           <Route path="/settings/data" element={<SettingsDataPage />} />
         </Route>
       </Routes>
