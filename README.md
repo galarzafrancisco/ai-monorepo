@@ -24,14 +24,16 @@ Taico supports:
 
 ## Recommended Startup Path
 
-For most users:
+### 1. One-liner launcher
+This will start a Taico server in a local container in your machine.
 
-1. Run the server in Docker with [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh).
-2. Run the worker locally via `npx` with [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh).
-3. Open the app and create your first account through the onboarding flow.
-4. Review the pre-populated agents and customize them as needed.
+```bash
+curl -fsSL https://raw.githubusercontent.com/galarzafrancisco/ai-monorepo/refs/heads/main/helpers/start-server.sh | bash
+```
+The server script is meant to be long-lived and restart with your machine.
 
-The server script is meant to be long-lived and restart with your machine. The worker script is meant to run where your provider auth and local toolchain already exist.
+### 2. Open the app
+Open [http://localhost:9999](http://localhost:9999), create your first account and follow the onboarding flow.
 
 ## Development
 
