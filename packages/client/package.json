@@ -1,6 +1,6 @@
 {
   "name": "@taico/client",
-  "version": "0.2.9",
+  "version": "0.2.11",
   "type": "module",
   "private": false,
   "license": "MIT",
