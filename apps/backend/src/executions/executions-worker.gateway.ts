@@ -24,6 +24,7 @@ import { AuthContext } from '../auth/guards/context/auth-context.types';
 import { WorkersService } from '../workers/workers.service';
 
 const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
+const WORKER_HEARTBEAT_POST_EVENT = 'worker.heartbeat.post';
 
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(WorkersScopes.CONNECT.id)
@@ -118,6 +119,21 @@ export class ExecutionsWorkerGateway
         message: 'Failed to process execution heartbeat',
         socketId: client.id,
         executionId: body.executionId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { ok: false, error: 'internal error' };
+    }
+  }
+
+  @SubscribeMessage(WORKER_HEARTBEAT_POST_EVENT)
+  async postWorkerHeartbeat(@ConnectedSocket() client: Socket) {
+    try {
+      await this.recordWorkerSeen(client);
+      return { ok: true };
+    } catch (error) {
+      this.logger.error({
+        message: 'Failed to process worker heartbeat',
+        socketId: client.id,
         error: error instanceof Error ? error.message : String(error),
       });
       return { ok: false, error: 'internal error' };

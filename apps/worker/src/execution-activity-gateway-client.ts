@@ -8,9 +8,15 @@ import { WorkerAuth } from './auth/worker-auth.js';
 const DEFAULT_TOKEN_REFRESH_SKEW_MS = 60_000;
 const ACK_TIMEOUT_MS = 5_000;
 const EXECUTION_HEARTBEAT_POST_EVENT = 'execution.heartbeat.post';
+const WORKER_HEARTBEAT_POST_EVENT = 'worker.heartbeat.post';
+const WORKER_HEARTBEAT_INTERVAL_MS = 30_000;
 
 type PostExecutionHeartbeatPayload = {
   executionId: string;
+};
+
+type PostWorkerHeartbeatPayload = {
+  ts: number;
 };
 
 type ActivityAck = {
@@ -35,6 +41,7 @@ export class ExecutionActivityGatewayClient {
   private started = false;
   private reconnectAttempts = 0;
   private tokenRefreshTimer?: ReturnType<typeof setTimeout>;
+  private workerHeartbeatTimer?: ReturnType<typeof setInterval>;
   private reconnectPromise: Promise<void> | null = null;
   private resolveInitialConnect?: () => void;
   private rejectInitialConnect?: (error: unknown) => void;
@@ -61,6 +68,7 @@ export class ExecutionActivityGatewayClient {
   async stop(): Promise<void> {
     this.started = false;
     this.clearTokenRefreshTimer();
+    this.clearWorkerHeartbeatTimer();
     this.clearInitialConnectHandlers();
 
     if (!this.socket) {
@@ -91,9 +99,21 @@ export class ExecutionActivityGatewayClient {
     );
   }
 
+  async publishWorkerHeartbeat(
+    payload: PostWorkerHeartbeatPayload,
+  ): Promise<boolean> {
+    return this.emitWithAck(
+      WORKER_HEARTBEAT_POST_EVENT,
+      payload,
+    );
+  }
+
   private async emitWithAck(
     eventName: string,
-    payload: PostExecutionActivityPayload | PostExecutionHeartbeatPayload,
+    payload:
+      | PostExecutionActivityPayload
+      | PostExecutionHeartbeatPayload
+      | PostWorkerHeartbeatPayload,
   ): Promise<boolean> {
     if (!this.socket || !this.socket.connected) {
       if (this.options.debug) {
@@ -177,6 +197,7 @@ export class ExecutionActivityGatewayClient {
 
       this.reconnectAttempts = 0;
       this.scheduleTokenRefresh(credentials.expiresAt);
+      this.startWorkerHeartbeatTimer();
       this.resolveInitialConnect?.();
       this.clearInitialConnectHandlers();
     });
@@ -187,6 +208,7 @@ export class ExecutionActivityGatewayClient {
       }
 
       this.clearTokenRefreshTimer();
+      this.clearWorkerHeartbeatTimer();
 
       if (!this.started) {
         return;
@@ -244,6 +266,21 @@ export class ExecutionActivityGatewayClient {
     this.tokenRefreshTimer = undefined;
   }
 
+  private startWorkerHeartbeatTimer(): void {
+    this.clearWorkerHeartbeatTimer();
+    this.workerHeartbeatTimer = setInterval(() => {
+      void this.publishWorkerHeartbeat({ ts: Date.now() });
+    }, WORKER_HEARTBEAT_INTERVAL_MS);
+  }
+
+  private clearWorkerHeartbeatTimer(): void {
+    if (!this.workerHeartbeatTimer) {
+      return;
+    }
+    clearInterval(this.workerHeartbeatTimer);
+    this.workerHeartbeatTimer = undefined;
+  }
+
   private clearInitialConnectHandlers(): void {
     this.resolveInitialConnect = undefined;
     this.rejectInitialConnect = undefined;
@@ -263,6 +300,7 @@ export class ExecutionActivityGatewayClient {
         }
 
         if (this.socket) {
+          this.clearWorkerHeartbeatTimer();
           this.socket.removeAllListeners();
           this.socket.disconnect();
           this.socket = undefined;
