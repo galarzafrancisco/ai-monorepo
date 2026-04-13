@@ -136,7 +136,7 @@ export class WorkerAuth {
   }
 
   private async bootstrapFromBrowserAuthorization(): Promise<WorkerCredentials> {
-    const callback = await createOAuthCallbackServer();
+    const callback = await createOAuthCallbackServer(this.serverUrl);
     const redirectUri = callback.redirectUri;
     const codeVerifier = randomBytes(32).toString('base64url');
     const codeChallenge = createHash('sha256')

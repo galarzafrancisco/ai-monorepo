@@ -1,6 +1,8 @@
 import { createServer } from 'http';
 
-export async function createOAuthCallbackServer(): Promise<{
+export async function createOAuthCallbackServer(
+  serverUrl: string,
+): Promise<{
   redirectUri: string;
   waitForCode: (expectedState: string) => Promise<{ code: string }>;
 }> {
@@ -21,7 +23,8 @@ export async function createOAuthCallbackServer(): Promise<{
     }
 
     res.statusCode = 200;
-    res.end('Taico worker authorization completed. You can close this tab.');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.end(generateSuccessPage(serverUrl));
 
     if (pendingResolve) {
       pendingResolve({ code, state });
@@ -62,4 +65,174 @@ export async function createOAuthCallbackServer(): Promise<{
       return { code: result.code };
     },
   };
+}
+
+function generateSuccessPage(serverUrl: string): string {
+  const redirectUrl = `${serverUrl}/settings/worker`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worker Paired - Taico</title>
+  <style>
+    /* Design tokens - Light theme */
+    :root {
+      --bg: #ffffff;
+      --surface: #f6f8fa;
+      --text: #1f2328;
+      --text-muted: #59636e;
+      --border: #d1d9e0;
+      --accent: #0969da;
+      --accent-hover: #0550ae;
+      --success: #1a7f37;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --r-3: 8px;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+      --fs-2: 14px;
+      --fs-3: 16px;
+      --fs-5: 24px;
+      --fw-normal: 400;
+      --fw-semibold: 600;
+      --lh-normal: 1.5;
+      --shadow-2: 0 4px 8px rgba(31, 35, 40, 0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--surface);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: var(--space-5);
+      line-height: var(--lh-normal);
+    }
+
+    .container {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-3);
+      padding: var(--space-6);
+      max-width: 480px;
+      width: 100%;
+      box-shadow: var(--shadow-2);
+      text-align: center;
+    }
+
+    .icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto var(--space-5);
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .checkmark {
+      width: 24px;
+      height: 24px;
+      stroke: white;
+      stroke-width: 3;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    h1 {
+      font-size: var(--fs-5);
+      font-weight: var(--fw-semibold);
+      margin-bottom: var(--space-4);
+      color: var(--text);
+    }
+
+    p {
+      font-size: var(--fs-3);
+      color: var(--text-muted);
+      margin-bottom: var(--space-5);
+    }
+
+    .countdown {
+      font-size: var(--fs-3);
+      color: var(--text);
+      margin-top: var(--space-5);
+    }
+
+    .countdown-number {
+      font-weight: var(--fw-semibold);
+      color: var(--accent);
+      font-size: var(--fs-5);
+    }
+
+    .manual-link {
+      margin-top: var(--space-5);
+      padding-top: var(--space-5);
+      border-top: 1px solid var(--border);
+    }
+
+    .manual-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: var(--fs-2);
+    }
+
+    .manual-link a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <svg class="checkmark" viewBox="0 0 24 24">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <h1>Worker Successfully Paired</h1>
+    <p>Your Taico worker has been successfully paired with the server. You can now close this tab or wait to be redirected.</p>
+    <div class="countdown">
+      Redirecting in <span class="countdown-number" id="countdown">5</span> seconds...
+    </div>
+    <div class="manual-link">
+      <a href="${redirectUrl}" id="manual-link">Go to Workers page now</a>
+    </div>
+  </div>
+
+  <script>
+    let count = 5;
+    const countdownElement = document.getElementById('countdown');
+    const redirectUrl = '${redirectUrl}';
+
+    const interval = setInterval(() => {
+      count--;
+      if (countdownElement) {
+        countdownElement.textContent = count.toString();
+      }
+
+      if (count <= 0) {
+        clearInterval(interval);
+        window.location.href = redirectUrl;
+      }
+    }, 1000);
+
+    // Also allow manual click during countdown
+    document.getElementById('manual-link')?.addEventListener('click', () => {
+      clearInterval(interval);
+    });
+  </script>
+</body>
+</html>`;
 }
