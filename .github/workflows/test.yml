@@ -55,7 +55,7 @@ jobs:
 
       - name: Run E2E tests
         id: tests
-        run: npm -w apps/backend run test:e2e tasks.e2e-spec.ts
+        run: npm -w apps/backend run test:e2e
 
       - name: Upload test results
         if: always()
