@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { AgentListResponseDto, AgentResponseDto, AgentToolPermissionResponseDto, CreateAgentDto, PatchAgentDto, UpsertAgentToolPermissionDto } from './types.js';
+import type { AgentListResponseDto, AgentResponseDto, AgentTemplateCatalogResponseDto, AgentToolPermissionResponseDto, CreateAgentDto, PatchAgentDto, UpsertAgentToolPermissionDto } from './types.js';
 
 export class AgentResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -14,6 +14,11 @@ export class AgentResource extends BaseClient {
   /** List agents with optional filtering and pagination */
   async AgentsController_listAgents(params?: { isActive?: boolean; page?: number; limit?: number; signal?: AbortSignal }): Promise<AgentListResponseDto> {
     return this.request('GET', '/api/v1/agents', { params: { isActive: params?.isActive, page: params?.page, limit: params?.limit }, signal: params?.signal });
+  }
+
+  /** List available agent creation templates */
+  async AgentsController_listAgentTemplates(params?: { signal?: AbortSignal }): Promise<AgentTemplateCatalogResponseDto> {
+    return this.request('GET', '/api/v1/agents/templates', { signal: params?.signal });
   }
 
   /** Get an agent by slug */

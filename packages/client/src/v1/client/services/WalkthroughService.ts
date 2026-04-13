@@ -9,6 +9,17 @@ import type { OpenAPIConfig } from '../core/OpenAPI.js';
 import { request as __request } from '../core/request.js';
 export class WalkthroughService {
     /**
+     * Acknowledge walkthrough — transitions FULL_PAGE display mode to BANNER
+     * @returns any Acknowledged
+     * @throws ApiError
+     */
+    public static walkthroughControllerAcknowledge(config: OpenAPIConfig = OpenAPI): CancelablePromise<any> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/walkthrough/acknowledge',
+        });
+    }
+    /**
      * Get walkthrough status for the current user
      * @returns UserWalkthroughStatusResponseDto Current walkthrough progress and display mode
      * @throws ApiError

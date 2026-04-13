@@ -23,6 +23,8 @@ import {
   AgentDeletedEvent,
 } from './events/agents.events';
 import { DEFAULT_AGENT_AVATAR } from './enums/agent-type.enum';
+import { AGENT_TEMPLATE_CATALOG } from './agent-template.catalog';
+import { AgentTemplateCatalogResponseDto } from './dto/agent-template-catalog-response.dto';
 
 @Injectable()
 export class AgentsService {
@@ -137,6 +139,10 @@ export class AgentsService {
       page: input.page,
       limit: input.limit,
     };
+  }
+
+  getTemplateCatalog(): AgentTemplateCatalogResponseDto {
+    return AGENT_TEMPLATE_CATALOG;
   }
 
   async getAgentById({ agentId }: { agentId: string }): Promise<AgentResult> {

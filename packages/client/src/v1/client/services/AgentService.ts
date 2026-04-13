@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { AgentListResponseDto } from '../models/AgentListResponseDto.js';
 import type { AgentResponseDto } from '../models/AgentResponseDto.js';
+import type { AgentTemplateCatalogResponseDto } from '../models/AgentTemplateCatalogResponseDto.js';
 import type { AgentToolPermissionResponseDto } from '../models/AgentToolPermissionResponseDto.js';
 import type { CreateAgentDto } from '../models/CreateAgentDto.js';
 import type { PatchAgentDto } from '../models/PatchAgentDto.js';
@@ -52,6 +53,17 @@ export class AgentService {
                 'page': page,
                 'limit': limit,
             },
+        });
+    }
+    /**
+     * List available agent creation templates
+     * @returns AgentTemplateCatalogResponseDto
+     * @throws ApiError
+     */
+    public static agentsControllerListAgentTemplates(config: OpenAPIConfig = OpenAPI): CancelablePromise<AgentTemplateCatalogResponseDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/agents/templates',
         });
     }
     /**

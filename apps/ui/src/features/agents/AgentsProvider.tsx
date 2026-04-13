@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useAgents } from "./useAgents";
 import type { Agent } from "./types";
-import type { TaskStatus } from "../../shared/const/taskStatus";
-import type { AgentResponseDto, PatchAgentDto } from "@taico/client/v2";
+import type { CreateAgentDto, PatchAgentDto } from "@taico/client/v2";
 
 // Shape this to match what pages/layout need.
 export type AgentsContextValue = {
@@ -12,7 +11,7 @@ export type AgentsContextValue = {
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
   loadAgentDetails: (slug: string) => Promise<Agent | null>;
-  createAgent: (params: { name: string; slug: string }) => Promise<Agent | null>;
+  createAgent: (params: CreateAgentDto) => Promise<Agent | null>;
   updateAgent: (actorId: string, updates: PatchAgentDto) => Promise<Agent | null>;
   deleteAgent: (actorId: string) => Promise<boolean>;
 };

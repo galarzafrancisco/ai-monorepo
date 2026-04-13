@@ -7,6 +7,7 @@ export type UserWalkthroughStatusResponseDto = {
     agentCreated: boolean;
     taskCreated: boolean;
     projectCreated: boolean;
+    projectConfigured: boolean;
     contextBlockCreated: boolean;
     threadConfigured: boolean;
     taskWithProjectCreated: boolean;

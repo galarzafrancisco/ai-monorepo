@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AgentsService } from './api';
 import type { Agent } from './types';
 import type { TaskStatus } from '../../shared/const/taskStatus';
-import type { AgentResponseDto, PatchAgentDto } from "@taico/client/v2";
+import type { AgentResponseDto, CreateAgentDto, PatchAgentDto } from "@taico/client/v2";
 
 export const useAgents = () => {
   // UI feedback
@@ -56,7 +56,7 @@ export const useAgents = () => {
   };
 
   // Create agent
-  const createAgent = async (params: { name: string; slug: string }): Promise<Agent | null> => {
+  const createAgent = async (params: CreateAgentDto): Promise<Agent | null> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -65,13 +65,18 @@ export const useAgents = () => {
         body: {
           name: params.name,
           slug: params.slug,
-          systemPrompt: '', // Empty as per requirements
-          allowedTools: [], // Empty as per requirements
-          type: undefined, // Will use backend default
-          description: undefined,
-          statusTriggers: undefined,
-          isActive: undefined,
-          concurrencyLimit: undefined,
+          systemPrompt: params.systemPrompt,
+          allowedTools: params.allowedTools ?? [],
+          type: params.type,
+          description: params.description,
+          introduction: params.introduction,
+          avatarUrl: params.avatarUrl,
+          providerId: params.providerId,
+          modelId: params.modelId,
+          statusTriggers: params.statusTriggers,
+          tagTriggers: params.tagTriggers,
+          isActive: params.isActive,
+          concurrencyLimit: params.concurrencyLimit,
         }
       });
 

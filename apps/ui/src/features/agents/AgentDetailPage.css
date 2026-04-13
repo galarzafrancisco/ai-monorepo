@@ -7,14 +7,21 @@
   margin: var(--space-5) 0;
 }
 
-/* System prompt display */
-.agent-detail-page__system-prompt {
+/* Prompt and introduction previews */
+.agent-detail-page__text-preview {
+  display: block;
   white-space: pre-wrap;
-  word-break: break-word;
-  font-family: var(--font-mono);
-  background: var(--surface-2);
-  padding: var(--space-3);
-  border-radius: var(--radius-2);
+  overflow-wrap: anywhere;
+  word-break: normal;
+  color: var(--text);
+  line-height: 1.55;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.agent-detail-page__text-preview--system {
+  font-size: var(--fs-1);
+  line-height: 1.65;
 }
 
 /* Actions */
@@ -35,9 +42,9 @@
 .agent-detail-page__input {
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
-  border-radius: var(--radius-2);
-  font-size: var(--font-size-2);
-  background: var(--surface-1);
+  border-radius: var(--r-2);
+  font-size: var(--fs-2);
+  background: var(--surface);
   color: var(--text);
   width: 100%;
 }
@@ -49,23 +56,23 @@
 
 /* Token display */
 .agent-detail-page__token-display {
-  background: var(--surface-2);
-  border-radius: var(--radius-2);
+  background: var(--surface);
+  border-radius: var(--r-2);
   padding: var(--space-3);
   overflow-x: auto;
 }
 
 .agent-detail-page__token-code {
   font-family: var(--font-mono);
-  font-size: var(--font-size-1);
+  font-size: var(--fs-1);
   word-break: break-all;
   display: block;
 }
 
 /* New token alert styling */
 .agent-detail-page__new-token {
-  border: 2px solid var(--color-danger, #ef4444);
-  border-radius: var(--radius-3);
+  border: 2px solid var(--danger);
+  border-radius: var(--r-3);
 }
 
 /* Button row (horizontal layout) */
@@ -78,12 +85,12 @@
 
 /* Warning text */
 .agent-detail-page__warning-text {
-  color: var(--color-danger, #ef4444);
+  color: var(--danger);
 }
 
 /* Revoked text */
 .agent-detail-page__revoked-text {
-  color: var(--color-danger, #ef4444);
+  color: var(--danger);
 }
 
 /* Scopes list */
@@ -94,8 +101,8 @@
   max-height: 300px;
   overflow-y: auto;
   padding: var(--space-2);
-  background: var(--surface-2);
-  border-radius: var(--radius-2);
+  background: var(--surface);
+  border-radius: var(--r-2);
 }
 
 .agent-detail-page__scope-item {
@@ -103,13 +110,13 @@
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-2);
-  border-radius: var(--radius-2);
+  border-radius: var(--r-2);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .agent-detail-page__scope-item:hover {
-  background: var(--surface-3);
+  background: var(--app-surface);
 }
 
 .agent-detail-page__scope-item input[type="checkbox"] {
@@ -133,20 +140,4 @@
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .agent-detail-page__system-prompt {
-    background: var(--color-surface-elevated, #374151);
-  }
-
-  .agent-detail-page__input {
-    background: var(--color-surface-elevated, #374151);
-    border-color: var(--color-border, #4b5563);
-  }
-
-  .agent-detail-page__token-display {
-    background: var(--color-surface-elevated, #374151);
-  }
 }

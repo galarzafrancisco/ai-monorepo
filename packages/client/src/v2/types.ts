@@ -673,6 +673,41 @@ export interface AgentListResponseDto {
   totalPages: number;
 }
 
+export interface AgentTemplateDto {
+  id: string;
+  label: string;
+  description: string;
+  type?: 'claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other';
+  providerId?: string;
+  modelId?: string;
+  systemPrompt: string;
+  agentDescription?: string;
+  statusTriggers: ('NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE')[];
+  tagTriggers: string[];
+  avatarUrl?: string;
+  concurrencyLimit?: number;
+}
+
+export interface AgentTemplateModelOptionDto {
+  id: string;
+  label: string;
+  providerId?: string;
+  modelId?: string;
+  isDefault: boolean;
+}
+
+export interface AgentTemplateHarnessDto {
+  type: 'claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other';
+  label: string;
+  description: string;
+  modelOptions: AgentTemplateModelOptionDto[];
+}
+
+export interface AgentTemplateCatalogResponseDto {
+  templates: AgentTemplateDto[];
+  harnesses: AgentTemplateHarnessDto[];
+}
+
 export interface PatchAgentDto {
   slug?: string;
   name?: string;

@@ -7,8 +7,8 @@ export class WalkthroughResource extends BaseClient {
   }
 
   /** Acknowledge walkthrough — transitions FULL_PAGE display mode to BANNER */
-  async WalkthroughController_acknowledge(params?: { signal?: AbortSignal }): Promise<{ ok: boolean }> {
-    return this.request('POST', '/api/v1/walkthrough/acknowledge', { signal: params?.signal });
+  async WalkthroughController_acknowledge(params?: { signal?: AbortSignal }): Promise<void> {
+    return this.request('POST', '/api/v1/walkthrough/acknowledge', { responseType: 'void', signal: params?.signal });
   }
 
   /** Get walkthrough status for the current user */

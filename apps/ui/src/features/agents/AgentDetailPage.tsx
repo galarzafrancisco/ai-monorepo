@@ -465,7 +465,7 @@ export function AgentDetailPage() {
       {/* System Prompt */}
       <DataRowContainer title="System Prompt" className="agent-detail-page__section">
         <DataRow onClick={() => setShowEditSystemPromptPop(true)}>
-          <Text size="2" className="agent-detail-page__system-prompt">
+          <Text size="2" style="mono" className="agent-detail-page__text-preview agent-detail-page__text-preview--system">
             {agent.systemPrompt || 'No system prompt configured'}
           </Text>
           <Text size="1" tone="muted">tap to edit</Text>
@@ -475,7 +475,7 @@ export function AgentDetailPage() {
       {/* Introduction */}
       <DataRowContainer title="Introduction" className="agent-detail-page__section">
         <DataRow onClick={() => setShowEditIntroductionPop(true)}>
-          <Text size="2" className="agent-detail-page__system-prompt">
+          <Text size="2" className="agent-detail-page__text-preview">
             {introductionText.trim().length > 0 ? introductionText : 'No introduction configured'}
           </Text>
           <Text size="1" tone="muted">tap to edit</Text>

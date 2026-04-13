@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, DataRow, Text, DataRowContainer, DataRowTag } from "../../ui/primitives";
 import { useAgentsCtx } from "./AgentsProvider";
@@ -6,15 +6,13 @@ import { Agent } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import type { AgentResponseDto } from "@taico/client/v2";
-import { NewAgentPop } from "./NewAgentPop";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import "./AgentsPage.css";
 
 export function AgentsPage() {
-  const { agents, setSectionTitle, isLoading, error, createAgent } = useAgentsCtx();
+  const { agents, setSectionTitle, isLoading, error } = useAgentsCtx();
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
-  const [showNewAgentPop, setShowNewAgentPop] = useState(false);
 
   // Set document title (browser tab)
   useDocumentTitle();
@@ -46,33 +44,16 @@ export function AgentsPage() {
 
   if (agents.length === 0) {
     return (
-      <DataRowContainer>
-        <DataRow leading={<Avatar name="?" size="lg" />}>
-          <Text tone="muted">No agents found</Text>
-        </DataRow>
-      </DataRowContainer>
+      <>
+        <DataRowContainer>
+          <DataRow leading={<Avatar name="?" size="lg" />}>
+            <Text tone="muted">No agents found</Text>
+          </DataRow>
+        </DataRowContainer>
+        <NewAgentButton isDesktop={isDesktop} onClick={() => navigate('/agents/new')} />
+      </>
     );
   }
-
-  const handleNewAgentCancel = () => {
-    setShowNewAgentPop(false);
-  };
-
-  const handleNewAgentSave = async ({ name, slug }: { name: string; slug: string }): Promise<boolean> => {
-    try {
-      const agent = await createAgent({ name, slug });
-      if (agent) {
-        navigate(`/agents/agent/${agent.slug}`);
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error('Error creating agent');
-      console.error(error);
-      return false;
-    }
-  };
 
   return (
     <>
@@ -86,26 +67,28 @@ export function AgentsPage() {
         ))}
       </DataRowContainer>
 
-      <button
-        className={`agents-fab ${isDesktop ? 'agents-fab--desktop' : ''}`}
-        type="button"
-        onClick={() => setShowNewAgentPop(true)}
-        aria-label="Create new agent"
-      >
-        {isDesktop ? (
-          <>
-            <span className="agents-fab__plus">+</span>
-            <span className="agents-fab__label">New agent</span>
-          </>
-        ) : (
-          '+'
-        )}
-      </button>
-
-      {showNewAgentPop ? (
-        <NewAgentPop onCancel={handleNewAgentCancel} onSave={handleNewAgentSave} />
-      ) : null}
+      <NewAgentButton isDesktop={isDesktop} onClick={() => navigate('/agents/new')} />
     </>
+  );
+}
+
+function NewAgentButton({ isDesktop, onClick }: { isDesktop: boolean; onClick: () => void }) {
+  return (
+    <button
+      className={`agents-fab ${isDesktop ? 'agents-fab--desktop' : ''}`}
+      type="button"
+      onClick={onClick}
+      aria-label="Create new agent"
+    >
+      {isDesktop ? (
+        <>
+          <span className="agents-fab__plus">+</span>
+          <span className="agents-fab__label">New agent</span>
+        </>
+      ) : (
+        '+'
+      )}
+    </button>
   );
 }
 

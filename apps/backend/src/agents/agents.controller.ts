@@ -26,6 +26,7 @@ import { AgentListResponseDto } from './dto/agent-list-response.dto';
 import { ListAgentsQueryDto } from './dto/list-agents-query.dto';
 import { AgentParamsDto } from './dto/agent-params.dto';
 import { AgentActorParamsDto } from './dto/agent-actor-params.dto';
+import { AgentTemplateCatalogResponseDto } from './dto/agent-template-catalog-response.dto';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { AgentsScopes } from './agents.scopes';
@@ -84,6 +85,13 @@ export class AgentsController {
       limit: result.limit,
       totalPages: Math.ceil(result.total / result.limit),
     };
+  }
+
+  @Get('templates')
+  @ApiOperation({ summary: 'List available agent creation templates' })
+  @ApiOkResponse({ type: AgentTemplateCatalogResponseDto })
+  listAgentTemplates(): AgentTemplateCatalogResponseDto {
+    return this.agentsService.getTemplateCatalog();
   }
 
   @Get(':slug')

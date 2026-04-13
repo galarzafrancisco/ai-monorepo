@@ -4278,6 +4278,33 @@
         ]
       }
     },
+    "/api/v1/agents/templates": {
+      "get": {
+        "operationId": "AgentsController_listAgentTemplates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentTemplateCatalogResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "List available agent creation templates",
+        "tags": [
+          "Agent"
+        ]
+      }
+    },
     "/api/v1/agents/{slug}": {
       "get": {
         "operationId": "AgentsController_getAgentBySlug",
@@ -6857,17 +6884,37 @@
         ]
       }
     },
-    "/api/v1/onboarding/status": {
-      "get": {
-        "operationId": "OnboardingController_getStatus",
+    "/api/v1/walkthrough/acknowledge": {
+      "post": {
+        "operationId": "WalkthroughController_acknowledge",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Current onboarding progress and display mode",
+            "description": "Acknowledged"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Acknowledge walkthrough — transitions FULL_PAGE display mode to BANNER",
+        "tags": [
+          "Walkthrough"
+        ]
+      }
+    },
+    "/api/v1/walkthrough/status": {
+      "get": {
+        "operationId": "WalkthroughController_getStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current walkthrough progress and display mode",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserOnboardingStatusResponseDto"
+                  "$ref": "#/components/schemas/UserWalkthroughStatusResponseDto"
                 }
               }
             }
@@ -6878,9 +6925,9 @@
             "JWT-Cookie": []
           }
         ],
-        "summary": "Get onboarding status for the current user",
+        "summary": "Get walkthrough status for the current user",
         "tags": [
-          "Onboarding"
+          "Walkthrough"
         ]
       }
     }
@@ -10288,6 +10335,191 @@
           "totalPages"
         ]
       },
+      "AgentTemplateDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable template identifier.",
+            "example": "developer"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable template name.",
+            "example": "Developer"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short explanation of what this template configures.",
+            "example": "Picks up queued implementation tasks and brings them to review."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "claude",
+              "codex",
+              "opencode",
+              "adk",
+              "githubcopilot",
+              "other"
+            ],
+            "description": "Default harness type for this template.",
+            "example": "opencode"
+          },
+          "providerId": {
+            "type": "string",
+            "description": "Default provider ID for this template.",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Default model ID for this template.",
+            "example": "gpt-5.3-codex"
+          },
+          "systemPrompt": {
+            "type": "string",
+            "description": "Default system prompt for this template."
+          },
+          "agentDescription": {
+            "type": "string",
+            "description": "Default agent description."
+          },
+          "statusTriggers": {
+            "type": "array",
+            "description": "Default statuses that trigger the agent.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "NOT_STARTED",
+                "IN_PROGRESS",
+                "FOR_REVIEW",
+                "DONE"
+              ]
+            }
+          },
+          "tagTriggers": {
+            "description": "Default tag names that filter agent triggers.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Default avatar URL for this template.",
+            "example": "/icons/cockatoo.png"
+          },
+          "concurrencyLimit": {
+            "type": "number",
+            "description": "Default concurrency limit for this template.",
+            "example": 1
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "description",
+          "systemPrompt",
+          "statusTriggers",
+          "tagTriggers"
+        ]
+      },
+      "AgentTemplateModelOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable option identifier used by the UI.",
+            "example": "openai:gpt-5.3-codex"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable model option label.",
+            "example": "GPT-5.3 Codex"
+          },
+          "providerId": {
+            "type": "string",
+            "description": "Provider ID submitted when this option is selected.",
+            "example": "openai"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model ID submitted when this option is selected.",
+            "example": "gpt-5.3-codex"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether this represents the runtime default model.",
+            "example": false
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "isDefault"
+        ]
+      },
+      "AgentTemplateHarnessDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "claude",
+              "codex",
+              "opencode",
+              "adk",
+              "githubcopilot",
+              "other"
+            ],
+            "description": "Agent harness type.",
+            "example": "claude"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable harness name.",
+            "example": "Claude Code"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short explanation of when to use this harness.",
+            "example": "Run tasks through the Claude Code harness."
+          },
+          "modelOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentTemplateModelOptionDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "label",
+          "description",
+          "modelOptions"
+        ]
+      },
+      "AgentTemplateCatalogResponseDto": {
+        "type": "object",
+        "properties": {
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentTemplateDto"
+            }
+          },
+          "harnesses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentTemplateHarnessDto"
+            }
+          }
+        },
+        "required": [
+          "templates",
+          "harnesses"
+        ]
+      },
       "PatchAgentDto": {
         "type": "object",
         "properties": {
@@ -12301,7 +12533,7 @@
           "url"
         ]
       },
-      "UserOnboardingStatusResponseDto": {
+      "UserWalkthroughStatusResponseDto": {
         "type": "object",
         "properties": {
           "workerConfigured": {
@@ -12317,6 +12549,10 @@
             "example": true
           },
           "projectCreated": {
+            "type": "boolean",
+            "example": true
+          },
+          "projectConfigured": {
             "type": "boolean",
             "example": true
           },
@@ -12347,6 +12583,7 @@
           "agentCreated",
           "taskCreated",
           "projectCreated",
+          "projectConfigured",
           "contextBlockCreated",
           "threadConfigured",
           "taskWithProjectCreated",

@@ -1210,6 +1210,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available agent creation templates */
+        get: operations["AgentsController_listAgentTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agents/{slug}": {
         parameters: {
             query?: never;
@@ -1984,15 +2001,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/onboarding/status": {
+    "/api/v1/walkthrough/acknowledge": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get onboarding status for the current user */
-        get: operations["OnboardingController_getStatus"];
+        get?: never;
+        put?: never;
+        /** Acknowledge walkthrough — transitions FULL_PAGE display mode to BANNER */
+        post: operations["WalkthroughController_acknowledge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/walkthrough/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get walkthrough status for the current user */
+        get: operations["WalkthroughController_getStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4261,6 +4295,107 @@ export interface components {
              */
             totalPages: number;
         };
+        AgentTemplateDto: {
+            /**
+             * @description Stable template identifier.
+             * @example developer
+             */
+            id: string;
+            /**
+             * @description Human-readable template name.
+             * @example Developer
+             */
+            label: string;
+            /**
+             * @description Short explanation of what this template configures.
+             * @example Picks up queued implementation tasks and brings them to review.
+             */
+            description: string;
+            /**
+             * @description Default harness type for this template.
+             * @example opencode
+             * @enum {string}
+             */
+            type?: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
+            /**
+             * @description Default provider ID for this template.
+             * @example openai
+             */
+            providerId?: string;
+            /**
+             * @description Default model ID for this template.
+             * @example gpt-5.3-codex
+             */
+            modelId?: string;
+            /** @description Default system prompt for this template. */
+            systemPrompt: string;
+            /** @description Default agent description. */
+            agentDescription?: string;
+            /** @description Default statuses that trigger the agent. */
+            statusTriggers: ("NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE")[];
+            /** @description Default tag names that filter agent triggers. */
+            tagTriggers: string[];
+            /**
+             * @description Default avatar URL for this template.
+             * @example /icons/cockatoo.png
+             */
+            avatarUrl?: string;
+            /**
+             * @description Default concurrency limit for this template.
+             * @example 1
+             */
+            concurrencyLimit?: number;
+        };
+        AgentTemplateModelOptionDto: {
+            /**
+             * @description Stable option identifier used by the UI.
+             * @example openai:gpt-5.3-codex
+             */
+            id: string;
+            /**
+             * @description Human-readable model option label.
+             * @example GPT-5.3 Codex
+             */
+            label: string;
+            /**
+             * @description Provider ID submitted when this option is selected.
+             * @example openai
+             */
+            providerId?: string;
+            /**
+             * @description Model ID submitted when this option is selected.
+             * @example gpt-5.3-codex
+             */
+            modelId?: string;
+            /**
+             * @description Whether this represents the runtime default model.
+             * @example false
+             */
+            isDefault: boolean;
+        };
+        AgentTemplateHarnessDto: {
+            /**
+             * @description Agent harness type.
+             * @example claude
+             * @enum {string}
+             */
+            type: "claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other";
+            /**
+             * @description Human-readable harness name.
+             * @example Claude Code
+             */
+            label: string;
+            /**
+             * @description Short explanation of when to use this harness.
+             * @example Run tasks through the Claude Code harness.
+             */
+            description: string;
+            modelOptions: components["schemas"]["AgentTemplateModelOptionDto"][];
+        };
+        AgentTemplateCatalogResponseDto: {
+            templates: components["schemas"]["AgentTemplateDto"][];
+            harnesses: components["schemas"]["AgentTemplateHarnessDto"][];
+        };
         PatchAgentDto: {
             /**
              * @description Updated actor slug for the agent
@@ -5599,7 +5734,7 @@ export interface components {
              */
             url: string;
         };
-        UserOnboardingStatusResponseDto: {
+        UserWalkthroughStatusResponseDto: {
             /** @example true */
             workerConfigured: boolean;
             /** @example true */
@@ -5608,6 +5743,8 @@ export interface components {
             taskCreated: boolean;
             /** @example true */
             projectCreated: boolean;
+            /** @example true */
+            projectConfigured: boolean;
             /** @example true */
             contextBlockCreated: boolean;
             /** @example true */
@@ -8683,6 +8820,25 @@ export interface operations {
             };
         };
     };
+    AgentsController_listAgentTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentTemplateCatalogResponseDto"];
+                };
+            };
+        };
+    };
     AgentsController_getAgentBySlug: {
         parameters: {
             query?: never;
@@ -10383,7 +10539,7 @@ export interface operations {
             };
         };
     };
-    OnboardingController_getStatus: {
+    WalkthroughController_acknowledge: {
         parameters: {
             query?: never;
             header?: never;
@@ -10392,13 +10548,31 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Current onboarding progress and display mode */
+            /** @description Acknowledged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WalkthroughController_getStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current walkthrough progress and display mode */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserOnboardingStatusResponseDto"];
+                    "application/json": components["schemas"]["UserWalkthroughStatusResponseDto"];
                 };
             };
         };
