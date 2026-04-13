@@ -50,7 +50,7 @@ export function WalkthroughPage() {
       setIsLoading(true);
       setError(null);
       await WebAuthenticationService.webAuthControllerMarkWalkthroughSeen();
-      // Refresh auth state to update hasSeenWalkthrough flag
+      // Refresh auth state to update onboarding display mode
       await refreshAuth();
       navigate('/home', { replace: true });
     } catch (err) {

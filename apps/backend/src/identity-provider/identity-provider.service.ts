@@ -13,7 +13,7 @@ import {
 } from './dto/service/identity-provider.service.types';
 import { ActorService } from './actor.service';
 import { ActorEntity } from './actor.entity';
-import { ActorType, UserRole } from './enums';
+import { ActorType, OnboardingDisplayMode, UserRole } from './enums';
 import {
   InvalidCredentialsError,
   InvalidCurrentPasswordError,
@@ -71,6 +71,12 @@ export class IdentityProviderService {
   async getUserByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email, isActive: true },
+    });
+  }
+
+  async getUserByActorId(actorId: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { actorId, isActive: true },
     });
   }
 
@@ -242,7 +248,7 @@ export class IdentityProviderService {
       throw new UserNotFoundError(userId);
     }
 
-    user.hasSeenWalkthrough = true;
+    user.onboardingDisplayMode = OnboardingDisplayMode.OFF;
     await this.userRepository.save(user);
 
     this.logger.log(`Walkthrough marked as seen for user: ${user.email}`);

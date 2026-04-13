@@ -171,7 +171,7 @@ export interface UserResponseDto {
   displayName: string;
   role: 'admin' | 'standard';
   actorId: string;
-  hasSeenWalkthrough: boolean;
+  onboardingDisplayMode: 'FULL_PAGE' | 'BANNER' | 'OFF';
 }
 
 export interface LoginResponseDto {
@@ -1045,4 +1045,15 @@ export interface GlobalSearchResultDto {
   title: string;
   score: number;
   url: string;
+}
+
+export interface UserOnboardingStatusResponseDto {
+  workerConfigured: boolean;
+  agentCreated: boolean;
+  taskCreated: boolean;
+  projectCreated: boolean;
+  contextBlockCreated: boolean;
+  threadConfigured: boolean;
+  taskWithProjectCreated: boolean;
+  onboardingDisplayMode: 'FULL_PAGE' | 'BANNER' | 'OFF';
 }

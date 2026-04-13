@@ -6831,6 +6831,33 @@
           "Search"
         ]
       }
+    },
+    "/api/v1/onboarding/status": {
+      "get": {
+        "operationId": "OnboardingController_getStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current onboarding progress and display mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOnboardingStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get onboarding status for the current user",
+        "tags": [
+          "Onboarding"
+        ]
+      }
     }
   },
   "info": {
@@ -7725,10 +7752,15 @@
             "description": "Actor ID associated with this user",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
-          "hasSeenWalkthrough": {
-            "type": "boolean",
-            "description": "Whether the user has seen the walkthrough",
-            "example": false
+          "onboardingDisplayMode": {
+            "type": "string",
+            "description": "How onboarding UI should be shown for this user (full page, banner, or off)",
+            "enum": [
+              "FULL_PAGE",
+              "BANNER",
+              "OFF"
+            ],
+            "example": "FULL_PAGE"
           }
         },
         "required": [
@@ -7737,7 +7769,7 @@
           "displayName",
           "role",
           "actorId",
-          "hasSeenWalkthrough"
+          "onboardingDisplayMode"
         ]
       },
       "LoginResponseDto": {
@@ -12196,6 +12228,58 @@
           "title",
           "score",
           "url"
+        ]
+      },
+      "UserOnboardingStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "workerConfigured": {
+            "type": "boolean",
+            "example": true
+          },
+          "agentCreated": {
+            "type": "boolean",
+            "example": true
+          },
+          "taskCreated": {
+            "type": "boolean",
+            "example": true
+          },
+          "projectCreated": {
+            "type": "boolean",
+            "example": true
+          },
+          "contextBlockCreated": {
+            "type": "boolean",
+            "example": true
+          },
+          "threadConfigured": {
+            "type": "boolean",
+            "example": true
+          },
+          "taskWithProjectCreated": {
+            "type": "boolean",
+            "example": true
+          },
+          "onboardingDisplayMode": {
+            "type": "string",
+            "enum": [
+              "FULL_PAGE",
+              "BANNER",
+              "OFF"
+            ],
+            "example": "FULL_PAGE"
+          }
+        },
+        "required": [
+          "workerConfigured",
+          "agentCreated",
+          "taskCreated",
+          "projectCreated",
+          "contextBlockCreated",
+          "threadConfigured",
+          "taskWithProjectCreated",
+          "onboardingDisplayMode"
         ]
       }
     }

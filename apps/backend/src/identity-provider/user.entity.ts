@@ -1,4 +1,8 @@
 import {
+  OnboardingDisplayMode,
+} from './enums';
+
+import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
@@ -35,8 +39,12 @@ export class User {
   @Column({ type: 'varchar', default: 'standard' })
   role!: 'admin' | 'standard';
 
-  @Column({ default: false, name: 'has_seen_walkthrough' })
-  hasSeenWalkthrough!: boolean;
+  @Column({
+    type: 'varchar',
+    default: OnboardingDisplayMode.FULL_PAGE,
+    name: 'onboarding_display_mode',
+  })
+  onboardingDisplayMode!: OnboardingDisplayMode;
 
   @VersionColumn()
   rowVersion!: number;

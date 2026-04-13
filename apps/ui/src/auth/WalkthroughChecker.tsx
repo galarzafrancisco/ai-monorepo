@@ -19,7 +19,7 @@ export function WalkthroughChecker({ children }: { children: React.ReactNode }) 
   }
 
   // User hasn't seen walkthrough - redirect
-  if (!user.hasSeenWalkthrough) {
+  if (user.onboardingDisplayMode === 'FULL_PAGE') {
     return <Navigate to="/walkthrough" replace />;
   }
 

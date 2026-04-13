@@ -93,7 +93,7 @@ export class WebAuthController {
         displayName: actor.displayName,
         role: user.role,
         actorId: user.actorId,
-        hasSeenWalkthrough: user.hasSeenWalkthrough,
+        onboardingDisplayMode: user.onboardingDisplayMode,
       },
       expiresIn: expiresInSeconds,
     };
@@ -160,7 +160,7 @@ export class WebAuthController {
         displayName: actor.displayName,
         role: user.role,
         actorId: user.actorId,
-        hasSeenWalkthrough: user.hasSeenWalkthrough,
+        onboardingDisplayMode: user.onboardingDisplayMode,
       },
       expiresIn,
     };
@@ -249,7 +249,7 @@ export class WebAuthController {
       displayName: actor.displayName,
       role: actor.user.role,
       actorId: actor.user.actorId,
-      hasSeenWalkthrough: actor.user.hasSeenWalkthrough,
+      onboardingDisplayMode: actor.user.onboardingDisplayMode,
     };
   }
 
@@ -390,7 +390,7 @@ export class WebAuthController {
         displayName: actor.displayName,
         role: UserRole.ADMIN,
         actorId: user.actorId,
-        hasSeenWalkthrough: user.hasSeenWalkthrough,
+        onboardingDisplayMode: user.onboardingDisplayMode,
       },
       expiresIn: expiresInSeconds,
     };

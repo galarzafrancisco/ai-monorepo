@@ -138,6 +138,7 @@ export type { UpdateTaskDto } from './models/UpdateTaskDto.js';
 export type { UpdateThreadDto } from './models/UpdateThreadDto.js';
 export type { UpdateThreadStateDto } from './models/UpdateThreadStateDto.js';
 export type { UpsertAgentToolPermissionDto } from './models/UpsertAgentToolPermissionDto.js';
+export { UserOnboardingStatusResponseDto } from './models/UserOnboardingStatusResponseDto.js';
 export { UserResponseDto } from './models/UserResponseDto.js';
 
 export { ActorsService } from './services/ActorsService.js';
@@ -155,6 +156,7 @@ export { ExecutionsService } from './services/ExecutionsService.js';
 export { JwksService } from './services/JwksService.js';
 export { MetaService } from './services/MetaService.js';
 export { MetaProjectsService } from './services/MetaProjectsService.js';
+export { OnboardingService } from './services/OnboardingService.js';
 export { ScheduledTasksService } from './services/ScheduledTasksService.js';
 export { SearchService } from './services/SearchService.js';
 export { SecretsService } from './services/SecretsService.js';

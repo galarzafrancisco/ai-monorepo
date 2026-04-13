@@ -24,9 +24,9 @@ export type UserResponseDto = {
      */
     actorId: string;
     /**
-     * Whether the user has seen the walkthrough
+     * How onboarding UI should be shown for this user (full page, banner, or off)
      */
-    hasSeenWalkthrough: boolean;
+    onboardingDisplayMode: UserResponseDto.onboardingDisplayMode;
 };
 export namespace UserResponseDto {
     /**
@@ -35,6 +35,14 @@ export namespace UserResponseDto {
     export enum role {
         ADMIN = 'admin',
         STANDARD = 'standard',
+    }
+    /**
+     * How onboarding UI should be shown for this user (full page, banner, or off)
+     */
+    export enum onboardingDisplayMode {
+        FULL_PAGE = 'FULL_PAGE',
+        BANNER = 'BANNER',
+        OFF = 'OFF',
     }
 }
 

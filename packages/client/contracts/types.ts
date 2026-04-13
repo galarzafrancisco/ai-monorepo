@@ -1967,6 +1967,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/onboarding/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get onboarding status for the current user */
+        get: operations["OnboardingController_getStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2578,10 +2595,11 @@ export interface components {
              */
             actorId: string;
             /**
-             * @description Whether the user has seen the walkthrough
-             * @example false
+             * @description How onboarding UI should be shown for this user (full page, banner, or off)
+             * @example FULL_PAGE
+             * @enum {string}
              */
-            hasSeenWalkthrough: boolean;
+            onboardingDisplayMode: "FULL_PAGE" | "BANNER" | "OFF";
         };
         LoginResponseDto: {
             /** @description Authenticated user information */
@@ -5551,6 +5569,27 @@ export interface components {
              * @example /tasks/task/ba1cffdd-6c42-4cfc-ab00-ba1cf934fb81
              */
             url: string;
+        };
+        UserOnboardingStatusResponseDto: {
+            /** @example true */
+            workerConfigured: boolean;
+            /** @example true */
+            agentCreated: boolean;
+            /** @example true */
+            taskCreated: boolean;
+            /** @example true */
+            projectCreated: boolean;
+            /** @example true */
+            contextBlockCreated: boolean;
+            /** @example true */
+            threadConfigured: boolean;
+            /** @example true */
+            taskWithProjectCreated: boolean;
+            /**
+             * @example FULL_PAGE
+             * @enum {string}
+             */
+            onboardingDisplayMode: "FULL_PAGE" | "BANNER" | "OFF";
         };
     };
     responses: never;
@@ -10291,6 +10330,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GlobalSearchResultDto"][];
+                };
+            };
+        };
+    };
+    OnboardingController_getStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current onboarding progress and display mode */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOnboardingStatusResponseDto"];
                 };
             };
         };

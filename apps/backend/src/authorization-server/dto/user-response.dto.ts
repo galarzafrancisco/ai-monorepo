@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { OnboardingDisplayMode } from 'src/identity-provider/enums';
 
 export class UserResponseDto {
   @ApiProperty({
@@ -33,8 +34,10 @@ export class UserResponseDto {
   actorId!: string;
 
   @ApiProperty({
-    description: 'Whether the user has seen the walkthrough',
-    example: false,
+    description:
+      'How onboarding UI should be shown for this user (full page, banner, or off)',
+    enum: OnboardingDisplayMode,
+    example: OnboardingDisplayMode.FULL_PAGE,
   })
-  hasSeenWalkthrough!: boolean;
+  onboardingDisplayMode!: OnboardingDisplayMode;
 }
