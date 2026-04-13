@@ -22,6 +22,10 @@ export class WsAccessTokenGuard implements CanActivate {
     this.logger.log('WsAccessTokenGuard: canActivate called');
 
     const client = context.switchToWs().getClient<Socket>();
+    if (client.data.auth) {
+      return true;
+    }
+
     const handshake = client.handshake;
 
     // 1) Extract token
@@ -30,13 +34,13 @@ export class WsAccessTokenGuard implements CanActivate {
       tokenFromHeaders(handshake.headers) ||
       tokenFromCookies(cookie.parse(handshake.headers.cookie || ''));
 
-    this.logger.log(
-      `Extracted WS token: ${token.replace(/(.{4}).+(.{4})/, '$1...$2')}`,
-    );
     if (!token) {
       client.disconnect(true);
       return false;
     }
+    this.logger.log(
+      `Extracted WS token: ${token.replace(/(.{4}).+(.{4})/, '$1...$2')}`,
+    );
 
     // 2) Validate
     let claims: AccessTokenClaims;

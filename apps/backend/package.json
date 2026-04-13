@@ -1,6 +1,6 @@
 {
   "name": "@taico/taico",
-  "version": "0.2.0",
+  "version": "0.2.9",
   "private": false,
   "license": "MIT",
   "main": "./dist/main.js",
@@ -61,7 +61,7 @@
     "@opencode-ai/sdk": "^1.1.28",
     "@taico/adk-session-store": "^0.1.0",
     "@taico/errors": "^0.2.8",
-    "@taico/events": "^0.2.8",
+    "@taico/events": "^0.2.9",
     "@taico/shared": "^0.2.8",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",

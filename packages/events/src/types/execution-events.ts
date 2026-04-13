@@ -22,6 +22,8 @@ export const ExecutionWireEvents = {
   EXECUTION_ACTIVITY: 'execution.activity',
   EXECUTION_ACTIVITY_POST: 'execution.activity.post',
   EXECUTION_HEARTBEAT_POST: 'execution.heartbeat.post',
+  WORKER_HEARTBEAT_POST: 'worker.heartbeat.post',
+  WORKER_HARNESSES_REPORT_REQUESTED: 'worker.harnesses.report.requested',
 } as const;
 
 export type ExecutionWireEventName =

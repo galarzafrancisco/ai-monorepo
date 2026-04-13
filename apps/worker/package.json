@@ -1,6 +1,6 @@
 {
   "name": "@taico/worker",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "type": "module",
   "private": false,
   "license": "MIT",
@@ -36,7 +36,7 @@
     "@google/adk": "^0.2.4",
     "@opencode-ai/sdk": "^1.1.28",
     "@taico/client": "^0.2.8",
-    "@taico/events": "^0.2.8",
+    "@taico/events": "^0.2.9",
     "@taico/shared": "^0.2.8",
     "socket.io-client": "^4.8.1"
   },

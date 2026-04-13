@@ -2,22 +2,13 @@ import { io, Socket } from 'socket.io-client';
 import {
   ExecutionWireEvents,
   type PostExecutionActivityPayload,
+  type PostExecutionHeartbeatPayload,
 } from '@taico/events';
 import { WorkerAuth } from './auth/worker-auth.js';
 
 const DEFAULT_TOKEN_REFRESH_SKEW_MS = 60_000;
 const ACK_TIMEOUT_MS = 5_000;
-const EXECUTION_HEARTBEAT_POST_EVENT = 'execution.heartbeat.post';
-const WORKER_HEARTBEAT_POST_EVENT = 'worker.heartbeat.post';
 const WORKER_HEARTBEAT_INTERVAL_MS = 30_000;
-
-type PostExecutionHeartbeatPayload = {
-  executionId: string;
-};
-
-type PostWorkerHeartbeatPayload = {
-  ts: number;
-};
 
 type ActivityAck = {
   ok: boolean;
@@ -94,26 +85,20 @@ export class ExecutionActivityGatewayClient {
     payload: PostExecutionHeartbeatPayload,
   ): Promise<boolean> {
     return this.emitWithAck(
-      EXECUTION_HEARTBEAT_POST_EVENT,
+      ExecutionWireEvents.EXECUTION_HEARTBEAT_POST,
       payload,
     );
   }
 
-  async publishWorkerHeartbeat(
-    payload: PostWorkerHeartbeatPayload,
-  ): Promise<boolean> {
+  async publishWorkerHeartbeat(): Promise<boolean> {
     return this.emitWithAck(
-      WORKER_HEARTBEAT_POST_EVENT,
-      payload,
+      ExecutionWireEvents.WORKER_HEARTBEAT_POST,
     );
   }
 
   private async emitWithAck(
     eventName: string,
-    payload:
-      | PostExecutionActivityPayload
-      | PostExecutionHeartbeatPayload
-      | PostWorkerHeartbeatPayload,
+    payload?: PostExecutionActivityPayload | PostExecutionHeartbeatPayload,
   ): Promise<boolean> {
     if (!this.socket || !this.socket.connected) {
       if (this.options.debug) {
@@ -135,23 +120,26 @@ export class ExecutionActivityGatewayClient {
         resolve(false);
       }, ACK_TIMEOUT_MS);
 
-      this.socket!.emit(
-        eventName,
-        payload,
-        (ack?: ActivityAck) => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          clearTimeout(timeout);
+      const handleAck = (ack?: ActivityAck) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timeout);
 
-          if (this.options.debug) {
-            console.log(`[execution-activity] ${eventName} ack:`, ack);
-          }
+        if (this.options.debug) {
+          console.log(`[execution-activity] ${eventName} ack:`, ack);
+        }
 
-          resolve(Boolean(ack?.ok));
-        },
-      );
+        resolve(Boolean(ack?.ok));
+      };
+
+      if (payload === undefined) {
+        this.socket!.emit(eventName, handleAck);
+        return;
+      }
+
+      this.socket!.emit(eventName, payload, handleAck);
     });
   }
 
@@ -219,6 +207,10 @@ export class ExecutionActivityGatewayClient {
       }
     });
 
+    this.socket.on(ExecutionWireEvents.WORKER_HARNESSES_REPORT_REQUESTED, () => {
+      this.handleHarnessesReportRequested();
+    });
+
     this.socket.on('connect_error', (err: Error) => {
       this.reconnectAttempts++;
       console.error(
@@ -235,6 +227,11 @@ export class ExecutionActivityGatewayClient {
         void this.reconnectWithFreshToken(true);
       }
     });
+  }
+
+  private handleHarnessesReportRequested(): void {
+    console.log('[execution-activity] worker harnesses report requested');
+    // TODO: Check which harnesses and models are available, then report them via REST.
   }
 
   private scheduleTokenRefresh(expiresAtIso: string): void {
@@ -269,7 +266,7 @@ export class ExecutionActivityGatewayClient {
   private startWorkerHeartbeatTimer(): void {
     this.clearWorkerHeartbeatTimer();
     this.workerHeartbeatTimer = setInterval(() => {
-      void this.publishWorkerHeartbeat({ ts: Date.now() });
+      void this.publishWorkerHeartbeat();
     }, WORKER_HEARTBEAT_INTERVAL_MS);
   }
 
