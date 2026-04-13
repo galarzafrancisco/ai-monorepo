@@ -1,0 +1,85 @@
+.settings-workers__error-card {
+  background-color: var(--color-background-error, #fee);
+  border: 1px solid var(--color-border-error, #fcc);
+}
+
+.settings-workers__command-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: var(--color-surface-secondary, #f5f5f5);
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border, #e0e0e0);
+}
+
+.settings-workers__command {
+  flex: 1;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  color: var(--color-text-primary, #1a1a1a);
+  word-break: break-all;
+}
+
+.settings-workers__copy-button {
+  padding: 0.375rem 0.75rem;
+  background-color: var(--color-primary, #007bff);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.settings-workers__copy-button:hover {
+  background-color: var(--color-primary-hover, #0056b3);
+}
+
+.settings-workers__copy-button:active {
+  transform: scale(0.98);
+}
+
+.settings-workers__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.settings-workers__status-indicator {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.settings-workers__status-indicator--connected {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.settings-workers__status-indicator--disconnected {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.settings-workers__harnesses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.settings-workers__harness-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--color-surface-tertiary, #e5e5e5);
+  border: 1px solid var(--color-border, #d0d0d0);
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  color: var(--color-text-secondary, #666);
+}

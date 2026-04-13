@@ -1,6 +1,14 @@
 import { Scope } from 'src/auth/core/types/scope.type';
 
 export const WorkersScopes = {
+  READ: {
+    id: 'workers:read',
+    description: 'Read workers',
+  },
+  WRITE: {
+    id: 'workers:write',
+    description: 'Manage workers',
+  },
   CONNECT: {
     id: 'workers:connect',
     description:

@@ -46,3 +46,10 @@ export const BFF_BASE_URL = getBFFBaseUrl();
  */
 OpenAPI.BASE = BFF_BASE_URL;
 OpenAPI.CREDENTIALS = 'include';
+
+/**
+ * API configuration object for use in fetch calls and WebSocket connections
+ */
+export const apiConfig = {
+  apiUrl: BFF_BASE_URL,
+};
