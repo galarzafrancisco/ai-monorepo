@@ -21,7 +21,7 @@ export function SettingsWorkersPage() {
     const lastSeen = new Date(lastSeenAt);
     const now = new Date();
     const diffMs = now.getTime() - lastSeen.getTime();
-    const fiveMinutesMs = 5 * 60 * 1000;
+    const fiveMinutesMs = 2 * 60 * 1000;
     return diffMs <= fiveMinutesMs;
   };
 
