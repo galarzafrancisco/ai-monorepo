@@ -1,6 +1,6 @@
 {
   "name": "@taico/ui-v1",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
     "lint": "echo \"No linter configured yet\" && exit 0"
   },
   "dependencies": {
-    "@taico/client": "*",
+    "@taico/client": "^0.2.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^9.1.0",
