@@ -3,7 +3,7 @@ import { ApiClient } from '@taico/client/v2';
 import { pickTask } from './task-picker.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 
-const QUEUE_POLL_INTERVAL_MS = 10_000;
+const QUEUE_POLL_INTERVAL_MS = 60_000;
 
 export async function runTaskClaimWorker(
   client: ApiClient,
