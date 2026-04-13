@@ -41,7 +41,7 @@ export function SettingsWorkersPage() {
 
       {error && (
         <Card padding="5" className="settings-workers__error-card">
-          <Text tone="danger">Error: {error}</Text>
+          <Text>Error: {error}</Text>
         </Card>
       )}
 
