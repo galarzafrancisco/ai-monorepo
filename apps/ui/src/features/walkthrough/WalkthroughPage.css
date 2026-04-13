@@ -1,0 +1,125 @@
+.walkthrough-page {
+  padding: var(--space-6);
+}
+
+.walkthrough-page-inner {
+  /* no max-width — fills the shell content area */
+}
+
+/* ── Subway map track ── */
+
+.walkthrough-track {
+  display: flex;
+  flex-direction: column;
+}
+
+.walkthrough-step {
+  display: flex;
+  align-items: stretch; /* rail stretches to full body height */
+  gap: var(--space-3);
+}
+
+.walkthrough-step-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 20px;
+}
+
+.walkthrough-step-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.walkthrough-step-dot--completed {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--text-inverse);
+}
+
+.walkthrough-step-dot--current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.walkthrough-step-connector {
+  width: 2px;
+  flex-grow: 1;
+  min-height: 12px;
+  background: var(--border-subtle);
+  margin: 3px 0;
+}
+
+.walkthrough-step-connector--completed {
+  background: var(--success);
+  opacity: 0.4;
+}
+
+.walkthrough-step-body {
+  padding-top: 1px;
+  padding-bottom: var(--space-4);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Clickable header row */
+.walkthrough-step-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Completed label */
+.walkthrough-label-done {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+/* Expanded detail panel */
+.walkthrough-step-detail {
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.walkthrough-step-description {
+  line-height: var(--lh-relaxed);
+}
+
+/* "Go →" button — outlined, fills accent on hover */
+.walkthrough-step-cta {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-2);
+  color: var(--accent);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+  font-family: var(--font-sans);
+  transition: background 0.15s, color 0.15s;
+}
+
+.walkthrough-step-cta:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}

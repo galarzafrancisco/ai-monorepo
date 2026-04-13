@@ -8,8 +8,8 @@ import { ProjectEntity } from '../meta/project.entity';
 import { TaskEntity } from '../tasks/task.entity';
 import { ThreadEntity } from '../threads/thread.entity';
 import { WorkerEntity } from '../workers/worker.entity';
-import { OnboardingController } from './onboarding.controller';
-import { OnboardingService } from './onboarding.service';
+import { WalkthroughController } from './walkthrough.controller';
+import { WalkthroughService } from './walkthrough.service';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { OnboardingService } from './onboarding.service';
     ]),
     AuthGuardsModule,
   ],
-  controllers: [OnboardingController],
-  providers: [OnboardingService],
+  controllers: [WalkthroughController],
+  providers: [WalkthroughService],
 })
-export class OnboardingModule {}
+export class WalkthroughModule {}

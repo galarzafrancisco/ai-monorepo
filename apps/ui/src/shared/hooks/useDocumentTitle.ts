@@ -66,6 +66,10 @@ export function useDocumentTitle(routeData?: RouteData) {
     else if (path.startsWith('/runs') || path.startsWith('/executions')) {
       title = '⚡ runs';
     }
+    // Walkthrough
+    else if (path.startsWith('/walkthrough')) {
+      title = '🐣 walkthrough';
+    }
 
     document.title = title;
   }, [location.pathname, routeData]);

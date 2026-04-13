@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { ThemeProvider } from './providers';
-import { AuthProvider, LoginPage, OnboardingPage, WalkthroughPage, ProtectedRoute, WalkthroughChecker } from '../auth';
+import { AuthProvider, LoginPage, OnboardingPage, ProtectedRoute, useAuth } from '../auth';
 import { OnboardingChecker } from '../auth/OnboardingChecker';
 import { BetaShell } from './shells/BetaShell';
+import { WalkthroughService } from '../features/walkthrough/api';
 import { HomeRoutes } from '../features/home/HomeRoutes';
 import { BASE_PATH } from '../shared/const/base';
 import './App.css';
@@ -17,6 +19,33 @@ import { ExecutionsRoutes } from '../features/executions/ExecutionsRoutes';
 import { ActorsProvider } from '../features/actors';
 import { ToastProvider } from '../shared/context/ToastContext';
 import { ToastContainer, CommandPaletteProvider } from '../ui/components';
+
+/**
+ * Redirects to /walkthrough during render if the user's display mode is FULL_PAGE,
+ * then fires the acknowledge call in an effect to downgrade the mode to BANNER.
+ * Using <Navigate> in render (not useEffect) ensures the redirect wins over any
+ * competing navigations in child components (e.g. the index → /home redirect).
+ */
+function WalkthroughGate({ children }: { children: React.ReactNode }) {
+  const { user, refreshAuth } = useAuth();
+  const acknowledgedRef = useRef(false);
+
+  useEffect(() => {
+    if (acknowledgedRef.current || !user) return;
+    if (user.onboardingDisplayMode === 'FULL_PAGE') {
+      acknowledgedRef.current = true;
+      WalkthroughService.WalkthroughController_acknowledge()
+        .then(() => refreshAuth())
+        .catch(console.error);
+    }
+  }, [user, refreshAuth]);
+
+  if (!acknowledgedRef.current && user?.onboardingDisplayMode === 'FULL_PAGE') {
+    return <Navigate to="/walkthrough" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 function BetaAppRoutes() {
   return (
@@ -58,20 +87,15 @@ export function App() {
                       <LoginPage />
                     </OnboardingChecker>
                   } />
-                  <Route path="/walkthrough" element={
-                    <ProtectedRoute>
-                      <WalkthroughPage />
-                    </ProtectedRoute>
-                  } />
                   <Route
                     path='*'
                     element={
                       <ProtectedRoute>
-                        <WalkthroughChecker>
+                        <WalkthroughGate>
                           <BetaShell>
                             <BetaAppRoutes />
                           </BetaShell>
-                        </WalkthroughChecker>
+                        </WalkthroughGate>
                       </ProtectedRoute>
                     }
                   />

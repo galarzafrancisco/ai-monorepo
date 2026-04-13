@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OnboardingDisplayMode } from '../../identity-provider/enums';
 
-export class UserOnboardingStatusResponseDto {
+export class UserWalkthroughStatusResponseDto {
   @ApiProperty({ example: true })
   workerConfigured!: boolean;
 
@@ -13,6 +13,9 @@ export class UserOnboardingStatusResponseDto {
 
   @ApiProperty({ example: true })
   projectCreated!: boolean;
+
+  @ApiProperty({ example: true })
+  projectConfigured!: boolean;
 
   @ApiProperty({ example: true })
   contextBlockCreated!: boolean;

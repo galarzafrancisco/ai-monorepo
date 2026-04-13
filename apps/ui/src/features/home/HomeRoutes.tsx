@@ -9,6 +9,7 @@ import { SettingsProjectsPage } from "./SettingsProjectsPage";
 import { SettingsChatPage } from "./SettingsChatPage";
 import { SettingsDataPage } from './SettingsDataPage';
 import { SettingsWorkersPage } from './SettingsWorkersPage';
+import { WalkthroughPage } from '../walkthrough/WalkthroughPage';
 
 export function HomeRoutes() {
   return (
@@ -23,6 +24,7 @@ export function HomeRoutes() {
           <Route path="/settings/chat" element={<SettingsChatPage />} />
           <Route path="/settings/workers" element={<SettingsWorkersPage />} />
           <Route path="/settings/data" element={<SettingsDataPage />} />
+          <Route path="/walkthrough" element={<WalkthroughPage />} />
         </Route>
       </Routes>
     </HomeProvider>

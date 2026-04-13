@@ -23,7 +23,7 @@ import { TaskBlueprintsResource } from './task-blueprints-resource.js';
 import { ScheduledTasksResource } from './scheduled-tasks-resource.js';
 import { DiscoveryResource } from './discovery-resource.js';
 import { SearchResource } from './search-resource.js';
-import { OnboardingResource } from './onboarding-resource.js';
+import { WalkthroughResource } from './walkthrough-resource.js';
 
 export class ApiClient {
   public readonly app: AppResource;
@@ -50,7 +50,7 @@ export class ApiClient {
   public readonly scheduledTasks: ScheduledTasksResource;
   public readonly discovery: DiscoveryResource;
   public readonly search: SearchResource;
-  public readonly onboarding: OnboardingResource;
+  public readonly walkthrough: WalkthroughResource;
 
   constructor(config: ClientConfig) {
     this.app = new AppResource(config);
@@ -77,6 +77,6 @@ export class ApiClient {
     this.scheduledTasks = new ScheduledTasksResource(config);
     this.discovery = new DiscoveryResource(config);
     this.search = new SearchResource(config);
-    this.onboarding = new OnboardingResource(config);
+    this.walkthrough = new WalkthroughResource(config);
   }
 }

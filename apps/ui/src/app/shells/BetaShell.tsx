@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useIsDesktop } from "../hooks/useIsDesktop";
 import './BetaShellMobile.css';
 import './BetaShellDesktop.css';
@@ -6,12 +6,28 @@ import { Stack } from "../../ui/primitives";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { Link, useLocation } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
+import { useAuth } from "../../auth/AuthContext";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
   console.log('Beta shell');
 
+  const { user } = useAuth();
   const location = useLocation();
   useDocumentTitle();
+
+  const navItems = useMemo(() => {
+    const showWalkthrough =
+      user?.onboardingDisplayMode === 'FULL_PAGE' ||
+      user?.onboardingDisplayMode === 'BANNER';
+
+    if (!showWalkthrough) return MAIN_NAVEGATION_ITEMS;
+
+    // Insert walkthrough before Settings
+    const settingsIndex = MAIN_NAVEGATION_ITEMS.findIndex((i) => i.path === '/settings');
+    const items = [...MAIN_NAVEGATION_ITEMS];
+    items.splice(settingsIndex, 0, { path: '/walkthrough', label: 'Walkthrough', icon: '🐣' });
+    return items;
+  }, [user?.onboardingDisplayMode]);
 
   // Detect destkop / mobile
   const isDesktop = useIsDesktop();
@@ -37,7 +53,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
           <nav className='beta-shell__desktop__nav'>
             <div className="beta-shell__desktop__navInner">
               <Stack spacing="1">
-                {MAIN_NAVEGATION_ITEMS.map(item => {
+                {navItems.map(item => {
                   const isActive = location.pathname.startsWith(item.path);
                   return (
                     <Link

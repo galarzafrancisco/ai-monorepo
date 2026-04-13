@@ -188,6 +188,25 @@ export function SettingsPage() {
           </Row>
         </Stack>
       </Card>
+
+      <Card padding="5">
+        <Stack spacing="3">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">Setup walkthrough</Text>
+            <Text tone="muted">Step-by-step guide to configuring Taico</Text>
+          </Stack>
+          <Row justify="space-between" align="center">
+            <Text size="2" tone="muted">Review setup steps and track your progress</Text>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/walkthrough')}
+            >
+              Open walkthrough
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
     </Stack>
   );
 }

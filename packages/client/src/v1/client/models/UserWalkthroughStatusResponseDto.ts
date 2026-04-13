@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type UserOnboardingStatusResponseDto = {
+export type UserWalkthroughStatusResponseDto = {
     workerConfigured: boolean;
     agentCreated: boolean;
     taskCreated: boolean;
@@ -10,9 +10,9 @@ export type UserOnboardingStatusResponseDto = {
     contextBlockCreated: boolean;
     threadConfigured: boolean;
     taskWithProjectCreated: boolean;
-    onboardingDisplayMode: UserOnboardingStatusResponseDto.onboardingDisplayMode;
+    onboardingDisplayMode: UserWalkthroughStatusResponseDto.onboardingDisplayMode;
 };
-export namespace UserOnboardingStatusResponseDto {
+export namespace UserWalkthroughStatusResponseDto {
     export enum onboardingDisplayMode {
         FULL_PAGE = 'FULL_PAGE',
         BANNER = 'BANNER',

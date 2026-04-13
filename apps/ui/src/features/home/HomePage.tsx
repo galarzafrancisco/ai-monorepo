@@ -4,8 +4,87 @@ import { Button, Card, Chip, ListRow, Row, Stack, Text } from "../../ui/primitiv
 import { useHomeCtx } from "./HomeProvider";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { SearchService } from "./search-api";
+import { useAuth } from "../../auth/AuthContext";
+import { useWalkthrough } from "../walkthrough/useWalkthrough";
+import { WebAuthenticationService } from "../../auth/api";
 import type { GlobalSearchResultDto } from "@taico/client/v2";
 import "./HomePage.css";
+
+function WalkthroughBanner() {
+  const { user, refreshAuth } = useAuth();
+  const { status } = useWalkthrough();
+  const navigate = useNavigate();
+  const [dismissed, setDismissed] = useState(false);
+  const [isAllSetLoading, setIsAllSetLoading] = useState(false);
+
+  if (user?.onboardingDisplayMode !== 'BANNER' || dismissed) return null;
+
+  const completedCount = status?.completedCount ?? 0;
+  const totalCount = status?.totalCount ?? 7;
+  const remaining = totalCount - completedCount;
+
+  const handleCardClick = () => navigate('/walkthrough');
+
+  const handleNotNow = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDismissed(true);
+  };
+
+  const handleAllSet = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      setIsAllSetLoading(true);
+      await WebAuthenticationService.webAuthControllerMarkWalkthroughSeen();
+      await refreshAuth();
+    } catch (err) {
+      console.error('Failed to hide walkthrough:', err);
+      setIsAllSetLoading(false);
+    }
+  };
+
+  return (
+    <div className="home-walkthrough-wrap">
+      <div
+        className="home-walkthrough-card"
+        onClick={handleCardClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && handleCardClick()}
+      >
+        <div className="home-walkthrough-dots" aria-hidden="true">
+          {Array.from({ length: totalCount }).map((_, i) => (
+            <span
+              key={i}
+              className={`home-walkthrough-dot${i < completedCount ? ' home-walkthrough-dot--done' : ''}`}
+            />
+          ))}
+        </div>
+
+        <div className="home-walkthrough-body">
+          <Text size="2" weight="semibold">
+            {remaining === 0 ? 'Setup complete!' : `${remaining} step${remaining === 1 ? '' : 's'} to go`}
+          </Text>
+          <Text size="1" tone="muted">
+            {completedCount} of {totalCount} setup steps completed · Click to continue
+          </Text>
+        </div>
+
+        <div className="home-walkthrough-actions">
+          <button className="home-walkthrough-not-now" onClick={handleNotNow}>
+            Not now
+          </button>
+          <button
+            className="home-walkthrough-all-set"
+            onClick={handleAllSet}
+            disabled={isAllSetLoading}
+          >
+            {isAllSetLoading ? '…' : "I'm all set"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -134,6 +213,8 @@ export function HomePage() {
   };
 
   return (
+    <div className="home-page">
+      <WalkthroughBanner />
     <div className="home-page-search">
       <div className="home-search-container">
         <Stack spacing="6" align="center">
@@ -233,6 +314,7 @@ export function HomePage() {
           </Row>
         </Stack>
       </div>
+    </div>
     </div>
   );
 }

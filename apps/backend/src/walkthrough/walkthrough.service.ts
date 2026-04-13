@@ -5,16 +5,18 @@ import { AgentEntity } from '../agents/agent.entity';
 import { ContextBlockEntity } from '../context/block.entity';
 import { User } from '../identity-provider/user.entity';
 import { UserNotFoundError } from '../identity-provider/errors/identity-provider.errors';
+import { OnboardingDisplayMode } from '../identity-provider/enums';
 import { ProjectEntity } from '../meta/project.entity';
 import { TaskEntity } from '../tasks/task.entity';
 import { ThreadEntity } from '../threads/thread.entity';
 import { WorkerEntity } from '../workers/worker.entity';
 
-export type OnboardingStatusResult = {
+export type WalkthroughStatusResult = {
   workerConfigured: boolean;
   agentCreated: boolean;
   taskCreated: boolean;
   projectCreated: boolean;
+  projectConfigured: boolean;
   contextBlockCreated: boolean;
   threadConfigured: boolean;
   taskWithProjectCreated: boolean;
@@ -22,7 +24,7 @@ export type OnboardingStatusResult = {
 };
 
 @Injectable()
-export class OnboardingService {
+export class WalkthroughService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
@@ -40,7 +42,21 @@ export class OnboardingService {
     private readonly threadsRepository: Repository<ThreadEntity>,
   ) {}
 
-  async getStatusForActor(actorId: string): Promise<OnboardingStatusResult> {
+  async acknowledgeForActor(actorId: string): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { actorId } });
+    if (!user) {
+      throw new UserNotFoundError(actorId);
+    }
+    if (
+      user.onboardingDisplayMode === OnboardingDisplayMode.FULL_PAGE ||
+      user.onboardingDisplayMode === OnboardingDisplayMode.OFF
+    ) {
+      user.onboardingDisplayMode = OnboardingDisplayMode.BANNER;
+      await this.usersRepository.save(user);
+    }
+  }
+
+  async getStatusForActor(actorId: string): Promise<WalkthroughStatusResult> {
     const user = await this.usersRepository.findOne({ where: { actorId } });
 
     if (!user) {
@@ -52,6 +68,7 @@ export class OnboardingService {
       agentCreated,
       taskCreated,
       projectCreated,
+      projectConfigured,
       contextBlockCreated,
       threadConfigured,
       taskWithProjectCreated,
@@ -60,6 +77,10 @@ export class OnboardingService {
       this.agentsRepository.existsBy({}),
       this.tasksRepository.existsBy({ createdByActorId: actorId }),
       this.projectsRepository.existsBy({}),
+      this.projectsRepository
+        .createQueryBuilder('p')
+        .where('p.repoUrl IS NOT NULL')
+        .getExists(),
       this.contextBlocksRepository.existsBy({ createdByActorId: actorId }),
       this.threadsRepository.existsBy({ createdByActorId: actorId }),
       this.tasksRepository
@@ -75,6 +96,7 @@ export class OnboardingService {
       agentCreated,
       taskCreated,
       projectCreated,
+      projectConfigured,
       contextBlockCreated,
       threadConfigured,
       taskWithProjectCreated,

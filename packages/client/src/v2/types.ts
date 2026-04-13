@@ -1056,11 +1056,12 @@ export interface GlobalSearchResultDto {
   url: string;
 }
 
-export interface UserOnboardingStatusResponseDto {
+export interface UserWalkthroughStatusResponseDto {
   workerConfigured: boolean;
   agentCreated: boolean;
   taskCreated: boolean;
   projectCreated: boolean;
+  projectConfigured: boolean;
   contextBlockCreated: boolean;
   threadConfigured: boolean;
   taskWithProjectCreated: boolean;

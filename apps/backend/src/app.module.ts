@@ -47,7 +47,7 @@ import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
-import { OnboardingModule } from './onboarding/onboarding.module';
+import { WalkthroughModule } from './walkthrough/walkthrough.module';
 
 @Module({
   imports: [
@@ -104,7 +104,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
     ExecutionsModule,
     WorkersModule,
     GlobalSearchModule,
-    OnboardingModule,
+    WalkthroughModule,
   ],
   controllers: [AppController],
   providers: [AppService],
