@@ -2,7 +2,7 @@
 
 IMAGE=ghcr.io/galarzafrancisco/ai-monorepo:main-ce7c419
 
-PORT=1234                    # Port where the server will be accessible
+PORT=9999                    # Port where the server will be accessible
 CONTAINER_NAME=taico         # Name for the Docker container
 DATABASE_PATH=$(pwd)/data    # Path to the local directory for database storage
 
