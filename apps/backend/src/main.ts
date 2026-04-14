@@ -47,7 +47,7 @@ async function bootstrap() {
 
   SwaggerModule.setup('api/v1/docs', app, document);
 
-  app.use('/launch', launchScriptHandler);
+  app.use('/launch', createLaunchScriptHandler(getConfig().appVersion));
 
   // Serve static files from the UI build (in production)
   const staticPath = join(__dirname, 'public');
@@ -173,13 +173,13 @@ function readCliOption(args: string[], name: string): string | null {
   return args[index + 1] ?? null;
 }
 
-function launchScriptHandler(req: Request, res: Response) {
-  console.log("ASD");
-  const launchScript = `#!/bin/bash
+function createLaunchScriptHandler(appVersion: string) {
+  return (_req: Request, res: Response) => {
+    const launchScript = `#!/bin/bash
 
 set -e
 
-IMAGE=ghcr.io/galarzafrancisco/ai-monorepo:latest
+IMAGE=ghcr.io/galarzafrancisco/ai-monorepo:${appVersion}
 
 PORT=9999                     # Port where the server will be accessible
 CONTAINER_NAME=taico          # Name for the Docker container
@@ -197,8 +197,9 @@ docker run --name $CONTAINER_NAME --restart unless-stopped -d \\
   $IMAGE
 
 echo "Server started on port $PORT. Access it at http://localhost:$PORT"`;
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.send(launchScript);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.send(launchScript);
+  };
 }
 
 bootstrap();

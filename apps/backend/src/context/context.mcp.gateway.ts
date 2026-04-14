@@ -8,6 +8,7 @@ import { ActorService } from 'src/identity-provider/actor.service';
 import { MetaService } from 'src/meta/meta.service';
 import { AuthContext, UserContext } from 'src/auth/guards/context/auth-context.types';
 import { ThreadsService } from 'src/threads/threads.service';
+import { getConfig } from 'src/config/env.config';
 
 @Injectable()
 export class ContextMcpGateway {
@@ -29,7 +30,7 @@ export class ContextMcpGateway {
 
     const server = new McpServer({
       name: 'context',
-      version: '0.0.0',
+      version: getConfig().appVersion,
     });
 
     server.registerTool(
