@@ -45,6 +45,7 @@ import {
 } from './events/threads.events';
 import { ChatService } from './chat.service';
 import { ChatStreamEvent } from './backends/chat-backend.interface';
+import { NoActiveChatProviderError } from '../chat-providers/errors/chat-providers.errors';
 import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
 
@@ -199,19 +200,28 @@ export class ThreadsService {
       savedThread.chatSessionId = conversation.id;
       await this.threadRepository.save(savedThread);
     } catch (error) {
-      await this.threadRepository.delete({ id: savedThread.id });
-      await this.contextBlockRepository.delete({ id: stateBlock.id });
+      if (error instanceof NoActiveChatProviderError) {
+        // No provider configured — thread is created with chatSessionId: null.
+        // The session will be lazily initialized when the first message is sent.
+        this.logger.warn({
+          message: 'No active chat provider; thread created without a chat session',
+          threadId: savedThread.id,
+        });
+      } else {
+        await this.threadRepository.delete({ id: savedThread.id });
+        await this.contextBlockRepository.delete({ id: stateBlock.id });
 
-      this.logger.error({
-        message: 'Failed to create chat conversation for thread, rolling back thread creation',
-        threadId: savedThread.id,
-        error:
-          error instanceof Error
-            ? { message: error.message, stack: error.stack, name: error.name }
-            : String(error),
-      });
+        this.logger.error({
+          message: 'Failed to create chat conversation for thread, rolling back thread creation',
+          threadId: savedThread.id,
+          error:
+            error instanceof Error
+              ? { message: error.message, stack: error.stack, name: error.name }
+              : String(error),
+        });
 
-      throw error;
+        throw error;
+      }
     }
 
     // Handle tags if provided

@@ -8,6 +8,7 @@ import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
 import { ALL_TASKS_SCOPES } from 'src/tasks/tasks.scopes';
 import { ALL_CONTEXT_SCOPES } from 'src/context/context.scopes';
 import { ChatProvidersService } from 'src/chat-providers/chat-providers.service';
+import { NoActiveChatProviderError } from 'src/chat-providers/errors/chat-providers.errors';
 import { ChatProviderType } from 'src/chat-providers/enums';
 import { AdkBackend } from './backends/adk.backend';
 import { OpenAiBackend } from './backends/openai.backend';
@@ -53,8 +54,15 @@ export class ChatService {
   }
 
   public async ensureConversationAvailable(): Promise<void> {
-    const backend = await this.getActiveBackend();
-    await backend.ensureAvailable();
+    try {
+      const backend = await this.getActiveBackend();
+      await backend.ensureAvailable();
+    } catch (error) {
+      if (error instanceof NoActiveChatProviderError) {
+        return; // No provider configured yet — thread creation can still proceed
+      }
+      throw error;
+    }
   }
 
   public async createConversation({ threadId }: CreateConversationArgs): Promise<{ id: string }> {
