@@ -83,9 +83,16 @@ export class ChatService {
   }
 
   public async generateText(prompt: string): Promise<string | null> {
-    const self = await this.getSelf();
-    const backend = await this.getActiveBackend();
-    return backend.generateText(prompt, self.modelId);
+    try {
+      const self = await this.getSelf();
+      const backend = await this.getActiveBackend();
+      return backend.generateText(prompt, self.modelId);
+    } catch (error) {
+      if (error instanceof NoActiveChatProviderError) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   public async runTask(args: {
