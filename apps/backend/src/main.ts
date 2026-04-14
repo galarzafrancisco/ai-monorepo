@@ -140,6 +140,10 @@ async function createConfiguredApp(
         path: '/.well-known/*path',
         method: RequestMethod.ALL,
       },
+      {
+        path: '/launch',
+        method: RequestMethod.ALL,
+      },
     ],
   });
 

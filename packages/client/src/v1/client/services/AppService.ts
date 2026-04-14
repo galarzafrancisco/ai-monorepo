@@ -18,4 +18,15 @@ export class AppService {
             url: '/api/v1',
         });
     }
+    /**
+     * Launch script endpoint
+     * @returns string Returns the bash script to launch Taico
+     * @throws ApiError
+     */
+    public static appControllerGetLaunchScript(config: OpenAPIConfig = OpenAPI): CancelablePromise<string> {
+        return __request(config, {
+            method: 'GET',
+            url: '/launch',
+        });
+    }
 }

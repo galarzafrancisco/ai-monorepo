@@ -24,6 +24,28 @@
         ]
       }
     },
+    "/launch": {
+      "get": {
+        "operationId": "AppController_getLaunchScript",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns the bash script to launch Taico",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Launch script endpoint",
+        "tags": [
+          "App"
+        ]
+      }
+    },
     "/api/v1/meta/tags": {
       "post": {
         "operationId": "MetaController_createTag",
