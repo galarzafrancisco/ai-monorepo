@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Header } from '@nestjs/common';
 import { ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { Public } from './auth/guards/decorators/public.decorator';
@@ -22,6 +22,7 @@ export class AppController {
 
   @Get('launch')
   @Public()
+  @Header('Content-Type', 'text/plain; charset=utf-8')
   @ApiOperation({ summary: 'Launch script endpoint' })
   @ApiOkResponse({
     description: 'Returns the bash script to launch Taico',
