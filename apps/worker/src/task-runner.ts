@@ -18,6 +18,7 @@ import {
   classifyAgentError,
   classifyRunnerError,
 } from './task-execution-errors.js';
+import { CodexAgentRunner } from './runners/CodexAgentRunner.js';
 
 type ExecuteTaskParams = {
   taskId: string;
@@ -119,6 +120,8 @@ export async function executeTask({
     runner = new ADKAgentRunner(modelConfig);
   } else if (agent.type === 'githubcopilot') {
     runner = new GitHubCopilotAgentRunner(modelConfig);
+  } else if (agent.type === 'codex') {
+    runner = new CodexAgentRunner(modelConfig);
   }
 
   if (!runner) {
