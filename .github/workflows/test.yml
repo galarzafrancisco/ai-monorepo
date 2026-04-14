@@ -4,11 +4,13 @@ on:
   pull_request:
     branches:
       - main
-      - agents/main
       - feature/**
   push:
     branches:
       - main
+  release:
+    types:
+      - published
 
 jobs:
   test-openapi-client-generator:
@@ -80,7 +82,7 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-24.04-arm
     needs: test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/agents/main')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
@@ -107,9 +109,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=agents-latest,enable=${{ github.ref == 'refs/heads/agents/main' }}
-            type=raw,value=agents-{{sha}},enable=${{ github.ref == 'refs/heads/agents/main' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
           labels: |
             org.opencontainers.image.source.branch=${{ github.ref_name }}
 
@@ -123,6 +123,45 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  docker-release-tag:
+    name: Tag existing image with release tag
+    runs-on: ubuntu-24.04-arm
+    needs: test
+    if: github.event_name == 'release'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute source image tag
+        id: vars
+        run: |
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          echo "source_tag=main-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Promote existing image to release tag
+        run: |
+          docker buildx imagetools create \
+            --tag ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.release_tag }} \
+            ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.source_tag }}
 
   deploy-pr:
     name: Copy Manifests to spark-ops
@@ -151,9 +190,8 @@ jobs:
       - name: Extract image tag
         id: image-tag
         run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
           SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
-          TAG="${BRANCH_NAME}-${SHORT_SHA}"
+          TAG="main-${SHORT_SHA}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
