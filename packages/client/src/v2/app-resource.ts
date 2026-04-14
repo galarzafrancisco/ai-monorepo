@@ -10,9 +10,4 @@ export class AppResource extends BaseClient {
     return this.request('GET', '/api/v1', { signal: params?.signal });
   }
 
-  /** Launch script endpoint */
-  async AppController_getLaunchScript(params?: { signal?: AbortSignal }): Promise<string> {
-    return this.request('GET', '/launch', { responseType: 'text', signal: params?.signal });
-  }
-
 }

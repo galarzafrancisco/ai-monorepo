@@ -4,10 +4,8 @@ import {
   Get,
   NotFoundException,
   Param,
-  UseGuards,
 } from '@nestjs/common';
 import {
-  ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
   ApiParam,

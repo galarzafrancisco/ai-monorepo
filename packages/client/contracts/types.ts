@@ -21,23 +21,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/launch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Launch script endpoint */
-        get: operations["AppController_getLaunchScript"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/meta/tags": {
         parameters: {
             query?: never;
@@ -5799,26 +5782,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
-                };
-            };
-        };
-    };
-    AppController_getLaunchScript: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Returns the bash script to launch Taico */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain": string;
                 };
             };
         };
