@@ -79,29 +79,29 @@ export function App() {
         <ToastProvider>
           <AuthProvider>
             <ActorsProvider>
-              <CommandPaletteProvider>
-                <Routes>
-                  <Route path="/onboarding" element={<OnboardingPage />} />
-                  <Route path="/login" element={
-                    <OnboardingChecker>
-                      <LoginPage />
-                    </OnboardingChecker>
-                  } />
-                  <Route
-                    path='*'
-                    element={
-                      <ProtectedRoute>
+              <Routes>
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route path="/login" element={
+                  <OnboardingChecker>
+                    <LoginPage />
+                  </OnboardingChecker>
+                } />
+                <Route
+                  path='*'
+                  element={
+                    <ProtectedRoute>
+                      <CommandPaletteProvider>
                         <WalkthroughGate>
                           <BetaShell>
                             <BetaAppRoutes />
                           </BetaShell>
                         </WalkthroughGate>
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-                <ToastContainer />
-              </CommandPaletteProvider>
+                      </CommandPaletteProvider>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+              <ToastContainer />
             </ActorsProvider>
           </AuthProvider>
         </ToastProvider>
