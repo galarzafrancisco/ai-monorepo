@@ -85,14 +85,12 @@ export async function writeWorkerCredentials(
     } else {
       // Create new config if existing file is not multi-server format
       config = {
-        currentServer: normalizeServerUrl(credentials.serverUrl),
         servers: {},
       };
     }
   } catch {
     // Create new config if file doesn't exist
     config = {
-      currentServer: normalizeServerUrl(credentials.serverUrl),
       servers: {},
     };
   }
@@ -100,7 +98,6 @@ export async function writeWorkerCredentials(
   // Update credentials for this server
   const normalizedUrl = normalizeServerUrl(credentials.serverUrl);
   config.servers[normalizedUrl] = credentials;
-  config.currentServer = normalizedUrl;
 
   await writeFile(
     credentialsPath,
@@ -133,29 +130,6 @@ export async function listConfiguredServers(
   }
 }
 
-/**
- * Gets the current active server URL.
- *
- * @param credentialsPath - Path to the credentials file
- * @returns The current server URL, or null if not set
- */
-export async function getCurrentServer(
-  credentialsPath: string,
-): Promise<string | null> {
-  try {
-    const content = await readFile(credentialsPath, 'utf8');
-    const parsed = JSON.parse(content) as unknown;
-
-    if (isMultiServerConfig(parsed)) {
-      const config = parsed as MultiServerConfig;
-      return config.currentServer;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 async function deleteLegacyCredentials(credentialsPath: string): Promise<void> {
   try {
@@ -171,11 +145,7 @@ function isMultiServerConfig(value: unknown): boolean {
   }
 
   const obj = value as Record<string, unknown>;
-  return (
-    typeof obj.currentServer === 'string' &&
-    typeof obj.servers === 'object' &&
-    obj.servers !== null
-  );
+  return typeof obj.servers === 'object' && obj.servers !== null;
 }
 
 function isLegacyCredentials(value: unknown): boolean {

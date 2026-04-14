@@ -11,9 +11,9 @@ export type WorkerCredentials = {
 /**
  * Multi-server worker configuration (kubeconfig-style).
  * Maps server URLs to their credentials.
+ * Each worker uses --serverUrl CLI flag to determine which credentials to use.
  */
 export type MultiServerConfig = {
-  currentServer: string;
   servers: {
     [serverUrl: string]: WorkerCredentials;
   };
