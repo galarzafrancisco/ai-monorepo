@@ -7,6 +7,8 @@
  */
 
 import { Logger } from '@nestjs/common';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import 'dotenv/config';
 
 const logger = new Logger('EnvConfig');
@@ -17,6 +19,8 @@ export type TypeormSchemaMode = 'migrate' | 'sync';
  * Configuration interface for type safety
  */
 export interface AppConfig {
+  appVersion: string;
+
   // Server Configuration
   port: number;
   nodeEnv: NodeEnv;
@@ -60,6 +64,8 @@ export function loadConfig(): AppConfig {
   const uiPort = getUiPort();
 
   const config: AppConfig = {
+    appVersion: getAppVersion(),
+
     // Server Configuration
     port: parseInt(backendPortValue, 10),
     nodeEnv: getEnv(),
@@ -117,6 +123,7 @@ export function loadConfig(): AppConfig {
 
   // Log configuration (excluding sensitive data)
   logger.log('Configuration loaded:');
+  logger.log(`  - App Version: ${config.appVersion}`);
   logger.log(`  - Port: ${config.port}`);
   logger.log(`  - Node Environment: ${config.nodeEnv}`);
   logger.log(`  - Issuer URL: ${config.issuerUrl}`);
@@ -128,6 +135,28 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Thread State Reconciler Debounce Ms: ${config.threadStateReconcilerDebounceMs}`);
 
   return config;
+}
+
+function getAppVersion(): string {
+  const packageJsonPath = join(__dirname, '..', '..', 'package.json');
+
+  try {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      version?: unknown;
+    };
+
+    if (typeof packageJson.version === 'string' && packageJson.version) {
+      return packageJson.version;
+    }
+  } catch (error) {
+    logger.warn(
+      `Unable to read app version from ${packageJsonPath}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+
+  return '0.0.0';
 }
 
 function getEnv(): NodeEnv {

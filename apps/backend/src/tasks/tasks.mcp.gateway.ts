@@ -13,6 +13,7 @@ import { TasksScopes } from './tasks.scopes';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { MetaService } from 'src/meta/meta.service';
 import { ThreadsService } from 'src/threads/threads.service';
+import { getConfig } from 'src/config/env.config';
 
 @Injectable()
 export class TasksMcpGateway {
@@ -39,7 +40,7 @@ export class TasksMcpGateway {
 
     const server = new McpServer({
       name: 'Tasks',
-      version: '0.0.0',
+      version: getConfig().appVersion,
     });
 
     const canWrite = authContext.scopes.find(

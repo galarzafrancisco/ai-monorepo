@@ -10,41 +10,9 @@ import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
+import { Request, Response } from 'express';
 
 const logger = new Logger('Bootstrap');
-
-async function listenWithFallback(
-  app: NestExpressApplication,
-  basePort: number,
-  maxAttempts: number,
-): Promise<number> {
-  let port = basePort;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    try {
-      await app.listen(port);
-      return port;
-    } catch (error) {
-      if (!isAddressInUseError(error)) {
-        throw error;
-      }
-      logger.warn(`Port ${port} is in use, trying ${port + 1}.`);
-      port += 1;
-    }
-  }
-
-  throw new Error(
-    `Unable to find an open port starting at ${basePort} after ${maxAttempts} attempts.`,
-  );
-}
-
-function isAddressInUseError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    (error as { code?: string }).code === 'EADDRINUSE'
-  );
-}
 
 async function bootstrap() {
   const args = process.argv.slice(2);
@@ -78,6 +46,8 @@ async function bootstrap() {
   const document = createSwaggerDocument(app);
 
   SwaggerModule.setup('api/v1/docs', app, document);
+
+  app.use('/launch', createLaunchScriptHandler(getConfig().appVersion));
 
   // Serve static files from the UI build (in production)
   const staticPath = join(__dirname, 'public');
@@ -140,6 +110,10 @@ async function createConfiguredApp(
         path: '/.well-known/*path',
         method: RequestMethod.ALL,
       },
+      {
+        path: '/launch',
+        method: RequestMethod.ALL,
+      },
     ],
   });
 
@@ -197,6 +171,35 @@ function readCliOption(args: string[], name: string): string | null {
   }
 
   return args[index + 1] ?? null;
+}
+
+function createLaunchScriptHandler(appVersion: string) {
+  return (_req: Request, res: Response) => {
+    const launchScript = `#!/bin/bash
+
+set -e
+
+IMAGE=ghcr.io/galarzafrancisco/ai-monorepo:${appVersion}
+
+PORT=9999                     # Port where the server will be accessible
+CONTAINER_NAME=taico          # Name for the Docker container
+DATABASE_PATH=~/.taico/data   # Path to the local directory for database storage
+
+docker run --name $CONTAINER_NAME --restart unless-stopped -d \\
+  -p $PORT:$PORT \\
+  -e NODE_ENV=production \\
+  -e PORT=$PORT \\
+  -e ISSUER_URL=http://localhost:$PORT \\
+  -e SECRETS_ENABLED=\\"true\\" \\
+  -e ALLOW_PLAINTEXT_SECRETS_INSECURE=\\"true\\" \\
+  -e DATABASE_PATH=/app/data/database.sqlite \\
+  -v $DATABASE_PATH:/app/data \\
+  $IMAGE
+
+echo "Server started on port $PORT. Access it at http://localhost:$PORT"`;
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.send(launchScript);
+  };
 }
 
 bootstrap();
