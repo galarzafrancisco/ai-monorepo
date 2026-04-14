@@ -69,7 +69,7 @@ export async function createOAuthCallbackServer(
 
 function generateSuccessPage(serverUrl: string): string {
   // Build redirect URL safely and escape for HTML/JS contexts
-  const redirectUrl = new URL('/settings/worker', serverUrl).toString();
+  const redirectUrl = new URL('/settings/workers', serverUrl).toString();
   const escapedHtmlUrl = redirectUrl
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
