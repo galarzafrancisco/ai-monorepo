@@ -74,6 +74,54 @@ export class ChatService {
     }
   }
 
+  public async generateText(prompt: string): Promise<string | null> {
+    const self = await this.getSelf();
+    const backend = await this.getActiveBackend();
+    return backend.generateText(prompt, self.modelId);
+  }
+
+  public async runTask(args: {
+    instructions: string;
+    prompt: string;
+    actor: ActorEntity | null;
+  }): Promise<void> {
+    const self = await this.getSelf();
+    const backend = await this.getActiveBackend();
+
+    const selfActor = {
+      id: self.actorId,
+      slug: self.slug,
+      type: ActorType.AGENT,
+      displayName: self.name,
+    };
+
+    const issuedByActor = args.actor
+      ? {
+          id: args.actor.id,
+          slug: args.actor.slug,
+          type: args.actor.type,
+          displayName: args.actor.displayName,
+        }
+      : selfActor;
+
+    const token = await this.issuedAccessTokenService.issueSystemToken({
+      subjectActor: selfActor,
+      issuedByActor,
+      scopes: [
+        McpScopes.USE.id,
+        ...ALL_TASKS_SCOPES.map((s) => s.id),
+        ...ALL_CONTEXT_SCOPES.map((s) => s.id),
+      ],
+    });
+
+    await backend.runTask({
+      instructions: args.instructions,
+      prompt: args.prompt,
+      token: token.token,
+      modelId: self.modelId,
+    });
+  }
+
   public async streamMessageToConversation(
     args: StreamMessageToConversationArgs,
   ): Promise<StreamMessageResult> {

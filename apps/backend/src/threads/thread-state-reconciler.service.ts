@@ -1,19 +1,11 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Agent, run } from '@openai/agents';
-import { AgentsService } from 'src/agents/agents.service';
-import { AgentResult } from 'src/agents/dto/service/agents.service.types';
-import { IssuedAccessTokenService } from 'src/authorization-server/issued-access-token.service';
-import { McpScopes } from 'src/auth/core/scopes/mcp.scopes';
-import { ALL_TASKS_SCOPES } from 'src/tasks/tasks.scopes';
-import { ALL_CONTEXT_SCOPES } from 'src/context/context.scopes';
-import { getConfig, isThreadStateReconcilerEnabled } from 'src/config/env.config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { getConfig, isThreadStateReconcilerEnabled } from 'src/config/env.config';
 import { ActorEntity } from 'src/identity-provider/actor.entity';
-import { ActorType } from 'src/identity-provider/enums';
-import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
 import { ThreadsService } from './threads.service';
+import { ChatService } from './chat.service';
 import { CommentAddedEvent, TaskStatusChangedEvent } from '../tasks/events/tasks.events';
 import { ThreadResult } from './dto/service/threads.service.types';
 import { KeyedDebounceBatchProcessor } from '../common/utils/keyed-debounce-batch-processor.util';
@@ -35,15 +27,8 @@ type BuildPromptInput = {
   taskId: string;
 };
 
-type SelfActorInfo = {
-  id: string;
-  slug: string;
-  type: ActorType.AGENT;
-  displayName: string;
-};
-
 @Injectable()
-export class ThreadStateReconcilerService {
+export class ThreadStateReconcilerService implements OnModuleDestroy {
   private readonly logger = new Logger(ThreadStateReconcilerService.name);
   private readonly activityBatcher: KeyedDebounceBatchProcessor<
     string,
@@ -51,10 +36,8 @@ export class ThreadStateReconcilerService {
   >;
 
   constructor(
-    private readonly agentsService: AgentsService,
     private readonly threadsService: ThreadsService,
-    private readonly issuedAccessTokenService: IssuedAccessTokenService,
-    private readonly openAiMcpServerFactoryService: OpenAiMcpServerFactoryService,
+    private readonly chatService: ChatService,
     @InjectRepository(ActorEntity)
     private readonly actorRepository: Repository<ActorEntity>,
   ) {
@@ -75,10 +58,6 @@ export class ThreadStateReconcilerService {
 
   onModuleDestroy(): void {
     this.activityBatcher.dispose();
-  }
-
-  private async getSelf(): Promise<AgentResult> {
-    return this.agentsService.getAgentBySlug({ slug: 'taico' });
   }
 
   private getInstructions(): string {
@@ -149,65 +128,31 @@ Now run the required process. If relevant, update the state block with context__
 
     const thread = await this.threadsService.getThreadById(threadId);
     const latestItem = items[items.length - 1];
-    const self = await this.getSelf();
-    const selfActor: SelfActorInfo = {
-      id: self.actorId,
-      slug: self.slug,
-      type: ActorType.AGENT,
-      displayName: self.name,
-    };
 
-    const issuedByActor = await this.actorRepository.findOne({
+    const actor = await this.actorRepository.findOne({
       where: { id: latestItem.actorId },
     });
 
-    const token = await this.issuedAccessTokenService.issueSystemToken({
-      subjectActor: selfActor,
-      issuedByActor: issuedByActor
-        ? {
-            id: issuedByActor.id,
-            slug: issuedByActor.slug,
-            type: issuedByActor.type,
-            displayName: issuedByActor.displayName,
-          }
-        : selfActor,
-      scopes: [
-        McpScopes.USE.id,
-        ...ALL_TASKS_SCOPES.map((scope) => scope.id),
-        ...ALL_CONTEXT_SCOPES.map((scope) => scope.id),
-      ],
-    });
-
     try {
-      const mcpServers = await this.openAiMcpServerFactoryService.createServers(
-        token,
-      );
-      const agent = new Agent({
-        name: `${self.name} state manager`,
+      await this.chatService.runTask({
         instructions: this.getInstructions(),
-        model: self.modelId || 'gpt-5.2-codex',
-        mcpServers,
-      });
-
-      await run(
-        agent,
-        this.buildPrompt({
+        prompt: this.buildPrompt({
           thread,
           activitySummary: this.summarizeBatch(items),
           kind: latestItem.kind,
           taskId: latestItem.taskId,
         }),
-      );
+        actor,
+      });
     } catch (error) {
       this.logger.warn({
         message: 'Thread state reconciliation failed',
         threadId: thread.id,
         taskId: latestItem.taskId,
         kind: latestItem.kind,
-        error:
-          error instanceof Error
-            ? { message: error.message, stack: error.stack }
-            : String(error),
+        error: error instanceof Error
+          ? { message: error.message, stack: error.stack }
+          : String(error),
       });
     }
   }

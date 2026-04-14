@@ -18,7 +18,6 @@ import { OpenAiBackend } from './backends/openai.backend';
 import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
 import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
-import { LlmModule } from '../llm/llm.module';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
@@ -35,7 +34,6 @@ import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
     ]),
     AgentsModule,
     AuthorizationServerModule,
-    LlmModule,
     AuthGuardsModule,
     MetaModule,
     ContextModule,

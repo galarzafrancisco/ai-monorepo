@@ -4,7 +4,7 @@ import { SqliteSessionService } from '@taico/adk-session-store';
 import { getConfig } from 'src/config/env.config';
 import { randomUUID } from 'crypto';
 import { basename, dirname, extname, join } from 'node:path';
-import { ChatBackend, ChatStreamEvent, StreamMessageArgs } from './chat-backend.interface';
+import { ChatBackend, ChatStreamEvent, RunTaskArgs, StreamMessageArgs } from './chat-backend.interface';
 import { buildThreadScopedInstructions, formatMessage } from './chat-backend.utils';
 
 @Injectable()
@@ -109,6 +109,92 @@ export class AdkBackend implements ChatBackend, OnModuleDestroy {
     }
   }
 
+  async generateText(prompt: string, modelId: string | null): Promise<string | null> {
+    try {
+      const sessionId = randomUUID();
+      const userId = `gen-${randomUUID()}`;
+
+      await this.sessionService.createSession({
+        appName: 'taico-chat',
+        sessionId,
+        userId,
+      });
+
+      const agent = new LlmAgent({
+        name: 'text_generator',
+        model: modelId ?? 'gemini-2.5-flash',
+        description: '',
+        instruction: '',
+        tools: [],
+      });
+
+      const runner = new Runner({
+        appName: 'taico-chat',
+        agent,
+        sessionService: this.sessionService,
+      });
+
+      const stream = runner.runAsync({
+        userId,
+        sessionId,
+        newMessage: { role: 'user', parts: [{ text: prompt }] },
+      });
+
+      const finalChunks: string[] = [];
+      let sawPartial = false;
+
+      for await (const event of stream) {
+        const textParts = this.parseTextParts(event);
+        if (textParts.length === 0) continue;
+
+        const chunk = textParts.join('');
+        if (event.partial) {
+          sawPartial = true;
+          finalChunks.push(chunk);
+        } else if (!sawPartial) {
+          finalChunks.push(chunk);
+        }
+      }
+
+      const result = finalChunks.join('').trim();
+      return result || null;
+    } catch (error) {
+      this.logger.warn({
+        message: 'ADK text generation failed',
+        error: error instanceof Error
+          ? { message: error.message, name: error.name }
+          : String(error),
+      });
+      return null;
+    }
+  }
+
+  async runTask(args: RunTaskArgs): Promise<void> {
+    const sessionId = randomUUID();
+    const userId = `task-${randomUUID()}`;
+
+    await this.sessionService.createSession({
+      appName: 'taico-chat',
+      sessionId,
+      userId,
+    });
+
+    const runner = await this.createRunner(
+      args.token,
+      args.modelId ?? 'gemini-2.5-flash',
+      args.instructions,
+    );
+
+    const stream = runner.runAsync({
+      userId,
+      sessionId,
+      newMessage: { role: 'user', parts: [{ text: args.prompt }] },
+    });
+
+    // Drain the stream — MCP tool calls happen as side effects during iteration
+    for await (const _ of stream) { /* noop */ }
+  }
+
   private async createRunner(token: string, modelId: string, instructions: string): Promise<Runner> {
     const baseUrl = getConfig().issuerUrl;
 
@@ -150,6 +236,7 @@ export class AdkBackend implements ChatBackend, OnModuleDestroy {
     }
 
     return event.content.parts
+      .filter((part) => !part.thought)
       .map((part) => part.text)
       .filter((text): text is string => typeof text === 'string' && text.length > 0);
   }

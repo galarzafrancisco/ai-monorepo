@@ -17,8 +17,19 @@ export interface StreamMessageArgs {
   token: string;
 }
 
+export interface RunTaskArgs {
+  instructions: string;
+  prompt: string;
+  token: string;
+  modelId: string | null;
+}
+
 export interface ChatBackend {
   ensureAvailable(): Promise<void>;
   createConversation(threadId: string): Promise<{ id: string }>;
   streamMessage(args: StreamMessageArgs): AsyncGenerator<ChatStreamEvent>;
+  /** One-shot text generation with no tools. Returns null on failure. */
+  generateText(prompt: string, modelId: string | null): Promise<string | null>;
+  /** One-shot agentic run with MCP tools. Text output is discarded; only side effects matter. */
+  runTask(args: RunTaskArgs): Promise<void>;
 }

@@ -792,63 +792,6 @@ export interface AgentExecutionTokenResponseDto {
   requestedByClientId: string;
 }
 
-export interface CreateChatProviderDto {
-  name: string;
-  type: 'openai' | 'adk';
-  secretId?: string;
-}
-
-export interface ChatProviderResponseDto {
-  id: string;
-  name: string;
-  type: 'openai' | 'adk';
-  secretId?: string | null;
-  isActive: boolean;
-  isConfigured: boolean;
-  rowVersion: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UpdateChatProviderDto {
-  name?: string;
-  secretId?: string;
-  apiKey?: string;
-}
-
-export interface SetActiveChatProviderDto {
-  providerId: string;
-}
-
-export interface CreateSecretDto {
-  name: string;
-  description?: string;
-  value: string;
-}
-
-export interface SecretResponseDto {
-  id: string;
-  name: string;
-  description?: string | null;
-  createdByActorId: string;
-  createdBy?: string | null;
-  rowVersion: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SecretValueResponseDto {
-  id: string;
-  name: string;
-  value: string;
-}
-
-export interface UpdateSecretDto {
-  name?: string;
-  description?: string | null;
-  value?: string;
-}
-
 export interface CreateBlockDto {
   title: string;
   content: string;
@@ -931,6 +874,63 @@ export interface ReorderBlockDto {
 
 export interface MoveBlockDto {
   newParentId: Record<string, any> | null;
+}
+
+export interface CreateChatProviderDto {
+  name: string;
+  type: 'openai' | 'adk';
+  secretId?: string;
+}
+
+export interface ChatProviderResponseDto {
+  id: string;
+  name: string;
+  type: 'openai' | 'adk';
+  secretId?: string | null;
+  isActive: boolean;
+  isConfigured: boolean;
+  rowVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateChatProviderDto {
+  name?: string;
+  secretId?: string;
+  apiKey?: string;
+}
+
+export interface SetActiveChatProviderDto {
+  providerId: string;
+}
+
+export interface CreateSecretDto {
+  name: string;
+  description?: string;
+  value: string;
+}
+
+export interface SecretResponseDto {
+  id: string;
+  name: string;
+  description?: string | null;
+  createdByActorId: string;
+  createdBy?: string | null;
+  rowVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SecretValueResponseDto {
+  id: string;
+  name: string;
+  value: string;
+}
+
+export interface UpdateSecretDto {
+  name?: string;
+  description?: string | null;
+  value?: string;
 }
 
 export interface TaskExecutionQueueEntryResponseDto {

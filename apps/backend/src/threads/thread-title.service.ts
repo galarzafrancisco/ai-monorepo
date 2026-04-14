@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { TaskEntity } from '../tasks/task.entity';
-import { OpenAiResponsesService } from '../llm/openai-responses.service';
+import { ChatService } from './chat.service';
 
 @Injectable()
 export class ThreadTitleService {
   private static readonly MAX_TITLE_LENGTH = 80;
 
-  constructor(private readonly openAiResponsesService: OpenAiResponsesService) {}
+  constructor(private readonly chatService: ChatService) {}
 
   private sanitizeTitle(title: string): string | null {
     const sanitized = title
@@ -41,10 +41,7 @@ Source: ${input.source}
 Content:
 ${input.content}`;
 
-    const generated = await this.openAiResponsesService.generateText({
-      prompt,
-      model: 'gpt-5.2',
-    });
+    const generated = await this.chatService.generateText(prompt);
 
     if (!generated) {
       return null;

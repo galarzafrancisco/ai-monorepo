@@ -10,7 +10,7 @@ import {
 import { OpenAI } from 'openai';
 import { ChatProvidersService } from 'src/chat-providers/chat-providers.service';
 import { OpenAiMcpServerFactoryService } from '../openai-mcp-server-factory.service';
-import { ChatBackend, ChatStreamEvent, StreamMessageArgs } from './chat-backend.interface';
+import { ChatBackend, ChatStreamEvent, RunTaskArgs, StreamMessageArgs } from './chat-backend.interface';
 import { buildThreadScopedInstructions, formatMessage } from './chat-backend.utils';
 
 type RunStreamEvent = Awaited<ReturnType<typeof run>> extends AsyncIterable<infer T> ? T : never;
@@ -36,6 +36,40 @@ export class OpenAiBackend implements ChatBackend {
     const client = new OpenAI({ apiKey });
     const conversation = await client.conversations.create({ metadata: { threadId } });
     return conversation;
+  }
+
+  async generateText(prompt: string, modelId: string | null): Promise<string | null> {
+    try {
+      const apiKey = await this.getApiKey();
+      const client = new OpenAI({ apiKey });
+      const response = await client.responses.create({
+        model: modelId ?? 'gpt-5.2',
+        input: prompt,
+      });
+      return response.output_text?.trim() || null;
+    } catch (error) {
+      this.logger.warn({
+        message: 'OpenAI text generation failed',
+        error: error instanceof Error
+          ? { message: error.message, name: error.name }
+          : String(error),
+      });
+      return null;
+    }
+  }
+
+  async runTask(args: RunTaskArgs): Promise<void> {
+    const apiKey = await this.getApiKey();
+    const modelProvider = this.configureOpenAiSdk(apiKey);
+    const mcpServers = await this.openAiMcpServerFactoryService.createServers({ token: args.token });
+    const agent = new Agent({
+      name: 'taico task runner',
+      instructions: args.instructions,
+      model: args.modelId ?? 'gpt-5.2-codex',
+      mcpServers,
+    });
+    const runner = new Runner({ modelProvider });
+    await runner.run(agent, args.prompt);
   }
 
   async *streamMessage(args: StreamMessageArgs): AsyncGenerator<ChatStreamEvent> {
