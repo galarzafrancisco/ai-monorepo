@@ -32,7 +32,7 @@
           "200": {
             "description": "Returns the bash script to launch Taico",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
                   "type": "string"
                 }

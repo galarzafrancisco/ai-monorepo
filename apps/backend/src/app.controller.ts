@@ -1,5 +1,5 @@
 import { Controller, Get, Header } from '@nestjs/common';
-import { ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiOkResponse, ApiProduces } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { Public } from './auth/guards/decorators/public.decorator';
 
@@ -22,6 +22,7 @@ export class AppController {
 
   @Get('launch')
   @Public()
+  @ApiProduces('text/plain')
   @Header('Content-Type', 'text/plain; charset=utf-8')
   @ApiOperation({ summary: 'Launch script endpoint' })
   @ApiOkResponse({
