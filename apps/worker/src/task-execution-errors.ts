@@ -4,6 +4,15 @@ export type ExecutionErrorCode = 'OUT_OF_QUOTA' | 'UNKNOWN';
 
 const MAX_ERROR_MESSAGE_LENGTH = 1000;
 
+const QUOTA_MESSAGE_PATTERNS: RegExp[] = [
+  /quota/i,
+  /rate\s*limit/i,
+  /credit/i,
+  /billing/i,
+  /you\s*(?:have|'ve)?\s*hit\s*(?:your\s*)?limit/i,
+  /usage\s*limit/i,
+];
+
 export class TaskExecutionError extends Error {
   readonly displayMessage: string;
 
@@ -65,14 +74,7 @@ export function classifyAgentError(input: {
   message: string;
   rawMessage?: unknown;
 }): TaskExecutionError {
-  const text = input.message.toLowerCase();
-
-  if (
-    text.includes('quota') ||
-    text.includes('rate limit') ||
-    text.includes('credit') ||
-    text.includes('billing')
-  ) {
+  if (QUOTA_MESSAGE_PATTERNS.some((pattern) => pattern.test(input.message))) {
     return new AgentQuotaExceededError(input.message, input.rawMessage);
   }
 
