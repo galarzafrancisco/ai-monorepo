@@ -1,6 +1,6 @@
 {
   "name": "@taico/openapi-sdkgen",
-  "version": "0.1.2",
+  "version": "0.2.12",
   "type": "module",
   "private": false,
   "license": "MIT",

@@ -82,7 +82,10 @@ export class WorkerAuth {
       INTERNAL_WORKER_AUTH_SCOPES.map((scope) => scope.id),
     );
 
-    const storedCredentials = await readWorkerCredentials(this.credentialsPath);
+    const storedCredentials = await readWorkerCredentials(
+      this.credentialsPath,
+      this.serverUrl,
+    );
     if (
       storedCredentials &&
       storedCredentials.serverUrl === this.serverUrl &&
