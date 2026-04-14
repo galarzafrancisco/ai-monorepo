@@ -180,11 +180,15 @@ export function SettingsChatPage() {
                         platform.openai.com/api-keys
                       </a>
                     </Text>
+                  ) : provider.type === 'adk' ? (
+                    <Text size="1" tone="muted">
+                      Uses Google AI environment variables (GOOGLE_API_KEY or Vertex AI config). No key stored here.
+                    </Text>
                   ) : null}
                 </Stack>
               </Row>
 
-              {editingProviderId === provider.id ? (
+              {editingProviderId === provider.id && provider.type !== 'adk' ? (
                 <Stack spacing="3">
                   <Stack spacing="2">
                     <Text size="2" weight="medium">
@@ -259,13 +263,15 @@ export function SettingsChatPage() {
 
                     return (
                       <>
-                        <Button
-                          variant={configureFeedback ? 'primary' : 'secondary'}
-                          size="sm"
-                          onClick={() => setEditingProviderId(provider.id)}
-                        >
-                          {configureFeedback || (provider.isConfigured ? 'Update Config' : 'Configure')}
-                        </Button>
+                        {provider.type !== 'adk' && (
+                          <Button
+                            variant={configureFeedback ? 'primary' : 'secondary'}
+                            size="sm"
+                            onClick={() => setEditingProviderId(provider.id)}
+                          >
+                            {configureFeedback || (provider.isConfigured ? 'Update Config' : 'Configure')}
+                          </Button>
+                        )}
                         <span className="settings-chat__action-wrapper" title={actionTitle}>
                           <Button
                             variant={actionVariant}

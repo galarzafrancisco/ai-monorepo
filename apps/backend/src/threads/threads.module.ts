@@ -13,6 +13,8 @@ import { MetaModule } from '../meta/meta.module';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { ContextModule } from '../context/context.module';
 import { ChatService } from './chat.service';
+import { AdkBackend } from './backends/adk.backend';
+import { OpenAiBackend } from './backends/openai.backend';
 import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
 import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
@@ -44,6 +46,8 @@ import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
     ThreadsService,
     ThreadsGateway,
     ChatService,
+    AdkBackend,
+    OpenAiBackend,
     OpenAiMcpServerFactoryService,
     ThreadTitleService,
     ThreadStateReconcilerService,

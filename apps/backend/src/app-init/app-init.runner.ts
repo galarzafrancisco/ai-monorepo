@@ -426,26 +426,31 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
   async ensureDefaultChatProvider(): Promise<void> {
     try {
-      this.logger.log('Ensuring default OpenAI chat provider exists');
+      this.logger.log('Ensuring default chat providers exist');
 
       const existingProviders = await this.chatProvidersService.listChatProviders();
-      const openAiProviderExists = existingProviders.some(
-        (provider) => provider.type === ChatProviderType.OPENAI,
-      );
 
-      if (!openAiProviderExists) {
+      if (!existingProviders.some((p) => p.type === ChatProviderType.OPENAI)) {
         this.logger.log('Creating default OpenAI chat provider');
         await this.chatProvidersService.createChatProvider({
           name: 'OpenAI',
           type: ChatProviderType.OPENAI,
           secretId: null,
         });
-        this.logger.log('Default OpenAI chat provider created');
       }
 
-      this.logger.log('Default chat provider ensured');
+      if (!existingProviders.some((p) => p.type === ChatProviderType.ADK)) {
+        this.logger.log('Creating default Google ADK chat provider');
+        await this.chatProvidersService.createChatProvider({
+          name: 'Google ADK',
+          type: ChatProviderType.ADK,
+          secretId: null,
+        });
+      }
+
+      this.logger.log('Default chat providers ensured');
     } catch (error) {
-      this.logger.error('Error ensuring default chat provider exists');
+      this.logger.error('Error ensuring default chat providers exist');
     }
   }
 }

@@ -794,14 +794,14 @@ export interface AgentExecutionTokenResponseDto {
 
 export interface CreateChatProviderDto {
   name: string;
-  type: 'openai';
+  type: 'openai' | 'adk';
   secretId?: string;
 }
 
 export interface ChatProviderResponseDto {
   id: string;
   name: string;
-  type: 'openai';
+  type: 'openai' | 'adk';
   secretId?: string | null;
   isActive: boolean;
   isConfigured: boolean;

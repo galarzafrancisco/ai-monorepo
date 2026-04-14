@@ -10985,7 +10985,8 @@
             "type": "string",
             "description": "Type of chat provider",
             "enum": [
-              "openai"
+              "openai",
+              "adk"
             ],
             "example": "openai"
           },
@@ -11017,7 +11018,8 @@
             "type": "string",
             "description": "Type of chat provider",
             "enum": [
-              "openai"
+              "openai",
+              "adk"
             ],
             "example": "openai"
           },

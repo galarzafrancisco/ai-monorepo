@@ -22,6 +22,9 @@ export class OpenAiResponsesService {
     let apiKey: string;
     try {
       const config = await this.chatProvidersService.getActiveChatProviderConfig();
+      if (!config.apiKey) {
+        return null;
+      }
       apiKey = config.apiKey;
     } catch (error) {
       this.logger.warn({

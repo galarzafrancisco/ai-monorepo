@@ -44,6 +44,7 @@ import {
   ThreadUpdatedEvent,
 } from './events/threads.events';
 import { ChatService } from './chat.service';
+import { ChatStreamEvent } from './backends/chat-backend.interface';
 import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
 
@@ -1029,20 +1030,25 @@ export class ThreadsService {
     );
 
     // Send to chat (fire-and-forget with error handling to prevent unhandled rejection)
-    void this.chatService.sendMessageToThread({
-      conversationId: threadWithConversation.chatSessionId!,
-      threadId: threadWithConversation.id,
-      message: input.content,
-      actor,
-    }).catch((error) => {
-      this.logger.error({
-        message: 'Failed to send message to chat service',
-        threadId: threadWithConversation.id,
-        error: error instanceof Error
-          ? { message: error.message, stack: error.stack, name: error.name }
-          : String(error),
-      });
-    });
+    void (async () => {
+      try {
+        const { agentActorId, events } = await this.chatService.streamMessageToConversation({
+          conversationId: threadWithConversation.chatSessionId!,
+          threadId: threadWithConversation.id,
+          message: input.content,
+          actor,
+        });
+        await this.consumeResponseStream(events, threadWithConversation.id, agentActorId);
+      } catch (error) {
+        this.logger.error({
+          message: 'Failed to process agent response stream',
+          threadId: threadWithConversation.id,
+          error: error instanceof Error
+            ? { message: error.message, stack: error.stack, name: error.name }
+            : String(error),
+        });
+      }
+    })();
 
     await this.maybeGenerateTitleFromFirstMessage({
       thread,
@@ -1054,7 +1060,7 @@ export class ThreadsService {
     return this.mapThreadMessageToResult(messageWithRelations);
   }
 
-  emitAgentActivity(input: EmitAgentActivityInput): void {
+  private emitAgentActivity(input: EmitAgentActivityInput): void {
     this.eventEmitter.emit(
       ThreadAgentActivityEvent.INTERNAL,
       new ThreadAgentActivityEvent(
@@ -1067,7 +1073,7 @@ export class ThreadsService {
     );
   }
 
-  emitAgentResponseDelta(input: EmitAgentResponseDeltaInput): void {
+  private emitAgentResponseDelta(input: EmitAgentResponseDeltaInput): void {
     this.eventEmitter.emit(
       ThreadAgentResponseDeltaEvent.INTERNAL,
       new ThreadAgentResponseDeltaEvent(
@@ -1079,6 +1085,81 @@ export class ThreadsService {
         },
       ),
     );
+  }
+
+  private async consumeResponseStream(
+    events: AsyncIterable<ChatStreamEvent>,
+    threadId: string,
+    agentActorId: string,
+  ): Promise<void> {
+    const responseStreamId = randomUUID();
+
+    for await (const event of events) {
+      switch (event.type) {
+        case 'agent_activity':
+          this.emitAgentActivity({ threadId, actorId: agentActorId, kind: event.kind });
+          break;
+        case 'response_delta':
+          this.emitAgentResponseDelta({
+            threadId,
+            actorId: agentActorId,
+            streamId: responseStreamId,
+            delta: event.delta,
+          });
+          break;
+        case 'final_response':
+          await this.persistAgentMessage({ threadId, content: event.content, actorId: agentActorId });
+          break;
+        case 'error': {
+          const errorMessage = `I encountered an error while processing your message: ${event.error.message}`;
+          await this.persistAgentMessage({ threadId, content: errorMessage, actorId: agentActorId });
+          break;
+        }
+      }
+    }
+  }
+
+  private async persistAgentMessage(input: {
+    threadId: string;
+    content: string;
+    actorId: string;
+  }): Promise<void> {
+    try {
+      const message = this.threadMessageRepository.create({
+        threadId: input.threadId,
+        content: input.content,
+        createdByActorId: input.actorId,
+      });
+
+      const savedMessage = await this.threadMessageRepository.save(message);
+
+      const messageWithRelations = await this.threadMessageRepository.findOne({
+        where: { id: savedMessage.id },
+        relations: ['createdByActor'],
+      });
+
+      if (!messageWithRelations) {
+        this.logger.error({
+          message: 'Failed to reload agent message after creation',
+          threadId: input.threadId,
+          messageId: savedMessage.id,
+        });
+        return;
+      }
+
+      this.eventEmitter.emit(
+        MessageCreatedEvent.INTERNAL,
+        new MessageCreatedEvent({ id: input.actorId }, messageWithRelations),
+      );
+    } catch (error) {
+      this.logger.error({
+        message: 'Failed to persist agent message',
+        threadId: input.threadId,
+        error: error instanceof Error
+          ? { message: error.message, stack: error.stack, name: error.name }
+          : String(error),
+      });
+    }
   }
 
   async listMessages(

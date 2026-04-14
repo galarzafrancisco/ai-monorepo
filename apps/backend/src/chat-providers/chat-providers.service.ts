@@ -156,8 +156,8 @@ export class ChatProvidersService {
         throw new ChatProviderNotFoundError(input.providerId);
       }
 
-      // Check if provider is configured
-      if (!provider.secretId) {
+      // ADK uses environment variables and needs no stored API key
+      if (provider.type !== ChatProviderType.ADK && !provider.secretId) {
         throw new ChatProviderNotConfiguredError(input.providerId);
       }
 
@@ -204,6 +204,11 @@ export class ChatProvidersService {
       throw new NoActiveChatProviderError();
     }
 
+    // ADK uses environment variables and has no stored API key
+    if (activeProvider.type === ChatProviderType.ADK) {
+      return { type: activeProvider.type, apiKey: null };
+    }
+
     if (!activeProvider.secretId) {
       throw new ChatProviderNotConfiguredError(activeProvider.id);
     }
@@ -225,7 +230,7 @@ export class ChatProvidersService {
       type: provider.type,
       secretId: provider.secretId,
       isActive: provider.isActive,
-      isConfigured: !!provider.secretId,
+      isConfigured: provider.type === ChatProviderType.ADK ? true : !!provider.secretId,
       rowVersion: provider.rowVersion,
       createdAt: provider.createdAt,
       updatedAt: provider.updatedAt,

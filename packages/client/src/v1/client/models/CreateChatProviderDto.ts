@@ -22,6 +22,7 @@ export namespace CreateChatProviderDto {
      */
     export enum type {
         OPENAI = 'openai',
+        ADK = 'adk',
     }
 }
 

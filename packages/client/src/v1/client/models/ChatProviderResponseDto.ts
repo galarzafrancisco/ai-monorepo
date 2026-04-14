@@ -46,6 +46,7 @@ export namespace ChatProviderResponseDto {
      */
     export enum type {
         OPENAI = 'openai',
+        ADK = 'adk',
     }
 }
 

@@ -31,5 +31,5 @@ export type ChatProviderResult = {
 
 export type ActiveChatProviderConfigResult = {
   type: ChatProviderType;
-  apiKey: string;
+  apiKey: string | null;
 };

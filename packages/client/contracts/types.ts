@@ -4720,7 +4720,7 @@ export interface components {
              * @example openai
              * @enum {string}
              */
-            type: "openai";
+            type: "openai" | "adk";
             /**
              * @description ID of the secret containing the API key
              * @example 123e4567-e89b-12d3-a456-426614174000
@@ -4743,7 +4743,7 @@ export interface components {
              * @example openai
              * @enum {string}
              */
-            type: "openai";
+            type: "openai" | "adk";
             /**
              * @description ID of the secret containing the API key
              * @example 123e4567-e89b-12d3-a456-426614174000
