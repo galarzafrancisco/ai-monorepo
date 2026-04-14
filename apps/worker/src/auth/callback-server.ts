@@ -68,7 +68,15 @@ export async function createOAuthCallbackServer(
 }
 
 function generateSuccessPage(serverUrl: string): string {
-  const redirectUrl = `${serverUrl}/settings/worker`;
+  // Build redirect URL safely and escape for HTML/JS contexts
+  const redirectUrl = new URL('/settings/worker', serverUrl).toString();
+  const escapedHtmlUrl = redirectUrl
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+  const escapedJsUrl = JSON.stringify(redirectUrl);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -207,24 +215,25 @@ function generateSuccessPage(serverUrl: string): string {
       Redirecting in <span class="countdown-number" id="countdown">5</span> seconds...
     </div>
     <div class="manual-link">
-      <a href="${redirectUrl}" id="manual-link">Go to Workers page now</a>
+      <a href="${escapedHtmlUrl}" id="manual-link">Go to Workers page now</a>
     </div>
   </div>
 
   <script>
     let count = 5;
     const countdownElement = document.getElementById('countdown');
-    const redirectUrl = '${redirectUrl}';
+    const redirectUrl = ${escapedJsUrl};
 
     const interval = setInterval(() => {
       count--;
-      if (countdownElement) {
-        countdownElement.textContent = count.toString();
-      }
 
-      if (count <= 0) {
+      if (count === 0) {
         clearInterval(interval);
         window.location.href = redirectUrl;
+      } else {
+        if (countdownElement) {
+          countdownElement.textContent = count.toString();
+        }
       }
     }, 1000);
 
