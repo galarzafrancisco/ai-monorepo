@@ -1112,6 +1112,9 @@ export function TaskDetailPage() {
         id: taskId,
         body: { dependsOnIds: updatedDependsOnIds },
       });
+      // Fetch the dependency task to ensure it's in the cache for rendering.
+      // This prevents the dependency from disappearing if it's not already in allTasks (paginated to 100).
+      await getTaskById(dependencyTaskId);
     },
     removeDependency: async ({ taskId, dependencyTaskId }) => {
       const currentTask = tasks.find(t => t.id === taskId);
