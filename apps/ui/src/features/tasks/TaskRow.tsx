@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Avatar, DataRow, Text, DataRowAnimation } from "../../ui/primitives";
+import { Avatar, DataRow, Text, DataRowAnimation, DataRowTag } from "../../ui/primitives";
 import { Task } from "./types";
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import './TaskRow.css';
 
-export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, animation?: DataRowAnimation, onClick?: () => void, pulseKey?: number }): React.JSX.Element {
+export function TaskRow({ task, animation, onClick, pulseKey, additionalTags }: { task: Task, animation?: DataRowAnimation, onClick?: () => void, pulseKey?: number, additionalTags?: DataRowTag[] }): React.JSX.Element {
   const [pulse, setPulse] = useState(false);
   const avatarActor = task.assigneeActor ?? task.createdByActor;
 
@@ -31,6 +31,11 @@ export function TaskRow({ task, animation, onClick, pulseKey }: { task: Task, an
     tags.push({
       label: `✋ ${openQuestions}`
     })
+  }
+
+  // Add any additional tags passed in
+  if (additionalTags) {
+    tags.push(...additionalTags);
   }
 
   return (

@@ -664,20 +664,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       {(dependencyTasks.length > 0 || task) && (
         <DataRowContainer title="Depends on" className='task-detail-page__section'>
           {dependencyTasks.map(depTask => {
-            const statusInfo = TASKS_STATUS[depTask.status as TaskStatus];
-            const statusTag: DataRowTag = {
-              label: statusInfo.label,
-              color: 'gray' as const,
-            };
             return (
-              <DataRow
+              <TaskRow
                 key={depTask.id}
-                tags={[
-                  statusTag,
-                  ...depTask.tags.map(tag => ({
-                    label: tag.name,
-                    color: 'gray' as const,
-                  })),
+                task={depTask}
+                onClick={() => navigate(`/tasks/task/${depTask.id}`)}
+                additionalTags={[
                   {
                     label: '× remove',
                     color: 'red' as const,
@@ -685,15 +677,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                     clickLabel: 'Remove dependency',
                   },
                 ]}
-                onClick={() => navigate(`/tasks/task/${depTask.id}`)}
-              >
-                <Text weight='medium' size='3'>
-                  {depTask.name}
-                </Text>
-                <Text tone='muted' size='1' style='mono'>
-                  #{depTask.id.slice(0, 6)}
-                </Text>
-              </DataRow>
+              />
             );
           })}
           <DataRow
