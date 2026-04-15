@@ -813,6 +813,92 @@ export class TasksMcpGateway {
         },
       );
 
+    canWrite &&
+      server.registerTool(
+        'add_dependency',
+        {
+          title: 'Add task dependency',
+          description: 'Add a dependency to a task (task A depends on task B)',
+          inputSchema: {
+            taskId: z.string(),
+            dependsOnTaskId: z.string(),
+          },
+        },
+        async ({ taskId, dependsOnTaskId }) => {
+          // Fetch current task to get existing dependencies
+          const task = await this.tasksService.getTaskById(taskId);
+          const currentDependencyIds = task.dependsOnIds || [];
+
+          // Check if dependency already exists
+          if (currentDependencyIds.includes(dependsOnTaskId)) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Dependency already exists',
+                },
+              ],
+            };
+          }
+
+          // Add new dependency
+          const updatedDependencyIds = [...currentDependencyIds, dependsOnTaskId];
+          await this.tasksService.updateTask(
+            taskId,
+            { dependsOnIds: updatedDependencyIds },
+            user.actorId,
+          );
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
+    canWrite &&
+      server.registerTool(
+        'remove_dependency',
+        {
+          title: 'Remove task dependency',
+          description: 'Remove a dependency from a task',
+          inputSchema: {
+            taskId: z.string(),
+            dependsOnTaskId: z.string(),
+          },
+        },
+        async ({ taskId, dependsOnTaskId }) => {
+          // Fetch current task to get existing dependencies
+          const task = await this.tasksService.getTaskById(taskId);
+          const currentDependencyIds = task.dependsOnIds || [];
+
+          // Filter out the dependency to remove
+          const updatedDependencyIds = currentDependencyIds.filter(
+            (id) => id !== dependsOnTaskId,
+          );
+
+          // Update task with new dependency list
+          await this.tasksService.updateTask(
+            taskId,
+            { dependsOnIds: updatedDependencyIds },
+            user.actorId,
+          );
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'done',
+              },
+            ],
+          };
+        },
+      );
+
     return server;
   }
 
