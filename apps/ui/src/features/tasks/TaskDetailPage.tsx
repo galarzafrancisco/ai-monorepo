@@ -9,6 +9,7 @@ import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { NewCommentPop } from './NewCommentPop';
 import { AnswerInputRequestPop } from './AnswerInputRequestPop';
 import { TagSearchPop } from './TagSearchPop';
+import { TaskSearchPop } from './TaskSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import {
@@ -37,6 +38,8 @@ type TaskDetailHandlers = {
   changeStatus: (payload: { taskId: string; status: TaskStatus }) => Promise<unknown>;
   addTag: (payload: { taskId: string; tag: MetaTagResponseDto }) => Promise<unknown>;
   removeTag: (payload: { taskId: string; tagId: string }) => Promise<unknown>;
+  addDependency: (payload: { taskId: string; dependencyTaskId: string }) => Promise<unknown>;
+  removeDependency: (payload: { taskId: string; dependencyTaskId: string }) => Promise<unknown>;
 };
 
 export type TaskDetailViewProps = {
@@ -266,6 +269,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
   const [showTagPop, setShowTagPop] = useState(false);
+  const [showDependencyPop, setShowDependencyPop] = useState(false);
   const [respondingToInputRequest, setRespondingToInputRequest] = useState<InputRequestResponseDto | null>(null);
 
   const toggleExecutionErrorDetails = useCallback((executionId: string) => {
@@ -290,7 +294,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         return;
       }
 
-      if (showNewCommentPop || showAssignPop || showTagPop || respondingToInputRequest) {
+      if (showNewCommentPop || showAssignPop || showTagPop || showDependencyPop || respondingToInputRequest) {
         return;
       }
 
@@ -399,6 +403,37 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     }
     try {
       await handlers.removeTag({ taskId: task.id, tagId });
+    } catch (err: unknown) {
+      showError(err);
+    }
+  }
+
+  const saveDependency = async (dependencyTask: Task): Promise<boolean> => {
+    if (!task) {
+      return false;
+    }
+    try {
+      await handlers.addDependency({
+        taskId: task.id,
+        dependencyTaskId: dependencyTask.id,
+      });
+      return true;
+    } catch (err: unknown) {
+      showError(err);
+      return false;
+    }
+  }
+
+  const cancelDependency = () => {
+    setShowDependencyPop(false);
+  }
+
+  const removeDependency = async (dependencyTaskId: string) => {
+    if (!task) {
+      return;
+    }
+    try {
+      await handlers.removeDependency({ taskId: task.id, dependencyTaskId });
     } catch (err: unknown) {
       showError(err);
     }
@@ -626,29 +661,55 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </DataRowContainer>
       )}
 
-      {dependencyTasks.length > 0 && (
+      {(dependencyTasks.length > 0 || task) && (
         <DataRowContainer title="Depends on" className='task-detail-page__section'>
           {dependencyTasks.map(depTask => {
-            // Add synthetic status tag to display task status
-            // Note: TaskRow component only uses tag.name, not tag.color
-            const statusTag: MetaTagResponseDto = {
-              id: `status-${depTask.status}`,
-              name: TASKS_STATUS[depTask.status as TaskStatus].label,
-              color: '', // Not used by TaskRow component
-              createdAt: depTask.createdAt,
-              updatedAt: depTask.updatedAt,
+            const statusInfo = TASKS_STATUS[depTask.status as TaskStatus];
+            const statusTag: DataRowTag = {
+              label: statusInfo.label,
+              color: 'gray' as const,
             };
             return (
-              <TaskRow
+              <DataRow
                 key={depTask.id}
-                task={{
-                  ...depTask,
-                  tags: [...depTask.tags, statusTag],
-                }}
+                tags={[
+                  statusTag,
+                  ...depTask.tags.map(tag => ({
+                    label: tag.name,
+                    color: 'gray' as const,
+                  })),
+                  {
+                    label: '× remove',
+                    color: 'red' as const,
+                    onClick: () => removeDependency(depTask.id),
+                    clickLabel: 'Remove dependency',
+                  },
+                ]}
                 onClick={() => navigate(`/tasks/task/${depTask.id}`)}
-              />
+              >
+                <Text weight='medium' size='3'>
+                  {depTask.name}
+                </Text>
+                <Text tone='muted' size='1' style='mono'>
+                  #{depTask.id.slice(0, 6)}
+                </Text>
+              </DataRow>
             );
           })}
+          <DataRow
+            tags={[
+              {
+                label: '+ add dependency',
+                color: 'gray' as const,
+                onClick: () => setShowDependencyPop(true),
+                clickLabel: 'Add dependency',
+              },
+            ]}
+          >
+            <Text tone='muted' size='2'>
+              {dependencyTasks.length === 0 ? 'No dependencies yet' : 'Add another dependency'}
+            </Text>
+          </DataRow>
         </DataRowContainer>
       )}
 
@@ -993,6 +1054,13 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       {showNewCommentPop ? <NewCommentPop onCancel={cancelNewComment} onSave={saveNewComment} taskId={task.id} /> : null}
       {showAssignPop ? <ActorSearchPop onCancel={cancelAssignment} onSave={saveAssignment} /> : null}
       {showTagPop ? <TagSearchPop onCancel={cancelTag} onSave={saveTag} existingTags={task.tags} /> : null}
+      {showDependencyPop ? (
+        <TaskSearchPop
+          onCancel={cancelDependency}
+          onSave={saveDependency}
+          excludeTaskIds={[task.id, ...(task.dependsOnIds || [])]}
+        />
+      ) : null}
       {respondingToInputRequest ? (
         <AnswerInputRequestPop
           onCancel={cancelAnswerInputRequest}
@@ -1052,6 +1120,24 @@ export function TaskDetailPage() {
     changeStatus: ({ taskId, status }) => TasksService.TasksController_changeStatus({ id: taskId, body: { status } }),
     addTag: ({ taskId, tag }) => TasksService.TasksController_addTagToTask({ id: taskId, body: { name: tag.name } }),
     removeTag: ({ taskId, tagId }) => TasksService.TasksController_removeTagFromTask({ id: taskId, tagId }),
+    addDependency: async ({ taskId, dependencyTaskId }) => {
+      const currentTask = tasks.find(t => t.id === taskId);
+      if (!currentTask) return;
+      const updatedDependsOnIds = [...(currentTask.dependsOnIds || []), dependencyTaskId];
+      await TasksService.TasksController_updateTask({
+        id: taskId,
+        body: { dependsOnIds: updatedDependsOnIds },
+      });
+    },
+    removeDependency: async ({ taskId, dependencyTaskId }) => {
+      const currentTask = tasks.find(t => t.id === taskId);
+      if (!currentTask) return;
+      const updatedDependsOnIds = (currentTask.dependsOnIds || []).filter(id => id !== dependencyTaskId);
+      await TasksService.TasksController_updateTask({
+        id: taskId,
+        body: { dependsOnIds: updatedDependsOnIds },
+      });
+    },
   };
 
   return (

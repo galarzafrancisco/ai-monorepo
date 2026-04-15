@@ -94,6 +94,16 @@ export function TaskBlueprintDetailPage() {
       const next = current.filter((item) => item.id !== tagId).map((item) => item.name);
       await updateBlueprint(taskId, { tagNames: next });
     },
+    addDependency: async ({ taskId, dependencyTaskId }: { taskId: string; dependencyTaskId: string }) => {
+      const current = blueprint?.dependsOnIds ?? [];
+      const next = [...current, dependencyTaskId];
+      await updateBlueprint(taskId, { dependsOnIds: next });
+    },
+    removeDependency: async ({ taskId, dependencyTaskId }: { taskId: string; dependencyTaskId: string }) => {
+      const current = blueprint?.dependsOnIds ?? [];
+      const next = current.filter((id) => id !== dependencyTaskId);
+      await updateBlueprint(taskId, { dependsOnIds: next });
+    },
   };
 
   return (
