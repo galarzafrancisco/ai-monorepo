@@ -22,6 +22,10 @@ export interface AppendBlockInput {
 
 export interface ListBlocksInput {
   tag?: string;
+  createdByActorId?: string;
+  parentId?: string | null;
+  updatedAfter?: Date;
+  limit?: number;
 }
 
 export interface TagResult {

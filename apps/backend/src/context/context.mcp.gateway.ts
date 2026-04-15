@@ -58,6 +58,76 @@ export class ContextMcpGateway {
     );
 
     server.registerTool(
+      'list_blocks_filtered',
+      {
+        title: 'List context blocks with filters',
+        description:
+          'List context blocks with additional filters for more precise queries',
+        annotations: readOnlyAnnotations,
+        inputSchema: {
+          tag: z.string().optional(),
+          createdByActorId: z.string().optional(),
+          parentId: z.string().nullable().optional(),
+          updatedWithinHours: z.number().positive().optional(),
+          limit: z.number().int().positive().max(500).optional(),
+        },
+      },
+      async ({ tag, createdByActorId, parentId, updatedWithinHours, limit }) => {
+        const updatedAfter =
+          updatedWithinHours !== undefined
+            ? new Date(Date.now() - updatedWithinHours * 60 * 60 * 1000)
+            : undefined;
+
+        const blocks = await this.contextService.listBlocks({
+          tag,
+          createdByActorId,
+          parentId,
+          updatedAfter,
+          limit: limit ?? 100,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(blocks),
+            },
+          ],
+        };
+      },
+    );
+
+    server.registerTool(
+      'search_blocks',
+      {
+        title: 'Search context blocks',
+        description:
+          'Fuzzy search for context blocks by title and content. Returns matching blocks sorted by relevance.',
+        annotations: readOnlyAnnotations,
+        inputSchema: {
+          query: z.string(),
+          limit: z.number().optional(),
+          threshold: z.number().optional(),
+        },
+      },
+      async ({ query, limit, threshold }) => {
+        const results = await this.contextService.searchBlocks({
+          query,
+          limit,
+          threshold,
+        });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results),
+            },
+          ],
+        };
+      },
+    );
+
+    server.registerTool(
       'get_thread_state_memory',
       {
         title: 'Get thread state memory',

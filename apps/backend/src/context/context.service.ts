@@ -137,27 +137,65 @@ export class ContextService {
   }
 
   async listBlocks(input?: ListBlocksInput): Promise<BlockSummaryResult[]> {
-    this.logger.log({ message: 'Listing context blocks', tag: input?.tag });
+    this.logger.log({
+      message: 'Listing context blocks',
+      filters: {
+        tag: input?.tag,
+        createdByActorId: input?.createdByActorId,
+        parentId: input?.parentId,
+        updatedAfter: input?.updatedAfter,
+        limit: input?.limit,
+      }
+    });
 
-    // If tag filter is provided, use query builder for join
+    // Use query builder for complex filtering
+    let queryBuilder = this.blockRepository
+      .createQueryBuilder('block')
+      .leftJoinAndSelect('block.tags', 'tags')
+      .leftJoinAndSelect('block.createdByActor', 'createdByActor')
+      .leftJoinAndSelect('block.assigneeActor', 'assigneeActor');
+
+    // Apply tag filter if provided
     if (input?.tag) {
-      const blocks = await this.blockRepository
-        .createQueryBuilder('block')
-        .leftJoinAndSelect('block.tags', 'tags')
-        .leftJoinAndSelect('block.createdByActor', 'createdByActor')
+      queryBuilder = queryBuilder
         .innerJoin('block.tags', 'filterTag')
-        .where('filterTag.name = :tagName', { tagName: input.tag })
-        .orderBy('block.createdAt', 'DESC')
-        .getMany();
-
-      return blocks.map((block) => this.mapToSummary(block));
+        .andWhere('filterTag.name = :tagName', { tagName: input.tag });
     }
 
-    // Standard filtering without tags
-    const blocks = await this.blockRepository.find({
-      relations: ['tags', 'createdByActor', 'assigneeActor'],
-      order: { createdAt: 'DESC' },
-    });
+    // Apply createdByActorId filter if provided
+    if (input?.createdByActorId) {
+      queryBuilder = queryBuilder.andWhere('block.createdByActorId = :createdByActorId', {
+        createdByActorId: input.createdByActorId,
+      });
+    }
+
+    // Apply parentId filter if provided (including explicit null)
+    if (input?.parentId !== undefined) {
+      if (input.parentId === null) {
+        queryBuilder = queryBuilder.andWhere('block.parentId IS NULL');
+      } else {
+        queryBuilder = queryBuilder.andWhere('block.parentId = :parentId', {
+          parentId: input.parentId,
+        });
+      }
+    }
+
+    // Apply updatedAfter filter if provided
+    if (input?.updatedAfter) {
+      queryBuilder = queryBuilder.andWhere('block.updatedAt >= :updatedAfter', {
+        updatedAfter: input.updatedAfter,
+      });
+    }
+
+    // Apply ordering
+    queryBuilder = queryBuilder.orderBy('block.createdAt', 'DESC');
+
+    // Apply limit if provided
+    if (input?.limit) {
+      queryBuilder = queryBuilder.take(input.limit);
+    }
+
+    const blocks = await queryBuilder.getMany();
 
     return blocks.map((block) => this.mapToSummary(block));
   }
