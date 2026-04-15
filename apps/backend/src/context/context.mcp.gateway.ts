@@ -67,7 +67,7 @@ export class ContextMcpGateway {
         inputSchema: {
           tag: z.string().optional(),
           createdByActorId: z.string().optional(),
-          parentId: z.string().nullable().optional(),
+          parentId: z.string().optional(),
           updatedWithinHours: z.number().positive().optional(),
           limit: z.number().int().positive().max(500).optional(),
         },
