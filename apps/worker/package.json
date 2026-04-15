@@ -1,6 +1,6 @@
 {
   "name": "@taico/worker",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "type": "module",
   "private": false,
   "license": "MIT",
@@ -35,9 +35,9 @@
     "@github/copilot-sdk": "^0.2.0",
     "@google/adk": "^0.2.4",
     "@opencode-ai/sdk": "^1.1.28",
-    "@taico/client": "^0.2.12",
-    "@taico/events": "^0.2.12",
-    "@taico/shared": "^0.2.12",
+    "@taico/client": "^0.2.13",
+    "@taico/events": "^0.2.13",
+    "@taico/shared": "^0.2.13",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
