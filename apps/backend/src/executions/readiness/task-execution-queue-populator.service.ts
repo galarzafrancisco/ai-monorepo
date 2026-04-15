@@ -19,7 +19,7 @@ export class TaskExecutionQueuePopulatorService {
     private readonly agentsService: AgentsService,
     private readonly readinessCandidateRepository: ReadinessCandidateRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   async populateTask(taskId: string): Promise<void> {
     const task = await this.readinessCandidateRepository.findCandidateTaskById(
@@ -64,6 +64,10 @@ export class TaskExecutionQueuePopulatorService {
     if (shouldBeQueued) {
       this.logger.debug(`Queueing task ${task.id} (${task.name})`);
       await this.upsertQueueEntry(task.id);
+      this.eventEmitter.emit(
+        TaskExecutionQueuedEvent.INTERNAL,
+        new TaskExecutionQueuedEvent(task.id),
+      );
       return;
     }
 
@@ -156,21 +160,13 @@ export class TaskExecutionQueuePopulatorService {
   }
 
   private async upsertQueueEntry(taskId: string): Promise<void> {
-    const result = await this.taskExecutionQueueRepository
+    await this.taskExecutionQueueRepository
       .createQueryBuilder()
       .insert()
       .into(TaskExecutionQueueEntity)
       .values({ taskId })
       .orIgnore()
       .execute();
-
-    // Check if a new row was inserted (SQLite returns changes > 0 for insert, 0 for ignore)
-    if (result.raw && result.raw.changes > 0) {
-      this.eventEmitter.emit(
-        TaskExecutionQueuedEvent.INTERNAL,
-        new TaskExecutionQueuedEvent(taskId),
-      );
-    }
   }
 
   private async deleteQueueEntry(taskId: string): Promise<void> {
