@@ -6,14 +6,17 @@ import {
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Logger, UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import * as cookie from 'cookie';
+import { OnEvent } from '@nestjs/event-emitter';
 import {
   ExecutionWireEvents,
   type PostExecutionHeartbeatPayload,
   type PostExecutionActivityPayload,
+  type TaskExecutionQueuedWireEvent,
 } from '@taico/events';
 import { WsAccessTokenGuard } from '../auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from '../auth/guards/guards/ws-scopes.guard';
@@ -26,6 +29,7 @@ import { WorkersService } from '../workers/workers.service';
 import { AccessTokenValidationService } from '../auth/guards/validation/access-token-validation.service';
 import { tokenFromHeaders } from '../auth/guards/extractors/token-header.extractor';
 import { tokenFromCookies } from '../auth/guards/extractors/token-cookie.extractor';
+import { TaskExecutionQueuedEvent } from './queue/task-execution-queued.event';
 
 const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
 
@@ -40,6 +44,9 @@ const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
 export class ExecutionsWorkerGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  @WebSocketServer()
+  server!: Server;
+
   private readonly logger = new Logger(ExecutionsWorkerGateway.name);
   private readonly socketExpiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly harnessReportRequestedSocketIds = new Set<string>();
@@ -256,6 +263,20 @@ export class ExecutionsWorkerGateway
       client.handshake.auth?.token ||
       tokenFromHeaders(client.handshake.headers) ||
       tokenFromCookies(cookie.parse(client.handshake.headers.cookie || ''))
+    );
+  }
+
+  @OnEvent(TaskExecutionQueuedEvent.INTERNAL)
+  handleTaskExecutionQueued(event: TaskExecutionQueuedEvent) {
+    const wireEvent: TaskExecutionQueuedWireEvent = {
+      taskId: event.taskId,
+      occurredAt: event.occurredAt.toISOString(),
+    };
+
+    // Broadcast to all connected workers
+    this.server.emit(ExecutionWireEvents.TASK_EXECUTION_QUEUED, wireEvent);
+    this.logger.debug(
+      `Emitted ${ExecutionWireEvents.TASK_EXECUTION_QUEUED} for task ${event.taskId} to all workers`,
     );
   }
 }

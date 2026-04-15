@@ -32,6 +32,29 @@ export async function runTaskClaimWorker(
   }
 }
 
+export async function attemptClaimTask(
+  taskId: string,
+  client: ApiClient,
+  workingDirectory: string,
+  baseUrl: string,
+  activityGatewayClient: ExecutionActivityGatewayClient,
+): Promise<void> {
+  console.log(`[worker] Received queue notification for task ${taskId}, attempting to claim...`);
+
+  try {
+    await pickTask({
+      client,
+      taskId,
+      baseDir: workingDirectory,
+      baseUrl,
+      activityGatewayClient,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.log(`[worker] Failed to claim task ${taskId}: ${message}`);
+  }
+}
+
 async function processNextQueuedTask(
   client: ApiClient,
   workingDirectory: string,

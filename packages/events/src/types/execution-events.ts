@@ -24,6 +24,7 @@ export const ExecutionWireEvents = {
   EXECUTION_HEARTBEAT_POST: 'execution.heartbeat.post',
   WORKER_HEARTBEAT_POST: 'worker.heartbeat.post',
   WORKER_HARNESSES_REPORT_REQUESTED: 'worker.harnesses.report.requested',
+  TASK_EXECUTION_QUEUED: 'task.execution.queued',
 } as const;
 
 export type ExecutionWireEventName =
@@ -116,13 +117,23 @@ export interface ExecutionActivityWireEvent {
 }
 
 /**
+ * Task execution queued event
+ * Emitted when a task enters the execution queue and is ready to be claimed by workers
+ */
+export interface TaskExecutionQueuedWireEvent {
+  taskId: string;
+  occurredAt: string;
+}
+
+/**
  * Union type of all execution wire events
  */
 export type ExecutionWireEvent =
   | ExecutionCreatedWireEvent
   | ExecutionUpdatedWireEvent
   | ExecutionDeletedWireEvent
-  | ExecutionActivityWireEvent;
+  | ExecutionActivityWireEvent
+  | TaskExecutionQueuedWireEvent;
 
 /**
  * Type guards for event identification

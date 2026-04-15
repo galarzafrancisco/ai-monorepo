@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { In, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AgentsService } from '../../agents/agents.service';
 import { AgentResult } from '../../agents/dto/service/agents.service.types';
 import { TaskEntity } from '../../tasks/task.entity';
 import { TaskExecutionQueueEntity } from '../queue/task-execution-queue.entity';
 import { ReadinessCandidateRepository } from './readiness-candidate.repository';
+import { TaskExecutionQueuedEvent } from '../queue/task-execution-queued.event';
 
 @Injectable()
 export class TaskExecutionQueuePopulatorService {
@@ -16,6 +18,7 @@ export class TaskExecutionQueuePopulatorService {
     private readonly taskExecutionQueueRepository: Repository<TaskExecutionQueueEntity>,
     private readonly agentsService: AgentsService,
     private readonly readinessCandidateRepository: ReadinessCandidateRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async populateTask(taskId: string): Promise<void> {
@@ -153,13 +156,21 @@ export class TaskExecutionQueuePopulatorService {
   }
 
   private async upsertQueueEntry(taskId: string): Promise<void> {
-    await this.taskExecutionQueueRepository
+    const result = await this.taskExecutionQueueRepository
       .createQueryBuilder()
       .insert()
       .into(TaskExecutionQueueEntity)
       .values({ taskId })
       .orIgnore()
       .execute();
+
+    // Check if a new row was inserted (affected > 0 means insert happened, not ignored)
+    if (result.raw && result.raw.affectedRows > 0) {
+      this.eventEmitter.emit(
+        TaskExecutionQueuedEvent.INTERNAL,
+        new TaskExecutionQueuedEvent(taskId),
+      );
+    }
   }
 
   private async deleteQueueEntry(taskId: string): Promise<void> {

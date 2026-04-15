@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'timers/promises';
 import { ApiClient } from '@taico/client/v2';
 import { WorkerAuth } from './auth/worker-auth.js';
-import { runTaskClaimWorker } from './task-claim-worker.js';
+import { runTaskClaimWorker, attemptClaimTask } from './task-claim-worker.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 
 const STARTUP_RETRY_DELAY_MS = 2_000;
@@ -53,6 +53,15 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
     baseUrl: auth.serverUrl,
     auth,
     debug: true,
+    onTaskQueued: (event) => {
+      void attemptClaimTask(
+        event.taskId,
+        client,
+        options.workingDirectory,
+        auth.serverUrl,
+        activityGatewayClient,
+      );
+    },
   });
 
   await activityGatewayClient.start();

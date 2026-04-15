@@ -3,6 +3,7 @@ import {
   ExecutionWireEvents,
   type PostExecutionActivityPayload,
   type PostExecutionHeartbeatPayload,
+  type TaskExecutionQueuedWireEvent,
 } from '@taico/events';
 import { WorkerAuth } from './auth/worker-auth.js';
 
@@ -25,6 +26,7 @@ export type ExecutionActivityGatewayClientOptions = {
   reconnectionDelayMax?: number;
   randomizationFactor?: number;
   tokenRefreshSkewMs?: number;
+  onTaskQueued?: (event: TaskExecutionQueuedWireEvent) => void;
 };
 
 export class ExecutionActivityGatewayClient {
@@ -209,6 +211,13 @@ export class ExecutionActivityGatewayClient {
 
     this.socket.on(ExecutionWireEvents.WORKER_HARNESSES_REPORT_REQUESTED, () => {
       this.handleHarnessesReportRequested();
+    });
+
+    this.socket.on(ExecutionWireEvents.TASK_EXECUTION_QUEUED, (event: TaskExecutionQueuedWireEvent) => {
+      if (this.options.debug) {
+        console.log('[execution-activity] task queued event received:', event);
+      }
+      this.options.onTaskQueued?.(event);
     });
 
     this.socket.on('connect_error', (err: Error) => {
