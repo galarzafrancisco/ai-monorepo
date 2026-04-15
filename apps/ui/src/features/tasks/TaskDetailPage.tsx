@@ -1134,9 +1134,14 @@ export function TaskDetailPage() {
         id: taskId,
         body: { dependsOnIds: updatedDependsOnIds },
       });
-      // Fetch the dependency task to ensure it's in the cache for rendering.
+      // Best-effort: Fetch the dependency task to ensure it's in the cache for rendering.
       // This prevents the dependency from disappearing if it's not already in allTasks (paginated to 100).
-      await getTaskById(dependencyTaskId);
+      // If hydration fails, the mutation already succeeded, so we just log the error.
+      try {
+        await getTaskById(dependencyTaskId);
+      } catch (err) {
+        console.error(`Failed to hydrate dependency ${dependencyTaskId} after adding`, err);
+      }
     },
     removeDependency: async ({ taskId, dependencyTaskId }) => {
       const currentTask = tasks.find(t => t.id === taskId);
