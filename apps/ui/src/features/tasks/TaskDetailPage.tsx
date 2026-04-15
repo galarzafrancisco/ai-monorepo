@@ -162,8 +162,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   // Look up dependency tasks from the real-time tasks array.
   // The useTasks hook already maintains a real-time updated tasks array via WebSocket.
-  // If a dependency isn't in allTasks (e.g., outside the 100-task pagination window),
-  // it simply won't display - which is acceptable behavior.
+  // Missing dependencies are hydrated by the useEffect above to ensure they're always in the cache.
   const dependencyTasks = useMemo(() => {
     if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) {
       return [];
@@ -1092,6 +1091,29 @@ export function TaskDetailPage() {
 
     return () => { cancelled = true; };
   }, [taskId, getTaskById]);
+
+  // Hydrate missing dependencies to ensure all dependency tasks are in the cache.
+  // This prevents dependencies from being invisible (and therefore unremovable) when
+  // they're outside the paginated allTasks cache (limited to 100 tasks).
+  useEffect(() => {
+    if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) return;
+
+    const missingDependencyIds = task.dependsOnIds.filter(
+      depId => !tasks.some(t => t.id === depId)
+    );
+
+    if (missingDependencyIds.length === 0) return;
+
+    // Fetch all missing dependencies in parallel
+    Promise.all(
+      missingDependencyIds.map(depId =>
+        getTaskById(depId).catch(err => {
+          console.error(`Failed to hydrate dependency ${depId}`, err);
+          return null;
+        })
+      )
+    );
+  }, [task, tasks, getTaskById]);
 
   const isLoadingTask = !task && (!hasLoadedOnce || isLoading || isFetchingTask);
 
