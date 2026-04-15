@@ -164,8 +164,8 @@ export class TaskExecutionQueuePopulatorService {
       .orIgnore()
       .execute();
 
-    // Check if a new row was inserted (affected > 0 means insert happened, not ignored)
-    if (result.raw && result.raw.affectedRows > 0) {
+    // Check if a new row was inserted (SQLite returns changes > 0 for insert, 0 for ignore)
+    if (result.raw && result.raw.changes > 0) {
       this.eventEmitter.emit(
         TaskExecutionQueuedEvent.INTERNAL,
         new TaskExecutionQueuedEvent(taskId),
