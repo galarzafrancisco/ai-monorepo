@@ -37,6 +37,8 @@ export function TaskSearchPop({ onCancel, onSave, excludeTaskIds }: TaskSearchPo
   useEffect(() => {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) {
+      // Invalidate any outstanding requests before clearing
+      searchRequestIdRef.current = searchRequestIdRef.current + 1;
       setSearchResults([]);
       setSearchError(null);
       setIsSearching(false);

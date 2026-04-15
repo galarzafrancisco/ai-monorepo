@@ -318,7 +318,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [task, showNewCommentPop, showAssignPop, showTagPop, respondingToInputRequest]);
+  }, [task, showNewCommentPop, showAssignPop, showTagPop, showDependencyPop, respondingToInputRequest]);
 
   const saveNewComment = async ({ content }: { content: string }): Promise<boolean> => {
     if (!task) {
