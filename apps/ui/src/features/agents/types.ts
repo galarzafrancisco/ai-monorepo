@@ -1,5 +1,6 @@
 // Re-export types from shared package for ergonomics
 export type {
+  AgentAvatarDto,
   AgentResponseDto as Agent,
   IssueAccessTokenRequestDto,
   IssueAccessTokenResponseDto,

@@ -703,9 +703,17 @@ export interface AgentTemplateHarnessDto {
   modelOptions: AgentTemplateModelOptionDto[];
 }
 
+export interface AgentAvatarDto {
+  id: string;
+  label: string;
+  url: string;
+  description: string;
+}
+
 export interface AgentTemplateCatalogResponseDto {
   templates: AgentTemplateDto[];
   harnesses: AgentTemplateHarnessDto[];
+  avatars: AgentAvatarDto[];
 }
 
 export interface PatchAgentDto {

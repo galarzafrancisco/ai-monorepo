@@ -10499,6 +10499,37 @@
           "modelOptions"
         ]
       },
+      "AgentAvatarDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable avatar identifier.",
+            "example": "openai"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable avatar label.",
+            "example": "OpenAI Blossom"
+          },
+          "url": {
+            "type": "string",
+            "description": "Relative public URL for the avatar image.",
+            "example": "/avatar/openai.svg"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short explanation of what this avatar represents.",
+            "example": "OpenAI-inspired avatar for GPT and Codex model selections."
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "url",
+          "description"
+        ]
+      },
       "AgentTemplateCatalogResponseDto": {
         "type": "object",
         "properties": {
@@ -10513,11 +10544,18 @@
             "items": {
               "$ref": "#/components/schemas/AgentTemplateHarnessDto"
             }
+          },
+          "avatars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentAvatarDto"
+            }
           }
         },
         "required": [
           "templates",
-          "harnesses"
+          "harnesses",
+          "avatars"
         ]
       },
       "PatchAgentDto": {

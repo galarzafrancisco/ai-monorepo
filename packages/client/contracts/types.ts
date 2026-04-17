@@ -4392,9 +4392,32 @@ export interface components {
             description: string;
             modelOptions: components["schemas"]["AgentTemplateModelOptionDto"][];
         };
+        AgentAvatarDto: {
+            /**
+             * @description Stable avatar identifier.
+             * @example openai
+             */
+            id: string;
+            /**
+             * @description Human-readable avatar label.
+             * @example OpenAI Blossom
+             */
+            label: string;
+            /**
+             * @description Relative public URL for the avatar image.
+             * @example /avatar/openai.svg
+             */
+            url: string;
+            /**
+             * @description Short explanation of what this avatar represents.
+             * @example OpenAI-inspired avatar for GPT and Codex model selections.
+             */
+            description: string;
+        };
         AgentTemplateCatalogResponseDto: {
             templates: components["schemas"]["AgentTemplateDto"][];
             harnesses: components["schemas"]["AgentTemplateHarnessDto"][];
+            avatars: components["schemas"]["AgentAvatarDto"][];
         };
         PatchAgentDto: {
             /**

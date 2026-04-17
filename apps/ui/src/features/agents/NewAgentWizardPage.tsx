@@ -13,9 +13,11 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useDraftState } from "../../shared/hooks/useDraftState";
 import { AgentsService } from "./api";
 import { useAgentsCtx } from "./AgentsProvider";
+import { AgentAvatarPicker } from './AgentAvatarPicker';
+import { getAvatarLabel, getSuggestedAvatarUrl } from './avatarSelection';
 import "./NewAgentWizardPage.css";
 
-type WizardStep = "template" | "harness" | "model" | "status" | "tags" | "prompt" | "identity";
+type WizardStep = "template" | "harness" | "model" | "status" | "tags" | "avatar" | "prompt" | "identity";
 type AgentType = CreateAgentDto["type"];
 
 type Draft = CreateAgentDto & {
@@ -30,9 +32,10 @@ type WizardState = {
   customModelId: string;
   tagText: string;
   slugTouched: boolean;
+  avatarTouched: boolean;
 };
 
-const BASE_STEPS: WizardStep[] = ["template", "harness", "model", "status", "tags"];
+const BASE_STEPS: WizardStep[] = ["template", "harness", "model", "status", "tags", "avatar"];
 const STATUS_OPTIONS = [
   TaskStatus.NOT_STARTED,
   TaskStatus.IN_PROGRESS,
@@ -63,6 +66,7 @@ const defaultWizardState: WizardState = {
   customModelId: "",
   tagText: "",
   slugTouched: false,
+  avatarTouched: false,
 };
 
 export function NewAgentWizardPage() {
@@ -164,17 +168,22 @@ export function NewAgentWizardPage() {
           : "default",
       customProviderId: "",
       customModelId: "",
+      avatarTouched: false,
     }));
   }
 
   function selectHarness(harness: AgentTemplateHarnessDto) {
     setWizardState((current) => ({
       ...current,
+      avatarTouched: false,
       draft: {
         ...current.draft,
         type: harness.type,
         providerId: undefined,
         modelId: undefined,
+        avatarUrl: catalog
+          ? getSuggestedAvatarUrl(catalog, { type: harness.type })
+          : current.draft.avatarUrl,
       },
       selectedModelOptionId: "default",
       customProviderId: "",
@@ -191,6 +200,14 @@ export function NewAgentWizardPage() {
           ...current.draft,
           providerId: current.customProviderId.trim() || undefined,
           modelId: current.customModelId.trim() || undefined,
+          avatarUrl:
+            catalog && !current.avatarTouched
+              ? getSuggestedAvatarUrl(catalog, {
+                  type: current.draft.type,
+                  providerId: current.customProviderId,
+                  modelId: current.customModelId,
+                })
+              : current.draft.avatarUrl,
         },
       }));
       return;
@@ -203,6 +220,14 @@ export function NewAgentWizardPage() {
         ...current.draft,
         providerId: option.providerId,
         modelId: option.modelId,
+        avatarUrl:
+          catalog && !current.avatarTouched
+            ? getSuggestedAvatarUrl(catalog, {
+                type: current.draft.type,
+                providerId: option.providerId,
+                modelId: option.modelId,
+              })
+            : current.draft.avatarUrl,
       },
     }));
   }
@@ -216,6 +241,25 @@ export function NewAgentWizardPage() {
         ...current.draft,
         providerId: nextProviderId.trim() || undefined,
         modelId: nextModelId.trim() || undefined,
+        avatarUrl:
+          catalog && !current.avatarTouched
+            ? getSuggestedAvatarUrl(catalog, {
+                type: current.draft.type,
+                providerId: nextProviderId,
+                modelId: nextModelId,
+              })
+            : current.draft.avatarUrl,
+      },
+    }));
+  }
+
+  function selectAvatar(avatarUrl: string) {
+    setWizardState((current) => ({
+      ...current,
+      avatarTouched: true,
+      draft: {
+        ...current.draft,
+        avatarUrl,
       },
     }));
   }
@@ -479,6 +523,19 @@ export function NewAgentWizardPage() {
           </WizardSection>
         )}
 
+        {currentStep === "avatar" && (
+          <WizardSection
+            title="Choose avatar"
+            support="Pick one of the bundled avatars that the backend exposes for agents."
+          >
+            <AgentAvatarPicker
+              avatars={catalog.avatars}
+              selectedUrl={draft.avatarUrl ?? undefined}
+              onSelect={selectAvatar}
+            />
+          </WizardSection>
+        )}
+
         {currentStep === "prompt" && (
           <WizardSection
             title="What should this agent do?"
@@ -533,6 +590,7 @@ export function NewAgentWizardPage() {
               <Text size="2" tone="muted">Template: {getTemplateLabel(catalog.templates, draft.templateId)}</Text>
               <Text size="2" tone="muted">Harness: {selectedHarness?.label ?? draft.type ?? "Other"}</Text>
               <Text size="2" tone="muted">Model: {draft.modelId ? formatModel(draft) : "Default"}</Text>
+              <Text size="2" tone="muted">Avatar: {getAvatarLabel(catalog, draft.avatarUrl)}</Text>
               <Text size="2" tone="muted">
                 Triggers: {(draft.statusTriggers ?? []).length > 0 ? draft.statusTriggers?.join(", ") : "Manual"}
               </Text>

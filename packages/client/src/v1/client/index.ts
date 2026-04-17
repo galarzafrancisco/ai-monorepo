@@ -11,6 +11,7 @@ export { ActiveTaskExecutionResponseDto } from './models/ActiveTaskExecutionResp
 export type { ActiveTaskExecutionTagSnapshotResponseDto } from './models/ActiveTaskExecutionTagSnapshotResponseDto.js';
 export { ActorResponseDto } from './models/ActorResponseDto.js';
 export type { AddParticipantDto } from './models/AddParticipantDto.js';
+export type { AgentAvatarDto } from './models/AgentAvatarDto.js';
 export type { AgentExecutionTokenResponseDto } from './models/AgentExecutionTokenResponseDto.js';
 export type { AgentListResponseDto } from './models/AgentListResponseDto.js';
 export { AgentResponseDto } from './models/AgentResponseDto.js';

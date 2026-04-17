@@ -34,6 +34,32 @@ export class AgentTemplateModelOptionDto {
   isDefault!: boolean;
 }
 
+export class AgentAvatarDto {
+  @ApiProperty({
+    description: 'Stable avatar identifier.',
+    example: 'openai',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'Human-readable avatar label.',
+    example: 'OpenAI Blossom',
+  })
+  label!: string;
+
+  @ApiProperty({
+    description: 'Relative public URL for the avatar image.',
+    example: '/avatar/openai.svg',
+  })
+  url!: string;
+
+  @ApiProperty({
+    description: 'Short explanation of what this avatar represents.',
+    example: 'OpenAI-inspired avatar for GPT and Codex model selections.',
+  })
+  description!: string;
+}
+
 export class AgentTemplateHarnessDto {
   @ApiProperty({
     enum: AgentType,
@@ -139,4 +165,7 @@ export class AgentTemplateCatalogResponseDto {
 
   @ApiProperty({ type: [AgentTemplateHarnessDto] })
   harnesses!: AgentTemplateHarnessDto[];
+
+  @ApiProperty({ type: [AgentAvatarDto] })
+  avatars!: AgentAvatarDto[];
 }

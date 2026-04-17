@@ -22,9 +22,9 @@ import {
   AgentUpdatedEvent,
   AgentDeletedEvent,
 } from './events/agents.events';
-import { DEFAULT_AGENT_AVATAR } from './enums/agent-type.enum';
 import { AGENT_TEMPLATE_CATALOG } from './agent-template.catalog';
 import { AgentTemplateCatalogResponseDto } from './dto/agent-template-catalog-response.dto';
+import { getDefaultAgentAvatarUrl } from './agent-avatar.library';
 
 @Injectable()
 export class AgentsService {
@@ -45,8 +45,12 @@ export class AgentsService {
     let avatarUrl: string | null = null;
     if (input.avatarUrl !== undefined) {
       avatarUrl = input.avatarUrl;
-    } else if (input.type !== undefined) {
-      avatarUrl = DEFAULT_AGENT_AVATAR[input.type];
+    } else {
+      avatarUrl = getDefaultAgentAvatarUrl({
+        type: input.type,
+        providerId: input.providerId,
+        modelId: input.modelId,
+      });
     }
     const actor = this.actorRepository.create({
       type: ActorType.AGENT,

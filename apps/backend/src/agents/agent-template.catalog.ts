@@ -13,11 +13,13 @@ import {
 } from 'src/app-init/models/models';
 import { AgentType } from './enums';
 import {
+  AgentAvatarDto,
   AgentTemplateCatalogResponseDto,
   AgentTemplateDto,
   AgentTemplateHarnessDto,
   AgentTemplateModelOptionDto,
 } from './dto/agent-template-catalog-response.dto';
+import { AGENT_AVATARS, getAgentAvatarUrlById } from './agent-avatar.library';
 
 const defaultModelOption: AgentTemplateModelOptionDto = {
   id: 'default',
@@ -129,7 +131,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     systemPrompt: DEV_PROMPT,
     statusTriggers: [TaskStatus.NOT_STARTED],
     tagTriggers: [],
-    avatarUrl: '/icons/OpenAI-white-monoblossom.svg',
+    avatarUrl: getAgentAvatarUrlById('openai') ?? undefined,
     concurrencyLimit: 1,
   },
   {
@@ -144,7 +146,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     systemPrompt: REVIEWER_PROMPT,
     statusTriggers: [TaskStatus.FOR_REVIEW],
     tagTriggers: ['code'],
-    avatarUrl: '/icons/cockatoo.png',
+    avatarUrl: getAgentAvatarUrlById('cockatoo') ?? undefined,
     concurrencyLimit: 1,
   },
   {
@@ -157,7 +159,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     systemPrompt: ASSISTANT_PROMPT,
     statusTriggers: [TaskStatus.NOT_STARTED],
     tagTriggers: [],
-    avatarUrl: '/icons/agent-development-kit.png',
+    avatarUrl: getAgentAvatarUrlById('gemini') ?? undefined,
     concurrencyLimit: 1,
   },
   {
@@ -176,4 +178,5 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
 export const AGENT_TEMPLATE_CATALOG: AgentTemplateCatalogResponseDto = {
   templates: AGENT_TEMPLATES,
   harnesses: AGENT_TEMPLATE_HARNESSES,
+  avatars: AGENT_AVATARS satisfies AgentAvatarDto[],
 };

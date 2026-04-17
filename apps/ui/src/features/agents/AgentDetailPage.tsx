@@ -4,9 +4,9 @@ import { useAgentsCtx } from './AgentsProvider';
 import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
-import { Agent, AgentToken } from './types';
+import { Agent, AgentAvatarDto, AgentToken } from './types';
 import type { AgentResponseDto, ScopeDto, MetaTagResponseDto, AgentToolPermissionResponseDto } from "@taico/client/v2";
-import { AgentTokensService, AgentToolPermissionsService, AuthorizationServerService, MetaService } from './api';
+import { AgentsService, AgentTokensService, AgentToolPermissionsService, AuthorizationServerService, MetaService } from './api';
 import { EditSystemPromptPop } from './EditSystemPromptPop';
 import { EditStatusTriggersPop } from './EditStatusTriggersPop';
 import { EditTagTriggersPop } from './EditTagTriggersPop';
@@ -14,6 +14,7 @@ import { EditIntroductionPop } from './EditIntroductionPop';
 import { EditAgentTypePop } from './EditAgentTypePop';
 import { EditAgentModelPop } from './EditAgentModelPop';
 import { EditConcurrencyLimitPop } from './EditConcurrencyLimitPop';
+import { EditAgentAvatarPop } from './EditAgentAvatarPop';
 import { TaskStatus } from '../../shared/const/taskStatus';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
@@ -61,6 +62,8 @@ export function AgentDetailPage() {
   const [showEditIntroductionPop, setShowEditIntroductionPop] = useState(false);
   const [showEditModelPop, setShowEditModelPop] = useState(false);
   const [showEditConcurrencyLimitPop, setShowEditConcurrencyLimitPop] = useState(false);
+  const [showEditAvatarPop, setShowEditAvatarPop] = useState(false);
+  const [avatarCatalog, setAvatarCatalog] = useState<AgentAvatarDto[]>([]);
 
   // Load tokens for this agent
   const loadTokens = useCallback(async () => {
@@ -86,6 +89,15 @@ export function AgentDetailPage() {
       console.error('Failed to load scopes:', err);
     } finally {
       setScopesLoading(false);
+    }
+  }, []);
+
+  const loadAvatarCatalog = useCallback(async () => {
+    try {
+      const response = await AgentsService.AgentsController_listAgentTemplates({});
+      setAvatarCatalog(response.avatars);
+    } catch (err) {
+      console.error('Failed to load avatar catalog:', err);
     }
   }, []);
 
@@ -140,8 +152,11 @@ export function AgentDetailPage() {
       loadTokens();
       loadTags();
       loadToolPermissions();
+      if (avatarCatalog.length === 0) {
+        loadAvatarCatalog();
+      }
     }
-  }, [agent, loadTokens, loadTags, loadToolPermissions]);
+  }, [agent, avatarCatalog.length, loadTokens, loadTags, loadToolPermissions, loadAvatarCatalog]);
 
   // Load available scopes when create form is shown
   useEffect(() => {
@@ -339,6 +354,27 @@ export function AgentDetailPage() {
     }
   };
 
+  const handleSaveAvatar = async ({
+    avatarUrl,
+  }: {
+    avatarUrl: string;
+  }): Promise<boolean> => {
+    if (!agent) return false;
+    try {
+      const updated = await updateAgent(agent.actorId, { avatarUrl });
+      if (updated) {
+        setAgent(updated);
+        setShowEditAvatarPop(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to update avatar:', err);
+      showError(err);
+      return false;
+    }
+  };
+
   // Handle revoking a token
   const handleRevokeToken = async (tokenId: string) => {
     if (!slug) return;
@@ -441,6 +477,7 @@ export function AgentDetailPage() {
       {/* Meta */}
       <DataRowContainer className="agent-detail-page__section">
         <DataRow
+          onClick={() => setShowEditAvatarPop(true)}
           leading={<Avatar size="sm" name={agent.name} src={agent.avatarUrl || undefined} />}
           tags={[
             getTypeTag(agent.type),
@@ -459,6 +496,7 @@ export function AgentDetailPage() {
           <Text>
             {agent.description ? String(agent.description) : 'No description'}
           </Text>
+          <Text size="1" tone="muted">tap to edit avatar</Text>
         </DataRow>
       </DataRowContainer>
 
@@ -821,6 +859,14 @@ export function AgentDetailPage() {
           initialValue={concurrencyLimit}
           onCancel={() => setShowEditConcurrencyLimitPop(false)}
           onSave={handleSaveConcurrencyLimit}
+        />
+      )}
+      {showEditAvatarPop && agent && avatarCatalog.length > 0 && (
+        <EditAgentAvatarPop
+          avatars={avatarCatalog}
+          initialValue={agent.avatarUrl}
+          onCancel={() => setShowEditAvatarPop(false)}
+          onSave={handleSaveAvatar}
         />
       )}
     </div>
