@@ -4,6 +4,8 @@ import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Button, Card, Text } from "../../ui/primitives";
 import { useActorsCtx } from "../actors";
 import { useExecutions } from "./useExecutions";
+import { ExecutionsService } from "./api";
+import { useToast } from "../../shared/context/ToastContext";
 import type {
   TaskExecutionQueueEntryResponseDto,
   ActiveTaskExecutionResponseDto,
@@ -14,6 +16,7 @@ import "./ExecutionsPage.css";
 export function ExecutionsPage() {
   const navigate = useNavigate();
   const { actors } = useActorsCtx();
+  const { showToast, showError } = useToast();
   const {
     queue,
     active,
@@ -35,6 +38,9 @@ export function ExecutionsPage() {
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [interruptingExecutions, setInterruptingExecutions] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const toggleHistoryMessage = (historyId: string) => {
     setExpandedHistoryIds((prev) => {
@@ -46,6 +52,29 @@ export function ExecutionsPage() {
       }
       return next;
     });
+  };
+
+  const handleInterruptExecution = async (executionId: string, taskName: string | null) => {
+    if (!confirm(`Are you sure you want to interrupt the execution for "${taskName ?? "Untitled task"}"?`)) {
+      return;
+    }
+
+    setInterruptingExecutions((prev) => new Set(prev).add(executionId));
+
+    try {
+      await ExecutionsService.ActiveTaskExecutionController_interruptExecution({ executionId });
+      showToast(`Interrupt signal sent for "${taskName ?? "Untitled task"}"`);
+      // Refresh executions to show updated state
+      await loadExecutions();
+    } catch (err) {
+      showError(err);
+    } finally {
+      setInterruptingExecutions((prev) => {
+        const next = new Set(prev);
+        next.delete(executionId);
+        return next;
+      });
+    }
   };
 
   return (
@@ -133,9 +162,10 @@ export function ExecutionsPage() {
             emptyMessage="No active executions right now."
             table={
               <ExecutionTable
-                columns={["State", "Task", "Worker", "Agent", "Session", "Tools", "Claimed", "Latest heartbeat", "Before claim"]}
+                columns={["State", "Task", "Worker", "Agent", "Session", "Tools", "Claimed", "Latest heartbeat", "Before claim", "Actions"]}
                 rows={active.map((entry) => {
                   const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
+                  const isInterrupting = interruptingExecutions.has(entry.id);
 
                   return {
                     key: entry.id,
@@ -156,6 +186,15 @@ export function ExecutionsPage() {
                     <StatusPill key="before" tone={taskStatusTone(entry.taskStatusBeforeClaim)}>
                       {entry.taskStatusBeforeClaim}
                     </StatusPill>,
+                    <Button
+                      key="interrupt"
+                      variant="danger"
+                      size="sm"
+                      disabled={isInterrupting}
+                      onClick={() => void handleInterruptExecution(entry.id, entry.taskName)}
+                    >
+                      {isInterrupting ? "Interrupting…" : "Interrupt"}
+                    </Button>,
                     ],
                     mobile: (
                     <ExecutionMobileCard
@@ -172,6 +211,16 @@ export function ExecutionsPage() {
                         { label: "Tool calls", value: String(entry.toolCallCount) },
                         { label: "Before claim", value: entry.taskStatusBeforeClaim },
                       ]}
+                      actionButton={
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          disabled={isInterrupting}
+                          onClick={() => void handleInterruptExecution(entry.id, entry.taskName)}
+                        >
+                          {isInterrupting ? "Interrupting…" : "Interrupt"}
+                        </Button>
+                      }
                       onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
                     />
                     ),
@@ -528,12 +577,14 @@ function ExecutionMobileCard({
   tone,
   lines,
   onClick,
+  actionButton,
 }: {
   title: string;
   badge: string;
   tone: "accent" | "warning" | "success" | "danger";
   lines: Array<{ label: string; value: string; mono?: boolean }>;
   onClick?: () => void;
+  actionButton?: React.ReactNode;
 }) {
   const className = onClick
     ? "executions-mobile-card executions-mobile-card--clickable"
@@ -560,6 +611,11 @@ function ExecutionMobileCard({
           </div>
         ))}
       </div>
+      {actionButton ? (
+        <div className="executions-mobile-card__actions">
+          {actionButton}
+        </div>
+      ) : null}
     </>
   );
 

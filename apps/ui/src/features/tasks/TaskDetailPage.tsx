@@ -264,6 +264,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [isLoadingExecutions, setIsLoadingExecutions] = useState(false);
   const [executionsError, setExecutionsError] = useState<string | null>(null);
   const [expandedExecutionErrorIds, setExpandedExecutionErrorIds] = useState<Set<string>>(new Set());
+  const [interruptingExecutions, setInterruptingExecutions] = useState<Set<string>>(new Set());
 
   const [showNewCommentPop, setShowNewCommentPop] = useState(false);
   const [showAssignPop, setShowAssignPop] = useState(false);
@@ -282,6 +283,27 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       return next;
     });
   }, []);
+
+  const handleInterruptExecution = useCallback(async (executionId: string, taskName: string | undefined, taskId: string) => {
+    if (!confirm(`Are you sure you want to interrupt the active execution for "${taskName ?? "this task"}"?`)) {
+      return;
+    }
+
+    setInterruptingExecutions((prev) => new Set(prev).add(executionId));
+
+    try {
+      await ExecutionsService.ActiveTaskExecutionController_interruptExecution({ executionId });
+      showToast(`Interrupt signal sent for "${taskName ?? "this task"}"`);
+    } catch (err) {
+      showError(err);
+    } finally {
+      setInterruptingExecutions((prev) => {
+        const next = new Set(prev);
+        next.delete(executionId);
+        return next;
+      });
+    }
+  }, [showToast, showError]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -882,8 +904,10 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           const hasFailureDetails =
             execution.status === 'FAILED' && Boolean(execution.errorCode || execution.errorMessage);
           const isFailureDetailsExpanded = expandedExecutionErrorIds.has(execution.id);
+          const isActive = execution.source === 'active';
+          const isInterrupting = interruptingExecutions.has(execution.id);
           const sourceTag: DataRowTag = {
-            label: execution.source === 'active' ? 'active' : 'history',
+            label: isActive ? 'active' : 'history',
             color: 'gray',
           };
 
@@ -892,7 +916,20 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
               key={execution.id}
               leading={<Avatar size={'sm'} name={actorName} src={actor?.avatarUrl || undefined} />}
               tags={[statusTag, sourceTag]}
-              topRight={<Text size='1' tone='muted'>{elapsedTime(execution.timestamp)}</Text>}
+              topRight={
+                isActive ? (
+                  <Button
+                    variant='danger'
+                    size='sm'
+                    disabled={isInterrupting}
+                    onClick={() => void handleInterruptExecution(execution.executionId, task?.name, task?.id ?? '')}
+                  >
+                    {isInterrupting ? 'Interrupting…' : 'Interrupt'}
+                  </Button>
+                ) : (
+                  <Text size='1' tone='muted'>{elapsedTime(execution.timestamp)}</Text>
+                )
+              }
             >
               <Stack spacing='1'>
                 <div>
@@ -925,6 +962,12 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                     tools: {execution.toolCallCount}
                     <span className='task-detail-page__execution-stats-separator'>|</span>
                     session: {execution.runnerSessionId ? shortId(execution.runnerSessionId) : 'pending'}
+                    {isActive ? (
+                      <>
+                        <span className='task-detail-page__execution-stats-separator'>|</span>
+                        {elapsedTime(execution.timestamp)}
+                      </>
+                    ) : null}
                   </span>
                 </Text>
                 {hasFailureDetails && isFailureDetailsExpanded ? (
