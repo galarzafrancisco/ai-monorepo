@@ -15,6 +15,36 @@ export const AGENT_AVATARS: AgentAvatarDefinition[] = [
     description: 'Taico app avatar for the system operator agent.',
   },
   {
+    id: 'angus',
+    label: 'Angus',
+    url: '/avatar/angus.png',
+    description: 'Bundled Angus avatar for agent profiles.',
+  },
+  {
+    id: 'bruce',
+    label: 'Bruce',
+    url: '/avatar/bruce.png',
+    description: 'Bundled Bruce avatar for agent profiles.',
+  },
+  {
+    id: 'grace',
+    label: 'Grace',
+    url: '/avatar/grace.png',
+    description: 'Bundled Grace avatar for agent profiles.',
+  },
+  {
+    id: 'gustav',
+    label: 'Gustav',
+    url: '/avatar/gustav.png',
+    description: 'Bundled Gustav avatar for agent profiles.',
+  },
+  {
+    id: 'stacy',
+    label: 'Stacy',
+    url: '/avatar/stacy.png',
+    description: 'Bundled Stacy avatar for agent profiles.',
+  },
+  {
     id: 'claude',
     label: 'Claude',
     url: '/avatar/claude.webp',
