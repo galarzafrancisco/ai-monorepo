@@ -12,6 +12,7 @@ import './ContextBlockDetailPage.css';
 import Markdown from 'marked-react';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { useIsDesktop } from '../../app/hooks/useIsDesktop';
+import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 
 function normalizeParentId(parentId: { id?: string } | string | null | undefined): string | null {
   if (typeof parentId === 'string') {
@@ -41,6 +42,9 @@ export function ContextBlockDetailPage() {
   // State for thread detection
   const [threadId, setThreadId] = useState<string | null>(null);
   const [isCheckingThread, setIsCheckingThread] = useState(false);
+
+  // Set browser tab title
+  useDocumentTitle(block ? { contextBlock: { title: block.title } } : undefined);
 
   useEffect(() => {
     if (block) {

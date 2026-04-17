@@ -24,6 +24,7 @@ import { ThreadTaskRow } from "./ThreadTaskRow";
 import { ThreadChat } from "./ThreadChat";
 import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 
 type ThreadTask = Thread["tasks"][number];
 type DisplayContextBlock = {
@@ -160,6 +161,9 @@ export function ThreadDetailPage() {
   const threadTaskIdsRef = useRef<Set<string>>(new Set());
 
   const { setNavItems } = useThreadsCtx();
+
+  // Set browser tab title
+  useDocumentTitle(thread ? { thread: { title: thread.title } } : undefined);
 
   const refreshThread = useCallback(async () => {
     if (!threadId) return;

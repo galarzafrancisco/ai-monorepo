@@ -5,6 +5,8 @@ interface RouteData {
   task?: { name?: string };
   agent?: { name?: string };
   tool?: { name?: string };
+  thread?: { title?: string };
+  contextBlock?: { title?: string };
 }
 
 /**
@@ -34,6 +36,13 @@ export function useDocumentTitle(routeData?: RouteData) {
     else if (path.startsWith('/tasks')) {
       title = '🧩 tasks';
     }
+    // Context block detail page
+    else if (path.match(/\/context\/block\/.+/) && routeData?.contextBlock?.title) {
+      const blockTitle = routeData.contextBlock.title;
+      // Trim if too long (max 50 chars)
+      const trimmedTitle = blockTitle.length > 50 ? blockTitle.substring(0, 50) + '...' : blockTitle;
+      title = `🧱 ${trimmedTitle}`;
+    }
     // Context blocks view
     else if (path.startsWith('/context')) {
       title = '🧱 context';
@@ -57,6 +66,13 @@ export function useDocumentTitle(routeData?: RouteData) {
     // Tools view
     else if (path.startsWith('/tools')) {
       title = '🧰 tools';
+    }
+    // Thread detail page
+    else if (path.match(/\/threads\/.+/) && routeData?.thread?.title) {
+      const threadTitle = routeData.thread.title;
+      // Trim if too long (max 50 chars)
+      const trimmedTitle = threadTitle.length > 50 ? threadTitle.substring(0, 50) + '...' : threadTitle;
+      title = `🧵 ${trimmedTitle}`;
     }
     // Threads view
     else if (path.startsWith('/threads')) {
