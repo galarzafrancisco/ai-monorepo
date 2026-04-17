@@ -38,7 +38,10 @@
     "taico:worker:4": "dotenv -e stack4.env -- sh -c 'npm -w apps/worker run start -- --serverurl ${ISSUER_URL}'",
     "taico:worker:5": "dotenv -e stack5.env -- sh -c 'npm -w apps/worker run start -- --serverurl ${ISSUER_URL}'",
     "zero-to-prod": "npm ci && npm run build:prod",
-    "release:backend": "npm run zero-to-prod && npm -w apps/backend run release"
+    "release:backend": "npm run zero-to-prod && npm -w apps/backend run release",
+    "release:taico:bump": "node scripts/release-taico.mjs bump",
+    "release:taico": "node scripts/release-taico.mjs release",
+    "release:taico:all": "node scripts/release-taico.mjs all"
   },
   "devDependencies": {
     "@hono/node-server": "^1.19.10",
