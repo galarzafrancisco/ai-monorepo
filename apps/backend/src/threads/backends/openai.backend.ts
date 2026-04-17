@@ -43,7 +43,7 @@ export class OpenAiBackend implements ChatBackend {
       const apiKey = await this.getApiKey();
       const client = new OpenAI({ apiKey });
       const response = await client.responses.create({
-        model: modelId ?? 'gpt-5.2',
+        model: modelId ?? 'gpt-5.4',
         input: prompt,
       });
       return response.output_text?.trim() || null;
@@ -65,7 +65,7 @@ export class OpenAiBackend implements ChatBackend {
     const agent = new Agent({
       name: 'taico task runner',
       instructions: args.instructions,
-      model: args.modelId ?? 'gpt-5.2-codex',
+        model: args.modelId ?? 'gpt-5.4-codex',
       mcpServers,
     });
     const runner = new Runner({ modelProvider });
@@ -80,7 +80,7 @@ export class OpenAiBackend implements ChatBackend {
       const agent = new Agent({
         name: args.agentName,
         instructions: buildThreadScopedInstructions(args.systemPrompt, args.threadId),
-        model: args.modelId ?? 'gpt-5.2-codex',
+      model: args.modelId ?? 'gpt-5.4-codex',
         mcpServers,
       });
       const runner = new Runner({ modelProvider });

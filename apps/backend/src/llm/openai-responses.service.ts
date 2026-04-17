@@ -40,7 +40,7 @@ export class OpenAiResponsesService {
     try {
       const client = new OpenAI({ apiKey });
       const response = await client.responses.create({
-        model: input.model || 'gpt-5.2',
+        model: input.model || 'gpt-5.4',
         input: input.prompt,
       });
 
