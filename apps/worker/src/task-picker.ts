@@ -30,7 +30,7 @@ export async function pickTask({
   );
 
   let stopStatus: 'SUCCEEDED' | 'FAILED' | 'CANCELLED' = 'SUCCEEDED';
-  let stopErrorCode: 'OUT_OF_QUOTA' | 'UNKNOWN' | undefined;
+  let stopErrorCode: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN' | undefined;
   let stopErrorMessage: string | undefined;
 
   try {
@@ -44,9 +44,19 @@ export async function pickTask({
     });
   } catch (error) {
     if (error instanceof TaskExecutionError) {
-      stopStatus = error.kind === 'cancelled' ? 'CANCELLED' : 'FAILED';
-      stopErrorCode = error.kind === 'cancelled' ? undefined : error.errorCode;
-      stopErrorMessage = error.displayMessage;
+      if (error.kind === 'interrupted') {
+        stopStatus = 'CANCELLED';
+        stopErrorCode = 'INTERRUPTED';
+        stopErrorMessage = error.displayMessage;
+      } else if (error.kind === 'cancelled') {
+        stopStatus = 'CANCELLED';
+        stopErrorCode = undefined;
+        stopErrorMessage = error.displayMessage;
+      } else {
+        stopStatus = 'FAILED';
+        stopErrorCode = error.errorCode;
+        stopErrorMessage = error.displayMessage;
+      }
     } else {
       stopStatus = 'FAILED';
       stopErrorCode = 'UNKNOWN';

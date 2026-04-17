@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ActiveTaskExecutionEntity,
   type ActiveTaskExecutionTagSnapshot,
@@ -20,6 +21,7 @@ import {
   TaskExecutionQueueEntryNotFoundError,
 } from '../errors/executions.errors';
 import { ExecutionActivityService } from '../execution-activity.service';
+import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
 
 export type ClaimTaskExecutionInput = {
   taskId: string;
@@ -43,6 +45,10 @@ export type IncrementToolCallCountInput = {
   executionId: string;
 };
 
+export type InterruptExecutionInput = {
+  executionId: string;
+};
+
 @Injectable()
 export class ActiveTaskExecutionService {
   constructor(
@@ -50,6 +56,7 @@ export class ActiveTaskExecutionService {
     private readonly activeTaskExecutionRepository: Repository<ActiveTaskExecutionEntity>,
     private readonly dataSource: DataSource,
     private readonly executionActivityService: ExecutionActivityService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async listActiveExecutions(): Promise<ActiveTaskExecutionEntity[]> {
@@ -248,5 +255,39 @@ export class ActiveTaskExecutionService {
     if ((result.affected ?? 0) === 0) {
       throw new ActiveTaskExecutionNotFoundError(input.executionId);
     }
+  }
+
+  async interruptExecution(
+    input: InterruptExecutionInput,
+    actorId: string,
+  ): Promise<void> {
+    const execution = await this.activeTaskExecutionRepository.findOne({
+      where: { id: input.executionId },
+    });
+
+    if (!execution) {
+      throw new ActiveTaskExecutionNotFoundError(input.executionId);
+    }
+
+    // Emit internal event that will be picked up by the gateway
+    this.eventEmitter.emit(
+      ExecutionInterruptEvent.INTERNAL,
+      new ExecutionInterruptEvent(
+        { id: actorId },
+        {
+          executionId: execution.id,
+          workerClientId: execution.workerClientId,
+        },
+      ),
+    );
+
+    // Publish activity for visibility
+    this.executionActivityService.publishSystemActivity({
+      executionId: execution.id,
+      taskId: execution.taskId,
+      agentActorId: execution.agentActorId,
+      kind: 'execution.interrupt.requested',
+      message: 'Execution interrupt requested',
+    });
   }
 }

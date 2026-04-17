@@ -31,6 +31,7 @@ export namespace StopActiveTaskExecutionDto {
      */
     export enum errorCode {
         OUT_OF_QUOTA = 'OUT_OF_QUOTA',
+        INTERRUPTED = 'INTERRUPTED',
         UNKNOWN = 'UNKNOWN',
     }
 }

@@ -139,4 +139,31 @@ export class ActiveTaskExecutionController {
       throw error;
     }
   }
+
+  @Post(':executionId/interrupt')
+  @HttpCode(204)
+  @RequireScopes(TasksScopes.WRITE.id)
+  @ApiOperation({
+    summary: 'Request interruption of an active execution',
+    description:
+      'Signals the worker to abort the currently running agent execution.',
+  })
+  @ApiParam({ name: 'executionId', description: 'Execution ID to interrupt' })
+  async interruptExecution(
+    @Param('executionId') executionId: string,
+    @CurrentAuth() auth: AuthContext,
+  ): Promise<void> {
+    try {
+      await this.activeTaskExecutionService.interruptExecution(
+        { executionId },
+        auth.subject,
+      );
+    } catch (error) {
+      if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+
+      throw error;
+    }
+  }
 }

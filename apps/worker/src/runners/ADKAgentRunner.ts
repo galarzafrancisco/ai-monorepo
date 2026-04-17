@@ -15,6 +15,7 @@ import {
   RuntimeMcpServerConfig,
 } from "./AgentRunner.js";
 import { randomUUID } from "node:crypto";
+import { InterruptedExecutionError } from "../task-execution-errors.js";
 
 class NamespacedTool extends BaseTool {
   constructor(
@@ -85,6 +86,11 @@ export class ADKAgentRunner extends BaseAgentRunner {
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
   ): Promise<string> {
+    // Check if already aborted before creating any resources
+    if (ctx.abortSignal?.aborted) {
+      throw new InterruptedExecutionError('ADK agent execution was interrupted before start');
+    }
+
     const formatter = new ADKMessageFormatter(ctx.agentSlug);
 
     let finalResult = '';
@@ -123,54 +129,77 @@ export class ADKAgentRunner extends BaseAgentRunner {
       ),
     );
 
-    await this.preflightToolsets(toolsets, mcpServers);
+    try {
+      await this.preflightToolsets(toolsets, mcpServers);
 
-    const agent = new LlmAgent({
-      name: 'agent',
-      model: this.modelId,
-      description: '',
-      instruction: '',
-      tools: toolsets,
-    });
+      const agent = new LlmAgent({
+        name: 'agent',
+        model: this.modelId,
+        description: '',
+        instruction: '',
+        tools: toolsets,
+      });
 
-    const runner = new Runner({
-      appName: 'app-123',
-      agent: agent,
-      sessionService: this.sessionService,
-    });
+      const runner = new Runner({
+        appName: 'app-123',
+        agent: agent,
+        sessionService: this.sessionService,
+      });
 
-    const stream = runner.runAsync({
-      userId: session.userId,
-      sessionId: session.id,
-      newMessage: {
-        parts: [
-          {
-            text: ctx.prompt,
-          }
-        ],
-        role: 'user',
+      const stream = runner.runAsync({
+        userId: session.userId,
+        sessionId: session.id,
+        newMessage: {
+          parts: [
+            {
+              text: ctx.prompt,
+            }
+          ],
+          role: 'user',
+        }
+      });
+
+      // Set up abort signal handler if provided
+      // Note: ADK doesn't have native abort support, so we'll break out of the loop
+      let aborted = false;
+      if (ctx.abortSignal) {
+        ctx.abortSignal.addEventListener('abort', () => {
+          console.log('[ADKAgentRunner] Abort signal received, will stop processing');
+          aborted = true;
+        });
       }
-    });
 
-    for await (const msg of stream) {
-      if (msg.content?.parts) {
-        for (const part of msg.content.parts) {
-          if (part.functionCall?.name) {
-            await onToolCall?.(part.functionCall.name);
+      for await (const msg of stream) {
+        if (aborted) {
+          console.log('[ADKAgentRunner] Breaking out of message loop due to abort');
+          break;
+        }
+
+        if (msg.content?.parts) {
+          for (const part of msg.content.parts) {
+            if (part.functionCall?.name) {
+              await onToolCall?.(part.functionCall.name);
+            }
           }
         }
+
+        // map → string
+        const messages = formatter.format(msg);
+        messages.forEach(async (message) => {
+          await emit(message);
+        });
       }
 
-      // map → string
-      const messages = formatter.format(msg);
-      messages.forEach(async (message) => {
-        await emit(message);
-      });
+      // If we were aborted, throw an error instead of returning success
+      if (aborted) {
+        throw new InterruptedExecutionError('ADK agent execution was interrupted');
+      }
+
+      return finalResult;
+    } finally {
+      // Always close toolsets, even if we were interrupted or errored
+      await Promise.all(toolsets.map((toolset) => toolset.close()));
     }
-
-    await Promise.all(toolsets.map((toolset) => toolset.close()));
-
-    return finalResult;
   }
 
   private toConnectionParams(serverConfig: RuntimeMcpServerConfig) {

@@ -121,6 +121,25 @@ export class ExecutionsService {
         });
     }
     /**
+     * Request interruption of an active execution
+     * Signals the worker to abort the currently running agent execution.
+     * @param executionId Execution ID to interrupt
+     * @returns void
+     * @throws ApiError
+     */
+    public static activeTaskExecutionControllerInterruptExecution(
+        executionId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/executions/active/{executionId}/interrupt',
+            path: {
+                'executionId': executionId,
+            },
+        });
+    }
+    /**
      * List task execution history
      * Returns the persisted execution history rows in the execution system.
      * @returns TaskExecutionHistoryResponseDto

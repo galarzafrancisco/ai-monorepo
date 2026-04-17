@@ -6,11 +6,13 @@ import {
   RuntimeMcpServerConfig,
 } from "./AgentRunner.js";
 import { approveAll, CopilotClient, MCPRemoteServerConfig, MCPLocalServerConfig } from "@github/copilot-sdk";
+import { InterruptedExecutionError } from "../task-execution-errors.js";
 
 export class GitHubCopilotAgentRunner extends BaseAgentRunner {
   readonly kind = 'githubcopilot';
   private client: CopilotClient | null = null;
   private model: string;
+  private currentSession: any = null;
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
@@ -25,6 +27,14 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     onToolCall?: (toolName: string) => void | Promise<void>,
   ): Promise<string> {
     const agentLabel = ctx.agentSlug ? `@${ctx.agentSlug}` : 'Assistant';
+
+    // Track abort state
+    let aborted = false;
+
+    // Check if already aborted before we even started
+    if (ctx.abortSignal?.aborted) {
+      throw new InterruptedExecutionError('GitHub Copilot agent execution was interrupted before start');
+    }
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -42,6 +52,18 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           onPermissionRequest: approveAll,
           mcpServers,
         });
+        this.currentSession = session;
+
+        // Set up abort signal handler
+        if (ctx.abortSignal) {
+          ctx.abortSignal.addEventListener('abort', async () => {
+            console.log('[GitHubCopilotAgentRunner] Abort signal received, aborting session');
+            aborted = true;
+            if (this.currentSession) {
+              await this.currentSession.abort();
+            }
+          });
+        }
 
         if (session?.sessionId) {
           await setSession(session.sessionId);
@@ -57,7 +79,12 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           if (this.client) {
             await this.client.stop();
           }
-          resolve(lastAssistantMessage);
+          // Check if we were aborted - if so, reject instead of resolve
+          if (aborted) {
+            reject(new InterruptedExecutionError('GitHub Copilot agent execution was interrupted'));
+          } else {
+            resolve(lastAssistantMessage);
+          }
         });
         session.on('assistant.reasoning', (reasoning) => {
           void emit(`💬 ${agentLabel} Thinking... ${reasoning.data.content}`);

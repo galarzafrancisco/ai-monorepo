@@ -1800,6 +1800,26 @@ export interface paths {
         patch: operations["ActiveTaskExecutionController_incrementToolCallCount"];
         trace?: never;
     };
+    "/api/v1/executions/active/{executionId}/interrupt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request interruption of an active execution
+         * @description Signals the worker to abort the currently running agent execution.
+         */
+        post: operations["ActiveTaskExecutionController_interruptExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/executions/history": {
         parameters: {
             query?: never;
@@ -5306,7 +5326,7 @@ export interface components {
              * @example OUT_OF_QUOTA
              * @enum {string|null}
              */
-            errorCode?: "OUT_OF_QUOTA" | "UNKNOWN" | null;
+            errorCode?: "OUT_OF_QUOTA" | "INTERRUPTED" | "UNKNOWN" | null;
             /**
              * @description Optional human-readable error message for failed or cancelled executions
              * @example ADK runner failed: 429 quota exceeded.
@@ -5373,7 +5393,7 @@ export interface components {
              * @description Optional failure code when execution ended with an error
              * @enum {string|null}
              */
-            errorCode: "OUT_OF_QUOTA" | "UNKNOWN" | null;
+            errorCode: "OUT_OF_QUOTA" | "INTERRUPTED" | "UNKNOWN" | null;
             /**
              * @description Optional human-readable error message for failed or cancelled executions
              * @example ADK runner failed: 429 quota exceeded.
@@ -10063,6 +10083,26 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Execution ID to update */
+                executionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ActiveTaskExecutionController_interruptExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Execution ID to interrupt */
                 executionId: string;
             };
             cookie?: never;
