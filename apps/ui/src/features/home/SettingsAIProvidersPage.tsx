@@ -1,0 +1,78 @@
+import { Stack, Text, Card, Button, Row } from '../../ui/primitives';
+import { useHomeCtx } from './HomeProvider';
+import { useEffect } from 'react';
+import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
+import './SettingsAIProvidersPage.css';
+
+export function SettingsAIProvidersPage() {
+  const { setSectionTitle } = useHomeCtx();
+
+  // Set document title (browser tab)
+  useDocumentTitle();
+
+  useEffect(() => {
+    setSectionTitle('AI Providers');
+  }, []);
+
+  return (
+    <Stack spacing="6">
+      <Text tone="muted">View usage and quota information for AI providers</Text>
+
+      <Card padding="5">
+        <Stack spacing="4">
+          <Row justify="space-between" align="center">
+            <Stack spacing="1">
+              <Text size="4" weight="semibold">Anthropic</Text>
+              <Text size="1" tone="muted">
+                Claude models usage and quota tracking
+              </Text>
+            </Stack>
+          </Row>
+
+          <Stack spacing="2">
+            <Text size="2" tone="muted">
+              Monitor your Claude API usage, quotas, and billing information
+            </Text>
+            <Row spacing="2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => window.open('https://claude.ai/settings/usage', '_blank', 'noopener,noreferrer')}
+              >
+                See usage
+              </Button>
+            </Row>
+          </Stack>
+        </Stack>
+      </Card>
+
+      <Card padding="5">
+        <Stack spacing="4">
+          <Row justify="space-between" align="center">
+            <Stack spacing="1">
+              <Text size="4" weight="semibold">OpenAI</Text>
+              <Text size="1" tone="muted">
+                ChatGPT and GPT models usage tracking
+              </Text>
+            </Stack>
+          </Row>
+
+          <Stack spacing="2">
+            <Text size="2" tone="muted">
+              View your OpenAI API usage, limits, and subscription details
+            </Text>
+            <Row spacing="2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => window.open('https://chatgpt.com/codex/cloud/settings/usage', '_blank', 'noopener,noreferrer')}
+              >
+                See usage
+              </Button>
+            </Row>
+          </Stack>
+        </Stack>
+      </Card>
+    </Stack>
+  );
+}

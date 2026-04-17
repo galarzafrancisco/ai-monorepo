@@ -58,6 +58,13 @@ export function SettingsPage() {
         onSelect: () => navigate('/settings/workers'),
       },
       {
+        id: 'settings-ai-providers',
+        label: 'AI Providers',
+        description: 'View usage and quota for AI providers',
+        aliases: ['ai', 'providers', 'usage', 'quota', 'anthropic', 'openai', 'claude'],
+        onSelect: () => navigate('/settings/ai-providers'),
+      },
+      {
         id: 'settings-data',
         label: 'Import / Export',
         description: 'Import and export workspace data',
@@ -165,6 +172,25 @@ export function SettingsPage() {
               onClick={() => navigate('/settings/workers')}
             >
               Manage Workers
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
+
+      <Card padding="5">
+        <Stack spacing="3">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">AI Providers</Text>
+            <Text tone="muted">View usage and quota for AI providers</Text>
+          </Stack>
+          <Row justify="space-between" align="center">
+            <Text size="2" tone="muted">Monitor Anthropic and OpenAI usage</Text>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/settings/ai-providers')}
+            >
+              View Usage
             </Button>
           </Row>
         </Stack>
