@@ -18,6 +18,6 @@ export const createTaico: CreateAgentInput = {
   statusTriggers: [],
   allowedTools: [],
   isActive: true,
-  avatarUrl: getAgentAvatarUrlById('opencode'),
+  avatarUrl: getAgentAvatarUrlById('taico'),
   concurrencyLimit: 10,
 };

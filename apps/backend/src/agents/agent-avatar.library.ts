@@ -9,6 +9,12 @@ export type AgentAvatarDefinition = {
 
 export const AGENT_AVATARS: AgentAvatarDefinition[] = [
   {
+    id: 'taico',
+    label: 'Taico',
+    url: '/avatar/taico.png',
+    description: 'Taico app avatar for the system operator agent.',
+  },
+  {
     id: 'claude',
     label: 'Claude',
     url: '/avatar/claude.webp',

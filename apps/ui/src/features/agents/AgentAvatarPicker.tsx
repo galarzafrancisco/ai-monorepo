@@ -20,10 +20,10 @@ export function AgentAvatarPicker({ avatars, selectedUrl, onSelect }: AgentAvata
             type="button"
             className={`agent-avatar-picker__option ${isSelected ? 'agent-avatar-picker__option--selected' : ''}`}
             onClick={() => onSelect(avatar.url)}
+            aria-pressed={isSelected}
           >
             <Avatar name={avatar.label} src={avatar.url} size={64} className="agent-avatar-picker__image" />
             <Text size="2" weight="medium">{avatar.label}</Text>
-            <Text size="1" tone="muted">{avatar.description}</Text>
           </button>
         );
       })}

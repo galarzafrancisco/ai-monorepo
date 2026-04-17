@@ -29,12 +29,7 @@ export function EditAgentAvatarPop({
 
   return (
     <PopShell title="Choose Avatar" onCancel={onCancel} onSave={handleSave}>
-      <>
-        <Text size="2" tone="muted">
-          Pick one of the bundled avatars registered by the backend library.
-        </Text>
-        <AgentAvatarPicker avatars={avatars} selectedUrl={avatarUrl} onSelect={setAvatarUrl} />
-      </>
+      <AgentAvatarPicker avatars={avatars} selectedUrl={avatarUrl} onSelect={setAvatarUrl} />
     </PopShell>
   );
 }
