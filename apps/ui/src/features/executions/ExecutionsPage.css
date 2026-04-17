@@ -361,6 +361,28 @@
   gap: var(--space-3);
 }
 
+.executions-mobile-card__header--clickable {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  transition: color 0.15s ease;
+}
+
+.executions-mobile-card__header--clickable:hover {
+  color: var(--accent);
+}
+
+.executions-mobile-card__header--clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-2);
+}
+
 .executions-mobile-card__body {
   display: grid;
   gap: var(--space-2);

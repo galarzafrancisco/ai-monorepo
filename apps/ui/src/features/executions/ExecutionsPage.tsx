@@ -586,6 +586,42 @@ function ExecutionMobileCard({
   onClick?: () => void;
   actionButton?: React.ReactNode;
 }) {
+  // When action button exists, render as div to avoid nested interactive elements
+  // Only the header becomes clickable for navigation
+  if (actionButton && onClick) {
+    return (
+      <div className="executions-mobile-card">
+        <button
+          type="button"
+          className="executions-mobile-card__header executions-mobile-card__header--clickable"
+          onClick={onClick}
+          aria-label={`Navigate to task: ${title}`}
+        >
+          <Text as="div" size="3" weight="semibold" wrap>{title}</Text>
+          <StatusPill tone={tone}>{badge}</StatusPill>
+        </button>
+        <div className="executions-mobile-card__body">
+          {lines.map((line) => (
+            <div key={`${badge}-${line.label}`} className="executions-mobile-card__row">
+              <Text as="span" size="1" tone="muted">{line.label}</Text>
+              <Text
+                as="span"
+                size="2"
+                style={line.mono ? "mono" : "sans"}
+                className={line.label === "Error" && line.value !== "None" ? "executions-error-copy" : ""}
+              >
+                {line.value}
+              </Text>
+            </div>
+          ))}
+        </div>
+        <div className="executions-mobile-card__actions">
+          {actionButton}
+        </div>
+      </div>
+    );
+  }
+
   const className = onClick
     ? "executions-mobile-card executions-mobile-card--clickable"
     : "executions-mobile-card";
@@ -611,11 +647,6 @@ function ExecutionMobileCard({
           </div>
         ))}
       </div>
-      {actionButton ? (
-        <div className="executions-mobile-card__actions">
-          {actionButton}
-        </div>
-      ) : null}
     </>
   );
 
