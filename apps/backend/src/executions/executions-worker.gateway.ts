@@ -17,6 +17,7 @@ import {
   type PostExecutionHeartbeatPayload,
   type PostExecutionActivityPayload,
   type TaskExecutionQueuedWireEvent,
+  type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
 import { WsAccessTokenGuard } from '../auth/guards/guards/ws-access-token-guard';
 import { WsScopesGuard } from '../auth/guards/guards/ws-scopes.guard';
@@ -30,6 +31,7 @@ import { AccessTokenValidationService } from '../auth/guards/validation/access-t
 import { tokenFromHeaders } from '../auth/guards/extractors/token-header.extractor';
 import { tokenFromCookies } from '../auth/guards/extractors/token-cookie.extractor';
 import { TaskExecutionQueuedEvent } from './queue/task-execution-queued.event';
+import { ExecutionInterruptEvent } from './events/execution-interrupt.event';
 
 const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
 
@@ -50,6 +52,7 @@ export class ExecutionsWorkerGateway
   private readonly logger = new Logger(ExecutionsWorkerGateway.name);
   private readonly socketExpiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly harnessReportRequestedSocketIds = new Set<string>();
+  private readonly workerSocketsByClientId = new Map<string, Set<string>>();
 
   constructor(
     private readonly executionActivityService: ExecutionActivityService,
@@ -75,6 +78,16 @@ export class ExecutionsWorkerGateway
 
   handleConnection(client: Socket) {
     this.logger.log(`Worker client connected: ${client.id}`);
+
+    // Track socket by worker client ID
+    const oauthClientId = this.getOauthClientId(client);
+    if (oauthClientId) {
+      if (!this.workerSocketsByClientId.has(oauthClientId)) {
+        this.workerSocketsByClientId.set(oauthClientId, new Set());
+      }
+      this.workerSocketsByClientId.get(oauthClientId)!.add(client.id);
+    }
+
     void this.recordAuthenticatedWorkerSeen(client).catch((error: unknown) => {
       this.logger.warn({
         message: 'Failed to record worker connection liveness',
@@ -88,6 +101,18 @@ export class ExecutionsWorkerGateway
     this.logger.log(`Worker client disconnected: ${client.id}`);
     this.clearTokenExpiryDisconnect(client.id);
     this.harnessReportRequestedSocketIds.delete(client.id);
+
+    // Remove socket from worker tracking
+    const oauthClientId = this.getOauthClientId(client);
+    if (oauthClientId) {
+      const sockets = this.workerSocketsByClientId.get(oauthClientId);
+      if (sockets) {
+        sockets.delete(client.id);
+        if (sockets.size === 0) {
+          this.workerSocketsByClientId.delete(oauthClientId);
+        }
+      }
+    }
   }
 
   @SubscribeMessage(ExecutionWireEvents.EXECUTION_ACTIVITY_POST)
@@ -278,5 +303,33 @@ export class ExecutionsWorkerGateway
     this.logger.debug(
       `Emitted ${ExecutionWireEvents.TASK_EXECUTION_QUEUED} for task ${event.taskId} to all workers`,
     );
+  }
+
+  @OnEvent(ExecutionInterruptEvent.INTERNAL)
+  handleExecutionInterrupt(event: ExecutionInterruptEvent) {
+    const wireEvent: ExecutionInterruptRequestWireEvent = {
+      executionId: event.payload.executionId,
+      requestedAt: event.occurredAt.toISOString(),
+    };
+
+    // Find the worker socket(s) for this worker client ID
+    const socketIds = this.workerSocketsByClientId.get(event.payload.workerClientId);
+    if (!socketIds || socketIds.size === 0) {
+      this.logger.warn(
+        `No connected sockets found for worker ${event.payload.workerClientId} when interrupting execution ${event.payload.executionId}`,
+      );
+      return;
+    }
+
+    // Emit to all sockets for this worker
+    for (const socketId of socketIds) {
+      const socket = this.server.sockets.sockets.get(socketId);
+      if (socket) {
+        socket.emit(ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST, wireEvent);
+        this.logger.log(
+          `Emitted ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to worker socket ${socketId}`,
+        );
+      }
+    }
   }
 }

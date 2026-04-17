@@ -36,6 +36,11 @@ export class ExecutionsResource extends BaseClient {
     return this.request('PATCH', `/api/v1/executions/active/${params.executionId}/tool-calls/increment`, { responseType: 'void', signal: params?.signal });
   }
 
+  /** Request interruption of an active execution */
+  async ActiveTaskExecutionController_interruptExecution(params: { executionId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('POST', `/api/v1/executions/active/${params.executionId}/interrupt`, { responseType: 'void', signal: params?.signal });
+  }
+
   /** List task execution history */
   async TaskExecutionHistoryController_listHistory(params?: { signal?: AbortSignal }): Promise<TaskExecutionHistoryResponseDto[]> {
     return this.request('GET', '/api/v1/executions/history', { signal: params?.signal });

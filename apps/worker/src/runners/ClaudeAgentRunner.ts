@@ -43,6 +43,19 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         },
       };
 
+    // Create abort controller if external signal is provided
+    let abortController: AbortController | undefined;
+    if (ctx.abortSignal) {
+      abortController = new AbortController();
+      // Check if already aborted before we even started
+      if (ctx.abortSignal.aborted) {
+        abortController.abort();
+      }
+      ctx.abortSignal.addEventListener('abort', () => {
+        abortController?.abort();
+      });
+    }
+
     const stream = query({
       prompt: ctx.prompt,
       options: {
@@ -53,6 +66,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         ...(ctx.options ?? {}),
         mcpServers,
         allowedTools: ctx.allowedTools ?? [...DEFAULT_AGENT_ALLOWED_TOOLS],
+        abortController,
       },
     });
 

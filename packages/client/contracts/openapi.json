@@ -6175,6 +6175,37 @@
         ]
       }
     },
+    "/api/v1/executions/active/{executionId}/interrupt": {
+      "post": {
+        "description": "Signals the worker to abort the currently running agent execution.",
+        "operationId": "ActiveTaskExecutionController_interruptExecution",
+        "parameters": [
+          {
+            "name": "executionId",
+            "required": true,
+            "in": "path",
+            "description": "Execution ID to interrupt",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Request interruption of an active execution",
+        "tags": [
+          "Executions"
+        ]
+      }
+    },
     "/api/v1/executions/history": {
       "get": {
         "description": "Returns the persisted execution history rows in the execution system.",
@@ -11847,6 +11878,7 @@
             "description": "Optional error code for failed execution outcomes",
             "enum": [
               "OUT_OF_QUOTA",
+              "INTERRUPTED",
               "UNKNOWN"
             ],
             "nullable": true,
@@ -11940,6 +11972,7 @@
             "description": "Optional failure code when execution ended with an error",
             "enum": [
               "OUT_OF_QUOTA",
+              "INTERRUPTED",
               "UNKNOWN"
             ],
             "nullable": true

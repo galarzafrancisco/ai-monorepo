@@ -970,7 +970,7 @@ export interface ActiveTaskExecutionResponseDto {
 
 export interface StopActiveTaskExecutionDto {
   status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
-  errorCode?: 'OUT_OF_QUOTA' | 'UNKNOWN';
+  errorCode?: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN';
   errorMessage?: string | null;
 }
 
@@ -986,7 +986,7 @@ export interface TaskExecutionHistoryResponseDto {
   runnerSessionId: string | null;
   toolCallCount: number;
   status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
-  errorCode: 'OUT_OF_QUOTA' | 'UNKNOWN';
+  errorCode: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN';
   errorMessage: string | null;
 }
 

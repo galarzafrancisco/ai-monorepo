@@ -18,6 +18,7 @@ import {
   classifyAgentError,
   classifyRunnerError,
 } from './task-execution-errors.js';
+import { activeExecutionAbortControllers } from './worker-app.js';
 
 type ExecuteTaskParams = {
   taskId: string;
@@ -42,95 +43,101 @@ export async function executeTask({
 }: ExecuteTaskParams): Promise<void> {
   console.log(`[worker] Starting execution ${executionId} for task ${taskId}.`);
 
-  // Get the task
-  const task = await workerClient.task.TasksController_getTask({ id: taskId });
-  // TODO: We should validate dependencies are clear
+  // Create and register abort controller for this execution
+  const abortController = new AbortController();
+  activeExecutionAbortControllers.set(executionId, abortController);
 
-  // Get the agent assigned to the task
-  const actor = task.assigneeActor;
-  if (!actor?.slug) {
-    throw new TaskExecutionPreconditionError(
-      `Task ${task.id} is not assigned or is missing an assignee slug.`,
-    );
-  }
-  const agent = await workerClient.agent.AgentsController_getAgentBySlug({ slug: actor.slug });
-  if (!agent) {
-    throw new TaskExecutionPreconditionError(
-      `Assigned agent @${actor.slug} was not found for task ${task.id}.`,
-    );
-  }
-
-  // See if the task needs a repo cloned
-  let repoUrl: string | undefined = undefined;
-  const projectTag = task.tags?.find((tag) => tag.name.startsWith('project:'));
-  if (projectTag) {
-    const projectSlug = projectTag.name.replace('project:', '');
-    const project = await workerClient.metaProjects.ProjectsController_getProjectBySlug({ slug: projectSlug });
-    if (project) {
-      repoUrl = project.repoUrl;
-    }
-  }
-
-  // Prepare the workspace
-  const workDir = await prepareWorkspace({
-    taskId,
-    agentId: agent.actorId,
-    baseDir,
-    repoUrl: repoUrl,
-  });
-
-  const thread = await workerClient.threads.ThreadsController_getThreadByTaskId({ taskId });
-
-  const permissions =
-    await workerClient.agent.AgentToolPermissionsController_listAgentToolPermissions({
-      actorId: agent.actorId,
-    });
-  const serversById = await fetchMcpServersById(workerClient, permissions);
-  const runtimeMcpServers = buildRuntimeMcpServers(
-    permissions,
-    serversById,
-    executionId,
-  );
-  const allowedTools = deriveAllowedToolsFromProvidedIds(
-    Object.keys(runtimeMcpServers),
-  );
-
-  // Get an access token for the agent
-  const agentToken = await workerClient.agentExecutionTokens.AgentExecutionTokensController_requestExecutionToken({
-    slug: agent.slug,
-    body: {
-      expirationSeconds: 60 * 60, // 1 hour? what's a sensible ttl?
-    }
-  });
-
-  attachRuntimeAuthHeaders(runtimeMcpServers, agentToken.token);
-
-  // Create runner
-  let runner: BaseAgentRunner | null = null;
-  const modelConfig: AgentModelConfig = {
-    providerId: agent.providerId ?? undefined,
-    modelId: agent.modelId ?? undefined,
-  };
-  if (agent.type === 'claude') {
-    runner = new ClaudeAgentRunner(modelConfig);
-  } else if (agent.type === 'opencode') {
-    runner = new OpencodeAgentRunner(modelConfig);
-  } else if (agent.type === 'adk') {
-    runner = new ADKAgentRunner(modelConfig);
-  } else if (agent.type === 'githubcopilot') {
-    runner = new GitHubCopilotAgentRunner(modelConfig);
-  }
-
-  if (!runner) {
-    throw new UnsupportedAgentTypeError(
-      `Agent type "${agent.type}" is not supported by this worker.`,
-    );
-  }
-
-  // Run and pipe results
+  // Wrap entire execution in try/finally to ensure cleanup
   try {
-    let latestRunnerSessionId: string | null = null;
-    await runner.run(
+    // Get the task
+    const task = await workerClient.task.TasksController_getTask({ id: taskId });
+    // TODO: We should validate dependencies are clear
+
+    // Get the agent assigned to the task
+    const actor = task.assigneeActor;
+    if (!actor?.slug) {
+      throw new TaskExecutionPreconditionError(
+        `Task ${task.id} is not assigned or is missing an assignee slug.`,
+      );
+    }
+    const agent = await workerClient.agent.AgentsController_getAgentBySlug({ slug: actor.slug });
+    if (!agent) {
+      throw new TaskExecutionPreconditionError(
+        `Assigned agent @${actor.slug} was not found for task ${task.id}.`,
+      );
+    }
+
+    // See if the task needs a repo cloned
+    let repoUrl: string | undefined = undefined;
+    const projectTag = task.tags?.find((tag) => tag.name.startsWith('project:'));
+    if (projectTag) {
+      const projectSlug = projectTag.name.replace('project:', '');
+      const project = await workerClient.metaProjects.ProjectsController_getProjectBySlug({ slug: projectSlug });
+      if (project) {
+        repoUrl = project.repoUrl;
+      }
+    }
+
+    // Prepare the workspace
+    const workDir = await prepareWorkspace({
+      taskId,
+      agentId: agent.actorId,
+      baseDir,
+      repoUrl: repoUrl,
+    });
+
+    const thread = await workerClient.threads.ThreadsController_getThreadByTaskId({ taskId });
+
+    const permissions =
+      await workerClient.agent.AgentToolPermissionsController_listAgentToolPermissions({
+        actorId: agent.actorId,
+      });
+    const serversById = await fetchMcpServersById(workerClient, permissions);
+    const runtimeMcpServers = buildRuntimeMcpServers(
+      permissions,
+      serversById,
+      executionId,
+    );
+    const allowedTools = deriveAllowedToolsFromProvidedIds(
+      Object.keys(runtimeMcpServers),
+    );
+
+    // Get an access token for the agent
+    const agentToken = await workerClient.agentExecutionTokens.AgentExecutionTokensController_requestExecutionToken({
+      slug: agent.slug,
+      body: {
+        expirationSeconds: 60 * 60, // 1 hour? what's a sensible ttl?
+      }
+    });
+
+    attachRuntimeAuthHeaders(runtimeMcpServers, agentToken.token);
+
+    // Create runner
+    let runner: BaseAgentRunner | null = null;
+    const modelConfig: AgentModelConfig = {
+      providerId: agent.providerId ?? undefined,
+      modelId: agent.modelId ?? undefined,
+    };
+    if (agent.type === 'claude') {
+      runner = new ClaudeAgentRunner(modelConfig);
+    } else if (agent.type === 'opencode') {
+      runner = new OpencodeAgentRunner(modelConfig);
+    } else if (agent.type === 'adk') {
+      runner = new ADKAgentRunner(modelConfig);
+    } else if (agent.type === 'githubcopilot') {
+      runner = new GitHubCopilotAgentRunner(modelConfig);
+    }
+
+    if (!runner) {
+      throw new UnsupportedAgentTypeError(
+        `Agent type "${agent.type}" is not supported by this worker.`,
+      );
+    }
+
+    // Run and pipe results
+    try {
+      let latestRunnerSessionId: string | null = null;
+      await runner.run(
       {
         taskId,
         prompt: buildPrompt(task, agent, mode, inputRequest, thread),
@@ -142,6 +149,7 @@ export async function executeTask({
         agentSlug: agent.slug,
         mcpServers: runtimeMcpServers,
         allowedTools,
+        abortSignal: abortController.signal,
       },
       {
         onHeartbeat: async () => {
@@ -192,8 +200,12 @@ export async function executeTask({
         }
       }
     );
-  } catch (error) {
-    throw classifyRunnerError(error);
+    } catch (error) {
+      throw classifyRunnerError(error);
+    }
+  } finally {
+    // Clean up abort controller - this now runs no matter where we fail
+    activeExecutionAbortControllers.delete(executionId);
   }
 }
 
