@@ -33,12 +33,6 @@ type DisplayContextBlock = {
   isStateMemory: boolean;
 };
 
-type TaskStatusSummary = {
-  status: TaskStatus;
-  label: string;
-  count: number;
-};
-
 const THREADS_SOCKET_URL = getUIWebSocketUrl('/threads');
 const TASKS_SOCKET_URL = getUIWebSocketUrl('/tasks');
 
@@ -125,28 +119,6 @@ const getContextBlocksForDisplay = (thread: Thread): DisplayContextBlock[] => {
   });
 
   return allBlocks;
-};
-
-const getTaskStatusSummary = (thread: Thread): TaskStatusSummary[] => {
-  const counts: Record<TaskStatus, number> = {
-    [TaskStatus.DONE]: 0,
-    [TaskStatus.FOR_REVIEW]: 0,
-    [TaskStatus.IN_PROGRESS]: 0,
-    [TaskStatus.NOT_STARTED]: 0,
-  };
-
-  thread.tasks.forEach((task) => {
-    const status = task.status as TaskStatus;
-    if (status in counts) {
-      counts[status] += 1;
-    }
-  });
-
-  return STATUS_ORDER.map((status) => ({
-    status,
-    label: TASKS_STATUS[status].label,
-    count: counts[status],
-  })).filter((item) => item.count > 0);
 };
 
 export function ThreadDetailPage() {
