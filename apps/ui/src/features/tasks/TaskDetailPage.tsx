@@ -905,7 +905,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             execution.status === 'FAILED' && Boolean(execution.errorCode || execution.errorMessage);
           const isFailureDetailsExpanded = expandedExecutionErrorIds.has(execution.id);
           const isActive = execution.source === 'active';
-          const isInterrupting = interruptingExecutions.has(execution.id);
+          const isInterrupting = interruptingExecutions.has(execution.executionId);
           const sourceTag: DataRowTag = {
             label: isActive ? 'active' : 'history',
             color: 'gray',
