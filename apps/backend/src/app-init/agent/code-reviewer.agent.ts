@@ -1,4 +1,5 @@
 import { CreateAgentInput } from 'src/agents/dto/service/agents.service.types';
+import { getAgentAvatarUrlById } from 'src/agents/agent-avatar.library';
 import { AgentType } from 'src/agents/enums';
 import { TaskStatus } from 'src/tasks/enums';
 import { REVIEWER_PROMPT } from '../prompts/prompts';
@@ -17,6 +18,6 @@ export const createCodeReviewer: CreateAgentInput = {
   tagTriggers: ['code'],
   allowedTools: [],
   isActive: true,
-  avatarUrl: '/icons/cockatoo.png',
+  avatarUrl: getAgentAvatarUrlById('cockatoo'),
   concurrencyLimit: 1,
 };
