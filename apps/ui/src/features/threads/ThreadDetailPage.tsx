@@ -435,6 +435,15 @@ function ThreadDetailPageMobile({
       <div className="thread-detail-page__mobile-wrapper">
         {/* Fixed top section with tabs */}
         <div className="thread-detail-page__mobile-topbar">
+          <div className="thread-detail-page__mobile-nav">
+            <button
+              className="thread-detail-page__mobile-back"
+              onClick={() => navigate('/threads')}
+              aria-label="Back to threads"
+            >
+              ← Back
+            </button>
+          </div>
           <div className="thread-detail-page__mobile-thread-meta">
             <div className="thread-detail-page__mobile-thread-header">
               <Text size="2" weight="semibold">
