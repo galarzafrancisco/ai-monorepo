@@ -4,6 +4,7 @@ import { createOpencode, OpencodeClient, TextPartInput } from "@opencode-ai/sdk"
 import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
+import { InterruptedExecutionError } from "../task-execution-errors.js";
 
 type OpenCodeMcpServerConfig =
   | {
@@ -147,10 +148,14 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
     this.runtimeMcpServers = ctx.mcpServers;
 
+    // Track abort state
+    let aborted = false;
+
     // Set up abort signal handler if provided
     if (ctx.abortSignal) {
       ctx.abortSignal.addEventListener('abort', () => {
         console.log('[OpenCodeAgentRunner] Abort signal received, shutting down');
+        aborted = true;
         this.shutdown();
       });
     }
@@ -236,6 +241,12 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       }
     } catch (error) {
       console.error(error);
+      // If we were aborted, this is expected - rethrow as interrupted error
+      if (aborted) {
+        throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
+      }
+      // Otherwise rethrow the original error
+      throw error;
     }
     console.log("--------- ENDING EVENT LOOP ---------");
 
@@ -243,6 +254,11 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     this.shutdown();
     this.runtimeMcpServers = undefined;
     console.log('returning final result');
+
+    // If we were aborted (but didn't error), still throw
+    if (aborted) {
+      throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
+    }
 
     return finalResult;
   }

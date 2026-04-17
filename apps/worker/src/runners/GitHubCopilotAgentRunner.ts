@@ -6,6 +6,7 @@ import {
   RuntimeMcpServerConfig,
 } from "./AgentRunner.js";
 import { approveAll, CopilotClient, MCPRemoteServerConfig, MCPLocalServerConfig } from "@github/copilot-sdk";
+import { InterruptedExecutionError } from "../task-execution-errors.js";
 
 export class GitHubCopilotAgentRunner extends BaseAgentRunner {
   readonly kind = 'githubcopilot';
@@ -26,6 +27,9 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     onToolCall?: (toolName: string) => void | Promise<void>,
   ): Promise<string> {
     const agentLabel = ctx.agentSlug ? `@${ctx.agentSlug}` : 'Assistant';
+
+    // Track abort state
+    let aborted = false;
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -49,6 +53,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         if (ctx.abortSignal) {
           ctx.abortSignal.addEventListener('abort', async () => {
             console.log('[GitHubCopilotAgentRunner] Abort signal received, aborting session');
+            aborted = true;
             if (this.currentSession) {
               await this.currentSession.abort();
             }
@@ -69,7 +74,12 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           if (this.client) {
             await this.client.stop();
           }
-          resolve(lastAssistantMessage);
+          // Check if we were aborted - if so, reject instead of resolve
+          if (aborted) {
+            reject(new InterruptedExecutionError('GitHub Copilot agent execution was interrupted'));
+          } else {
+            resolve(lastAssistantMessage);
+          }
         });
         session.on('assistant.reasoning', (reasoning) => {
           void emit(`💬 ${agentLabel} Thinking... ${reasoning.data.content}`);

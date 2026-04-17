@@ -15,6 +15,7 @@ import {
   RuntimeMcpServerConfig,
 } from "./AgentRunner.js";
 import { randomUUID } from "node:crypto";
+import { InterruptedExecutionError } from "../task-execution-errors.js";
 
 class NamespacedTool extends BaseTool {
   constructor(
@@ -184,6 +185,11 @@ export class ADKAgentRunner extends BaseAgentRunner {
     }
 
     await Promise.all(toolsets.map((toolset) => toolset.close()));
+
+    // If we were aborted, throw an error instead of returning success
+    if (aborted) {
+      throw new InterruptedExecutionError('ADK agent execution was interrupted');
+    }
 
     return finalResult;
   }
