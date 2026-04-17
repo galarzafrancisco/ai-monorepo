@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ExecutionStatsResponseDto } from './ExecutionStatsResponseDto.js';
 export type TaskExecutionHistoryResponseDto = {
     /**
      * History row ID
@@ -55,6 +56,10 @@ export type TaskExecutionHistoryResponseDto = {
      * Optional human-readable error message for failed or cancelled executions
      */
     errorMessage: string | null;
+    /**
+     * Execution metadata and usage stats
+     */
+    stats: ExecutionStatsResponseDto | null;
 };
 export namespace TaskExecutionHistoryResponseDto {
     /**

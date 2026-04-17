@@ -22,3 +22,9 @@ export class ActiveTaskExecutionNotFoundError extends ExecutionsError {
     super('Active execution was not found.', { executionId });
   }
 }
+
+export class ExecutionStatsNotFoundError extends ExecutionsError {
+  constructor(executionId: string) {
+    super('Execution stats were not found.', { executionId });
+  }
+}

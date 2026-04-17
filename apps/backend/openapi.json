@@ -6175,6 +6175,47 @@
         ]
       }
     },
+    "/api/v1/executions/active/{executionId}/stats": {
+      "patch": {
+        "description": "Atomically updates one or more execution metadata fields such as harness, model details, or token usage.",
+        "operationId": "ActiveTaskExecutionController_updateExecutionStats",
+        "parameters": [
+          {
+            "name": "executionId",
+            "required": true,
+            "in": "path",
+            "description": "Execution ID to update",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExecutionStatsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Patch execution stats and metadata",
+        "tags": [
+          "Executions"
+        ]
+      }
+    },
     "/api/v1/executions/active/{executionId}/interrupt": {
       "post": {
         "description": "Signals the worker to abort the currently running agent execution.",
@@ -11757,6 +11798,55 @@
           "name"
         ]
       },
+      "ExecutionStatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "harness": {
+            "type": "string",
+            "description": "Harness used to execute the run",
+            "example": "opencode",
+            "nullable": true
+          },
+          "providerId": {
+            "type": "string",
+            "description": "LLM provider id resolved for this run",
+            "example": "openai",
+            "nullable": true
+          },
+          "modelId": {
+            "type": "string",
+            "description": "LLM model id resolved for this run",
+            "example": "gpt-5.4",
+            "nullable": true
+          },
+          "inputTokens": {
+            "type": "number",
+            "description": "Input token usage when available",
+            "example": 1200,
+            "nullable": true
+          },
+          "outputTokens": {
+            "type": "number",
+            "description": "Output token usage when available",
+            "example": 380,
+            "nullable": true
+          },
+          "totalTokens": {
+            "type": "number",
+            "description": "Total token usage when available",
+            "example": 1580,
+            "nullable": true
+          }
+        },
+        "required": [
+          "harness",
+          "providerId",
+          "modelId",
+          "inputTokens",
+          "outputTokens",
+          "totalTokens"
+        ]
+      },
       "ActiveTaskExecutionResponseDto": {
         "type": "object",
         "properties": {
@@ -11841,6 +11931,15 @@
             "type": "string",
             "description": "Agent actor id that picked up the task",
             "example": "19dc147c-6051-49e3-bf7a-404e3bb575d3"
+          },
+          "stats": {
+            "description": "Execution metadata and usage stats",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionStatsResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -11856,7 +11955,8 @@
           "taskTagsBeforeClaim",
           "workerClientId",
           "taskAssigneeActorIdBeforeClaim",
-          "agentActorId"
+          "agentActorId",
+          "stats"
         ]
       },
       "StopActiveTaskExecutionDto": {
@@ -11982,6 +12082,15 @@
             "description": "Optional human-readable error message for failed or cancelled executions",
             "nullable": true,
             "example": "ADK runner failed: 429 quota exceeded."
+          },
+          "stats": {
+            "description": "Execution metadata and usage stats",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionStatsResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -11997,7 +12106,8 @@
           "toolCallCount",
           "status",
           "errorCode",
-          "errorMessage"
+          "errorMessage",
+          "stats"
         ]
       },
       "UpdateRunnerSessionIdDto": {
@@ -12013,6 +12123,53 @@
         "required": [
           "sessionId"
         ]
+      },
+      "UpdateExecutionStatsDto": {
+        "type": "object",
+        "properties": {
+          "harness": {
+            "type": "string",
+            "nullable": true,
+            "description": "Harness used by the worker to run this execution",
+            "example": "opencode",
+            "maxLength": 50
+          },
+          "providerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Model provider id used by the harness",
+            "example": "openai",
+            "maxLength": 100
+          },
+          "modelId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Model id used by the harness",
+            "example": "gpt-5.4",
+            "maxLength": 255
+          },
+          "inputTokens": {
+            "type": "number",
+            "nullable": true,
+            "description": "Input token usage when available",
+            "example": 1200,
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": "number",
+            "nullable": true,
+            "description": "Output token usage when available",
+            "example": 380,
+            "minimum": 0
+          },
+          "totalTokens": {
+            "type": "number",
+            "nullable": true,
+            "description": "Total token usage when available",
+            "example": 1580,
+            "minimum": 0
+          }
+        }
       },
       "WorkerResponseDto": {
         "type": "object",

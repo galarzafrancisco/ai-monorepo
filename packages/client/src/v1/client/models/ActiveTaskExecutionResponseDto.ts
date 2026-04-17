@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ActiveTaskExecutionTagSnapshotResponseDto } from './ActiveTaskExecutionTagSnapshotResponseDto.js';
+import type { ExecutionStatsResponseDto } from './ExecutionStatsResponseDto.js';
 export type ActiveTaskExecutionResponseDto = {
     /**
      * Execution ID
@@ -56,6 +57,10 @@ export type ActiveTaskExecutionResponseDto = {
      * Agent actor id that picked up the task
      */
     agentActorId: string;
+    /**
+     * Execution metadata and usage stats
+     */
+    stats: ExecutionStatsResponseDto | null;
 };
 export namespace ActiveTaskExecutionResponseDto {
     /**

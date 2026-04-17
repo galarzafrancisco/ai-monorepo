@@ -13,9 +13,11 @@ import {
   AgentModelConfig,
   AgentRunContext,
   RuntimeMcpServerConfig,
+  TokenUsage,
 } from "./AgentRunner.js";
 import { randomUUID } from "node:crypto";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
+import { extractTokenUsage } from './token-usage.js';
 
 class NamespacedTool extends BaseTool {
   constructor(
@@ -79,12 +81,20 @@ export class ADKAgentRunner extends BaseAgentRunner {
     this.modelId = modelConfig.modelId ?? 'gemini-2.5-flash';
   }
 
+  override getModel() {
+    return {
+      providerId: 'google',
+      modelId: this.modelId,
+    };
+  }
+
   protected async runInternal(
     ctx: AgentRunContext,
     emit: (msg: string) => Promise<void>,
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
+    onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
   ): Promise<string> {
     // Check if already aborted before creating any resources
     if (ctx.abortSignal?.aborted) {
@@ -181,6 +191,11 @@ export class ADKAgentRunner extends BaseAgentRunner {
               await onToolCall?.(part.functionCall.name);
             }
           }
+        }
+
+        const usage = extractTokenUsage(msg);
+        if (usage) {
+          await onTokenUsage?.(usage);
         }
 
         // map → string

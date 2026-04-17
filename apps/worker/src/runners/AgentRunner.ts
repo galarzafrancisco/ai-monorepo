@@ -8,6 +8,12 @@ export type AgentModelConfig = {
   modelId?: string | null;
 }
 
+export type TokenUsage = {
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  totalTokens?: number | null;
+};
+
 export type RuntimeMcpServerConfig =
   | {
       type: 'http';
@@ -73,6 +79,9 @@ export type AgentRunCallbacks = {
   /** Called whenever the runner initiates a tool call */
   onToolCall?: (toolName: string) => void | Promise<void>;
 
+  /** Called whenever token usage information is available */
+  onTokenUsage?: (usage: TokenUsage) => void | Promise<void>;
+
   /** Called when an error occurs (e.g., quota limit, API errors) */
   onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>;
 };
@@ -85,6 +94,8 @@ export type AgentRunResult = {
 
 export interface AgentRunner {
   readonly kind: string;
+
+  getModel(): Model | null;
 
   cancel?(): void | Promise<void>;
 

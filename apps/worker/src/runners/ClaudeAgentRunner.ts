@@ -3,8 +3,9 @@ import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
-import { AgentModelConfig, AgentRunContext } from "./AgentRunner.js";
+import { AgentModelConfig, AgentRunContext, TokenUsage } from "./AgentRunner.js";
 import { DEFAULT_AGENT_ALLOWED_TOOLS } from '@taico/shared';
+import { extractTokenUsage } from './token-usage.js';
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
@@ -19,6 +20,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
+    onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
   ): Promise<string> {
     const formatter = new ClaudeMessageFormatter(ctx.agentSlug);
 
@@ -83,6 +85,11 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
       const toolCalls = formatter.extractToolCallNames(msg);
       for (const toolName of toolCalls) {
         await onToolCall?.(toolName);
+      }
+
+      const usage = extractTokenUsage(msg);
+      if (usage) {
+        await onTokenUsage?.(usage);
       }
 
       // map → string

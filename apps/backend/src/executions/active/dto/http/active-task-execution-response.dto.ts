@@ -4,6 +4,7 @@ import {
   ActiveTaskExecutionEntity,
   type ActiveTaskExecutionTagSnapshot,
 } from '../../active-task-execution.entity';
+import { ExecutionStatsResponseDto } from '../../../dto/http/execution-stats-response.dto';
 
 class ActiveTaskExecutionTagSnapshotResponseDto {
   @ApiProperty({
@@ -116,6 +117,13 @@ export class ActiveTaskExecutionResponseDto {
   })
   agentActorId!: string;
 
+  @ApiProperty({
+    description: 'Execution metadata and usage stats',
+    type: ExecutionStatsResponseDto,
+    nullable: true,
+  })
+  stats!: ExecutionStatsResponseDto | null;
+
   static fromEntity(
     entity: ActiveTaskExecutionEntity,
   ): ActiveTaskExecutionResponseDto {
@@ -135,6 +143,7 @@ export class ActiveTaskExecutionResponseDto {
       workerClientId: entity.workerClientId,
       taskAssigneeActorIdBeforeClaim: entity.taskAssigneeActorIdBeforeClaim,
       agentActorId: entity.agentActorId,
+      stats: entity.stats ? ExecutionStatsResponseDto.fromEntity(entity.stats) : null,
     };
   }
 }

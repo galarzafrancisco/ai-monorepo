@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { ActiveTaskExecutionResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueEntryResponseDto, UpdateRunnerSessionIdDto } from './types.js';
+import type { ActiveTaskExecutionResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueEntryResponseDto, UpdateExecutionStatsDto, UpdateRunnerSessionIdDto } from './types.js';
 
 export class ExecutionsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -34,6 +34,11 @@ export class ExecutionsResource extends BaseClient {
   /** Increment tool call count for an active execution */
   async ActiveTaskExecutionController_incrementToolCallCount(params: { executionId: string; signal?: AbortSignal }): Promise<void> {
     return this.request('PATCH', `/api/v1/executions/active/${params.executionId}/tool-calls/increment`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Patch execution stats and metadata */
+  async ActiveTaskExecutionController_updateExecutionStats(params: { executionId: string; body: UpdateExecutionStatsDto; signal?: AbortSignal }): Promise<void> {
+    return this.request('PATCH', `/api/v1/executions/active/${params.executionId}/stats`, { body: params.body, responseType: 'void', signal: params?.signal });
   }
 
   /** Request interruption of an active execution */

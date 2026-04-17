@@ -26,6 +26,7 @@ import { StaleActiveTaskExecutionDetectorService } from './staleness/stale-activ
 import { StaleActiveTaskExecutionPrunerService } from './staleness/stale-active-task-execution-pruner.service';
 import { StaleActiveTaskExecutionSchedulerService } from './staleness/stale-active-task-execution-scheduler.service';
 import { WorkersModule } from '../workers/workers.module';
+import { ExecutionStatsEntity } from './stats/execution-stats.entity';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { WorkersModule } from '../workers/workers.module';
       TaskExecutionQueueEntity,
       ActiveTaskExecutionEntity,
       TaskExecutionHistoryEntity,
+      ExecutionStatsEntity,
       AgentRunEntity,
     ]),
     AgentsModule,

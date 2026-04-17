@@ -8,10 +8,12 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   VersionColumn,
+  OneToOne,
 } from 'typeorm';
 import { AgentEntity } from '../../agents/agent.entity';
 import { TaskEntity } from '../../tasks/task.entity';
 import { TaskStatus } from '../../tasks/enums';
+import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
 
 export type ActiveTaskExecutionTagSnapshot = {
   id: string;
@@ -68,6 +70,13 @@ export class ActiveTaskExecutionEntity {
 
   @Column({ type: 'integer', name: 'tool_call_count', default: 0 })
   toolCallCount!: number;
+
+  @OneToOne(() => ExecutionStatsEntity, {
+    nullable: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'id', referencedColumnName: 'executionId' })
+  stats!: ExecutionStatsEntity | null;
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;

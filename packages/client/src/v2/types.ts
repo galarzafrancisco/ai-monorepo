@@ -952,6 +952,15 @@ export interface ActiveTaskExecutionTagSnapshotResponseDto {
   name: string;
 }
 
+export interface ExecutionStatsResponseDto {
+  harness: string | null;
+  providerId: string | null;
+  modelId: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+}
+
 export interface ActiveTaskExecutionResponseDto {
   id: string;
   taskId: string;
@@ -966,6 +975,7 @@ export interface ActiveTaskExecutionResponseDto {
   workerClientId: string;
   taskAssigneeActorIdBeforeClaim: string | null;
   agentActorId: string;
+  stats: ExecutionStatsResponseDto;
 }
 
 export interface StopActiveTaskExecutionDto {
@@ -988,10 +998,20 @@ export interface TaskExecutionHistoryResponseDto {
   status: 'SUCCEEDED' | 'FAILED' | 'STALE' | 'CANCELLED';
   errorCode: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN';
   errorMessage: string | null;
+  stats: ExecutionStatsResponseDto;
 }
 
 export interface UpdateRunnerSessionIdDto {
   sessionId: string;
+}
+
+export interface UpdateExecutionStatsDto {
+  harness?: string | null;
+  providerId?: string | null;
+  modelId?: string | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  totalTokens?: number | null;
 }
 
 export interface WorkerResponseDto {

@@ -6,6 +6,7 @@ import type { ActiveTaskExecutionResponseDto } from '../models/ActiveTaskExecuti
 import type { StopActiveTaskExecutionDto } from '../models/StopActiveTaskExecutionDto.js';
 import type { TaskExecutionHistoryResponseDto } from '../models/TaskExecutionHistoryResponseDto.js';
 import type { TaskExecutionQueueEntryResponseDto } from '../models/TaskExecutionQueueEntryResponseDto.js';
+import type { UpdateExecutionStatsDto } from '../models/UpdateExecutionStatsDto.js';
 import type { UpdateRunnerSessionIdDto } from '../models/UpdateRunnerSessionIdDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
@@ -118,6 +119,29 @@ export class ExecutionsService {
             path: {
                 'executionId': executionId,
             },
+        });
+    }
+    /**
+     * Patch execution stats and metadata
+     * Atomically updates one or more execution metadata fields such as harness, model details, or token usage.
+     * @param executionId Execution ID to update
+     * @param requestBody
+     * @returns void
+     * @throws ApiError
+     */
+    public static activeTaskExecutionControllerUpdateExecutionStats(
+        executionId: string,
+        requestBody: UpdateExecutionStatsDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'PATCH',
+            url: '/api/v1/executions/active/{executionId}/stats',
+            path: {
+                'executionId': executionId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

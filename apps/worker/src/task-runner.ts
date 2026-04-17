@@ -4,7 +4,11 @@ import { deriveAllowedToolsFromProvidedIds } from '@taico/shared';
 import { prepareWorkspace } from './helpers/prepareWorkspace.js';
 import { EXECUTION_ID_HEADER } from './helpers/config.js';
 import { BaseAgentRunner } from './runners/BaseAgentRunner.js';
-import { AgentModelConfig, RuntimeMcpServerConfig } from './runners/AgentRunner.js';
+import {
+  AgentModelConfig,
+  RuntimeMcpServerConfig,
+  TokenUsage,
+} from './runners/AgentRunner.js';
 import { ClaudeAgentRunner } from './runners/ClaudeAgentRunner.js';
 import { OpencodeAgentRunner } from './runners/OpenCodeAgentRunner.js';
 import { ADKAgentRunner } from './runners/ADKAgentRunner.js';
@@ -142,11 +146,30 @@ export async function executeTask({
         `Agent type "${agent.type}" is not supported by this worker.`,
       );
     }
+
+    const resolvedModel = runner.getModel();
+
+    await workerClient.executions
+      .ActiveTaskExecutionController_updateExecutionStats({
+        executionId,
+        body: {
+          harness: runner.kind,
+          providerId: resolvedModel?.providerId ?? null,
+          modelId: resolvedModel?.modelId ?? null,
+        },
+      })
+      .catch((error) => {
+        console.warn(
+          `[worker] failed to persist execution harness/model for execution ${executionId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+
     activeExecutionInterruptHandlers.set(executionId, () => runner?.cancel());
 
     // Run and pipe results
     try {
       let latestRunnerSessionId: string | null = null;
+      const latestUsage: TokenUsage = {};
       await runner.run(
         {
           taskId,
@@ -206,6 +229,26 @@ export async function executeTask({
                 );
               });
           },
+          onTokenUsage: (usage: TokenUsage) => {
+            throwIfInterrupted();
+            const changedUsage = diffUsagePatch(latestUsage, usage);
+            if (!changedUsage) {
+              return;
+            }
+
+            Object.assign(latestUsage, changedUsage);
+
+            return workerClient.executions
+              .ActiveTaskExecutionController_updateExecutionStats({
+                executionId,
+                body: changedUsage,
+              })
+              .catch((error) => {
+                console.warn(
+                  `[worker] failed to persist token usage for execution ${executionId}: ${error instanceof Error ? error.message : String(error)}`,
+                );
+              });
+          },
           onError: (error: { message: string; rawMessage?: any }) => {
             console.log('Error detected');
             console.log('error message:', error.message);
@@ -222,6 +265,43 @@ export async function executeTask({
     activeExecutionAbortControllers.delete(executionId);
     activeExecutionInterruptHandlers.delete(executionId);
   }
+}
+
+function diffUsagePatch(
+  previous: TokenUsage,
+  next: TokenUsage,
+): TokenUsage | null {
+  const patch: TokenUsage = {};
+
+  if (
+    next.inputTokens !== undefined &&
+    next.inputTokens !== null &&
+    next.inputTokens !== previous.inputTokens
+  ) {
+    patch.inputTokens = next.inputTokens;
+  }
+
+  if (
+    next.outputTokens !== undefined &&
+    next.outputTokens !== null &&
+    next.outputTokens !== previous.outputTokens
+  ) {
+    patch.outputTokens = next.outputTokens;
+  }
+
+  if (
+    next.totalTokens !== undefined &&
+    next.totalTokens !== null &&
+    next.totalTokens !== previous.totalTokens
+  ) {
+    patch.totalTokens = next.totalTokens;
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return null;
+  }
+
+  return patch;
 }
 
 function buildRuntimeMcpServers(

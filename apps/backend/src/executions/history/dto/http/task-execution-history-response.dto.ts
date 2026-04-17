@@ -3,6 +3,7 @@ import { TaskStatus } from '../../../../tasks/enums';
 import { TaskExecutionHistoryEntity } from '../../task-execution-history.entity';
 import { TaskExecutionHistoryErrorCode } from '../../task-execution-history-error-code.enum';
 import { TaskExecutionHistoryStatus } from '../../task-execution-history-status.enum';
+import { ExecutionStatsResponseDto } from '../../../dto/http/execution-stats-response.dto';
 
 export class TaskExecutionHistoryResponseDto {
   @ApiProperty({
@@ -91,6 +92,13 @@ export class TaskExecutionHistoryResponseDto {
   })
   errorMessage!: string | null;
 
+  @ApiProperty({
+    description: 'Execution metadata and usage stats',
+    type: ExecutionStatsResponseDto,
+    nullable: true,
+  })
+  stats!: ExecutionStatsResponseDto | null;
+
   static fromEntity(
     entity: TaskExecutionHistoryEntity,
   ): TaskExecutionHistoryResponseDto {
@@ -108,6 +116,7 @@ export class TaskExecutionHistoryResponseDto {
       status: entity.status,
       errorCode: entity.errorCode,
       errorMessage: entity.errorMessage,
+      stats: entity.stats ? ExecutionStatsResponseDto.fromEntity(entity.stats) : null,
     };
   }
 }

@@ -70,6 +70,7 @@ export type { DeleteConnectionResponseDto } from './models/DeleteConnectionRespo
 export type { DeleteMappingResponseDto } from './models/DeleteMappingResponseDto.js';
 export type { DeleteScopeResponseDto } from './models/DeleteScopeResponseDto.js';
 export type { DeleteServerResponseDto } from './models/DeleteServerResponseDto.js';
+export type { ExecutionStatsResponseDto } from './models/ExecutionStatsResponseDto.js';
 export type { FlowClientDto } from './models/FlowClientDto.js';
 export type { FlowServerDto } from './models/FlowServerDto.js';
 export { GetConsentMetadataResponseDto } from './models/GetConsentMetadataResponseDto.js';
@@ -134,6 +135,7 @@ export type { UpdateAgentRunDto } from './models/UpdateAgentRunDto.js';
 export type { UpdateBlockDto } from './models/UpdateBlockDto.js';
 export type { UpdateChatProviderDto } from './models/UpdateChatProviderDto.js';
 export type { UpdateConnectionDto } from './models/UpdateConnectionDto.js';
+export type { UpdateExecutionStatsDto } from './models/UpdateExecutionStatsDto.js';
 export type { UpdateRunnerSessionIdDto } from './models/UpdateRunnerSessionIdDto.js';
 export type { UpdateScheduledTaskDto } from './models/UpdateScheduledTaskDto.js';
 export type { UpdateSecretDto } from './models/UpdateSecretDto.js';

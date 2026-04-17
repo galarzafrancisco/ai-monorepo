@@ -43,6 +43,7 @@ import { RenameExecutionTables1742200000000 } from './migrations/1742200000000-R
 import { AddWorkersTable1742300000000 } from './migrations/1742300000000-AddWorkersTable';
 import { RenameHasSeenWalkthroughToOnboardingDisplayMode1742400000000 } from './migrations/1742400000000-RenameHasSeenWalkthroughToOnboardingDisplayMode';
 import { AllowInterruptedExecutionErrorCode1742500000000 } from './migrations/1742500000000-AllowInterruptedExecutionErrorCode';
+import { AddExecutionStatsTable1742600000000 } from './migrations/1742600000000-AddExecutionStatsTable';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -84,6 +85,7 @@ import { WalkthroughModule } from './walkthrough/walkthrough.module';
         AddWorkersTable1742300000000,
         RenameHasSeenWalkthroughToOnboardingDisplayMode1742400000000,
         AllowInterruptedExecutionErrorCode1742500000000,
+        AddExecutionStatsTable1742600000000,
       ],
     }),
     EventEmitterModule.forRoot(),

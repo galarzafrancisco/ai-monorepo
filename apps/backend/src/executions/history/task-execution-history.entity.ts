@@ -8,11 +8,13 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   VersionColumn,
+  OneToOne,
 } from 'typeorm';
 import { AgentEntity } from '../../agents/agent.entity';
 import { TaskEntity } from '../../tasks/task.entity';
 import { TaskExecutionHistoryErrorCode } from './task-execution-history-error-code.enum';
 import { TaskExecutionHistoryStatus } from './task-execution-history-status.enum';
+import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
 
 @Entity({ name: 'task_execution_history' })
 export class TaskExecutionHistoryEntity {
@@ -47,6 +49,13 @@ export class TaskExecutionHistoryEntity {
 
   @Column({ type: 'integer', name: 'tool_call_count', default: 0 })
   toolCallCount!: number;
+
+  @OneToOne(() => ExecutionStatsEntity, {
+    nullable: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'id', referencedColumnName: 'executionId' })
+  stats!: ExecutionStatsEntity | null;
 
   @Column({
     type: 'text',

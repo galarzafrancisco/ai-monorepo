@@ -24,12 +24,16 @@ import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decor
 import type { AuthContext } from '../../auth/guards/context/auth-context.types';
 import { TasksScopes } from '../../tasks/tasks.scopes';
 import { WorkersScopes } from '../workers.scopes';
-import { ActiveTaskExecutionNotFoundError } from '../errors/executions.errors';
+import {
+  ActiveTaskExecutionNotFoundError,
+  ExecutionStatsNotFoundError,
+} from '../errors/executions.errors';
 import { ActiveTaskExecutionService } from './active-task-execution.service';
 import { ActiveTaskExecutionResponseDto } from './dto/http/active-task-execution-response.dto';
 import { StopActiveTaskExecutionDto } from './dto/http/stop-active-task-execution.dto';
 import { UpdateRunnerSessionIdDto } from './dto/http/update-runner-session-id.dto';
 import { TaskExecutionHistoryResponseDto } from '../history/dto/http/task-execution-history-response.dto';
+import { UpdateExecutionStatsDto } from './dto/http/update-execution-stats.dto';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
@@ -133,6 +137,38 @@ export class ActiveTaskExecutionController {
       });
     } catch (error) {
       if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+
+      throw error;
+    }
+  }
+
+  @Patch(':executionId/stats')
+  @HttpCode(204)
+  @RequireScopes(WorkersScopes.CONNECT.id)
+  @ApiOperation({
+    summary: 'Patch execution stats and metadata',
+    description:
+      'Atomically updates one or more execution metadata fields such as harness, model details, or token usage.',
+  })
+  @ApiParam({ name: 'executionId', description: 'Execution ID to update' })
+  async updateExecutionStats(
+    @Param('executionId') executionId: string,
+    @Body() dto: UpdateExecutionStatsDto,
+  ): Promise<void> {
+    try {
+      await this.activeTaskExecutionService.updateExecutionStats({
+        executionId,
+        harness: dto.harness,
+        providerId: dto.providerId,
+        modelId: dto.modelId,
+        inputTokens: dto.inputTokens,
+        outputTokens: dto.outputTokens,
+        totalTokens: dto.totalTokens,
+      });
+    } catch (error) {
+      if (error instanceof ExecutionStatsNotFoundError) {
         throw new NotFoundException(error.message);
       }
 

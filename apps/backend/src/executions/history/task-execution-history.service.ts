@@ -12,7 +12,7 @@ export class TaskExecutionHistoryService {
 
   async listHistory(): Promise<TaskExecutionHistoryEntity[]> {
     return this.taskExecutionHistoryRepository.find({
-      relations: ['task'],
+      relations: ['task', 'stats'],
       order: { taskId: 'ASC' },
     });
   }
@@ -22,6 +22,7 @@ export class TaskExecutionHistoryService {
   ): Promise<TaskExecutionHistoryEntity | null> {
     return this.taskExecutionHistoryRepository.findOne({
       where: { taskId },
+      relations: ['stats'],
       order: { transitionedAt: 'DESC' },
     });
   }

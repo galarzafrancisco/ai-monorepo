@@ -1800,6 +1800,26 @@ export interface paths {
         patch: operations["ActiveTaskExecutionController_incrementToolCallCount"];
         trace?: never;
     };
+    "/api/v1/executions/active/{executionId}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch execution stats and metadata
+         * @description Atomically updates one or more execution metadata fields such as harness, model details, or token usage.
+         */
+        patch: operations["ActiveTaskExecutionController_updateExecutionStats"];
+        trace?: never;
+    };
     "/api/v1/executions/active/{executionId}/interrupt": {
         parameters: {
             query?: never;
@@ -5250,6 +5270,38 @@ export interface components {
              */
             name: string;
         };
+        ExecutionStatsResponseDto: {
+            /**
+             * @description Harness used to execute the run
+             * @example opencode
+             */
+            harness: string | null;
+            /**
+             * @description LLM provider id resolved for this run
+             * @example openai
+             */
+            providerId: string | null;
+            /**
+             * @description LLM model id resolved for this run
+             * @example gpt-5.4
+             */
+            modelId: string | null;
+            /**
+             * @description Input token usage when available
+             * @example 1200
+             */
+            inputTokens: number | null;
+            /**
+             * @description Output token usage when available
+             * @example 380
+             */
+            outputTokens: number | null;
+            /**
+             * @description Total token usage when available
+             * @example 1580
+             */
+            totalTokens: number | null;
+        };
         ActiveTaskExecutionResponseDto: {
             /**
              * @description Execution ID
@@ -5313,6 +5365,8 @@ export interface components {
              * @example 19dc147c-6051-49e3-bf7a-404e3bb575d3
              */
             agentActorId: string;
+            /** @description Execution metadata and usage stats */
+            stats: components["schemas"]["ExecutionStatsResponseDto"] | null;
         };
         StopActiveTaskExecutionDto: {
             /**
@@ -5399,6 +5453,8 @@ export interface components {
              * @example ADK runner failed: 429 quota exceeded.
              */
             errorMessage: string | null;
+            /** @description Execution metadata and usage stats */
+            stats: components["schemas"]["ExecutionStatsResponseDto"] | null;
         };
         UpdateRunnerSessionIdDto: {
             /**
@@ -5406,6 +5462,38 @@ export interface components {
              * @example session_01JZ0SMM85FBFA8Y82M8VREY2A
              */
             sessionId: string;
+        };
+        UpdateExecutionStatsDto: {
+            /**
+             * @description Harness used by the worker to run this execution
+             * @example opencode
+             */
+            harness?: string | null;
+            /**
+             * @description Model provider id used by the harness
+             * @example openai
+             */
+            providerId?: string | null;
+            /**
+             * @description Model id used by the harness
+             * @example gpt-5.4
+             */
+            modelId?: string | null;
+            /**
+             * @description Input token usage when available
+             * @example 1200
+             */
+            inputTokens?: number | null;
+            /**
+             * @description Output token usage when available
+             * @example 380
+             */
+            outputTokens?: number | null;
+            /**
+             * @description Total token usage when available
+             * @example 1580
+             */
+            totalTokens?: number | null;
         };
         WorkerResponseDto: {
             /** Format: uuid */
@@ -10088,6 +10176,30 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ActiveTaskExecutionController_updateExecutionStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Execution ID to update */
+                executionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateExecutionStatsDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {

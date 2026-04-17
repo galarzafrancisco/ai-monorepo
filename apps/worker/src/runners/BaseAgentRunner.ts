@@ -1,4 +1,11 @@
-import { AgentRunResult, AgentRunCallbacks, AgentRunContext, AgentRunner } from "./AgentRunner.js";
+import {
+  AgentRunResult,
+  AgentRunCallbacks,
+  AgentRunContext,
+  AgentRunner,
+  Model,
+  TokenUsage,
+} from "./AgentRunner.js";
 
 export abstract class BaseAgentRunner implements AgentRunner {
   private static readonly HEARTBEAT_INTERVAL_MS = 10_000;
@@ -7,6 +14,10 @@ export abstract class BaseAgentRunner implements AgentRunner {
   };
 
   abstract readonly kind: string;
+
+  getModel(): Model | null {
+    return null;
+  }
 
   cancel(): void | Promise<void> {
     return undefined;
@@ -46,9 +57,22 @@ export abstract class BaseAgentRunner implements AgentRunner {
       }
       await cb.onToolCall(toolName);
     };
+    const onTokenUsage = async (usage: TokenUsage) => {
+      if (!cb.onTokenUsage) {
+        return;
+      }
+      await cb.onTokenUsage(usage);
+    };
 
     try {
-      result = await this.runInternal(ctx, emit, setSession, onError, onToolCall);
+      result = await this.runInternal(
+        ctx,
+        emit,
+        setSession,
+        onError,
+        onToolCall,
+        onTokenUsage,
+      );
     } catch (err: any) {
       await emit(`❌ Agent error: ${err?.message ?? String(err)}`);
       throw err;
@@ -69,5 +93,6 @@ export abstract class BaseAgentRunner implements AgentRunner {
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
+    onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
   ): Promise<string>;
 }

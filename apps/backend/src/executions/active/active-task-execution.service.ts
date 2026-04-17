@@ -17,11 +17,13 @@ import {
 } from '../../tasks/errors/tasks.errors';
 import {
   ActiveTaskExecutionNotFoundError,
+  ExecutionStatsNotFoundError,
   TaskAlreadyClaimedError,
   TaskExecutionQueueEntryNotFoundError,
 } from '../errors/executions.errors';
 import { ExecutionActivityService } from '../execution-activity.service';
 import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
+import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
 
 export type ClaimTaskExecutionInput = {
   taskId: string;
@@ -49,6 +51,16 @@ export type InterruptExecutionInput = {
   executionId: string;
 };
 
+export type UpdateExecutionStatsInput = {
+  executionId: string;
+  harness?: string | null;
+  providerId?: string | null;
+  modelId?: string | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  totalTokens?: number | null;
+};
+
 @Injectable()
 export class ActiveTaskExecutionService {
   constructor(
@@ -61,7 +73,7 @@ export class ActiveTaskExecutionService {
 
   async listActiveExecutions(): Promise<ActiveTaskExecutionEntity[]> {
     return this.activeTaskExecutionRepository.find({
-      relations: ['task'],
+      relations: ['task', 'stats'],
       order: { claimedAt: 'DESC' },
     });
   }
@@ -125,12 +137,25 @@ export class ActiveTaskExecutionService {
 
       const hydratedExecution = await manager.findOne(ActiveTaskExecutionEntity, {
         where: { id: savedExecution.id },
-        relations: ['task'],
+        relations: ['task', 'stats'],
       });
 
       if (!hydratedExecution) {
         throw new Error('Active task execution was created but could not be reloaded.');
       }
+
+      const stats = manager.create(ExecutionStatsEntity, {
+        executionId: savedExecution.id,
+        harness: null,
+        providerId: null,
+        modelId: null,
+        inputTokens: null,
+        outputTokens: null,
+        totalTokens: null,
+      });
+
+      await manager.save(stats);
+      hydratedExecution.stats = stats;
 
       return hydratedExecution;
     });
@@ -163,6 +188,7 @@ export class ActiveTaskExecutionService {
       });
 
       const historyEntry = manager.create(TaskExecutionHistoryEntity, {
+        id: activeExecution.id,
         taskId: activeExecution.taskId,
         claimedAt: activeExecution.claimedAt,
         transitionedAt: new Date(),
@@ -181,7 +207,7 @@ export class ActiveTaskExecutionService {
         TaskExecutionHistoryEntity,
         {
           where: { id: savedHistoryEntry.id },
-          relations: ['task'],
+          relations: ['task', 'stats'],
         },
       );
 
@@ -237,6 +263,47 @@ export class ActiveTaskExecutionService {
 
     if (!existing) {
       throw new ActiveTaskExecutionNotFoundError(input.executionId);
+    }
+  }
+
+  async updateExecutionStats(input: UpdateExecutionStatsInput): Promise<void> {
+    const valuesToSet: Record<string, string | number | (() => string) | null> = {
+      rowVersion: () => 'row_version + 1',
+      updatedAt: () => 'CURRENT_TIMESTAMP',
+    };
+
+    if (input.harness !== undefined) {
+      valuesToSet.harness = input.harness;
+    }
+    if (input.providerId !== undefined) {
+      valuesToSet.providerId = input.providerId;
+    }
+    if (input.modelId !== undefined) {
+      valuesToSet.modelId = input.modelId;
+    }
+    if (input.inputTokens !== undefined) {
+      valuesToSet.inputTokens = input.inputTokens;
+    }
+    if (input.outputTokens !== undefined) {
+      valuesToSet.outputTokens = input.outputTokens;
+    }
+    if (input.totalTokens !== undefined) {
+      valuesToSet.totalTokens = input.totalTokens;
+    }
+
+    if (Object.keys(valuesToSet).length === 2) {
+      return;
+    }
+
+    const result = await this.dataSource
+      .createQueryBuilder()
+      .update(ExecutionStatsEntity)
+      .set(valuesToSet)
+      .where('execution_id = :executionId', { executionId: input.executionId })
+      .execute();
+
+    if ((result.affected ?? 0) === 0) {
+      throw new ExecutionStatsNotFoundError(input.executionId);
     }
   }
 

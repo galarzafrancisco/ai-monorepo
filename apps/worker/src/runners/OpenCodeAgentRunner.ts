@@ -4,8 +4,9 @@ import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { createOpencodeClient, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
 import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
-import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
+import { AgentModelConfig, AgentRunContext, Model, TokenUsage } from "./AgentRunner.js";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
+import { extractTokenUsage } from './token-usage.js';
 
 type OpenCodeMcpServerConfig =
   | {
@@ -88,6 +89,10 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
       providerId: hasCustomModel ? modelConfig.providerId! : 'openai',
       modelId: hasCustomModel ? modelConfig.modelId! : 'gpt-5.4',
     };
+  }
+
+  override getModel() {
+    return this.model;
   }
 
   private static readonly CHDIR_TIMEOUT_MS = 60_000; // 1 min — if we wait longer, something is stuck
@@ -348,6 +353,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     setSession: (id: string) => Promise<void>,
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
+    onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
   ): Promise<string> {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
     this.runtimeMcpServers = ctx.mcpServers;
@@ -461,6 +467,11 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           event.properties.part.type === 'tool'
         ) {
           await onToolCall?.(event.properties.part.tool);
+        }
+
+        const usage = extractTokenUsage(event);
+        if (usage) {
+          await onTokenUsage?.(usage);
         }
 
         const message = formatter.format(event);
