@@ -53,3 +53,13 @@ export class InvalidAgentToolPermissionScopeError extends AgentsDomainError {
     );
   }
 }
+
+export class InvalidAgentAvatarUrlError extends AgentsDomainError {
+  constructor(avatarUrl: string) {
+    super(
+      'Avatar URL must be one of the managed agent avatars.',
+      AgentsErrorCodes.VALIDATION_FAILED,
+      { avatarUrl },
+    );
+  }
+}

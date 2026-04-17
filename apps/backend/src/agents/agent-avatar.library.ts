@@ -47,6 +47,7 @@ export const AGENT_AVATARS: AgentAvatarDefinition[] = [
 ];
 
 const AVATAR_BY_ID = new Map(AGENT_AVATARS.map((avatar) => [avatar.id, avatar]));
+const AVATAR_URLS = new Set(AGENT_AVATARS.map((avatar) => avatar.url));
 
 const DEFAULT_AVATAR_BY_TYPE: Record<AgentType, string | null> = {
   [AgentType.CLAUDE]: 'claude',
@@ -62,6 +63,16 @@ export function getAgentAvatarUrlById(id: string | null | undefined): string | n
     return null;
   }
   return AVATAR_BY_ID.get(id)?.url ?? null;
+}
+
+export function isManagedAgentAvatarUrl(
+  url: string | null | undefined,
+): boolean {
+  if (url == null) {
+    return true;
+  }
+
+  return AVATAR_URLS.has(url);
 }
 
 export function getDefaultAgentAvatarUrl({

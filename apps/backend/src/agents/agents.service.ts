@@ -16,6 +16,7 @@ import {
 import {
   AgentNotFoundError,
   AgentSlugConflictError,
+  InvalidAgentAvatarUrlError,
 } from './errors/agents.errors';
 import {
   AgentCreatedEvent,
@@ -24,7 +25,10 @@ import {
 } from './events/agents.events';
 import { AGENT_TEMPLATE_CATALOG } from './agent-template.catalog';
 import { AgentTemplateCatalogResponseDto } from './dto/agent-template-catalog-response.dto';
-import { getDefaultAgentAvatarUrl } from './agent-avatar.library';
+import {
+  getDefaultAgentAvatarUrl,
+  isManagedAgentAvatarUrl,
+} from './agent-avatar.library';
 
 @Injectable()
 export class AgentsService {
@@ -44,6 +48,7 @@ export class AgentsService {
     // Create actor first
     let avatarUrl: string | null = null;
     if (input.avatarUrl !== undefined) {
+      this.assertManagedAgentAvatarUrl(input.avatarUrl);
       avatarUrl = input.avatarUrl;
     } else {
       avatarUrl = getDefaultAgentAvatarUrl({
@@ -363,6 +368,7 @@ export class AgentsService {
       agent.actor.introduction = input.introduction;
     }
     if (input.avatarUrl !== undefined) {
+      this.assertManagedAgentAvatarUrl(input.avatarUrl);
       agent.actor.avatarUrl = input.avatarUrl;
     }
 
@@ -440,5 +446,11 @@ export class AgentsService {
       return null;
     }
     return value;
+  }
+
+  private assertManagedAgentAvatarUrl(url: string | null | undefined): void {
+    if (!isManagedAgentAvatarUrl(url)) {
+      throw new InvalidAgentAvatarUrlError(url ?? '');
+    }
   }
 }
