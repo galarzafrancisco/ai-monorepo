@@ -157,6 +157,10 @@ export class ADKAgentRunner extends BaseAgentRunner {
     // Note: ADK doesn't have native abort support, so we'll break out of the loop
     let aborted = false;
     if (ctx.abortSignal) {
+      // Check if already aborted before we even started
+      if (ctx.abortSignal.aborted) {
+        throw new InterruptedExecutionError('ADK agent execution was interrupted before start');
+      }
       ctx.abortSignal.addEventListener('abort', () => {
         console.log('[ADKAgentRunner] Abort signal received, will stop processing');
         aborted = true;

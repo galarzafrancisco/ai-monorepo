@@ -31,6 +31,11 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     // Track abort state
     let aborted = false;
 
+    // Check if already aborted before we even started
+    if (ctx.abortSignal?.aborted) {
+      throw new InterruptedExecutionError('GitHub Copilot agent execution was interrupted before start');
+    }
+
     return new Promise(async (resolve, reject) => {
       try {
         // Init client

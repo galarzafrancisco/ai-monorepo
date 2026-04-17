@@ -47,6 +47,10 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
     let abortController: AbortController | undefined;
     if (ctx.abortSignal) {
       abortController = new AbortController();
+      // Check if already aborted before we even started
+      if (ctx.abortSignal.aborted) {
+        abortController.abort();
+      }
       ctx.abortSignal.addEventListener('abort', () => {
         abortController?.abort();
       });

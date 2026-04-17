@@ -153,6 +153,10 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
     // Set up abort signal handler if provided
     if (ctx.abortSignal) {
+      // Check if already aborted before we even started
+      if (ctx.abortSignal.aborted) {
+        throw new InterruptedExecutionError('OpenCode agent execution was interrupted before start');
+      }
       ctx.abortSignal.addEventListener('abort', () => {
         console.log('[OpenCodeAgentRunner] Abort signal received, shutting down');
         aborted = true;
