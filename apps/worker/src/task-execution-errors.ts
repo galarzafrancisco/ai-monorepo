@@ -1,6 +1,6 @@
-export type ExecutionFailureKind = 'retryable' | 'terminal' | 'cancelled';
+export type ExecutionFailureKind = 'retryable' | 'terminal' | 'cancelled' | 'interrupted';
 
-export type ExecutionErrorCode = 'OUT_OF_QUOTA' | 'UNKNOWN';
+export type ExecutionErrorCode = 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN';
 
 const MAX_ERROR_MESSAGE_LENGTH = 1000;
 
@@ -70,6 +70,12 @@ export class TaskExecutionPreconditionError extends TerminalExecutionError {}
 
 export class StopRequestedError extends CancelledExecutionError {}
 
+export class InterruptedExecutionError extends TaskExecutionError {
+  constructor(message = 'Execution was interrupted.', cause?: unknown) {
+    super(message, 'interrupted', 'INTERRUPTED', cause);
+  }
+}
+
 export function classifyAgentError(input: {
   message: string;
   rawMessage?: unknown;
@@ -84,6 +90,13 @@ export function classifyAgentError(input: {
 export function classifyRunnerError(error: unknown): TaskExecutionError {
   if (error instanceof TaskExecutionError) {
     return error;
+  }
+
+  // Check if it's an abort error
+  if (error instanceof Error) {
+    if (error.name === 'AbortError' || error.message.includes('aborted')) {
+      return new InterruptedExecutionError(error.message, error);
+    }
   }
 
   return new RunnerProcessError(

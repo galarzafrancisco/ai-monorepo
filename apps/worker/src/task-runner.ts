@@ -18,6 +18,7 @@ import {
   classifyAgentError,
   classifyRunnerError,
 } from './task-execution-errors.js';
+import { activeExecutionAbortControllers } from './worker-app.js';
 
 type ExecuteTaskParams = {
   taskId: string;
@@ -41,6 +42,10 @@ export async function executeTask({
   inputRequest,
 }: ExecuteTaskParams): Promise<void> {
   console.log(`[worker] Starting execution ${executionId} for task ${taskId}.`);
+
+  // Create and register abort controller for this execution
+  const abortController = new AbortController();
+  activeExecutionAbortControllers.set(executionId, abortController);
 
   // Get the task
   const task = await workerClient.task.TasksController_getTask({ id: taskId });
@@ -142,6 +147,7 @@ export async function executeTask({
         agentSlug: agent.slug,
         mcpServers: runtimeMcpServers,
         allowedTools,
+        abortSignal: abortController.signal,
       },
       {
         onHeartbeat: async () => {
@@ -194,6 +200,9 @@ export async function executeTask({
     );
   } catch (error) {
     throw classifyRunnerError(error);
+  } finally {
+    // Clean up abort controller
+    activeExecutionAbortControllers.delete(executionId);
   }
 }
 

@@ -4,6 +4,7 @@ import {
   type PostExecutionActivityPayload,
   type PostExecutionHeartbeatPayload,
   type TaskExecutionQueuedWireEvent,
+  type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
 import { WorkerAuth } from './auth/worker-auth.js';
 
@@ -27,6 +28,7 @@ export type ExecutionActivityGatewayClientOptions = {
   randomizationFactor?: number;
   tokenRefreshSkewMs?: number;
   onTaskQueued?: (event: TaskExecutionQueuedWireEvent) => void;
+  onExecutionInterruptRequest?: (event: ExecutionInterruptRequestWireEvent) => void;
 };
 
 export class ExecutionActivityGatewayClient {
@@ -218,6 +220,13 @@ export class ExecutionActivityGatewayClient {
         console.log('[execution-activity] task queued event received:', event);
       }
       this.options.onTaskQueued?.(event);
+    });
+
+    this.socket.on(ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST, (event: ExecutionInterruptRequestWireEvent) => {
+      if (this.options.debug) {
+        console.log('[execution-activity] execution interrupt request received:', event);
+      }
+      this.options.onExecutionInterruptRequest?.(event);
     });
 
     this.socket.on('connect_error', (err: Error) => {

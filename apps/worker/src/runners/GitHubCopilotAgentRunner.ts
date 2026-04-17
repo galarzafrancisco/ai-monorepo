@@ -11,6 +11,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
   readonly kind = 'githubcopilot';
   private client: CopilotClient | null = null;
   private model: string;
+  private currentSession: any = null;
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
@@ -42,6 +43,17 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           onPermissionRequest: approveAll,
           mcpServers,
         });
+        this.currentSession = session;
+
+        // Set up abort signal handler
+        if (ctx.abortSignal) {
+          ctx.abortSignal.addEventListener('abort', async () => {
+            console.log('[GitHubCopilotAgentRunner] Abort signal received, aborting session');
+            if (this.currentSession) {
+              await this.currentSession.abort();
+            }
+          });
+        }
 
         if (session?.sessionId) {
           await setSession(session.sessionId);

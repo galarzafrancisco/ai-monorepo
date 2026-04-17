@@ -4,6 +4,9 @@ import { WorkerAuth } from './auth/worker-auth.js';
 import { runTaskClaimWorker, attemptClaimTask } from './task-claim-worker.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 
+// Global map to track active execution abort controllers
+export const activeExecutionAbortControllers = new Map<string, AbortController>();
+
 const STARTUP_RETRY_DELAY_MS = 2_000;
 
 export type WorkerOptions = {
@@ -61,6 +64,16 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
         auth.serverUrl,
         activityGatewayClient,
       );
+    },
+    onExecutionInterruptRequest: (event) => {
+      console.log(`[worker] Received interrupt request for execution ${event.executionId}`);
+      const abortController = activeExecutionAbortControllers.get(event.executionId);
+      if (abortController) {
+        console.log(`[worker] Aborting execution ${event.executionId}`);
+        abortController.abort();
+      } else {
+        console.warn(`[worker] No active execution found for ${event.executionId}`);
+      }
     },
   });
 

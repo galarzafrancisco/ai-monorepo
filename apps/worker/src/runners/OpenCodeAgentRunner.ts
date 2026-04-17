@@ -147,6 +147,14 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
     this.runtimeMcpServers = ctx.mcpServers;
 
+    // Set up abort signal handler if provided
+    if (ctx.abortSignal) {
+      ctx.abortSignal.addEventListener('abort', () => {
+        console.log('[OpenCodeAgentRunner] Abort signal received, shutting down');
+        this.shutdown();
+      });
+    }
+
     // Start client
     await this.initBullshit({
       executionId: ctx.executionId,

@@ -152,7 +152,22 @@ export class ADKAgentRunner extends BaseAgentRunner {
       }
     });
 
+    // Set up abort signal handler if provided
+    // Note: ADK doesn't have native abort support, so we'll break out of the loop
+    let aborted = false;
+    if (ctx.abortSignal) {
+      ctx.abortSignal.addEventListener('abort', () => {
+        console.log('[ADKAgentRunner] Abort signal received, will stop processing');
+        aborted = true;
+      });
+    }
+
     for await (const msg of stream) {
+      if (aborted) {
+        console.log('[ADKAgentRunner] Breaking out of message loop due to abort');
+        break;
+      }
+
       if (msg.content?.parts) {
         for (const part of msg.content.parts) {
           if (part.functionCall?.name) {

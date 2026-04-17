@@ -25,6 +25,7 @@ export const ExecutionWireEvents = {
   WORKER_HEARTBEAT_POST: 'worker.heartbeat.post',
   WORKER_HARNESSES_REPORT_REQUESTED: 'worker.harnesses.report.requested',
   TASK_EXECUTION_QUEUED: 'task.execution.queued',
+  EXECUTION_INTERRUPT_REQUEST: 'execution.interrupt.request',
 } as const;
 
 export type ExecutionWireEventName =
@@ -126,6 +127,15 @@ export interface TaskExecutionQueuedWireEvent {
 }
 
 /**
+ * Execution interrupt request event
+ * Emitted when a user requests to interrupt/cancel an active execution
+ */
+export interface ExecutionInterruptRequestWireEvent {
+  executionId: string;
+  requestedAt: string;
+}
+
+/**
  * Union type of all execution wire events
  */
 export type ExecutionWireEvent =
@@ -133,7 +143,8 @@ export type ExecutionWireEvent =
   | ExecutionUpdatedWireEvent
   | ExecutionDeletedWireEvent
   | ExecutionActivityWireEvent
-  | TaskExecutionQueuedWireEvent;
+  | TaskExecutionQueuedWireEvent
+  | ExecutionInterruptRequestWireEvent;
 
 /**
  * Type guards for event identification

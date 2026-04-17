@@ -55,6 +55,9 @@ export type AgentRunContext = {
 
   /** Allowed tool list for SDKs that support tool filtering */
   allowedTools?: string[];
+
+  /** Abort signal for cancellation */
+  abortSignal?: AbortSignal;
 };
 
 export type AgentRunCallbacks = {
