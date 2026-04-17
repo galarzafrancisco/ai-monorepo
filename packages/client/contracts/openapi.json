@@ -10085,7 +10085,7 @@
           "modelId": {
             "type": "string",
             "description": "Model ID used by the agent runtime",
-            "example": "gpt-5.2-codex"
+            "example": "gpt-5.4"
           },
           "statusTriggers": {
             "type": "array",
@@ -10208,7 +10208,7 @@
             "type": "string",
             "nullable": true,
             "description": "Model ID used by the agent runtime",
-            "example": "gpt-5.2-codex"
+            "example": "gpt-5.4"
           },
           "statusTriggers": {
             "type": "array",
@@ -10546,7 +10546,7 @@
           "modelId": {
             "type": "string",
             "description": "Model ID used by the agent runtime",
-            "example": "gpt-5.2-codex"
+            "example": "gpt-5.4"
           },
           "statusTriggers": {
             "type": "array",

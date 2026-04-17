@@ -68,7 +68,7 @@ export class AgentResponseDto {
     type: String,
     nullable: true,
     description: 'Model ID used by the agent runtime',
-    example: 'gpt-5.2-codex',
+    example: 'gpt-5.4',
   })
   modelId!: string | null;
 

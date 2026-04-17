@@ -65,7 +65,7 @@ export class OpenAiBackend implements ChatBackend {
     const agent = new Agent({
       name: 'taico task runner',
       instructions: args.instructions,
-        model: args.modelId ?? 'gpt-5.4-codex',
+        model: args.modelId ?? 'gpt-5.4',
       mcpServers,
     });
     const runner = new Runner({ modelProvider });
@@ -80,7 +80,7 @@ export class OpenAiBackend implements ChatBackend {
       const agent = new Agent({
         name: args.agentName,
         instructions: buildThreadScopedInstructions(args.systemPrompt, args.threadId),
-      model: args.modelId ?? 'gpt-5.4-codex',
+      model: args.modelId ?? 'gpt-5.4',
         mcpServers,
       });
       const runner = new Runner({ modelProvider });

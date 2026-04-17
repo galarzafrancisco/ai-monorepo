@@ -43,7 +43,7 @@ export class MyFeatureLlmService {
 
   async summarize(text: string): Promise<string | null> {
     return await this.openAiResponsesService.generateText({
-      model: 'gpt-5.2',
+      model: 'gpt-5.4',
       prompt: `Summarize the following text in one sentence:\n${text}`,
     });
   }

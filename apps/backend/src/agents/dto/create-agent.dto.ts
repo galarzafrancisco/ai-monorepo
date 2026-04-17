@@ -83,7 +83,7 @@ export class CreateAgentDto {
 
   @ApiPropertyOptional({
     description: 'Model ID used by the agent runtime',
-    example: 'gpt-5.2-codex',
+    example: 'gpt-5.4',
   })
   @IsString()
   @IsOptional()

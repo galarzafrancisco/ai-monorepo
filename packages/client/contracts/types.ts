@@ -4122,7 +4122,7 @@ export interface components {
             providerId?: string;
             /**
              * @description Model ID used by the agent runtime
-             * @example gpt-5.2-codex
+             * @example gpt-5.4
              */
             modelId?: string;
             /**
@@ -4212,7 +4212,7 @@ export interface components {
             providerId?: string | null;
             /**
              * @description Model ID used by the agent runtime
-             * @example gpt-5.2-codex
+             * @example gpt-5.4
              */
             modelId?: string | null;
             /**
@@ -4419,7 +4419,7 @@ export interface components {
             providerId?: string;
             /**
              * @description Model ID used by the agent runtime
-             * @example gpt-5.2-codex
+             * @example gpt-5.4
              */
             modelId?: string;
             /**
