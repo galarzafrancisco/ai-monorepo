@@ -190,7 +190,7 @@ export function SettingsPage() {
               size="sm"
               onClick={() => navigate('/settings/ai-providers')}
             >
-              View Usage
+              Settings
             </Button>
           </Row>
         </Stack>
