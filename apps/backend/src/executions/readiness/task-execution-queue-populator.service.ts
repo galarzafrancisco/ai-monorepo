@@ -8,6 +8,9 @@ import { TaskEntity } from '../../tasks/task.entity';
 import { TaskExecutionQueueEntity } from '../queue/task-execution-queue.entity';
 import { ReadinessCandidateRepository } from './readiness-candidate.repository';
 import { TaskExecutionQueuedEvent } from '../queue/task-execution-queued.event';
+import { TaskExecutionHistoryService } from '../history/task-execution-history.service';
+import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
+import { TaskExecutionHistoryErrorCode } from '../history/task-execution-history-error-code.enum';
 
 @Injectable()
 export class TaskExecutionQueuePopulatorService {
@@ -19,6 +22,7 @@ export class TaskExecutionQueuePopulatorService {
     private readonly agentsService: AgentsService,
     private readonly readinessCandidateRepository: ReadinessCandidateRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly taskExecutionHistoryService: TaskExecutionHistoryService,
   ) { }
 
   async populateTask(taskId: string): Promise<void> {
@@ -123,7 +127,64 @@ export class TaskExecutionQueuePopulatorService {
       return false;
     }
 
+    // Check if task should be delayed due to recent errors or cancellation
+    if (await this.shouldDelayTask(task.id)) {
+      return false;
+    }
+
     return true;
+  }
+
+  private async shouldDelayTask(taskId: string): Promise<boolean> {
+    const latestHistory =
+      await this.taskExecutionHistoryService.getLatestHistoryForTask(taskId);
+
+    if (!latestHistory) {
+      return false; // No history, no delay needed
+    }
+
+    const now = new Date();
+    const timeSinceLastExecution =
+      now.getTime() - latestHistory.transitionedAt.getTime();
+
+    // Check if task was cancelled
+    if (latestHistory.status === TaskExecutionHistoryStatus.CANCELLED) {
+      const delayMs = 10 * 60 * 1000; // 10 minutes
+      if (timeSinceLastExecution < delayMs) {
+        const remainingMs = delayMs - timeSinceLastExecution;
+        const remainingMinutes = Math.ceil(remainingMs / 60000);
+        this.logger.debug(
+          `Task ${taskId} is not queueable: cancelled ${Math.floor(timeSinceLastExecution / 60000)} minutes ago, waiting ${remainingMinutes} more minutes`,
+        );
+        return true;
+      }
+    }
+
+    // Check if task failed with OUT_OF_QUOTA error
+    if (
+      latestHistory.status === TaskExecutionHistoryStatus.FAILED &&
+      latestHistory.errorCode === TaskExecutionHistoryErrorCode.OUT_OF_QUOTA
+    ) {
+      const quotaErrorCount =
+        await this.taskExecutionHistoryService.countConsecutiveQuotaErrors(
+          taskId,
+        );
+
+      const baseDelayMs = 10 * 60 * 1000; // 10 minutes
+      const maxDelayMs = 60 * 60 * 1000; // 1 hour
+      const delayMs = Math.min(baseDelayMs * quotaErrorCount, maxDelayMs);
+
+      if (timeSinceLastExecution < delayMs) {
+        const remainingMs = delayMs - timeSinceLastExecution;
+        const remainingMinutes = Math.ceil(remainingMs / 60000);
+        this.logger.debug(
+          `Task ${taskId} is not queueable: has ${quotaErrorCount} consecutive quota errors, waiting ${remainingMinutes} more minutes`,
+        );
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private matchesTagTriggers(task: TaskEntity, agent: AgentResult): boolean {
