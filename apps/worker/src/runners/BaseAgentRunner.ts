@@ -8,6 +8,10 @@ export abstract class BaseAgentRunner implements AgentRunner {
 
   abstract readonly kind: string;
 
+  cancel(): void | Promise<void> {
+    return undefined;
+  }
+
   async run(
     ctx: AgentRunContext,
     cb: AgentRunCallbacks = BaseAgentRunner.DEFAULT_CALLBACKS

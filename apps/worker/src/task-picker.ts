@@ -32,6 +32,8 @@ export async function pickTask({
   let stopStatus: 'SUCCEEDED' | 'FAILED' | 'CANCELLED' = 'SUCCEEDED';
   let stopErrorCode: 'OUT_OF_QUOTA' | 'INTERRUPTED' | 'UNKNOWN' | undefined;
   let stopErrorMessage: string | undefined;
+  let shouldRethrow = false;
+  let taskError: unknown;
 
   try {
     await executeTask({
@@ -56,14 +58,16 @@ export async function pickTask({
         stopStatus = 'FAILED';
         stopErrorCode = error.errorCode;
         stopErrorMessage = error.displayMessage;
+        shouldRethrow = true;
       }
     } else {
       stopStatus = 'FAILED';
       stopErrorCode = 'UNKNOWN';
       stopErrorMessage =
         error instanceof Error ? error.message : String(error);
+      shouldRethrow = true;
     }
-    throw error;
+    taskError = error;
   } finally {
     const historyEntry =
       await client.executions.ActiveTaskExecutionController_stopTaskExecution({
@@ -78,5 +82,9 @@ export async function pickTask({
     console.log(
       `[worker] Stopped execution ${execution.id} with status ${historyEntry.status}.`,
     );
+  }
+
+  if (shouldRethrow) {
+    throw taskError;
   }
 }

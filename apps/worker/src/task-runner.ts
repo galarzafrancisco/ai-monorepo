@@ -13,12 +13,16 @@ import { buildPrompt } from './prompt.js';
 import { InputRequestLike, RunMode } from './types.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 import {
+  InterruptedExecutionError,
   TaskExecutionPreconditionError,
   UnsupportedAgentTypeError,
   classifyAgentError,
   classifyRunnerError,
 } from './task-execution-errors.js';
-import { activeExecutionAbortControllers } from './worker-app.js';
+import {
+  activeExecutionAbortControllers,
+  activeExecutionInterruptHandlers,
+} from './worker-app.js';
 
 type ExecuteTaskParams = {
   taskId: string;
@@ -46,6 +50,11 @@ export async function executeTask({
   // Create and register abort controller for this execution
   const abortController = new AbortController();
   activeExecutionAbortControllers.set(executionId, abortController);
+  const throwIfInterrupted = () => {
+    if (abortController.signal.aborted) {
+      throw new InterruptedExecutionError('Execution was interrupted.');
+    }
+  };
 
   // Wrap entire execution in try/finally to ensure cleanup
   try {
@@ -133,79 +142,85 @@ export async function executeTask({
         `Agent type "${agent.type}" is not supported by this worker.`,
       );
     }
+    activeExecutionInterruptHandlers.set(executionId, () => runner?.cancel());
 
     // Run and pipe results
     try {
       let latestRunnerSessionId: string | null = null;
       await runner.run(
-      {
-        taskId,
-        prompt: buildPrompt(task, agent, mode, inputRequest, thread),
-        cwd: workDir,
-        baseUrl,
-        accessToken: agentToken.token,
-        executionId,
-        resume: undefined,
-        agentSlug: agent.slug,
-        mcpServers: runtimeMcpServers,
-        allowedTools,
-        abortSignal: abortController.signal,
-      },
-      {
-        onHeartbeat: async () => {
-          await activityGatewayClient.publishHeartbeat({ executionId });
+        {
+          taskId,
+          prompt: buildPrompt(task, agent, mode, inputRequest, thread),
+          cwd: workDir,
+          baseUrl,
+          accessToken: agentToken.token,
+          executionId,
+          resume: undefined,
+          agentSlug: agent.slug,
+          mcpServers: runtimeMcpServers,
+          allowedTools,
+          abortSignal: abortController.signal,
         },
-        onEvent: async (message: string) => {
-          console.log(`[agent message] ⤵️`);
-          console.log(message);
-          console.log('[end of agent message] ⤴️');
-          await activityGatewayClient.publishActivity({
-            executionId,
-            message,
-            ts: Date.now(),
-            runnerSessionId: latestRunnerSessionId,
-          });
-        },
-        onSession: (runnerSessionId: string) => {
-          latestRunnerSessionId = runnerSessionId;
-          return workerClient.executions
-            .ActiveTaskExecutionController_updateRunnerSessionId({
+        {
+          onHeartbeat: async () => {
+            throwIfInterrupted();
+            await activityGatewayClient.publishHeartbeat({ executionId });
+          },
+          onEvent: async (message: string) => {
+            throwIfInterrupted();
+            console.log(`[agent message] ⤵️`);
+            console.log(message);
+            console.log('[end of agent message] ⤴️');
+            await activityGatewayClient.publishActivity({
               executionId,
-              body: {
-                sessionId: runnerSessionId,
-              },
-            })
-            .catch((error) => {
-              console.warn(
-                `[worker] failed to persist runner session id for execution ${executionId}: ${error instanceof Error ? error.message : String(error)}`,
-              );
+              message,
+              ts: Date.now(),
+              runnerSessionId: latestRunnerSessionId,
             });
-        },
-        onToolCall: (toolName: string) => {
-          return workerClient.executions
-            .ActiveTaskExecutionController_incrementToolCallCount({
-              executionId,
-            })
-            .catch((error) => {
-              console.warn(
-                `[worker] failed to increment tool call count for execution ${executionId} (tool=${toolName}): ${error instanceof Error ? error.message : String(error)}`,
-              );
-            });
-        },
-        onError: (error: { message: string; rawMessage?: any }) => {
-          console.log('Error detected');
-          console.log('error message:', error.message);
-          console.log('raw message', error.rawMessage);
-          throw classifyAgentError(error);
+          },
+          onSession: (runnerSessionId: string) => {
+            throwIfInterrupted();
+            latestRunnerSessionId = runnerSessionId;
+            return workerClient.executions
+              .ActiveTaskExecutionController_updateRunnerSessionId({
+                executionId,
+                body: {
+                  sessionId: runnerSessionId,
+                },
+              })
+              .catch((error) => {
+                console.warn(
+                  `[worker] failed to persist runner session id for execution ${executionId}: ${error instanceof Error ? error.message : String(error)}`,
+                );
+              });
+          },
+          onToolCall: (toolName: string) => {
+            throwIfInterrupted();
+            return workerClient.executions
+              .ActiveTaskExecutionController_incrementToolCallCount({
+                executionId,
+              })
+              .catch((error) => {
+                console.warn(
+                  `[worker] failed to increment tool call count for execution ${executionId} (tool=${toolName}): ${error instanceof Error ? error.message : String(error)}`,
+                );
+              });
+          },
+          onError: (error: { message: string; rawMessage?: any }) => {
+            console.log('Error detected');
+            console.log('error message:', error.message);
+            console.log('raw message', error.rawMessage);
+            throw classifyAgentError(error);
+          }
         }
-      }
-    );
+      );
     } catch (error) {
       throw classifyRunnerError(error);
     }
   } finally {
     // Clean up abort controller - this now runs no matter where we fail
     activeExecutionAbortControllers.delete(executionId);
+    activeExecutionInterruptHandlers.delete(executionId);
   }
 }
 

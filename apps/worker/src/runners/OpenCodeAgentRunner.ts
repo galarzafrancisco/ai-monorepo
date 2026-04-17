@@ -1,6 +1,7 @@
 // OpenCodeAgentRunner.ts
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { BaseAgentRunner } from "./BaseAgentRunner.js";
-import { createOpencode, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
+import { createOpencodeClient, OpencodeClient, TextPartInput } from "@opencode-ai/sdk";
 import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model } from "./AgentRunner.js";
@@ -19,6 +20,50 @@ type OpenCodeMcpServerConfig =
       enabled: true;
     };
 
+type ManagedOpencodeServer = {
+  client: OpencodeClient;
+  server: {
+    close(): void;
+  };
+};
+
+function stopProcessTree(proc: ChildProcessWithoutNullStreams): void {
+  if (proc.exitCode !== null || proc.signalCode !== null) {
+    return;
+  }
+
+  if (process.platform === 'win32' && proc.pid) {
+    const result = spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F'], {
+      windowsHide: true,
+    });
+    if (!result.error && result.status === 0) {
+      return;
+    }
+  }
+
+  if (process.platform !== 'win32' && proc.pid) {
+    try {
+      process.kill(-proc.pid, 'SIGTERM');
+    } catch {
+      proc.kill('SIGTERM');
+    }
+
+    setTimeout(() => {
+      if (proc.exitCode !== null || proc.signalCode !== null || !proc.pid) {
+        return;
+      }
+      try {
+        process.kill(-proc.pid, 'SIGKILL');
+      } catch {
+        proc.kill('SIGKILL');
+      }
+    }, 1_000).unref();
+    return;
+  }
+
+  proc.kill('SIGTERM');
+}
+
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind = 'opencode';
 
@@ -30,6 +75,11 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   private abortController: AbortController = new AbortController();
   private close: () => void = () => {};
   private model: Model;
+  private activeSessionId: string | null = null;
+  private activeSessionDirectory: string | null = null;
+  private interruptRequested = false;
+  private abortConfirmed = false;
+  private abortPromise: Promise<boolean> | undefined;
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
@@ -88,11 +138,61 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   }
 
   private shutdown() {
-    // Belt and suspenders: abort signal + close().
-    // close() alone is broken (https://github.com/anomalyco/opencode/issues/3841)
-    // but we keep it for when they fix it.
     this.abortController.abort();
     this.close();
+  }
+
+  private async abortActiveSession(): Promise<boolean> {
+    if (!this.client || !this.activeSessionId) {
+      return false;
+    }
+
+    try {
+      const result = await this.client.session.abort({
+        path: {
+          id: this.activeSessionId,
+        },
+        query: this.activeSessionDirectory
+          ? {
+              directory: this.activeSessionDirectory,
+            }
+          : undefined,
+      });
+
+      if (result.error) {
+        console.warn('[OpenCodeAgentRunner] Failed to abort session:', result.error);
+        return false;
+      }
+
+      return result.data === true;
+    } catch (error) {
+      console.warn('[OpenCodeAgentRunner] Failed to abort session:', error);
+      return false;
+    }
+  }
+
+  cancel(): void {
+    this.requestInterrupt();
+  }
+
+  private requestInterrupt(): void {
+    if (this.interruptRequested) {
+      return;
+    }
+
+    this.interruptRequested = true;
+    console.log('[OpenCodeAgentRunner] Interrupt requested, aborting session');
+    this.abortPromise = this.abortActiveSession().then((confirmed) => {
+      this.abortConfirmed = confirmed;
+      if (confirmed) {
+        this.shutdown();
+      }
+      return confirmed;
+    });
+  }
+
+  private async wasAbortApplied(): Promise<boolean> {
+    return this.abortConfirmed || (this.abortPromise ? await this.abortPromise : false);
   }
 
   async init({
@@ -116,7 +216,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
         console.log(`Trying port ${port}...`);
 
         this.abortController = new AbortController();
-        const opencode = await createOpencode({
+        const opencode = await this.createManagedOpencode({
           port,
           timeout: 20 * 3600,
           signal: this.abortController.signal,
@@ -138,6 +238,110 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     throw new Error(`Failed to start Opencode on ports ${PORT_START}–${PORT_END}: ${String(lastError)}`);
   }
 
+  private async createManagedOpencode({
+    port,
+    timeout,
+    signal,
+    config,
+  }: {
+    port: number;
+    timeout: number;
+    signal: AbortSignal;
+    config: {
+      mcp: Record<string, OpenCodeMcpServerConfig>;
+    };
+  }): Promise<ManagedOpencodeServer> {
+    const proc = spawn(
+      'opencode',
+      ['serve', '--hostname=127.0.0.1', `--port=${port}`],
+      {
+        detached: process.platform !== 'win32',
+        env: {
+          ...process.env,
+          OPENCODE_CONFIG_CONTENT: JSON.stringify(config),
+        },
+      },
+    );
+    let closed = false;
+    let output = '';
+
+    const close = () => {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      stopProcessTree(proc);
+    };
+
+    const clearAbort = () => signal.removeEventListener('abort', close);
+    signal.addEventListener('abort', close, { once: true });
+    proc.once('exit', clearAbort);
+    proc.once('error', clearAbort);
+
+    try {
+      const url = await new Promise<string>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          close();
+          reject(new Error(`Timeout waiting for OpenCode server to start after ${timeout}ms`));
+        }, timeout);
+
+        const fail = (error: unknown) => {
+          clearTimeout(timeoutId);
+          close();
+          reject(error);
+        };
+
+        proc.stdout.on('data', (chunk) => {
+          output += chunk.toString();
+          for (const line of output.split('\n')) {
+            if (!line.startsWith('opencode server listening')) {
+              continue;
+            }
+
+            const match = line.match(/on\s+(https?:\/\/[^\s]+)/);
+            if (!match) {
+              fail(new Error(`Failed to parse OpenCode server url from output: ${line}`));
+              return;
+            }
+
+            clearTimeout(timeoutId);
+            resolve(match[1]);
+            return;
+          }
+        });
+
+        proc.stderr.on('data', (chunk) => {
+          output += chunk.toString();
+        });
+
+        proc.once('exit', (code, signalCode) => {
+          fail(
+            new Error(
+              `OpenCode server exited before startup (code=${code}, signal=${signalCode})${output.trim() ? `\n${output}` : ''}`,
+            ),
+          );
+        });
+        proc.once('error', fail);
+
+        if (signal.aborted) {
+          fail(signal.reason ?? new Error('OpenCode server startup aborted'));
+        }
+      });
+
+      return {
+        client: createOpencodeClient({
+          baseUrl: url,
+        }),
+        server: {
+          close,
+        },
+      };
+    } catch (error) {
+      clearAbort();
+      throw error;
+    }
+  }
+
   protected async runInternal(
     ctx: AgentRunContext,
     emit: (msg: string) => Promise<void>,
@@ -148,85 +352,106 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
     this.runtimeMcpServers = ctx.mcpServers;
 
-    // Track abort state
-    let aborted = false;
+    let removeAbortListener: (() => void) | undefined;
+    this.interruptRequested = false;
+    this.abortConfirmed = false;
+    this.abortPromise = undefined;
 
-    // Set up abort signal handler if provided
     if (ctx.abortSignal) {
-      // Check if already aborted before we even started
       if (ctx.abortSignal.aborted) {
         throw new InterruptedExecutionError('OpenCode agent execution was interrupted before start');
       }
-      ctx.abortSignal.addEventListener('abort', () => {
-        console.log('[OpenCodeAgentRunner] Abort signal received, shutting down');
-        aborted = true;
-        this.shutdown();
-      });
+
+      const onAbort = () => {
+        this.requestInterrupt();
+      };
+      ctx.abortSignal.addEventListener('abort', onAbort, { once: true });
+      removeAbortListener = () => ctx.abortSignal?.removeEventListener('abort', onAbort);
     }
 
-    // Start client
-    await this.initBullshit({
-      executionId: ctx.executionId,
-      cwd: ctx.cwd,
-      baseUrl: ctx.baseUrl,
-      accessToken: ctx.accessToken,
-    });
-    // await this.init({ executionId: ctx.executionId });
-
-    if (!this.client) {
-      throw new Error("Failed to create Opencode client");
-    }
-
-    // Create a session for this work
-    const { data: session } = await this.client.session.create({
-      body: {
-        title: `Session ${new Date().toLocaleString()}`,
-      },
-      query: {
-        directory: ctx.cwd,
-      },
-
-    });
-    if (!session) {
-      this.shutdown();
-      throw new Error("Failed to create Opencode session");
-    }
-    await setSession(session.id);
-    console.log(`created session ${session.id} in ${session.directory}`);
-    // Session is created in the right dir ✅
-
-    const events = await this.client.event.subscribe(); // SSE stream
-
-    const prompt: TextPartInput = {
-      type: 'text',
-      text: ctx.prompt,
-    }
-    let finalResult = '';
-    this.client.session.promptAsync({
-      path: {
-        id: session.id,
-      },
-      // NOTE: adding a directory breaks realtime events 🤷🏻‍♂️: https://github.com/anomalyco/opencode/issues/11522
-      // NOTE: Good news is we don't need it because the session carries the dir.
-      // NOTE: Acutally we need to. I've implemented a horrible hack to CD before starting the server.
-      // query: {
-      //   directory: ctx.cwd,
-      // },
-      body: {
-        model: {
-          providerID: this.model.providerId,
-          modelID: this.model.modelId,
-        },
-        parts: [prompt],
-      }
-    })
-
-    console.log("--------- STARTING EVENT LOOP ---------");
     try {
+      await this.initBullshit({
+        executionId: ctx.executionId,
+        cwd: ctx.cwd,
+        baseUrl: ctx.baseUrl,
+        accessToken: ctx.accessToken,
+      });
+      // await this.init({ executionId: ctx.executionId });
+
+      if (!this.client) {
+        throw new Error("Failed to create Opencode client");
+      }
+
+      const { data: session } = await this.client.session.create({
+        body: {
+          title: `Session ${new Date().toLocaleString()}`,
+        },
+        query: {
+          directory: ctx.cwd,
+        },
+
+      });
+      if (!session) {
+        throw new Error("Failed to create Opencode session");
+      }
+      this.activeSessionId = session.id;
+      this.activeSessionDirectory = ctx.cwd;
+
+      if (this.interruptRequested) {
+        const confirmed = await this.abortActiveSession();
+        this.abortConfirmed = confirmed;
+        if (confirmed) {
+          this.shutdown();
+        }
+        throw new InterruptedExecutionError('OpenCode agent execution was interrupted before prompt start');
+      }
+
+      await setSession(session.id);
+      console.log(`created session ${session.id} in ${session.directory}`);
+      // Session is created in the right dir ✅
+
+      const events = await this.client.event.subscribe(); // SSE stream
+
+      const prompt: TextPartInput = {
+        type: 'text',
+        text: ctx.prompt,
+      }
+      let finalResult = '';
+      await this.client.session.promptAsync({
+        path: {
+          id: session.id,
+        },
+        // NOTE: adding a directory breaks realtime events 🤷🏻‍♂️: https://github.com/anomalyco/opencode/issues/11522
+        // NOTE: Good news is we don't need it because the session carries the dir.
+        // NOTE: Acutally we need to. I've implemented a horrible hack to CD before starting the server.
+        // query: {
+        //   directory: ctx.cwd,
+        // },
+        body: {
+          model: {
+            providerID: this.model.providerId,
+            modelID: this.model.modelId,
+          },
+          parts: [prompt],
+        }
+      })
+
+      if (this.interruptRequested && await this.wasAbortApplied()) {
+        throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
+      }
+
+      console.log("--------- STARTING EVENT LOOP ---------");
       for await (const event of events.stream) {
+        if (this.interruptRequested && await this.wasAbortApplied()) {
+          throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
+        }
+
         // Detect end of session
         if (event.type == 'session.idle') {
           console.log('session.idle');
+          if (this.interruptRequested && await this.wasAbortApplied()) {
+            throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
+          }
           break;
         }
 
@@ -240,31 +465,31 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
         const message = formatter.format(event);
         if (message) {
-          emit(message);
+          await emit(message);
+        }
+
+        if (this.interruptRequested && await this.wasAbortApplied()) {
+          throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
         }
       }
+      console.log("--------- ENDING EVENT LOOP ---------");
+      console.log('returning final result');
+      return finalResult;
     } catch (error) {
-      console.error(error);
-      // If we were aborted, this is expected - rethrow as interrupted error
-      if (aborted) {
+      if (this.interruptRequested && await this.wasAbortApplied()) {
+        console.log('[OpenCodeAgentRunner] Execution interrupted');
         throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
       }
-      // Otherwise rethrow the original error
+      console.error(error);
       throw error;
+    } finally {
+      removeAbortListener?.();
+      console.log('shutting down Opencode client');
+      this.shutdown();
+      this.activeSessionId = null;
+      this.activeSessionDirectory = null;
+      this.runtimeMcpServers = undefined;
     }
-    console.log("--------- ENDING EVENT LOOP ---------");
-
-    console.log('shutting down Opencode client');
-    this.shutdown();
-    this.runtimeMcpServers = undefined;
-    console.log('returning final result');
-
-    // If we were aborted (but didn't error), still throw
-    if (aborted) {
-      throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
-    }
-
-    return finalResult;
   }
 
   private buildMcpConfig({

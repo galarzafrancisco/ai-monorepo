@@ -86,6 +86,8 @@ export type AgentRunResult = {
 export interface AgentRunner {
   readonly kind: string;
 
+  cancel?(): void | Promise<void>;
+
   run(
     ctx: AgentRunContext,
     cb?: AgentRunCallbacks

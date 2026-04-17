@@ -311,6 +311,9 @@ export class ExecutionsWorkerGateway
       executionId: event.payload.executionId,
       requestedAt: event.occurredAt.toISOString(),
     };
+    this.logger.debug(
+      `Handling interrupt for execution ${event.payload.executionId} requested by actor ${event.actor.id}`,
+    );
 
     // Find the worker socket(s) for this worker client ID
     const socketIds = this.workerSocketsByClientId.get(event.payload.workerClientId);
@@ -321,15 +324,16 @@ export class ExecutionsWorkerGateway
       return;
     }
 
-    // Emit to all sockets for this worker
-    for (const socketId of socketIds) {
-      const socket = this.server.sockets.sockets.get(socketId);
-      if (socket) {
-        socket.emit(ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST, wireEvent);
-        this.logger.log(
-          `Emitted ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to worker socket ${socketId}`,
-        );
-      }
-    }
+    this.logger.debug(
+      `Emitting ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to worker client ${event.payload.workerClientId} on sockets ${[...socketIds].join(',')}`,
+    );
+
+    this.server.to([...socketIds]).emit(ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST, wireEvent);
+    this.logger.log(
+      `Emitted ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to ${socketIds.size} worker socket(s)`,
+    );
+    this.logger.debug(
+      `Finished emitting ${ExecutionWireEvents.EXECUTION_INTERRUPT_REQUEST} for execution ${event.payload.executionId} to worker client ${event.payload.workerClientId}`,
+    );
   }
 }

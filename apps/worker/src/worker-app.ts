@@ -6,6 +6,7 @@ import { ExecutionActivityGatewayClient } from './execution-activity-gateway-cli
 
 // Global map to track active execution abort controllers
 export const activeExecutionAbortControllers = new Map<string, AbortController>();
+export const activeExecutionInterruptHandlers = new Map<string, () => void | Promise<void>>();
 
 const STARTUP_RETRY_DELAY_MS = 2_000;
 
@@ -71,6 +72,11 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
       if (abortController) {
         console.log(`[worker] Aborting execution ${event.executionId}`);
         abortController.abort();
+        void Promise.resolve(activeExecutionInterruptHandlers.get(event.executionId)?.()).catch((error) => {
+          console.warn(
+            `[worker] Failed to interrupt execution ${event.executionId}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        });
       } else {
         console.warn(`[worker] No active execution found for ${event.executionId}`);
       }
