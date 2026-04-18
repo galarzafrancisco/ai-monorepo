@@ -8,7 +8,6 @@ import {
 } from "./AgentRunner.js";
 import { approveAll, CopilotClient, MCPRemoteServerConfig, MCPLocalServerConfig } from "@github/copilot-sdk";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
-import { extractTokenUsage } from './token-usage.js';
 
 export class GitHubCopilotAgentRunner extends BaseAgentRunner {
   readonly kind = 'githubcopilot';
@@ -97,7 +96,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
           }
         });
         session.on('assistant.reasoning', (reasoning) => {
-          const usage = extractTokenUsage(reasoning);
+          const usage = extractCopilotTokenUsage(reasoning);
           if (usage) {
             void onTokenUsage?.(usage);
           }
@@ -105,7 +104,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
         });
         session.on('assistant.message', (message) => {
           lastAssistantMessage = message.data.content ?? '';
-          const usage = extractTokenUsage(message);
+          const usage = extractCopilotTokenUsage(message);
           if (usage) {
             void onTokenUsage?.(usage);
           }
@@ -188,4 +187,55 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
       tools: ["*"],
     };
   }
+}
+
+type CopilotUsage = {
+  promptTokens?: unknown;
+  completionTokens?: unknown;
+  totalTokens?: unknown;
+  inputTokens?: unknown;
+  outputTokens?: unknown;
+};
+
+function extractCopilotTokenUsage(event: unknown): TokenUsage | null {
+  if (!event || typeof event !== 'object') {
+    return null;
+  }
+
+  const usage = (event as { data?: { usage?: CopilotUsage } }).data?.usage;
+  if (!usage) {
+    return null;
+  }
+
+  const inputTokens = toTokenCount(usage.inputTokens ?? usage.promptTokens);
+  const outputTokens = toTokenCount(
+    usage.outputTokens ?? usage.completionTokens,
+  );
+  let totalTokens = toTokenCount(usage.totalTokens);
+
+  if (
+    totalTokens === null &&
+    inputTokens !== null &&
+    outputTokens !== null
+  ) {
+    totalTokens = inputTokens + outputTokens;
+  }
+
+  if (inputTokens === null && outputTokens === null && totalTokens === null) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function toTokenCount(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  return Math.trunc(value);
 }

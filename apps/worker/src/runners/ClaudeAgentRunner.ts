@@ -5,7 +5,6 @@ import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js"
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, TokenUsage } from "./AgentRunner.js";
 import { DEFAULT_AGENT_ALLOWED_TOOLS } from '@taico/shared';
-import { extractTokenUsage } from './token-usage.js';
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
@@ -87,7 +86,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         await onToolCall?.(toolName);
       }
 
-      const usage = extractTokenUsage(msg);
+      const usage = extractClaudeTokenUsage(msg);
       if (usage) {
         await onTokenUsage?.(usage);
       }
@@ -112,4 +111,55 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
 
     return finalResult;
   }
+}
+
+type ClaudeUsage = {
+  input_tokens?: unknown;
+  output_tokens?: unknown;
+  prompt_tokens?: unknown;
+  completion_tokens?: unknown;
+  total_tokens?: unknown;
+};
+
+function extractClaudeTokenUsage(message: unknown): TokenUsage | null {
+  if (!message || typeof message !== 'object') {
+    return null;
+  }
+
+  const usage = (message as { message?: { usage?: ClaudeUsage } }).message?.usage;
+  if (!usage) {
+    return null;
+  }
+
+  const inputTokens = toTokenCount(usage.input_tokens ?? usage.prompt_tokens);
+  const outputTokens = toTokenCount(
+    usage.output_tokens ?? usage.completion_tokens,
+  );
+  let totalTokens = toTokenCount(usage.total_tokens);
+
+  if (
+    totalTokens === null &&
+    inputTokens !== null &&
+    outputTokens !== null
+  ) {
+    totalTokens = inputTokens + outputTokens;
+  }
+
+  if (inputTokens === null && outputTokens === null && totalTokens === null) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function toTokenCount(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  return Math.trunc(value);
 }

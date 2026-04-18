@@ -6,7 +6,6 @@ import { OpencodeAsyncMessageFormatter } from "../formatters/OpencodeMessageForm
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
 import { AgentModelConfig, AgentRunContext, Model, TokenUsage } from "./AgentRunner.js";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
-import { extractTokenUsage } from './token-usage.js';
 
 type OpenCodeMcpServerConfig =
   | {
@@ -469,7 +468,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
           await onToolCall?.(event.properties.part.tool);
         }
 
-        const usage = extractTokenUsage(event);
+        const usage = extractOpencodeTokenUsage(event);
         if (usage) {
           await onTokenUsage?.(usage);
         }
@@ -555,4 +554,58 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   }
 
   private runtimeMcpServers?: AgentRunContext['mcpServers'];
+}
+
+type OpencodeTokenCounts = {
+  input?: unknown;
+  output?: unknown;
+  total?: unknown;
+};
+
+function extractOpencodeTokenUsage(event: unknown): TokenUsage | null {
+  if (!event || typeof event !== 'object') {
+    return null;
+  }
+
+  const properties = (event as {
+    properties?: {
+      info?: { tokens?: OpencodeTokenCounts };
+      message?: { info?: { tokens?: OpencodeTokenCounts } };
+    };
+  }).properties;
+
+  const tokens = properties?.info?.tokens ?? properties?.message?.info?.tokens;
+  if (!tokens) {
+    return null;
+  }
+
+  const inputTokens = toTokenCount(tokens.input);
+  const outputTokens = toTokenCount(tokens.output);
+  let totalTokens = toTokenCount(tokens.total);
+
+  if (
+    totalTokens === null &&
+    inputTokens !== null &&
+    outputTokens !== null
+  ) {
+    totalTokens = inputTokens + outputTokens;
+  }
+
+  if (inputTokens === null && outputTokens === null && totalTokens === null) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function toTokenCount(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  return Math.trunc(value);
 }

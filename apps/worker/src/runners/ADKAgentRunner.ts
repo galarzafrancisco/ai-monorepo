@@ -17,7 +17,6 @@ import {
 } from "./AgentRunner.js";
 import { randomUUID } from "node:crypto";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
-import { extractTokenUsage } from './token-usage.js';
 
 class NamespacedTool extends BaseTool {
   constructor(
@@ -193,7 +192,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
           }
         }
 
-        const usage = extractTokenUsage(msg);
+        const usage = extractAdkTokenUsage(msg);
         if (usage) {
           await onTokenUsage?.(usage);
         }
@@ -293,4 +292,52 @@ export class ADKAgentRunner extends BaseAgentRunner {
 
     return [...new Set(details)];
   }
+}
+
+type AdkUsageMetadata = {
+  promptTokenCount?: unknown;
+  candidatesTokenCount?: unknown;
+  totalTokenCount?: unknown;
+};
+
+function extractAdkTokenUsage(message: unknown): TokenUsage | null {
+  if (!message || typeof message !== 'object') {
+    return null;
+  }
+
+  const usageMetadata = (message as { usageMetadata?: AdkUsageMetadata })
+    .usageMetadata;
+  if (!usageMetadata) {
+    return null;
+  }
+
+  const inputTokens = toTokenCount(usageMetadata.promptTokenCount);
+  const outputTokens = toTokenCount(usageMetadata.candidatesTokenCount);
+  let totalTokens = toTokenCount(usageMetadata.totalTokenCount);
+
+  if (
+    totalTokens === null &&
+    inputTokens !== null &&
+    outputTokens !== null
+  ) {
+    totalTokens = inputTokens + outputTokens;
+  }
+
+  if (inputTokens === null && outputTokens === null && totalTokens === null) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function toTokenCount(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  return Math.trunc(value);
 }
