@@ -23,16 +23,13 @@ export function ThreadsLayout(): React.JSX.Element {
           <Outlet />
         </DesktopShell>)
         :
-        isThreadDetailRoute ? (
-          <Outlet />
-        ) : (
         <IosShell
           appTitle="Threads"
           sectionTitle={sectionTitle}
           navItems={navItems}
         >
           <Outlet />
-        </IosShell>)}
+        </IosShell>}
     </div>
   );
 }
