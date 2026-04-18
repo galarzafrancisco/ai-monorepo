@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import {
   TaskAssignedWireEvent,
@@ -25,6 +25,7 @@ import { ThreadChat } from "./ThreadChat";
 import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
+import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 
 type ThreadTask = Thread["tasks"][number];
 type DisplayContextBlock = {
@@ -608,13 +609,6 @@ function ThreadDetailPageMobile({
 // Mobile drawer component
 function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const MAIN_NAV_ITEMS = [
-    { path: "/dashboard", icon: "🏠", label: "Dashboard" },
-    { path: "/threads", icon: "💬", label: "Threads" },
-    { path: "/tasks", icon: "✓", label: "Tasks" },
-    { path: "/context", icon: "📄", label: "Context" },
-  ];
 
   return (
     <>
@@ -633,20 +627,18 @@ function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           </button>
         </div>
         <nav className="thread-detail-page__mobile-drawer-nav">
-          {MAIN_NAV_ITEMS.map((item) => {
+          {MAIN_NAVEGATION_ITEMS.map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             return (
-              <button
+              <Link
                 key={item.path}
+                to={item.path}
                 className={`thread-detail-page__mobile-drawer-item ${isActive ? "thread-detail-page__mobile-drawer-item--active" : ""}`}
-                onClick={() => {
-                  navigate(item.path);
-                  onClose();
-                }}
+                onClick={onClose}
               >
                 <span className="thread-detail-page__mobile-drawer-icon">{item.icon}</span>
                 <span className="thread-detail-page__mobile-drawer-label">{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>
