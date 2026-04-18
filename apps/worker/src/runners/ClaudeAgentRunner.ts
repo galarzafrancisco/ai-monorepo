@@ -3,14 +3,34 @@ import { BaseAgentRunner } from "./BaseAgentRunner.js";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { ClaudeMessageFormatter } from "../formatters/ClaudeMessageFormatter.js";
 import { EXECUTION_ID_HEADER } from "../helpers/config.js";
-import { AgentModelConfig, AgentRunContext, TokenUsage } from "./AgentRunner.js";
+import {
+  AgentModelConfig,
+  AgentRunContext,
+  Model,
+  TokenUsage,
+} from "./AgentRunner.js";
 import { DEFAULT_AGENT_ALLOWED_TOOLS } from '@taico/shared';
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
+  private readonly model: Model | null;
 
-  constructor(_modelConfig: AgentModelConfig = {}) {
+  constructor(modelConfig: AgentModelConfig = {}) {
     super();
+
+    if (!modelConfig.modelId) {
+      this.model = null;
+      return;
+    }
+
+    this.model = {
+      providerId: modelConfig.providerId ?? 'anthropic',
+      modelId: modelConfig.modelId,
+    };
+  }
+
+  override getModel() {
+    return this.model;
   }
 
   protected async runInternal(
