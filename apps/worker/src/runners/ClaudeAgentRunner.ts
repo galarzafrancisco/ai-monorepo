@@ -112,7 +112,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         if (usage.mode === 'absolute') {
           await onTokenUsage?.(applyAbsoluteUsage(cumulativeUsage, usage.usage));
         } else {
-          await onTokenUsage?.(accumulateUsage(cumulativeUsage, usage.usage));
+          await onTokenUsage?.(applySnapshotUsage(cumulativeUsage, usage.usage));
         }
       }
 
@@ -150,7 +150,7 @@ type ClaudeUsage = {
 
 type ExtractedClaudeUsage = {
   usage: TokenUsage;
-  mode: 'delta' | 'absolute';
+  mode: 'snapshot' | 'absolute';
 };
 
 function extractClaudeTokenUsage(message: unknown): ExtractedClaudeUsage | null {
@@ -197,7 +197,7 @@ function extractClaudeTokenUsage(message: unknown): ExtractedClaudeUsage | null 
       outputTokens,
       totalTokens,
     },
-    mode: typedMessage.type === 'result' ? 'absolute' : 'delta',
+    mode: typedMessage.type === 'result' ? 'absolute' : 'snapshot',
   };
 }
 
@@ -229,20 +229,17 @@ function toTokenCount(value: unknown): number | null {
   return Math.trunc(value);
 }
 
-function accumulateUsage(current: TokenUsage, next: TokenUsage): TokenUsage {
-  const inputDelta = next.inputTokens;
-  if (typeof inputDelta === 'number') {
-    current.inputTokens = (current.inputTokens ?? 0) + inputDelta;
+function applySnapshotUsage(current: TokenUsage, snapshot: TokenUsage): TokenUsage {
+  if (typeof snapshot.inputTokens === 'number') {
+    current.inputTokens = Math.max(current.inputTokens ?? 0, snapshot.inputTokens);
   }
 
-  const outputDelta = next.outputTokens;
-  if (typeof outputDelta === 'number') {
-    current.outputTokens = (current.outputTokens ?? 0) + outputDelta;
+  if (typeof snapshot.outputTokens === 'number') {
+    current.outputTokens = Math.max(current.outputTokens ?? 0, snapshot.outputTokens);
   }
 
-  const totalDelta = next.totalTokens;
-  if (typeof totalDelta === 'number') {
-    current.totalTokens = (current.totalTokens ?? 0) + totalDelta;
+  if (typeof snapshot.totalTokens === 'number') {
+    current.totalTokens = Math.max(current.totalTokens ?? 0, snapshot.totalTokens);
   } else if (
     typeof current.inputTokens === 'number' &&
     typeof current.outputTokens === 'number'
