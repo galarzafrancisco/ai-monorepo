@@ -23,13 +23,19 @@ export function ThreadsLayout(): React.JSX.Element {
           <Outlet />
         </DesktopShell>)
         :
-        <IosShell
-          appTitle="Threads"
-          sectionTitle={sectionTitle}
-          navItems={navItems}
-        >
+        isThreadDetailRoute ? (
+          // Thread detail on mobile: bypass IosShell, use custom layout
           <Outlet />
-        </IosShell>}
+        ) : (
+          // Thread list on mobile: use IosShell with bottom nav
+          <IosShell
+            appTitle="Threads"
+            sectionTitle={sectionTitle}
+            navItems={navItems}
+          >
+            <Outlet />
+          </IosShell>
+        )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { io } from "socket.io-client";
 import {
   TaskAssignedWireEvent,
@@ -429,21 +429,34 @@ function ThreadDetailPageMobile({
   const taskGroups = groupTasksByStatus(thread);
   const contextBlocks = getContextBlocksForDisplay(thread);
   const [mobileView, setMobileView] = useState<"chat" | "tasks" | "context" | "more">("chat");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   return (
     <div className="thread-detail-page thread-detail-page--mobile">
-      {/* Thread info header */}
-      <div className="thread-detail-page__mobile-thread-meta">
-        <Text size="2" weight="semibold">
-          {thread.title}
-        </Text>
-        <Text size="1" tone="muted">
-          #{thread.id.slice(0, 6)} · {thread.participants.length} participants
-        </Text>
-      </div>
+      {/* Mobile drawer */}
+      <MobileDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
 
-      {/* Tab navigation - fixed */}
-      <div className="thread-detail-page__mobile-view-toggle" role="tablist" aria-label="Thread mobile views">
+      {/* Fixed header with burger menu */}
+      <header className="thread-detail-page__mobile-header">
+        <button
+          className="thread-detail-page__mobile-burger"
+          onClick={() => setIsDrawerOpen(true)}
+          aria-label="Open menu"
+        >
+          ☰
+        </button>
+        <div className="thread-detail-page__mobile-header-content">
+          <Text size="2" weight="semibold">
+            {thread.title}
+          </Text>
+          <Text size="1" tone="muted">
+            #{thread.id.slice(0, 6)} · {thread.participants.length} participants
+          </Text>
+        </div>
+      </header>
+
+      {/* Fixed tab navigation */}
+      <div className="thread-detail-page__mobile-tabs" role="tablist" aria-label="Thread mobile views">
         <button
           type="button"
           role="tab"
@@ -482,10 +495,10 @@ function ThreadDetailPageMobile({
         </button>
       </div>
 
-      {/* Scrollable content area */}
-      <div className="thread-detail-page__mobile-view-content">
+      {/* Main content area - scrollable or fixed depending on view */}
+      <div className="thread-detail-page__mobile-content">
         {mobileView === "chat" && (
-          <div className="thread-detail-page__mobile-chat-view">
+          <div className="thread-detail-page__mobile-chat-container">
             <ThreadChat threadId={thread.id} />
           </div>
         )}
@@ -589,5 +602,55 @@ function ThreadDetailPageMobile({
         )}
       </div>
     </div>
+  );
+}
+
+// Mobile drawer component
+function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const MAIN_NAV_ITEMS = [
+    { path: "/dashboard", icon: "🏠", label: "Dashboard" },
+    { path: "/threads", icon: "💬", label: "Threads" },
+    { path: "/tasks", icon: "✓", label: "Tasks" },
+    { path: "/context", icon: "📄", label: "Context" },
+  ];
+
+  return (
+    <>
+      {isOpen && (
+        <div className="thread-detail-page__mobile-drawer-overlay" onClick={onClose} />
+      )}
+      <aside className={`thread-detail-page__mobile-drawer ${isOpen ? "thread-detail-page__mobile-drawer--open" : ""}`}>
+        <div className="thread-detail-page__mobile-drawer-header">
+          <Text size="4" weight="bold">taico</Text>
+          <button
+            className="thread-detail-page__mobile-drawer-close"
+            onClick={onClose}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
+        </div>
+        <nav className="thread-detail-page__mobile-drawer-nav">
+          {MAIN_NAV_ITEMS.map((item) => {
+            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+            return (
+              <button
+                key={item.path}
+                className={`thread-detail-page__mobile-drawer-item ${isActive ? "thread-detail-page__mobile-drawer-item--active" : ""}`}
+                onClick={() => {
+                  navigate(item.path);
+                  onClose();
+                }}
+              >
+                <span className="thread-detail-page__mobile-drawer-icon">{item.icon}</span>
+                <span className="thread-detail-page__mobile-drawer-label">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
   );
 }
