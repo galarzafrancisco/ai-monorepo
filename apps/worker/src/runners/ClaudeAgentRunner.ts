@@ -109,7 +109,11 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
 
       const usage = extractClaudeTokenUsage(msg);
       if (usage) {
-        await onTokenUsage?.(accumulateUsage(cumulativeUsage, usage));
+        if (usage.mode === 'absolute') {
+          await onTokenUsage?.(applyAbsoluteUsage(cumulativeUsage, usage.usage));
+        } else {
+          await onTokenUsage?.(accumulateUsage(cumulativeUsage, usage.usage));
+        }
       }
 
       // map → string
@@ -139,20 +143,37 @@ type ClaudeUsage = {
   output_tokens?: unknown;
   prompt_tokens?: unknown;
   completion_tokens?: unknown;
+  cache_creation_input_tokens?: unknown;
+  cache_read_input_tokens?: unknown;
   total_tokens?: unknown;
 };
 
-function extractClaudeTokenUsage(message: unknown): TokenUsage | null {
+type ExtractedClaudeUsage = {
+  usage: TokenUsage;
+  mode: 'delta' | 'absolute';
+};
+
+function extractClaudeTokenUsage(message: unknown): ExtractedClaudeUsage | null {
   if (!message || typeof message !== 'object') {
     return null;
   }
 
-  const usage = (message as { message?: { usage?: ClaudeUsage } }).message?.usage;
+  const typedMessage = message as {
+    type?: unknown;
+    message?: { usage?: ClaudeUsage };
+    usage?: ClaudeUsage;
+  };
+
+  const usage = typedMessage.message?.usage ?? typedMessage.usage;
   if (!usage) {
     return null;
   }
 
-  const inputTokens = toTokenCount(usage.input_tokens ?? usage.prompt_tokens);
+  const inputTokens = sumTokenCounts(
+    toTokenCount(usage.input_tokens ?? usage.prompt_tokens),
+    toTokenCount(usage.cache_creation_input_tokens),
+    toTokenCount(usage.cache_read_input_tokens),
+  );
   const outputTokens = toTokenCount(
     usage.output_tokens ?? usage.completion_tokens,
   );
@@ -171,10 +192,33 @@ function extractClaudeTokenUsage(message: unknown): TokenUsage | null {
   }
 
   return {
-    inputTokens,
-    outputTokens,
-    totalTokens,
+    usage: {
+      inputTokens,
+      outputTokens,
+      totalTokens,
+    },
+    mode: typedMessage.type === 'result' ? 'absolute' : 'delta',
   };
+}
+
+function sumTokenCounts(...values: Array<number | null>): number | null {
+  let hasValue = false;
+  let total = 0;
+
+  for (const value of values) {
+    if (value === null) {
+      continue;
+    }
+
+    hasValue = true;
+    total += value;
+  }
+
+  if (!hasValue) {
+    return null;
+  }
+
+  return total;
 }
 
 function toTokenCount(value: unknown): number | null {
@@ -199,6 +243,31 @@ function accumulateUsage(current: TokenUsage, next: TokenUsage): TokenUsage {
   const totalDelta = next.totalTokens;
   if (typeof totalDelta === 'number') {
     current.totalTokens = (current.totalTokens ?? 0) + totalDelta;
+  } else if (
+    typeof current.inputTokens === 'number' &&
+    typeof current.outputTokens === 'number'
+  ) {
+    current.totalTokens = current.inputTokens + current.outputTokens;
+  }
+
+  return {
+    inputTokens: current.inputTokens,
+    outputTokens: current.outputTokens,
+    totalTokens: current.totalTokens,
+  };
+}
+
+function applyAbsoluteUsage(current: TokenUsage, absolute: TokenUsage): TokenUsage {
+  if (typeof absolute.inputTokens === 'number') {
+    current.inputTokens = absolute.inputTokens;
+  }
+
+  if (typeof absolute.outputTokens === 'number') {
+    current.outputTokens = absolute.outputTokens;
+  }
+
+  if (typeof absolute.totalTokens === 'number') {
+    current.totalTokens = absolute.totalTokens;
   } else if (
     typeof current.inputTokens === 'number' &&
     typeof current.outputTokens === 'number'
