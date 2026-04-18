@@ -65,6 +65,9 @@ type TaskExecutionListItem = {
   errorMessage: string | null;
 };
 
+const COLLAPSED_TIMELINE_COUNT = 3;
+const COLLAPSED_EXECUTION_COUNT = 3;
+
 export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks }: TaskDetailViewProps) {
   const navigate = useNavigate();
   const { actors } = useActorsCtx();
@@ -75,6 +78,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   const [liveActivity, setLiveActivity] = useState<TaskActivityWireEvent | null>(null);
   const [activityPhase, setActivityPhase] = useState<'idle' | 'enter' | 'exit'>('idle');
+  const [showAllTimelineItems, setShowAllTimelineItems] = useState(false);
+  const [showAllExecutions, setShowAllExecutions] = useState(false);
   const activityHideTimerRef = useRef<number | null>(null);
   const activityExitTimerRef = useRef<number | null>(null);
 
@@ -462,6 +467,11 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
   const activity = task ? activityByTaskId[task.id] : null;
 
+  useEffect(() => {
+    setShowAllTimelineItems(false);
+    setShowAllExecutions(false);
+  }, [task?.id]);
+
   const loadExecutionsForTask = useCallback(async (taskId: string) => {
     setIsLoadingExecutions(true);
     try {
@@ -515,6 +525,40 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       setIsLoadingExecutions(false);
     }
   }, []);
+
+  const timelineItems = useMemo(() => {
+    if (!task) {
+      return [];
+    }
+
+    type TimelineItem =
+      | { type: 'comment'; data: Task['comments'][number]; timestamp: number }
+      | { type: 'inputRequest'; data: InputRequestResponseDto; timestamp: number };
+
+    return [
+      ...task.comments.map((comment) => ({
+        type: 'comment' as const,
+        data: comment,
+        timestamp: new Date(comment.createdAt).getTime(),
+      })),
+      ...task.inputRequests.map((inputRequest) => ({
+        type: 'inputRequest' as const,
+        data: inputRequest,
+        timestamp: new Date(inputRequest.createdAt).getTime(),
+      })),
+    ]
+      .sort((a, b) => b.timestamp - a.timestamp) as TimelineItem[];
+  }, [task]);
+
+  const visibleTimelineItems = showAllTimelineItems
+    ? timelineItems
+    : timelineItems.slice(0, COLLAPSED_TIMELINE_COUNT);
+  const hasMoreTimelineItems = timelineItems.length > COLLAPSED_TIMELINE_COUNT;
+
+  const visibleExecutions = showAllExecutions
+    ? executions
+    : executions.slice(0, COLLAPSED_EXECUTION_COUNT);
+  const hasMoreExecutions = executions.length > COLLAPSED_EXECUTION_COUNT;
 
   useEffect(() => {
     if (!task) {
@@ -740,131 +784,126 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         </DataRow>
       </DataRowContainer >
 
-      <DataRowContainer className='task-detail-page__section' >
-        {
-          (() => {
-            type TimelineItem =
-              | { type: 'comment'; data: typeof task.comments[0]; timestamp: number }
-              | { type: 'inputRequest'; data: InputRequestResponseDto; timestamp: number };
+      <DataRowContainer title="Updates" className='task-detail-page__section' >
+        {timelineItems.length === 0 ? (
+          <Text className="task-detail-page__executions-state" tone='muted'>No updates yet.</Text>
+        ) : null}
+        {visibleTimelineItems.map((item) => {
+          if (item.type === 'comment') {
+            const comment = item.data;
+            const name = comment.commenterActor?.displayName || 'unknown';
+            const slug = comment.commenterActor?.slug || 'unknown';
+            return (
+              <DataRow
+                key={`comment-${comment.id}`}
+                leading={<Avatar size={'sm'} name={name} src={comment.commenterActor?.avatarUrl || undefined} />}
+                topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
+              >
+                <Text as='span' weight='medium' size='3'>
+                  {name}
+                </Text>
+                <Text as='span' weight='normal' tone='muted' size='3'>
+                  {` @${slug}`}
+                </Text>
+                <Text>
+                  {comment.content}
+                </Text>
+              </DataRow>
+            );
+          }
 
-            const timeline: TimelineItem[] = [
-              ...task.comments.map(comment => ({
-                type: 'comment' as const,
-                data: comment,
-                timestamp: new Date(comment.createdAt).getTime(),
-              })),
-              ...task.inputRequests.map(inputRequest => ({
-                type: 'inputRequest' as const,
-                data: inputRequest,
-                timestamp: new Date(inputRequest.createdAt).getTime(),
-              })),
-            ].sort((a, b) => a.timestamp - b.timestamp);
+          const inputRequest = item.data;
+          const askedByActor = actors.find(a => a.id === inputRequest.askedByActorId);
+          const assignedToActor = actors.find(a => a.id === inputRequest.assignedToActorId);
+          const name = askedByActor?.displayName || 'Unknown';
+          const slug = askedByActor?.slug || 'unknown';
+          const answerName = assignedToActor?.displayName || 'Unknown';
+          const answerSlug = assignedToActor?.slug || 'unknown';
+          const isResolved = !!inputRequest.resolvedAt;
+          const isAssignedToMe = user && inputRequest.assignedToActorId === user.actorId;
+          const answerText = typeof inputRequest.answer === 'string'
+            ? inputRequest.answer
+            : JSON.stringify(inputRequest.answer);
+          const tags = isResolved
+            ? [
+              { label: 'resolved question', color: 'gray' as const },
+              { label: 'answer', color: 'green' as const },
+            ]
+            : [{ label: 'question', color: 'orange' as const }];
 
-            return timeline.map((item) => {
-              if (item.type === 'comment') {
-                const comment = item.data;
-                const name = comment.commenterActor?.displayName || 'unknown';
-                const slug = comment.commenterActor?.slug || 'unknown';
-                return (
-                  <DataRow
-                    key={`comment-${comment.id}`}
-                    leading={<Avatar size={'sm'} name={name} src={comment.commenterActor?.avatarUrl || undefined} />}
-                    topRight={<Text size='1' tone='muted'>{elapsedTime(comment.createdAt)}</Text>}
-                  >
-                    <Text as='span' weight='medium' size='3'>
-                      {name}
-                    </Text>
-                    <Text as='span' weight='normal' tone='muted' size='3'>
-                      {` @${slug}`}
-                    </Text>
+          return (
+            <DataRow
+              key={`input-request-${inputRequest.id}`}
+              leading={isResolved ? (
+                <div className="task-detail-page__input-request-avatars">
+                  <Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />
+                  <Avatar size={'sm'} name={answerName} src={assignedToActor?.avatarUrl || undefined} />
+                </div>
+              ) : (
+                <Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />
+              )}
+              tags={tags}
+              topRight={<Text size='1' tone='muted'>{elapsedTime(inputRequest.createdAt)}</Text>}
+            >
+              <Stack spacing="2">
+                <div className="task-detail-page__input-request">
+                  <div className="task-detail-page__input-request-question">
+                    <div className="task-detail-page__input-request-header">
+                      <Text as='span' weight='medium' size='3'>
+                        {name}
+                      </Text>
+                      <Text as='span' weight='normal' tone='muted' size='3'>
+                        {` @${slug}`}
+                      </Text>
+                    </div>
                     <Text>
-                      {comment.content}
+                      <Text as='span' tone='muted'>Asked:</Text>{' '}
+                      {inputRequest.question}
                     </Text>
-                  </DataRow>
-                );
-              } else if (item.type === 'inputRequest') {
-                const inputRequest = item.data;
-                const askedByActor = actors.find(a => a.id === inputRequest.askedByActorId);
-                const assignedToActor = actors.find(a => a.id === inputRequest.assignedToActorId);
-                const name = askedByActor?.displayName || 'Unknown';
-                const slug = askedByActor?.slug || 'unknown';
-                const answerName = assignedToActor?.displayName || 'Unknown';
-                const answerSlug = assignedToActor?.slug || 'unknown';
-                const isResolved = !!inputRequest.resolvedAt;
-                const isAssignedToMe = user && inputRequest.assignedToActorId === user.actorId;
-                const answerText = typeof inputRequest.answer === 'string'
-                  ? inputRequest.answer
-                  : JSON.stringify(inputRequest.answer);
-                const tags = isResolved
-                  ? [
-                    { label: 'resolved question', color: 'gray' as const },
-                    { label: 'answer', color: 'green' as const },
-                  ]
-                  : [{ label: 'question', color: 'orange' as const }];
-
-                return (
-                  <DataRow
-                    key={`input-request-${inputRequest.id}`}
-                    leading={isResolved ? (
-                      <div className="task-detail-page__input-request-avatars">
-                        <Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />
-                        <Avatar size={'sm'} name={answerName} src={assignedToActor?.avatarUrl || undefined} />
+                  </div>
+                  {isResolved ? (
+                    <div className="task-detail-page__input-request-answer">
+                      <div className="task-detail-page__input-request-header">
+                        <Text as='span' weight='medium' size='3'>
+                          {answerName}
+                        </Text>
+                        <Text as='span' weight='normal' tone='muted' size='3'>
+                          {` @${answerSlug}`}
+                        </Text>
                       </div>
-                    ) : (
-                      <Avatar size={'sm'} name={name} src={askedByActor?.avatarUrl || undefined} />
-                    )}
-                    tags={tags}
-                    topRight={<Text size='1' tone='muted'>{elapsedTime(inputRequest.createdAt)}</Text>}
+                      <Text>
+                        <Text as='span' tone='muted'>Answered:</Text>{' '}
+                        {answerText}
+                      </Text>
+                    </div>
+                  ) : null}
+                </div>
+                {!isResolved && isAssignedToMe && (
+                  <Button
+                    size='sm'
+                    variant='primary'
+                    onClick={() => setRespondingToInputRequest(inputRequest)}
                   >
-                    <Stack spacing="2">
-                      <div className="task-detail-page__input-request">
-                        <div className="task-detail-page__input-request-question">
-                          <div className="task-detail-page__input-request-header">
-                            <Text as='span' weight='medium' size='3'>
-                              {name}
-                            </Text>
-                            <Text as='span' weight='normal' tone='muted' size='3'>
-                              {` @${slug}`}
-                            </Text>
-                          </div>
-                          <Text>
-                            <Text as='span' tone='muted'>Asked:</Text>{' '}
-                            {inputRequest.question}
-                          </Text>
-                        </div>
-                        {isResolved ? (
-                          <div className="task-detail-page__input-request-answer">
-                            <div className="task-detail-page__input-request-header">
-                              <Text as='span' weight='medium' size='3'>
-                                {answerName}
-                              </Text>
-                              <Text as='span' weight='normal' tone='muted' size='3'>
-                                {` @${answerSlug}`}
-                              </Text>
-                            </div>
-                            <Text>
-                              <Text as='span' tone='muted'>Answered:</Text>{' '}
-                              {answerText}
-                            </Text>
-                          </div>
-                        ) : null}
-                      </div>
-                      {!isResolved && isAssignedToMe && (
-                        <Button
-                          size='sm'
-                          variant='primary'
-                          onClick={() => setRespondingToInputRequest(inputRequest)}
-                        >
-                          Respond
-                        </Button>
-                      )}
-                    </Stack>
-                  </DataRow>
-                );
-              }
-            });
-          })()
-        }
+                    Respond
+                  </Button>
+                )}
+              </Stack>
+            </DataRow>
+          );
+        })}
+        {hasMoreTimelineItems ? (
+          <div className='task-detail-page__section-toggle'>
+            <Button
+              size='sm'
+              variant='secondary'
+              onClick={() => setShowAllTimelineItems((prev) => !prev)}
+            >
+              {showAllTimelineItems
+                ? 'Show fewer updates'
+                : `See ${timelineItems.length - COLLAPSED_TIMELINE_COUNT} more updates`}
+            </Button>
+          </div>
+        ) : null}
       </DataRowContainer>
 
       <DataRowContainer className='task-detail-page__section'>
@@ -896,7 +935,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         {!isLoadingExecutions && !executionsError && executions.length === 0 ? (
           <Text className="task-detail-page__executions-state" tone='muted'>No runs yet for this task.</Text>
         ) : null}
-        {executions.map((execution) => {
+        {visibleExecutions.map((execution) => {
           const actor = actors.find((candidate) => candidate.id === execution.agentActorId);
           const actorName = actor?.displayName ?? shortId(execution.agentActorId);
           const actorSlug = actor?.slug;
@@ -988,6 +1027,19 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             </DataRow>
           );
         })}
+        {hasMoreExecutions ? (
+          <div className='task-detail-page__section-toggle'>
+            <Button
+              size='sm'
+              variant='secondary'
+              onClick={() => setShowAllExecutions((prev) => !prev)}
+            >
+              {showAllExecutions
+                ? 'Show fewer runs'
+                : `See ${executions.length - COLLAPSED_EXECUTION_COUNT} more runs`}
+            </Button>
+          </div>
+        ) : null}
       </DataRowContainer>
 
       <DataRowContainer className='task-detail-page__status-buttons'>

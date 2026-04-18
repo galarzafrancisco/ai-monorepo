@@ -75,6 +75,12 @@
   border-radius: 8px;
 }
 
+.task-detail-page__section-toggle {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3) var(--space-3) 0;
+}
+
 .task-detail-page__comment-content {
   flex: 1;
   min-width: 0;
