@@ -44,6 +44,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
     const formatter = new ClaudeMessageFormatter(ctx.agentSlug);
 
     let finalResult = '';
+    const cumulativeUsage: TokenUsage = {};
     const mcpServers =
       ctx.mcpServers ?? {
         tasks: {
@@ -108,7 +109,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
 
       const usage = extractClaudeTokenUsage(msg);
       if (usage) {
-        await onTokenUsage?.(usage);
+        await onTokenUsage?.(accumulateUsage(cumulativeUsage, usage));
       }
 
       // map → string
@@ -182,4 +183,32 @@ function toTokenCount(value: unknown): number | null {
   }
 
   return Math.trunc(value);
+}
+
+function accumulateUsage(current: TokenUsage, next: TokenUsage): TokenUsage {
+  const inputDelta = next.inputTokens;
+  if (typeof inputDelta === 'number') {
+    current.inputTokens = (current.inputTokens ?? 0) + inputDelta;
+  }
+
+  const outputDelta = next.outputTokens;
+  if (typeof outputDelta === 'number') {
+    current.outputTokens = (current.outputTokens ?? 0) + outputDelta;
+  }
+
+  const totalDelta = next.totalTokens;
+  if (typeof totalDelta === 'number') {
+    current.totalTokens = (current.totalTokens ?? 0) + totalDelta;
+  } else if (
+    typeof current.inputTokens === 'number' &&
+    typeof current.outputTokens === 'number'
+  ) {
+    current.totalTokens = current.inputTokens + current.outputTokens;
+  }
+
+  return {
+    inputTokens: current.inputTokens,
+    outputTokens: current.outputTokens,
+    totalTokens: current.totalTokens,
+  };
 }
