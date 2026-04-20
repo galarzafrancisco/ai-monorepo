@@ -13,6 +13,8 @@ import { ChatSetupCallout } from "../chat-providers/ChatSetupCallout";
 import { useDraftState } from "../../shared/hooks/useDraftState";
 import { ThreadsService } from "./api";
 import { ThreadContextCard } from "./ThreadContextCard";
+import { useAuth } from "../../auth";
+import { useActorsCtx } from "../actors";
 import './ThreadsPage.css';
 
 export function ThreadsPage() {
@@ -241,6 +243,13 @@ function OptimisticDesktopThread({
   title: string;
   message: string;
 }) {
+  const { user } = useAuth();
+  const { actors } = useActorsCtx();
+  const currentActor = actors.find((actor) => actor.id === user?.actorId);
+  const authorName = currentActor?.displayName || user?.displayName || "You";
+  const authorSlug = currentActor?.slug;
+  const authorAvatarUrl = currentActor?.avatarUrl || undefined;
+
   return (
     <div className="thread-detail-page thread-detail-page--desktop threads-page-desktop__optimistic">
       <div className="thread-detail-page__main">
@@ -267,10 +276,15 @@ function OptimisticDesktopThread({
                 <div className="thread-chat__message thread-chat__message--mine">
                   <div className="thread-chat__message-header">
                     <div className="thread-chat__author">
-                      <Avatar name="You" size="xs" />
+                      <Avatar name={authorName} src={authorAvatarUrl} size="xs" />
                       <Text size="1" weight="semibold">
-                        You
+                        {authorName}
                       </Text>
+                      {authorSlug ? (
+                        <Text size="1" tone="muted">
+                          @{authorSlug}
+                        </Text>
+                      ) : null}
                     </div>
                     <Text size="1" tone="muted">
                       sending...
