@@ -15,6 +15,8 @@ Build everything:
 npm run build:dev
 ```
 
+This is `npm ci` + a full nx-orchestrated prod build. nx caches by content hash, so re-runs are near-instant. For details on the build system (dep graph, cache, troubleshooting), see [Build System](how-to-guides/build-system.md).
+
 Run a dev stack:
 
 ```bash

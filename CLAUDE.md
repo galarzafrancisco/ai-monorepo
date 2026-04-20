@@ -20,9 +20,11 @@ Full details: `docs/PRIMITIVES.md`
 ## Development
 
 ```bash
-npm run build:dev     # Install deps, generate API types, build all packages
+npm run build:dev     # Cloned -> ready: npm ci + full prod build via nx
 npm run dev:[1-5]     # Start backend + both frontends with hot reload
 ```
+
+Builds are orchestrated by **nx**. `build:dev` and `build:prod` both walk the dep graph and cache by content hash — re-running an already-built workspace returns in ~1s. See [Build System](docs/how-to-guides/build-system.md) for project.json conventions, the `assemble-public` pattern, cache behavior, and troubleshooting. The dependency graph itself lives in [dependencies.md](dependencies.md).
 
 If you hit an "address in use" error, use `npm run dev:[1-5]` to pick a different stack (each has pre-configured ports and its own database via `stack[1-5].env`), or set `UI_PORT`, `LEGACY_UI_PORT`, and `BACKEND_PORT` env vars directly.
 

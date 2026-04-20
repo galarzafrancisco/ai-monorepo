@@ -37,29 +37,36 @@ It does not try to document every workspace in the monorepo.
 
 # Build Dependencies
 
-Production build order:
+Builds are orchestrated by [nx](https://nx.dev). The dependency graph below is what nx walks; you don't run these steps manually.
 
-1. Build shared packages:
-- `packages/shared`
-- `packages/events`
-- `packages/errors`
-- `packages/adk-session-store`
-- `packages/openapi-sdkgen`
+`npm run build:prod` is `nx run-many -t assemble-public,build:prod -p @taico/taico,@taico/worker`. nx pulls every transitive dep and runs them in the correct order, in parallel where possible, with content-hash caching.
 
-2. Build `apps/backend`
-- This also generates `apps/backend/openapi.json`
+Order nx executes:
 
-3. Build `packages/client`
-- Copies `apps/backend/openapi.json`
-- Generates TypeScript types
-- Generates the v1 and v2 clients
+1. Build leaf packages in parallel:
+- `packages/shared`, `packages/events`, `packages/errors`, `packages/adk-session-store`, `packages/openapi-sdkgen`
 
-4. Build `apps/ui`
+2. Build `apps/backend` (`build:prod`)
+- Compiles via `nest build`
+- Generates `apps/backend/openapi.json`
 
-5. Copy `apps/ui/dist` into `apps/backend/dist/public`
-- This makes the frontend part of the backend production artifact
+3. Build `packages/client` (`build:prod`)
+- Has an `implicitDependency` on `@taico/taico` and `@taico/openapi-sdkgen` (declared in `packages/client/project.json`)
+- Declares `apps/backend/openapi.json` as an input so its cache busts when the spec changes
+- Copies `apps/backend/openapi.json`, generates TypeScript types, generates v1 and v2 clients
 
-6. Build `apps/worker`
+4. Build `apps/ui` and `apps/ui-v1` in parallel (`build:prod`)
+- Each writes only to its own `dist/`
+
+5. Run `apps/backend:assemble-public` (declared in `apps/backend/project.json`)
+- `dependsOn` `@taico/ui:build:prod` and `@taico/ui-v1:build:prod`
+- Copies `apps/ui/dist` → `apps/backend/dist/public`
+- Copies `apps/ui-v1/dist` → `apps/backend/dist/public/beta`
+- This is the only owner of `apps/backend/dist/public/`
+
+6. Build `apps/worker` (`build:prod`)
+
+For details on how nx is wired (project.json conventions, cache behavior, adding a new package, troubleshooting), see [Build System](how-to-guides/build-system.md).
 
 # Runtime Dependencies
 
@@ -94,7 +101,7 @@ packages/events -----------> apps/ui
 packages/client -----------> apps/worker
 packages/shared -----------> apps/worker
 
-apps/ui/dist -------------> apps/backend/dist/public
+apps/ui/dist + apps/ui-v1/dist -> apps/backend:assemble-public -> apps/backend/dist/public
 ```
 
 # Mermaid Graph
@@ -111,7 +118,10 @@ flowchart TD
   backendSpec["apps/backend/openapi.json"]
   client["packages/client"]
   ui["apps/ui"]
+  uiV1["apps/ui-v1"]
   uiDist["apps/ui/dist"]
+  uiV1Dist["apps/ui-v1/dist"]
+  assemble["apps/backend:assemble-public"]
   backendPublic["apps/backend/dist/public"]
   worker["apps/worker"]
 
@@ -128,9 +138,15 @@ flowchart TD
   shared --> ui
   events --> ui
 
+  client --> uiV1
+
   client --> worker
   shared --> worker
 
   ui --> uiDist
-  uiDist --> backendPublic
+  uiV1 --> uiV1Dist
+  uiDist --> assemble
+  uiV1Dist --> assemble
+  backend --> assemble
+  assemble --> backendPublic
 ```
