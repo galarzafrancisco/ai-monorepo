@@ -547,7 +547,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         timestamp: new Date(inputRequest.createdAt).getTime(),
       })),
     ]
-      .sort((a, b) => b.timestamp - a.timestamp) as TimelineItem[];
+      .sort((a, b) => a.timestamp - b.timestamp) as TimelineItem[];
   }, [task]);
 
   const visibleTimelineItems = showAllTimelineItems
