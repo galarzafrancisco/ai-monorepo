@@ -77,7 +77,6 @@ export function ThreadsLayout(): React.JSX.Element {
                         onClick={() => navigate(`/threads/${thread.id}`)}
                       >
                         <span className="threads-layout__thread-title">{thread.title}</span>
-                        <span className="threads-layout__thread-id">#{thread.id.slice(0, 6)}</span>
                       </button>
                     );
                   })}

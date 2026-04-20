@@ -88,40 +88,50 @@
 
 .threads-layout__thread-item {
   border: 0;
-  border-bottom: 1px solid var(--border-subtle);
   background: transparent;
   color: var(--text);
   text-align: left;
-  padding: var(--space-3);
+  padding: 5px var(--space-3) 5px var(--space-4);
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  display: block;
+  position: relative;
 }
 
 .threads-layout__thread-item:hover {
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
 }
 
 .threads-layout__thread-item--active {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
 }
 
-.threads-layout__thread-title,
-.threads-layout__thread-id {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.threads-layout__thread-item--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent);
+}
+
+.threads-layout__thread-item:hover .threads-layout__thread-title,
+.threads-layout__thread-item--active .threads-layout__thread-title {
+  color: var(--accent);
+}
+
+.threads-layout__thread-item:hover .threads-layout__thread-title {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .threads-layout__thread-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--fs-2);
   font-weight: var(--fw-medium);
-}
-
-.threads-layout__thread-id {
-  font-size: var(--fs-1);
-  color: var(--text-muted);
 }
 
 .threads-layout__sidebar-status {
@@ -152,4 +162,6 @@
   min-height: 0;
   overflow: hidden;
   background: var(--bg);
+  padding-left: var(--space-4);
+  box-sizing: border-box;
 }

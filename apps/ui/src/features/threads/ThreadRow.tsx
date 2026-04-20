@@ -15,9 +15,6 @@ export function ThreadRow({
           {thread.title}
         </Text>
       </div>
-      <div style={{ fontSize: 12 }} className="text--tone-muted">
-        #{thread.id.slice(0, 6)}
-      </div>
     </DataRow>
   );
 }

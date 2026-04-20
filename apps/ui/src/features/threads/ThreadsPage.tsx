@@ -164,21 +164,8 @@ function DesktopNewThreadPage() {
 
   return (
     <div className="threads-page-desktop">
-      <div className="threads-page-desktop__intro">
-        <Text size="5" weight="bold">Start a new thread</Text>
-        <Text size="2" tone="muted">
-          Send the first message and Taico will create the thread, switch the URL, and load the attached task and context sidebar.
-        </Text>
-      </div>
-
       <div className="thread-chat threads-page-desktop__chat">
-        <div className="thread-chat__messages">
-          <div className="thread-chat__empty-state threads-page-desktop__empty-state">
-            <Text size="2" tone="muted">
-              No thread selected yet. Kick things off here and the conversation will open in its own thread.
-            </Text>
-          </div>
-        </div>
+        <div className="thread-chat__messages" aria-label="New thread messages" />
 
         {!isChatReadinessLoading && readiness && !readiness.isReady ? (
           <div className="thread-chat__setup-callout">
@@ -197,7 +184,7 @@ function DesktopNewThreadPage() {
                 className="thread-chat__input"
                 value={draftState.content}
                 onChange={(event) => setDraftState({ content: event.target.value })}
-                placeholder="Write the first message for this thread..."
+                placeholder="Write a message..."
                 rows={3}
                 disabled={isCreating || isChatReadinessLoading}
                 onKeyDown={(event) => {
