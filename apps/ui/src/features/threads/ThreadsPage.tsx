@@ -185,6 +185,16 @@ function DesktopNewThreadPage() {
 
   return (
     <div className="threads-page-desktop">
+      <div className="thread-detail-page__header">
+        <div className="thread-detail-page__header-top">
+          <div>
+            <Text size="5" weight="bold">
+              New thread
+            </Text>
+          </div>
+        </div>
+      </div>
+
       <div className="thread-chat threads-page-desktop__chat">
         <div className="thread-chat__messages" aria-label="New thread messages" />
 
