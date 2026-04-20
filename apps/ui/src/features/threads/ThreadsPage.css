@@ -91,3 +91,23 @@
 .threads-page-desktop__chat {
   min-height: 0;
 }
+
+.threads-page-desktop__optimistic {
+  height: 100%;
+}
+
+.threads-page-desktop__optimistic-sidebar {
+  animation: threads-optimistic-sidebar-enter 180ms ease-out;
+}
+
+@keyframes threads-optimistic-sidebar-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

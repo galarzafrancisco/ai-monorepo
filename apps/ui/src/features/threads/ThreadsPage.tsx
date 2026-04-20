@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, DataRowContainer, Text } from "../../ui/primitives";
+import { Avatar, Chip } from "../../ui/primitives";
 import { useThreadsCtx } from "./ThreadsProvider";
 import { ThreadRow } from "./ThreadRow";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
@@ -11,6 +12,7 @@ import { useChatReadiness } from "../chat-providers/useChatReadiness";
 import { ChatSetupCallout } from "../chat-providers/ChatSetupCallout";
 import { useDraftState } from "../../shared/hooks/useDraftState";
 import { ThreadsService } from "./api";
+import { ThreadContextCard } from "./ThreadContextCard";
 import './ThreadsPage.css';
 
 export function ThreadsPage() {
@@ -119,7 +121,7 @@ export function ThreadsPage() {
 
 function DesktopNewThreadPage() {
   const navigate = useNavigate();
-  const { createThread } = useThreadsCtx();
+  const { createThread, optimisticDraftThread, setOptimisticDraftThread } = useThreadsCtx();
   const { showError } = useToast();
   const [draftState, setDraftState, clearDraft] = useDraftState({
     key: 'thread-chat-draft-new',
@@ -144,6 +146,11 @@ function DesktopNewThreadPage() {
 
     setIsCreating(true);
     setCreateError(null);
+    setOptimisticDraftThread({
+      title: "New thread",
+      message: content,
+    });
+    setDraftState({ content: "" });
 
     try {
       const thread = await createThread();
@@ -152,15 +159,27 @@ function DesktopNewThreadPage() {
         body: { content },
       });
       clearDraft();
+      setOptimisticDraftThread(null);
       navigate(`/threads/${thread.id}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to start thread';
       setCreateError(message);
+      setDraftState({ content });
+      setOptimisticDraftThread(null);
       showError(error);
     } finally {
       setIsCreating(false);
     }
-  }, [clearDraft, createThread, draftState.content, isCreating, navigate, showError]);
+  }, [clearDraft, createThread, draftState.content, isCreating, navigate, setDraftState, setOptimisticDraftThread, showError]);
+
+  if (optimisticDraftThread) {
+    return (
+      <OptimisticDesktopThread
+        title={optimisticDraftThread.title}
+        message={optimisticDraftThread.message}
+      />
+    );
+  }
 
   return (
     <div className="threads-page-desktop">
@@ -210,6 +229,98 @@ function DesktopNewThreadPage() {
             ) : null}
           </form>
         )}
+      </div>
+    </div>
+  );
+}
+
+function OptimisticDesktopThread({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <div className="thread-detail-page thread-detail-page--desktop threads-page-desktop__optimistic">
+      <div className="thread-detail-page__main">
+        <div className="thread-detail-page__content">
+          <div className="thread-detail-page__header">
+            <div className="thread-detail-page__header-top">
+              <div>
+                <Text size="5" weight="bold">
+                  {title}
+                </Text>
+                <div className="thread-detail-page__meta-row">
+                  <Chip color="gray">creating</Chip>
+                  <Text size="1" tone="muted">
+                    1 participant
+                  </Text>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="thread-detail-page__chat">
+            <div className="thread-chat">
+              <div className="thread-chat__messages">
+                <div className="thread-chat__message thread-chat__message--mine">
+                  <div className="thread-chat__message-header">
+                    <div className="thread-chat__author">
+                      <Avatar name="You" size="xs" />
+                      <Text size="1" weight="semibold">
+                        You
+                      </Text>
+                    </div>
+                    <Text size="1" tone="muted">
+                      sending...
+                    </Text>
+                  </div>
+
+                  <Text size="2">{message}</Text>
+                </div>
+              </div>
+
+              <form className="thread-chat__input-form">
+                <div className="thread-chat__composer-row">
+                  <textarea
+                    className="thread-chat__input"
+                    placeholder="Write a message..."
+                    rows={3}
+                    disabled
+                  />
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    className="thread-chat__send-btn"
+                    disabled
+                  >
+                    starting...
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="thread-detail-page__sidebar threads-page-desktop__optimistic-sidebar">
+        <div className="thread-detail-page__sidebar-scroll">
+          <div className="thread-detail-page__sidebar-section">
+            <Text size="2" weight="semibold" className="thread-detail-page__sidebar-header">
+              Context (1)
+            </Text>
+            <div className="thread-detail-page__sidebar-content">
+              <ThreadContextCard
+                contextBlock={{
+                  id: "creating",
+                  title: "Thread state memory",
+                }}
+                isStateMemory
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

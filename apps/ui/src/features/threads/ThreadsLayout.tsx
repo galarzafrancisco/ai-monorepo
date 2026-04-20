@@ -11,7 +11,7 @@ export function ThreadsLayout(): React.JSX.Element {
   const { id: threadId } = useParams<{ id?: string }>();
   const isThreadDetailRoute = Boolean(threadId);
   const navigate = useNavigate();
-  const { threads, isLoading, error, sectionTitle, navItems } = useThreadsCtx();
+  const { threads, isLoading, error, sectionTitle, navItems, optimisticDraftThread } = useThreadsCtx();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
@@ -67,6 +67,15 @@ export function ThreadsLayout(): React.JSX.Element {
                 <div className="threads-layout__sidebar-status">No threads yet</div>
               ) : (
                 <div className="threads-layout__thread-list">
+                  {optimisticDraftThread ? (
+                    <button
+                      type="button"
+                      className="threads-layout__thread-item threads-layout__thread-item--active"
+                      onClick={() => navigate("/threads")}
+                    >
+                      <span className="threads-layout__thread-title">{optimisticDraftThread.title}</span>
+                    </button>
+                  ) : null}
                   {threads.map((thread) => {
                     const isSelected = thread.id === threadId;
                     return (
