@@ -37,6 +37,7 @@ export class TaskExecutionHistoryController {
     const result = await this.taskExecutionHistoryService.listHistory({
       page: query.page ?? 1,
       limit: query.limit ?? 50,
+      taskId: query.taskId,
     });
 
     return {

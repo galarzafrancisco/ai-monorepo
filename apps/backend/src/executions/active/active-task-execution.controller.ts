@@ -61,6 +61,7 @@ export class ActiveTaskExecutionController {
     const result = await this.activeTaskExecutionService.listActiveExecutions({
       page: query.page ?? 1,
       limit: query.limit ?? 50,
+      taskId: query.taskId,
     });
 
     return {

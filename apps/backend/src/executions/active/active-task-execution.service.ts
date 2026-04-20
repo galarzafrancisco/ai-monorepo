@@ -74,6 +74,7 @@ export class ActiveTaskExecutionService {
   async listActiveExecutions(options?: {
     page?: number;
     limit?: number;
+    taskId?: string;
   }): Promise<{
     items: ActiveTaskExecutionEntity[];
     total: number;
@@ -84,7 +85,10 @@ export class ActiveTaskExecutionService {
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
 
+    const where = options?.taskId ? { taskId: options.taskId } : {};
+
     const [items, total] = await this.activeTaskExecutionRepository.findAndCount({
+      where,
       relations: ['task', 'stats'],
       order: { claimedAt: 'DESC' },
       skip,

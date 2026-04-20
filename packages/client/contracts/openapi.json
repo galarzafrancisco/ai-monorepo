@@ -6070,6 +6070,16 @@
               "example": 50,
               "type": "number"
             }
+          },
+          {
+            "name": "taskId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by task ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6312,6 +6322,16 @@
               "default": 50,
               "example": 50,
               "type": "number"
+            }
+          },
+          {
+            "name": "taskId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by task ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
             }
           }
         ],

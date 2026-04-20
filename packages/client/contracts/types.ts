@@ -10180,6 +10180,8 @@ export interface operations {
                 page?: number;
                 /** @description Items per page (1-100) */
                 limit?: number;
+                /** @description Filter by task ID */
+                taskId?: string;
             };
             header?: never;
             path?: never;
@@ -10318,6 +10320,8 @@ export interface operations {
                 page?: number;
                 /** @description Items per page (1-100) */
                 limit?: number;
+                /** @description Filter by task ID */
+                taskId?: string;
             };
             header?: never;
             path?: never;

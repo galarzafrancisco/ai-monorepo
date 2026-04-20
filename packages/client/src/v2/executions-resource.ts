@@ -17,8 +17,8 @@ export class ExecutionsResource extends BaseClient {
   }
 
   /** List active task executions */
-  async ActiveTaskExecutionController_listActiveExecutions(params?: { page?: number; limit?: number; signal?: AbortSignal }): Promise<ActiveTaskExecutionListResponseDto> {
-    return this.request('GET', '/api/v1/executions/active', { params: { page: params?.page, limit: params?.limit }, signal: params?.signal });
+  async ActiveTaskExecutionController_listActiveExecutions(params?: { page?: number; limit?: number; taskId?: string; signal?: AbortSignal }): Promise<ActiveTaskExecutionListResponseDto> {
+    return this.request('GET', '/api/v1/executions/active', { params: { page: params?.page, limit: params?.limit, taskId: params?.taskId }, signal: params?.signal });
   }
 
   /** Stop an active task execution and move it to history */
@@ -47,8 +47,8 @@ export class ExecutionsResource extends BaseClient {
   }
 
   /** List task execution history */
-  async TaskExecutionHistoryController_listHistory(params?: { page?: number; limit?: number; signal?: AbortSignal }): Promise<TaskExecutionHistoryListResponseDto> {
-    return this.request('GET', '/api/v1/executions/history', { params: { page: params?.page, limit: params?.limit }, signal: params?.signal });
+  async TaskExecutionHistoryController_listHistory(params?: { page?: number; limit?: number; taskId?: string; signal?: AbortSignal }): Promise<TaskExecutionHistoryListResponseDto> {
+    return this.request('GET', '/api/v1/executions/history', { params: { page: params?.page, limit: params?.limit, taskId: params?.taskId }, signal: params?.signal });
   }
 
 }

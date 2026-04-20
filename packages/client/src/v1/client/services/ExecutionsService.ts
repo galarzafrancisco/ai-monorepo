@@ -61,12 +61,14 @@ export class ExecutionsService {
      * Returns the tasks currently being worked on in the execution system with pagination.
      * @param page Page number (1-indexed)
      * @param limit Items per page (1-100)
+     * @param taskId Filter by task ID
      * @returns ActiveTaskExecutionListResponseDto
      * @throws ApiError
      */
     public static activeTaskExecutionControllerListActiveExecutions(
         page: number = 1,
         limit: number = 50,
+        taskId?: string,
         config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<ActiveTaskExecutionListResponseDto> {
         return __request(config, {
@@ -75,6 +77,7 @@ export class ExecutionsService {
             query: {
                 'page': page,
                 'limit': limit,
+                'taskId': taskId,
             },
         });
     }
@@ -190,12 +193,14 @@ export class ExecutionsService {
      * Returns the persisted execution history rows in the execution system with pagination.
      * @param page Page number (1-indexed)
      * @param limit Items per page (1-100)
+     * @param taskId Filter by task ID
      * @returns TaskExecutionHistoryListResponseDto
      * @throws ApiError
      */
     public static taskExecutionHistoryControllerListHistory(
         page: number = 1,
         limit: number = 50,
+        taskId?: string,
         config: OpenAPIConfig = OpenAPI,
     ): CancelablePromise<TaskExecutionHistoryListResponseDto> {
         return __request(config, {
@@ -204,6 +209,7 @@ export class ExecutionsService {
             query: {
                 'page': page,
                 'limit': limit,
+                'taskId': taskId,
             },
         });
     }

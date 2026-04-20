@@ -476,12 +476,11 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     setIsLoadingExecutions(true);
     try {
       const [activeResponse, historyResponse] = await Promise.all([
-        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions({ limit: 100 }),
-        ExecutionsService.TaskExecutionHistoryController_listHistory({ limit: 100 }),
+        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions({ taskId, limit: 100 }),
+        ExecutionsService.TaskExecutionHistoryController_listHistory({ taskId, limit: 100 }),
       ]);
 
       const taskActiveItems = activeResponse.items
-        .filter((entry: ActiveTaskExecutionResponseDto) => entry.taskId === taskId)
         .map((entry: ActiveTaskExecutionResponseDto): TaskExecutionListItem => ({
           id: `active-${entry.id}`,
           executionId: entry.id,
@@ -496,7 +495,6 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         }));
 
       const taskHistoryItems = historyResponse.items
-        .filter((entry: TaskExecutionHistoryResponseDto) => entry.taskId === taskId)
         .map((entry: TaskExecutionHistoryResponseDto): TaskExecutionListItem => ({
           id: `history-${entry.id}`,
           executionId: entry.id,

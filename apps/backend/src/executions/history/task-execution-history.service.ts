@@ -13,6 +13,7 @@ export class TaskExecutionHistoryService {
   async listHistory(options?: {
     page?: number;
     limit?: number;
+    taskId?: string;
   }): Promise<{
     items: TaskExecutionHistoryEntity[];
     total: number;
@@ -23,7 +24,10 @@ export class TaskExecutionHistoryService {
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
 
+    const where = options?.taskId ? { taskId: options.taskId } : {};
+
     const [items, total] = await this.taskExecutionHistoryRepository.findAndCount({
+      where,
       relations: ['task', 'stats'],
       order: { transitionedAt: 'DESC' },
       skip,

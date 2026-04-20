@@ -1,4 +1,4 @@
-import { IsOptional, IsInt, Min } from 'class-validator';
+import { IsOptional, IsInt, Min, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -24,4 +24,12 @@ export class ListActiveExecutionsQueryDto {
   @IsInt()
   @Min(1)
   limit?: number = 50;
+
+  @ApiPropertyOptional({
+    description: 'Filter by task ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsUUID()
+  taskId?: string;
 }
