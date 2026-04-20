@@ -7,6 +7,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise.js';
 export { OpenAPI } from './core/OpenAPI.js';
 export type { OpenAPIConfig } from './core/OpenAPI.js';
 
+export type { ActiveTaskExecutionListResponseDto } from './models/ActiveTaskExecutionListResponseDto.js';
 export { ActiveTaskExecutionResponseDto } from './models/ActiveTaskExecutionResponseDto.js';
 export type { ActiveTaskExecutionTagSnapshotResponseDto } from './models/ActiveTaskExecutionTagSnapshotResponseDto.js';
 export { ActorResponseDto } from './models/ActorResponseDto.js';
@@ -115,8 +116,10 @@ export { StopActiveTaskExecutionDto } from './models/StopActiveTaskExecutionDto.
 export type { TagResponseDto } from './models/TagResponseDto.js';
 export type { TaskBlueprintListResponseDto } from './models/TaskBlueprintListResponseDto.js';
 export type { TaskBlueprintResponseDto } from './models/TaskBlueprintResponseDto.js';
+export type { TaskExecutionHistoryListResponseDto } from './models/TaskExecutionHistoryListResponseDto.js';
 export { TaskExecutionHistoryResponseDto } from './models/TaskExecutionHistoryResponseDto.js';
 export { TaskExecutionQueueEntryResponseDto } from './models/TaskExecutionQueueEntryResponseDto.js';
+export type { TaskExecutionQueueListResponseDto } from './models/TaskExecutionQueueListResponseDto.js';
 export type { TaskInfoDto } from './models/TaskInfoDto.js';
 export type { TaskListResponseDto } from './models/TaskListResponseDto.js';
 export { TaskResponseDto } from './models/TaskResponseDto.js';

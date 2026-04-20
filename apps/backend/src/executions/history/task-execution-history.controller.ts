@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiOkResponse,
@@ -11,6 +11,8 @@ import { RequireScopes } from '../../auth/guards/decorators/require-scopes.decor
 import { TasksScopes } from '../../tasks/tasks.scopes';
 import { TaskExecutionHistoryService } from './task-execution-history.service';
 import { TaskExecutionHistoryResponseDto } from './dto/http/task-execution-history-response.dto';
+import { TaskExecutionHistoryListResponseDto } from './dto/http/task-execution-history-list-response.dto';
+import { ListHistoryQueryDto } from './dto/http/list-history-query.dto';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
@@ -26,13 +28,25 @@ export class TaskExecutionHistoryController {
   @ApiOperation({
     summary: 'List task execution history',
     description:
-      'Returns the persisted execution history rows in the execution system.',
+      'Returns the persisted execution history rows in the execution system with pagination.',
   })
-  @ApiOkResponse({ type: [TaskExecutionHistoryResponseDto] })
-  async listHistory(): Promise<TaskExecutionHistoryResponseDto[]> {
-    const history = await this.taskExecutionHistoryService.listHistory();
-    return history.map((entry) =>
-      TaskExecutionHistoryResponseDto.fromEntity(entry),
-    );
+  @ApiOkResponse({ type: TaskExecutionHistoryListResponseDto })
+  async listHistory(
+    @Query() query: ListHistoryQueryDto,
+  ): Promise<TaskExecutionHistoryListResponseDto> {
+    const result = await this.taskExecutionHistoryService.listHistory({
+      page: query.page ?? 1,
+      limit: query.limit ?? 50,
+    });
+
+    return {
+      items: result.items.map((item) =>
+        TaskExecutionHistoryResponseDto.fromEntity(item),
+      ),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: Math.ceil(result.total / result.limit),
+    };
   }
 }

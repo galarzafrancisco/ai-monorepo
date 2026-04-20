@@ -947,6 +947,14 @@ export interface TaskExecutionQueueEntryResponseDto {
   taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'FOR_REVIEW' | 'DONE';
 }
 
+export interface TaskExecutionQueueListResponseDto {
+  items: TaskExecutionQueueEntryResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface ActiveTaskExecutionTagSnapshotResponseDto {
   id: string;
   name: string;
@@ -976,6 +984,14 @@ export interface ActiveTaskExecutionResponseDto {
   taskAssigneeActorIdBeforeClaim: string | null;
   agentActorId: string;
   stats: ExecutionStatsResponseDto;
+}
+
+export interface ActiveTaskExecutionListResponseDto {
+  items: ActiveTaskExecutionResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface StopActiveTaskExecutionDto {
@@ -1012,6 +1028,14 @@ export interface UpdateExecutionStatsDto {
   inputTokens?: number | null;
   outputTokens?: number | null;
   totalTokens?: number | null;
+}
+
+export interface TaskExecutionHistoryListResponseDto {
+  items: TaskExecutionHistoryResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface WorkerResponseDto {

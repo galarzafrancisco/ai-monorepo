@@ -30,11 +30,6 @@ export function ExecutionsPage() {
 
   useDocumentTitle();
 
-  const historySuccessCount = useMemo(
-    () => history.filter((entry) => entry.status === "SUCCEEDED").length,
-    [history],
-  );
-  const historyFailureCount = history.length - historySuccessCount;
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -81,7 +76,6 @@ export function ExecutionsPage() {
     <div className="executions-page">
       <div className="executions-hero">
         <div className="executions-hero__copy">
-          <Text as="div" size="6" weight="bold">Runs</Text>
           <Text as="div" size="3" tone="muted" wrap>
             Queue, active work, and recent history in one place. The view refreshes automatically every 5 seconds.
           </Text>
@@ -94,13 +88,6 @@ export function ExecutionsPage() {
             Refresh now
           </Button>
         </div>
-      </div>
-
-      <div className="executions-summary-grid">
-        <SummaryCard label="Queued" value={queue.length} tone="accent" />
-        <SummaryCard label="Active" value={active.length} tone="warning" />
-        <SummaryCard label="Succeeded" value={historySuccessCount} tone="success" />
-        <SummaryCard label="Failed" value={historyFailureCount} tone="danger" />
       </div>
 
 
@@ -304,32 +291,6 @@ export function ExecutionsPage() {
           />
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: "accent" | "warning" | "success" | "danger";
-}) {
-  return (
-    <Card className={`executions-summary-card executions-summary-card--${tone}`}>
-      <Text as="div" size="2" tone="muted" weight="medium">{label}</Text>
-      <Text as="div" size="6" weight="bold">{value}</Text>
-    </Card>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="executions-metric">
-      <Text as="div" size="1" tone="muted" weight="medium">{label}</Text>
-      <Text as="div" size="3" weight="semibold">{value}</Text>
     </div>
   );
 }

@@ -10,10 +10,26 @@ export class TaskExecutionQueueService {
     private readonly taskExecutionQueueRepository: Repository<TaskExecutionQueueEntity>,
   ) {}
 
-  async listQueue(): Promise<TaskExecutionQueueEntity[]> {
-    return this.taskExecutionQueueRepository.find({
+  async listQueue(options?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    items: TaskExecutionQueueEntity[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 50;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.taskExecutionQueueRepository.findAndCount({
       relations: ['task'],
       order: { taskId: 'ASC' },
+      skip,
+      take: limit,
     });
+
+    return { items, total, page, limit };
   }
 }

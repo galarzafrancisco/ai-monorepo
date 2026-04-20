@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -31,6 +32,8 @@ import {
 } from '../errors/executions.errors';
 import { TaskExecutionQueueService } from './task-execution-queue.service';
 import { TaskExecutionQueueEntryResponseDto } from './dto/http/task-execution-queue-entry-response.dto';
+import { TaskExecutionQueueListResponseDto } from './dto/http/task-execution-queue-list-response.dto';
+import { ListQueueQueryDto } from './dto/http/list-queue-query.dto';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
@@ -47,15 +50,27 @@ export class TaskExecutionQueueController {
   @ApiOperation({
     summary: 'List the current task execution work queue',
     description:
-      'Returns the tasks currently present in the execution queue. ' +
+      'Returns the tasks currently present in the execution queue with pagination. ' +
       'Presence means the task is ready to be picked by the executor.',
   })
-  @ApiOkResponse({ type: [TaskExecutionQueueEntryResponseDto] })
-  async listQueue(): Promise<TaskExecutionQueueEntryResponseDto[]> {
-    const queue = await this.taskExecutionQueueService.listQueue();
-    return queue.map((entry) =>
-      TaskExecutionQueueEntryResponseDto.fromEntity(entry),
-    );
+  @ApiOkResponse({ type: TaskExecutionQueueListResponseDto })
+  async listQueue(
+    @Query() query: ListQueueQueryDto,
+  ): Promise<TaskExecutionQueueListResponseDto> {
+    const result = await this.taskExecutionQueueService.listQueue({
+      page: query.page ?? 1,
+      limit: query.limit ?? 50,
+    });
+
+    return {
+      items: result.items.map((item) =>
+        TaskExecutionQueueEntryResponseDto.fromEntity(item),
+      ),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: Math.ceil(result.total / result.limit),
+    };
   }
 
   @Post(':taskId/claim')

@@ -5957,19 +5957,39 @@
     },
     "/api/v1/executions/queue": {
       "get": {
-        "description": "Returns the tasks currently present in the execution queue. Presence means the task is ready to be picked by the executor.",
+        "description": "Returns the tasks currently present in the execution queue with pagination. Presence means the task is ready to be picked by the executor.",
         "operationId": "TaskExecutionQueueController_listQueue",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (1-100)",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TaskExecutionQueueEntryResponseDto"
-                  }
+                  "$ref": "#/components/schemas/TaskExecutionQueueListResponseDto"
                 }
               }
             }
@@ -6026,19 +6046,39 @@
     },
     "/api/v1/executions/active": {
       "get": {
-        "description": "Returns the tasks currently being worked on in the execution system.",
+        "description": "Returns the tasks currently being worked on in the execution system with pagination.",
         "operationId": "ActiveTaskExecutionController_listActiveExecutions",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (1-100)",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ActiveTaskExecutionResponseDto"
-                  }
+                  "$ref": "#/components/schemas/ActiveTaskExecutionListResponseDto"
                 }
               }
             }
@@ -6249,19 +6289,39 @@
     },
     "/api/v1/executions/history": {
       "get": {
-        "description": "Returns the persisted execution history rows in the execution system.",
+        "description": "Returns the persisted execution history rows in the execution system with pagination.",
         "operationId": "TaskExecutionHistoryController_listHistory",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (1-100)",
+            "schema": {
+              "default": 50,
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TaskExecutionHistoryResponseDto"
-                  }
+                  "$ref": "#/components/schemas/TaskExecutionHistoryListResponseDto"
                 }
               }
             }
@@ -11779,6 +11839,45 @@
           "taskStatus"
         ]
       },
+      "TaskExecutionQueueListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of task execution queue entries",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskExecutionQueueEntryResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of queue entries",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 50
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
       "ActiveTaskExecutionTagSnapshotResponseDto": {
         "type": "object",
         "properties": {
@@ -11957,6 +12056,45 @@
           "taskAssigneeActorIdBeforeClaim",
           "agentActorId",
           "stats"
+        ]
+      },
+      "ActiveTaskExecutionListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of active task executions",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActiveTaskExecutionResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of active executions",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 50
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
         ]
       },
       "StopActiveTaskExecutionDto": {
@@ -12170,6 +12308,45 @@
             "minimum": 0
           }
         }
+      },
+      "TaskExecutionHistoryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of task execution history entries",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskExecutionHistoryResponseDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of history entries",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Number of items per page",
+            "example": 50
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 3
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
       },
       "WorkerResponseDto": {
         "type": "object",

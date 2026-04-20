@@ -61,10 +61,10 @@ async function processNextQueuedTask(
   baseUrl: string,
   activityGatewayClient: ExecutionActivityGatewayClient,
 ): Promise<void> {
-  const queue = await client.executions.TaskExecutionQueueController_listQueue();
-  console.log(`[worker] Queue poll succeeded. ${queue.length} task(s) ready.`);
+  const queueResponse = await client.executions.TaskExecutionQueueController_listQueue({ limit: 1 });
+  console.log(`[worker] Queue poll succeeded. ${queueResponse.total} task(s) ready.`);
 
-  const nextTask = queue[0];
+  const nextTask = queueResponse.items[0];
   if (!nextTask) {
     return;
   }

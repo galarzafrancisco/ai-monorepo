@@ -71,11 +71,27 @@ export class ActiveTaskExecutionService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async listActiveExecutions(): Promise<ActiveTaskExecutionEntity[]> {
-    return this.activeTaskExecutionRepository.find({
+  async listActiveExecutions(options?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    items: ActiveTaskExecutionEntity[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 50;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.activeTaskExecutionRepository.findAndCount({
       relations: ['task', 'stats'],
       order: { claimedAt: 'DESC' },
+      skip,
+      take: limit,
     });
+
+    return { items, total, page, limit };
   }
 
   async claimTask(

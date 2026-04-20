@@ -2,10 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ActiveTaskExecutionListResponseDto } from '../models/ActiveTaskExecutionListResponseDto.js';
 import type { ActiveTaskExecutionResponseDto } from '../models/ActiveTaskExecutionResponseDto.js';
 import type { StopActiveTaskExecutionDto } from '../models/StopActiveTaskExecutionDto.js';
+import type { TaskExecutionHistoryListResponseDto } from '../models/TaskExecutionHistoryListResponseDto.js';
 import type { TaskExecutionHistoryResponseDto } from '../models/TaskExecutionHistoryResponseDto.js';
-import type { TaskExecutionQueueEntryResponseDto } from '../models/TaskExecutionQueueEntryResponseDto.js';
+import type { TaskExecutionQueueListResponseDto } from '../models/TaskExecutionQueueListResponseDto.js';
 import type { UpdateExecutionStatsDto } from '../models/UpdateExecutionStatsDto.js';
 import type { UpdateRunnerSessionIdDto } from '../models/UpdateRunnerSessionIdDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
@@ -15,14 +17,24 @@ import { request as __request } from '../core/request.js';
 export class ExecutionsService {
     /**
      * List the current task execution work queue
-     * Returns the tasks currently present in the execution queue. Presence means the task is ready to be picked by the executor.
-     * @returns TaskExecutionQueueEntryResponseDto
+     * Returns the tasks currently present in the execution queue with pagination. Presence means the task is ready to be picked by the executor.
+     * @param page Page number (1-indexed)
+     * @param limit Items per page (1-100)
+     * @returns TaskExecutionQueueListResponseDto
      * @throws ApiError
      */
-    public static taskExecutionQueueControllerListQueue(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<TaskExecutionQueueEntryResponseDto>> {
+    public static taskExecutionQueueControllerListQueue(
+        page: number = 1,
+        limit: number = 50,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<TaskExecutionQueueListResponseDto> {
         return __request(config, {
             method: 'GET',
             url: '/api/v1/executions/queue',
+            query: {
+                'page': page,
+                'limit': limit,
+            },
         });
     }
     /**
@@ -46,14 +58,24 @@ export class ExecutionsService {
     }
     /**
      * List active task executions
-     * Returns the tasks currently being worked on in the execution system.
-     * @returns ActiveTaskExecutionResponseDto
+     * Returns the tasks currently being worked on in the execution system with pagination.
+     * @param page Page number (1-indexed)
+     * @param limit Items per page (1-100)
+     * @returns ActiveTaskExecutionListResponseDto
      * @throws ApiError
      */
-    public static activeTaskExecutionControllerListActiveExecutions(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<ActiveTaskExecutionResponseDto>> {
+    public static activeTaskExecutionControllerListActiveExecutions(
+        page: number = 1,
+        limit: number = 50,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ActiveTaskExecutionListResponseDto> {
         return __request(config, {
             method: 'GET',
             url: '/api/v1/executions/active',
+            query: {
+                'page': page,
+                'limit': limit,
+            },
         });
     }
     /**
@@ -165,14 +187,24 @@ export class ExecutionsService {
     }
     /**
      * List task execution history
-     * Returns the persisted execution history rows in the execution system.
-     * @returns TaskExecutionHistoryResponseDto
+     * Returns the persisted execution history rows in the execution system with pagination.
+     * @param page Page number (1-indexed)
+     * @param limit Items per page (1-100)
+     * @returns TaskExecutionHistoryListResponseDto
      * @throws ApiError
      */
-    public static taskExecutionHistoryControllerListHistory(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<TaskExecutionHistoryResponseDto>> {
+    public static taskExecutionHistoryControllerListHistory(
+        page: number = 1,
+        limit: number = 50,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<TaskExecutionHistoryListResponseDto> {
         return __request(config, {
             method: 'GET',
             url: '/api/v1/executions/history',
+            query: {
+                'page': page,
+                'limit': limit,
+            },
         });
     }
 }

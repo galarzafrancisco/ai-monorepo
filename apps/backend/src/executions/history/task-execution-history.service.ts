@@ -10,11 +10,27 @@ export class TaskExecutionHistoryService {
     private readonly taskExecutionHistoryRepository: Repository<TaskExecutionHistoryEntity>,
   ) {}
 
-  async listHistory(): Promise<TaskExecutionHistoryEntity[]> {
-    return this.taskExecutionHistoryRepository.find({
+  async listHistory(options?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    items: TaskExecutionHistoryEntity[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 50;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.taskExecutionHistoryRepository.findAndCount({
       relations: ['task', 'stats'],
-      order: { taskId: 'ASC' },
+      order: { transitionedAt: 'DESC' },
+      skip,
+      take: limit,
     });
+
+    return { items, total, page, limit };
   }
 
   async getLatestHistoryForTask(

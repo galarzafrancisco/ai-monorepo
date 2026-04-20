@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { ActiveTaskExecutionResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueEntryResponseDto, UpdateExecutionStatsDto, UpdateRunnerSessionIdDto } from './types.js';
+import type { ActiveTaskExecutionListResponseDto, ActiveTaskExecutionResponseDto, StopActiveTaskExecutionDto, TaskExecutionHistoryListResponseDto, TaskExecutionHistoryResponseDto, TaskExecutionQueueListResponseDto, UpdateExecutionStatsDto, UpdateRunnerSessionIdDto } from './types.js';
 
 export class ExecutionsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -7,8 +7,8 @@ export class ExecutionsResource extends BaseClient {
   }
 
   /** List the current task execution work queue */
-  async TaskExecutionQueueController_listQueue(params?: { signal?: AbortSignal }): Promise<TaskExecutionQueueEntryResponseDto[]> {
-    return this.request('GET', '/api/v1/executions/queue', { signal: params?.signal });
+  async TaskExecutionQueueController_listQueue(params?: { page?: number; limit?: number; signal?: AbortSignal }): Promise<TaskExecutionQueueListResponseDto> {
+    return this.request('GET', '/api/v1/executions/queue', { params: { page: params?.page, limit: params?.limit }, signal: params?.signal });
   }
 
   /** Claim a specific task from the execution queue */
@@ -17,8 +17,8 @@ export class ExecutionsResource extends BaseClient {
   }
 
   /** List active task executions */
-  async ActiveTaskExecutionController_listActiveExecutions(params?: { signal?: AbortSignal }): Promise<ActiveTaskExecutionResponseDto[]> {
-    return this.request('GET', '/api/v1/executions/active', { signal: params?.signal });
+  async ActiveTaskExecutionController_listActiveExecutions(params?: { page?: number; limit?: number; signal?: AbortSignal }): Promise<ActiveTaskExecutionListResponseDto> {
+    return this.request('GET', '/api/v1/executions/active', { params: { page: params?.page, limit: params?.limit }, signal: params?.signal });
   }
 
   /** Stop an active task execution and move it to history */
@@ -47,8 +47,8 @@ export class ExecutionsResource extends BaseClient {
   }
 
   /** List task execution history */
-  async TaskExecutionHistoryController_listHistory(params?: { signal?: AbortSignal }): Promise<TaskExecutionHistoryResponseDto[]> {
-    return this.request('GET', '/api/v1/executions/history', { signal: params?.signal });
+  async TaskExecutionHistoryController_listHistory(params?: { page?: number; limit?: number; signal?: AbortSignal }): Promise<TaskExecutionHistoryListResponseDto> {
+    return this.request('GET', '/api/v1/executions/history', { params: { page: params?.page, limit: params?.limit }, signal: params?.signal });
   }
 
 }

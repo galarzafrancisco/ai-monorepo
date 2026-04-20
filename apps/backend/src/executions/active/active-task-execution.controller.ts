@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -30,6 +31,8 @@ import {
 } from '../errors/executions.errors';
 import { ActiveTaskExecutionService } from './active-task-execution.service';
 import { ActiveTaskExecutionResponseDto } from './dto/http/active-task-execution-response.dto';
+import { ActiveTaskExecutionListResponseDto } from './dto/http/active-task-execution-list-response.dto';
+import { ListActiveExecutionsQueryDto } from './dto/http/list-active-executions-query.dto';
 import { StopActiveTaskExecutionDto } from './dto/http/stop-active-task-execution.dto';
 import { UpdateRunnerSessionIdDto } from './dto/http/update-runner-session-id.dto';
 import { TaskExecutionHistoryResponseDto } from '../history/dto/http/task-execution-history-response.dto';
@@ -49,14 +52,26 @@ export class ActiveTaskExecutionController {
   @ApiOperation({
     summary: 'List active task executions',
     description:
-      'Returns the tasks currently being worked on in the execution system.',
+      'Returns the tasks currently being worked on in the execution system with pagination.',
   })
-  @ApiOkResponse({ type: [ActiveTaskExecutionResponseDto] })
-  async listActiveExecutions(): Promise<ActiveTaskExecutionResponseDto[]> {
-    const executions = await this.activeTaskExecutionService.listActiveExecutions();
-    return executions.map((execution) =>
-      ActiveTaskExecutionResponseDto.fromEntity(execution),
-    );
+  @ApiOkResponse({ type: ActiveTaskExecutionListResponseDto })
+  async listActiveExecutions(
+    @Query() query: ListActiveExecutionsQueryDto,
+  ): Promise<ActiveTaskExecutionListResponseDto> {
+    const result = await this.activeTaskExecutionService.listActiveExecutions({
+      page: query.page ?? 1,
+      limit: query.limit ?? 50,
+    });
+
+    return {
+      items: result.items.map((item) =>
+        ActiveTaskExecutionResponseDto.fromEntity(item),
+      ),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: Math.ceil(result.total / result.limit),
+    };
   }
 
   @Post(':executionId/stop')

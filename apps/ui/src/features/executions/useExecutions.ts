@@ -41,15 +41,15 @@ export const useExecutions = () => {
     }
 
     try {
-      const [nextQueue, nextActive, nextHistory] = await Promise.all([
-        ExecutionsService.TaskExecutionQueueController_listQueue(),
-        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions(),
-        ExecutionsService.TaskExecutionHistoryController_listHistory(),
+      const [queueResponse, activeResponse, historyResponse] = await Promise.all([
+        ExecutionsService.TaskExecutionQueueController_listQueue({ limit: 50 }),
+        ExecutionsService.ActiveTaskExecutionController_listActiveExecutions({ limit: 50 }),
+        ExecutionsService.TaskExecutionHistoryController_listHistory({ limit: 50 }),
       ]);
 
-      setQueue(nextQueue);
-      setActive(nextActive.sort((a, b) => b.claimedAt.localeCompare(a.claimedAt)));
-      setHistory(nextHistory.sort((a, b) => b.transitionedAt.localeCompare(a.transitionedAt)));
+      setQueue(queueResponse.items);
+      setActive(activeResponse.items);
+      setHistory(historyResponse.items);
       setLastUpdatedAt(new Date().toISOString());
       setError(null);
     } catch (err) {

@@ -1689,7 +1689,7 @@ export interface paths {
         };
         /**
          * List the current task execution work queue
-         * @description Returns the tasks currently present in the execution queue. Presence means the task is ready to be picked by the executor.
+         * @description Returns the tasks currently present in the execution queue with pagination. Presence means the task is ready to be picked by the executor.
          */
         get: operations["TaskExecutionQueueController_listQueue"];
         put?: never;
@@ -1729,7 +1729,7 @@ export interface paths {
         };
         /**
          * List active task executions
-         * @description Returns the tasks currently being worked on in the execution system.
+         * @description Returns the tasks currently being worked on in the execution system with pagination.
          */
         get: operations["ActiveTaskExecutionController_listActiveExecutions"];
         put?: never;
@@ -1849,7 +1849,7 @@ export interface paths {
         };
         /**
          * List task execution history
-         * @description Returns the persisted execution history rows in the execution system.
+         * @description Returns the persisted execution history rows in the execution system with pagination.
          */
         get: operations["TaskExecutionHistoryController_listHistory"];
         put?: never;
@@ -5258,6 +5258,30 @@ export interface components {
              */
             taskStatus: "NOT_STARTED" | "IN_PROGRESS" | "FOR_REVIEW" | "DONE" | null;
         };
+        TaskExecutionQueueListResponseDto: {
+            /** @description List of task execution queue entries */
+            items: components["schemas"]["TaskExecutionQueueEntryResponseDto"][];
+            /**
+             * @description Total number of queue entries
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 50
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 3
+             */
+            totalPages: number;
+        };
         ActiveTaskExecutionTagSnapshotResponseDto: {
             /**
              * @description Tag ID at the time the task was claimed
@@ -5367,6 +5391,30 @@ export interface components {
             agentActorId: string;
             /** @description Execution metadata and usage stats */
             stats: components["schemas"]["ExecutionStatsResponseDto"] | null;
+        };
+        ActiveTaskExecutionListResponseDto: {
+            /** @description List of active task executions */
+            items: components["schemas"]["ActiveTaskExecutionResponseDto"][];
+            /**
+             * @description Total number of active executions
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 50
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 3
+             */
+            totalPages: number;
         };
         StopActiveTaskExecutionDto: {
             /**
@@ -5494,6 +5542,30 @@ export interface components {
              * @example 1580
              */
             totalTokens?: number | null;
+        };
+        TaskExecutionHistoryListResponseDto: {
+            /** @description List of task execution history entries */
+            items: components["schemas"]["TaskExecutionHistoryResponseDto"][];
+            /**
+             * @description Total number of history entries
+             * @example 42
+             */
+            total: number;
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page
+             * @example 50
+             */
+            limit: number;
+            /**
+             * @description Total number of pages
+             * @example 3
+             */
+            totalPages: number;
         };
         WorkerResponseDto: {
             /** Format: uuid */
@@ -10057,7 +10129,12 @@ export interface operations {
     };
     TaskExecutionQueueController_listQueue: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (1-100) */
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -10069,7 +10146,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskExecutionQueueEntryResponseDto"][];
+                    "application/json": components["schemas"]["TaskExecutionQueueListResponseDto"];
                 };
             };
         };
@@ -10098,7 +10175,12 @@ export interface operations {
     };
     ActiveTaskExecutionController_listActiveExecutions: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (1-100) */
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -10110,7 +10192,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ActiveTaskExecutionResponseDto"][];
+                    "application/json": components["schemas"]["ActiveTaskExecutionListResponseDto"];
                 };
             };
         };
@@ -10231,7 +10313,12 @@ export interface operations {
     };
     TaskExecutionHistoryController_listHistory: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (1-100) */
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -10243,7 +10330,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskExecutionHistoryResponseDto"][];
+                    "application/json": components["schemas"]["TaskExecutionHistoryListResponseDto"];
                 };
             };
         };
