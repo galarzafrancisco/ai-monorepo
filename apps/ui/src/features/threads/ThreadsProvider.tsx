@@ -8,6 +8,7 @@ export type ThreadsContextValue = {
   threads: ThreadListItem[];
   isLoading: boolean;
   error: string | null;
+  loadThreads: () => Promise<void>;
   sectionTitle: string;
   setSectionTitle: (title: string) => void;
   navItems: NavegationItem[];
@@ -20,7 +21,7 @@ export type ThreadsContextValue = {
 const ThreadsContext = createContext<ThreadsContextValue | null>(null);
 
 export function ThreadsProvider({ children }: { children: React.ReactNode }) {
-  const { threads, isLoading, error, getThread, createThread, deleteThread } = useThreads();
+  const { threads, isLoading, error, loadThreads, getThread, createThread, deleteThread } = useThreads();
   const [sectionTitle, setSectionTitle] = useState("");
   const [navItems, setNavItems] = useState<NavegationItem[]>([]);
 
@@ -30,6 +31,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
       threads,
       isLoading,
       error,
+      loadThreads,
       sectionTitle,
       setSectionTitle,
       navItems,
@@ -42,6 +44,7 @@ export function ThreadsProvider({ children }: { children: React.ReactNode }) {
     threads,
     isLoading,
     error,
+    loadThreads,
     sectionTitle,
     setSectionTitle,
     navItems,

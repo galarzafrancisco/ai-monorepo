@@ -11,7 +11,7 @@
   flex-direction: row;
   gap: 0;
   overflow: hidden;
-  height: 100vh;
+  height: 100%;
 }
 
 .thread-detail-page__main {

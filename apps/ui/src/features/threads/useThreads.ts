@@ -27,15 +27,8 @@ export const useThreads = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Boot
-  useEffect(() => {
-    loadThreads();
-    const cleanup = setupWebsocket();
-    return cleanup;
-  }, []);
-
   // Load threads
-  const loadThreads = async () => {
+  const loadThreads = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -46,7 +39,7 @@ export const useThreads = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Get single thread with full details
   const getThread = useCallback(async (id: string): Promise<Thread> => {
@@ -111,6 +104,13 @@ export const useThreads = () => {
       setIsConnected(false);
     };
   }, []);
+
+  // Boot
+  useEffect(() => {
+    void loadThreads();
+    const cleanup = setupWebsocket();
+    return cleanup;
+  }, [loadThreads, setupWebsocket]);
 
   return {
     // UI feedback
