@@ -20,6 +20,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build:prod": "npm run build",
     "pack": "npm run build && npm pack",
     "release": "npm run build && npm publish --access public"
   },

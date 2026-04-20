@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@taico/client",
+  "implicitDependencies": ["@taico/taico", "@taico/openapi-sdkgen"],
+  "targets": {
+    "build:prod": {
+      "inputs": [
+        "production",
+        "^production",
+        "{workspaceRoot}/apps/backend/openapi.json"
+      ],
+      "outputs": [
+        "{projectRoot}/dist",
+        "{projectRoot}/contracts",
+        "{projectRoot}/src/v1/client",
+        "{projectRoot}/src/v2"
+      ]
+    }
+  }
+}

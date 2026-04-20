@@ -4,6 +4,10 @@
 tmp
 .DS_Store
 
+# Nx
+.nx/cache
+.nx/workspace-data
+
 # Logs
 logs
 *.log

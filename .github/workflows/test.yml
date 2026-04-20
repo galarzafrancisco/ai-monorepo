@@ -13,8 +13,8 @@ on:
       - published
 
 jobs:
-  test-openapi-client-generator:
-    name: OpenAPI Client Generator Tests
+  test:
+    name: Build and Test
     runs-on: ubuntu-24.04-arm
 
     steps:
@@ -29,31 +29,21 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Run tests
-        run: npm run test:openapi-client-generator
-
-  test:
-    name: Build and Test
-    needs: test-openapi-client-generator
-    runs-on: ubuntu-24.04-arm
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
+      - name: Restore nx cache
+        uses: actions/cache@v4
         with:
-          node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            packages/shared/package-lock.json
+          path: .nx/cache
+          key: nx-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-
 
-      - name: Build everything
-        run: npm run build:dev
+      - name: Build everything (cached via nx)
+        run: npm run build:prod
+
+      - name: Run openapi-sdkgen tests
+        run: npx nx run @taico/openapi-sdkgen:test
 
       - name: Run E2E tests
         id: tests

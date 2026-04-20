@@ -24,6 +24,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:prod": "npm run build",
     "dev": "tsc --watch",
     "test:api": "tsx --tsconfig test/api/tsconfig.json test/api/src/main.ts",
     "test:client": "tsx test/client/test-sdk.ts",

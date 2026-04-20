@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:prod": "npm run build && cp -r ./dist ../backend/dist/public/beta",
+    "build:prod": "npm run build",
     "start": "vite preview --port ${UI_PORT:-5173}",
     "preview": "vite preview --port ${UI_PORT:-5173}",
     "test": "vitest run",

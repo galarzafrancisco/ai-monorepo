@@ -1,0 +1,26 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@taico/taico",
+  "targets": {
+    "build:prod": {
+      "outputs": [
+        "{projectRoot}/dist",
+        "{projectRoot}/openapi.json"
+      ]
+    },
+    "assemble-public": {
+      "dependsOn": [
+        { "projects": ["@taico/ui", "@taico/ui-v1"], "target": "build:prod" },
+        "build:prod"
+      ],
+      "inputs": [
+        "{workspaceRoot}/apps/ui/dist/**/*",
+        "{workspaceRoot}/apps/ui-v1/dist/**/*"
+      ],
+      "outputs": [
+        "{projectRoot}/dist/public"
+      ],
+      "cache": true
+    }
+  }
+}
