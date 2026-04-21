@@ -149,30 +149,47 @@ export function ExecutionsPage() {
             emptyMessage="No active executions right now."
             table={
               <ExecutionTable
-                columns={["State", "Task", "Worker", "Agent", "Session", "Tools", "Claimed", "Latest heartbeat", "Before claim", "Actions"]}
+                columns={["Status", "Task", "Agent", "Heartbeat", "Details", "Actions"]}
                 rows={active.map((entry) => {
                   const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
                   const isInterrupting = interruptingExecutions.has(entry.id);
 
                   return {
                     key: entry.id,
+                    expandedContent: expandedHistoryIds.has(entry.id) ? (
+                      <ExecutionDetails
+                        execution={entry}
+                        actor={actor}
+                      />
+                    ) : null,
                     cells: [
                     <StatusPill key="state" tone="warning">Active</StatusPill>,
-                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
-                    <CodeCell key="worker" value={entry.workerClientId} />,
+                    <TaskCellWithStatus
+                      key="task"
+                      taskId={entry.taskId}
+                      taskName={entry.taskName}
+                      taskStatus={entry.taskStatus}
+                      onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
+                    />,
                     <ActorCell
                       key="agent"
                       actorId={entry.agentActorId}
                       actorName={actor?.displayName}
                       actorSlug={actor?.slug}
                     />,
-                    <SessionCell key="session" value={entry.runnerSessionId} />,
-                    <ToolCountCell key="tool-count" value={entry.toolCallCount} />,
-                    <TimeCell key="claimed" value={entry.claimedAt} />,
                     <TimeCell key="heartbeat" value={entry.lastHeartbeatAt} />,
-                    <StatusPill key="before" tone={taskStatusTone(entry.taskStatusBeforeClaim)}>
-                      {entry.taskStatusBeforeClaim}
-                    </StatusPill>,
+                    <button
+                      key="details"
+                      type="button"
+                      className="executions-details-toggle"
+                      onClick={() => toggleHistoryMessage(entry.id)}
+                      aria-expanded={expandedHistoryIds.has(entry.id)}
+                      aria-label={expandedHistoryIds.has(entry.id) ? "Hide details" : "Show details"}
+                    >
+                      <Text as="span" size="2" weight="semibold">
+                        {expandedHistoryIds.has(entry.id) ? "Hide details" : "Show details"}
+                      </Text>
+                    </button>,
                     <Button
                       key="interrupt"
                       variant="danger"
@@ -189,14 +206,10 @@ export function ExecutionsPage() {
                       tone="warning"
                       title={entry.taskName ?? "Untitled task"}
                       badge="Active"
+                      taskStatus={entry.taskStatus}
                       lines={[
-                        { label: "Claimed", value: formatDateTime(entry.claimedAt) },
                         { label: "Latest heartbeat", value: formatDateTime(entry.lastHeartbeatAt) },
-                        { label: "Worker", value: shortId(entry.workerClientId), mono: true },
                         { label: "Agent", value: actor?.slug ? `@${actor.slug}` : shortId(entry.agentActorId), mono: true },
-                        { label: "Session", value: formatSession(entry.runnerSessionId), mono: true },
-                        { label: "Tool calls", value: String(entry.toolCallCount) },
-                        { label: "Before claim", value: entry.taskStatusBeforeClaim },
                       ]}
                       actionButton={
                         <Button
@@ -209,6 +222,10 @@ export function ExecutionsPage() {
                         </Button>
                       }
                       onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
+                      onToggleDetails={() => toggleHistoryMessage(entry.id)}
+                      detailsExpanded={expandedHistoryIds.has(entry.id)}
+                      executionDetails={entry}
+                      actor={actor}
                     />
                     ),
                   };
@@ -224,44 +241,50 @@ export function ExecutionsPage() {
             emptyMessage="No historical executions yet."
             table={
               <ExecutionTable
-                columns={["Result", "Task", "Transitioned", "Task status", "Agent", "Worker", "Session", "Tools", "Error"]}
+                columns={["Status", "Task", "Agent", "Details"]}
                 rows={history.map((entry) => {
                   const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
 
                   return {
                     key: entry.id,
-                    expandedContent:
-                    entry.errorMessage && expandedHistoryIds.has(entry.id) ? (
-                      <ExecutionErrorMessage
-                        status={entry.status}
-                        message={entry.errorMessage}
+                    expandedContent: expandedHistoryIds.has(entry.id) ? (
+                      <ExecutionDetails
+                        execution={entry}
+                        actor={actor}
                       />
                     ) : null,
                     cells: [
-                    <StatusPill key="result" tone={entry.status === "SUCCEEDED" ? "success" : "danger"}>
-                      {entry.status}
-                    </StatusPill>,
-                    <TaskCell key="task" taskId={entry.taskId} taskName={entry.taskName} onClick={() => navigate(`/tasks/task/${entry.taskId}`)} />,
-                    <TimeCell key="transitioned" value={entry.transitionedAt} />,
-                    <StatusPill key="task-status" tone={taskStatusTone(entry.taskStatus)}>
-                      {entry.taskStatus ?? "Unknown"}
-                    </StatusPill>,
+                    <StatusCellWithError
+                      key="status"
+                      status={entry.status}
+                      errorCode={entry.errorCode}
+                      errorMessage={entry.errorMessage}
+                    />,
+                    <TaskCellWithStatus
+                      key="task"
+                      taskId={entry.taskId}
+                      taskName={entry.taskName}
+                      taskStatus={entry.taskStatus}
+                      onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
+                    />,
                     <ActorCell
                       key="agent"
                       actorId={entry.agentActorId}
                       actorName={actor?.displayName}
                       actorSlug={actor?.slug}
                     />,
-                    <CodeCell key="worker" value={entry.workerClientId} />,
-                    <SessionCell key="session" value={entry.runnerSessionId} />,
-                    <ToolCountCell key="tool-count" value={entry.toolCallCount} />,
-                    <ErrorCell
-                      key="error"
-                      errorCode={entry.errorCode}
-                      errorMessage={entry.errorMessage}
-                      expanded={expandedHistoryIds.has(entry.id)}
-                      onToggle={() => toggleHistoryMessage(entry.id)}
-                    />,
+                    <button
+                      key="details"
+                      type="button"
+                      className="executions-details-toggle"
+                      onClick={() => toggleHistoryMessage(entry.id)}
+                      aria-expanded={expandedHistoryIds.has(entry.id)}
+                      aria-label={expandedHistoryIds.has(entry.id) ? "Hide details" : "Show details"}
+                    >
+                      <Text as="span" size="2" weight="semibold">
+                        {expandedHistoryIds.has(entry.id) ? "Hide details" : "Show details"}
+                      </Text>
+                    </button>,
                     ],
                     mobile: (
                     <ExecutionMobileCard
@@ -269,19 +292,20 @@ export function ExecutionsPage() {
                       tone={entry.status === "SUCCEEDED" ? "success" : "danger"}
                       title={entry.taskName ?? "Untitled task"}
                       badge={entry.status}
+                      taskStatus={entry.taskStatus}
                       lines={[
                         { label: "Transitioned", value: formatDateTime(entry.transitionedAt) },
-                        { label: "Task status", value: entry.taskStatus ?? "Unknown" },
                         { label: "Agent", value: actor?.slug ? `@${actor.slug}` : shortId(entry.agentActorId), mono: true },
-                        { label: "Worker", value: shortId(entry.workerClientId), mono: true },
-                        { label: "Session", value: formatSession(entry.runnerSessionId), mono: true },
-                        { label: "Tool calls", value: String(entry.toolCallCount) },
                         { label: "Error", value: entry.errorCode ?? "None" },
                         ...(entry.errorMessage
                           ? [{ label: "Message", value: entry.errorMessage }]
                           : []),
                       ]}
                       onClick={() => navigate(`/tasks/task/${entry.taskId}`)}
+                      onToggleDetails={() => toggleHistoryMessage(entry.id)}
+                      detailsExpanded={expandedHistoryIds.has(entry.id)}
+                      executionDetails={entry}
+                      actor={actor}
                     />
                     ),
                   };
@@ -388,6 +412,34 @@ function StatusPill({
   );
 }
 
+function StatusCellWithError({
+  status,
+  errorCode,
+  errorMessage,
+}: {
+  status: TaskExecutionHistoryResponseDto["status"];
+  errorCode: TaskExecutionHistoryResponseDto["errorCode"];
+  errorMessage: string | null;
+}) {
+  const hasError = Boolean(errorCode || errorMessage);
+  const tone = status === "SUCCEEDED" ? "success" : "danger";
+
+  return (
+    <div className="executions-status-with-error">
+      <StatusPill tone={tone}>{status}</StatusPill>
+      {hasError && (
+        <span
+          className="executions-error-indicator"
+          title={errorMessage || errorCode || "Error occurred"}
+          aria-label="Error occurred"
+        >
+          !
+        </span>
+      )}
+    </div>
+  );
+}
+
 function TaskCell({
   taskId,
   taskName,
@@ -415,6 +467,48 @@ function TaskCell({
     <div className="executions-task-cell">
       <Text as="div" size="2" weight="semibold">{taskName ?? "Untitled task"}</Text>
       <Text as="div" size="1" tone="muted" style="mono">{shortId(taskId)}</Text>
+    </div>
+  );
+}
+
+function TaskCellWithStatus({
+  taskId,
+  taskName,
+  taskStatus,
+  onClick,
+}: {
+  taskId: string;
+  taskName: string | null;
+  taskStatus: string | null;
+  onClick?: () => void;
+}) {
+  const content = (
+    <>
+      <Text as="div" size="2" weight="semibold">{taskName ?? "Untitled task"}</Text>
+      {taskStatus && (
+        <StatusPill tone={taskStatusTone(taskStatus)}>
+          {taskStatus}
+        </StatusPill>
+      )}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className="executions-task-cell-with-status executions-task-cell--clickable"
+        onClick={onClick}
+        aria-label={`Navigate to task: ${taskName ?? "Untitled task"}`}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="executions-task-cell-with-status">
+      {content}
     </div>
   );
 }
@@ -503,6 +597,116 @@ function ExecutionErrorMessage({
   );
 }
 
+function ExecutionDetails({
+  execution,
+  actor,
+}: {
+  execution: ActiveTaskExecutionResponseDto | TaskExecutionHistoryResponseDto;
+  actor?: { id: string; displayName?: string; slug?: string };
+}) {
+  const isHistory = "transitionedAt" in execution;
+  const claimedAt = new Date(execution.claimedAt);
+  const endTime = isHistory ? new Date(execution.transitionedAt) : new Date();
+  const durationMs = endTime.getTime() - claimedAt.getTime();
+  const durationText = formatDuration(durationMs);
+
+  return (
+    <div className="executions-details-panel">
+      <div className="executions-details-grid">
+        <div className="executions-details-section">
+          <Text as="div" size="1" weight="semibold" tone="muted" className="executions-details-heading">
+            Timing
+          </Text>
+          <div className="executions-details-rows">
+            <DetailRow label="Claimed at" value={formatDateTime(execution.claimedAt)} />
+            {isHistory && (
+              <>
+                <DetailRow label="Finished at" value={formatDateTime(execution.transitionedAt)} />
+                <DetailRow label="Duration" value={durationText} />
+              </>
+            )}
+            {!isHistory && "lastHeartbeatAt" in execution && (
+              <DetailRow label="Latest heartbeat" value={formatDateTime(execution.lastHeartbeatAt)} />
+            )}
+          </div>
+        </div>
+
+        {execution.stats && (
+          <div className="executions-details-section">
+            <Text as="div" size="1" weight="semibold" tone="muted" className="executions-details-heading">
+              Execution Stats
+            </Text>
+            <div className="executions-details-rows">
+              {execution.stats.harness && (
+                <DetailRow label="Harness" value={execution.stats.harness} />
+              )}
+              {execution.stats.providerId && (
+                <DetailRow label="Provider" value={execution.stats.providerId} />
+              )}
+              {execution.stats.modelId && (
+                <DetailRow label="Model" value={execution.stats.modelId} />
+              )}
+              {execution.stats.totalTokens !== null && (
+                <DetailRow
+                  label="Tokens"
+                  value={`${execution.stats.totalTokens.toLocaleString()} (${execution.stats.inputTokens?.toLocaleString() ?? 0} in / ${execution.stats.outputTokens?.toLocaleString() ?? 0} out)`}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="executions-details-section">
+          <Text as="div" size="1" weight="semibold" tone="muted" className="executions-details-heading">
+            System Info
+          </Text>
+          <div className="executions-details-rows">
+            <DetailRow label="Worker ID" value={shortId(execution.workerClientId)} mono />
+            <DetailRow label="Session ID" value={formatSession(execution.runnerSessionId)} mono />
+            <DetailRow label="Tool calls" value={String(execution.toolCallCount)} />
+          </div>
+        </div>
+
+        {isHistory && execution.errorMessage && (
+          <div className="executions-details-section executions-details-section--full">
+            <ExecutionErrorMessage
+              status={execution.status}
+              message={execution.errorMessage}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="executions-detail-row">
+      <Text as="span" size="1" tone="muted">{label}</Text>
+      <Text as="span" size="2" style={mono ? "mono" : "sans"}>{value}</Text>
+    </div>
+  );
+}
+
+function formatDuration(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return `${days}d ${hours % 24}h ${minutes % 60}m`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`;
+  }
+  return `${seconds}s`;
+}
+
 function TimeCell({ value }: { value: string | null }) {
   return (
     <div className="executions-time-cell">
@@ -536,16 +740,26 @@ function ExecutionMobileCard({
   title,
   badge,
   tone,
+  taskStatus,
   lines,
   onClick,
   actionButton,
+  onToggleDetails,
+  detailsExpanded,
+  executionDetails,
+  actor,
 }: {
   title: string;
   badge: string;
   tone: "accent" | "warning" | "success" | "danger";
+  taskStatus?: string | null;
   lines: Array<{ label: string; value: string; mono?: boolean }>;
   onClick?: () => void;
   actionButton?: React.ReactNode;
+  onToggleDetails?: () => void;
+  detailsExpanded?: boolean;
+  executionDetails?: ActiveTaskExecutionResponseDto | TaskExecutionHistoryResponseDto;
+  actor?: { id: string; displayName?: string; slug?: string };
 }) {
   // When action button exists, render as div to avoid nested interactive elements
   // Only the header becomes clickable for navigation
@@ -558,7 +772,14 @@ function ExecutionMobileCard({
           onClick={onClick}
           aria-label={`Navigate to task: ${title}`}
         >
-          <Text as="div" size="3" weight="semibold" wrap>{title}</Text>
+          <div className="executions-mobile-card__title-group">
+            <Text as="div" size="3" weight="semibold" wrap>{title}</Text>
+            {taskStatus && (
+              <StatusPill tone={taskStatusTone(taskStatus)}>
+                {taskStatus}
+              </StatusPill>
+            )}
+          </div>
           <StatusPill tone={tone}>{badge}</StatusPill>
         </button>
         <div className="executions-mobile-card__body">
@@ -576,6 +797,23 @@ function ExecutionMobileCard({
             </div>
           ))}
         </div>
+        {onToggleDetails && executionDetails && (
+          <>
+            <button
+              type="button"
+              className="executions-mobile-details-toggle"
+              onClick={onToggleDetails}
+              aria-expanded={detailsExpanded}
+            >
+              <Text as="span" size="2" weight="semibold">
+                {detailsExpanded ? "Hide details" : "Show details"}
+              </Text>
+            </button>
+            {detailsExpanded && (
+              <ExecutionDetails execution={executionDetails} actor={actor} />
+            )}
+          </>
+        )}
         <div className="executions-mobile-card__actions">
           {actionButton}
         </div>
@@ -590,7 +828,14 @@ function ExecutionMobileCard({
   const CardContent = (
     <>
       <div className="executions-mobile-card__header">
-        <Text as="div" size="3" weight="semibold" wrap>{title}</Text>
+        <div className="executions-mobile-card__title-group">
+          <Text as="div" size="3" weight="semibold" wrap>{title}</Text>
+          {taskStatus && (
+            <StatusPill tone={taskStatusTone(taskStatus)}>
+              {taskStatus}
+            </StatusPill>
+          )}
+        </div>
         <StatusPill tone={tone}>{badge}</StatusPill>
       </div>
       <div className="executions-mobile-card__body">
@@ -608,6 +853,26 @@ function ExecutionMobileCard({
           </div>
         ))}
       </div>
+      {onToggleDetails && executionDetails && (
+        <>
+          <button
+            type="button"
+            className="executions-mobile-details-toggle"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleDetails();
+            }}
+            aria-expanded={detailsExpanded}
+          >
+            <Text as="span" size="2" weight="semibold">
+              {detailsExpanded ? "Hide details" : "Show details"}
+            </Text>
+          </button>
+          {detailsExpanded && (
+            <ExecutionDetails execution={executionDetails} actor={actor} />
+          )}
+        </>
+      )}
     </>
   );
 
