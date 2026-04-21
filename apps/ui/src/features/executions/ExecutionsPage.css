@@ -421,7 +421,18 @@
   color: var(--danger);
   font-size: var(--fs-1);
   font-weight: var(--fw-bold);
-  cursor: help;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.executions-error-indicator:hover {
+  background: color-mix(in srgb, var(--danger) 16%, var(--card-bg));
+}
+
+.executions-error-indicator:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  outline-offset: 2px;
 }
 
 .executions-details-toggle {

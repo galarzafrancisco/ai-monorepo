@@ -259,6 +259,8 @@ export function ExecutionsPage() {
                       status={entry.status}
                       errorCode={entry.errorCode}
                       errorMessage={entry.errorMessage}
+                      onToggleDetails={() => toggleHistoryMessage(entry.id)}
+                      detailsExpanded={expandedHistoryIds.has(entry.id)}
                     />,
                     <TaskCellWithStatus
                       key="task"
@@ -416,10 +418,14 @@ function StatusCellWithError({
   status,
   errorCode,
   errorMessage,
+  onToggleDetails,
+  detailsExpanded,
 }: {
   status: TaskExecutionHistoryResponseDto["status"];
   errorCode: TaskExecutionHistoryResponseDto["errorCode"];
   errorMessage: string | null;
+  onToggleDetails?: () => void;
+  detailsExpanded?: boolean;
 }) {
   const hasError = Boolean(errorCode || errorMessage);
   const tone = status === "SUCCEEDED" ? "success" : "danger";
@@ -427,14 +433,17 @@ function StatusCellWithError({
   return (
     <div className="executions-status-with-error">
       <StatusPill tone={tone}>{status}</StatusPill>
-      {hasError && (
-        <span
+      {hasError && onToggleDetails && (
+        <button
+          type="button"
           className="executions-error-indicator"
-          title={errorMessage || errorCode || "Error occurred"}
-          aria-label="Error occurred"
+          onClick={onToggleDetails}
+          aria-expanded={detailsExpanded}
+          aria-label={detailsExpanded ? "Hide error details" : "Show error details"}
+          title={detailsExpanded ? "Hide error details" : "Show error details"}
         >
           !
-        </span>
+        </button>
       )}
     </div>
   );
@@ -761,9 +770,11 @@ function ExecutionMobileCard({
   executionDetails?: ActiveTaskExecutionResponseDto | TaskExecutionHistoryResponseDto;
   actor?: { id: string; displayName?: string; slug?: string };
 }) {
-  // When action button exists, render as div to avoid nested interactive elements
-  // Only the header becomes clickable for navigation
-  if (actionButton && onClick) {
+  // When we have both onClick and other interactive elements (actionButton or details toggle),
+  // render as div to avoid nested interactive elements. Only the header becomes clickable for navigation.
+  const hasOtherInteractiveElements = actionButton || onToggleDetails;
+
+  if (onClick && hasOtherInteractiveElements) {
     return (
       <div className="executions-mobile-card">
         <button
@@ -814,9 +825,11 @@ function ExecutionMobileCard({
             )}
           </>
         )}
-        <div className="executions-mobile-card__actions">
-          {actionButton}
-        </div>
+        {actionButton && (
+          <div className="executions-mobile-card__actions">
+            {actionButton}
+          </div>
+        )}
       </div>
     );
   }
@@ -853,26 +866,6 @@ function ExecutionMobileCard({
           </div>
         ))}
       </div>
-      {onToggleDetails && executionDetails && (
-        <>
-          <button
-            type="button"
-            className="executions-mobile-details-toggle"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleDetails();
-            }}
-            aria-expanded={detailsExpanded}
-          >
-            <Text as="span" size="2" weight="semibold">
-              {detailsExpanded ? "Hide details" : "Show details"}
-            </Text>
-          </button>
-          {detailsExpanded && (
-            <ExecutionDetails execution={executionDetails} actor={actor} />
-          )}
-        </>
-      )}
     </>
   );
 
