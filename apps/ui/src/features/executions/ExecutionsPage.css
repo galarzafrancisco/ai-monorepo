@@ -4,6 +4,34 @@
   gap: var(--space-4);
 }
 
+.executions-workers-banner {
+  padding: var(--space-3);
+  border-radius: var(--r-3);
+  background: color-mix(in srgb, var(--accent) 4%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border-subtle));
+  text-align: center;
+}
+
+.executions-workers-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+}
+
+.executions-workers-link:hover {
+  color: color-mix(in srgb, var(--accent) 85%, var(--text));
+}
+
+.executions-workers-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-1);
+}
+
 .executions-hero {
   display: flex;
   justify-content: space-between;

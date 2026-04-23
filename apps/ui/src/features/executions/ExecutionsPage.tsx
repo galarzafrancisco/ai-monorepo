@@ -6,6 +6,7 @@ import { useActorsCtx } from "../actors";
 import { useExecutions } from "./useExecutions";
 import { ExecutionsService } from "./api";
 import { useToast } from "../../shared/context/ToastContext";
+import { useWorkers } from "../workers/useWorkers";
 import type {
   TaskExecutionQueueEntryResponseDto,
   ActiveTaskExecutionResponseDto,
@@ -27,8 +28,20 @@ export function ExecutionsPage() {
     error,
     loadExecutions,
   } = useExecutions();
+  const { workers } = useWorkers();
 
   useDocumentTitle();
+
+  // Calculate connected workers (seen in last 2 minutes)
+  const connectedWorkersCount = useMemo(() => {
+    const now = new Date();
+    const twoMinutesMs = 2 * 60 * 1000;
+    return workers.filter((worker) => {
+      const lastSeen = new Date(worker.lastSeenAt);
+      const diffMs = now.getTime() - lastSeen.getTime();
+      return diffMs <= twoMinutesMs;
+    }).length;
+  }, [workers]);
 
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(
     () => new Set(),
@@ -74,6 +87,24 @@ export function ExecutionsPage() {
 
   return (
     <div className="executions-page">
+      {workers.length > 0 && (
+        <div className="executions-workers-banner">
+          <Text as="div" size="2" tone="muted">
+            {connectedWorkersCount > 0
+              ? `${connectedWorkersCount} worker${connectedWorkersCount !== 1 ? 's' : ''} connected`
+              : `${workers.length} worker${workers.length !== 1 ? 's' : ''} registered (none currently connected)`}
+            {' · '}
+            <button
+              type="button"
+              className="executions-workers-link"
+              onClick={() => navigate('/settings/workers')}
+            >
+              Configure workers
+            </button>
+          </Text>
+        </div>
+      )}
+
       <div className="executions-hero">
         <div className="executions-hero__copy">
           <Text as="div" size="3" tone="muted" wrap>
