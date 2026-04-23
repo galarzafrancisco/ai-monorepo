@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 
-import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { DEFAULT_WORKER_WORKSPACES_PATH } from './auth/credentials-store.js';
 import { startWorkerApp } from './worker-app.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = join(__filename, '..');
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -23,6 +28,9 @@ async function main(): Promise<void> {
   const workingDirectory = resolve(
     readCliOption(args, '--working-directory') ?? DEFAULT_WORKER_WORKSPACES_PATH,
   );
+
+  const version = getAppVersion();
+  console.log(`🚀 Starting Taico worker v${version}...`);
 
   await startWorkerApp({
     serverUrl,
@@ -48,4 +56,27 @@ function readCliOption(args: string[], name: string): string | null {
 
   return args[index + 1] ?? null;
 }
+
+function getAppVersion(): string {
+  const packageJsonPath = join(__dirname, '..', 'package.json');
+
+  try {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      version?: unknown;
+    };
+
+    if (typeof packageJson.version === 'string' && packageJson.version) {
+      return packageJson.version;
+    }
+  } catch (error) {
+    console.warn(
+      `Unable to read app version from ${packageJsonPath}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+
+  return '0.0.0';
+}
+
 void main();
