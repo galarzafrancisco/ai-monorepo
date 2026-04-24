@@ -87,29 +87,35 @@ export function ExecutionsPage() {
 
   return (
     <div className="executions-page">
-      {workers.length > 0 && (
-        <div className="executions-workers-banner">
-          <Text as="div" size="2" tone="muted">
-            {connectedWorkersCount > 0
-              ? `${connectedWorkersCount} worker${connectedWorkersCount !== 1 ? 's' : ''} connected`
-              : `${workers.length} worker${workers.length !== 1 ? 's' : ''} registered (none currently connected)`}
-            {' · '}
-            <button
-              type="button"
-              className="executions-workers-link"
-              onClick={() => navigate('/settings/workers')}
-            >
-              Configure workers
-            </button>
-          </Text>
-        </div>
-      )}
-
       <div className="executions-hero">
         <div className="executions-hero__copy">
           <Text as="div" size="3" tone="muted" wrap>
             Queue, active work, and recent history in one place. The view refreshes automatically every 5 seconds.
           </Text>
+          {workers.length > 0 && (
+            <div className="executions-worker-status">
+              <span
+                className="executions-worker-status__indicator"
+                style={{ color: connectedWorkersCount > 0 ? 'var(--success)' : 'var(--danger)' }}
+                aria-label={connectedWorkersCount > 0 ? 'Workers connected' : 'No workers connected'}
+              >
+                ●
+              </span>
+              <Text as="span" size="2" tone="muted">
+                {connectedWorkersCount > 0
+                  ? `${connectedWorkersCount} worker${connectedWorkersCount !== 1 ? 's' : ''} connected`
+                  : 'no worker connected'}
+                {' · '}
+                <button
+                  type="button"
+                  className="executions-worker-status__link"
+                  onClick={() => navigate('/settings/workers')}
+                >
+                  configure
+                </button>
+              </Text>
+            </div>
+          )}
         </div>
         <div className="executions-hero__actions">
           <span className={`executions-pill ${error ? "executions-pill--danger" : "executions-pill--success"}`}>
