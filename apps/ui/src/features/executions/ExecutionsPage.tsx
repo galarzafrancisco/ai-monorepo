@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { Button, Card, Text } from "../../ui/primitives";
 import { useActorsCtx } from "../actors";
@@ -13,6 +13,11 @@ import type {
   TaskExecutionHistoryResponseDto,
 } from "./types";
 import "./ExecutionsPage.css";
+
+type ExecutionDetailResult =
+  | { kind: "queue"; entry: TaskExecutionQueueEntryResponseDto }
+  | { kind: "active"; entry: ActiveTaskExecutionResponseDto }
+  | { kind: "history"; entry: TaskExecutionHistoryResponseDto };
 
 export function ExecutionsPage() {
   const navigate = useNavigate();
@@ -48,6 +53,19 @@ export function ExecutionsPage() {
   const [interruptingExecutions, setInterruptingExecutions] = useState<Set<string>>(
     () => new Set(),
   );
+
+  const failedHistory = useMemo(
+    () => history.filter((entry) => entry.status !== "SUCCEEDED"),
+    [history],
+  );
+  const successRate = useMemo(() => {
+    if (history.length === 0) {
+      return "-";
+    }
+
+    const succeeded = history.filter((entry) => entry.status === "SUCCEEDED").length;
+    return `${Math.round((succeeded / history.length) * 100)}%`;
+  }, [history]);
 
   const toggleHistoryMessage = (historyId: string) => {
     setExpandedHistoryIds((prev) => {
@@ -120,6 +138,15 @@ export function ExecutionsPage() {
         ) : null}
       </div>
 
+      {hasLoadedOnce && !error ? (
+        <div className="executions-overview" aria-label="Runs overview">
+          <OverviewMetric label="Queued" value={String(queue.length)} detail="waiting for a worker" tone="accent" />
+          <OverviewMetric label="Active" value={String(active.length)} detail="currently executing" tone="warning" />
+          <OverviewMetric label="Failed" value={String(failedHistory.length)} detail="recent failed or cancelled runs" tone={failedHistory.length > 0 ? "danger" : "neutral"} />
+          <OverviewMetric label="Success rate" value={successRate} detail="across loaded history" tone="success" />
+        </div>
+      ) : null}
+
 
       {isLoading && !hasLoadedOnce ? (
         <Card className="executions-empty-card">
@@ -138,12 +165,12 @@ export function ExecutionsPage() {
         <div className="executions-sections">
           <ExecutionSection
             title="Queue"
-            subtitle=""
+            subtitle="Runs waiting to be claimed"
             count={queue.length}
             emptyMessage="Nothing is waiting in the queue."
             table={
               <ExecutionTable
-                columns={["State", "Task", "Task status", "Task ID"]}
+                columns={["State", "Task", "Task status", "Task ID", "Run"]}
                 rows={queue.map((entry) => ({
                   key: entry.taskId,
                   cells: [
@@ -153,6 +180,7 @@ export function ExecutionsPage() {
                       {entry.taskStatus ?? "Unknown"}
                     </StatusPill>,
                     <CodeCell key="id" value={entry.taskId} />,
+                    <RunLink key="run" label="Open run" onClick={() => navigate(`/runs/queue/${entry.taskId}`)} />,
                   ],
                   mobile: (
                     <ExecutionMobileCard
@@ -174,12 +202,12 @@ export function ExecutionsPage() {
 
           <ExecutionSection
             title="Active"
-            subtitle=""
+            subtitle="Live agent work with heartbeat and worker details"
             count={active.length}
             emptyMessage="No active executions right now."
             table={
               <ExecutionTable
-                columns={["Status", "Task", "Agent", "Heartbeat", "Details", "Actions"]}
+                columns={["Status", "Task", "Agent", "Heartbeat", "Run", "Actions"]}
                 rows={active.map((entry) => {
                   const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
                   const isInterrupting = interruptingExecutions.has(entry.id);
@@ -193,7 +221,7 @@ export function ExecutionsPage() {
                       />
                     ) : null,
                     cells: [
-                    <StatusPill key="state" tone="warning">Active</StatusPill>,
+                    <StatusPill key="state" tone="warning"><StatusMark status="ACTIVE" /> Active</StatusPill>,
                     <TaskCellWithStatus
                       key="task"
                       taskId={entry.taskId}
@@ -208,18 +236,7 @@ export function ExecutionsPage() {
                       actorSlug={actor?.slug}
                     />,
                     <TimeCell key="heartbeat" value={entry.lastHeartbeatAt} />,
-                    <button
-                      key="details"
-                      type="button"
-                      className="executions-details-toggle"
-                      onClick={() => toggleHistoryMessage(entry.id)}
-                      aria-expanded={expandedHistoryIds.has(entry.id)}
-                      aria-label={expandedHistoryIds.has(entry.id) ? "Hide details" : "Show details"}
-                    >
-                      <Text as="span" size="2" weight="semibold">
-                        {expandedHistoryIds.has(entry.id) ? "Hide details" : "Show details"}
-                      </Text>
-                    </button>,
+                    <RunLink key="run" label="Open run" onClick={() => navigate(`/runs/active/${entry.id}`)} />,
                     <Button
                       key="interrupt"
                       variant="danger"
@@ -266,12 +283,12 @@ export function ExecutionsPage() {
 
           <ExecutionSection
             title="History"
-            subtitle=""
+            subtitle="Completed, failed, and cancelled runs"
             count={history.length}
             emptyMessage="No historical executions yet."
             table={
               <ExecutionTable
-                columns={["Status", "Task", "Agent", "Details"]}
+                columns={["Status", "Task", "Agent", "Duration", "Run"]}
                 rows={history.map((entry) => {
                   const actor = actors.find((candidate) => candidate.id === entry.agentActorId);
 
@@ -305,18 +322,8 @@ export function ExecutionsPage() {
                       actorName={actor?.displayName}
                       actorSlug={actor?.slug}
                     />,
-                    <button
-                      key="details"
-                      type="button"
-                      className="executions-details-toggle"
-                      onClick={() => toggleHistoryMessage(entry.id)}
-                      aria-expanded={expandedHistoryIds.has(entry.id)}
-                      aria-label={expandedHistoryIds.has(entry.id) ? "Hide details" : "Show details"}
-                    >
-                      <Text as="span" size="2" weight="semibold">
-                        {expandedHistoryIds.has(entry.id) ? "Hide details" : "Show details"}
-                      </Text>
-                    </button>,
+                    <DurationCell key="duration" start={entry.claimedAt} end={entry.transitionedAt} />,
+                    <RunLink key="run" label="Open run" onClick={() => navigate(`/runs/history/${entry.id}`)} />,
                     ],
                     mobile: (
                     <ExecutionMobileCard
@@ -348,6 +355,149 @@ export function ExecutionsPage() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+export function ExecutionDetailPage() {
+  const navigate = useNavigate();
+  const { kind, id } = useParams<{ kind: string; id: string }>();
+  const { actors } = useActorsCtx();
+  const { queue, active, history, isLoading, hasLoadedOnce, error } = useExecutions();
+
+  useDocumentTitle();
+
+  const detail = useMemo<ExecutionDetailResult | null>(() => {
+    if (!kind || !id) {
+      return null;
+    }
+
+    if (kind === "queue") {
+      const entry = queue.find((candidate) => candidate.taskId === id);
+      return entry ? { kind: "queue", entry } : null;
+    }
+
+    if (kind === "active") {
+      const entry = active.find((candidate) => candidate.id === id);
+      return entry ? { kind: "active", entry } : null;
+    }
+
+    if (kind === "history") {
+      const entry = history.find((candidate) => candidate.id === id);
+      return entry ? { kind: "history", entry } : null;
+    }
+
+    return null;
+  }, [active, history, id, kind, queue]);
+
+  if (isLoading && !hasLoadedOnce) {
+    return (
+      <div className="executions-page">
+        <Card className="executions-empty-card">
+          <Text as="div" size="3" weight="medium">Loading run…</Text>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="executions-page">
+        <Card className="executions-empty-card">
+          <Text as="div" size="3" weight="medium">Could not load run</Text>
+          <Text as="div" tone="muted" wrap>{error}</Text>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!detail) {
+    return (
+      <div className="executions-page">
+        <Card className="executions-detail-card">
+          <div className="executions-detail-header">
+            <div>
+              <Text as="div" size="5" weight="bold">Run not found</Text>
+              <Text as="div" tone="muted" wrap>The run may have moved between queue, active, and history. Return to the runs list to find the latest state.</Text>
+            </div>
+            <Button variant="secondary" onClick={() => navigate('/runs')}>Back to runs</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  const entry = detail.entry;
+  const actorId = "agentActorId" in entry ? entry.agentActorId : null;
+  const actor = actorId ? actors.find((candidate) => candidate.id === actorId) : undefined;
+  const title = entry.taskName ?? "Untitled task";
+  let status: string;
+  let tone: "accent" | "warning" | "success" | "danger";
+  let detailPanel: React.ReactNode;
+
+  if (detail.kind === "queue") {
+    status = "QUEUED";
+    tone = "accent";
+    detailPanel = (
+      <div className="executions-details-panel executions-details-panel--standalone">
+        <div className="executions-details-grid">
+          <div className="executions-details-section">
+            <Text as="div" size="1" weight="semibold" tone="muted" className="executions-details-heading">Queue</Text>
+            <div className="executions-details-rows">
+              <DetailRow label="Task status" value={entry.taskStatus ?? "Unknown"} />
+              <DetailRow label="Task ID" value={entry.taskId} mono />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  } else if (detail.kind === "active") {
+    status = "ACTIVE";
+    tone = "warning";
+    detailPanel = <ExecutionDetails execution={detail.entry} actor={actor} />;
+  } else {
+    status = detail.entry.status;
+    tone = detail.entry.status === "SUCCEEDED" ? "success" : "danger";
+    detailPanel = <ExecutionDetails execution={detail.entry} actor={actor} />;
+  }
+
+  return (
+    <div className="executions-page executions-page--detail">
+      <Card className="executions-detail-card">
+        <div className="executions-detail-header">
+          <div className="executions-detail-title-group">
+            <StatusPill tone={tone}><StatusMark status={status} /> {status}</StatusPill>
+            <Text as="div" size="5" weight="bold" wrap>{title}</Text>
+            <Text as="div" tone="muted" style="mono">{detail.kind}/{id}</Text>
+          </div>
+          <div className="executions-detail-actions">
+            <Button variant="secondary" onClick={() => navigate(`/tasks/task/${entry.taskId}`)}>Open task</Button>
+            <Button variant="secondary" onClick={() => navigate('/runs')}>Back to runs</Button>
+          </div>
+        </div>
+
+        {detailPanel}
+      </Card>
+    </div>
+  );
+}
+
+function OverviewMetric({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "accent" | "warning" | "success" | "danger" | "neutral";
+}) {
+  return (
+    <Card className={`executions-metric executions-metric--${tone}`}>
+      <Text as="div" size="1" tone="muted" className="executions-metric__label">{label}</Text>
+      <Text as="div" size="5" weight="bold" className="executions-metric__value">{value}</Text>
+      <Text as="div" size="2" tone="muted">{detail}</Text>
+    </Card>
   );
 }
 
@@ -444,6 +594,22 @@ function StatusPill({
   );
 }
 
+function StatusMark({ status }: { status: string }) {
+  if (status === "SUCCEEDED") {
+    return <span className="executions-status-mark executions-status-mark--success" aria-hidden="true">✓</span>;
+  }
+
+  if (status === "FAILED" || status === "CANCELLED") {
+    return <span className="executions-status-mark executions-status-mark--danger" aria-hidden="true">×</span>;
+  }
+
+  if (status === "ACTIVE") {
+    return <span className="executions-status-mark executions-status-mark--warning" aria-hidden="true">•</span>;
+  }
+
+  return <span className="executions-status-mark executions-status-mark--accent" aria-hidden="true">•</span>;
+}
+
 function StatusCellWithError({
   status,
   errorCode,
@@ -462,7 +628,7 @@ function StatusCellWithError({
 
   return (
     <div className="executions-status-with-error">
-      <StatusPill tone={tone}>{status}</StatusPill>
+      <StatusPill tone={tone}><StatusMark status={status} /> {status}</StatusPill>
       {hasError && onToggleDetails && (
         <button
           type="button"
@@ -475,6 +641,27 @@ function StatusCellWithError({
           !
         </button>
       )}
+    </div>
+  );
+}
+
+function RunLink({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="executions-details-toggle"
+      onClick={onClick}
+    >
+      <Text as="span" size="2" weight="semibold">{label}</Text>
+    </button>
+  );
+}
+
+function DurationCell({ start, end }: { start: string; end: string }) {
+  return (
+    <div className="executions-time-cell">
+      <Text as="div" size="2" weight="semibold">{formatDuration(new Date(end).getTime() - new Date(start).getTime())}</Text>
+      <Text as="div" size="1" tone="muted">{formatRelativeTime(end)}</Text>
     </div>
   );
 }

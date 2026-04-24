@@ -59,7 +59,7 @@
   align-items: center;
   min-height: 36px;
   padding: 0 var(--space-3);
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid var(--border);
   background: var(--card-bg);
   color: var(--text);
@@ -81,21 +81,46 @@
   background: color-mix(in srgb, var(--danger) 8%, var(--card-bg));
 }
 
-.executions-overview-card,
 .executions-empty-card {
-  border-radius: var(--r-4);
-  box-shadow: var(--shadow-1);
+  border-radius: 0;
 }
 
 .executions-overview {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
 }
 
 .executions-metric {
   display: grid;
   gap: var(--space-1);
+  border-radius: 0;
+  border-left: 4px solid var(--border);
+}
+
+.executions-metric--accent {
+  border-left-color: var(--accent);
+}
+
+.executions-metric--warning {
+  border-left-color: var(--warning);
+}
+
+.executions-metric--success {
+  border-left-color: var(--success);
+}
+
+.executions-metric--danger {
+  border-left-color: var(--danger);
+}
+
+.executions-metric__label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.executions-metric__value {
+  line-height: 1;
 }
 
 .executions-sections {
@@ -104,9 +129,8 @@
 }
 
 .executions-section-card {
-  border-radius: var(--r-4);
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: var(--shadow-1);
 }
 
 .executions-section-card__header {
@@ -116,12 +140,7 @@
   gap: var(--space-4);
   padding: var(--space-4);
   border-bottom: 1px solid var(--border-subtle);
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--accent) 5%, var(--card-bg)),
-      var(--card-bg)
-    );
+  background: var(--card-bg);
 }
 
 .executions-count-pill {
@@ -131,7 +150,7 @@
   min-width: 40px;
   height: 32px;
   padding: 0 var(--space-2);
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
@@ -192,12 +211,24 @@
   justify-content: center;
   min-height: 26px;
   padding: 0 var(--space-2);
-  border-radius: 999px;
+  border-radius: 0;
   font-size: var(--fs-1);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.02em;
   text-transform: uppercase;
   border: 1px solid transparent;
+  gap: var(--space-1);
+}
+
+.executions-status-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  line-height: 1;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
 }
 
 .executions-status-pill--accent {
@@ -294,7 +325,7 @@
   width: 22px;
   height: 22px;
   border: 1px solid color-mix(in srgb, var(--danger) 25%, var(--border));
-  border-radius: 999px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--danger) 10%, var(--card-bg));
   color: var(--danger);
   font-size: var(--fs-1);
@@ -315,7 +346,7 @@
   display: grid;
   gap: var(--space-2);
   padding: var(--space-3);
-  border-radius: var(--r-3);
+  border-radius: 0;
   background: color-mix(in srgb, var(--danger) 5%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--danger) 12%, var(--border-subtle));
 }
@@ -333,6 +364,7 @@
   gap: var(--space-3);
   padding: var(--space-4);
   border-top: 1px solid var(--border-subtle);
+  border-left: 4px solid transparent;
 }
 
 .executions-mobile-card--clickable {
@@ -447,7 +479,7 @@
   width: 22px;
   height: 22px;
   border: 1px solid color-mix(in srgb, var(--danger) 25%, var(--border));
-  border-radius: 999px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--danger) 10%, var(--card-bg));
   color: var(--danger);
   font-size: var(--fs-1);
@@ -488,7 +520,12 @@
 .executions-details-panel {
   padding: var(--space-4);
   background: color-mix(in srgb, var(--surface) 25%, var(--card-bg));
-  border-radius: var(--r-3);
+  border-radius: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.executions-details-panel--standalone {
+  margin-top: var(--space-4);
 }
 
 .executions-details-grid {
@@ -554,6 +591,32 @@
   border-radius: var(--r-2);
 }
 
+.executions-page--detail {
+  max-width: 1120px;
+}
+
+.executions-detail-card {
+  border-radius: 0;
+}
+
+.executions-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.executions-detail-title-group,
+.executions-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.executions-detail-actions {
+  align-items: flex-end;
+}
+
 @media (max-width: 980px) {
   .executions-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -572,6 +635,15 @@
 
   .executions-overview {
     grid-template-columns: 1fr;
+  }
+
+  .executions-detail-header {
+    flex-direction: column;
+  }
+
+  .executions-detail-actions {
+    width: 100%;
+    align-items: stretch;
   }
 
   .executions-table-wrap {

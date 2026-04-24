@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { ExecutionsPage } from './ExecutionsPage';
+import { ExecutionDetailPage, ExecutionsPage } from './ExecutionsPage';
 import { ExecutionsLayout } from './ExecutionsLayout';
 
 export function ExecutionsRoutes() {
@@ -7,6 +7,7 @@ export function ExecutionsRoutes() {
     <Routes>
       <Route element={<ExecutionsLayout />}>
         <Route index element={<ExecutionsPage />} />
+        <Route path=":kind/:id" element={<ExecutionDetailPage />} />
       </Route>
     </Routes>
   );
