@@ -1,7 +1,7 @@
 {
   "name": "@taico/ui",
   "private": true,
-  "version": "0.2.15",
+  "version": "0.2.16",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
-    "@taico/client": "^0.2.15",
-    "@taico/events": "^0.2.15",
-    "@taico/shared": "^0.2.15",
+    "@taico/client": "^0.2.16",
+    "@taico/events": "^0.2.16",
+    "@taico/shared": "^0.2.16",
     "marked-react": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

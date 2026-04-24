@@ -15,8 +15,8 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
-const defaultFromVersion = "0.2.13";
-const defaultToVersion = "0.2.14";
+const defaultFromVersion = "0.2.15";
+const defaultToVersion = "0.2.16";
 
 const packageReleaseOrder = [
   "packages/shared",
@@ -28,6 +28,17 @@ const packageReleaseOrder = [
 ];
 
 const appReleaseOrder = ["apps/backend", "apps/worker"];
+
+const releaseVersionTextTargets = [
+  {
+    relativePath: "helpers/start-server.sh",
+    patterns: [/ghcr\.io\/galarzafrancisco\/ai-monorepo:\d+\.\d+\.\d+/g],
+  },
+  {
+    relativePath: "helpers/start-worker.sh",
+    patterns: [/@taico\/worker@\d+\.\d+\.\d+/g],
+  },
+];
 
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
@@ -148,6 +159,28 @@ function bumpPackageLock(fromVersion, toVersion) {
   return { changed, relativePath: path.relative(repoRoot, lockPath) };
 }
 
+function bumpTextFile(target, fromVersion, toVersion) {
+  const { relativePath, patterns } = target;
+  const filePath = path.join(repoRoot, relativePath);
+  if (!existsSync(filePath)) {
+    return { changed: false, relativePath };
+  }
+
+  const current = readFileSync(filePath, "utf8");
+  let next = current.replaceAll(fromVersion, toVersion);
+  for (const pattern of patterns) {
+    next = next.replace(pattern, (match) =>
+      match.replace(/\d+\.\d+\.\d+$/, toVersion),
+    );
+  }
+  if (next === current) {
+    return { changed: false, relativePath };
+  }
+
+  writeFileSync(filePath, next);
+  return { changed: true, relativePath };
+}
+
 function parseFlag(name, fallback) {
   const prefix = `--${name}=`;
   const match = process.argv.find((arg) => arg.startsWith(prefix));
@@ -189,8 +222,13 @@ function bump(fromVersion, toVersion) {
     bumpPackageJson(filePath, fromVersion, toVersion),
   );
   const lockResult = bumpPackageLock(fromVersion, toVersion);
+  const textResults = releaseVersionTextTargets.map((target) =>
+    bumpTextFile(target, fromVersion, toVersion),
+  );
 
-  const changed = [...results, lockResult].filter((result) => result.changed);
+  const changed = [...results, lockResult, ...textResults].filter(
+    (result) => result.changed,
+  );
   if (changed.length === 0) {
     console.log(`No @taico versions or dependencies matched ${fromVersion}.`);
     return;
