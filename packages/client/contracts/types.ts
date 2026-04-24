@@ -1760,6 +1760,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/executions/active/{executionId}/unclaim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unclaim an active task execution and return it to the queue
+         * @description Atomically removes the execution from the active execution table and returns its task to the execution queue. Only the worker that claimed the execution may unclaim it.
+         */
+        post: operations["ActiveTaskExecutionController_unclaimTaskExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/executions/active/{executionId}/session": {
         parameters: {
             query?: never;
@@ -10222,6 +10242,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaskExecutionHistoryResponseDto"];
                 };
+            };
+        };
+    };
+    ActiveTaskExecutionController_unclaimTaskExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Execution ID to unclaim */
+                executionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

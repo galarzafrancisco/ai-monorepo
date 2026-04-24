@@ -6153,6 +6153,37 @@
         ]
       }
     },
+    "/api/v1/executions/active/{executionId}/unclaim": {
+      "post": {
+        "description": "Atomically removes the execution from the active execution table and returns its task to the execution queue. Only the worker that claimed the execution may unclaim it.",
+        "operationId": "ActiveTaskExecutionController_unclaimTaskExecution",
+        "parameters": [
+          {
+            "name": "executionId",
+            "required": true,
+            "in": "path",
+            "description": "Execution ID to unclaim",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Unclaim an active task execution and return it to the queue",
+        "tags": [
+          "Executions"
+        ]
+      }
+    },
     "/api/v1/executions/active/{executionId}/session": {
       "patch": {
         "description": "Stores the runtime session identifier emitted by the agent harness so it can be propagated to execution history.",

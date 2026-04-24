@@ -1,7 +1,11 @@
 import { ApiClient } from '@taico/client/v2';
 import { executeTask } from './task-runner.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
-import { TaskExecutionError } from './task-execution-errors.js';
+import {
+  TaskExecutionError,
+  UnsupportedAgentTypeError,
+} from './task-execution-errors.js';
+import { deferTaskClaimAfterUnclaim } from './task-claim-deferral.js';
 
 type PickTaskParams = {
   client: ApiClient;
@@ -34,6 +38,7 @@ export async function pickTask({
   let stopErrorMessage: string | undefined;
   let shouldRethrow = false;
   let taskError: unknown;
+  let shouldUnclaim = false;
 
   try {
     await executeTask({
@@ -45,7 +50,10 @@ export async function pickTask({
       activityGatewayClient,
     });
   } catch (error) {
-    if (error instanceof TaskExecutionError) {
+    if (error instanceof UnsupportedAgentTypeError) {
+      shouldUnclaim = true;
+      stopErrorMessage = error.displayMessage;
+    } else if (error instanceof TaskExecutionError) {
       if (error.kind === 'interrupted') {
         stopStatus = 'CANCELLED';
         stopErrorCode = 'INTERRUPTED';
@@ -69,19 +77,30 @@ export async function pickTask({
     }
     taskError = error;
   } finally {
-    const historyEntry =
-      await client.executions.ActiveTaskExecutionController_stopTaskExecution({
+    if (shouldUnclaim) {
+      await client.executions.ActiveTaskExecutionController_unclaimTaskExecution({
         executionId: execution.id,
-        body: {
-          status: stopStatus,
-          errorCode: stopErrorCode,
-          errorMessage: stopErrorMessage,
-        },
       });
+      deferTaskClaimAfterUnclaim(execution.taskId);
 
-    console.log(
-      `[worker] Stopped execution ${execution.id} with status ${historyEntry.status}.`,
-    );
+      console.log(
+        `[worker] Unclaimed execution ${execution.id} for task ${execution.taskId}: ${stopErrorMessage}`,
+      );
+    } else {
+      const historyEntry =
+        await client.executions.ActiveTaskExecutionController_stopTaskExecution({
+          executionId: execution.id,
+          body: {
+            status: stopStatus,
+            errorCode: stopErrorCode,
+            errorMessage: stopErrorMessage,
+          },
+        });
+
+      console.log(
+        `[worker] Stopped execution ${execution.id} with status ${historyEntry.status}.`,
+      );
+    }
   }
 
   if (shouldRethrow) {

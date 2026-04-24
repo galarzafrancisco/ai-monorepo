@@ -26,6 +26,11 @@ export class ExecutionsResource extends BaseClient {
     return this.request('POST', `/api/v1/executions/active/${params.executionId}/stop`, { body: params.body, signal: params?.signal });
   }
 
+  /** Unclaim an active task execution and return it to the queue */
+  async ActiveTaskExecutionController_unclaimTaskExecution(params: { executionId: string; signal?: AbortSignal }): Promise<void> {
+    return this.request('POST', `/api/v1/executions/active/${params.executionId}/unclaim`, { responseType: 'void', signal: params?.signal });
+  }
+
   /** Attach the runner session id to an active execution */
   async ActiveTaskExecutionController_updateRunnerSessionId(params: { executionId: string; body: UpdateRunnerSessionIdDto; signal?: AbortSignal }): Promise<void> {
     return this.request('PATCH', `/api/v1/executions/active/${params.executionId}/session`, { body: params.body, responseType: 'void', signal: params?.signal });

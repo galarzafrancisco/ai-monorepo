@@ -105,6 +105,25 @@ export class ExecutionsService {
         });
     }
     /**
+     * Unclaim an active task execution and return it to the queue
+     * Atomically removes the execution from the active execution table and returns its task to the execution queue. Only the worker that claimed the execution may unclaim it.
+     * @param executionId Execution ID to unclaim
+     * @returns void
+     * @throws ApiError
+     */
+    public static activeTaskExecutionControllerUnclaimTaskExecution(
+        executionId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<void> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/executions/active/{executionId}/unclaim',
+            path: {
+                'executionId': executionId,
+            },
+        });
+    }
+    /**
      * Attach the runner session id to an active execution
      * Stores the runtime session identifier emitted by the agent harness so it can be propagated to execution history.
      * @param executionId Execution ID to update

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   NotFoundException,
@@ -27,6 +28,7 @@ import { TasksScopes } from '../../tasks/tasks.scopes';
 import { WorkersScopes } from '../workers.scopes';
 import {
   ActiveTaskExecutionNotFoundError,
+  ActiveTaskExecutionWorkerMismatchError,
   ExecutionStatsNotFoundError,
 } from '../errors/executions.errors';
 import { ActiveTaskExecutionService } from './active-task-execution.service';
@@ -102,6 +104,37 @@ export class ActiveTaskExecutionController {
     } catch (error) {
       if (error instanceof ActiveTaskExecutionNotFoundError) {
         throw new NotFoundException(error.message);
+      }
+
+      throw error;
+    }
+  }
+
+  @Post(':executionId/unclaim')
+  @HttpCode(204)
+  @RequireScopes(WorkersScopes.CONNECT.id)
+  @ApiOperation({
+    summary: 'Unclaim an active task execution and return it to the queue',
+    description:
+      'Atomically removes the execution from the active execution table and returns its task to the execution queue. Only the worker that claimed the execution may unclaim it.',
+  })
+  @ApiParam({ name: 'executionId', description: 'Execution ID to unclaim' })
+  async unclaimTaskExecution(
+    @Param('executionId') executionId: string,
+    @CurrentAuth() auth: AuthContext,
+  ): Promise<void> {
+    try {
+      await this.activeTaskExecutionService.unclaimTask({
+        executionId,
+        workerClientId: auth.claims.client_id,
+      });
+    } catch (error) {
+      if (error instanceof ActiveTaskExecutionNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+
+      if (error instanceof ActiveTaskExecutionWorkerMismatchError) {
+        throw new ForbiddenException(error.message);
       }
 
       throw error;

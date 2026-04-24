@@ -2,6 +2,7 @@ import { setTimeout as sleep } from 'timers/promises';
 import { ApiClient } from '@taico/client/v2';
 import { pickTask } from './task-picker.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
+import { isTaskClaimDeferred } from './task-claim-deferral.js';
 
 const QUEUE_POLL_INTERVAL_MS = 60_000;
 
@@ -41,6 +42,11 @@ export async function attemptClaimTask(
 ): Promise<void> {
   console.log(`[worker] Received queue notification for task ${taskId}, attempting to claim...`);
 
+  if (isTaskClaimDeferred(taskId)) {
+    console.log(`[worker] Skipping task ${taskId}; recently unclaimed by this worker.`);
+    return;
+  }
+
   try {
     await pickTask({
       client,
@@ -61,10 +67,12 @@ async function processNextQueuedTask(
   baseUrl: string,
   activityGatewayClient: ExecutionActivityGatewayClient,
 ): Promise<void> {
-  const queueResponse = await client.executions.TaskExecutionQueueController_listQueue({ limit: 1 });
+  const queueResponse = await client.executions.TaskExecutionQueueController_listQueue({ limit: 25 });
   console.log(`[worker] Queue poll succeeded. ${queueResponse.total} task(s) ready.`);
 
-  const nextTask = queueResponse.items[0];
+  const nextTask = queueResponse.items.find(
+    (item) => !isTaskClaimDeferred(item.taskId),
+  );
   if (!nextTask) {
     return;
   }

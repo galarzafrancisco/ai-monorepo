@@ -23,6 +23,12 @@ export class ActiveTaskExecutionNotFoundError extends ExecutionsError {
   }
 }
 
+export class ActiveTaskExecutionWorkerMismatchError extends ExecutionsError {
+  constructor(executionId: string) {
+    super('Active execution is claimed by a different worker.', { executionId });
+  }
+}
+
 export class ExecutionStatsNotFoundError extends ExecutionsError {
   constructor(executionId: string) {
     super('Execution stats were not found.', { executionId });

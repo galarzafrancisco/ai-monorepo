@@ -17,6 +17,7 @@ import {
 } from '../../tasks/errors/tasks.errors';
 import {
   ActiveTaskExecutionNotFoundError,
+  ActiveTaskExecutionWorkerMismatchError,
   ExecutionStatsNotFoundError,
   TaskAlreadyClaimedError,
   TaskExecutionQueueEntryNotFoundError,
@@ -36,6 +37,11 @@ export type StopTaskExecutionInput = {
   status: TaskExecutionHistoryStatus;
   errorCode?: TaskExecutionHistoryErrorCode | null;
   errorMessage?: string | null;
+};
+
+export type UnclaimTaskExecutionInput = {
+  executionId: string;
+  workerClientId: string;
 };
 
 export type UpdateRunnerSessionIdInput = {
@@ -257,6 +263,44 @@ export class ActiveTaskExecutionService {
     });
 
     return historyEntry;
+  }
+
+  async unclaimTask(input: UnclaimTaskExecutionInput): Promise<void> {
+    const execution = await this.dataSource.transaction(async (manager) => {
+      const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {
+        where: { id: input.executionId },
+      });
+
+      if (!activeExecution) {
+        throw new ActiveTaskExecutionNotFoundError(input.executionId);
+      }
+
+      if (activeExecution.workerClientId !== input.workerClientId) {
+        throw new ActiveTaskExecutionWorkerMismatchError(input.executionId);
+      }
+
+      await manager.delete(ExecutionStatsEntity, {
+        executionId: activeExecution.id,
+      });
+      await manager.delete(ActiveTaskExecutionEntity, {
+        id: activeExecution.id,
+      });
+      await manager.upsert(
+        TaskExecutionQueueEntity,
+        { taskId: activeExecution.taskId },
+        ['taskId'],
+      );
+
+      return activeExecution;
+    });
+
+    this.executionActivityService.publishSystemActivity({
+      executionId: execution.id,
+      taskId: execution.taskId,
+      agentActorId: execution.agentActorId,
+      kind: 'execution.unclaimed',
+      message: 'Execution unclaimed and returned to queue',
+    });
   }
 
   async updateRunnerSessionId(input: UpdateRunnerSessionIdInput): Promise<void> {
