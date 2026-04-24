@@ -23,7 +23,6 @@ export function ExecutionsPage() {
     active,
     history,
     isLoading,
-    isRefreshing,
     hasLoadedOnce,
     error,
     loadExecutions,
@@ -112,10 +111,10 @@ export function ExecutionsPage() {
             </Text>
           </div>
         </div>
-        {error || isRefreshing ? (
+        {error ? (
           <div className="executions-hero__actions">
-            <span className={`executions-pill ${error ? "executions-pill--danger" : "executions-pill--success"}`}>
-              {error ? "Fetch failed" : "Refreshing"}
+            <span className="executions-pill executions-pill--danger">
+              Fetch failed
             </span>
           </div>
         ) : null}
