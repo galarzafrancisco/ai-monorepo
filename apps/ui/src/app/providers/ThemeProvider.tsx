@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 type Theme =
   | 'light'
   | 'dark'
+  | 'clarity'
   | 'github'
   | 'forest'
   | 'terminal'

@@ -91,6 +91,58 @@
   --shadow-3: 0 8px 24px rgba(31, 35, 40, 0.16);
 }
 
+/* ===== CLARITY THEME (Soft neutral, all-day light theme) ===== */
+[data-theme='clarity'] {
+  /*
+   * Intent:
+   * - Not plain white, not dark mode.
+   * - Calm ChatGPT-like grays.
+   * - White cards/input sections against very soft gray shells.
+   * - Lower contrast than GitHub light, but still readable.
+   */
+
+  /* Theme color values */
+  --theme-bg: #f7f7f5;
+  --theme-app-surface: #eceff3;
+  --theme-surface: #f2f4f7;
+  --theme-nav-bar: #fcfcfb;
+  --theme-nav-bar-rgb: 252, 252, 251;
+
+  /* Colors - Background */
+  --bg: var(--theme-bg);
+  --app-surface: var(--theme-app-surface);
+  --surface: var(--theme-surface);
+  --nav-bar: var(--theme-nav-bar);
+  --card-bg: #ffffff;
+
+  /* Colors - Text */
+  --text: #1f2328;
+  --text-muted: #66707a;
+  --text-inverse: #ffffff;
+
+  /* Colors - Borders */
+  --border: #d9dee5;
+  --border-subtle: #e8ebef;
+
+  /* Colors - Interactive */
+  --accent: #3971d9;
+  --accent-contrast: #ffffff;
+  --accent-hover: #2e61c0;
+
+  /* Colors - Semantic */
+  --success: #2f8f63;
+  --warning: #b7791f;
+  --danger: #d25757;
+
+  /* Colors - Focus */
+  --focus-ring: #3971d9;
+
+  /* Elevation - Shadows */
+  --shadow-1: 0 1px 2px rgba(31, 35, 40, 0.06), 0 1px 1px rgba(31, 35, 40, 0.04);
+  --shadow-2: 0 6px 16px rgba(31, 35, 40, 0.08), 0 1px 2px rgba(31, 35, 40, 0.05);
+  --shadow-3: 0 12px 32px rgba(31, 35, 40, 0.10), 0 2px 6px rgba(31, 35, 40, 0.06);
+}
+
 /* ===== DARK THEME ===== */
 [data-theme='dark'] {
   /* Theme color values */

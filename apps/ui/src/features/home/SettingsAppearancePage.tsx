@@ -7,6 +7,7 @@ import './SettingsPage.css';
 const THEMES = [
   { value: 'light', label: 'Light', description: 'Clean light theme' },
   { value: 'dark', label: 'Dark', description: 'Easy on the eyes' },
+  { value: 'clarity', label: 'Clarity', description: 'Soft neutral, all-day light theme' },
   { value: 'github', label: 'GitHub', description: 'GitHub-inspired green accent' },
   { value: 'forest', label: 'Forest', description: 'Nature-inspired dark green' },
   { value: 'terminal', label: 'Terminal', description: 'Classic terminal green on black' },
