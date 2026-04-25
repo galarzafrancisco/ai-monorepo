@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE=ghcr.io/galarzafrancisco/ai-monorepo:0.2.16
+IMAGE=ghcr.io/galarzafrancisco/ai-monorepo:0.2.17
 
 PORT=9999                    # Port where the server will be accessible
 CONTAINER_NAME=taico         # Name for the Docker container
