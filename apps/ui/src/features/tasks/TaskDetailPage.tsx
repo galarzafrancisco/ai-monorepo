@@ -1051,8 +1051,8 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
               onClick={() => handleChangeStatus(status as TaskStatus)}
               disabled={isLoading}
             >
-              <Stack spacing='0'>
-                <Icon size={16} />
+              <Stack spacing='1' align='center'>
+                <Icon size={20} />
                 <div>{info.label}</div>
               </Stack>
             </Button>
