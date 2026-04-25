@@ -8,6 +8,7 @@ import {
   HeartCrack,
 } from "lucide-react";
 
+import './SettingsPage.css';
 import './SettingsWorkersPage.css';
 
 export function SettingsWorkersPage() {
@@ -43,21 +44,21 @@ export function SettingsWorkersPage() {
 
   if (isLoading) {
     return (
-      <Stack spacing="6">
+      <Stack spacing="6" className="settings-subpage">
         <Text>Loading...</Text>
       </Stack>
     );
   }
 
   return (
-    <Stack spacing="6">
-      <Text tone="muted">
+    <Stack spacing="6" className="settings-subpage">
+      <Text tone="muted" className="settings-subpage__intro">
         Workers execute tasks in the background. Configure workers to enable automated task execution.
       </Text>
 
       {error ? <ErrorText size="2" weight="medium">{error}</ErrorText> : null}
 
-      <Card padding="5">
+      <Card padding="5" className="settings-panel-card">
         <Stack spacing="4">
           <Stack spacing="1">
             <Text size="4" weight="semibold">
@@ -92,7 +93,7 @@ export function SettingsWorkersPage() {
         </Text>
 
         {workers.length === 0 ? (
-          <Card padding="5">
+          <Card padding="5" className="settings-panel-card">
             <Text tone="muted">
               No workers registered yet. Run the command above to start your first worker.
             </Text>
@@ -104,7 +105,7 @@ export function SettingsWorkersPage() {
             const lastSeenStr = lastSeenDate.toLocaleString();
 
             return (
-              <Card key={worker.id} padding="5">
+              <Card key={worker.id} padding="5" className="settings-panel-card">
                 <Stack spacing="3">
                   <Row justify="space-between" align="center">
                     <Stack spacing="1">

@@ -1,0 +1,22 @@
+.settings-projects__color-input {
+  width: 72px;
+  height: 40px;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--card-bg);
+  cursor: pointer;
+}
+
+.settings-projects__color-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.settings-projects__success {
+  color: var(--success);
+}
+
+.settings-projects__toolbar {
+  min-width: 0;
+}

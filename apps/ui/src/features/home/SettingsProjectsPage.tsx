@@ -1,13 +1,17 @@
 import { Stack, Text, Card, Button, Row } from '../../ui/primitives';
 import { useHomeCtx } from './HomeProvider';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ProjectsService } from '../projects/api';
 import type { ProjectResponseDto } from "@taico/client";
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import '../../auth/LoginPage.css';
+import './SettingsPage.css';
+import './SettingsProjectsPage.css';
 
 export function SettingsProjectsPage() {
   const { setSectionTitle } = useHomeCtx();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -75,7 +79,7 @@ export function SettingsProjectsPage() {
 
   if (isLoading) {
     return (
-      <Stack spacing="6">
+      <Stack spacing="6" className="settings-subpage">
         <Text tone="muted">Loading projects...</Text>
       </Stack>
     );
@@ -83,7 +87,7 @@ export function SettingsProjectsPage() {
 
   if (error) {
     return (
-      <Stack spacing="6">
+      <Stack spacing="6" className="settings-subpage">
         <ErrorText>{error}</ErrorText>
         <Button variant="secondary" onClick={loadProjects}>
           Retry
@@ -93,16 +97,40 @@ export function SettingsProjectsPage() {
   }
 
   return (
-    <Stack spacing="6">
-      <Text tone="muted">Manage your projects</Text>
+    <Stack spacing="6" className="settings-subpage">
+      <Text tone="muted" className="settings-subpage__intro">
+        Manage project metadata and repository links used by task workflows.
+      </Text>
+
+      <Row justify="space-between" align="center" className="settings-projects__toolbar">
+        <Text size="3" weight="semibold">Projects</Text>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => navigate('/settings/projects/new')}
+        >
+          New project
+        </Button>
+      </Row>
 
       {projects.length === 0 ? (
-        <Card padding="5">
-          <Text tone="muted">No projects found</Text>
+        <Card padding="5" className="settings-panel-card">
+          <Stack spacing="3">
+            <Text tone="muted">No projects found</Text>
+            <Row>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate('/settings/projects/new')}
+              >
+                Create project
+              </Button>
+            </Row>
+          </Stack>
         </Card>
       ) : (
         projects.map((project) => (
-          <Card key={project.id} padding="5">
+          <Card key={project.id} padding="5" className="settings-panel-card">
             <Stack spacing="4">
               <Stack spacing="2">
                 <Text size="4" weight="semibold">{project.slug}</Text>

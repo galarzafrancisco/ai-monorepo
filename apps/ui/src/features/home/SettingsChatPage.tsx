@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ChatProvidersService } from '@taico/client';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import '../../auth/LoginPage.css';
+import './SettingsPage.css';
 import './SettingsChatPage.css';
 
 interface ChatProvider {
@@ -132,15 +133,17 @@ export function SettingsChatPage() {
 
   if (isLoading) {
     return (
-      <Stack spacing="6">
+      <Stack spacing="6" className="settings-subpage">
         <Text>Loading...</Text>
       </Stack>
     );
   }
 
   return (
-    <Stack spacing="6">
-      <Text tone="muted">Configure chat providers for thread conversations</Text>
+    <Stack spacing="6" className="settings-subpage">
+      <Text tone="muted" className="settings-subpage__intro">
+        Configure chat providers for thread conversations.
+      </Text>
 
       {error && (
         <ErrorText size="2" weight="medium">
@@ -149,12 +152,12 @@ export function SettingsChatPage() {
       )}
 
       {providers.length === 0 ? (
-        <Card padding="5">
+        <Card padding="5" className="settings-panel-card">
           <Text tone="muted">No chat providers available. OpenAI provider should be created automatically.</Text>
         </Card>
       ) : (
         providers.map((provider) => (
-          <Card key={provider.id} padding="5">
+          <Card key={provider.id} padding="5" className="settings-panel-card">
             <Stack spacing="4">
               <Row justify="space-between" align="center">
                 <Stack spacing="1" className="settings-chat__header-copy">

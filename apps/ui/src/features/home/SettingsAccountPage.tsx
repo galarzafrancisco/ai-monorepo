@@ -6,6 +6,7 @@ import { WebAuthenticationService } from '../../auth/api';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { useNavigate } from 'react-router-dom';
 import '../../auth/LoginPage.css';
+import './SettingsPage.css';
 
 export function SettingsAccountPage() {
   const { setSectionTitle } = useHomeCtx();
@@ -50,8 +51,12 @@ export function SettingsAccountPage() {
   };
 
   return (
-    <Stack spacing="6">
-      <Card padding="5">
+    <Stack spacing="6" className="settings-subpage">
+      <Text tone="muted" className="settings-subpage__intro">
+        Update the password used to sign in to this Taico instance.
+      </Text>
+
+      <Card padding="5" className="settings-panel-card">
         <Stack spacing="4">
           <Stack spacing="2">
             <Text size="4" weight="semibold">Change Password</Text>

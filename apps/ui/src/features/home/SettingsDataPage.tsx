@@ -3,6 +3,7 @@ import { Button, Card, Row, Stack, Text } from '../../ui/primitives';
 import { ErrorText } from '../../ui/primitives/ErrorText';
 import { BFF_BASE_URL } from '../../config/api';
 import { useHomeCtx } from './HomeProvider';
+import './SettingsPage.css';
 import './SettingsDataPage.css';
 
 type ImportResponse = {
@@ -99,8 +100,8 @@ export function SettingsDataPage() {
   };
 
   return (
-    <Stack spacing="6">
-      <Text tone="muted">
+    <Stack spacing="6" className="settings-subpage">
+      <Text tone="muted" className="settings-subpage__intro">
         Import and export workspace data. Blocks are available now; task support can be added in this section later.
       </Text>
 
@@ -116,7 +117,7 @@ export function SettingsDataPage() {
         </Text>
       ) : null}
 
-      <Card padding="5">
+      <Card padding="5" className="settings-panel-card">
         <Stack spacing="4">
           <Stack spacing="1">
             <Text size="4" weight="semibold">Export Blocks</Text>
@@ -135,7 +136,7 @@ export function SettingsDataPage() {
         </Stack>
       </Card>
 
-      <Card padding="5">
+      <Card padding="5" className="settings-panel-card">
         <Stack spacing="4">
           <Stack spacing="1">
             <Text size="4" weight="semibold">Import Blocks</Text>

@@ -2,6 +2,7 @@ import { Stack, Text, Card, Button, Row } from '../../ui/primitives';
 import { useHomeCtx } from './HomeProvider';
 import { useEffect } from 'react';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
+import './SettingsPage.css';
 import './SettingsAIProvidersPage.css';
 
 export function SettingsAIProvidersPage() {
@@ -15,10 +16,12 @@ export function SettingsAIProvidersPage() {
   }, []);
 
   return (
-    <Stack spacing="6">
-      <Text tone="muted">View usage and quota information for AI providers</Text>
+    <Stack spacing="6" className="settings-subpage">
+      <Text tone="muted" className="settings-subpage__intro">
+        View usage and quota information for AI providers.
+      </Text>
 
-      <Card padding="5">
+      <Card padding="5" className="settings-panel-card">
         <Stack spacing="4">
           <Row justify="space-between" align="center">
             <Stack spacing="1">
@@ -44,7 +47,7 @@ export function SettingsAIProvidersPage() {
       </Card>
 
 
-      <Card padding="5">
+      <Card padding="5" className="settings-panel-card">
         <Stack spacing="4">
           <Row justify="space-between" align="center">
             <Stack spacing="1">
