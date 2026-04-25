@@ -68,7 +68,7 @@ export class ActiveTaskExecutionController {
 
     return {
       items: result.items.map((item) =>
-        ActiveTaskExecutionResponseDto.fromEntity(item),
+        ActiveTaskExecutionResponseDto.fromResult(item),
       ),
       total: result.total,
       page: result.page,
@@ -100,7 +100,7 @@ export class ActiveTaskExecutionController {
         errorMessage: dto.errorMessage,
       });
 
-      return TaskExecutionHistoryResponseDto.fromEntity(historyEntry);
+      return TaskExecutionHistoryResponseDto.fromResult(historyEntry);
     } catch (error) {
       if (error instanceof ActiveTaskExecutionNotFoundError) {
         throw new NotFoundException(error.message);

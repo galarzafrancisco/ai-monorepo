@@ -7,7 +7,12 @@ import {
   McpAuthorizationFlowEntity,
 } from './entities';
 import { AuthJourneyStatus } from './enums/auth-journey-status.enum';
-import { CreateAuthJourneyInput } from './dto/service/auth-journeys.service.types';
+import {
+  AuthJourneyResult,
+  ConnectionAuthorizationFlowResult,
+  CreateAuthJourneyInput,
+  McpAuthorizationFlowResult,
+} from './dto/service/auth-journeys.service.types';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { McpAuthorizationFlowStatus } from './enums/mcp-authorization-flow-status.enum';
 import { RegisteredClientEntity } from '../authorization-server/entities/registered-client.entity';
@@ -91,7 +96,7 @@ export class AuthJourneysService {
   */
   async getJourneysForMcpServer(
     mcpServerId: string,
-  ): Promise<AuthJourneyEntity[]> {
+  ): Promise<AuthJourneyResult[]> {
     const authJourneys = await this.authJourneyRepository.find({
       where: {
         mcpAuthorizationFlow: {
@@ -108,7 +113,7 @@ export class AuthJourneysService {
         },
       },
     });
-    return authJourneys;
+    return authJourneys.map((journey) => this.mapAuthJourneyToResult(journey));
   }
 
   /*
@@ -203,6 +208,64 @@ export class AuthJourneysService {
     connectionFlow: ConnectionAuthorizationFlowEntity,
   ): Promise<ConnectionAuthorizationFlowEntity> {
     return this.connectionAuthorizationFlowRepository.save(connectionFlow);
+  }
+
+  private mapAuthJourneyToResult(journey: AuthJourneyEntity): AuthJourneyResult {
+    return {
+      id: journey.id,
+      status: journey.status,
+      actor: journey.actor
+        ? {
+            id: journey.actor.id,
+            type: journey.actor.type,
+            slug: journey.actor.slug,
+            displayName: journey.actor.displayName,
+            avatarUrl: journey.actor.avatarUrl,
+            introduction: journey.actor.introduction,
+          }
+        : null,
+      mcpAuthorizationFlow: this.mapMcpFlowToResult(
+        journey.mcpAuthorizationFlow,
+      ),
+      connectionAuthorizationFlows: journey.connectionAuthorizationFlows.map(
+        (flow) => this.mapConnectionFlowToResult(flow),
+      ),
+      createdAt: journey.createdAt,
+      updatedAt: journey.updatedAt,
+    };
+  }
+
+  private mapMcpFlowToResult(
+    flow: McpAuthorizationFlowEntity,
+  ): McpAuthorizationFlowResult {
+    return {
+      id: flow.id,
+      authorizationJourneyId: flow.authorizationJourneyId,
+      serverId: flow.serverId,
+      clientId: flow.clientId,
+      clientName: flow.client?.clientName ?? null,
+      status: flow.status,
+      scope: flow.scopes?.join(' ') ?? null,
+      authorizationCodeExpiresAt: flow.authorizationCodeExpiresAt ?? null,
+      authorizationCodeUsed: flow.authorizationCodeUsed,
+      createdAt: flow.createdAt,
+      updatedAt: flow.updatedAt,
+    };
+  }
+
+  private mapConnectionFlowToResult(
+    flow: ConnectionAuthorizationFlowEntity,
+  ): ConnectionAuthorizationFlowResult {
+    return {
+      id: flow.id,
+      authorizationJourneyId: flow.authorizationJourneyId,
+      mcpConnectionId: flow.mcpConnectionId,
+      connectionName: flow.mcpConnection?.friendlyName ?? null,
+      status: flow.status,
+      tokenExpiresAt: flow.tokenExpiresAt ?? null,
+      createdAt: flow.createdAt,
+      updatedAt: flow.updatedAt,
+    };
   }
 
   /*

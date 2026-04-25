@@ -5,3 +5,12 @@ export type RecordWorkerSeenInput = {
   seenAt?: Date;
   harnesses?: AgentType[];
 };
+
+export type WorkerResult = {
+  id: string;
+  oauthClientId: string;
+  lastSeenAt: Date;
+  harnesses: AgentType[];
+  createdAt: Date;
+  updatedAt: Date;
+};

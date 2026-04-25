@@ -34,6 +34,7 @@ import { TaskExecutionQueueService } from './task-execution-queue.service';
 import { TaskExecutionQueueEntryResponseDto } from './dto/http/task-execution-queue-entry-response.dto';
 import { TaskExecutionQueueListResponseDto } from './dto/http/task-execution-queue-list-response.dto';
 import { ListQueueQueryDto } from './dto/http/list-queue-query.dto';
+import { TaskExecutionQueueEntryResult } from '../dto/service/execution-results.service.types';
 
 @ApiTags('Executions')
 @ApiCookieAuth('JWT-Cookie')
@@ -63,9 +64,7 @@ export class TaskExecutionQueueController {
     });
 
     return {
-      items: result.items.map((item) =>
-        TaskExecutionQueueEntryResponseDto.fromEntity(item),
-      ),
+      items: result.items.map((item) => this.mapQueueEntryToResponse(item)),
       total: result.total,
       page: result.page,
       limit: result.limit,
@@ -92,7 +91,7 @@ export class TaskExecutionQueueController {
         workerClientId: auth.claims.client_id,
       });
 
-      return ActiveTaskExecutionResponseDto.fromEntity(execution);
+      return ActiveTaskExecutionResponseDto.fromResult(execution);
     } catch (error) {
       if (error instanceof TaskNotFoundError) {
         throw new NotFoundException(error.message);
@@ -108,5 +107,15 @@ export class TaskExecutionQueueController {
 
       throw error;
     }
+  }
+
+  private mapQueueEntryToResponse(
+    entry: TaskExecutionQueueEntryResult,
+  ): TaskExecutionQueueEntryResponseDto {
+    return {
+      taskId: entry.taskId,
+      taskName: entry.taskName,
+      taskStatus: entry.taskStatus,
+    };
   }
 }

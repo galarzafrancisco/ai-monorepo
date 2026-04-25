@@ -6,6 +6,7 @@ import { AccessTokenGuard } from 'src/auth/guards/guards/access-token.guard';
 import { ScopesGuard } from 'src/auth/guards/guards/scopes.guard';
 import { RequireScopes } from 'src/auth/guards/decorators/require-scopes.decorator';
 import { WorkersScopes } from 'src/executions/workers.scopes';
+import { WorkerResult } from './dto/service/workers.service.types';
 
 @ApiTags('workers')
 @UseGuards(AccessTokenGuard, ScopesGuard)
@@ -23,6 +24,17 @@ export class WorkersController {
   })
   async listWorkers(): Promise<WorkerResponseDto[]> {
     const workers = await this.workersService.findAll();
-    return workers.map((worker) => WorkerResponseDto.fromEntity(worker));
+    return workers.map((worker) => this.mapWorkerToResponse(worker));
+  }
+
+  private mapWorkerToResponse(worker: WorkerResult): WorkerResponseDto {
+    return {
+      id: worker.id,
+      oauthClientId: worker.oauthClientId,
+      lastSeenAt: worker.lastSeenAt.toISOString(),
+      harnesses: worker.harnesses,
+      createdAt: worker.createdAt.toISOString(),
+      updatedAt: worker.updatedAt.toISOString(),
+    };
   }
 }

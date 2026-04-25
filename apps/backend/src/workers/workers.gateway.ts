@@ -74,7 +74,14 @@ export class WorkersGateway
 
   @OnEvent(WorkerSeenEvent.INTERNAL)
   handleWorkerSeen(event: WorkerSeenEvent) {
-    const dto = WorkerResponseDto.fromEntity(event.payload);
+    const dto: WorkerResponseDto = {
+      id: event.payload.id,
+      oauthClientId: event.payload.oauthClientId,
+      lastSeenAt: event.payload.lastSeenAt.toISOString(),
+      harnesses: event.payload.harnesses,
+      createdAt: event.payload.createdAt.toISOString(),
+      updatedAt: event.payload.updatedAt.toISOString(),
+    };
     const wireEvent: WorkerSeenWireEvent = {
       worker: dto,
       occurredAt: event.occurredAt.toISOString(),

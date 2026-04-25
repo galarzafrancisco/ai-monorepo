@@ -20,7 +20,11 @@ import {
   ConnectionFlowResponseDto,
   McpFlowResponseDto,
 } from './dto';
-import { AuthJourneyEntity } from './entities';
+import {
+  AuthJourneyResult,
+  ConnectionAuthorizationFlowResult,
+  McpAuthorizationFlowResult,
+} from './dto/service/auth-journeys.service.types';
 
 @ApiTags('Authorization Journeys')
 @ApiCookieAuth('JWT-Cookie')
@@ -51,7 +55,7 @@ export class AuthJourneysController {
   }
 
   private mapAuthJourneyToResponse(
-    journey: AuthJourneyEntity,
+    journey: AuthJourneyResult,
   ): AuthJourneyResponseDto {
     return {
       id: journey.id,
@@ -77,15 +81,17 @@ export class AuthJourneysController {
     };
   }
 
-  private mapMcpFlowToResponse(flow: any): McpFlowResponseDto {
+  private mapMcpFlowToResponse(
+    flow: McpAuthorizationFlowResult,
+  ): McpFlowResponseDto {
     return {
       id: flow.id,
       authorizationJourneyId: flow.authorizationJourneyId,
       serverId: flow.serverId,
       clientId: flow.clientId,
-      clientName: flow.client?.clientName || null,
+      clientName: flow.clientName,
       status: flow.status,
-      scope: flow.scope || null,
+      scope: flow.scope,
       authorizationCodeExpiresAt: flow.authorizationCodeExpiresAt
         ? this.formatDate(flow.authorizationCodeExpiresAt)
         : null,
@@ -95,12 +101,14 @@ export class AuthJourneysController {
     };
   }
 
-  private mapConnectionFlowToResponse(flow: any): ConnectionFlowResponseDto {
+  private mapConnectionFlowToResponse(
+    flow: ConnectionAuthorizationFlowResult,
+  ): ConnectionFlowResponseDto {
     return {
       id: flow.id,
       authorizationJourneyId: flow.authorizationJourneyId,
       mcpConnectionId: flow.mcpConnectionId,
-      connectionName: flow.mcpConnection?.friendlyName || null,
+      connectionName: flow.connectionName,
       status: flow.status,
       tokenExpiresAt: flow.tokenExpiresAt
         ? this.formatDate(flow.tokenExpiresAt)

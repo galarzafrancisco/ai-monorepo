@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TaskStatus } from '../../../../tasks/enums';
-import { TaskExecutionHistoryEntity } from '../../task-execution-history.entity';
 import { TaskExecutionHistoryErrorCode } from '../../task-execution-history-error-code.enum';
 import { TaskExecutionHistoryStatus } from '../../task-execution-history-status.enum';
 import { ExecutionStatsResponseDto } from '../../../dto/http/execution-stats-response.dto';
+import { TaskExecutionHistoryResult } from '../../../dto/service/execution-results.service.types';
 
 export class TaskExecutionHistoryResponseDto {
   @ApiProperty({
@@ -99,24 +99,24 @@ export class TaskExecutionHistoryResponseDto {
   })
   stats!: ExecutionStatsResponseDto | null;
 
-  static fromEntity(
-    entity: TaskExecutionHistoryEntity,
+  static fromResult(
+    result: TaskExecutionHistoryResult,
   ): TaskExecutionHistoryResponseDto {
     return {
-      id: entity.id,
-      taskId: entity.taskId,
-      taskName: entity.task?.name ?? null,
-      taskStatus: entity.task?.status ?? null,
-      claimedAt: entity.claimedAt.toISOString(),
-      transitionedAt: entity.transitionedAt.toISOString(),
-      agentActorId: entity.agentActorId,
-      workerClientId: entity.workerClientId,
-      runnerSessionId: entity.runnerSessionId,
-      toolCallCount: entity.toolCallCount,
-      status: entity.status,
-      errorCode: entity.errorCode,
-      errorMessage: entity.errorMessage,
-      stats: entity.stats ? ExecutionStatsResponseDto.fromEntity(entity.stats) : null,
+      id: result.id,
+      taskId: result.taskId,
+      taskName: result.taskName,
+      taskStatus: result.taskStatus,
+      claimedAt: result.claimedAt.toISOString(),
+      transitionedAt: result.transitionedAt.toISOString(),
+      agentActorId: result.agentActorId,
+      workerClientId: result.workerClientId,
+      runnerSessionId: result.runnerSessionId,
+      toolCallCount: result.toolCallCount,
+      status: result.status,
+      errorCode: result.errorCode,
+      errorMessage: result.errorMessage,
+      stats: result.stats ? ExecutionStatsResponseDto.fromResult(result.stats) : null,
     };
   }
 }

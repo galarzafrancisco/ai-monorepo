@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ExecutionStatsEntity } from '../../stats/execution-stats.entity';
+import { ExecutionStatsResult } from '../service/execution-results.service.types';
 
 export class ExecutionStatsResponseDto {
   @ApiProperty({
@@ -50,14 +50,14 @@ export class ExecutionStatsResponseDto {
   })
   totalTokens!: number | null;
 
-  static fromEntity(entity: ExecutionStatsEntity): ExecutionStatsResponseDto {
+  static fromResult(result: ExecutionStatsResult): ExecutionStatsResponseDto {
     return {
-      harness: entity.harness,
-      providerId: entity.providerId,
-      modelId: entity.modelId,
-      inputTokens: entity.inputTokens,
-      outputTokens: entity.outputTokens,
-      totalTokens: entity.totalTokens,
+      harness: result.harness,
+      providerId: result.providerId,
+      modelId: result.modelId,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      totalTokens: result.totalTokens,
     };
   }
 }

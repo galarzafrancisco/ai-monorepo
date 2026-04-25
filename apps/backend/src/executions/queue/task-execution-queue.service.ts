@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskExecutionQueueEntity } from './task-execution-queue.entity';
+import {
+  TaskExecutionQueueEntryResult,
+  TaskExecutionQueueListResult,
+} from '../dto/service/execution-results.service.types';
 
 @Injectable()
 export class TaskExecutionQueueService {
@@ -13,12 +17,7 @@ export class TaskExecutionQueueService {
   async listQueue(options?: {
     page?: number;
     limit?: number;
-  }): Promise<{
-    items: TaskExecutionQueueEntity[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  }): Promise<TaskExecutionQueueListResult> {
     const page = options?.page ?? 1;
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
@@ -30,6 +29,21 @@ export class TaskExecutionQueueService {
       take: limit,
     });
 
-    return { items, total, page, limit };
+    return {
+      items: items.map((item) => this.mapQueueEntryToResult(item)),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  private mapQueueEntryToResult(
+    entry: TaskExecutionQueueEntity,
+  ): TaskExecutionQueueEntryResult {
+    return {
+      taskId: entry.taskId,
+      taskName: entry.task?.name ?? null,
+      taskStatus: entry.task?.status ?? null,
+    };
   }
 }

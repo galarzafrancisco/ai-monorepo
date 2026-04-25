@@ -15,6 +15,7 @@ import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { getConfig } from 'src/config/env.config';
 import * as bcrypt from 'bcrypt';
+import { ClientRegistrationResult } from './dto/service/client-registration.service.types';
 
 @Injectable()
 export class ClientRegistrationService {
@@ -35,7 +36,7 @@ export class ClientRegistrationService {
   async registerClient(
     dto: RegisterClientDto,
     serverId: string,
-  ): Promise<RegisteredClientEntity> {
+  ): Promise<ClientRegistrationResult> {
     // Validate payload without touching the database
 
     // Validate required fields
@@ -84,16 +85,16 @@ export class ClientRegistrationService {
       });
 
     // Return the client with the plaintext secret (only time it's exposed)
-    return {
+    return this.mapClientToResult({
       ...savedClient,
       clientSecret,
-    };
+    });
   }
 
   /**
    * Retrieve a registered client by client_id
    */
-  async getClient(clientId: string): Promise<RegisteredClientEntity> {
+  async getClient(clientId: string): Promise<ClientRegistrationResult> {
     const client = await this.clientRepository.findOne({
       where: { clientId },
     });
@@ -102,16 +103,18 @@ export class ClientRegistrationService {
       throw new ClientNotFoundError(clientId);
     }
 
-    return client;
+    return this.mapClientToResult(client);
   }
 
   /**
    * List all registered clients (for admin purposes)
    */
-  async listClients(): Promise<RegisteredClientEntity[]> {
-    return this.clientRepository.find({
+  async listClients(): Promise<ClientRegistrationResult[]> {
+    const clients = await this.clientRepository.find({
       order: { createdAt: 'DESC' },
     });
+
+    return clients.map((client) => this.mapClientToResult(client));
   }
 
   // Validation methods
@@ -197,5 +200,19 @@ export class ClientRegistrationService {
     hash: string,
   ): Promise<boolean> {
     return bcrypt.compare(plaintext, hash);
+  }
+
+  private mapClientToResult(
+    client: RegisteredClientEntity,
+  ): ClientRegistrationResult {
+    return {
+      clientId: client.clientId,
+      clientName: client.clientName,
+      redirectUris: client.redirectUris,
+      grantTypes: client.grantTypes,
+      tokenEndpointAuthMethod: client.tokenEndpointAuthMethod,
+      contacts: client.contacts,
+      createdAt: client.createdAt,
+    };
   }
 }

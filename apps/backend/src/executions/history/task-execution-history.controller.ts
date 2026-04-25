@@ -42,7 +42,7 @@ export class TaskExecutionHistoryController {
 
     return {
       items: result.items.map((item) =>
-        TaskExecutionHistoryResponseDto.fromEntity(item),
+        TaskExecutionHistoryResponseDto.fromResult(item),
       ),
       total: result.total,
       page: result.page,

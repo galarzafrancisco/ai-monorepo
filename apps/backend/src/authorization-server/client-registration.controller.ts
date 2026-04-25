@@ -20,7 +20,7 @@ import {
 import { ClientRegistrationService } from './client-registration.service';
 import { RegisterClientDto } from './dto/register-client.dto';
 import { ClientRegistrationResponseDto } from './dto/client-registration-response.dto';
-import { RegisteredClientEntity } from './entities/registered-client.entity';
+import { ClientRegistrationResult } from './dto/service/client-registration.service.types';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
@@ -34,7 +34,7 @@ export class ClientRegistrationController {
   ) {}
 
   private mapToClientRegistrationResponseDto(
-    client: RegisteredClientEntity,
+    client: ClientRegistrationResult,
   ): ClientRegistrationResponseDto {
     const response: ClientRegistrationResponseDto = {
       client_id: client.clientId,

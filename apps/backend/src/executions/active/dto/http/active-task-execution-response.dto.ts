@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TaskStatus } from '../../../../tasks/enums';
 import {
-  ActiveTaskExecutionEntity,
-  type ActiveTaskExecutionTagSnapshot,
-} from '../../active-task-execution.entity';
+  ActiveTaskExecutionResult,
+  ActiveTaskExecutionTagSnapshotResult,
+} from '../../../dto/service/execution-results.service.types';
 import { ExecutionStatsResponseDto } from '../../../dto/http/execution-stats-response.dto';
 
 class ActiveTaskExecutionTagSnapshotResponseDto {
@@ -20,7 +20,7 @@ class ActiveTaskExecutionTagSnapshotResponseDto {
   name!: string;
 
   static fromSnapshot(
-    snapshot: ActiveTaskExecutionTagSnapshot,
+    snapshot: ActiveTaskExecutionTagSnapshotResult,
   ): ActiveTaskExecutionTagSnapshotResponseDto {
     return {
       id: snapshot.id,
@@ -124,26 +124,26 @@ export class ActiveTaskExecutionResponseDto {
   })
   stats!: ExecutionStatsResponseDto | null;
 
-  static fromEntity(
-    entity: ActiveTaskExecutionEntity,
+  static fromResult(
+    result: ActiveTaskExecutionResult,
   ): ActiveTaskExecutionResponseDto {
     return {
-      id: entity.id,
-      taskId: entity.taskId,
-      taskName: entity.task?.name ?? null,
-      taskStatus: entity.task?.status ?? null,
-      claimedAt: entity.claimedAt.toISOString(),
-      lastHeartbeatAt: entity.lastHeartbeatAt?.toISOString() ?? null,
-      runnerSessionId: entity.runnerSessionId,
-      toolCallCount: entity.toolCallCount,
-      taskStatusBeforeClaim: entity.taskStatusBeforeClaim,
-      taskTagsBeforeClaim: entity.taskTagsBeforeClaim.map((tag) =>
+      id: result.id,
+      taskId: result.taskId,
+      taskName: result.taskName,
+      taskStatus: result.taskStatus,
+      claimedAt: result.claimedAt.toISOString(),
+      lastHeartbeatAt: result.lastHeartbeatAt?.toISOString() ?? null,
+      runnerSessionId: result.runnerSessionId,
+      toolCallCount: result.toolCallCount,
+      taskStatusBeforeClaim: result.taskStatusBeforeClaim,
+      taskTagsBeforeClaim: result.taskTagsBeforeClaim.map((tag) =>
         ActiveTaskExecutionTagSnapshotResponseDto.fromSnapshot(tag),
       ),
-      workerClientId: entity.workerClientId,
-      taskAssigneeActorIdBeforeClaim: entity.taskAssigneeActorIdBeforeClaim,
-      agentActorId: entity.agentActorId,
-      stats: entity.stats ? ExecutionStatsResponseDto.fromEntity(entity.stats) : null,
+      workerClientId: result.workerClientId,
+      taskAssigneeActorIdBeforeClaim: result.taskAssigneeActorIdBeforeClaim,
+      agentActorId: result.agentActorId,
+      stats: result.stats ? ExecutionStatsResponseDto.fromResult(result.stats) : null,
     };
   }
 }

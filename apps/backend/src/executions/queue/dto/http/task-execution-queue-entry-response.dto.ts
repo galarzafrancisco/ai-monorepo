@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TaskStatus } from '../../../../tasks/enums';
-import { TaskExecutionQueueEntity } from '../../task-execution-queue.entity';
 
 export class TaskExecutionQueueEntryResponseDto {
   @ApiProperty({
@@ -23,14 +22,4 @@ export class TaskExecutionQueueEntryResponseDto {
     nullable: true,
   })
   taskStatus!: TaskStatus | null;
-
-  static fromEntity(
-    entity: TaskExecutionQueueEntity,
-  ): TaskExecutionQueueEntryResponseDto {
-    return {
-      taskId: entity.taskId,
-      taskName: entity.task?.name ?? null,
-      taskStatus: entity.task?.status ?? null,
-    };
-  }
 }

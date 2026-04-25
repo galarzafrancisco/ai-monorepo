@@ -25,6 +25,12 @@ import {
 import { ExecutionActivityService } from '../execution-activity.service';
 import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
 import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
+import {
+  ActiveTaskExecutionListResult,
+  ActiveTaskExecutionResult,
+  ExecutionStatsResult,
+  TaskExecutionHistoryResult,
+} from '../dto/service/execution-results.service.types';
 
 export type ClaimTaskExecutionInput = {
   taskId: string;
@@ -81,12 +87,7 @@ export class ActiveTaskExecutionService {
     page?: number;
     limit?: number;
     taskId?: string;
-  }): Promise<{
-    items: ActiveTaskExecutionEntity[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  }): Promise<ActiveTaskExecutionListResult> {
     const page = options?.page ?? 1;
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
@@ -101,12 +102,17 @@ export class ActiveTaskExecutionService {
       take: limit,
     });
 
-    return { items, total, page, limit };
+    return {
+      items: items.map((item) => this.mapActiveExecutionToResult(item)),
+      total,
+      page,
+      limit,
+    };
   }
 
   async claimTask(
     input: ClaimTaskExecutionInput,
-  ): Promise<ActiveTaskExecutionEntity> {
+  ): Promise<ActiveTaskExecutionResult> {
     const execution = await this.dataSource.transaction(async (manager) => {
       const task = await manager.findOne(TaskEntity, {
         where: { id: input.taskId },
@@ -194,12 +200,12 @@ export class ActiveTaskExecutionService {
       message: 'Execution started',
     });
 
-    return execution;
+    return this.mapActiveExecutionToResult(execution);
   }
 
   async stopTask(
     input: StopTaskExecutionInput,
-  ): Promise<TaskExecutionHistoryEntity> {
+  ): Promise<TaskExecutionHistoryResult> {
     const historyEntry = await this.dataSource.transaction(async (manager) => {
       const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {
         where: { id: input.executionId },
@@ -262,7 +268,7 @@ export class ActiveTaskExecutionService {
       message: `Execution history recorded (${historyEntry.status.toLowerCase()})`,
     });
 
-    return historyEntry;
+    return this.mapHistoryEntryToResult(historyEntry);
   }
 
   async unclaimTask(input: UnclaimTaskExecutionInput): Promise<void> {
@@ -420,5 +426,61 @@ export class ActiveTaskExecutionService {
       kind: 'execution.interrupt.requested',
       message: 'Execution interrupt requested',
     });
+  }
+
+  private mapActiveExecutionToResult(
+    execution: ActiveTaskExecutionEntity,
+  ): ActiveTaskExecutionResult {
+    return {
+      id: execution.id,
+      taskId: execution.taskId,
+      taskName: execution.task?.name ?? null,
+      taskStatus: execution.task?.status ?? null,
+      claimedAt: execution.claimedAt,
+      lastHeartbeatAt: execution.lastHeartbeatAt,
+      runnerSessionId: execution.runnerSessionId,
+      toolCallCount: execution.toolCallCount,
+      taskStatusBeforeClaim: execution.taskStatusBeforeClaim,
+      taskTagsBeforeClaim: execution.taskTagsBeforeClaim.map((tag) => ({
+        id: tag.id,
+        name: tag.name,
+      })),
+      workerClientId: execution.workerClientId,
+      taskAssigneeActorIdBeforeClaim: execution.taskAssigneeActorIdBeforeClaim,
+      agentActorId: execution.agentActorId,
+      stats: execution.stats ? this.mapStatsToResult(execution.stats) : null,
+    };
+  }
+
+  private mapHistoryEntryToResult(
+    historyEntry: TaskExecutionHistoryEntity,
+  ): TaskExecutionHistoryResult {
+    return {
+      id: historyEntry.id,
+      taskId: historyEntry.taskId,
+      taskName: historyEntry.task?.name ?? null,
+      taskStatus: historyEntry.task?.status ?? null,
+      claimedAt: historyEntry.claimedAt,
+      transitionedAt: historyEntry.transitionedAt,
+      agentActorId: historyEntry.agentActorId,
+      workerClientId: historyEntry.workerClientId,
+      runnerSessionId: historyEntry.runnerSessionId,
+      toolCallCount: historyEntry.toolCallCount,
+      status: historyEntry.status,
+      errorCode: historyEntry.errorCode,
+      errorMessage: historyEntry.errorMessage,
+      stats: historyEntry.stats ? this.mapStatsToResult(historyEntry.stats) : null,
+    };
+  }
+
+  private mapStatsToResult(stats: ExecutionStatsEntity): ExecutionStatsResult {
+    return {
+      harness: stats.harness,
+      providerId: stats.providerId,
+      modelId: stats.modelId,
+      inputTokens: stats.inputTokens,
+      outputTokens: stats.outputTokens,
+      totalTokens: stats.totalTokens,
+    };
   }
 }

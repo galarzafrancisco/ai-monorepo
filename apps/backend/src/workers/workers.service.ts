@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WorkerEntity } from './worker.entity';
-import { RecordWorkerSeenInput } from './dto/service/workers.service.types';
+import {
+  RecordWorkerSeenInput,
+  WorkerResult,
+} from './dto/service/workers.service.types';
 import { WorkerSeenEvent } from './events/workers.events';
 
 @Injectable()
@@ -14,12 +17,14 @@ export class WorkersService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async findAll(): Promise<WorkerEntity[]> {
-    return this.workersRepository.find({
+  async findAll(): Promise<WorkerResult[]> {
+    const workers = await this.workersRepository.find({
       order: {
         lastSeenAt: 'DESC',
       },
     });
+
+    return workers.map((worker) => this.mapWorkerToResult(worker));
   }
 
   async recordWorkerSeen(input: RecordWorkerSeenInput): Promise<WorkerEntity> {
@@ -59,5 +64,16 @@ export class WorkersService {
     );
 
     return savedWorker;
+  }
+
+  private mapWorkerToResult(worker: WorkerEntity): WorkerResult {
+    return {
+      id: worker.id,
+      oauthClientId: worker.oauthClientId,
+      lastSeenAt: worker.lastSeenAt,
+      harnesses: worker.harnesses,
+      createdAt: worker.createdAt,
+      updatedAt: worker.updatedAt,
+    };
   }
 }

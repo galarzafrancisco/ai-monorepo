@@ -2,6 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskExecutionHistoryEntity } from './task-execution-history.entity';
+import {
+  ExecutionStatsResult,
+  TaskExecutionHistoryListResult,
+  TaskExecutionHistoryResult,
+} from '../dto/service/execution-results.service.types';
+import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
 
 @Injectable()
 export class TaskExecutionHistoryService {
@@ -14,12 +20,7 @@ export class TaskExecutionHistoryService {
     page?: number;
     limit?: number;
     taskId?: string;
-  }): Promise<{
-    items: TaskExecutionHistoryEntity[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  }): Promise<TaskExecutionHistoryListResult> {
     const page = options?.page ?? 1;
     const limit = options?.limit ?? 50;
     const skip = (page - 1) * limit;
@@ -34,7 +35,12 @@ export class TaskExecutionHistoryService {
       take: limit,
     });
 
-    return { items, total, page, limit };
+    return {
+      items: items.map((item) => this.mapHistoryEntryToResult(item)),
+      total,
+      page,
+      limit,
+    };
   }
 
   async getLatestHistoryForTask(
@@ -68,5 +74,37 @@ export class TaskExecutionHistoryService {
     }
 
     return count;
+  }
+
+  private mapHistoryEntryToResult(
+    historyEntry: TaskExecutionHistoryEntity,
+  ): TaskExecutionHistoryResult {
+    return {
+      id: historyEntry.id,
+      taskId: historyEntry.taskId,
+      taskName: historyEntry.task?.name ?? null,
+      taskStatus: historyEntry.task?.status ?? null,
+      claimedAt: historyEntry.claimedAt,
+      transitionedAt: historyEntry.transitionedAt,
+      agentActorId: historyEntry.agentActorId,
+      workerClientId: historyEntry.workerClientId,
+      runnerSessionId: historyEntry.runnerSessionId,
+      toolCallCount: historyEntry.toolCallCount,
+      status: historyEntry.status,
+      errorCode: historyEntry.errorCode,
+      errorMessage: historyEntry.errorMessage,
+      stats: historyEntry.stats ? this.mapStatsToResult(historyEntry.stats) : null,
+    };
+  }
+
+  private mapStatsToResult(stats: ExecutionStatsEntity): ExecutionStatsResult {
+    return {
+      harness: stats.harness,
+      providerId: stats.providerId,
+      modelId: stats.modelId,
+      inputTokens: stats.inputTokens,
+      outputTokens: stats.outputTokens,
+      totalTokens: stats.totalTokens,
+    };
   }
 }
