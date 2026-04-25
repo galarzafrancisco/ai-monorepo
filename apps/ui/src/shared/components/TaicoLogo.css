@@ -1,0 +1,13 @@
+.taico-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.taico-logo__wordmark {
+  font-size: var(--fs-4);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.02em;
+  color: var(--text);
+  white-space: nowrap;
+}
