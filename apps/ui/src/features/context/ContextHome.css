@@ -142,8 +142,8 @@
 }
 
 .context-layout__drawer-icon {
-  font-size: var(--fs-4);
   width: 1.5rem;
+  height: 1.5rem;
   text-align: center;
 }
 

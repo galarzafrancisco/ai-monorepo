@@ -26,6 +26,7 @@ import { TaskStatus, TASKS_STATUS } from "../../shared/const/taskStatus";
 import { ThreadNavItemsForThreadId, THREADS_NAVEGATION_ITEMS } from "./const";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
+import { NavigationIcon } from "../../shared/components/NavigationIcon";
 
 type ThreadTask = Thread["tasks"][number];
 type DisplayContextBlock = {
@@ -636,7 +637,7 @@ function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                 className={`thread-detail-page__mobile-drawer-item ${isActive ? "thread-detail-page__mobile-drawer-item--active" : ""}`}
                 onClick={onClose}
               >
-                <span className="thread-detail-page__mobile-drawer-icon">{item.icon}</span>
+                <NavigationIcon icon={item.icon} className="thread-detail-page__mobile-drawer-icon" />
                 <span className="thread-detail-page__mobile-drawer-label">{item.label}</span>
               </Link>
             );

@@ -5,6 +5,7 @@ import { useContextCtx } from "./ContextProvider";
 import { ContextBlockTree } from "./ContextBlockTree";
 import { Text, Row } from "../../ui/primitives";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
+import { NavigationIcon } from "../../shared/components/NavigationIcon";
 import "./ContextHome.css";
 
 export function ContextLayout(): React.JSX.Element {
@@ -66,7 +67,7 @@ export function ContextLayout(): React.JSX.Element {
                     to={item.path}
                     className={`context-layout__drawer-item ${isActive ? 'context-layout__drawer-item--active' : ''}`}
                   >
-                    <span className="context-layout__drawer-icon">{item.icon}</span>
+                    <NavigationIcon icon={item.icon} className="context-layout__drawer-icon" />
                     <span>{item.label}</span>
                   </Link>
                 );

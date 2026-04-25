@@ -4,10 +4,11 @@ import "./IosShell.css";
 import { Row, Text } from "../../ui/primitives";
 import { NavegationItem } from "../../shared/types/NavegationItem";
 import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
+import { NavigationIcon } from "../../shared/components/NavigationIcon";
 
 export interface NavItem {
   label: string;
-  icon: string;
+  icon: NavegationItem['icon'];
   path: string;
 }
 
@@ -33,7 +34,7 @@ function BottomNavContent({
   }
   return (
     <Row spacing="1" justify="space-between">
-      {navItems.map((item, idx) => {
+      {navItems.map((item) => {
         const isActive = activePath === item.path;
         return (
           <Link
@@ -46,7 +47,7 @@ function BottomNavContent({
               }
             }}
           >
-            <span className="ios-shell__bottom-nav__icon">{item.icon}</span>
+            <NavigationIcon icon={item.icon} className="ios-shell__bottom-nav__icon" />
             <Text size="1" className="ios-shell__bottom-nav-label">
               {item.label}
             </Text>
@@ -207,7 +208,7 @@ export function IosShell(props: IosShellProps): React.JSX.Element {
                 className={`ios-shell__drawer-item ${isActive ? 'ios-shell__drawer-item--active' : ''}`}
                 onClick={handleDrawerClose}
               >
-                <span className="ios-shell__drawer-icon">{item.icon}</span>
+                <NavigationIcon icon={item.icon} className="ios-shell__drawer-icon" />
                 <span className="ios-shell__drawer-label">{item.label}</span>
               </Link>
             );

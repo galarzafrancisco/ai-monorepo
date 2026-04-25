@@ -7,6 +7,8 @@ import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { Link, useLocation } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useAuth } from "../../auth/AuthContext";
+import { Sparkles } from "lucide-react";
+import { NavigationIcon } from "../../shared/components/NavigationIcon";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
   console.log('Beta shell');
@@ -25,7 +27,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
     // Insert walkthrough before Settings
     const settingsIndex = MAIN_NAVEGATION_ITEMS.findIndex((i) => i.path === '/settings');
     const items = [...MAIN_NAVEGATION_ITEMS];
-    items.splice(settingsIndex, 0, { path: '/walkthrough', label: 'Walkthrough', icon: '🐣' });
+    items.splice(settingsIndex, 0, { path: '/walkthrough', label: 'Walkthrough', icon: Sparkles });
     return items;
   }, [user?.onboardingDisplayMode]);
 
@@ -62,7 +64,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
                       title={isCollapsed ? item.label : undefined}
                       className={`beta-shell__desktop__nav-item ${isActive ? 'beta-shell__desktop__nav-item--active' : ''}`}
                     >
-                      <span className="beta-shell__desktop__nav-icon">{item.icon}</span>
+                      <NavigationIcon icon={item.icon} className="beta-shell__desktop__nav-icon" />
                       {!isCollapsed && <span className="beta-shell__desktop__nav-label">{item.label}</span>}
                     </Link>
                   )

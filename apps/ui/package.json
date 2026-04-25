@@ -15,6 +15,7 @@
     "@taico/client": "^0.2.16",
     "@taico/events": "^0.2.16",
     "@taico/shared": "^0.2.16",
+    "lucide-react": "^1.11.0",
     "marked-react": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

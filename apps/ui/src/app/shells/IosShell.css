@@ -140,7 +140,8 @@
 }
 
 .ios-shell__bottom-nav__icon {
-  font-size: 20px;
+  width: 22px;
+  height: 22px;
 }
 
 .ios-shell__bottom-nav-label {
@@ -253,8 +254,8 @@
 }
 
 .ios-shell__drawer-icon {
-  font-size: 20px;
   width: 24px;
+  height: 24px;
   text-align: center;
 }
 

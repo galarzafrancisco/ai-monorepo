@@ -124,10 +124,10 @@
 }
 
 .beta-shell__desktop__nav-icon {
-  font-size: 20px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
   transition: transform 0.2s ease;
-
 }
 
 .beta-shell__desktop__sidebar--collapsed .beta-shell__desktop__nav-icon {
