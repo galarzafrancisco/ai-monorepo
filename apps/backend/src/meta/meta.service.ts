@@ -483,18 +483,19 @@ export class MetaService {
 
       // Read UI version from UI package.json
       // Path depends on whether we're in dev or prod:
-      // - Dev: ../ui/package.json
-      // - Prod: We'll copy it during build to dist/public/package.json
+      // - Prod (running from dist/meta): __dirname is dist/meta, so ../public/package.json resolves to dist/public/package.json
+      // - Dev (running from src/meta): __dirname is src/meta, so ../../ui/package.json resolves to apps/ui/package.json
       let uiVersion = backendVersion; // Fallback to backend version
 
       try {
-        const uiPackageJsonPath = join(__dirname, '../../public/package.json');
+        // First try production path (dist/public/package.json)
+        const uiPackageJsonPath = join(__dirname, '../public/package.json');
         const uiPackageJson = JSON.parse(
           readFileSync(uiPackageJsonPath, 'utf-8'),
         );
         uiVersion = uiPackageJson.version;
       } catch {
-        // If UI package.json is not found, try development path
+        // If not found, try development path
         try {
           const uiDevPackageJsonPath = join(__dirname, '../../../ui/package.json');
           const uiPackageJson = JSON.parse(
