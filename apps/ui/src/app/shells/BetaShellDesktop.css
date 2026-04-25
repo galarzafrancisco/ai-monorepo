@@ -3,7 +3,7 @@
 -------------------------------------------------------- */
 .beta-shell__desktop {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 180px 1fr;
   height: 100vh;
   overflow: hidden;
 
@@ -66,19 +66,19 @@
   border-right: 1px solid var(--border);
   overflow: hidden;
   transition: width 0.2s ease, padding 0.2s ease;
-  width: 240px;
+  width: 180px;
   gap: var(--space-4);
   min-height: 0;
   /* important in grid/flex contexts */
 }
 
 .beta-shell__desktop__sidebar--collapsed {
-  width: 80px;
+  width: 56px;
 }
 
 /* Update grid when collapsed */
 .beta-shell__desktop:has(.beta-shell__desktop__sidebar--collapsed) {
-  grid-template-columns: 80px 1fr;
+  grid-template-columns: 56px 1fr;
 }
 
 .beta-shell__desktop__nav {
@@ -124,8 +124,8 @@
 }
 
 .beta-shell__desktop__nav-icon {
-  width: 22px;
-  height: 22px;
+  width: 19px;
+  height: 19px;
   flex-shrink: 0;
   transition: transform 0.2s ease;
 }
