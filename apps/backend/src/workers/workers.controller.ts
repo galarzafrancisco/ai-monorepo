@@ -31,6 +31,7 @@ export class WorkersController {
     return {
       id: worker.id,
       oauthClientId: worker.oauthClientId,
+      workerVersion: worker.workerVersion,
       lastSeenAt: worker.lastSeenAt.toISOString(),
       harnesses: worker.harnesses,
       createdAt: worker.createdAt.toISOString(),

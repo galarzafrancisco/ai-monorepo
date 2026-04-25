@@ -3,10 +3,12 @@ import {
   ExecutionWireEvents,
   type PostExecutionActivityPayload,
   type PostExecutionHeartbeatPayload,
+  type PostWorkerHeartbeatPayload,
   type TaskExecutionQueuedWireEvent,
   type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
 import { WorkerAuth } from './auth/worker-auth.js';
+import { WORKER_VERSION } from './version.js';
 
 const DEFAULT_TOKEN_REFRESH_SKEW_MS = 60_000;
 const ACK_TIMEOUT_MS = 5_000;
@@ -97,12 +99,16 @@ export class ExecutionActivityGatewayClient {
   async publishWorkerHeartbeat(): Promise<boolean> {
     return this.emitWithAck(
       ExecutionWireEvents.WORKER_HEARTBEAT_POST,
+      { workerVersion: WORKER_VERSION },
     );
   }
 
   private async emitWithAck(
     eventName: string,
-    payload?: PostExecutionActivityPayload | PostExecutionHeartbeatPayload,
+    payload?:
+      | PostExecutionActivityPayload
+      | PostExecutionHeartbeatPayload
+      | PostWorkerHeartbeatPayload,
   ): Promise<boolean> {
     if (!this.socket || !this.socket.connected) {
       if (this.options.debug) {
@@ -169,7 +175,7 @@ export class ExecutionActivityGatewayClient {
 
     this.socket = io(url, {
       transports,
-      auth: { token: credentials.accessToken },
+      auth: { token: credentials.accessToken, workerVersion: WORKER_VERSION },
       reconnection,
       reconnectionAttempts,
       reconnectionDelay,

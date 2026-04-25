@@ -77,6 +77,7 @@ export class WorkersGateway
     const dto: WorkerResponseDto = {
       id: event.payload.id,
       oauthClientId: event.payload.oauthClientId,
+      workerVersion: event.payload.workerVersion,
       lastSeenAt: event.payload.lastSeenAt.toISOString(),
       harnesses: event.payload.harnesses,
       createdAt: event.payload.createdAt.toISOString(),

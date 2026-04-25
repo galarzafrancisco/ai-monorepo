@@ -16,6 +16,7 @@ type WorkersSubscribeAck = {
 export interface Worker {
   id: string;
   oauthClientId: string;
+  workerVersion: string | null;
   lastSeenAt: string;
   harnesses: string[];
   createdAt: string;

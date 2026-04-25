@@ -108,6 +108,10 @@ export interface PostExecutionHeartbeatPayload {
   executionId: string;
 }
 
+export interface PostWorkerHeartbeatPayload {
+  workerVersion?: string | null;
+}
+
 /**
  * Execution activity event
  * Emitted for real-time activity updates from workers/runners

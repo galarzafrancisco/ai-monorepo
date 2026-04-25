@@ -48,6 +48,19 @@ export class UpdateExecutionStatsDto {
   modelId?: string | null;
 
   @ApiProperty({
+    type: String,
+    required: false,
+    nullable: true,
+    description: 'Taico worker package version used for this execution',
+    example: '0.2.16',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  workerVersion?: string | null;
+
+  @ApiProperty({
     type: Number,
     required: false,
     nullable: true,

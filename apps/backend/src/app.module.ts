@@ -44,6 +44,7 @@ import { AddWorkersTable1742300000000 } from './migrations/1742300000000-AddWork
 import { RenameHasSeenWalkthroughToOnboardingDisplayMode1742400000000 } from './migrations/1742400000000-RenameHasSeenWalkthroughToOnboardingDisplayMode';
 import { AllowInterruptedExecutionErrorCode1742500000000 } from './migrations/1742500000000-AllowInterruptedExecutionErrorCode';
 import { AddExecutionStatsTable1742600000000 } from './migrations/1742600000000-AddExecutionStatsTable';
+import { AddWorkerVersionFields1742700000000 } from './migrations/1742700000000-AddWorkerVersionFields';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -86,6 +87,7 @@ import { WalkthroughModule } from './walkthrough/walkthrough.module';
         RenameHasSeenWalkthroughToOnboardingDisplayMode1742400000000,
         AllowInterruptedExecutionErrorCode1742500000000,
         AddExecutionStatsTable1742600000000,
+        AddWorkerVersionFields1742700000000,
       ],
     }),
     EventEmitterModule.forRoot(),

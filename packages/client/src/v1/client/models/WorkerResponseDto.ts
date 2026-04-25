@@ -5,6 +5,7 @@
 export type WorkerResponseDto = {
     id: string;
     oauthClientId: string;
+    workerVersion: string | null;
     lastSeenAt: string;
     harnesses: Array<'claude' | 'codex' | 'opencode' | 'adk' | 'githubcopilot' | 'other'>;
     createdAt: string;

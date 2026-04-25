@@ -16,6 +16,10 @@ export type ExecutionStatsResponseDto = {
      */
     modelId: string | null;
     /**
+     * Taico worker package version used for this run
+     */
+    workerVersion: string | null;
+    /**
      * Input token usage when available
      */
     inputTokens: number | null;

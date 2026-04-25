@@ -6,6 +6,7 @@ export type ExecutionStatsResult = {
   harness: string | null;
   providerId: string | null;
   modelId: string | null;
+  workerVersion: string | null;
   inputTokens: number | null;
   outputTokens: number | null;
   totalTokens: number | null;

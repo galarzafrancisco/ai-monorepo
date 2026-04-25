@@ -11969,6 +11969,12 @@
             "example": "gpt-5.4",
             "nullable": true
           },
+          "workerVersion": {
+            "type": "string",
+            "description": "Taico worker package version used for this run",
+            "example": "0.2.16",
+            "nullable": true
+          },
           "inputTokens": {
             "type": "number",
             "description": "Input token usage when available",
@@ -11992,6 +11998,7 @@
           "harness",
           "providerId",
           "modelId",
+          "workerVersion",
           "inputTokens",
           "outputTokens",
           "totalTokens"
@@ -12337,6 +12344,13 @@
             "example": "gpt-5.4",
             "maxLength": 255
           },
+          "workerVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Taico worker package version used for this execution",
+            "example": "0.2.16",
+            "maxLength": 100
+          },
           "inputTokens": {
             "type": "number",
             "nullable": true,
@@ -12409,6 +12423,11 @@
           "oauthClientId": {
             "type": "string"
           },
+          "workerVersion": {
+            "type": "string",
+            "nullable": true,
+            "example": "0.2.16"
+          },
           "lastSeenAt": {
             "type": "string",
             "format": "date-time"
@@ -12439,6 +12458,7 @@
         "required": [
           "id",
           "oauthClientId",
+          "workerVersion",
           "lastSeenAt",
           "harnesses",
           "createdAt",

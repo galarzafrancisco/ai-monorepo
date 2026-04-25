@@ -5331,6 +5331,11 @@ export interface components {
              */
             modelId: string | null;
             /**
+             * @description Taico worker package version used for this run
+             * @example 0.2.16
+             */
+            workerVersion: string | null;
+            /**
              * @description Input token usage when available
              * @example 1200
              */
@@ -5548,6 +5553,11 @@ export interface components {
              */
             modelId?: string | null;
             /**
+             * @description Taico worker package version used for this execution
+             * @example 0.2.16
+             */
+            workerVersion?: string | null;
+            /**
              * @description Input token usage when available
              * @example 1200
              */
@@ -5591,6 +5601,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             oauthClientId: string;
+            /** @example 0.2.16 */
+            workerVersion: string | null;
             /** Format: date-time */
             lastSeenAt: string;
             harnesses: ("claude" | "codex" | "opencode" | "adk" | "githubcopilot" | "other")[];

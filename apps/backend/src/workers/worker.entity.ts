@@ -26,6 +26,9 @@ export class WorkerEntity {
   @Column({ type: 'datetime', name: 'last_seen_at' })
   lastSeenAt!: Date;
 
+  @Column({ type: 'text', name: 'worker_version', nullable: true })
+  workerVersion!: string | null;
+
   @Column({ type: 'simple-json', default: '[]' })
   harnesses!: AgentType[];
 

@@ -212,6 +212,7 @@ export class ActiveTaskExecutionController {
         harness: dto.harness,
         providerId: dto.providerId,
         modelId: dto.modelId,
+        workerVersion: dto.workerVersion,
         inputTokens: dto.inputTokens,
         outputTokens: dto.outputTokens,
         totalTokens: dto.totalTokens,

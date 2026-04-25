@@ -16,6 +16,7 @@ import {
   ExecutionWireEvents,
   type PostExecutionHeartbeatPayload,
   type PostExecutionActivityPayload,
+  type PostWorkerHeartbeatPayload,
   type TaskExecutionQueuedWireEvent,
   type ExecutionInterruptRequestWireEvent,
 } from '@taico/events';
@@ -175,9 +176,12 @@ export class ExecutionsWorkerGateway
   }
 
   @SubscribeMessage(ExecutionWireEvents.WORKER_HEARTBEAT_POST)
-  async postWorkerHeartbeat(@ConnectedSocket() client: Socket) {
+  async postWorkerHeartbeat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body?: PostWorkerHeartbeatPayload,
+  ) {
     try {
-      await this.recordAuthenticatedWorkerSeen(client);
+      await this.recordAuthenticatedWorkerSeen(client, body?.workerVersion);
       return { ok: true };
     } catch (error) {
       this.logger.error({
@@ -222,18 +226,27 @@ export class ExecutionsWorkerGateway
     this.socketExpiryTimers.delete(socketId);
   }
 
-  private async recordWorkerSeen(client: Socket): Promise<boolean> {
+  private async recordWorkerSeen(
+    client: Socket,
+    workerVersion?: string | null,
+  ): Promise<boolean> {
     const oauthClientId = this.getOauthClientId(client);
     if (!oauthClientId) {
       return false;
     }
 
-    await this.workersService.recordWorkerSeen({ oauthClientId });
+    await this.workersService.recordWorkerSeen({
+      oauthClientId,
+      workerVersion: workerVersion ?? this.getHandshakeWorkerVersion(client),
+    });
     return true;
   }
 
-  private async recordAuthenticatedWorkerSeen(client: Socket): Promise<void> {
-    if (!(await this.recordWorkerSeen(client))) {
+  private async recordAuthenticatedWorkerSeen(
+    client: Socket,
+    workerVersion?: string | null,
+  ): Promise<void> {
+    if (!(await this.recordWorkerSeen(client, workerVersion))) {
       return;
     }
 
@@ -252,6 +265,11 @@ export class ExecutionsWorkerGateway
     }
 
     return oauthClientId;
+  }
+
+  private getHandshakeWorkerVersion(client: Socket): string | null {
+    const workerVersion = client.handshake.auth?.workerVersion;
+    return typeof workerVersion === 'string' ? workerVersion : null;
   }
 
   private requestWorkerHarnessesReport(client: Socket): void {

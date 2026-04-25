@@ -102,6 +102,7 @@ export class TaskExecutionHistoryService {
       harness: stats.harness,
       providerId: stats.providerId,
       modelId: stats.modelId,
+      workerVersion: stats.workerVersion,
       inputTokens: stats.inputTokens,
       outputTokens: stats.outputTokens,
       totalTokens: stats.totalTokens,

@@ -121,6 +121,9 @@ export function SettingsWorkersPage() {
                         ID: {worker.id}
                       </Text>
                       <Text size="1" tone="muted">
+                        Version: {worker.workerVersion ?? 'Unknown'}
+                      </Text>
+                      <Text size="1" tone="muted">
                         Last seen: {lastSeenStr}
                       </Text>
                     </Stack>

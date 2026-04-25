@@ -68,6 +68,7 @@ export type UpdateExecutionStatsInput = {
   harness?: string | null;
   providerId?: string | null;
   modelId?: string | null;
+  workerVersion?: string | null;
   inputTokens?: number | null;
   outputTokens?: number | null;
   totalTokens?: number | null;
@@ -181,6 +182,7 @@ export class ActiveTaskExecutionService {
         harness: null,
         providerId: null,
         modelId: null,
+        workerVersion: null,
         inputTokens: null,
         outputTokens: null,
         totalTokens: null,
@@ -351,6 +353,9 @@ export class ActiveTaskExecutionService {
     if (input.modelId !== undefined) {
       valuesToSet.modelId = input.modelId;
     }
+    if (input.workerVersion !== undefined) {
+      valuesToSet.workerVersion = input.workerVersion;
+    }
     if (input.inputTokens !== undefined) {
       valuesToSet.inputTokens = input.inputTokens;
     }
@@ -478,6 +483,7 @@ export class ActiveTaskExecutionService {
       harness: stats.harness,
       providerId: stats.providerId,
       modelId: stats.modelId,
+      workerVersion: stats.workerVersion,
       inputTokens: stats.inputTokens,
       outputTokens: stats.outputTokens,
       totalTokens: stats.totalTokens,

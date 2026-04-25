@@ -8,6 +8,9 @@ export class WorkerResponseDto {
   @ApiProperty()
   oauthClientId!: string;
 
+  @ApiProperty({ type: String, nullable: true, example: '0.2.16' })
+  workerVersion!: string | null;
+
   @ApiProperty({ format: 'date-time' })
   lastSeenAt!: string;
 

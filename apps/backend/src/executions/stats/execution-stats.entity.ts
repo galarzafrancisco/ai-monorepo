@@ -21,6 +21,9 @@ export class ExecutionStatsEntity {
   @Column({ type: 'text', name: 'model_id', nullable: true })
   modelId!: string | null;
 
+  @Column({ type: 'text', name: 'worker_version', nullable: true })
+  workerVersion!: string | null;
+
   @Column({ type: 'integer', name: 'input_tokens', nullable: true })
   inputTokens!: number | null;
 

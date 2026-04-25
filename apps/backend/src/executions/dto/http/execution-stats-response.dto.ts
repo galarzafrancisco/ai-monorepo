@@ -27,6 +27,14 @@ export class ExecutionStatsResponseDto {
   modelId!: string | null;
 
   @ApiProperty({
+    type: String,
+    description: 'Taico worker package version used for this run',
+    example: '0.2.16',
+    nullable: true,
+  })
+  workerVersion!: string | null;
+
+  @ApiProperty({
     type: Number,
     description: 'Input token usage when available',
     example: 1200,
@@ -55,6 +63,7 @@ export class ExecutionStatsResponseDto {
       harness: result.harness,
       providerId: result.providerId,
       modelId: result.modelId,
+      workerVersion: result.workerVersion,
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
       totalTokens: result.totalTokens,

@@ -354,6 +354,7 @@ function RunExecutionDetails({ execution, actor }: { execution: ActiveTaskExecut
           <DetailRow label="Harness" value={stats?.harness ?? "Unknown"} />
           <DetailRow label="Provider" value={stats?.providerId ?? "Unknown"} />
           <DetailRow label="Model" value={stats?.modelId ?? "Unknown"} />
+          <DetailRow label="Worker version" value={stats?.workerVersion ?? "Unknown"} />
         </div>
       </section>
 

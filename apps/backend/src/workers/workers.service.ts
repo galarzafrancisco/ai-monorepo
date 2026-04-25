@@ -41,11 +41,16 @@ export class WorkersService {
         this.workersRepository.create({
           oauthClientId: input.oauthClientId,
           lastSeenAt: nextSeenAt,
+          workerVersion: normalizeWorkerVersion(input.workerVersion),
           harnesses: input.harnesses ?? [],
         }),
       );
     } else {
       worker.lastSeenAt = nextSeenAt;
+
+      if (input.workerVersion !== undefined) {
+        worker.workerVersion = normalizeWorkerVersion(input.workerVersion);
+      }
 
       if (input.harnesses) {
         worker.harnesses = input.harnesses;
@@ -70,10 +75,16 @@ export class WorkersService {
     return {
       id: worker.id,
       oauthClientId: worker.oauthClientId,
+      workerVersion: worker.workerVersion,
       lastSeenAt: worker.lastSeenAt,
       harnesses: worker.harnesses,
       createdAt: worker.createdAt,
       updatedAt: worker.updatedAt,
     };
   }
+}
+
+function normalizeWorkerVersion(workerVersion: string | null | undefined): string | null {
+  const normalized = workerVersion?.trim();
+  return normalized ? normalized.slice(0, 100) : null;
 }

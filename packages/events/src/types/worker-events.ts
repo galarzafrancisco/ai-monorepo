@@ -27,6 +27,7 @@ export type WorkerWireEventName =
 export interface WorkerWirePayload {
   id: string;
   oauthClientId: string;
+  workerVersion: string | null;
   lastSeenAt: string;
   harnesses: string[];
   createdAt: string;

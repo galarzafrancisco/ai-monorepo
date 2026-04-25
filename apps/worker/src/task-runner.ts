@@ -16,6 +16,7 @@ import { GitHubCopilotAgentRunner } from './runners/GitHubCopilotAgentRunner.js'
 import { buildPrompt } from './prompt.js';
 import { InputRequestLike, RunMode } from './types.js';
 import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
+import { WORKER_VERSION } from './version.js';
 import {
   InterruptedExecutionError,
   TaskExecutionPreconditionError,
@@ -156,6 +157,7 @@ export async function executeTask({
           harness: runner.kind,
           providerId: resolvedModel?.providerId ?? null,
           modelId: resolvedModel?.modelId ?? null,
+          workerVersion: WORKER_VERSION,
         },
       })
       .catch((error) => {
