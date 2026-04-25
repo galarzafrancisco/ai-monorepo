@@ -14,6 +14,13 @@
   margin: var(--space-3);
 }
 
+/* Reduce button padding on mobile to prevent overflow */
+@media (max-width: 900px) {
+  .task-detail-page__status-buttons .btn--lg {
+    padding: var(--space-3) var(--space-2);
+  }
+}
+
 /* Comments */
 .task-detail-page__comment-buttons {
   display: grid;
