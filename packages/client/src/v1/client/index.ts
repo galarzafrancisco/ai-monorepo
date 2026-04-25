@@ -150,6 +150,7 @@ export type { UpdateThreadStateDto } from './models/UpdateThreadStateDto.js';
 export type { UpsertAgentToolPermissionDto } from './models/UpsertAgentToolPermissionDto.js';
 export { UserResponseDto } from './models/UserResponseDto.js';
 export { UserWalkthroughStatusResponseDto } from './models/UserWalkthroughStatusResponseDto.js';
+export type { VersionResponseDto } from './models/VersionResponseDto.js';
 export type { WorkerResponseDto } from './models/WorkerResponseDto.js';
 
 export { ActorsService } from './services/ActorsService.js';

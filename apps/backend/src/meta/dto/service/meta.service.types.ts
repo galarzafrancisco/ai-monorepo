@@ -17,3 +17,8 @@ export type TagResult = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type VersionResult = {
+  backend: string;
+  ui: string;
+};

@@ -2,10 +2,12 @@ import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { TagEntity } from './tag.entity';
 import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
-import { CreateTagInput, TagResult } from './dto/service/meta.service.types';
+import { CreateTagInput, TagResult, VersionResult } from './dto/service/meta.service.types';
 
 /**
  * Predefined color palette for tags
@@ -461,6 +463,60 @@ export class MetaService {
 
     for (const tagId of tagIds) {
       await this.incrementTagUsage(tagId);
+    }
+  }
+
+  /**
+   * Get version information for backend and UI
+   */
+  getVersion(): VersionResult {
+    this.logger.log({ message: 'Getting version information' });
+
+    try {
+      // Read backend version from package.json
+      // In production (dist), this will be at dist/package.json (copied during build)
+      // In development, this will be at src/../package.json
+      const backendPackageJson = JSON.parse(
+        readFileSync(join(__dirname, '../../package.json'), 'utf-8'),
+      );
+      const backendVersion = backendPackageJson.version;
+
+      // Read UI version from UI package.json
+      // Path depends on whether we're in dev or prod:
+      // - Dev: ../ui/package.json
+      // - Prod: We'll copy it during build to dist/public/package.json
+      let uiVersion = backendVersion; // Fallback to backend version
+
+      try {
+        const uiPackageJsonPath = join(__dirname, '../../public/package.json');
+        const uiPackageJson = JSON.parse(
+          readFileSync(uiPackageJsonPath, 'utf-8'),
+        );
+        uiVersion = uiPackageJson.version;
+      } catch {
+        // If UI package.json is not found, try development path
+        try {
+          const uiDevPackageJsonPath = join(__dirname, '../../../ui/package.json');
+          const uiPackageJson = JSON.parse(
+            readFileSync(uiDevPackageJsonPath, 'utf-8'),
+          );
+          uiVersion = uiPackageJson.version;
+        } catch {
+          // If still not found, use backend version as fallback
+          this.logger.warn('Could not read UI package.json, using backend version as fallback');
+        }
+      }
+
+      return {
+        backend: backendVersion,
+        ui: uiVersion,
+      };
+    } catch (error) {
+      this.logger.error('Error reading version information', error);
+      return {
+        backend: 'unknown',
+        ui: 'unknown',
+      };
     }
   }
 

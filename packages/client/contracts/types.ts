@@ -73,6 +73,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meta/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get version information */
+        get: operations["MetaController_getVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meta/projects": {
         parameters: {
             query?: never;
@@ -2132,6 +2149,18 @@ export interface components {
              * @example 2024-01-15T10:30:00.000Z
              */
             updatedAt: string;
+        };
+        VersionResponseDto: {
+            /**
+             * @description Backend version
+             * @example 0.2.16
+             */
+            backend: string;
+            /**
+             * @description UI version
+             * @example 0.2.16
+             */
+            ui: string;
         };
         CreateProjectDto: {
             /**
@@ -6104,6 +6133,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    MetaController_getVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Version information for backend and UI */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionResponseDto"];
+                };
             };
         };
     };

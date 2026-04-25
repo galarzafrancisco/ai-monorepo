@@ -22,7 +22,8 @@ import {
 import { MetaService, TAG_COLOR_PALETTE } from './meta.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { MetaTagResponseDto } from './dto/tag-response.dto';
-import { TagResult } from './dto/service/meta.service.types';
+import { VersionResponseDto } from './dto/version-response.dto';
+import { TagResult, VersionResult } from './dto/service/meta.service.types';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
 import { RequireScopes } from '../auth/guards/decorators/require-scopes.decorator';
@@ -82,6 +83,17 @@ export class MetaController {
     await this.metaService.deleteTag(tagId);
   }
 
+  @Get('version')
+  @ApiOperation({ summary: 'Get version information' })
+  @ApiOkResponse({
+    type: VersionResponseDto,
+    description: 'Version information for backend and UI',
+  })
+  getVersion(): VersionResponseDto {
+    const result = this.metaService.getVersion();
+    return this.mapVersionResultToResponse(result);
+  }
+
   private mapTagResultToResponse(result: TagResult): MetaTagResponseDto {
     return {
       id: result.id,
@@ -89,6 +101,13 @@ export class MetaController {
       color: result.color,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
+    };
+  }
+
+  private mapVersionResultToResponse(result: VersionResult): VersionResponseDto {
+    return {
+      backend: result.backend,
+      ui: result.ui,
     };
   }
 }

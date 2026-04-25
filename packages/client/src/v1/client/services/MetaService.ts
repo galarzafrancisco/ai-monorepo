@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { CreateTagDto } from '../models/CreateTagDto.js';
 import type { MetaTagResponseDto } from '../models/MetaTagResponseDto.js';
+import type { VersionResponseDto } from '../models/VersionResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
 import type { OpenAPIConfig } from '../core/OpenAPI.js';
@@ -70,6 +71,17 @@ export class MetaService {
             errors: {
                 404: `Tag not found`,
             },
+        });
+    }
+    /**
+     * Get version information
+     * @returns VersionResponseDto Version information for backend and UI
+     * @throws ApiError
+     */
+    public static metaControllerGetVersion(config: OpenAPIConfig = OpenAPI): CancelablePromise<VersionResponseDto> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/meta/version',
         });
     }
 }

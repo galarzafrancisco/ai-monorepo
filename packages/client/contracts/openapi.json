@@ -154,6 +154,33 @@
         ]
       }
     },
+    "/api/v1/meta/version": {
+      "get": {
+        "operationId": "MetaController_getVersion",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Version information for backend and UI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Get version information",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
     "/api/v1/meta/projects": {
       "post": {
         "operationId": "ProjectsController_createProject",
@@ -7186,6 +7213,25 @@
           "name",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "VersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "backend": {
+            "type": "string",
+            "description": "Backend version",
+            "example": "0.2.16"
+          },
+          "ui": {
+            "type": "string",
+            "description": "UI version",
+            "example": "0.2.16"
+          }
+        },
+        "required": [
+          "backend",
+          "ui"
         ]
       },
       "CreateProjectDto": {

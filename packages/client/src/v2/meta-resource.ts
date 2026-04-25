@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { CreateTagDto, MetaTagResponseDto } from './types.js';
+import type { CreateTagDto, MetaTagResponseDto, VersionResponseDto } from './types.js';
 
 export class MetaResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -24,6 +24,11 @@ export class MetaResource extends BaseClient {
   /** Delete a tag from the system */
   async MetaController_deleteTag(params: { tagId: string; signal?: AbortSignal }): Promise<void> {
     return this.request('DELETE', `/api/v1/meta/tags/${params.tagId}`, { responseType: 'void', signal: params?.signal });
+  }
+
+  /** Get version information */
+  async MetaController_getVersion(params?: { signal?: AbortSignal }): Promise<VersionResponseDto> {
+    return this.request('GET', '/api/v1/meta/version', { signal: params?.signal });
   }
 
 }

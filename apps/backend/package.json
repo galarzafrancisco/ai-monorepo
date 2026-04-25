@@ -23,7 +23,7 @@
   "scripts": {
     "build": "nest build",
     "build:prod": "npm run build && NODE_ENV=development node dist/main.js --generate-openapi",
-    "assemble-public": "rm -rf dist/public && mkdir -p dist && cp -R ../ui/dist dist/public && cp -R ../ui-v1/dist dist/public/beta",
+    "assemble-public": "rm -rf dist/public && mkdir -p dist && cp -R ../ui/dist dist/public && cp ../ui/package.json dist/public/ && cp -R ../ui-v1/dist dist/public/beta",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch -- --server",

@@ -13,6 +13,11 @@ export interface MetaTagResponseDto {
   updatedAt: string;
 }
 
+export interface VersionResponseDto {
+  backend: string;
+  ui: string;
+}
+
 export interface CreateProjectDto {
   slug: string;
   description?: string;
