@@ -1041,19 +1041,23 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       </DataRowContainer>
 
       <DataRowContainer className='task-detail-page__status-buttons'>
-        {Object.entries(TASKS_STATUS).map(([status, info]) => (
-          <Button
-            key={status}
-            size='sm'
-            variant={status === task.status ? 'primary' : 'secondary'}
-            onClick={() => handleChangeStatus(status as TaskStatus)}
-            disabled={isLoading}
-          >
-            <Stack spacing='0'>
-              <div>{info.label}</div>
-            </Stack>
-          </Button>
-        ))}
+        {Object.entries(TASKS_STATUS).map(([status, info]) => {
+          const Icon = info.icon;
+          return (
+            <Button
+              key={status}
+              size='sm'
+              variant={status === task.status ? 'primary' : 'secondary'}
+              onClick={() => handleChangeStatus(status as TaskStatus)}
+              disabled={isLoading}
+            >
+              <Stack spacing='0'>
+                <Icon size={16} />
+                <div>{info.label}</div>
+              </Stack>
+            </Button>
+          );
+        })}
       </DataRowContainer>
 
       <Button
