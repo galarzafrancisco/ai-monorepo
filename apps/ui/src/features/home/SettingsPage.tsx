@@ -247,19 +247,16 @@ export function SettingsPage() {
       </Card>
 
       {version && (
-        <Card padding="5">
-          <Stack spacing="2">
-            <Text size="4" weight="semibold">Version</Text>
-            <Row justify="space-between" align="center">
-              <Text size="2" tone="muted">Backend</Text>
-              <Text size="2">{version.backend}</Text>
-            </Row>
-            <Row justify="space-between" align="center">
-              <Text size="2" tone="muted">UI</Text>
-              <Text size="2">{version.ui}</Text>
-            </Row>
-          </Stack>
-        </Card>
+        <div style={{
+          textAlign: 'center',
+          paddingTop: 'var(--space-6)',
+          marginTop: 'var(--space-4)',
+          borderTop: '1px solid var(--border)',
+        }}>
+          <Text size="1" tone="muted">
+            Taico v{version.backend} • UI v{version.ui}
+          </Text>
+        </div>
       )}
     </Stack>
   );
