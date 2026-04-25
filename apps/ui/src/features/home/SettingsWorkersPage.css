@@ -28,27 +28,31 @@
   gap: var(--space-3);
 }
 
-.settings-workers__status-indicator {
+.settings-workers__status-icon {
   display: inline-block;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--r-2);
-  font-size: var(--fs-1);
-  font-weight: var(--fw-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-.settings-workers__status-indicator--connected {
-  background: var(--surface);
+.settings-workers__status-icon--connected {
   color: var(--success);
-  border-color: var(--success);
+  animation: settings-workers__heartbeat 1.2s ease-in-out infinite;
+  transform-origin: center;
 }
 
-.settings-workers__status-indicator--disconnected {
-  background: var(--surface);
+@keyframes settings-workers__heartbeat {
+  0%, 60%, 100% { transform: scale(1); }
+  20% { transform: scale(1.18); }
+  40% { transform: scale(0.95); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-workers__status-icon--connected {
+    animation: none;
+  }
+}
+
+.settings-workers__status-icon--disconnected {
   color: var(--danger);
-  border-color: var(--danger);
 }
 
 .settings-workers__harnesses {

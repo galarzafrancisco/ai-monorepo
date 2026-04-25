@@ -153,7 +153,7 @@ export function HomePage() {
               onClick={() => navigate(info.path)}
             >
               <Card className="home-status-card__inner">
-                <Text size="1" tone="muted">{info.icon} {info.label}</Text>
+                <Text size="1" tone="muted">{info.label}</Text>
                 <Text size="5" weight="bold">{taskCounts[status]}</Text>
               </Card>
             </button>

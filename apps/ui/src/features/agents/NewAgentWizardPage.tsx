@@ -496,7 +496,7 @@ export function NewAgentWizardPage() {
                 return (
                   <OptionButton
                     key={status}
-                    title={`${statusInfo.icon} ${statusInfo.label}`}
+                    title={statusInfo.label}
                     description={status}
                     selected={(draft.statusTriggers ?? []).includes(status)}
                     onClick={() => toggleStatus(status)}

@@ -432,7 +432,6 @@ export function TaskDetailPage() {
               onClick={() => handleChangeStatus(status as TaskStatus)}
               disabled={isLoading}
             >
-              <span>{info.icon}</span>
               <span>{info.label}</span>
             </button>
           ))}

@@ -3,11 +3,12 @@ import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { DesktopShell } from '../../app/shells/DesktopShell';
 import { IosShell } from '../../app/shells/IosShell';
 import { useScheduledTasksCtx } from './ScheduledTasksProvider';
+import { CalendarDays, Puzzle } from 'lucide-react';
 import { NavegationItem } from '../../shared/types/NavegationItem';
 
 const SCHEDULED_TASKS_NAV: NavegationItem[] = [
-  { path: '/tasks', label: 'Tasks', icon: '🧩' },
-  { path: '/tasks/schedule', label: 'Schedules', icon: '🗓' },
+  { path: '/tasks', label: 'Tasks', icon: Puzzle },
+  { path: '/tasks/schedule', label: 'Schedules', icon: CalendarDays },
 ];
 
 export function ScheduledTasksLayout(): React.JSX.Element {

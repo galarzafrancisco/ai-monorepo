@@ -12,5 +12,5 @@ export function NavigationIcon({ icon, className, size = 22 }: NavigationIconPro
   }
 
   const Icon = icon;
-  return <Icon className={className} size={size} strokeWidth={2.1} absoluteStrokeWidth />;
+  return <Icon className={className} size={size} strokeWidth={1.5} absoluteStrokeWidth />;
 }

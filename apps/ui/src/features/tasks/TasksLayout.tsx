@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CalendarDays } from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { DesktopShell } from "../../app/shells/DesktopShell";
@@ -52,7 +53,7 @@ export function TasksLayout(): React.JSX.Element {
               className="tasks-layout__schedule-button"
               onClick={() => navigate('/tasks/schedule')}
             >
-              <span className="tasks-layout__schedule-icon">🗓</span>
+              <CalendarDays className="tasks-layout__schedule-icon" size={16} strokeWidth={1.5} absoluteStrokeWidth />
               Schedule
               {activeScheduleCount && activeScheduleCount > 0 ? (
                 <span className="tasks-layout__schedule-badge">{activeScheduleCount}</span>

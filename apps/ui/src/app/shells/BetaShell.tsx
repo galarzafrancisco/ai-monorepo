@@ -7,7 +7,7 @@ import { MAIN_NAVEGATION_ITEMS } from "../../shared/const/mainNavegationItems";
 import { Link, useLocation } from "react-router-dom";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { useAuth } from "../../auth/AuthContext";
-import { Sparkles } from "lucide-react";
+import { Footprints } from "lucide-react";
 import { NavigationIcon } from "../../shared/components/NavigationIcon";
 
 export function BetaShell({ children }: { children: React.ReactNode }) {
@@ -27,7 +27,7 @@ export function BetaShell({ children }: { children: React.ReactNode }) {
     // Insert walkthrough before Settings
     const settingsIndex = MAIN_NAVEGATION_ITEMS.findIndex((i) => i.path === '/settings');
     const items = [...MAIN_NAVEGATION_ITEMS];
-    items.splice(settingsIndex, 0, { path: '/walkthrough', label: 'Walkthrough', icon: Sparkles });
+    items.splice(settingsIndex, 0, { path: '/walkthrough', label: 'Walkthrough', icon: Footprints });
     return items;
   }, [user?.onboardingDisplayMode]);
 

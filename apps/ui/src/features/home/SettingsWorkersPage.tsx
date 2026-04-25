@@ -3,6 +3,11 @@ import { useHomeCtx } from './HomeProvider';
 import { useEffect, useState } from 'react';
 import { useWorkers } from '../workers/useWorkers';
 import { ErrorText } from '../../ui/primitives/ErrorText';
+import {
+  Heart,
+  HeartCrack,
+} from "lucide-react";
+
 import './SettingsWorkersPage.css';
 
 export function SettingsWorkersPage() {
@@ -107,15 +112,23 @@ export function SettingsWorkersPage() {
                         <Text size="3" weight="semibold">
                           Worker
                         </Text>
-                        <span
-                          className={`settings-workers__status-indicator ${
-                            isConnected
-                              ? 'settings-workers__status-indicator--connected'
-                              : 'settings-workers__status-indicator--disconnected'
-                          }`}
-                        >
-                          {isConnected ? 'Connected' : 'Disconnected'}
-                        </span>
+                        {isConnected ? (
+                          <Heart
+                            className="settings-workers__status-icon settings-workers__status-icon--connected"
+                            size={18}
+                            strokeWidth={1.5}
+                            absoluteStrokeWidth
+                            aria-label="Connected"
+                          />
+                        ) : (
+                          <HeartCrack
+                            className="settings-workers__status-icon settings-workers__status-icon--disconnected"
+                            size={18}
+                            strokeWidth={1.5}
+                            absoluteStrokeWidth
+                            aria-label="Disconnected"
+                          />
+                        )}
                       </div>
                       <Text size="1" tone="muted">
                         ID: {worker.id}

@@ -1050,7 +1050,6 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             disabled={isLoading}
           >
             <Stack spacing='0'>
-              <div>{info.icon}</div>
               <div>{info.label}</div>
             </Stack>
           </Button>

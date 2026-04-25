@@ -1,3 +1,4 @@
+import { Eye, Hammer, Inbox, Rocket } from "lucide-react";
 import { NavegationItem } from "../types/NavegationItem";
 
 export const TaskStatus = {
@@ -14,10 +15,10 @@ export type TaskStatusNavItem = NavegationItem & {
 };
 
 export const TASKS_STATUS = {
-  [TaskStatus.NOT_STARTED]: { path: '/tasks/not-started', label: 'Queued', icon: '📋' },
-  [TaskStatus.IN_PROGRESS]: { path: '/tasks/in-progress', label: 'Building', icon: '👨🏻‍💻' },
-  [TaskStatus.FOR_REVIEW]: { path: '/tasks/in-review', label: 'Review', icon: '👀' },
-  [TaskStatus.DONE]: { path: '/tasks/done', label: 'Shipped', icon: '🚀' },
+  [TaskStatus.NOT_STARTED]: { path: '/tasks/not-started', label: 'Queued', icon: Inbox },
+  [TaskStatus.IN_PROGRESS]: { path: '/tasks/in-progress', label: 'Building', icon: Hammer },
+  [TaskStatus.FOR_REVIEW]: { path: '/tasks/in-review', label: 'Review', icon: Eye },
+  [TaskStatus.DONE]: { path: '/tasks/done', label: 'Shipped', icon: Rocket },
 } as const satisfies Record<string, NavegationItem>;
 
 export const TASKS_STATUS_NAV: NavegationItem[] = [

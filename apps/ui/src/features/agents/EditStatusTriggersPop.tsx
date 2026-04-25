@@ -63,9 +63,6 @@ export function EditStatusTriggersPop({ initialValue, onCancel, onSave }: EditSt
                   className="edit-status-triggers-pop__checkbox"
                 />
                 <div className="edit-status-triggers-pop__status-info">
-                  <span className="edit-status-triggers-pop__status-icon">
-                    {statusInfo.icon}
-                  </span>
                   <Text size="3" weight="medium">
                     {statusInfo.label}
                   </Text>
