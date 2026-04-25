@@ -1044,7 +1044,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         {Object.entries(TASKS_STATUS).map(([status, info]) => (
           <Button
             key={status}
-            size='lg'
+            size='sm'
             variant={status === task.status ? 'primary' : 'secondary'}
             onClick={() => handleChangeStatus(status as TaskStatus)}
             disabled={isLoading}
