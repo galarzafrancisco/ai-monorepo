@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import type { FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToolsCtx } from './ToolsProvider';
-import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip } from '../../ui/primitives';
+import { Text, Stack, Button, Avatar, DataRow, DataRowTag, DataRowContainer, Chip, Card } from '../../ui/primitives';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
-import { Tool, ToolScope, ToolClient, ToolAuthorization } from './types';
+import { Tool, ToolScope, ToolClient, ToolAuthorization, ToolScopeMapping } from './types';
 import { ToolsService } from './api';
 import { EditToolNamePop } from './EditToolNamePop';
 import { EditToolDescriptionPop } from './EditToolDescriptionPop';
@@ -17,6 +18,21 @@ import './ToolDetailPage.css';
 
 type ProtectedResourceMetadata = {
   authorization_servers?: string[];
+};
+
+const EMPTY_CONNECTION_FORM = {
+  friendlyName: '',
+  providedId: '',
+  clientId: '',
+  clientSecret: '',
+  authorizeUrl: '',
+  tokenUrl: '',
+};
+
+const EMPTY_MAPPING_FORM = {
+  scopeId: '',
+  connectionId: '',
+  downstreamScope: '',
 };
 
 // Helper to get status color and label
@@ -47,15 +63,20 @@ export function ToolDetailPage() {
   const { toolId } = useParams<{ toolId: string }>();
   const navigate = useNavigate();
   const { tools, setSectionTitle, loadToolDetails, loadToolScopes, loadToolClients, loadToolAuthorizations, updateTool, deleteTool } = useToolsCtx();
-  const { showError } = useToast();
+  const { showError, showToast } = useToast();
 
   // Find tool from context first (for quick load)
   const toolFromList = tools.find(t => t.id === toolId);
   const [tool, setTool] = useState<Tool | null>(toolFromList || null);
   const [scopes, setScopes] = useState<ToolScope[]>([]);
   const [clients, setClients] = useState<ToolClient[]>([]);
+  const [scopeMappings, setScopeMappings] = useState<ToolScopeMapping[]>([]);
   const [authorizations, setAuthorizations] = useState<ToolAuthorization[]>([]);
   const [isLoading, setIsLoading] = useState(!toolFromList);
+  const [isSavingConnection, setIsSavingConnection] = useState(false);
+  const [isSavingMapping, setIsSavingMapping] = useState(false);
+  const [connectionForm, setConnectionForm] = useState(EMPTY_CONNECTION_FORM);
+  const [mappingForm, setMappingForm] = useState(EMPTY_MAPPING_FORM);
   const [expandedMetadata, setExpandedMetadata] = useState(false);
   const [authorizationServerMetadata, setAuthorizationServerMetadata] = useState<any | null>(null);
   const [showCopiedToast, setShowCopiedToast] = useState(false);
@@ -102,16 +123,28 @@ export function ToolDetailPage() {
   useEffect(() => {
     if (tool && toolId) {
       if (tool.type === 'http') {
-        loadToolScopes(toolId).then(setScopes);
+        loadToolScopes(toolId).then((loadedScopes) => {
+          setScopes(loadedScopes);
+          refreshScopeMappings(toolId, loadedScopes);
+        });
         loadToolAuthorizations(toolId).then(setAuthorizations);
       } else {
         setScopes([]);
+        setScopeMappings([]);
         setAuthorizations([]);
       }
 
       loadToolClients(toolId).then(setClients);
     }
   }, [tool, toolId, loadToolScopes, loadToolClients, loadToolAuthorizations]);
+
+  useEffect(() => {
+    setMappingForm((current) => ({
+      ...current,
+      scopeId: scopes.some((scope) => scope.id === current.scopeId) ? current.scopeId : scopes[0]?.id || '',
+      connectionId: clients.some((client) => client.id === current.connectionId) ? current.connectionId : clients[0]?.id || '',
+    }));
+  }, [scopes, clients]);
 
   const stdioCommandParts = useMemo(() => {
     if (!tool || tool.type !== 'stdio') {
@@ -133,6 +166,29 @@ export function ToolDetailPage() {
 
   const formatCommand = (parts: string[]): string =>
     parts.map((part) => quoteArg(part)).join(' ');
+
+  const refreshClients = async () => {
+    if (!toolId) return;
+    const loadedClients = await loadToolClients(toolId);
+    setClients(loadedClients);
+  };
+
+  const refreshScopeMappings = async (serverId: string, nextScopes = scopes) => {
+    if (nextScopes.length === 0) {
+      setScopeMappings([]);
+      return;
+    }
+
+    const mappingsByScope = await Promise.all(
+      nextScopes.map((scope) =>
+        ToolsService.McpRegistryController_listMappings({ serverId, scopeId: scope.id }).catch((error) => {
+          console.error(`Failed to load mappings for scope ${scope.id}:`, error);
+          return [] as ToolScopeMapping[];
+        }),
+      ),
+    );
+    setScopeMappings(mappingsByScope.flat());
+  };
 
   // Save handlers
   const handleSaveName = async ({ name }: { name: string }): Promise<boolean> => {
@@ -225,12 +281,76 @@ export function ToolDetailPage() {
       // Reload scopes
       const updatedScopes = await loadToolScopes(tool.id);
       setScopes(updatedScopes);
+      await refreshScopeMappings(tool.id, updatedScopes);
       setShowEditScopesPop(false);
       return true;
     } catch (err) {
       console.error('Failed to update scopes:', err);
       showError(err);
       return false;
+    }
+  };
+
+  const handleCreateConnection = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!tool) return;
+
+    setIsSavingConnection(true);
+    try {
+      await ToolsService.McpRegistryController_createConnection({
+        serverId: tool.id,
+        body: {
+          friendlyName: connectionForm.friendlyName.trim(),
+          providedId: connectionForm.providedId.trim(),
+          clientId: connectionForm.clientId.trim(),
+          clientSecret: connectionForm.clientSecret,
+          authorizeUrl: connectionForm.authorizeUrl.trim(),
+          tokenUrl: connectionForm.tokenUrl.trim(),
+        },
+      });
+      setConnectionForm(EMPTY_CONNECTION_FORM);
+      await refreshClients();
+      showToast('Downstream OAuth connection added', 'success');
+    } catch (err) {
+      showError(err);
+    } finally {
+      setIsSavingConnection(false);
+    }
+  };
+
+  const handleCreateMapping = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!tool) return;
+
+    setIsSavingMapping(true);
+    try {
+      await ToolsService.McpRegistryController_createMapping({
+        serverId: tool.id,
+        body: {
+          scopeId: mappingForm.scopeId,
+          connectionId: mappingForm.connectionId,
+          downstreamScope: mappingForm.downstreamScope.trim(),
+        },
+      });
+      setMappingForm((current) => ({ ...current, downstreamScope: '' }));
+      await refreshScopeMappings(tool.id);
+      showToast('Scope mapping added', 'success');
+    } catch (err) {
+      showError(err);
+    } finally {
+      setIsSavingMapping(false);
+    }
+  };
+
+  const handleDeleteMapping = async (mappingId: string) => {
+    if (!tool) return;
+
+    try {
+      await ToolsService.McpRegistryController_deleteMapping({ mappingId });
+      await refreshScopeMappings(tool.id);
+      showToast('Scope mapping removed', 'success');
+    } catch (err) {
+      showError(err);
     }
   };
 
@@ -573,6 +693,195 @@ export function ToolDetailPage() {
             <Text size="1" tone="muted">tap to edit</Text>
           </DataRow>
         </DataRowContainer>
+      )}
+
+      {isHttpTool && (
+        <Card padding="5" className="tool-detail-page__oauth-panel">
+          <div className="tool-detail-page__panel-header">
+            <Stack spacing="1">
+              <Text size="3" weight="semibold">Downstream OAuth</Text>
+              <Text size="1" tone="muted">
+                Connect this MCP server to a downstream provider and translate Taico scopes into provider scopes.
+              </Text>
+            </Stack>
+            <Chip color={clients.length > 0 ? 'green' : 'gray'}>
+              {clients.length} {clients.length === 1 ? 'connection' : 'connections'}
+            </Chip>
+          </div>
+
+          <div className="tool-detail-page__oauth-grid">
+            <section className="tool-detail-page__oauth-card" aria-label="Add downstream OAuth connection">
+              <Stack spacing="3">
+                <Stack spacing="1">
+                  <Text size="2" weight="semibold">Add connection</Text>
+                  <Text size="1" tone="muted">Register downstream OAuth client credentials for this HTTP MCP tool.</Text>
+                </Stack>
+
+                <form className="tool-detail-page__form" onSubmit={handleCreateConnection}>
+                  <label className="tool-detail-page__field">
+                    <span>Name</span>
+                    <input
+                      required
+                      value={connectionForm.friendlyName}
+                      onChange={(event) => setConnectionForm((current) => ({ ...current, friendlyName: event.target.value }))}
+                      placeholder="GitHub production"
+                    />
+                  </label>
+                  <label className="tool-detail-page__field">
+                    <span>Provided ID</span>
+                    <input
+                      required
+                      value={connectionForm.providedId}
+                      onChange={(event) => setConnectionForm((current) => ({ ...current, providedId: event.target.value }))}
+                      placeholder="github-prod"
+                    />
+                  </label>
+                  <label className="tool-detail-page__field">
+                    <span>Client ID</span>
+                    <input
+                      required
+                      value={connectionForm.clientId}
+                      onChange={(event) => setConnectionForm((current) => ({ ...current, clientId: event.target.value }))}
+                      placeholder="OAuth client ID"
+                    />
+                  </label>
+                  <label className="tool-detail-page__field">
+                    <span>Client secret</span>
+                    <input
+                      required
+                      type="password"
+                      value={connectionForm.clientSecret}
+                      onChange={(event) => setConnectionForm((current) => ({ ...current, clientSecret: event.target.value }))}
+                      placeholder="OAuth client secret"
+                    />
+                  </label>
+                  <label className="tool-detail-page__field tool-detail-page__field--wide">
+                    <span>Authorization URL</span>
+                    <input
+                      required
+                      type="url"
+                      value={connectionForm.authorizeUrl}
+                      onChange={(event) => setConnectionForm((current) => ({ ...current, authorizeUrl: event.target.value }))}
+                      placeholder="https://provider.example/oauth/authorize"
+                    />
+                  </label>
+                  <label className="tool-detail-page__field tool-detail-page__field--wide">
+                    <span>Token URL</span>
+                    <input
+                      required
+                      type="url"
+                      value={connectionForm.tokenUrl}
+                      onChange={(event) => setConnectionForm((current) => ({ ...current, tokenUrl: event.target.value }))}
+                      placeholder="https://provider.example/oauth/token"
+                    />
+                  </label>
+                  <Button type="submit" disabled={isSavingConnection} className="tool-detail-page__form-action">
+                    {isSavingConnection ? 'Adding...' : 'Add connection'}
+                  </Button>
+                </form>
+              </Stack>
+            </section>
+
+            <section className="tool-detail-page__oauth-card" aria-label="Map scopes">
+              <Stack spacing="3">
+                <Stack spacing="1">
+                  <Text size="2" weight="semibold">Map scopes</Text>
+                  <Text size="1" tone="muted">Route requested Taico scopes to the downstream OAuth scopes needed by the provider.</Text>
+                </Stack>
+
+                <form className="tool-detail-page__form" onSubmit={handleCreateMapping}>
+                  <label className="tool-detail-page__field tool-detail-page__field--wide">
+                    <span>Taico scope</span>
+                    <select
+                      required
+                      value={mappingForm.scopeId}
+                      onChange={(event) => setMappingForm((current) => ({ ...current, scopeId: event.target.value }))}
+                      disabled={scopes.length === 0}
+                    >
+                      {scopes.length === 0 ? <option value="">Create a Taico scope first</option> : null}
+                      {scopes.map((scope) => (
+                        <option key={scope.id} value={scope.id}>{scope.id}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="tool-detail-page__field tool-detail-page__field--wide">
+                    <span>Connection</span>
+                    <select
+                      required
+                      value={mappingForm.connectionId}
+                      onChange={(event) => setMappingForm((current) => ({ ...current, connectionId: event.target.value }))}
+                      disabled={clients.length === 0}
+                    >
+                      {clients.length === 0 ? <option value="">Add a connection first</option> : null}
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>{client.friendlyName}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="tool-detail-page__field tool-detail-page__field--wide">
+                    <span>Downstream scope</span>
+                    <input
+                      required
+                      value={mappingForm.downstreamScope}
+                      onChange={(event) => setMappingForm((current) => ({ ...current, downstreamScope: event.target.value }))}
+                      placeholder="repo:read"
+                    />
+                  </label>
+                  <Button
+                    type="submit"
+                    disabled={isSavingMapping || scopes.length === 0 || clients.length === 0}
+                    className="tool-detail-page__form-action"
+                  >
+                    {isSavingMapping ? 'Mapping...' : 'Add mapping'}
+                  </Button>
+                </form>
+              </Stack>
+            </section>
+          </div>
+
+          <div className="tool-detail-page__oauth-lists">
+            <section>
+              <Text size="2" weight="semibold">Connections</Text>
+              <div className="tool-detail-page__compact-list">
+                {clients.length === 0 ? (
+                  <Text size="2" tone="muted">No downstream OAuth connections yet.</Text>
+                ) : clients.map((client) => (
+                  <div className="tool-detail-page__compact-row" key={client.id}>
+                    <div>
+                      <Text size="2" weight="medium">{client.friendlyName}</Text>
+                      <Text size="1" tone="muted" style="mono">{client.clientId}</Text>
+                    </div>
+                    <Chip color={client.clientSecret ? 'blue' : 'gray'}>
+                      {client.clientSecret ? 'secret set' : 'no secret'}
+                    </Chip>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <Text size="2" weight="semibold">Scope mappings</Text>
+              <div className="tool-detail-page__compact-list">
+                {scopeMappings.length === 0 ? (
+                  <Text size="2" tone="muted">No scope mappings configured.</Text>
+                ) : scopeMappings.map((mapping) => {
+                  const client = clients.find((candidate) => candidate.id === mapping.connectionId);
+                  return (
+                    <div className="tool-detail-page__compact-row" key={mapping.id}>
+                      <div>
+                        <Text size="2" weight="medium" style="mono">{mapping.scopeId} {'->'} {mapping.downstreamScope}</Text>
+                        <Text size="1" tone="muted">{client?.friendlyName ?? mapping.connectionId}</Text>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteMapping(mapping.id)}>
+                        Remove
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+        </Card>
       )}
 
       {isStdioTool && (
