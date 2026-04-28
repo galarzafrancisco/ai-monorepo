@@ -2,11 +2,16 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AccountSetupStatusRequestDto } from '../models/AccountSetupStatusRequestDto.js';
+import type { AccountSetupStatusResponseDto } from '../models/AccountSetupStatusResponseDto.js';
 import type { ChangePasswordRequestDto } from '../models/ChangePasswordRequestDto.js';
+import type { CreateManagedUserRequestDto } from '../models/CreateManagedUserRequestDto.js';
 import type { LoginRequestDto } from '../models/LoginRequestDto.js';
 import type { LoginResponseDto } from '../models/LoginResponseDto.js';
+import type { ManagedUserResponseDto } from '../models/ManagedUserResponseDto.js';
 import type { OnboardingRequestDto } from '../models/OnboardingRequestDto.js';
 import type { OnboardingStatusResponseDto } from '../models/OnboardingStatusResponseDto.js';
+import type { SetupManagedUserRequestDto } from '../models/SetupManagedUserRequestDto.js';
 import type { UserResponseDto } from '../models/UserResponseDto.js';
 import type { CancelablePromise } from '../core/CancelablePromise.js';
 import { OpenAPI } from '../core/OpenAPI.js';
@@ -31,6 +36,104 @@ export class WebAuthenticationService {
             errors: {
                 401: `Invalid credentials`,
             },
+        });
+    }
+    /**
+     * List human users for admin user management
+     * @returns ManagedUserResponseDto
+     * @throws ApiError
+     */
+    public static webAuthControllerListUsers(config: OpenAPIConfig = OpenAPI): CancelablePromise<Array<ManagedUserResponseDto>> {
+        return __request(config, {
+            method: 'GET',
+            url: '/api/v1/auth/users',
+        });
+    }
+    /**
+     * Create an invited human user
+     * @param requestBody
+     * @returns ManagedUserResponseDto
+     * @throws ApiError
+     */
+    public static webAuthControllerCreateUser(
+        requestBody: CreateManagedUserRequestDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ManagedUserResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/auth/users',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Reset a managed user password so they can set a new one
+     * @param userId
+     * @returns ManagedUserResponseDto
+     * @throws ApiError
+     */
+    public static webAuthControllerResetUserPassword(
+        userId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ManagedUserResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/auth/users/{userId}/reset-password',
+            path: {
+                'userId': userId,
+            },
+        });
+    }
+    /**
+     * Deactivate a managed user
+     * @param userId
+     * @returns ManagedUserResponseDto
+     * @throws ApiError
+     */
+    public static webAuthControllerDeleteUser(
+        userId: string,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<ManagedUserResponseDto> {
+        return __request(config, {
+            method: 'DELETE',
+            url: '/api/v1/auth/users/{userId}',
+            path: {
+                'userId': userId,
+            },
+        });
+    }
+    /**
+     * Check whether an invited or reset account can be set up
+     * @param requestBody
+     * @returns AccountSetupStatusResponseDto
+     * @throws ApiError
+     */
+    public static webAuthControllerGetAccountSetupStatus(
+        requestBody: AccountSetupStatusRequestDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<AccountSetupStatusResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/auth/account-setup-status',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Set up an invited or reset account and log in
+     * @param requestBody
+     * @returns LoginResponseDto
+     * @throws ApiError
+     */
+    public static webAuthControllerSetupAccount(
+        requestBody: SetupManagedUserRequestDto,
+        config: OpenAPIConfig = OpenAPI,
+    ): CancelablePromise<LoginResponseDto> {
+        return __request(config, {
+            method: 'POST',
+            url: '/api/v1/auth/setup-account',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

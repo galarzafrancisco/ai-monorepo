@@ -11,6 +11,7 @@ import { SettingsChatPage } from "./SettingsChatPage";
 import { SettingsDataPage } from './SettingsDataPage';
 import { SettingsWorkersPage } from './SettingsWorkersPage';
 import { SettingsAIProvidersPage } from './SettingsAIProvidersPage';
+import { SettingsUsersPage } from './SettingsUsersPage';
 import { WalkthroughPage } from '../walkthrough/WalkthroughPage';
 
 export function HomeRoutes() {
@@ -28,6 +29,7 @@ export function HomeRoutes() {
           <Route path="/settings/workers" element={<SettingsWorkersPage />} />
           <Route path="/settings/ai-providers" element={<SettingsAIProvidersPage />} />
           <Route path="/settings/data" element={<SettingsDataPage />} />
+          <Route path="/settings/users" element={<SettingsUsersPage />} />
           <Route path="/walkthrough" element={<WalkthroughPage />} />
         </Route>
       </Routes>

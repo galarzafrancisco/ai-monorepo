@@ -1114,6 +1114,187 @@
         ]
       }
     },
+    "/api/v1/auth/users": {
+      "get": {
+        "operationId": "WebAuthController_listUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManagedUserResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List human users for admin user management",
+        "tags": [
+          "Web Authentication"
+        ]
+      },
+      "post": {
+        "operationId": "WebAuthController_createUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateManagedUserRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedUserResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create an invited human user",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/users/{userId}/reset-password": {
+      "post": {
+        "operationId": "WebAuthController_resetUserPassword",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedUserResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reset a managed user password so they can set a new one",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/users/{userId}": {
+      "delete": {
+        "operationId": "WebAuthController_deleteUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedUserResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deactivate a managed user",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/account-setup-status": {
+      "post": {
+        "operationId": "WebAuthController_getAccountSetupStatus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountSetupStatusRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSetupStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Check whether an invited or reset account can be set up",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/setup-account": {
+      "post": {
+        "operationId": "WebAuthController_setupAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupManagedUserRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Set up an invited or reset account and log in",
+        "tags": [
+          "Web Authentication"
+        ]
+      }
+    },
     "/api/v1/auth/refresh": {
       "post": {
         "operationId": "WebAuthController_refresh",
@@ -8093,6 +8274,153 @@
         "required": [
           "user",
           "expiresIn"
+        ]
+      },
+      "ManagedUserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name from the associated human actor"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Actor slug/username"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Actor ID associated with this user"
+          },
+          "role": {
+            "type": "string",
+            "description": "User role",
+            "enum": [
+              "admin",
+              "standard"
+            ]
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this user can currently sign in"
+          },
+          "passwordSetupPending": {
+            "type": "boolean",
+            "description": "Whether this user still needs to set a password"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "displayName",
+          "slug",
+          "actorId",
+          "role",
+          "isActive",
+          "passwordSetupPending",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateManagedUserRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email address to invite",
+            "example": "user@example.com"
+          },
+          "role": {
+            "type": "string",
+            "description": "Role for the new user",
+            "enum": [
+              "admin",
+              "standard"
+            ],
+            "example": "standard"
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ]
+      },
+      "AccountSetupStatusRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email address to check",
+            "example": "user@example.com"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "AccountSetupStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Normalized email address"
+          },
+          "canSetup": {
+            "type": "boolean",
+            "description": "Whether an invited or reset account can be set up"
+          }
+        },
+        "required": [
+          "email",
+          "canSetup"
+        ]
+      },
+      "SetupManagedUserRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Invited or reset account email address",
+            "example": "user@example.com"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name for the user",
+            "example": "Jane User"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Slug/username for the user",
+            "example": "jane"
+          },
+          "password": {
+            "type": "string",
+            "description": "New password for the account",
+            "example": "securepassword123"
+          }
+        },
+        "required": [
+          "email",
+          "displayName",
+          "slug",
+          "password"
         ]
       },
       "ChangePasswordRequestDto": {

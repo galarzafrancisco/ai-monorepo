@@ -99,8 +99,6 @@ export class WebAuthService {
     const config = getConfig();
 
     // Determine scopes based on role
-    console.log("USER ROLE")
-    console.log(user.role)
     const scopes: Scope[] = [
       ...ALL_WEB_SCOPES,
       ...ALL_MCP_REGISTRY_SCOPES,
@@ -227,6 +225,9 @@ export class WebAuthService {
         'User not found for refresh token. This should not happen',
       );
       throw new RefreshTokenUserMissingError(storedToken.id);
+    }
+    if (!user.isActive || this.identityProviderService.isPasswordSetupPending(user)) {
+      throw new UnauthorizedException('Invalid refresh token');
     }
     const actor = storedToken.user.actor;
     if (!actor) {

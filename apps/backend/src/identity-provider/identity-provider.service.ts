@@ -3,12 +3,15 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import * as bcrypt from 'bcrypt';
 import {
   CreateUserInput,
+  CreateManagedUserInput,
+  SetupManagedUserInput,
   UpdateUserRoleInput,
 } from './dto/service/identity-provider.service.types';
 import { ActorService } from './actor.service';
@@ -26,6 +29,8 @@ import {
 @Injectable()
 export class IdentityProviderService {
   private logger = new Logger(IdentityProviderService.name);
+  private readonly pendingPasswordPrefix = 'pending-password:';
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -45,6 +50,10 @@ export class IdentityProviderService {
       throw new InvalidCredentialsError();
     }
 
+    if (this.isPasswordSetupPending(user)) {
+      throw new InvalidCredentialsError();
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new InvalidCredentialsError();
@@ -60,6 +69,118 @@ export class IdentityProviderService {
     const actor = user.actor;
 
     return { user, actor };
+  }
+
+  isPasswordSetupPending(user: User): boolean {
+    return user.passwordHash.startsWith(this.pendingPasswordPrefix);
+  }
+
+  async listManagedUsers(): Promise<User[]> {
+    return this.userRepository.find({
+      relations: { actor: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async createManagedUser(input: CreateManagedUserInput): Promise<User> {
+    const email = input.email.trim().toLowerCase();
+    const existing = await this.userRepository.findOne({ where: { email } });
+    if (existing) {
+      throw new UserEmailConflictError(email);
+    }
+
+    const slug = await this.createAvailableSlug(email);
+    const displayName = email.split('@')[0] || email;
+
+    const actor = await this.actorService.createUserActor({
+      slug,
+      displayName,
+    });
+
+    const user = this.userRepository.create({
+      email,
+      passwordHash: this.createPendingPasswordHash(),
+      actorId: actor.id,
+      role: input.role,
+      isActive: true,
+    });
+    const savedUser = await this.userRepository.save(user);
+    savedUser.actor = actor;
+    return savedUser;
+  }
+
+  async getManagedAccountSetupStatus(email: string): Promise<{ email: string; canSetup: boolean }> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.userRepository.findOne({
+      where: { email: normalizedEmail, isActive: true },
+    });
+
+    return {
+      email: normalizedEmail,
+      canSetup: Boolean(user && this.isPasswordSetupPending(user)),
+    };
+  }
+
+  async setupManagedUser(input: SetupManagedUserInput): Promise<User> {
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const MIN_PASSWORD_LENGTH = 8;
+    if (input.password.length < MIN_PASSWORD_LENGTH) {
+      throw new PasswordTooShortError(MIN_PASSWORD_LENGTH);
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { email: normalizedEmail, isActive: true },
+      relations: { actor: true },
+    });
+    if (!user || !this.isPasswordSetupPending(user)) {
+      throw new InvalidCredentialsError();
+    }
+    if (!user.actor) {
+      this.logger.error('User returned no actor during account setup. This should not happen!');
+      throw new InternalServerErrorException('Failed to retrieve actor');
+    }
+
+    const slugTaken = await this.actorService.isSlugTaken(input.slug);
+    if (slugTaken && user.actor.slug !== input.slug) {
+      throw new UserSlugConflictError(input.slug);
+    }
+
+    user.actor.displayName = input.displayName;
+    user.actor.slug = input.slug;
+    user.passwordHash = await this.hashPassword(input.password);
+
+    await this.userRepository.manager.transaction(async (manager) => {
+      await manager.save(ActorEntity, user.actor!);
+      await manager.save(User, user);
+    });
+
+    return user;
+  }
+
+  async resetManagedUserPassword(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isActive: true },
+      relations: { actor: true },
+    });
+    if (!user) {
+      throw new UserNotFoundError(userId);
+    }
+
+    user.passwordHash = this.createPendingPasswordHash();
+    return this.userRepository.save(user);
+  }
+
+  async deactivateManagedUser(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isActive: true },
+      relations: { actor: true },
+    });
+    if (!user) {
+      throw new UserNotFoundError(userId);
+    }
+
+    user.isActive = false;
+    return this.userRepository.save(user);
   }
 
   async getUserById(id: string): Promise<User | null> {
@@ -257,5 +378,30 @@ export class IdentityProviderService {
   private async hashPassword(password: string): Promise<string> {
     const saltRounds = 12;
     return bcrypt.hash(password, saltRounds);
+  }
+
+  private createPendingPasswordHash(): string {
+    return `${this.pendingPasswordPrefix}${randomBytes(24).toString('hex')}`;
+  }
+
+  private async createAvailableSlug(email: string): Promise<string> {
+    const baseSlug =
+      email
+        .split('@')[0]
+        ?.toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'user';
+
+    let slug = baseSlug;
+    let suffix = 2;
+    while (await this.actorService.isSlugTaken(slug)) {
+      slug = `${baseSlug}-${suffix}`;
+      suffix += 1;
+      if (suffix > 1000) {
+        throw new InternalServerErrorException('Could not generate a unique username');
+      }
+    }
+
+    return slug;
   }
 }

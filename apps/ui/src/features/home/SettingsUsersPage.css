@@ -1,0 +1,115 @@
+.settings-users-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.settings-users-page__hero {
+  border-color: var(--border-subtle);
+}
+
+.settings-users-page__hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+}
+
+.settings-users-page__create-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) auto;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.settings-users-page__create-button {
+  min-height: 46px;
+}
+
+.settings-users-page__list-card {
+  overflow: hidden;
+}
+
+.settings-users-page__list-header,
+.settings-users-page__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.settings-users-page__list-header {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-users-page__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-users-page__row {
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, auto) auto;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-users-page__row:last-child {
+  border-bottom: 0;
+}
+
+.settings-users-page__identity {
+  min-width: 0;
+}
+
+.settings-users-page__badges,
+.settings-users-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.settings-users-page__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: var(--surface);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+.settings-users-page__badge--active {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 10%, var(--card-bg));
+}
+
+.settings-users-page__badge--inactive,
+.settings-users-page__badge--pending {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 10%, var(--card-bg));
+}
+
+.settings-users-page__empty {
+  padding: var(--space-4);
+}
+
+@media (max-width: 860px) {
+  .settings-users-page__create-grid,
+  .settings-users-page__row {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-users-page__create-button {
+    width: 100%;
+  }
+}

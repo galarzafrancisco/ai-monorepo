@@ -382,6 +382,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List human users for admin user management */
+        get: operations["WebAuthController_listUsers"];
+        put?: never;
+        /** Create an invited human user */
+        post: operations["WebAuthController_createUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/users/{userId}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset a managed user password so they can set a new one */
+        post: operations["WebAuthController_resetUserPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Deactivate a managed user */
+        delete: operations["WebAuthController_deleteUser"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/account-setup-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check whether an invited or reset account can be set up */
+        post: operations["WebAuthController_getAccountSetupStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/setup-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set up an invited or reset account and log in */
+        post: operations["WebAuthController_setupAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -2749,6 +2835,85 @@ export interface components {
              * @example 600
              */
             expiresIn: number;
+        };
+        ManagedUserResponseDto: {
+            /** @description User ID */
+            id: string;
+            /** @description User email address */
+            email: string;
+            /** @description Display name from the associated human actor */
+            displayName: string;
+            /** @description Actor slug/username */
+            slug: string;
+            /** @description Actor ID associated with this user */
+            actorId: string;
+            /**
+             * @description User role
+             * @enum {string}
+             */
+            role: "admin" | "standard";
+            /** @description Whether this user can currently sign in */
+            isActive: boolean;
+            /** @description Whether this user still needs to set a password */
+            passwordSetupPending: boolean;
+            /**
+             * Format: date-time
+             * @description Creation timestamp
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Last update timestamp
+             */
+            updatedAt: string;
+        };
+        CreateManagedUserRequestDto: {
+            /**
+             * @description Email address to invite
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description Role for the new user
+             * @example standard
+             * @enum {string}
+             */
+            role: "admin" | "standard";
+        };
+        AccountSetupStatusRequestDto: {
+            /**
+             * @description Email address to check
+             * @example user@example.com
+             */
+            email: string;
+        };
+        AccountSetupStatusResponseDto: {
+            /** @description Normalized email address */
+            email: string;
+            /** @description Whether an invited or reset account can be set up */
+            canSetup: boolean;
+        };
+        SetupManagedUserRequestDto: {
+            /**
+             * @description Invited or reset account email address
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description Display name for the user
+             * @example Jane User
+             */
+            displayName: string;
+            /**
+             * @description Slug/username for the user
+             * @example jane
+             */
+            slug: string;
+            /**
+             * @description New password for the account
+             * @example securepassword123
+             */
+            password: string;
         };
         ChangePasswordRequestDto: {
             /**
@@ -6817,6 +6982,136 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    WebAuthController_listUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUserResponseDto"][];
+                };
+            };
+        };
+    };
+    WebAuthController_createUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateManagedUserRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUserResponseDto"];
+                };
+            };
+        };
+    };
+    WebAuthController_resetUserPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUserResponseDto"];
+                };
+            };
+        };
+    };
+    WebAuthController_deleteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedUserResponseDto"];
+                };
+            };
+        };
+    };
+    WebAuthController_getAccountSetupStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountSetupStatusRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSetupStatusResponseDto"];
+                };
+            };
+        };
+    };
+    WebAuthController_setupAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupManagedUserRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponseDto"];
+                };
             };
         };
     };

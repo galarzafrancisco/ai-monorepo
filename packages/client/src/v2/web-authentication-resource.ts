@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { ChangePasswordRequestDto, LoginRequestDto, LoginResponseDto, OnboardingRequestDto, OnboardingStatusResponseDto, UserResponseDto } from './types.js';
+import type { AccountSetupStatusRequestDto, AccountSetupStatusResponseDto, ChangePasswordRequestDto, CreateManagedUserRequestDto, LoginRequestDto, LoginResponseDto, ManagedUserResponseDto, OnboardingRequestDto, OnboardingStatusResponseDto, SetupManagedUserRequestDto, UserResponseDto } from './types.js';
 
 export class WebAuthenticationResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -9,6 +9,36 @@ export class WebAuthenticationResource extends BaseClient {
   /** Login with email and password */
   async WebAuthController_login(params: { body: LoginRequestDto; signal?: AbortSignal }): Promise<LoginResponseDto> {
     return this.request('POST', '/api/v1/auth/login', { body: params.body, signal: params?.signal });
+  }
+
+  /** List human users for admin user management */
+  async WebAuthController_listUsers(params?: { signal?: AbortSignal }): Promise<ManagedUserResponseDto[]> {
+    return this.request('GET', '/api/v1/auth/users', { signal: params?.signal });
+  }
+
+  /** Create an invited human user */
+  async WebAuthController_createUser(params: { body: CreateManagedUserRequestDto; signal?: AbortSignal }): Promise<ManagedUserResponseDto> {
+    return this.request('POST', '/api/v1/auth/users', { body: params.body, signal: params?.signal });
+  }
+
+  /** Reset a managed user password so they can set a new one */
+  async WebAuthController_resetUserPassword(params: { userId: string; signal?: AbortSignal }): Promise<ManagedUserResponseDto> {
+    return this.request('POST', `/api/v1/auth/users/${params.userId}/reset-password`, { signal: params?.signal });
+  }
+
+  /** Deactivate a managed user */
+  async WebAuthController_deleteUser(params: { userId: string; signal?: AbortSignal }): Promise<ManagedUserResponseDto> {
+    return this.request('DELETE', `/api/v1/auth/users/${params.userId}`, { signal: params?.signal });
+  }
+
+  /** Check whether an invited or reset account can be set up */
+  async WebAuthController_getAccountSetupStatus(params: { body: AccountSetupStatusRequestDto; signal?: AbortSignal }): Promise<AccountSetupStatusResponseDto> {
+    return this.request('POST', '/api/v1/auth/account-setup-status', { body: params.body, signal: params?.signal });
+  }
+
+  /** Set up an invited or reset account and log in */
+  async WebAuthController_setupAccount(params: { body: SetupManagedUserRequestDto; signal?: AbortSignal }): Promise<LoginResponseDto> {
+    return this.request('POST', '/api/v1/auth/setup-account', { body: params.body, signal: params?.signal });
   }
 
   /** Refresh access token using refresh token */

@@ -1,13 +1,17 @@
 import {
   Controller,
+  Delete,
   Post,
   Get,
   Body,
+  Param,
   Res,
   Req,
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  ForbiddenException,
+  BadRequestException,
   Logger,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -27,6 +31,12 @@ import { WebAuthService } from './web-auth.service';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { UserRole } from 'src/identity-provider/enums';
 import { OnboardingNotAllowedError } from 'src/identity-provider/errors/identity-provider.errors';
+import { CreateManagedUserRequestDto } from './dto/create-managed-user-request.dto';
+import { ManagedUserResponseDto } from './dto/managed-user-response.dto';
+import { AccountSetupStatusRequestDto } from './dto/account-setup-status-request.dto';
+import { AccountSetupStatusResponseDto } from './dto/account-setup-status-response.dto';
+import { SetupManagedUserRequestDto } from './dto/setup-managed-user-request.dto';
+import { User } from 'src/identity-provider/user.entity';
 
 @ApiTags('Web Authentication')
 @Controller('auth')
@@ -63,29 +73,102 @@ export class WebAuthController {
 
     this.logger.log('Got access token');
 
-    // Determine if cookies should be secure (HTTPS only)
-    const config = getConfig();
-    const isProduction = config.nodeEnv === 'production';
-
-    // Set httpOnly cookies
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax' as const,
-      path: '/',
-    };
-
-    response.cookie(COOKIE_KEYS.ACCESS_TOKEN, accessToken, {
-      ...cookieOptions,
-      maxAge: expiresInSeconds * 1000, // 60 minutes in milliseconds
-    });
-
-    response.cookie(COOKIE_KEYS.REFRESH_TOKEN, refreshToken, {
-      ...cookieOptions,
-      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds (triggers re-login)
-    });
+    this.setAuthCookies(response, accessToken, refreshToken, expiresInSeconds);
 
     // Return user info and token expiration
+    return {
+      user: {
+        id: actor.id,
+        email: user.email,
+        displayName: actor.displayName,
+        role: user.role,
+        actorId: user.actorId,
+        onboardingDisplayMode: user.onboardingDisplayMode,
+      },
+      expiresIn: expiresInSeconds,
+    };
+  }
+
+  @Get('users')
+  @ApiOperation({ summary: 'List human users for admin user management' })
+  @ApiResponse({ status: 200, type: [ManagedUserResponseDto] })
+  async listUsers(@Req() request: Request): Promise<ManagedUserResponseDto[]> {
+    await this.requireAdminUser(request);
+    const users = await this.identityProviderService.listManagedUsers();
+    return users.map((user) => this.toManagedUserResponse(user));
+  }
+
+  @Post('users')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create an invited human user' })
+  @ApiBody({ type: CreateManagedUserRequestDto })
+  @ApiResponse({ status: 201, type: ManagedUserResponseDto })
+  async createUser(
+    @Req() request: Request,
+    @Body() createUserDto: CreateManagedUserRequestDto,
+  ): Promise<ManagedUserResponseDto> {
+    await this.requireAdminUser(request);
+    const user = await this.identityProviderService.createManagedUser(createUserDto);
+    return this.toManagedUserResponse(user);
+  }
+
+  @Post('users/:userId/reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset a managed user password so they can set a new one' })
+  @ApiResponse({ status: 200, type: ManagedUserResponseDto })
+  async resetUserPassword(
+    @Req() request: Request,
+    @Param('userId') userId: string,
+  ): Promise<ManagedUserResponseDto> {
+    await this.requireAdminUser(request);
+    const user = await this.identityProviderService.resetManagedUserPassword(userId);
+    return this.toManagedUserResponse(user);
+  }
+
+  @Delete('users/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Deactivate a managed user' })
+  @ApiResponse({ status: 200, type: ManagedUserResponseDto })
+  async deleteUser(
+    @Req() request: Request,
+    @Param('userId') userId: string,
+  ): Promise<ManagedUserResponseDto> {
+    const adminUser = await this.requireAdminUser(request);
+    if (adminUser.id === userId) {
+      throw new BadRequestException('Admins cannot delete their own account');
+    }
+
+    const user = await this.identityProviderService.deactivateManagedUser(userId);
+    return this.toManagedUserResponse(user);
+  }
+
+  @Post('account-setup-status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Check whether an invited or reset account can be set up' })
+  @ApiBody({ type: AccountSetupStatusRequestDto })
+  @ApiResponse({ status: 200, type: AccountSetupStatusResponseDto })
+  async getAccountSetupStatus(
+    @Body() accountSetupDto: AccountSetupStatusRequestDto,
+  ): Promise<AccountSetupStatusResponseDto> {
+    return this.identityProviderService.getManagedAccountSetupStatus(accountSetupDto.email);
+  }
+
+  @Post('setup-account')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set up an invited or reset account and log in' })
+  @ApiBody({ type: SetupManagedUserRequestDto })
+  @ApiResponse({ status: 200, type: LoginResponseDto })
+  async setupAccount(
+    @Body() setupUserDto: SetupManagedUserRequestDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<LoginResponseDto> {
+    await this.identityProviderService.setupManagedUser(setupUserDto);
+
+    const { accessToken, refreshToken, expiresInSeconds, user, actor } =
+      await this.webAuthService.login(setupUserDto.email, setupUserDto.password);
+
+    this.setAuthCookies(response, accessToken, refreshToken, expiresInSeconds);
+
     return {
       user: {
         id: actor.id,
@@ -130,27 +213,7 @@ export class WebAuthController {
       throw new UnauthorizedException('User not found');
     }
 
-    // Determine if cookies should be secure
-    const config = getConfig();
-    const isProduction = config.nodeEnv === 'production';
-
-    // Set new httpOnly cookies
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax' as const,
-      path: '/',
-    };
-
-    response.cookie(COOKIE_KEYS.ACCESS_TOKEN, accessToken, {
-      ...cookieOptions,
-      maxAge: expiresIn * 1000,
-    });
-
-    response.cookie(COOKIE_KEYS.REFRESH_TOKEN, refreshToken, {
-      ...cookieOptions,
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    this.setAuthCookies(response, accessToken, refreshToken, expiresIn);
 
     // Return user info
     return {
@@ -237,7 +300,7 @@ export class WebAuthController {
     if (!actor) {
       throw new UnauthorizedException('Actor not found');
     }
-    if (!actor.user) {
+    if (!actor.user || !actor.user.isActive) {
       this.logger.error('Actor returned no user. This should not happen');
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
@@ -291,7 +354,7 @@ export class WebAuthController {
     if (!actor) {
       throw new UnauthorizedException('Actor not found');
     }
-    if (!actor.user) {
+    if (!actor.user || !actor.user.isActive) {
       this.logger.error('Actor returned no user. This should not happen');
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
@@ -360,26 +423,7 @@ export class WebAuthController {
     const { accessToken, refreshToken, expiresInSeconds } =
       await this.webAuthService.login(onboardingDto.email, onboardingDto.password);
 
-    // Set cookies (same logic as login)
-    const config = getConfig();
-    const isProduction = config.nodeEnv === 'production';
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax' as const,
-      path: '/',
-    };
-
-    response.cookie(COOKIE_KEYS.ACCESS_TOKEN, accessToken, {
-      ...cookieOptions,
-      maxAge: expiresInSeconds * 1000,
-    });
-
-    response.cookie(COOKIE_KEYS.REFRESH_TOKEN, refreshToken, {
-      ...cookieOptions,
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    this.setAuthCookies(response, accessToken, refreshToken, expiresInSeconds);
 
     this.logger.log(`First admin user created: ${onboardingDto.email}`);
 
@@ -429,7 +473,7 @@ export class WebAuthController {
     if (!actor) {
       throw new UnauthorizedException('Actor not found');
     }
-    if (!actor.user) {
+    if (!actor.user || !actor.user.isActive) {
       this.logger.error('Actor returned no user. This should not happen');
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
@@ -440,5 +484,64 @@ export class WebAuthController {
     this.logger.log(`Walkthrough marked as seen for user: ${actor.user.email}`);
 
     return { ok: true };
+  }
+
+  private async requireAdminUser(request: Request): Promise<User> {
+    const accessToken = request.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
+    if (!accessToken) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    const payload = await this.tokenVerifierService.verifyAndDecode(accessToken);
+    const actor = await this.actorService.getActorById(payload.actor_id, true);
+    if (!actor?.user || !actor.user.isActive) {
+      throw new UnauthorizedException('User not found');
+    }
+    if (actor.user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Admin access required');
+    }
+
+    return actor.user;
+  }
+
+  private setAuthCookies(
+    response: Response,
+    accessToken: string,
+    refreshToken: string,
+    expiresInSeconds: number,
+  ): void {
+    const config = getConfig();
+    const isProduction = config.nodeEnv === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+      path: '/',
+    };
+
+    response.cookie(COOKIE_KEYS.ACCESS_TOKEN, accessToken, {
+      ...cookieOptions,
+      maxAge: expiresInSeconds * 1000,
+    });
+
+    response.cookie(COOKIE_KEYS.REFRESH_TOKEN, refreshToken, {
+      ...cookieOptions,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+  }
+
+  private toManagedUserResponse(user: User): ManagedUserResponseDto {
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.actor?.displayName ?? user.email,
+      slug: user.actor?.slug ?? user.email,
+      actorId: user.actorId,
+      role: user.role as UserRole,
+      isActive: user.isActive,
+      passwordSetupPending: this.identityProviderService.isPasswordSetupPending(user),
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }

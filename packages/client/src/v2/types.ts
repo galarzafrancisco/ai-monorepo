@@ -184,6 +184,40 @@ export interface LoginResponseDto {
   expiresIn: number;
 }
 
+export interface ManagedUserResponseDto {
+  id: string;
+  email: string;
+  displayName: string;
+  slug: string;
+  actorId: string;
+  role: 'admin' | 'standard';
+  isActive: boolean;
+  passwordSetupPending: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateManagedUserRequestDto {
+  email: string;
+  role: 'admin' | 'standard';
+}
+
+export interface AccountSetupStatusRequestDto {
+  email: string;
+}
+
+export interface AccountSetupStatusResponseDto {
+  email: string;
+  canSetup: boolean;
+}
+
+export interface SetupManagedUserRequestDto {
+  email: string;
+  displayName: string;
+  slug: string;
+  password: string;
+}
+
 export interface ChangePasswordRequestDto {
   currentPassword: string;
   newPassword: string;

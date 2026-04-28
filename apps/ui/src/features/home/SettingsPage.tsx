@@ -27,6 +27,7 @@ import {
   Palette,
   Server,
   Sparkles,
+  Users,
 } from 'lucide-react';
 import './SettingsPage.css';
 
@@ -140,6 +141,13 @@ export function SettingsPage() {
         aliases: ['data', 'export', 'import', 'backup', 'restore'],
         onSelect: () => navigate('/settings/data'),
       },
+      {
+        id: 'settings-users',
+        label: 'User Management',
+        description: 'Invite users and manage access',
+        aliases: ['users', 'user management', 'admin', 'accounts'],
+        onSelect: () => navigate('/settings/users'),
+      },
     ];
 
     return registerCommands(commands);
@@ -206,6 +214,15 @@ export function SettingsPage() {
       path: '/settings/account',
       action: 'Security',
       detail: { label: 'Password', value: 'Change available', tone: 'default' },
+    },
+    {
+      title: 'Users',
+      description: 'Invite people, reset passwords, and disable access.',
+      icon: Users,
+      iconTone: 'accent',
+      path: '/settings/users',
+      action: 'Manage users',
+      detail: { label: 'Access', value: 'Admin only', tone: 'default' },
     },
     {
       title: 'Data',

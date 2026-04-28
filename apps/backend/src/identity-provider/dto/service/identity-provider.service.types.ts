@@ -14,6 +14,18 @@ export type CreateUserInput = {
   introduction?: string;
 };
 
+export type CreateManagedUserInput = {
+  email: string;
+  role: UserRole;
+};
+
+export type SetupManagedUserInput = {
+  email: string;
+  displayName: string;
+  slug: string;
+  password: string;
+};
+
 export type UpdateUserRoleInput = {
   role: UserRole;
 };
