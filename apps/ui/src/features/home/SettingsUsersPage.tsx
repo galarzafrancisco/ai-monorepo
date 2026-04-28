@@ -15,7 +15,7 @@ type UserRole = CreateManagedUserRequestDto.role;
 
 export function SettingsUsersPage() {
   const { setSectionTitle } = useHomeCtx();
-  const { user } = useAuth();
+  const { user, isLoading: authIsLoading } = useAuth();
   const [users, setUsers] = useState<ManagedUserResponseDto[]>([]);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>(CreateManagedUserRequestDto.role.STANDARD);
@@ -26,10 +26,14 @@ export function SettingsUsersPage() {
 
   useEffect(() => {
     setSectionTitle('User Management');
-    void loadUsers();
-  }, []);
+  }, [setSectionTitle]);
 
   const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    if (authIsLoading || !isAdmin) return;
+    void loadUsers();
+  }, [authIsLoading, isAdmin]);
 
   const loadUsers = async () => {
     if (!isAdmin) return;
@@ -87,6 +91,14 @@ export function SettingsUsersPage() {
       setError(readError(err, 'Failed to delete user.'));
     }
   };
+
+  if (authIsLoading) {
+    return (
+      <Card padding="5">
+        <Text tone="muted">Loading user management...</Text>
+      </Card>
+    );
+  }
 
   if (!isAdmin) {
     return (
