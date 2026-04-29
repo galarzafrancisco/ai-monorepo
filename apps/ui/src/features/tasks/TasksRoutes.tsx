@@ -4,6 +4,7 @@ import { TasksLayout } from "./TasksLayout";
 import { TasksProvider } from "./TasksProvider";
 import { TaskStatus } from "./const";
 import { TaskDetailPage } from "./TaskDetailPage";
+import { TaskDependenciesPage } from "./TaskDependenciesPage";
 import { ScheduledTasksProvider } from "../scheduled-tasks/ScheduledTasksProvider";
 import { ScheduledTasksPage } from "../scheduled-tasks/ScheduledTasksPage";
 import { ScheduledTaskDetailPage } from "../scheduled-tasks/ScheduledTaskDetailPage";
@@ -28,6 +29,7 @@ export function TasksRoutes() {
           <Route path="in-progress" element={<TasksPage status={TaskStatus.IN_PROGRESS} />} />
           <Route path="in-review" element={<TasksPage status={TaskStatus.FOR_REVIEW} />} />
           <Route path="done" element={<TasksPage status={TaskStatus.DONE} />} />
+          <Route path="dependencies" element={<TaskDependenciesPage />} />
           <Route path="task/:d" element={<TaskDetailPage />} />
           <Route element={<ScheduledTasksSection />}>
             <Route path="schedule" element={<ScheduledTasksPage />} />

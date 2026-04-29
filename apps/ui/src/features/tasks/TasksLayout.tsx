@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, GitBranch } from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { DesktopShell } from "../../app/shells/DesktopShell";
@@ -47,18 +47,29 @@ export function TasksLayout(): React.JSX.Element {
         <DesktopShell
           sectionTitle={sectionTitle}
           headerActions={(
-            <Button
-              size="sm"
-              variant="ghost"
-              className="tasks-layout__schedule-button"
-              onClick={() => navigate('/tasks/schedule')}
-            >
-              <CalendarDays className="tasks-layout__schedule-icon" size={16} strokeWidth={1.5} absoluteStrokeWidth />
-              Schedule
-              {activeScheduleCount && activeScheduleCount > 0 ? (
-                <span className="tasks-layout__schedule-badge">{activeScheduleCount}</span>
-              ) : null}
-            </Button>
+            <div className="tasks-layout__header-actions">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="tasks-layout__header-button"
+                onClick={() => navigate('/tasks/dependencies')}
+              >
+                <GitBranch className="tasks-layout__header-icon" size={16} strokeWidth={1.5} absoluteStrokeWidth />
+                Dependencies
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="tasks-layout__header-button"
+                onClick={() => navigate('/tasks/schedule')}
+              >
+                <CalendarDays className="tasks-layout__header-icon" size={16} strokeWidth={1.5} absoluteStrokeWidth />
+                Schedule
+                {activeScheduleCount && activeScheduleCount > 0 ? (
+                  <span className="tasks-layout__schedule-badge">{activeScheduleCount}</span>
+                ) : null}
+              </Button>
+            </div>
           )}
         >
           <Outlet />

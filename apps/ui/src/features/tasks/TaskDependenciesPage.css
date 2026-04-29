@@ -1,0 +1,157 @@
+.task-dependencies-page {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+}
+
+.task-dependencies-page--state {
+  align-items: center;
+  justify-content: center;
+}
+
+.task-dependencies-canvas {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(160px, 1fr) minmax(280px, 360px);
+  gap: var(--space-5);
+  width: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-4);
+  background: var(--surface);
+}
+
+.task-dependencies-empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  gap: var(--space-2);
+  max-width: 420px;
+  text-align: center;
+}
+
+.task-dependencies-column {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.task-dependencies-column--right {
+  grid-column: 3;
+}
+
+.task-dependencies-column__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.task-dependencies-column__cards {
+  display: grid;
+  gap: 14px;
+}
+
+.dependency-task-card {
+  height: 76px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--card-bg);
+  color: var(--text);
+  padding: var(--space-3);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dependency-task-card:hover {
+  border-color: var(--accent);
+}
+
+.dependency-task-card--done {
+  border-color: var(--success);
+}
+
+.dependency-task-card__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+}
+
+.dependency-status-indicator,
+.dependency-task-card__spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.dependency-status-indicator--not-started {
+  border: 2px solid var(--text-muted);
+}
+
+.dependency-status-indicator--in-progress {
+  background: var(--success);
+}
+
+.dependency-status-indicator--for-review {
+  border: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.dependency-status-indicator--done {
+  border: 2px solid var(--success);
+  color: var(--success);
+}
+
+.dependency-task-card__spinner {
+  border: 2px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-top-color: var(--accent);
+  animation: dependency-spin 0.9s linear infinite;
+}
+
+.task-dependencies-connections {
+  grid-column: 2;
+  align-self: start;
+  width: 100%;
+  min-height: 100%;
+  margin-top: calc(var(--space-3) + var(--fs-2) + var(--space-2));
+  overflow: visible;
+}
+
+.task-dependencies-connection {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+@keyframes dependency-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .task-dependencies-canvas {
+    grid-template-columns: minmax(240px, 1fr) 96px minmax(240px, 1fr);
+    gap: var(--space-3);
+  }
+}
