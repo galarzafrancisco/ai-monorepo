@@ -10,6 +10,7 @@ import {
   TokenUsage,
 } from './runners/AgentRunner.js';
 import { ClaudeAgentRunner } from './runners/ClaudeAgentRunner.js';
+import { CodexAgentRunner } from './runners/CodexAgentRunner.js';
 import { OpencodeAgentRunner } from './runners/OpenCodeAgentRunner.js';
 import { ADKAgentRunner } from './runners/ADKAgentRunner.js';
 import { GitHubCopilotAgentRunner } from './runners/GitHubCopilotAgentRunner.js';
@@ -134,6 +135,8 @@ export async function executeTask({
     };
     if (agent.type === 'claude') {
       runner = new ClaudeAgentRunner(modelConfig);
+    } else if (agent.type === 'codex') {
+      runner = new CodexAgentRunner(modelConfig);
     } else if (agent.type === 'opencode') {
       runner = new OpencodeAgentRunner(modelConfig);
     } else if (agent.type === 'adk') {

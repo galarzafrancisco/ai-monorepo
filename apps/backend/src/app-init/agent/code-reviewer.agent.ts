@@ -8,7 +8,7 @@ import { CODEX } from '../models/models';
 export const createCodeReviewer: CreateAgentInput = {
   slug: 'code-reviewer',
   name: 'Code Reviewer',
-  type: AgentType.OPENCODE,
+  type: AgentType.CODEX,
   providerId: CODEX.providerId,
   modelId: CODEX.modelId,
   description:

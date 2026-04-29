@@ -65,7 +65,7 @@ function stopProcessTree(proc: ChildProcessWithoutNullStreams): void {
 }
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
-  readonly kind = 'opencode';
+  readonly kind: string;
 
   // Mutex for process.chdir: serializes all instances so only one
   // changes the working directory at a time.
@@ -81,8 +81,9 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   private abortConfirmed = false;
   private abortPromise: Promise<boolean> | undefined;
 
-  constructor(modelConfig: AgentModelConfig = {}) {
+  constructor(modelConfig: AgentModelConfig = {}, kind = 'opencode') {
     super();
+    this.kind = kind;
     const hasCustomModel = Boolean(modelConfig.providerId && modelConfig.modelId);
     this.model = {
       providerId: hasCustomModel ? modelConfig.providerId! : 'openai',

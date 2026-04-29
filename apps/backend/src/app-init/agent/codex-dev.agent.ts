@@ -8,12 +8,12 @@ import { CODEX } from '../models/models';
 export const createCodexDev: CreateAgentInput = {
   slug: 'gpt-codex-dev',
   name: 'GPT Codex Developer',
-  type: AgentType.OPENCODE,
+  type: AgentType.CODEX,
   providerId: CODEX.providerId,
   modelId: CODEX.modelId,
   avatarUrl: getAgentAvatarUrlById('openai'),
   description:
-    'GPT Codex with a Developer persona, running on an Opencode harness',
+    'GPT Codex with a Developer persona, running on the Codex harness',
   systemPrompt: DEV_PROMPT,
   statusTriggers: [TaskStatus.NOT_STARTED],
   allowedTools: [],

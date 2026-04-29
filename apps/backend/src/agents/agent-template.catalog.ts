@@ -58,6 +58,24 @@ export const AGENT_TEMPLATE_HARNESSES: AgentTemplateHarnessDto[] = [
     ],
   },
   {
+    type: AgentType.CODEX,
+    label: 'Codex',
+    description: 'Run tasks through the Codex harness.',
+    modelOptions: [
+      defaultModelOption,
+      modelOption({
+        label: 'GPT-5.3 Codex',
+        providerId: CODEX.providerId,
+        modelId: CODEX.modelId,
+      }),
+      modelOption({
+        label: 'GPT-5.4',
+        providerId: GPT_5_4.providerId,
+        modelId: GPT_5_4.modelId,
+      }),
+    ],
+  },
+  {
     type: AgentType.OPENCODE,
     label: 'OpenCode',
     description: 'Run tasks through the OpenCode harness.',
@@ -124,7 +142,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     id: 'developer',
     label: 'Developer',
     description: 'Picks up queued implementation tasks and brings them to review.',
-    type: AgentType.OPENCODE,
+    type: AgentType.CODEX,
     providerId: CODEX.providerId,
     modelId: CODEX.modelId,
     agentDescription: 'Developer agent for implementation tasks.',
@@ -138,7 +156,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     id: 'code-reviewer',
     label: 'Code reviewer',
     description: 'Reviews code tasks when they are ready for review.',
-    type: AgentType.OPENCODE,
+    type: AgentType.CODEX,
     providerId: CODEX.providerId,
     modelId: CODEX.modelId,
     agentDescription:
