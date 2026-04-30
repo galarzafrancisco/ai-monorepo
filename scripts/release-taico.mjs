@@ -15,8 +15,8 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
-const defaultFromVersion = "0.2.16";
-const defaultToVersion = "0.2.17";
+const defaultFromVersion = "0.2.17";
+const defaultToVersion = "0.2.18";
 
 const packageReleaseOrder = [
   "packages/shared",
