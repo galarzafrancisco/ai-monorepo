@@ -18,7 +18,7 @@ export function TasksLayout(): React.JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeScheduleCount, setActiveScheduleCount] = useState<number | null>(null);
-  const isDependencyView = location.pathname === "/tasks/dependencies";
+  const isDependencyView = location.pathname === "/tasks/dependencies" || location.pathname.startsWith("/tasks/dependencies/");
   const isBoardView = [
     "/tasks/not-started",
     "/tasks/in-progress",

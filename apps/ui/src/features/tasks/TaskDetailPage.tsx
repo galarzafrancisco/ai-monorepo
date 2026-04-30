@@ -735,7 +735,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
               size="sm"
               variant="ghost"
               className="task-detail-page__dependency-graph-button"
-              onClick={() => navigate('/tasks/dependencies')}
+              onClick={() => navigate(`/tasks/dependencies/${task.id}`)}
             >
               <GitBranch className="task-detail-page__dependency-graph-icon" size={14} strokeWidth={1.5} absoluteStrokeWidth />
               View graph
