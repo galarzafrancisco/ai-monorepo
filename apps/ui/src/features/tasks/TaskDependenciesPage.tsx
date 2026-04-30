@@ -10,6 +10,7 @@ import { useExecutions } from "../executions/useExecutions";
 import { getTaskStatusTag } from "./taskStatusTag";
 import { MetaService } from "./api";
 import type { MetaTagResponseDto } from "@taico/client/v2";
+import type { TaskActivityWireEvent } from "@taico/events";
 import "./TaskDependenciesPage.css";
 
 type GraphConnection = {
@@ -115,9 +116,12 @@ export function TaskDependenciesPage(): React.JSX.Element {
   const activeStatusByTaskId = useMemo(() => {
     return new Map(active.map((execution) => [execution.taskId, execution.taskStatus as TaskStatus]));
   }, [active]);
+  const activityActiveTaskIds = useMemo(() => {
+    return new Set(Object.values(activityByTaskId).filter(isActiveExecutionActivity).map((activity) => activity.taskId));
+  }, [activityByTaskId]);
   const graph = useMemo(
-    () => buildDependencyGraph(filteredTasks, activeStatusByTaskId, activeTaskIds, activityByTaskId, { includeAllTasks: graphMode === "all" }),
-    [activeStatusByTaskId, activeTaskIds, activityByTaskId, filteredTasks, graphMode],
+    () => buildDependencyGraph(filteredTasks, activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, { includeAllTasks: graphMode === "all" }),
+    [activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, filteredTasks, graphMode],
   );
   const hasSelectedTags = selectedTagNames.length > 0;
   const graphModeLabel = graphMode === "all" ? "all tasks" : "tasks with dependencies";
@@ -445,7 +449,7 @@ export function TaskDependenciesPage(): React.JSX.Element {
                     key={node.task.id}
                     node={node}
                     status={activeStatusByTaskId.get(node.task.id) ?? (node.task.status as TaskStatus)}
-                    hasActiveExecution={activeTaskIds.has(node.task.id) || Boolean(activityByTaskId[node.task.id])}
+                    hasActiveExecution={activeTaskIds.has(node.task.id) || activityActiveTaskIds.has(node.task.id)}
                     onOpen={() => navigate(`/tasks/task/${node.task.id}`)}
                   />
                 ))}
@@ -556,7 +560,7 @@ function buildDependencyGraph(
   tasks: Task[],
   activeStatusByTaskId: Map<string, TaskStatus>,
   activeTaskIds: Set<string>,
-  activityByTaskId: Record<string, unknown>,
+  activityActiveTaskIds: Set<string>,
   options: { includeAllTasks: boolean },
 ): DependencyGraph {
   const taskById = new Map(tasks.map((task) => [task.id, task]));
@@ -636,7 +640,7 @@ function buildDependencyGraph(
   const layerHeights = new Map<number, number>();
 
   for (const [layer, layerTaskIds] of taskIdsByLayer) {
-    const layerHeight = getLayerHeight(layerTaskIds, taskById, activeStatusByTaskId, activeTaskIds, activityByTaskId);
+    const layerHeight = getLayerHeight(layerTaskIds, taskById, activeStatusByTaskId, activeTaskIds, activityActiveTaskIds);
     layerHeights.set(layer, layerHeight);
   }
 
@@ -653,7 +657,7 @@ function buildDependencyGraph(
       if (!task) {
         return;
       }
-      const nodeHeight = getGraphNodeHeight(task, activeStatusByTaskId, activeTaskIds, activityByTaskId);
+      const nodeHeight = getGraphNodeHeight(task, activeStatusByTaskId, activeTaskIds, activityActiveTaskIds);
       const node = {
         task,
         layer,
@@ -726,11 +730,11 @@ function getLayerHeight(
   taskById: Map<string, Task>,
   activeStatusByTaskId: Map<string, TaskStatus>,
   activeTaskIds: Set<string>,
-  activityByTaskId: Record<string, unknown>,
+  activityActiveTaskIds: Set<string>,
 ): number {
   return taskIds.reduce((height, taskId, index) => {
     const task = taskById.get(taskId);
-    const nodeHeight = task ? getGraphNodeHeight(task, activeStatusByTaskId, activeTaskIds, activityByTaskId) : COMPACT_NODE_HEIGHT;
+    const nodeHeight = task ? getGraphNodeHeight(task, activeStatusByTaskId, activeTaskIds, activityActiveTaskIds) : COMPACT_NODE_HEIGHT;
     return height + nodeHeight + (index > 0 ? ROW_GAP : 0);
   }, 0);
 }
@@ -739,11 +743,21 @@ function getGraphNodeHeight(
   task: Task,
   activeStatusByTaskId: Map<string, TaskStatus>,
   activeTaskIds: Set<string>,
-  activityByTaskId: Record<string, unknown>,
+  activityActiveTaskIds: Set<string>,
 ): number {
   const status = activeStatusByTaskId.get(task.id) ?? (task.status as TaskStatus);
-  const hasActiveExecution = activeTaskIds.has(task.id) || Boolean(activityByTaskId[task.id]);
+  const hasActiveExecution = activeTaskIds.has(task.id) || activityActiveTaskIds.has(task.id);
   return getVisibleGraphStatusTag(status, hasActiveExecution) ? TAGGED_NODE_HEIGHT : COMPACT_NODE_HEIGHT;
+}
+
+function isActiveExecutionActivity(activity: TaskActivityWireEvent): boolean {
+  if (!activity.kind.startsWith("execution.")) {
+    return false;
+  }
+
+  return activity.kind !== "execution.stopped"
+    && activity.kind !== "execution.history.added"
+    && activity.kind !== "execution.unclaimed";
 }
 
 function getConnectedOrder(task: Task | undefined, orderByTaskId: Map<string, number>): number {
