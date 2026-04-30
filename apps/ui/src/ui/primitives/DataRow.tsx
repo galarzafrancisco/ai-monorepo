@@ -1,9 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { Chip, type ChipProps } from "./Chip";
 import "./DataRow.css";
 
 export type DataRowTag = {
   label: string;
-  color?: "gray" | "blue" | "green" | "yellow" | "orange" | "red" | "purple";
+  color?: ChipProps["color"];
   onClick?: () => void;
   clickLabel?: string;
   onRemove?: () => void;
@@ -74,48 +75,18 @@ export function DataRow({
 
           {tags.length ? (
             <div className="data-row__tags" aria-label="tags">
-              {tags.map((t, index) => {
-                const chipClass = `chip chip--${t.color ?? "gray"}${t.onClick ? " chip--clickable" : ""}`;
-
-                if (t.onClick) {
-                  return (
-                    <button
-                      key={`${t.label}-${t.color ?? "gray"}-${index}`}
-                      type="button"
-                      className={chipClass}
-                      aria-label={t.clickLabel ?? t.label}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        t.onClick?.();
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  );
-                }
-
-                return (
-                  <span
-                    key={`${t.label}-${t.color ?? "gray"}-${index}`}
-                    className={chipClass}
-                  >
-                    {t.label}
-                    {t.onRemove ? (
-                      <button
-                        type="button"
-                        className="chip__remove"
-                        aria-label={t.removeLabel ?? `Remove ${t.label}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          t.onRemove?.();
-                        }}
-                      >
-                        ×
-                      </button>
-                    ) : null}
-                  </span>
-                );
-              })}
+              {tags.map((t, index) => (
+                <Chip
+                  key={`${t.label}-${t.color ?? "gray"}-${index}`}
+                  color={t.color}
+                  onClick={t.onClick}
+                  clickLabel={t.clickLabel ?? t.label}
+                  onRemove={t.onRemove}
+                  removeLabel={t.removeLabel ?? `Remove ${t.label}`}
+                >
+                  {t.label}
+                </Chip>
+              ))}
             </div>
           ) : null}
         </div>
