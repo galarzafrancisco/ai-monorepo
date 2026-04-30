@@ -62,8 +62,14 @@ export class ProjectsService {
         tagId: tag.id,
       });
     } else {
+      // Update existing project with new data
+      project.slug = input.slug;
+      project.description = input.description;
+      project.repoUrl = input.repoUrl;
+      project = await this.projectRepository.save(project);
+
       this.logger.log({
-        message: 'Project already exists',
+        message: 'Project already exists, updated with new data',
         projectId: project.id,
         slug: project.slug,
       });
