@@ -47,6 +47,7 @@ type GraphTagFilter = {
 const NODE_WIDTH = 228;
 const COMPACT_NODE_HEIGHT = 48;
 const TAGGED_NODE_HEIGHT = 60;
+const ASSIGNEE_NODE_HEIGHT = 74;
 const LAYER_GAP = 112;
 const ROW_GAP = 20;
 const CANVAS_PADDING = 48;
@@ -491,14 +492,14 @@ function DependencyTaskCard({
     >
       <span className="dependency-task-card__content">
         <span className="dependency-task-card__title">{task.name}</span>
-        <span className="dependency-task-card__status-row">
-          {statusTag ? (
+        {shouldShowAssigneeSlug ? <span className="dependency-task-card__assignee">@{assigneeSlug}</span> : null}
+        {statusTag ? (
+          <span className="dependency-task-card__status-row">
             <Chip color={statusTag.color} className="dependency-task-card__status-chip">
               {statusTag.label}
             </Chip>
-          ) : null}
-          {shouldShowAssigneeSlug ? <span className="dependency-task-card__assignee">@{assigneeSlug}</span> : null}
-        </span>
+          </span>
+        ) : null}
       </span>
       <span className="dependency-task-card__meta">
         {status === TaskStatus.DONE ? <DoneStatusIcon /> : null}
@@ -747,6 +748,10 @@ function getGraphNodeHeight(
 ): number {
   const status = activeStatusByTaskId.get(task.id) ?? (task.status as TaskStatus);
   const hasActiveExecution = activeTaskIds.has(task.id) || activityActiveTaskIds.has(task.id);
+  if (task.assigneeActor?.slug && (status === TaskStatus.IN_PROGRESS || status === TaskStatus.FOR_REVIEW)) {
+    return ASSIGNEE_NODE_HEIGHT;
+  }
+
   return getVisibleGraphStatusTag(status, hasActiveExecution) ? TAGGED_NODE_HEIGHT : COMPACT_NODE_HEIGHT;
 }
 
