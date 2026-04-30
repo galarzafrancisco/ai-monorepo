@@ -81,6 +81,10 @@
   pointer-events: none;
 }
 
+.ios-shell__main__top-actions {
+  padding: 0 var(--space-2) var(--space-3);
+}
+
 .ios-shell__main__top-padding {
   padding: var(--space-2);
 }

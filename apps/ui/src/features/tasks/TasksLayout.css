@@ -4,6 +4,55 @@
   gap: var(--space-2);
 }
 
+.tasks-layout__view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  background: var(--card-bg);
+}
+
+.tasks-layout__view-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 30px;
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-2);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.tasks-layout__view-toggle-button:hover {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.tasks-layout__view-toggle-button--active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.tasks-layout__mobile-view-toggle {
+  width: 100%;
+}
+
+.tasks-layout__mobile-view-toggle .tasks-layout__view-toggle {
+  width: 100%;
+}
+
+.tasks-layout__mobile-view-toggle .tasks-layout__view-toggle-button {
+  flex: 1 1 0;
+  justify-content: center;
+}
+
 .tasks-layout__header-button {
   display: inline-flex;
   align-items: center;
