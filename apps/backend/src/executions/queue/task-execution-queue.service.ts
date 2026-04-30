@@ -24,7 +24,7 @@ export class TaskExecutionQueueService {
 
     const [items, total] = await this.taskExecutionQueueRepository.findAndCount({
       relations: ['task'],
-      order: { taskId: 'ASC' },
+      order: { createdAt: 'ASC' },
       skip,
       take: limit,
     });
