@@ -63,7 +63,7 @@ const ZOOM_STEP = 0.15;
 const WHEEL_ZOOM_SENSITIVITY = 0.0025;
 const DEPENDENCY_VIEW_PREFERENCES_KEY = "task-dependencies-view-preferences";
 const DEFAULT_DEPENDENCY_VIEW_PREFERENCES: DependencyViewPreferences = {
-  graphMode: "dependencies",
+  graphMode: "all",
   hideDonePaths: true,
   selectedTagNames: [],
 };
