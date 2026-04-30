@@ -16,6 +16,7 @@ export function TasksLayout(): JSX.Element {
     ...item,
     path: `${item.path}${location.search}`,
   }));
+  const showProjectSelector = !location.pathname.startsWith("/tasks/task/");
 
   return (
     <div style={{ minHeight: 0 }}>
@@ -23,7 +24,7 @@ export function TasksLayout(): JSX.Element {
       {isDesktop ?
         <DesktopShell
           sectionTitle={sectionTitle}
-          headerRight={<TasksProjectSelector compact />}
+          headerRight={showProjectSelector ? <TasksProjectSelector compact /> : null}
         >
           <Outlet />
         </DesktopShell>
