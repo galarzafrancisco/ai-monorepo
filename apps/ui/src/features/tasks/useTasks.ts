@@ -418,7 +418,6 @@ export const useTasks = () => {
     }
 
     setTasks([]);
-    setDetailTasks([]);
     setActivityByTaskId({});
     loadTasks();
     const cleanup = setupWebsocket();
