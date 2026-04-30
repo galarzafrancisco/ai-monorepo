@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import { useTasksCtx } from './TasksProvider';
 import { TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
+import type { Task } from './types';
 import { Text, Stack, Button, Avatar, DataRow, ErrorText, DataRowTag, DataRowContainer } from '../../ui/primitives';
 import { DeleteWithConfirmation } from '../../ui/components';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
@@ -12,10 +14,22 @@ import { TagSearchPop } from './TagSearchPop';
 import { ActorSearchPop, Actor, useActorsCtx } from '../actors';
 import { useAuth } from '../../auth/AuthContext';
 import { InputRequestResponseDto, MetaTagResponseDto } from "@taico/client";
-import { TaskActivityWireEvent } from '@taico/events';
+import {
+  InputRequestAnsweredWireEvent,
+  TaskActivityWireEvent,
+  TaskAssignedWireEvent,
+  TaskCommentedWireEvent,
+  TaskDeletedWireEvent,
+  TaskStatusChangedWireEvent,
+  TaskUpdatedWireEvent,
+  TaskWireEvents,
+} from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useToast } from '../../shared/context/ToastContext';
+import { getUIWebSocketUrl } from '../../config/api';
 import './TaskDetailPage.css';
+
+const SOCKET_URL = getUIWebSocketUrl('/tasks');
 
 export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
@@ -38,9 +52,33 @@ export function TaskDetailPage() {
   const ACTIVITY_VISIBLE_MS = 3500;
   const ACTIVITY_EXIT_MS = 220;
 
+  const showLiveActivity = useCallback((activityEvent: TaskActivityWireEvent) => {
+    if (!activityEvent.message) {
+      return;
+    }
+
+    if (activityHideTimerRef.current) {
+      window.clearTimeout(activityHideTimerRef.current);
+    }
+    if (activityExitTimerRef.current) {
+      window.clearTimeout(activityExitTimerRef.current);
+    }
+
+    setLiveActivity(activityEvent);
+    setActivityPhase('enter');
+
+    activityHideTimerRef.current = window.setTimeout(() => {
+      setActivityPhase('exit');
+      activityExitTimerRef.current = window.setTimeout(() => {
+        setLiveActivity(null);
+        setActivityPhase('idle');
+      }, ACTIVITY_EXIT_MS);
+    }, ACTIVITY_VISIBLE_MS);
+  }, [ACTIVITY_EXIT_MS, ACTIVITY_VISIBLE_MS]);
+
   // Find task from context (real-time updates)
   const taskFromContext = tasks.find(t => t.id === taskId);
-  const [hydratedTask, setHydratedTask] = useState<typeof taskFromContext>(undefined);
+  const [hydratedTask, setHydratedTask] = useState<Task | undefined>(undefined);
   const [isHydratingTask, setIsHydratingTask] = useState(false);
   const task = taskFromContext ?? hydratedTask;
 
@@ -68,9 +106,28 @@ export function TaskDetailPage() {
     };
   }, []);
 
-  useEffect(() => {
-    let isCurrent = true;
+  const refreshHydratedTask = useCallback(async (options?: { showLoading?: boolean }) => {
+    if (!taskId) {
+      setHydratedTask(undefined);
+      setIsHydratingTask(false);
+      return;
+    }
 
+    if (options?.showLoading) {
+      setIsHydratingTask(true);
+    }
+
+    try {
+      const fetchedTask = await TasksService.tasksControllerGetTask(taskId);
+      setHydratedTask(fetchedTask);
+    } catch {
+      setHydratedTask(undefined);
+    } finally {
+      setIsHydratingTask(false);
+    }
+  }, [taskId]);
+
+  useEffect(() => {
     if (!taskId) {
       setHydratedTask(undefined);
       setIsHydratingTask(false);
@@ -83,28 +140,71 @@ export function TaskDetailPage() {
       return;
     }
 
-    setIsHydratingTask(true);
-    TasksService.tasksControllerGetTask(taskId)
-      .then((fetchedTask) => {
-        if (isCurrent) {
-          setHydratedTask(fetchedTask);
-        }
-      })
-      .catch(() => {
-        if (isCurrent) {
-          setHydratedTask(undefined);
-        }
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setIsHydratingTask(false);
-        }
-      });
+    void refreshHydratedTask({ showLoading: true });
+  }, [taskId, taskFromContext, refreshHydratedTask]);
+
+  useEffect(() => {
+    if (!taskId) {
+      return;
+    }
+
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+    });
+
+    const upsertIfCurrentTask = (updatedTask: Task) => {
+      if (updatedTask.id === taskId) {
+        setHydratedTask(updatedTask);
+      }
+    };
+
+    const refreshIfCurrentTask = (updatedTaskId: string) => {
+      if (updatedTaskId === taskId) {
+        void refreshHydratedTask();
+      }
+    };
+
+    socket.on('connect', () => {
+      socket.emit('tasks.subscribe', {}, () => undefined);
+    });
+
+    socket.on(TaskWireEvents.TASK_UPDATED, (event: TaskUpdatedWireEvent) => {
+      upsertIfCurrentTask(event.payload as Task);
+    });
+
+    socket.on(TaskWireEvents.TASK_ASSIGNED, (event: TaskAssignedWireEvent) => {
+      upsertIfCurrentTask(event.payload as Task);
+    });
+
+    socket.on(TaskWireEvents.TASK_STATUS_CHANGED, (event: TaskStatusChangedWireEvent) => {
+      upsertIfCurrentTask(event.payload as Task);
+    });
+
+    socket.on(TaskWireEvents.TASK_COMMENTED, (event: TaskCommentedWireEvent) => {
+      refreshIfCurrentTask(event.payload.taskId);
+    });
+
+    socket.on(TaskWireEvents.INPUT_REQUEST_ANSWERED, (event: InputRequestAnsweredWireEvent) => {
+      refreshIfCurrentTask(event.payload.taskId);
+    });
+
+    socket.on(TaskWireEvents.TASK_DELETED, (event: TaskDeletedWireEvent) => {
+      if (event.payload.taskId === taskId) {
+        setHydratedTask(undefined);
+      }
+    });
+
+    socket.on(TaskWireEvents.TASK_ACTIVITY, (event: TaskActivityWireEvent) => {
+      if (event.taskId === taskId) {
+        showLiveActivity(event);
+      }
+    });
 
     return () => {
-      isCurrent = false;
+      socket.close();
     };
-  }, [taskId, taskFromContext]);
+  }, [taskId, refreshHydratedTask, showLiveActivity]);
 
   // Loading / error state
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +225,7 @@ export function TaskDetailPage() {
         taskId: task.id,
         comment: content,
       });
+      await refreshHydratedTask();
       return true;
     } catch (err: unknown) {
       showError(err);
@@ -144,6 +245,7 @@ export function TaskDetailPage() {
         taskId: task.id,
         assigneeActorId: actor.id,
       });
+      await refreshHydratedTask();
       return true;
     } catch (err: unknown) {
       showError(err);
@@ -164,6 +266,7 @@ export function TaskDetailPage() {
         inputRequestId: respondingToInputRequest.id,
         answer,
       });
+      await refreshHydratedTask();
       return true;
     } catch (err: unknown) {
       showError(err);
@@ -182,6 +285,7 @@ export function TaskDetailPage() {
       await TasksService.tasksControllerAddTagToTask(task.id, {
         name: tag.name,
       });
+      await refreshHydratedTask();
       return true;
     } catch (err: unknown) {
       showError(err);
@@ -198,6 +302,7 @@ export function TaskDetailPage() {
     }
     try {
       await TasksService.tasksControllerRemoveTagFromTask(task.id, tagId);
+      await refreshHydratedTask();
     } catch (err: unknown) {
       showError(err);
     }
@@ -211,24 +316,8 @@ export function TaskDetailPage() {
       return;
     }
 
-    if (activityHideTimerRef.current) {
-      window.clearTimeout(activityHideTimerRef.current);
-    }
-    if (activityExitTimerRef.current) {
-      window.clearTimeout(activityExitTimerRef.current);
-    }
-
-    setLiveActivity(activity);
-    setActivityPhase('enter');
-
-    activityHideTimerRef.current = window.setTimeout(() => {
-      setActivityPhase('exit');
-      activityExitTimerRef.current = window.setTimeout(() => {
-        setLiveActivity(null);
-        setActivityPhase('idle');
-      }, ACTIVITY_EXIT_MS);
-    }, ACTIVITY_VISIBLE_MS);
-  }, [activity, task, ACTIVITY_EXIT_MS, ACTIVITY_VISIBLE_MS]);
+    showLiveActivity(activity);
+  }, [activity, task, showLiveActivity]);
 
   // If task not found in context, could be loading or invalid
   if (!task) {
@@ -248,6 +337,7 @@ export function TaskDetailPage() {
     setIsLoading(true);
     try {
       await TasksService.tasksControllerChangeStatus(task.id, { status: newStatus });
+      await refreshHydratedTask();
       setError(null);
     } catch (err: unknown) {
       showError(err);
@@ -587,6 +677,7 @@ export function TaskDetailPage() {
             variant='primary'
             onClick={async () => {
               await assignTaskToMe({ taskId: task.id });
+              await refreshHydratedTask();
             }}
           >
             Assign to Me
