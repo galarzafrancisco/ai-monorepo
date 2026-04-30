@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource, EntityManager, In } from 'typeorm';
 import {
   ActiveTaskExecutionEntity,
@@ -8,10 +9,16 @@ import { TagEntity } from '../../meta/tag.entity';
 import { TaskEntity } from '../../tasks/task.entity';
 import { TaskExecutionHistoryEntity } from '../history/task-execution-history.entity';
 import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
+import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
+
+const STALE_EXECUTION_INTERRUPT_ACTOR_ID = 'system';
 
 @Injectable()
 export class StaleActiveTaskExecutionPrunerService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async pruneExecutions(executions: ActiveTaskExecutionEntity[]): Promise<number> {
     let prunedCount = 0;
@@ -25,13 +32,13 @@ export class StaleActiveTaskExecutionPrunerService {
   }
 
   async pruneExecutionById(executionId: string): Promise<boolean> {
-    return this.dataSource.transaction(async (manager) => {
+    const prunedExecution = await this.dataSource.transaction(async (manager) => {
       const activeExecution = await manager.findOne(ActiveTaskExecutionEntity, {
         where: { id: executionId },
       });
 
       if (!activeExecution) {
-        return false;
+        return null;
       }
 
       const task = await manager.findOne(TaskEntity, {
@@ -41,7 +48,7 @@ export class StaleActiveTaskExecutionPrunerService {
 
       if (!task) {
         await manager.delete(ActiveTaskExecutionEntity, { id: activeExecution.id });
-        return true;
+        return activeExecution;
       }
 
       task.status = activeExecution.taskStatusBeforeClaim;
@@ -66,8 +73,25 @@ export class StaleActiveTaskExecutionPrunerService {
         }),
       );
 
-      return true;
+      return activeExecution;
     });
+
+    if (!prunedExecution) {
+      return false;
+    }
+
+    this.eventEmitter.emit(
+      ExecutionInterruptEvent.INTERNAL,
+      new ExecutionInterruptEvent(
+        { id: STALE_EXECUTION_INTERRUPT_ACTOR_ID },
+        {
+          executionId: prunedExecution.id,
+          workerClientId: prunedExecution.workerClientId,
+        },
+      ),
+    );
+
+    return true;
   }
 
   private async resolveSnapshotTags(
