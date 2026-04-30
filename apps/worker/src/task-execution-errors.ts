@@ -13,6 +13,13 @@ const QUOTA_MESSAGE_PATTERNS: RegExp[] = [
   /usage\s*limit/i,
 ];
 
+const OVERLOADED_MESSAGE_PATTERNS: RegExp[] = [
+  /overloaded_error/i,
+  /api\s*error:\s*529/i,
+  /\b529\b.*\boverloaded\b/i,
+  /\boverloaded\b/i,
+];
+
 export class TaskExecutionError extends Error {
   readonly displayMessage: string;
 
@@ -62,6 +69,12 @@ export class AgentQuotaExceededError extends RetryableExecutionError {
   }
 }
 
+export class AgentOverloadedError extends RetryableExecutionError {
+  constructor(message = 'Agent API is temporarily overloaded.', cause?: unknown) {
+    super(message, 'UNKNOWN', cause);
+  }
+}
+
 export class RunnerProcessError extends RetryableExecutionError {}
 
 export class UnsupportedAgentTypeError extends TerminalExecutionError {}
@@ -80,6 +93,10 @@ export function classifyAgentError(input: {
   message: string;
   rawMessage?: unknown;
 }): TaskExecutionError {
+  if (isOverloadedErrorMessage(input.message)) {
+    return new AgentOverloadedError(input.message, input.rawMessage);
+  }
+
   if (QUOTA_MESSAGE_PATTERNS.some((pattern) => pattern.test(input.message))) {
     return new AgentQuotaExceededError(input.message, input.rawMessage);
   }
@@ -97,6 +114,10 @@ export function classifyRunnerError(error: unknown): TaskExecutionError {
     if (error.name === 'AbortError' || error.message.includes('aborted')) {
       return new InterruptedExecutionError(error.message, error);
     }
+
+    if (isOverloadedErrorMessage(error.message)) {
+      return new AgentOverloadedError(error.message, error);
+    }
   }
 
   return new RunnerProcessError(
@@ -104,6 +125,10 @@ export function classifyRunnerError(error: unknown): TaskExecutionError {
     'UNKNOWN',
     error,
   );
+}
+
+export function isOverloadedErrorMessage(message: string): boolean {
+  return OVERLOADED_MESSAGE_PATTERNS.some((pattern) => pattern.test(message));
 }
 
 function normalizeExecutionErrorMessage(message: string): string {

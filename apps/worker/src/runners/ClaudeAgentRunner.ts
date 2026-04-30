@@ -10,6 +10,12 @@ import {
   TokenUsage,
 } from "./AgentRunner.js";
 import { DEFAULT_AGENT_ALLOWED_TOOLS } from '@taico/shared';
+import {
+  AgentOverloadedError,
+  isOverloadedErrorMessage,
+} from "../task-execution-errors.js";
+
+const MAX_OVERLOADED_RESUME_ATTEMPTS = 1;
 
 export class ClaudeAgentRunner extends BaseAgentRunner {
   readonly kind = 'claude';
@@ -78,63 +84,88 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
       });
     }
 
-    const stream = query({
-      prompt: ctx.prompt,
-      options: {
-        cwd: ctx.cwd,
-        // resume: ctx.resume,
-        persistSession: true,
-        settingSources: ['user', 'project', 'local'],
-        ...(ctx.options ?? {}),
-        mcpServers,
-        allowedTools: ctx.allowedTools ?? [...DEFAULT_AGENT_ALLOWED_TOOLS],
-        abortController,
-      },
-    });
+    let latestSessionId = ctx.resume;
+    let overloadedResumeAttempts = 0;
 
-    for await (const msg of stream) {
-      // session capture
-      if (
-        msg?.type === 'system' &&
-        msg?.subtype === 'init' &&
-        typeof msg.session_id === 'string'
-      ) {
-        await setSession(msg.session_id);
-      }
+    while (true) {
+      try {
+        const stream = query({
+          prompt: ctx.prompt,
+          options: {
+            cwd: ctx.cwd,
+            persistSession: true,
+            settingSources: ['user', 'project', 'local'],
+            ...(ctx.options ?? {}),
+            ...(latestSessionId ? { resume: latestSessionId } : {}),
+            mcpServers,
+            allowedTools: ctx.allowedTools ?? [...DEFAULT_AGENT_ALLOWED_TOOLS],
+            abortController,
+          },
+        });
 
-      const toolCalls = formatter.extractToolCallNames(msg);
-      for (const toolName of toolCalls) {
-        await onToolCall?.(toolName);
-      }
+        for await (const msg of stream) {
+          // session capture
+          if (
+            msg?.type === 'system' &&
+            msg?.subtype === 'init' &&
+            typeof msg.session_id === 'string'
+          ) {
+            latestSessionId = msg.session_id;
+            await setSession(msg.session_id);
+          }
 
-      const usage = extractClaudeTokenUsage(msg);
-      if (usage) {
-        if (usage.mode === 'absolute') {
-          await onTokenUsage?.(applyAbsoluteUsage(cumulativeUsage, usage.usage));
-        } else {
-          await onTokenUsage?.(applySnapshotUsage(cumulativeUsage, usage.usage));
-        }
-      }
+          const toolCalls = formatter.extractToolCallNames(msg);
+          for (const toolName of toolCalls) {
+            await onToolCall?.(toolName);
+          }
 
-      // map → string
-      const text = formatter.format(msg);
-      if (text) await emit(text);
+          const usage = extractClaudeTokenUsage(msg);
+          if (usage) {
+            if (usage.mode === 'absolute') {
+              await onTokenUsage?.(applyAbsoluteUsage(cumulativeUsage, usage.usage));
+            } else {
+              await onTokenUsage?.(applySnapshotUsage(cumulativeUsage, usage.usage));
+            }
+          }
 
-      if (msg.type === 'result' && msg.subtype === 'success') {
-        // Check if this is an error result (e.g., quota limit)
-        if (msg.is_error === true) {
-          if (onError) {
-            await onError({
-              message: typeof msg.result === 'string' ? msg.result : 'Unknown error',
-              rawMessage: msg,
-            });
+          // map → string
+          const text = formatter.format(msg);
+          if (text) await emit(text);
+
+          if (msg.type === 'result' && msg.subtype === 'success') {
+            // Check if this is an error result (e.g., quota limit)
+            if (msg.is_error === true) {
+              if (onError) {
+                await onError({
+                  message: typeof msg.result === 'string' ? msg.result : 'Unknown error',
+                  rawMessage: msg,
+                });
+              }
+            }
+            finalResult = msg.result;
           }
         }
-        finalResult = msg.result;
+
+        return finalResult;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (
+          isOverloadedErrorMessage(message) &&
+          latestSessionId &&
+          overloadedResumeAttempts < MAX_OVERLOADED_RESUME_ATTEMPTS
+        ) {
+          overloadedResumeAttempts += 1;
+          await emit(`Claude API is overloaded; resuming session ${latestSessionId}.`);
+          continue;
+        }
+
+        if (isOverloadedErrorMessage(message)) {
+          throw new AgentOverloadedError(message, error);
+        }
+
+        throw error;
       }
     }
-
-    return finalResult;
   }
 }
 
