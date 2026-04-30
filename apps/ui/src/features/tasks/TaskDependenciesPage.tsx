@@ -518,6 +518,19 @@ function getVisibleGraphStatusTag(status: TaskStatus, hasActiveExecution = false
 function ConnectionLayer({ connections, width, height }: { connections: GraphConnection[]; width: number; height: number }) {
   return (
     <svg className="task-dependencies-connections" width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+      <defs>
+        <marker
+          id="task-dependencies-connection-arrow"
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
+          refY="4"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path className="task-dependencies-connection-arrow" d="M 0 0 L 8 4 L 0 8 Z" />
+        </marker>
+      </defs>
       {connections.map((connection) => {
         const distance = Math.max(80, connection.endX - connection.startX);
         const handle = Math.min(140, distance * 0.5);
@@ -526,6 +539,7 @@ function ConnectionLayer({ connections, width, height }: { connections: GraphCon
             key={`${connection.fromTaskId}-${connection.toTaskId}`}
             d={`M ${connection.startX} ${connection.startY} C ${connection.startX + handle} ${connection.startY}, ${connection.endX - handle} ${connection.endY}, ${connection.endX} ${connection.endY}`}
             className="task-dependencies-connection"
+            markerEnd="url(#task-dependencies-connection-arrow)"
           />
         );
       })}
