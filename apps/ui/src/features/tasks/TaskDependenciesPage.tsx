@@ -77,7 +77,7 @@ export function TaskDependenciesPage(): React.JSX.Element {
   useDocumentTitle();
 
   useEffect(() => {
-    setSectionTitle("Dependencies");
+    setSectionTitle("Tasks");
   }, [setSectionTitle]);
 
   useEffect(() => {
