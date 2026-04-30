@@ -1173,6 +1173,7 @@ export function TaskDetailPage() {
   const { d: taskId } = useParams<{ d: string }>();
   const {
     tasks,
+    detailTasks,
     getTaskById,
     isLoading,
     hasLoadedOnce,
@@ -1187,8 +1188,19 @@ export function TaskDetailPage() {
 
   const [isFetchingTask, setIsFetchingTask] = useState(false);
 
-  // Derive task from the live tasks array so WebSocket updates are reflected automatically.
-  const task = taskId ? tasks.find(t => t.id === taskId) : undefined;
+  const allCachedTasks = useMemo(() => {
+    const taskById = new Map<string, Task>();
+    for (const task of tasks) {
+      taskById.set(task.id, task);
+    }
+    for (const task of detailTasks) {
+      taskById.set(task.id, task);
+    }
+    return Array.from(taskById.values());
+  }, [tasks, detailTasks]);
+
+  // Derive task from all cached tasks so direct detail hydration does not affect board state.
+  const task = taskId ? allCachedTasks.find(t => t.id === taskId) : undefined;
 
   // On mount (or taskId change), ensure the task is in the cache.
   // getTaskById fetches from the API and adds it to the tasks array if missing.
@@ -1211,7 +1223,7 @@ export function TaskDetailPage() {
     if (!task || !task.dependsOnIds || task.dependsOnIds.length === 0) return;
 
     const missingDependencyIds = task.dependsOnIds.filter(
-      depId => !tasks.some(t => t.id === depId)
+      depId => !allCachedTasks.some(t => t.id === depId)
     );
 
     if (missingDependencyIds.length === 0) return;
@@ -1225,7 +1237,7 @@ export function TaskDetailPage() {
         })
       )
     );
-  }, [task, tasks, getTaskById]);
+  }, [task, allCachedTasks, getTaskById]);
 
   const isLoadingTask = !task && (!hasLoadedOnce || isLoading || isFetchingTask);
 
@@ -1239,7 +1251,7 @@ export function TaskDetailPage() {
     addTag: ({ taskId, tag }) => TasksService.TasksController_addTagToTask({ id: taskId, body: { name: tag.name } }),
     removeTag: ({ taskId, tagId }) => TasksService.TasksController_removeTagFromTask({ id: taskId, tagId }),
     addDependency: async ({ taskId, dependencyTaskId }) => {
-      const currentTask = tasks.find(t => t.id === taskId);
+      const currentTask = allCachedTasks.find(t => t.id === taskId);
       if (!currentTask) return;
       const updatedDependsOnIds = [...(currentTask.dependsOnIds || []), dependencyTaskId];
       await TasksService.TasksController_updateTask({
@@ -1256,7 +1268,7 @@ export function TaskDetailPage() {
       }
     },
     removeDependency: async ({ taskId, dependencyTaskId }) => {
-      const currentTask = tasks.find(t => t.id === taskId);
+      const currentTask = allCachedTasks.find(t => t.id === taskId);
       if (!currentTask) return;
       const updatedDependsOnIds = (currentTask.dependsOnIds || []).filter(id => id !== dependencyTaskId);
       await TasksService.TasksController_updateTask({
@@ -1274,7 +1286,7 @@ export function TaskDetailPage() {
       isLoadingTask={isLoadingTask}
       activityByTaskId={activityByTaskId}
       handlers={handlers}
-      allTasks={tasks}
+      allTasks={allCachedTasks}
     />
   );
 }
