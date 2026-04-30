@@ -25,6 +25,7 @@ export function TasksLayout(): React.JSX.Element {
     "/tasks/in-review",
     "/tasks/done",
   ].includes(location.pathname);
+  const showViewToggle = isBoardView || isDependencyView;
   const viewToggle = (
     <TaskViewToggle
       isBoardView={isBoardView}
@@ -64,7 +65,7 @@ export function TasksLayout(): React.JSX.Element {
           sectionTitle={sectionTitle}
           headerActions={(
             <div className="tasks-layout__header-actions">
-              {viewToggle}
+              {showViewToggle ? viewToggle : null}
               <Button
                 size="sm"
                 variant="ghost"
@@ -87,7 +88,7 @@ export function TasksLayout(): React.JSX.Element {
           appTitle="Tasks"
           sectionTitle={sectionTitle}
           navItems={TASKS_STATUS_NAV}
-          topActions={<div className="tasks-layout__mobile-view-toggle">{viewToggle}</div>}
+          topActions={showViewToggle ? <div className="tasks-layout__mobile-view-toggle">{viewToggle}</div> : undefined}
         >
           <Outlet />
         </IosShell>}
