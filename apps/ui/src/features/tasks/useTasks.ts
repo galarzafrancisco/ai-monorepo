@@ -274,6 +274,12 @@ export const useTasks = () => {
     });
   };
 
+  const removeTaskFromCaches = (taskId: string) => {
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+    setDetailTasks((prev) => prev.filter((task) => task.id !== taskId));
+    clearActivity(taskId);
+  };
+
   const refreshTaskFromEvent = async (taskId: string, errorMessage: string) => {
     try {
       const updatedTask = await TasksService.TasksController_getTask({ id: taskId });
@@ -325,11 +331,7 @@ export const useTasks = () => {
     // Handle task deleted event
     newSocket.on(TaskWireEvents.TASK_DELETED, (event: TaskDeletedWireEvent) => {
       console.log('task.deleted', event);
-      if (!isVisibleTaskId(event.payload.taskId)) {
-        return;
-      }
-      setTasks((prev) => prev.filter((t) => t.id !== event.payload.taskId));
-      clearActivity(event.payload.taskId);
+      removeTaskFromCaches(event.payload.taskId);
     });
 
     // Handle task assigned event
