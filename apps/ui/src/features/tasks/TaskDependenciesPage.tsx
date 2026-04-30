@@ -471,6 +471,8 @@ function DependencyTaskCard({
 }) {
   const { task } = node;
   const statusTag = getVisibleGraphStatusTag(status, hasActiveExecution);
+  const assigneeSlug = task.assigneeActor?.slug;
+  const shouldShowAssigneeSlug = Boolean(assigneeSlug && (status === TaskStatus.IN_PROGRESS || status === TaskStatus.FOR_REVIEW));
 
   return (
     <button
@@ -485,11 +487,14 @@ function DependencyTaskCard({
     >
       <span className="dependency-task-card__content">
         <span className="dependency-task-card__title">{task.name}</span>
-        {statusTag ? (
-          <Chip color={statusTag.color} className="dependency-task-card__status-chip">
-            {statusTag.label}
-          </Chip>
-        ) : null}
+        <span className="dependency-task-card__status-row">
+          {statusTag ? (
+            <Chip color={statusTag.color} className="dependency-task-card__status-chip">
+              {statusTag.label}
+            </Chip>
+          ) : null}
+          {shouldShowAssigneeSlug ? <span className="dependency-task-card__assignee">@{assigneeSlug}</span> : null}
+        </span>
       </span>
       <span className="dependency-task-card__meta">
         {status === TaskStatus.DONE ? <DoneStatusIcon /> : null}
