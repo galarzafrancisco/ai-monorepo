@@ -17,6 +17,7 @@ export interface IosShellProps {
   sectionTitle: string;
   children: ReactNode;
   navItems: NavegationItem[];
+  topActions?: ReactNode;
 }
 
 function BottomNavContent({
@@ -246,6 +247,11 @@ export function IosShell(props: IosShellProps): React.JSX.Element {
           {props.sectionTitle}
           {/* </Text> */}
         </div>
+        {props.topActions ? (
+          <div className="ios-shell__main__top-actions">
+            {props.topActions}
+          </div>
+        ) : null}
         <div ref={mainSectionTitleBottomSentinelRef} className="ios-shell__main__section-title-bottom-sentinel" />
         <div className="ios-shell__main__top-sentinel" />
         {props.children}

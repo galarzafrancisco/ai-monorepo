@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, GitBranch } from "lucide-react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { CalendarDays, GitBranch, LayoutDashboard } from "lucide-react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsDesktop } from "../../app/hooks/useIsDesktop";
 import { DesktopShell } from "../../app/shells/DesktopShell";
 import { IosShell } from "../../app/shells/IosShell";
@@ -16,7 +16,23 @@ export function TasksLayout(): React.JSX.Element {
   const isDesktop = useIsDesktop();
   const { sectionTitle, shippedCelebrationTrigger } = useTasksCtx();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeScheduleCount, setActiveScheduleCount] = useState<number | null>(null);
+  const isDependencyView = location.pathname === "/tasks/dependencies";
+  const isBoardView = [
+    "/tasks/not-started",
+    "/tasks/in-progress",
+    "/tasks/in-review",
+    "/tasks/done",
+  ].includes(location.pathname);
+  const viewToggle = (
+    <TaskViewToggle
+      isBoardView={isBoardView}
+      isDependencyView={isDependencyView}
+      onBoardClick={() => navigate('/tasks/not-started')}
+      onDependenciesClick={() => navigate('/tasks/dependencies')}
+    />
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -48,15 +64,7 @@ export function TasksLayout(): React.JSX.Element {
           sectionTitle={sectionTitle}
           headerActions={(
             <div className="tasks-layout__header-actions">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="tasks-layout__header-button"
-                onClick={() => navigate('/tasks/dependencies')}
-              >
-                <GitBranch className="tasks-layout__header-icon" size={16} strokeWidth={1.5} absoluteStrokeWidth />
-                Dependencies
-              </Button>
+              {viewToggle}
               <Button
                 size="sm"
                 variant="ghost"
@@ -79,9 +87,45 @@ export function TasksLayout(): React.JSX.Element {
           appTitle="Tasks"
           sectionTitle={sectionTitle}
           navItems={TASKS_STATUS_NAV}
+          topActions={<div className="tasks-layout__mobile-view-toggle">{viewToggle}</div>}
         >
           <Outlet />
         </IosShell>}
     </div>
   )
+}
+
+function TaskViewToggle({
+  isBoardView,
+  isDependencyView,
+  onBoardClick,
+  onDependenciesClick,
+}: {
+  isBoardView: boolean;
+  isDependencyView: boolean;
+  onBoardClick: () => void;
+  onDependenciesClick: () => void;
+}): React.JSX.Element {
+  return (
+    <div className="tasks-layout__view-toggle" role="group" aria-label="Task view">
+      <button
+        className={`tasks-layout__view-toggle-button${isBoardView ? " tasks-layout__view-toggle-button--active" : ""}`}
+        type="button"
+        aria-pressed={isBoardView}
+        onClick={onBoardClick}
+      >
+        <LayoutDashboard className="tasks-layout__header-icon" size={16} strokeWidth={1.5} absoluteStrokeWidth />
+        Board
+      </button>
+      <button
+        className={`tasks-layout__view-toggle-button${isDependencyView ? " tasks-layout__view-toggle-button--active" : ""}`}
+        type="button"
+        aria-pressed={isDependencyView}
+        onClick={onDependenciesClick}
+      >
+        <GitBranch className="tasks-layout__header-icon" size={16} strokeWidth={1.5} absoluteStrokeWidth />
+        Dependencies
+      </button>
+    </div>
+  );
 }
