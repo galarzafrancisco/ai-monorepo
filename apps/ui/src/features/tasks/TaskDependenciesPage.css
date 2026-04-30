@@ -1,0 +1,246 @@
+.beta-shell__desktop__main:has(.task-dependencies-page),
+.desktop-shell:has(.task-dependencies-page),
+.desktop-shell__content:has(.task-dependencies-page) {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.task-dependencies-page {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+.task-dependencies-page--state {
+  align-items: center;
+  justify-content: center;
+}
+
+.task-dependencies-canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-4);
+  background: var(--surface);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--border-subtle) 65%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border-subtle) 65%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  contain: layout paint;
+}
+
+.task-dependencies-empty {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: grid;
+  place-content: center;
+  gap: var(--space-2);
+  max-width: 420px;
+  text-align: center;
+}
+
+.task-dependencies-toolbar {
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  padding: var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.task-dependencies-toolbar__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: var(--r-2);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.task-dependencies-toolbar__button:hover {
+  border-color: var(--border);
+  background: var(--card-bg);
+}
+
+.task-dependencies-toolbar__zoom {
+  min-width: 44px;
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+  text-align: center;
+}
+
+.task-dependencies-viewport {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.task-dependencies-graph {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+.dependency-task-card {
+  position: absolute;
+  z-index: 2;
+  height: 48px;
+  width: 228px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-2);
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--card-bg);
+  color: var(--text);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dependency-task-card:hover {
+  border-color: var(--accent);
+}
+
+.dependency-task-card--done {
+  border-color: var(--success);
+}
+
+.dependency-task-card__content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+.dependency-task-card__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+.dependency-task-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dependency-run-status-icon,
+.dependency-task-card__spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.dependency-run-status-icon {
+  width: 22px;
+  height: 22px;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+}
+
+.dependency-run-status-icon--success {
+  background: var(--success);
+  color: var(--text-inverse);
+}
+
+.dependency-task-card__status-badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  height: 16px;
+  max-width: 76px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dependency-task-card__status-badge--active {
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+}
+
+.dependency-task-card__status-badge--review {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.dependency-task-card__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-top-color: var(--accent);
+  animation: dependency-spin 0.9s linear infinite;
+}
+
+.task-dependencies-connections {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.task-dependencies-connection {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-muted) 48%, transparent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+@keyframes dependency-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 700px) {
+  .task-dependencies-canvas {
+    padding: var(--space-3);
+  }
+}
