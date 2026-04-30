@@ -27,6 +27,7 @@ import type { Task } from './types';
 import { useChatReadiness } from '../chat-providers/useChatReadiness';
 import { ChatSetupCallout } from '../chat-providers/ChatSetupCallout';
 import { TaskRow } from './TaskRow';
+import { getTaskStatusTag } from './taskStatusTag';
 import './TaskDetailPage.css';
 
 type TaskDetailHandlers = {
@@ -649,7 +650,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
         <DataRow
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
-            StatusTag({ status: task.status as TaskStatus }),
+            getTaskStatusTag(task.status as TaskStatus),
             ...task.tags.map(tag => ({
               label: tag.name,
               onRemove: () => removeTag(tag.id),
@@ -1291,28 +1292,6 @@ function TaskDetailLoadingShell({ backPath }: { backPath: string }) {
       </div>
     </div>
   );
-}
-
-function StatusTag({ status }: { status: TaskStatus }): DataRowTag {
-  let color: DataRowTag['color'] = 'gray';
-  let label = 'unknown';
-  if (status === TaskStatus.DONE) {
-    label = 'done';
-    color = 'purple';
-  } else if (status === TaskStatus.IN_PROGRESS) {
-    label = 'in progress';
-    color = 'green';
-  } else if (status === TaskStatus.NOT_STARTED) {
-    label = 'not started';
-    color = 'blue';
-  } else if (status === TaskStatus.FOR_REVIEW) {
-    label = 'in review';
-    color = 'orange';
-  }
-  return {
-    label,
-    color,
-  }
 }
 
 function getExecutionStatusTag(
