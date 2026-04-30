@@ -263,11 +263,7 @@ export const useTasks = () => {
     });
   };
 
-  const refreshVisibleTask = async (taskId: string, errorMessage: string) => {
-    if (!isVisibleTaskId(taskId)) {
-      return;
-    }
-
+  const refreshTaskFromEvent = async (taskId: string, errorMessage: string) => {
     try {
       const updatedTask = await TasksService.TasksController_getTask({ id: taskId });
       upsertTaskFromEvent(updatedTask);
@@ -334,13 +330,13 @@ export const useTasks = () => {
     // Handle comment added event
     newSocket.on(TaskWireEvents.TASK_COMMENTED, async (event: TaskCommentedWireEvent) => {
       console.log('task.commented', event);
-      await refreshVisibleTask(event.payload.taskId, 'Failed to refresh task after comment');
+      await refreshTaskFromEvent(event.payload.taskId, 'Failed to refresh task after comment');
     });
 
     // Handle input request answered event
     newSocket.on(TaskWireEvents.INPUT_REQUEST_ANSWERED, async (event: InputRequestAnsweredWireEvent) => {
       console.log('input.request.answered', event);
-      await refreshVisibleTask(event.payload.taskId, 'Failed to refresh task after input request answer');
+      await refreshTaskFromEvent(event.payload.taskId, 'Failed to refresh task after input request answer');
     });
 
     // Handle task status changed event
