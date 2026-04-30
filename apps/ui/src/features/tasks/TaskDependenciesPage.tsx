@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
-import { Text } from "../../ui/primitives";
+import { Chip, Text } from "../../ui/primitives";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { TaskStatus } from "./const";
 import { useTasksCtx } from "./TasksProvider";
 import type { Task } from "./types";
 import { useExecutions } from "../executions/useExecutions";
+import { getTaskStatusTag } from "./taskStatusTag";
 import "./TaskDependenciesPage.css";
 
 type GraphConnection = {
@@ -23,6 +24,7 @@ type GraphNode = {
   layer: number;
   x: number;
   y: number;
+  height: number;
 };
 
 type DependencyGraph = {
@@ -33,9 +35,10 @@ type DependencyGraph = {
 };
 
 const NODE_WIDTH = 228;
-const NODE_HEIGHT = 48;
+const COMPACT_NODE_HEIGHT = 48;
+const TAGGED_NODE_HEIGHT = 60;
 const LAYER_GAP = 112;
-const ROW_GAP = 18;
+const ROW_GAP = 20;
 const CANVAS_PADDING = 48;
 const MIN_ZOOM = 0.55;
 const MAX_ZOOM = 1.6;
@@ -56,11 +59,14 @@ export function TaskDependenciesPage(): React.JSX.Element {
     setSectionTitle("Dependencies");
   }, [setSectionTitle]);
 
-  const graph = useMemo(() => buildDependencyGraph(tasks), [tasks]);
   const activeTaskIds = useMemo(() => new Set(active.map((execution) => execution.taskId)), [active]);
   const activeStatusByTaskId = useMemo(() => {
     return new Map(active.map((execution) => [execution.taskId, execution.taskStatus as TaskStatus]));
   }, [active]);
+  const graph = useMemo(
+    () => buildDependencyGraph(tasks, activeStatusByTaskId, activeTaskIds, activityByTaskId),
+    [activeStatusByTaskId, activeTaskIds, activityByTaskId, tasks],
+  );
 
   const applyZoom = useCallback((nextZoomValue: number, focusPoint?: { x: number; y: number }) => {
     const viewport = viewportRef.current;
@@ -204,7 +210,8 @@ function DependencyTaskCard({
   onOpen: () => void;
 }) {
   const { task } = node;
-  const statusBadge = getStatusBadge(status) ?? (hasActiveExecution && status !== TaskStatus.DONE ? { label: "In progress", tone: "active" } : null);
+  const statusTag = getVisibleGraphStatusTag(status, hasActiveExecution);
+
   return (
     <button
       className={`dependency-task-card dependency-task-card--${status.toLowerCase().replaceAll("_", "-")}`}
@@ -213,14 +220,15 @@ function DependencyTaskCard({
       style={{
         left: node.x,
         top: node.y,
+        height: node.height,
       }}
     >
       <span className="dependency-task-card__content">
         <span className="dependency-task-card__title">{task.name}</span>
-        {statusBadge ? (
-          <span className={`dependency-task-card__status-badge dependency-task-card__status-badge--${statusBadge.tone}`}>
-            {statusBadge.label}
-          </span>
+        {statusTag ? (
+          <Chip color={statusTag.color} className="dependency-task-card__status-chip">
+            {statusTag.label}
+          </Chip>
         ) : null}
       </span>
       <span className="dependency-task-card__meta">
@@ -235,13 +243,13 @@ function DoneStatusIcon() {
   return <span className="dependency-run-status-icon dependency-run-status-icon--success" aria-label="Done">✓</span>;
 }
 
-function getStatusBadge(status: TaskStatus): { label: string; tone: "active" | "review" } | null {
-  if (status === TaskStatus.IN_PROGRESS) {
-    return { label: "In progress", tone: "active" };
+function getVisibleGraphStatusTag(status: TaskStatus, hasActiveExecution = false) {
+  if (hasActiveExecution && status === TaskStatus.NOT_STARTED) {
+    return getTaskStatusTag(TaskStatus.IN_PROGRESS);
   }
 
-  if (status === TaskStatus.FOR_REVIEW) {
-    return { label: "In review", tone: "review" };
+  if (status === TaskStatus.IN_PROGRESS || status === TaskStatus.FOR_REVIEW) {
+    return getTaskStatusTag(status);
   }
 
   return null;
@@ -265,7 +273,12 @@ function ConnectionLayer({ connections, width, height }: { connections: GraphCon
   );
 }
 
-function buildDependencyGraph(tasks: Task[]): DependencyGraph {
+function buildDependencyGraph(
+  tasks: Task[],
+  activeStatusByTaskId: Map<string, TaskStatus>,
+  activeTaskIds: Set<string>,
+  activityByTaskId: Record<string, unknown>,
+): DependencyGraph {
   const taskById = new Map(tasks.map((task) => [task.id, task]));
   const graphTaskIds = new Set<string>();
 
@@ -340,27 +353,37 @@ function buildDependencyGraph(tasks: Task[]): DependencyGraph {
   const nodes: GraphNode[] = [];
   const nodeByTaskId = new Map<string, GraphNode>();
   const sortedLayers = Array.from(taskIdsByLayer.keys()).sort((first, second) => first - second);
-  const maxRows = Math.max(...Array.from(taskIdsByLayer.values()).map((layerTaskIds) => layerTaskIds.length));
+  const layerHeights = new Map<number, number>();
+
+  for (const [layer, layerTaskIds] of taskIdsByLayer) {
+    const layerHeight = getLayerHeight(layerTaskIds, taskById, activeStatusByTaskId, activeTaskIds, activityByTaskId);
+    layerHeights.set(layer, layerHeight);
+  }
+
+  const graphBodyHeight = Math.max(...Array.from(layerHeights.values()));
 
   for (const layer of sortedLayers) {
     const layerTaskIds = taskIdsByLayer.get(layer) ?? [];
-    const layerHeight = layerTaskIds.length * NODE_HEIGHT + Math.max(layerTaskIds.length - 1, 0) * ROW_GAP;
-    const graphBodyHeight = maxRows * NODE_HEIGHT + Math.max(maxRows - 1, 0) * ROW_GAP;
+    const layerHeight = layerHeights.get(layer) ?? 0;
     const layerYOffset = Math.max(0, (graphBodyHeight - layerHeight) / 2);
+    let nextY = CANVAS_PADDING + layerYOffset;
 
-    layerTaskIds.forEach((taskId, index) => {
+    layerTaskIds.forEach((taskId) => {
       const task = taskById.get(taskId);
       if (!task) {
         return;
       }
+      const nodeHeight = getGraphNodeHeight(task, activeStatusByTaskId, activeTaskIds, activityByTaskId);
       const node = {
         task,
         layer,
         x: CANVAS_PADDING + layer * (NODE_WIDTH + LAYER_GAP),
-        y: CANVAS_PADDING + layerYOffset + index * (NODE_HEIGHT + ROW_GAP),
+        y: nextY,
+        height: nodeHeight,
       };
       nodes.push(node);
       nodeByTaskId.set(taskId, node);
+      nextY += nodeHeight + ROW_GAP;
     });
   }
 
@@ -375,18 +398,43 @@ function buildDependencyGraph(tasks: Task[]): DependencyGraph {
         fromTaskId: dependencyId,
         toTaskId: node.task.id,
         startX: dependencyNode.x + NODE_WIDTH,
-        startY: dependencyNode.y + NODE_HEIGHT / 2,
+        startY: dependencyNode.y + dependencyNode.height / 2,
         endX: node.x,
-        endY: node.y + NODE_HEIGHT / 2,
+        endY: node.y + node.height / 2,
       });
     }
   }
 
   const maxLayer = sortedLayers.at(-1) ?? 0;
   const width = CANVAS_PADDING * 2 + NODE_WIDTH + maxLayer * (NODE_WIDTH + LAYER_GAP);
-  const height = CANVAS_PADDING * 2 + maxRows * NODE_HEIGHT + Math.max(maxRows - 1, 0) * ROW_GAP;
+  const height = CANVAS_PADDING * 2 + graphBodyHeight;
 
   return { nodes, connections, width, height };
+}
+
+function getLayerHeight(
+  taskIds: string[],
+  taskById: Map<string, Task>,
+  activeStatusByTaskId: Map<string, TaskStatus>,
+  activeTaskIds: Set<string>,
+  activityByTaskId: Record<string, unknown>,
+): number {
+  return taskIds.reduce((height, taskId, index) => {
+    const task = taskById.get(taskId);
+    const nodeHeight = task ? getGraphNodeHeight(task, activeStatusByTaskId, activeTaskIds, activityByTaskId) : COMPACT_NODE_HEIGHT;
+    return height + nodeHeight + (index > 0 ? ROW_GAP : 0);
+  }, 0);
+}
+
+function getGraphNodeHeight(
+  task: Task,
+  activeStatusByTaskId: Map<string, TaskStatus>,
+  activeTaskIds: Set<string>,
+  activityByTaskId: Record<string, unknown>,
+): number {
+  const status = activeStatusByTaskId.get(task.id) ?? (task.status as TaskStatus);
+  const hasActiveExecution = activeTaskIds.has(task.id) || Boolean(activityByTaskId[task.id]);
+  return getVisibleGraphStatusTag(status, hasActiveExecution) ? TAGGED_NODE_HEIGHT : COMPACT_NODE_HEIGHT;
 }
 
 function getConnectedOrder(task: Task | undefined, orderByTaskId: Map<string, number>): number {

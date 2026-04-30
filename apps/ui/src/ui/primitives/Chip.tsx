@@ -15,7 +15,7 @@ export interface ChipProps {
 export function Chip(props: ChipProps) {
 
   return (
-    <span className={`chip chip--${props.color ?? "gray"}`}>
+    <span className={`chip chip--${props.color ?? "gray"} ${props.className ?? ""}`}>
       {props.children}
     </span>
   )
