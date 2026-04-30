@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { useTasks } from "./useTasks"; // your abstraction hook
 import type { Task } from "./types";
 import { TaskStatus } from "./const";
-import { CommentResponseDto, CreateTaskDto, TaskResponseDto, InputRequestResponseDto } from "@taico/client/v2";
+import { CommentResponseDto, CreateTaskDto, TaskResponseDto, InputRequestResponseDto, ProjectResponseDto } from "@taico/client/v2";
 import { TaskActivityWireEvent } from "@taico/events";
 
 // Animation state tracked per status (for column-based animations)
@@ -52,6 +52,12 @@ export type TasksContextValue = {
   globalExitingTasks: Task[];
   activityByTaskId: Record<string, TaskActivityWireEvent>;
   shippedCelebrationTrigger: number;
+  projects: ProjectResponseDto[];
+  projectsLoaded: boolean;
+  selectedProjectId: string | null;
+  selectedProject: ProjectResponseDto | null;
+  selectedProjectTag: string | null;
+  setSelectedProjectId: (projectId: string | null) => void;
 };
 
 const TasksContext = createContext<TasksContextValue | null>(null);
@@ -70,7 +76,27 @@ type ActiveAnimation = {
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
-  const { tasks, getTaskById, isLoading, hasLoadedOnce, error, isConnected, createTask, deleteTask, addComment, assignTask, assignTaskToMe, answerInputRequest, activityByTaskId } = useTasks();
+  const {
+    tasks,
+    getTaskById,
+    isLoading,
+    hasLoadedOnce,
+    error,
+    isConnected,
+    createTask,
+    deleteTask,
+    addComment,
+    assignTask,
+    assignTaskToMe,
+    answerInputRequest,
+    activityByTaskId,
+    projects,
+    projectsLoaded,
+    selectedProjectId,
+    selectedProject,
+    selectedProjectTag,
+    setSelectedProjectId,
+  } = useTasks();
   const [sectionTitle, setSectionTitle] = useState("");
   const [shippedCelebrationTrigger, setShippedCelebrationTrigger] = useState(0);
 
@@ -241,6 +267,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       globalExitingTasks,
       activityByTaskId,
       shippedCelebrationTrigger,
+      projects,
+      projectsLoaded,
+      selectedProjectId,
+      selectedProject,
+      selectedProjectTag,
+      setSelectedProjectId,
     };
   }, [
     tasks,
@@ -262,6 +294,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     globalExitingTasks,
     activityByTaskId,
     shippedCelebrationTrigger,
+    projects,
+    projectsLoaded,
+    selectedProjectId,
+    selectedProject,
+    selectedProjectTag,
+    setSelectedProjectId,
   ]);
 
   return <TasksContext.Provider value={value}>{children}</TasksContext.Provider>;
