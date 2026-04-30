@@ -218,11 +218,6 @@ export const useTasks = () => {
     // Try to fetch from backend (it's fast enough and ensures we have the latest data)
     try {
       const task = await TasksService.TasksController_getTask({ id: taskId });
-      const selectedTag = selectedProjectTagRef.current;
-      if (selectedTag && !taskHasTag(task, selectedTag)) {
-        setTasks((prev) => prev.filter((t) => t.id !== task.id));
-        return null;
-      }
       // Add to cache for future lookups
       setTasks((prev) => {
         // Check if task already exists in cache to avoid duplicates
