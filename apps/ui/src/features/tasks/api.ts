@@ -9,9 +9,11 @@ const client = new ApiClient({
 
 export const TasksService = client.task;
 export const ActorsService = client.actors;
+export const MetaService = client.meta;
 
 // Export API client for easier access to all endpoints
 export const api = {
   task: client.task,
   actor: client.actors,
+  meta: client.meta,
 };
