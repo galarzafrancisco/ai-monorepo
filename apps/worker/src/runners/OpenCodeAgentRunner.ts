@@ -359,6 +359,17 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
   ): Promise<string> {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
     this.runtimeMcpServers = ctx.mcpServers;
+    let heartbeatInFlight = false;
+    const emitHarnessHeartbeat = () => {
+      if (!onHeartbeat || heartbeatInFlight) {
+        return;
+      }
+
+      heartbeatInFlight = true;
+      void Promise.resolve(onHeartbeat()).finally(() => {
+        heartbeatInFlight = false;
+      });
+    };
 
     let removeAbortListener: (() => void) | undefined;
     this.interruptRequested = false;
@@ -450,7 +461,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
       console.log("--------- STARTING EVENT LOOP ---------");
       for await (const event of events.stream) {
-        await onHeartbeat?.();
+        emitHarnessHeartbeat();
 
         if (this.interruptRequested && await this.wasAbortApplied()) {
           throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
