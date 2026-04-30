@@ -39,7 +39,10 @@ export function TaskDetailPage() {
   const ACTIVITY_EXIT_MS = 220;
 
   // Find task from context (real-time updates)
-  const task = tasks.find(t => t.id === taskId);
+  const taskFromContext = tasks.find(t => t.id === taskId);
+  const [hydratedTask, setHydratedTask] = useState<typeof taskFromContext>(undefined);
+  const [isHydratingTask, setIsHydratingTask] = useState(false);
+  const task = taskFromContext ?? hydratedTask;
 
   // Set document title (browser tab)
   useDocumentTitle({ task: { name: task?.name } });
@@ -64,6 +67,44 @@ export function TaskDetailPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    if (!taskId) {
+      setHydratedTask(undefined);
+      setIsHydratingTask(false);
+      return;
+    }
+
+    if (taskFromContext) {
+      setHydratedTask(taskFromContext);
+      setIsHydratingTask(false);
+      return;
+    }
+
+    setIsHydratingTask(true);
+    TasksService.tasksControllerGetTask(taskId)
+      .then((fetchedTask) => {
+        if (isCurrent) {
+          setHydratedTask(fetchedTask);
+        }
+      })
+      .catch(() => {
+        if (isCurrent) {
+          setHydratedTask(undefined);
+        }
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setIsHydratingTask(false);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [taskId, taskFromContext]);
 
   // Loading / error state
   const [error, setError] = useState<string | null>(null);
@@ -194,7 +235,7 @@ export function TaskDetailPage() {
     return (
       <div className="task-detail-page">
         <Stack spacing="4" align="center">
-          <Text size="3" tone="muted">Task not found</Text>
+          <Text size="3" tone="muted">{isHydratingTask ? 'Loading task...' : 'Task not found'}</Text>
           <Button variant="secondary" onClick={navigateToTasksList}>
             Back to tasks
           </Button>
