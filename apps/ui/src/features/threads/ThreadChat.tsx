@@ -6,6 +6,7 @@ import { useAuth } from "../../auth";
 import { useDraftState } from "../../shared/hooks/useDraftState";
 import { useChatReadiness } from "../chat-providers/useChatReadiness";
 import { ChatSetupCallout } from "../chat-providers/ChatSetupCallout";
+import Markdown from "marked-react";
 import "./ThreadChat.css";
 
 interface ThreadChatProps {
@@ -127,7 +128,9 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
                   </Text>
                 </div>
 
-                <Text size="2">{message.content}</Text>
+                <div className="thread-chat__message-content">
+                  <Markdown>{message.content}</Markdown>
+                </div>
               </div>
             );
           })
@@ -147,7 +150,9 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
               </Text>
             </div>
 
-            <Text size="2">{agentResponseStream.content}</Text>
+            <div className="thread-chat__message-content">
+              <Markdown>{agentResponseStream.content}</Markdown>
+            </div>
           </div>
         )}
 

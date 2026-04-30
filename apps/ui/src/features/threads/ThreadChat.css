@@ -170,3 +170,164 @@
   border-top: 1px solid var(--border-subtle);
   padding-top: var(--space-3);
 }
+
+/* Markdown content styling */
+.thread-chat__message-content {
+  font-size: var(--fs-2);
+  line-height: var(--lh-normal);
+  color: var(--text);
+}
+
+/* Headings */
+.thread-chat__message-content h1 {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-3);
+  font-size: var(--fs-5);
+  font-weight: var(--fw-semibold);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.thread-chat__message-content h2 {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-3);
+  font-size: var(--fs-4);
+  font-weight: var(--fw-semibold);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.thread-chat__message-content h3,
+.thread-chat__message-content h4,
+.thread-chat__message-content h5,
+.thread-chat__message-content h6 {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-weight: var(--fw-semibold);
+}
+
+.thread-chat__message-content h3 {
+  font-size: var(--fs-3);
+}
+
+.thread-chat__message-content h4,
+.thread-chat__message-content h5,
+.thread-chat__message-content h6 {
+  font-size: var(--fs-2);
+}
+
+/* Paragraphs */
+.thread-chat__message-content p {
+  margin-bottom: var(--space-2);
+}
+
+.thread-chat__message-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+.thread-chat__message-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: var(--space-2);
+}
+
+.thread-chat__message-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: var(--space-2);
+}
+
+.thread-chat__message-content li {
+  margin-bottom: var(--space-1);
+}
+
+.thread-chat__message-content li:last-child {
+  margin-bottom: 0;
+}
+
+/* Code */
+.thread-chat__message-content code {
+  background-color: var(--theme-surface);
+  padding: 0.125rem var(--space-1);
+  border-radius: var(--space-1);
+  border: 1px solid var(--border-subtle);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+}
+
+.thread-chat__message-content pre {
+  background-color: var(--theme-surface);
+  padding: var(--space-2);
+  border-radius: var(--space-1);
+  border: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  margin-bottom: var(--space-2);
+}
+
+.thread-chat__message-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+}
+
+/* Blockquotes */
+.thread-chat__message-content blockquote {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--border);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Links */
+.thread-chat__message-content a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.thread-chat__message-content a:hover {
+  text-decoration-color: var(--accent);
+}
+
+/* Tables */
+.thread-chat__message-content table {
+  border-collapse: collapse;
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+  width: 100%;
+  font-size: var(--fs-1);
+}
+
+.thread-chat__message-content th,
+.thread-chat__message-content td {
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  border: 1px solid var(--border-subtle);
+}
+
+.thread-chat__message-content th {
+  font-weight: var(--fw-semibold);
+  background: var(--surface);
+}
+
+.thread-chat__message-content tr:nth-child(even) {
+  background: color-mix(in srgb, var(--surface) 30%, transparent);
+}
+
+/* Horizontal rule */
+.thread-chat__message-content hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-3) 0;
+}
+
+/* Images */
+.thread-chat__message-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--space-1);
+  margin: var(--space-2) 0;
+}
