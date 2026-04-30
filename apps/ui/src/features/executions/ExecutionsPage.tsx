@@ -73,26 +73,31 @@ export function ExecutionsPage() {
   return (
     <div className="executions-page">
       <div className="executions-hero">
-        <div className="executions-worker-status">
-          <span
-            className="executions-worker-status__indicator"
-            style={{ color: connectedWorkersCount > 0 ? "var(--success)" : "var(--danger)" }}
-            aria-label={connectedWorkersCount > 0 ? "Workers connected" : "No workers connected"}
-          >
-            ●
-          </span>
-          <Text as="span" size="2" tone="muted">
-            {connectedWorkersCount > 0
-              ? `${connectedWorkersCount} worker${connectedWorkersCount !== 1 ? "s" : ""} connected`
-              : "no worker connected"}
-            {" · "}
-            <button
-              type="button"
-              className="executions-worker-status__link"
-              onClick={() => navigate("/settings/workers")}
+        <div className="executions-hero__summary">
+          <div className="executions-worker-status">
+            <span
+              className="executions-worker-status__indicator"
+              style={{ color: connectedWorkersCount > 0 ? "var(--success)" : "var(--danger)" }}
+              aria-label={connectedWorkersCount > 0 ? "Workers connected" : "No workers connected"}
             >
-              configure
-            </button>
+              ●
+            </span>
+            <Text as="span" size="2" tone="muted">
+              {connectedWorkersCount > 0
+                ? `${connectedWorkersCount} worker${connectedWorkersCount !== 1 ? "s" : ""} connected`
+                : "no worker connected"}
+              {" · "}
+              <button
+                type="button"
+                className="executions-worker-status__link"
+                onClick={() => navigate("/settings/workers")}
+              >
+                configure
+              </button>
+            </Text>
+          </div>
+          <Text as="div" size="2" tone="muted" className="executions-run-counts">
+            {queue.length.toLocaleString()} queued · {active.length.toLocaleString()} running · {history.length.toLocaleString()} finished
           </Text>
         </div>
         {error ? <span className="executions-error-copy">Fetch failed</span> : null}

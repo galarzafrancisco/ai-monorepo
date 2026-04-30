@@ -11,6 +11,11 @@
   align-items: center;
 }
 
+.executions-hero__summary {
+  display: grid;
+  gap: var(--space-1);
+}
+
 .executions-worker-status {
   display: inline-flex;
   align-items: center;
@@ -40,6 +45,10 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--r-1);
+}
+
+.executions-run-counts {
+  padding-left: calc(var(--space-1) + var(--fs-1));
 }
 
 .executions-empty-card {
@@ -226,6 +235,10 @@
   .executions-detail-topbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .executions-run-counts {
+    padding-left: 0;
   }
 
   .executions-detail-topbar {
