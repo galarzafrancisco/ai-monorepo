@@ -101,6 +101,13 @@
   min-height: 0;
   overflow: hidden;
   overscroll-behavior: contain;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.task-dependencies-viewport--panning {
+  cursor: grabbing;
 }
 
 .task-dependencies-graph {
@@ -126,6 +133,7 @@
   padding: var(--space-2) var(--space-3);
   text-align: left;
   cursor: pointer;
+  user-select: text;
 }
 
 .dependency-task-card:hover {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import { Text } from "../../ui/primitives";
@@ -47,14 +47,21 @@ export function TaskDependenciesPage(): React.JSX.Element {
   const { active } = useExecutions();
   const navigate = useNavigate();
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const panRef = useRef({ x: 0, y: 0 });
+  const panDragRef = useRef<{ pointerId: number; startClientX: number; startClientY: number; startPanX: number; startPanY: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
 
   useDocumentTitle();
 
   useEffect(() => {
     setSectionTitle("Dependencies");
   }, [setSectionTitle]);
+
+  useEffect(() => {
+    panRef.current = pan;
+  }, [pan]);
 
   const graph = useMemo(() => buildDependencyGraph(tasks), [tasks]);
   const activeTaskIds = useMemo(() => new Set(active.map((execution) => execution.taskId)), [active]);
@@ -122,6 +129,54 @@ export function TaskDependenciesPage(): React.JSX.Element {
     }
   }, [applyZoom, graph.nodes.length, zoom]);
 
+  const handlePointerDown = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    if (graph.nodes.length === 0 || event.button !== 0) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+    if (target.closest(".dependency-task-card")) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    panDragRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startPanX: panRef.current.x,
+      startPanY: panRef.current.y,
+    };
+    setIsPanning(true);
+  }, [graph.nodes.length]);
+
+  const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const drag = panDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    setPan({
+      x: drag.startPanX + event.clientX - drag.startClientX,
+      y: drag.startPanY + event.clientY - drag.startClientY,
+    });
+  }, []);
+
+  const finishPointerPan = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const drag = panDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    panDragRef.current = null;
+    setIsPanning(false);
+  }, []);
+
   if (isLoading && tasks.length === 0) {
     return (
       <div className="task-dependencies-page task-dependencies-page--state">
@@ -162,8 +217,12 @@ export function TaskDependenciesPage(): React.JSX.Element {
             </div>
             <div
               ref={viewportRef}
-              className="task-dependencies-viewport"
+              className={`task-dependencies-viewport${isPanning ? " task-dependencies-viewport--panning" : ""}`}
               onWheel={handleCanvasWheel}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={finishPointerPan}
+              onPointerCancel={finishPointerPan}
             >
               <div
                 className="task-dependencies-graph"
