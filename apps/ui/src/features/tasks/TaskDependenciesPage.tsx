@@ -126,7 +126,10 @@ export function TaskDependenciesPage(): React.JSX.Element {
     [activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, filteredTasks, graphMode, hideDonePaths],
   );
   const hasSelectedTags = selectedTagNames.length > 0;
-  const graphModeLabel = graphMode === "all" ? "all tasks" : "tasks with dependencies";
+  const graphCountLabel = `${graph.nodes.length} shown`;
+  const unfinishedPathsTooltip = hideDonePaths
+    ? "Showing paths that contain unfinished work. Click to include completed-only paths."
+    : "Showing every path. Click to hide completed-only paths.";
 
   useEffect(() => {
     if (!isTagPickerOpen) {
@@ -309,117 +312,115 @@ export function TaskDependenciesPage(): React.JSX.Element {
 
   return (
     <div className="task-dependencies-page">
-      <div className="task-dependencies-canvas" aria-label="Task dependency graph">
-        <div className="task-dependencies-controls" aria-label="Dependency graph filters">
+      <div className="task-dependencies-controls" aria-label="Dependency graph filters">
+        <div className="task-dependencies-controls__main">
           <div className="task-dependencies-controls__row">
-            <span className="task-dependencies-controls__label">Show</span>
-            <div className="task-dependencies-segmented" role="group" aria-label="Graph task scope">
+            <div className="task-dependencies-segmented" role="group" aria-label="Tasks shown in graph">
               <button
                 className={`task-dependencies-segmented__button ${graphMode === "dependencies" ? "task-dependencies-segmented__button--active" : ""}`}
                 type="button"
+                title="Show only tasks that have dependency links."
                 onClick={() => setGraphMode("dependencies")}
               >
-                With dependencies
+                Linked tasks
               </button>
               <button
                 className={`task-dependencies-segmented__button ${graphMode === "all" ? "task-dependencies-segmented__button--active" : ""}`}
                 type="button"
+                title="Show every task, including tasks without dependency links."
                 onClick={() => setGraphMode("all")}
               >
-                All tasks
+                Every task
               </button>
             </div>
           </div>
           <div className="task-dependencies-controls__row">
-            <span className="task-dependencies-controls__label">Paths</span>
             <button
               className={`task-dependencies-toggle${hideDonePaths ? " task-dependencies-toggle--active" : ""}`}
               type="button"
               aria-pressed={hideDonePaths}
               onClick={() => setHideDonePaths((currentValue) => !currentValue)}
+              aria-label="Show unfinished paths only"
+              title={unfinishedPathsTooltip}
             >
-              Hide done paths
+              Unfinished paths
             </button>
           </div>
-          <div className="task-dependencies-controls__row task-dependencies-controls__row--tags">
-            <span className="task-dependencies-controls__label">Tags</span>
-            <div className="task-dependencies-tags" aria-label="Tag filters">
-              <div className="task-dependencies-selected-tags" aria-label="Selected tag filters">
-                {selectedTagFilters.length === 0 ? (
-                  <span className="task-dependencies-tags__empty">No filters</span>
+          <span className="task-dependencies-controls__summary">
+            {graphCountLabel}
+          </span>
+          <div className="task-dependencies-tag-picker" ref={tagPickerRef}>
+            <input
+              className="task-dependencies-tag-picker__input"
+              type="search"
+              value={tagSearchQuery}
+              placeholder="+ tag"
+              aria-label="Add tag filter"
+              aria-expanded={isTagPickerOpen}
+              aria-controls="task-dependencies-tag-picker-list"
+              title="Filter the graph by tag."
+              onChange={(event) => {
+                setTagSearchQuery(event.target.value);
+                setIsTagPickerOpen(true);
+              }}
+              onFocus={() => setIsTagPickerOpen(true)}
+              onKeyDown={handleTagSearchKeyDown}
+            />
+            {isTagPickerOpen ? (
+              <div
+                id="task-dependencies-tag-picker-list"
+                className="task-dependencies-tag-picker__menu"
+                role="listbox"
+                aria-label="Available tag filters"
+              >
+                {tagPickerOptions.length === 0 ? (
+                  <span className="task-dependencies-tag-picker__empty">
+                    {availableTagFilters.length === selectedTagNames.length ? "No more tags" : "No matching tags"}
+                  </span>
                 ) : (
-                  selectedTagFilters.map((tag) => (
+                  tagPickerOptions.map((tag) => (
                     <button
                       key={tag.name}
-                      className="task-dependencies-tag task-dependencies-tag--selected"
+                      className="task-dependencies-tag-picker__option"
                       type="button"
-                      onClick={() => removeTagFilter(tag.name)}
-                      aria-label={`Remove ${tag.name} filter`}
+                      role="option"
+                      aria-selected="false"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => addTagFilter(tag.name)}
                     >
-                      {tag.name}
-                      <span className="task-dependencies-tag__count">{tag.count}</span>
-                      <span className="task-dependencies-tag__remove" aria-hidden="true">×</span>
+                      <span className="task-dependencies-tag-picker__option-name">{tag.name}</span>
+                      <span className="task-dependencies-tag-picker__option-count">{tag.count}</span>
                     </button>
                   ))
                 )}
-                {hasSelectedTags ? (
-                  <button className="task-dependencies-tags__clear" type="button" onClick={clearTagFilters}>
-                    Clear
-                  </button>
-                ) : null}
               </div>
-              <div className="task-dependencies-tag-picker" ref={tagPickerRef}>
-                <input
-                  className="task-dependencies-tag-picker__input"
-                  type="search"
-                  value={tagSearchQuery}
-                  placeholder="Add tag filter"
-                  aria-label="Add tag filter"
-                  aria-expanded={isTagPickerOpen}
-                  aria-controls="task-dependencies-tag-picker-list"
-                  onChange={(event) => {
-                    setTagSearchQuery(event.target.value);
-                    setIsTagPickerOpen(true);
-                  }}
-                  onFocus={() => setIsTagPickerOpen(true)}
-                  onKeyDown={handleTagSearchKeyDown}
-                />
-                {isTagPickerOpen ? (
-                  <div
-                    id="task-dependencies-tag-picker-list"
-                    className="task-dependencies-tag-picker__menu"
-                    role="listbox"
-                    aria-label="Available tag filters"
+            ) : null}
+          </div>
+        </div>
+        {hasSelectedTags ? (
+          <div className="task-dependencies-controls__tags-row">
+            <span className="task-dependencies-controls__label">Tags</span>
+            <div className="task-dependencies-tags" aria-label="Tag filters">
+              <div className="task-dependencies-selected-tags" aria-label="Selected tag filters">
+                {selectedTagFilters.map((tag) => (
+                  <Chip
+                    key={tag.name}
+                    className="task-dependencies-tag-filter"
+                    onRemove={() => removeTagFilter(tag.name)}
+                    removeLabel={`Remove ${tag.name} filter`}
                   >
-                    {tagPickerOptions.length === 0 ? (
-                      <span className="task-dependencies-tag-picker__empty">
-                        {availableTagFilters.length === selectedTagNames.length ? "No more tags" : "No matching tags"}
-                      </span>
-                    ) : (
-                      tagPickerOptions.map((tag) => (
-                        <button
-                          key={tag.name}
-                          className="task-dependencies-tag-picker__option"
-                          type="button"
-                          role="option"
-                          aria-selected="false"
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => addTagFilter(tag.name)}
-                        >
-                          <span className="task-dependencies-tag-picker__option-name">{tag.name}</span>
-                          <span className="task-dependencies-tag-picker__option-count">{tag.count}</span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                ) : null}
+                    {tag.name}
+                  </Chip>
+                ))}
+                <button className="task-dependencies-tags__clear" type="button" onClick={clearTagFilters}>
+                  Clear
+                </button>
               </div>
             </div>
           </div>
-          <span className="task-dependencies-controls__summary">
-            Showing {graph.nodes.length} {graphModeLabel}{hasSelectedTags ? ` matching ${selectedTagNames.length} tag${selectedTagNames.length === 1 ? "" : "s"}` : ""}{hideDonePaths ? "; done-only paths hidden" : ""}.
-          </span>
-        </div>
+        ) : null}
+      </div>
+      <div className="task-dependencies-canvas" aria-label="Task dependency graph">
         {graph.nodes.length === 0 ? (
           <div className="task-dependencies-empty">
             <Text size="3" weight="semibold">No tasks match this graph</Text>
