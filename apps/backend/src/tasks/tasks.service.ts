@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, In } from 'typeorm';
+import { Repository, In, SelectQueryBuilder } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
@@ -497,65 +497,84 @@ export class TasksService {
 
     const skip = (input.page - 1) * input.limit;
 
-    // If tag filter is provided, use query builder for join
-    if (input.tag) {
-      const queryBuilder = this.taskRepository
-        .createQueryBuilder('task')
-        .leftJoinAndSelect('task.comments', 'comments')
-        .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
-        .leftJoinAndSelect('task.artefacts', 'artefacts')
-        .leftJoinAndSelect('task.inputRequests', 'inputRequests')
-        .leftJoinAndSelect('task.tags', 'tags')
-        .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
-        .leftJoinAndSelect('task.createdByActor', 'createdByActor')
-        .innerJoin('task.tags', 'filterTag')
-        .where('filterTag.name = :tagName', { tagName: input.tag });
+    const result = await this.taskRepository.manager.transaction(async (manager) => {
+      const taskRepository = manager.getRepository(TaskEntity);
 
-      if (input.assignee) {
-        queryBuilder.andWhere('assigneeActor.slug = :assignee', {
-          assignee: input.assignee,
-        });
-      }
       if (input.status) {
-        queryBuilder.andWhere('task.status = :status', {
-          status: input.status,
-        });
-      }
-      if (input.updatedAfter) {
-        queryBuilder.andWhere('task.updatedAt >= :updatedAfter', {
-          updatedAfter: input.updatedAfter,
-        });
-      }
-      if (input.sessionId) {
-        queryBuilder.andWhere('task.sessionId = :sessionId', {
-          sessionId: input.sessionId,
-        });
+        const queryBuilder = this.createListTasksQuery(taskRepository, input)
+          .orderBy('task.updatedAt', 'DESC')
+          .skip(skip)
+          .take(input.limit);
+        const [tasks, total] = await queryBuilder.getManyAndCount();
+
+        return {
+          tasks,
+          total,
+          totalPages: Math.ceil(total / input.limit),
+        };
       }
 
-      queryBuilder
-        .orderBy('task.updatedAt', 'DESC')
-        .skip(skip)
-        .take(input.limit);
+      const tasks: TaskEntity[] = [];
+      const totalsByStatus: number[] = [];
 
-      const [tasks, total] = await queryBuilder.getManyAndCount();
+      for (const status of Object.values(TaskStatus)) {
+        const count = await this.createListTasksQuery(
+          taskRepository,
+          input,
+          status,
+        ).getCount();
+        totalsByStatus.push(count);
 
-      this.logger.log({
-        message: 'Tasks listed',
-        count: tasks.length,
-        total,
-        page: input.page,
-      });
+        if (count <= skip) {
+          continue;
+        }
+
+        const statusTasks = await this.createListTasksQuery(
+          taskRepository,
+          input,
+          status,
+        )
+          .orderBy('task.updatedAt', 'DESC')
+          .skip(skip)
+          .take(input.limit)
+          .getMany();
+        tasks.push(...statusTasks);
+      }
+
+      tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
       return {
-        items: tasks.map((task) => this.mapTaskToResult(task)),
-        total,
-        page: input.page,
-        limit: input.limit,
+        tasks,
+        total: totalsByStatus.reduce((sum, count) => sum + count, 0),
+        totalPages: Math.max(
+          0,
+          ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
+        ),
       };
-    }
+    });
 
-    // Standard filtering - need to use query builder for assignee filtering by slug
-    const queryBuilder = this.taskRepository
+    this.logger.log({
+      message: 'Tasks listed',
+      count: result.tasks.length,
+      total: result.total,
+      page: input.page,
+    });
+
+    return {
+      items: result.tasks.map((task) => this.mapTaskToResult(task)),
+      total: result.total,
+      page: input.page,
+      limit: input.limit,
+      totalPages: result.totalPages,
+    };
+  }
+
+  private createListTasksQuery(
+    taskRepository: Repository<TaskEntity>,
+    input: ListTasksInput,
+    status?: TaskStatus,
+  ): SelectQueryBuilder<TaskEntity> {
+    const queryBuilder = taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.comments', 'comments')
       .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
@@ -566,14 +585,19 @@ export class TasksService {
       .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
       .leftJoinAndSelect('task.createdByActor', 'createdByActor');
 
+    if (input.tag) {
+      queryBuilder
+        .innerJoin('task.tags', 'filterTag')
+        .where('filterTag.name = :tagName', { tagName: input.tag });
+    }
     if (input.assignee) {
       queryBuilder.andWhere('assigneeActor.slug = :assignee', {
         assignee: input.assignee,
       });
     }
-    if (input.status) {
+    if (status ?? input.status) {
       queryBuilder.andWhere('task.status = :status', {
-        status: input.status,
+        status: status ?? input.status,
       });
     }
     if (input.updatedAfter) {
@@ -587,23 +611,7 @@ export class TasksService {
       });
     }
 
-    queryBuilder.orderBy('task.updatedAt', 'DESC').skip(skip).take(input.limit);
-
-    const [tasks, total] = await queryBuilder.getManyAndCount();
-
-    this.logger.log({
-      message: 'Tasks listed',
-      count: tasks.length,
-      total,
-      page: input.page,
-    });
-
-    return {
-      items: tasks.map((task) => this.mapTaskToResult(task)),
-      total,
-      page: input.page,
-      limit: input.limit,
-    };
+    return queryBuilder;
   }
 
   async getTaskById(taskId: string): Promise<TaskResult> {
