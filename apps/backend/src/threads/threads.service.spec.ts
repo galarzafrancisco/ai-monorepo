@@ -372,6 +372,42 @@ describe('ThreadsService - Parent Task ID', () => {
         expect(result).toBeNull();
       });
     });
+
+    describe('3.4. Find Thread by Parent Task ID', () => {
+      it('should find a thread directly by parent task ID', async () => {
+        threadRepository.findOne.mockResolvedValue(mockThread);
+
+        const result = await service.findThreadByParentTaskId('parent-task-uuid');
+
+        expect(result).toBeDefined();
+        expect(result?.parentTaskId).toBe('parent-task-uuid');
+        expect(threadRepository.findOne).toHaveBeenCalledWith({
+          where: { parentTaskId: 'parent-task-uuid' },
+          relations: [
+            'createdByActor',
+            'tasks',
+            'tasks.assigneeActor',
+            'tasks.createdByActor',
+            'tasks.tags',
+            'tasks.comments',
+            'tasks.inputRequests',
+            'referencedContextBlocks',
+            'tags',
+            'participants',
+          ],
+        });
+      });
+
+      it('should return null when no thread exists for parent task ID', async () => {
+        threadRepository.findOne.mockResolvedValue(null);
+
+        const result = await service.findThreadByParentTaskId(
+          'non-existent-parent-task-uuid',
+        );
+
+        expect(result).toBeNull();
+      });
+    });
   });
 
   describe('Thread Deletion Tests', () => {

@@ -239,7 +239,7 @@ export class TasksService {
         newTaskId: task.id,
       });
 
-      thread = await this.threadsService.findThreadByTaskId(parentTaskId);
+      thread = await this.threadsService.findThreadByParentTaskId(parentTaskId);
       if (!thread) {
         throw error;
       }
