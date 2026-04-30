@@ -366,6 +366,22 @@
   font-weight: var(--fw-medium);
 }
 
+.dependency-task-card__status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.dependency-task-card__assignee {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dependency-task-card__meta {
   display: inline-flex;
   align-items: center;
