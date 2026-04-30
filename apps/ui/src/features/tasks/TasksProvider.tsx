@@ -22,6 +22,7 @@ const createEmptyAnimationByStatus = (): Record<TaskStatus, AnimationState> => (
 // Shape this to match what pages/layout need.
 export type TasksContextValue = {
   tasks: Task[];
+  detailTasks: Task[];
   getTaskById: (taskId: string) => Promise<Task | null>;
   createTask: (task: CreateTaskDto) => Promise<Task>;
   deleteTask: ({ taskId }: { taskId: string }) => Promise<void>;
@@ -78,6 +79,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   // IMPORTANT: this is where the one websocket connection should be created
   const {
     tasks,
+    detailTasks,
     getTaskById,
     isLoading,
     hasLoadedOnce,
@@ -249,6 +251,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<TasksContextValue>(() => {
     return {
       tasks,
+      detailTasks,
       getTaskById,
       createTask,
       deleteTask,
@@ -276,6 +279,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     };
   }, [
     tasks,
+    detailTasks,
     getTaskById,
     createTask,
     deleteTask,

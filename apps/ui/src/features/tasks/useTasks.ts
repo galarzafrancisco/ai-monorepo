@@ -45,6 +45,7 @@ export const useTasks = () => {
 
   // Data store
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [detailTasks, setDetailTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [selectedProjectId, setSelectedProjectIdState] = useState<string | null>(() => readStoredSelectedProjectId());
@@ -143,6 +144,10 @@ export const useTasks = () => {
     ]);
   };
 
+  const cacheDetailTask = (task: Task) => {
+    setDetailTasks((prev) => mergeTasks(prev, [task]));
+  };
+
   // Create task
   const createTask = async (task: CreateTaskDto) => {
     const projectTag = selectedProjectTagRef.current;
@@ -218,8 +223,12 @@ export const useTasks = () => {
     // Try to fetch from backend (it's fast enough and ensures we have the latest data)
     try {
       const task = await TasksService.TasksController_getTask({ id: taskId });
-      // Add to cache for future lookups
+      cacheDetailTask(task);
+      // Only project-matching hydrated tasks belong in the board/list cache.
       setTasks((prev) => {
+        if (!taskMatchesSelectedProject(task)) {
+          return prev.filter(t => t.id !== task.id);
+        }
         // Check if task already exists in cache to avoid duplicates
         if (prev.some(t => t.id === task.id)) {
           // Update existing task in case it changed
@@ -233,7 +242,7 @@ export const useTasks = () => {
       console.error('Failed to fetch task by ID', err);
       return null;
     }
-  }, []); // No dependencies - uses functional state updates
+  }, []); // No dependencies - uses refs and functional state updates
 
   const taskMatchesSelectedProject = (task: Task): boolean => {
     const selectedTag = selectedProjectTagRef.current;
@@ -249,6 +258,8 @@ export const useTasks = () => {
   };
 
   const upsertTaskFromEvent = (task: Task) => {
+    cacheDetailTask(task);
+
     if (!taskMatchesSelectedProject(task)) {
       setTasks((prev) => prev.filter((existingTask) => existingTask.id !== task.id));
       clearActivity(task.id);
@@ -389,6 +400,7 @@ export const useTasks = () => {
     }
 
     setTasks([]);
+    setDetailTasks([]);
     setActivityByTaskId({});
     loadTasks();
     const cleanup = setupWebsocket();
@@ -410,6 +422,7 @@ export const useTasks = () => {
 
     // Data
     tasks,
+    detailTasks,
     getTaskById,
     createTask,
     deleteTask,
