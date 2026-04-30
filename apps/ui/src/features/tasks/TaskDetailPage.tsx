@@ -17,6 +17,7 @@ import {
   ActiveTaskExecutionResponseDto,
   TaskExecutionHistoryResponseDto,
 } from "@taico/client/v2";
+import { GitBranch } from 'lucide-react';
 import { MetaTagResponseDto } from "@taico/client";
 import { TaskActivityWireEvent } from '@taico/events';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -725,7 +726,21 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
       )}
 
       {(dependencyTasks.length > 0 || task) && (
-        <DataRowContainer title="Depends on" className='task-detail-page__section'>
+        <DataRowContainer
+          title="Depends on"
+          className='task-detail-page__section'
+          action={dependencyTasks.length > 0 ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="task-detail-page__dependency-graph-button"
+              onClick={() => navigate('/tasks/dependencies')}
+            >
+              <GitBranch className="task-detail-page__dependency-graph-icon" size={14} strokeWidth={1.5} absoluteStrokeWidth />
+              View graph
+            </Button>
+          ) : undefined}
+        >
           {dependencyTasks.map(depTask => {
             return (
               <TaskRow
