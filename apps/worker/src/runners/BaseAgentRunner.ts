@@ -13,6 +13,8 @@ export abstract class BaseAgentRunner implements AgentRunner {
     onHeartbeat: () => undefined,
   };
 
+  protected readonly usePeriodicHeartbeat: boolean = true;
+
   abstract readonly kind: string;
 
   getModel(): Model | null {
@@ -30,13 +32,20 @@ export abstract class BaseAgentRunner implements AgentRunner {
     const events: string[] = [];
     let sessionId: string | null = null;
     let result = '';
-    const heartbeatTimer = setInterval(() => {
-      void Promise.resolve(cb.onHeartbeat()).catch((error) => {
+    const emitHeartbeat = async () => {
+      try {
+        await cb.onHeartbeat();
+      } catch (error) {
         console.warn(
           `[agent-runner:${this.kind}] heartbeat callback failed: ${error instanceof Error ? error.message : String(error)}`,
         );
-      });
-    }, BaseAgentRunner.HEARTBEAT_INTERVAL_MS);
+      }
+    };
+    const heartbeatTimer = this.usePeriodicHeartbeat
+      ? setInterval(() => {
+          void emitHeartbeat();
+        }, BaseAgentRunner.HEARTBEAT_INTERVAL_MS)
+      : undefined;
 
     const emit = async (msg: string) => {
       events.push(msg);
@@ -72,12 +81,15 @@ export abstract class BaseAgentRunner implements AgentRunner {
         onError,
         onToolCall,
         onTokenUsage,
+        emitHeartbeat,
       );
     } catch (err: any) {
       await emit(`❌ Agent error: ${err?.message ?? String(err)}`);
       throw err;
     } finally {
-      clearInterval(heartbeatTimer);
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+      }
     }
 
     return { sessionId, events, result };
@@ -94,5 +106,6 @@ export abstract class BaseAgentRunner implements AgentRunner {
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
     onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
+    onHeartbeat?: () => void | Promise<void>,
   ): Promise<string>;
 }
