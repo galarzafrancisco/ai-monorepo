@@ -4,11 +4,11 @@ import { useTasksCtx } from './TasksProvider';
 import { ActorsService, TasksService } from './api';
 import { TaskStatus, TASKS_STATUS } from './const';
 import type { Comment } from './types';
-import { Chip, Text, Stack, Row, Button, Divider, Avatar, ErrorText, type ChipProps, DataRow, DataRowContainer } from '../../ui/primitives';
+import { Chip, Text, Stack, Row, Button, Divider, Avatar, ErrorText, DataRow, DataRowContainer } from '../../ui/primitives';
 import './TaskDetailPage.css';
 import type { ActorResponseDto } from "@taico/client/v2";
-import { DataRowTag } from 'src/ui/primitives/DataRow';
 import { elapsedTime } from "../../shared/helpers/elapsedTime";
+import { getTaskStatusTag } from './taskStatusTag';
 
 type EditingField = 'title' | 'description' | 'assignee' | null;
 
@@ -305,7 +305,7 @@ export function TaskDetailPage() {
         <DataRow
           leading={<Avatar size={'sm'} name={task.createdByActor.displayName} src={task.createdByActor.avatarUrl || undefined} />}
           tags={[
-            StatusTag({ status: task.status as TaskStatus }),
+            getTaskStatusTag(task.status as TaskStatus),
             ...task.tags.map(tag => ({ label: tag.name })),
           ]}
           topRight={<Text size='1' tone='muted'>{elapsedTime(task.updatedAt)}</Text>}
@@ -659,47 +659,12 @@ export function TaskDetailPage() {
   );
 }
 
-function StatusTag({ status }: { status: TaskStatus }): DataRowTag {
-  let color: DataRowTag['color'] = 'gray';
-  let label = 'unknown';
-  if (status === TaskStatus.DONE) {
-    label = 'done';
-    color = 'purple';
-  } else if (status === TaskStatus.IN_PROGRESS) {
-    label = 'in progress';
-    color = 'green';
-  } else if (status === TaskStatus.NOT_STARTED) {
-    label = 'not started';
-    color = 'blue';
-  } else if (status === TaskStatus.FOR_REVIEW) {
-    label = 'in review';
-    color = 'orange';
-  }
-  return {
-    label,
-    color,
-  }
-}
-
 function StatusChip({ status }: { status: TaskStatus }) {
-  let color: ChipProps['color'] = 'gray';
-  let label
-  if (status === TaskStatus.DONE) {
-    label = 'done';
-    color = 'purple';
-  } else if (status === TaskStatus.IN_PROGRESS) {
-    label = 'in progress';
-    color = 'green';
-  } else if (status === TaskStatus.NOT_STARTED) {
-    label = 'not started';
-    color = 'blue';
-  } else if (status === TaskStatus.FOR_REVIEW) {
-    label = 'in review';
-    color = 'orange';
-  }
+  const statusTag = getTaskStatusTag(status);
+
   return (
-    <Chip color={color}>
-      {label}
+    <Chip color={statusTag.color}>
+      {statusTag.label}
     </Chip>
   )
 }
