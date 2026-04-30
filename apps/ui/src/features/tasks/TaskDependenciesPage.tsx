@@ -32,6 +32,13 @@ type DependencyGraph = {
   height: number;
 };
 
+type GraphMode = "dependencies" | "all";
+
+type GraphTagFilter = {
+  name: string;
+  count: number;
+};
+
 const NODE_WIDTH = 228;
 const NODE_HEIGHT = 48;
 const LAYER_GAP = 112;
@@ -49,6 +56,8 @@ export function TaskDependenciesPage(): React.JSX.Element {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [graphMode, setGraphMode] = useState<GraphMode>("dependencies");
+  const [selectedTagNames, setSelectedTagNames] = useState<string[]>([]);
 
   useDocumentTitle();
 
@@ -56,11 +65,28 @@ export function TaskDependenciesPage(): React.JSX.Element {
     setSectionTitle("Dependencies");
   }, [setSectionTitle]);
 
-  const graph = useMemo(() => buildDependencyGraph(tasks), [tasks]);
+  const availableTagFilters = useMemo(() => getAvailableTagFilters(tasks), [tasks]);
+  const filteredTasks = useMemo(() => filterTasksByTags(tasks, selectedTagNames), [tasks, selectedTagNames]);
+  const graph = useMemo(() => buildDependencyGraph(filteredTasks, { includeAllTasks: graphMode === "all" }), [filteredTasks, graphMode]);
   const activeTaskIds = useMemo(() => new Set(active.map((execution) => execution.taskId)), [active]);
   const activeStatusByTaskId = useMemo(() => {
     return new Map(active.map((execution) => [execution.taskId, execution.taskStatus as TaskStatus]));
   }, [active]);
+  const hasSelectedTags = selectedTagNames.length > 0;
+  const graphModeLabel = graphMode === "all" ? "all tasks" : "tasks with dependencies";
+
+  const toggleTagFilter = useCallback((tagName: string) => {
+    setSelectedTagNames((currentTagNames) => {
+      if (currentTagNames.includes(tagName)) {
+        return currentTagNames.filter((currentTagName) => currentTagName !== tagName);
+      }
+      return [...currentTagNames, tagName];
+    });
+  }, []);
+
+  const clearTagFilters = useCallback(() => {
+    setSelectedTagNames([]);
+  }, []);
 
   const applyZoom = useCallback((nextZoomValue: number, focusPoint?: { x: number; y: number }) => {
     const viewport = viewportRef.current;
@@ -141,10 +167,63 @@ export function TaskDependenciesPage(): React.JSX.Element {
   return (
     <div className="task-dependencies-page">
       <div className="task-dependencies-canvas" aria-label="Task dependency graph">
+        <div className="task-dependencies-controls" aria-label="Dependency graph filters">
+          <div className="task-dependencies-controls__row">
+            <span className="task-dependencies-controls__label">Show</span>
+            <div className="task-dependencies-segmented" role="group" aria-label="Graph task scope">
+              <button
+                className={`task-dependencies-segmented__button ${graphMode === "dependencies" ? "task-dependencies-segmented__button--active" : ""}`}
+                type="button"
+                onClick={() => setGraphMode("dependencies")}
+              >
+                With dependencies
+              </button>
+              <button
+                className={`task-dependencies-segmented__button ${graphMode === "all" ? "task-dependencies-segmented__button--active" : ""}`}
+                type="button"
+                onClick={() => setGraphMode("all")}
+              >
+                All tasks
+              </button>
+            </div>
+          </div>
+          <div className="task-dependencies-controls__row task-dependencies-controls__row--tags">
+            <span className="task-dependencies-controls__label">Tags</span>
+            <div className="task-dependencies-tags" aria-label="Tag filters">
+              {availableTagFilters.length === 0 ? (
+                <span className="task-dependencies-tags__empty">No tags</span>
+              ) : (
+                availableTagFilters.map((tag) => {
+                  const isSelected = selectedTagNames.includes(tag.name);
+                  return (
+                    <button
+                      key={tag.name}
+                      className={`task-dependencies-tag ${isSelected ? "task-dependencies-tag--selected" : ""}`}
+                      type="button"
+                      onClick={() => toggleTagFilter(tag.name)}
+                      aria-pressed={isSelected}
+                    >
+                      {tag.name}
+                      <span className="task-dependencies-tag__count">{tag.count}</span>
+                    </button>
+                  );
+                })
+              )}
+              {hasSelectedTags ? (
+                <button className="task-dependencies-tags__clear" type="button" onClick={clearTagFilters}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <span className="task-dependencies-controls__summary">
+            Showing {graph.nodes.length} {graphModeLabel}{hasSelectedTags ? ` matching ${selectedTagNames.length} tag${selectedTagNames.length === 1 ? "" : "s"}` : ""}.
+          </span>
+        </div>
         {graph.nodes.length === 0 ? (
           <div className="task-dependencies-empty">
-            <Text size="3" weight="semibold">No dependency graph yet</Text>
-            <Text tone="muted">Add dependencies to tasks and they will appear here as task-to-blocker connections.</Text>
+            <Text size="3" weight="semibold">No tasks match this graph</Text>
+            <Text tone="muted">Adjust the task scope or tag filters to show more tasks.</Text>
           </div>
         ) : (
           <>
@@ -265,9 +344,9 @@ function ConnectionLayer({ connections, width, height }: { connections: GraphCon
   );
 }
 
-function buildDependencyGraph(tasks: Task[]): DependencyGraph {
+function buildDependencyGraph(tasks: Task[], options: { includeAllTasks: boolean }): DependencyGraph {
   const taskById = new Map(tasks.map((task) => [task.id, task]));
-  const graphTaskIds = new Set<string>();
+  const graphTaskIds = new Set<string>(options.includeAllTasks ? tasks.map((task) => task.id) : []);
 
   for (const task of tasks) {
     const knownDependencies = task.dependsOnIds.filter((dependencyId) => taskById.has(dependencyId));
@@ -387,6 +466,29 @@ function buildDependencyGraph(tasks: Task[]): DependencyGraph {
   const height = CANVAS_PADDING * 2 + maxRows * NODE_HEIGHT + Math.max(maxRows - 1, 0) * ROW_GAP;
 
   return { nodes, connections, width, height };
+}
+
+function getAvailableTagFilters(tasks: Task[]): GraphTagFilter[] {
+  const countByTagName = new Map<string, number>();
+
+  for (const task of tasks) {
+    for (const tag of task.tags) {
+      countByTagName.set(tag.name, (countByTagName.get(tag.name) ?? 0) + 1);
+    }
+  }
+
+  return Array.from(countByTagName.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((firstTag, secondTag) => firstTag.name.localeCompare(secondTag.name));
+}
+
+function filterTasksByTags(tasks: Task[], selectedTagNames: string[]): Task[] {
+  if (selectedTagNames.length === 0) {
+    return tasks;
+  }
+
+  const selectedTagNameSet = new Set(selectedTagNames);
+  return tasks.filter((task) => task.tags.some((tag) => selectedTagNameSet.has(tag.name)));
 }
 
 function getConnectedOrder(task: Task | undefined, orderByTaskId: Map<string, number>): number {
