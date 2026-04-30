@@ -59,6 +59,7 @@ export const useTasks = () => {
   const tasksRef = useRef<Task[]>([]);
   const selectedProjectTagRef = useRef<string | null>(null);
   const isProjectSelectionReadyRef = useRef(false);
+  const loadTasksRequestIdRef = useRef(0);
 
   const selectedProject = useMemo(() => {
     if (!selectedProjectId) {
@@ -198,20 +199,35 @@ export const useTasks = () => {
     if (!isProjectSelectionReadyRef.current) {
       return;
     }
+    const requestId = loadTasksRequestIdRef.current + 1;
+    loadTasksRequestIdRef.current = requestId;
+    const requestedProjectTag = selectedProjectTagRef.current;
     setIsLoading(true);
     setError(null);
     try {
       const response = await TasksService.TasksController_listTasks({
         page: 1,
         limit: TASKS_PAGE_SIZE,
-        tag: selectedProjectTagRef.current ?? undefined,
+        tag: requestedProjectTag ?? undefined,
       });
-      setTasks(prev => mergeTasks(prev, response.items));
+      if (loadTasksRequestIdRef.current !== requestId || selectedProjectTagRef.current !== requestedProjectTag) {
+        return;
+      }
+
+      const visibleItems = requestedProjectTag
+        ? response.items.filter((task) => taskHasTag(task, requestedProjectTag))
+        : response.items;
+      setTasks(prev => mergeTasks(prev, visibleItems));
     } catch (err) {
+      if (loadTasksRequestIdRef.current !== requestId || selectedProjectTagRef.current !== requestedProjectTag) {
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {
-      setHasLoadedOnce(true);
-      setIsLoading(false);
+      if (loadTasksRequestIdRef.current === requestId && selectedProjectTagRef.current === requestedProjectTag) {
+        setHasLoadedOnce(true);
+        setIsLoading(false);
+      }
     }
   };
 
