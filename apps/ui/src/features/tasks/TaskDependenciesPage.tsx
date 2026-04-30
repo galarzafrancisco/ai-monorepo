@@ -68,6 +68,7 @@ export function TaskDependenciesPage(): React.JSX.Element {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [graphMode, setGraphMode] = useState<GraphMode>("dependencies");
+  const [hideDonePaths, setHideDonePaths] = useState(true);
   const [selectedTagNames, setSelectedTagNames] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<MetaTagResponseDto[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState("");
@@ -121,8 +122,8 @@ export function TaskDependenciesPage(): React.JSX.Element {
     return new Set(Object.values(activityByTaskId).filter(isActiveExecutionActivity).map((activity) => activity.taskId));
   }, [activityByTaskId]);
   const graph = useMemo(
-    () => buildDependencyGraph(filteredTasks, activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, { includeAllTasks: graphMode === "all" }),
-    [activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, filteredTasks, graphMode],
+    () => buildDependencyGraph(filteredTasks, activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, { includeAllTasks: graphMode === "all", hideDonePaths }),
+    [activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, filteredTasks, graphMode, hideDonePaths],
   );
   const hasSelectedTags = selectedTagNames.length > 0;
   const graphModeLabel = graphMode === "all" ? "all tasks" : "tasks with dependencies";
@@ -329,6 +330,17 @@ export function TaskDependenciesPage(): React.JSX.Element {
               </button>
             </div>
           </div>
+          <div className="task-dependencies-controls__row">
+            <span className="task-dependencies-controls__label">Paths</span>
+            <button
+              className={`task-dependencies-toggle${hideDonePaths ? " task-dependencies-toggle--active" : ""}`}
+              type="button"
+              aria-pressed={hideDonePaths}
+              onClick={() => setHideDonePaths((currentValue) => !currentValue)}
+            >
+              Hide done paths
+            </button>
+          </div>
           <div className="task-dependencies-controls__row task-dependencies-controls__row--tags">
             <span className="task-dependencies-controls__label">Tags</span>
             <div className="task-dependencies-tags" aria-label="Tag filters">
@@ -405,7 +417,7 @@ export function TaskDependenciesPage(): React.JSX.Element {
             </div>
           </div>
           <span className="task-dependencies-controls__summary">
-            Showing {graph.nodes.length} {graphModeLabel}{hasSelectedTags ? ` matching ${selectedTagNames.length} tag${selectedTagNames.length === 1 ? "" : "s"}` : ""}.
+            Showing {graph.nodes.length} {graphModeLabel}{hasSelectedTags ? ` matching ${selectedTagNames.length} tag${selectedTagNames.length === 1 ? "" : "s"}` : ""}{hideDonePaths ? "; done-only paths hidden" : ""}.
           </span>
         </div>
         {graph.nodes.length === 0 ? (
@@ -562,7 +574,7 @@ function buildDependencyGraph(
   activeStatusByTaskId: Map<string, TaskStatus>,
   activeTaskIds: Set<string>,
   activityActiveTaskIds: Set<string>,
-  options: { includeAllTasks: boolean },
+  options: { includeAllTasks: boolean; hideDonePaths: boolean },
 ): DependencyGraph {
   const taskById = new Map(tasks.map((task) => [task.id, task]));
   const graphTaskIds = new Set<string>(options.includeAllTasks ? tasks.map((task) => task.id) : []);
@@ -576,6 +588,14 @@ function buildDependencyGraph(
     for (const dependencyId of knownDependencies) {
       graphTaskIds.add(dependencyId);
     }
+  }
+
+  if (graphTaskIds.size === 0) {
+    return { nodes: [], connections: [], width: 0, height: 0 };
+  }
+
+  if (options.hideDonePaths) {
+    hideDoneOnlyPaths(graphTaskIds, taskById, activeStatusByTaskId);
   }
 
   if (graphTaskIds.size === 0) {
@@ -724,6 +744,73 @@ function filterTasksByTags(tasks: Task[], selectedTagNames: string[]): Task[] {
 
   const selectedTagNameSet = new Set(selectedTagNames);
   return tasks.filter((task) => task.tags.some((tag) => selectedTagNameSet.has(tag.name)));
+}
+
+function hideDoneOnlyPaths(graphTaskIds: Set<string>, taskById: Map<string, Task>, activeStatusByTaskId: Map<string, TaskStatus>) {
+  const dependencyIdsByTaskId = new Map<string, string[]>();
+  const dependentIdsByTaskId = new Map<string, string[]>();
+
+  for (const taskId of graphTaskIds) {
+    const task = taskById.get(taskId);
+    if (!task) {
+      continue;
+    }
+
+    const dependencyIds = task.dependsOnIds.filter((dependencyId) => graphTaskIds.has(dependencyId));
+    dependencyIdsByTaskId.set(taskId, dependencyIds);
+
+    for (const dependencyId of dependencyIds) {
+      const dependentIds = dependentIdsByTaskId.get(dependencyId) ?? [];
+      dependentIds.push(taskId);
+      dependentIdsByTaskId.set(dependencyId, dependentIds);
+    }
+  }
+
+  for (const taskId of Array.from(graphTaskIds)) {
+    if (!isDoneGraphTask(taskId, taskById, activeStatusByTaskId)) {
+      continue;
+    }
+
+    const hasUnfinishedContext = hasReachableUnfinishedTask(taskId, dependencyIdsByTaskId, taskById, activeStatusByTaskId)
+      || hasReachableUnfinishedTask(taskId, dependentIdsByTaskId, taskById, activeStatusByTaskId);
+
+    if (!hasUnfinishedContext) {
+      graphTaskIds.delete(taskId);
+    }
+  }
+}
+
+function hasReachableUnfinishedTask(
+  startTaskId: string,
+  connectedIdsByTaskId: Map<string, string[]>,
+  taskById: Map<string, Task>,
+  activeStatusByTaskId: Map<string, TaskStatus>,
+): boolean {
+  const visitedTaskIds = new Set([startTaskId]);
+  const pendingTaskIds = [...(connectedIdsByTaskId.get(startTaskId) ?? [])];
+
+  while (pendingTaskIds.length > 0) {
+    const taskId = pendingTaskIds.pop();
+    if (!taskId || visitedTaskIds.has(taskId)) {
+      continue;
+    }
+
+    visitedTaskIds.add(taskId);
+
+    if (!isDoneGraphTask(taskId, taskById, activeStatusByTaskId)) {
+      return true;
+    }
+
+    pendingTaskIds.push(...(connectedIdsByTaskId.get(taskId) ?? []));
+  }
+
+  return false;
+}
+
+function isDoneGraphTask(taskId: string, taskById: Map<string, Task>, activeStatusByTaskId: Map<string, TaskStatus>): boolean {
+  const task = taskById.get(taskId);
+  const status = activeStatusByTaskId.get(taskId) ?? task?.status;
+  return status === TaskStatus.DONE;
 }
 
 function getLayerHeight(

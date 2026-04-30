@@ -102,6 +102,7 @@
 }
 
 .task-dependencies-segmented__button,
+.task-dependencies-toggle,
 .task-dependencies-tag,
 .task-dependencies-tags__clear,
 .task-dependencies-tag-picker__option {
@@ -119,7 +120,17 @@
   font-weight: var(--fw-medium);
 }
 
+.task-dependencies-toggle {
+  min-height: 30px;
+  padding: 6px var(--space-2);
+  border-color: var(--border-subtle);
+  background: var(--card-bg);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
 .task-dependencies-segmented__button:hover,
+.task-dependencies-toggle:hover,
 .task-dependencies-tag:hover,
 .task-dependencies-tags__clear:hover,
 .task-dependencies-tag-picker__option:hover {
@@ -128,6 +139,7 @@
 }
 
 .task-dependencies-segmented__button--active,
+.task-dependencies-toggle--active,
 .task-dependencies-tag--selected {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
