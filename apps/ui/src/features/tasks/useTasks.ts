@@ -76,6 +76,14 @@ export const useTasks = () => {
     });
   };
 
+  const mergeTasks = (existingTasks: Task[], incomingTasks: Task[]): Task[] => {
+    const incomingIds = new Set(incomingTasks.map(task => task.id));
+    return sortTasks([
+      ...incomingTasks,
+      ...existingTasks.filter(task => !incomingIds.has(task.id)),
+    ]);
+  };
+
   // Create task
   const createTask = async (task: CreateTaskDto) => {
     return await TasksService.TasksController_createTask({ body: task });
@@ -123,7 +131,7 @@ export const useTasks = () => {
         page: 1,
         limit: TASKS_PAGE_SIZE,
       });
-      setTasks(sortTasks(response.items));
+      setTasks(prev => mergeTasks(prev, response.items));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {
