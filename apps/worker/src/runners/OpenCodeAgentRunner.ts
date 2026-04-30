@@ -66,6 +66,7 @@ function stopProcessTree(proc: ChildProcessWithoutNullStreams): void {
 
 export class OpencodeAgentRunner extends BaseAgentRunner {
   readonly kind: string;
+  protected override readonly usePeriodicHeartbeat = false;
 
   // Mutex for process.chdir: serializes all instances so only one
   // changes the working directory at a time.
@@ -354,6 +355,7 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
     onError?: (error: { message: string; rawMessage?: any }) => void | Promise<void>,
     onToolCall?: (toolName: string) => void | Promise<void>,
     onTokenUsage?: (usage: TokenUsage) => void | Promise<void>,
+    onHeartbeat?: () => void | Promise<void>,
   ): Promise<string> {
     const formatter = new OpencodeAsyncMessageFormatter(ctx.agentSlug);
     this.runtimeMcpServers = ctx.mcpServers;
@@ -448,6 +450,8 @@ export class OpencodeAgentRunner extends BaseAgentRunner {
 
       console.log("--------- STARTING EVENT LOOP ---------");
       for await (const event of events.stream) {
+        await onHeartbeat?.();
+
         if (this.interruptRequested && await this.wasAbortApplied()) {
           throw new InterruptedExecutionError('OpenCode agent execution was interrupted');
         }
