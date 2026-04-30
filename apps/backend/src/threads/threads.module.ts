@@ -21,6 +21,7 @@ import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.servi
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
+import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-projector.service';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
     OpenAiMcpServerFactoryService,
     ThreadTitleService,
     ThreadStateReconcilerService,
+    ThreadTaskAssignmentProjectorService,
   ],
   exports: [ThreadsService],
 })
