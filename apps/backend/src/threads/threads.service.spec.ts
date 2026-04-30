@@ -570,6 +570,74 @@ describe('ThreadsService - Parent Task ID', () => {
         expect(addParticipantSpy).not.toHaveBeenCalled();
       });
     });
+
+    describe('Participant Tests', () => {
+      it('should add participants through relation insert to avoid overwriting concurrent additions', async () => {
+        const threadWithParticipant = {
+          ...mockThread,
+          participants: [mockActor],
+        } as ThreadEntity;
+        const relationQueryBuilder = {
+          relation: jest.fn().mockReturnThis(),
+          of: jest.fn().mockReturnThis(),
+          add: jest.fn().mockResolvedValue(undefined),
+        };
+
+        threadRepository.createQueryBuilder.mockReturnValue(
+          relationQueryBuilder as any,
+        );
+        threadRepository.findOne
+          .mockResolvedValueOnce(mockThread)
+          .mockResolvedValueOnce(threadWithParticipant);
+        actorRepository.findOne.mockResolvedValue(mockActor);
+
+        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+
+        expect(relationQueryBuilder.relation).toHaveBeenCalledWith(
+          ThreadEntity,
+          'participants',
+        );
+        expect(relationQueryBuilder.of).toHaveBeenCalledWith('thread-uuid');
+        expect(relationQueryBuilder.add).toHaveBeenCalledWith('actor-uuid');
+        expect(threadRepository.save).not.toHaveBeenCalled();
+        expect(result.participants).toEqual(
+          expect.arrayContaining([expect.objectContaining({ id: 'actor-uuid' })]),
+        );
+      });
+
+      it('should treat duplicate participant relation insert as idempotent success', async () => {
+        const threadWithParticipant = {
+          ...mockThread,
+          participants: [mockActor],
+        } as ThreadEntity;
+        const relationQueryBuilder = {
+          relation: jest.fn().mockReturnThis(),
+          of: jest.fn().mockReturnThis(),
+          add: jest.fn().mockRejectedValue(
+            new QueryFailedError('INSERT INTO thread_participants ...', [], {
+              code: 'SQLITE_CONSTRAINT',
+              message:
+                'UNIQUE constraint failed: thread_participants.thread_id, thread_participants.actor_id',
+            } as any),
+          ),
+        };
+
+        threadRepository.createQueryBuilder.mockReturnValue(
+          relationQueryBuilder as any,
+        );
+        threadRepository.findOne
+          .mockResolvedValueOnce(mockThread)
+          .mockResolvedValueOnce(threadWithParticipant);
+        actorRepository.findOne.mockResolvedValue(mockActor);
+
+        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+
+        expect(relationQueryBuilder.add).toHaveBeenCalledWith('actor-uuid');
+        expect(result.participants).toEqual(
+          expect.arrayContaining([expect.objectContaining({ id: 'actor-uuid' })]),
+        );
+      });
+    });
   });
 
   describe('Thread Update Tests', () => {

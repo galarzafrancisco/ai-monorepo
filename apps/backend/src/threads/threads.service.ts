@@ -599,10 +599,19 @@ export class ThreadsService {
       throw new ActorNotFoundForThreadError(actorId);
     }
 
-    // Add participant if not already present
     if (!thread.participants.some((p) => p.id === actorId)) {
-      thread.participants.push(actor);
-      await this.threadRepository.save(thread);
+      try {
+        await this.threadRepository
+          .createQueryBuilder()
+          .relation(ThreadEntity, 'participants')
+          .of(threadId)
+          .add(actorId);
+      } catch (error) {
+        if (!this.isThreadParticipantUniqueViolation(error)) {
+          throw error;
+        }
+      }
+
       this.logger.log({
         message: 'Participant added to thread',
         threadId,
@@ -932,6 +941,28 @@ export class ThreadsService {
       message.includes('thread_tasks')
       && message.includes('thread_id')
       && message.includes('task_id')
+    );
+  }
+
+  private isThreadParticipantUniqueViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const driverError = (error as any).driverError;
+    const code = driverError?.code;
+    const message = driverError?.message ?? '';
+
+    const isUniqueConstraintCode =
+      code === 'SQLITE_CONSTRAINT' || code === '23505';
+    if (!isUniqueConstraintCode) {
+      return false;
+    }
+
+    return (
+      message.includes('thread_participants')
+      && message.includes('thread_id')
+      && message.includes('actor_id')
     );
   }
 
