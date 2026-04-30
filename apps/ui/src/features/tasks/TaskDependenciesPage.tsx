@@ -44,6 +44,12 @@ type GraphTagFilter = {
   count: number;
 };
 
+type DependencyViewPreferences = {
+  graphMode: GraphMode;
+  hideDonePaths: boolean;
+  selectedTagNames: string[];
+};
+
 const NODE_WIDTH = 228;
 const COMPACT_NODE_HEIGHT = 48;
 const TAGGED_NODE_HEIGHT = 60;
@@ -55,6 +61,12 @@ const MIN_ZOOM = 0.55;
 const MAX_ZOOM = 1.6;
 const ZOOM_STEP = 0.15;
 const WHEEL_ZOOM_SENSITIVITY = 0.0025;
+const DEPENDENCY_VIEW_PREFERENCES_KEY = "task-dependencies-view-preferences";
+const DEFAULT_DEPENDENCY_VIEW_PREFERENCES: DependencyViewPreferences = {
+  graphMode: "all",
+  hideDonePaths: true,
+  selectedTagNames: [],
+};
 
 export function TaskDependenciesPage(): React.JSX.Element {
   const { tasks, isLoading, error, setSectionTitle, activityByTaskId } = useTasksCtx();
@@ -67,9 +79,8 @@ export function TaskDependenciesPage(): React.JSX.Element {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
-  const [graphMode, setGraphMode] = useState<GraphMode>("dependencies");
-  const [hideDonePaths, setHideDonePaths] = useState(true);
-  const [selectedTagNames, setSelectedTagNames] = useState<string[]>([]);
+  const [viewPreferences, setViewPreferences] = useState<DependencyViewPreferences>(loadDependencyViewPreferences);
+  const { graphMode, hideDonePaths, selectedTagNames } = viewPreferences;
   const [availableTags, setAvailableTags] = useState<MetaTagResponseDto[]>([]);
   const [tagSearchQuery, setTagSearchQuery] = useState("");
   const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
@@ -83,6 +94,10 @@ export function TaskDependenciesPage(): React.JSX.Element {
   useEffect(() => {
     panRef.current = pan;
   }, [pan]);
+
+  useEffect(() => {
+    saveDependencyViewPreferences(viewPreferences);
+  }, [viewPreferences]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -148,22 +163,31 @@ export function TaskDependenciesPage(): React.JSX.Element {
   }, [isTagPickerOpen]);
 
   const addTagFilter = useCallback((tagName: string) => {
-    setSelectedTagNames((currentTagNames) => {
-      if (currentTagNames.includes(tagName)) {
-        return currentTagNames;
+    setViewPreferences((currentPreferences) => {
+      if (currentPreferences.selectedTagNames.includes(tagName)) {
+        return currentPreferences;
       }
-      return [...currentTagNames, tagName];
+      return {
+        ...currentPreferences,
+        selectedTagNames: [...currentPreferences.selectedTagNames, tagName],
+      };
     });
     setTagSearchQuery("");
     setIsTagPickerOpen(false);
   }, []);
 
   const removeTagFilter = useCallback((tagName: string) => {
-    setSelectedTagNames((currentTagNames) => currentTagNames.filter((currentTagName) => currentTagName !== tagName));
+    setViewPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      selectedTagNames: currentPreferences.selectedTagNames.filter((currentTagName) => currentTagName !== tagName),
+    }));
   }, []);
 
   const clearTagFilters = useCallback(() => {
-    setSelectedTagNames([]);
+    setViewPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      selectedTagNames: [],
+    }));
   }, []);
 
   const handleTagSearchKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -320,7 +344,7 @@ export function TaskDependenciesPage(): React.JSX.Element {
                 className={`task-dependencies-segmented__button ${graphMode === "dependencies" ? "task-dependencies-segmented__button--active" : ""}`}
                 type="button"
                 title="Show only tasks that have dependency links."
-                onClick={() => setGraphMode("dependencies")}
+                onClick={() => setViewPreferences((currentPreferences) => ({ ...currentPreferences, graphMode: "dependencies" }))}
               >
                 Linked tasks
               </button>
@@ -328,7 +352,7 @@ export function TaskDependenciesPage(): React.JSX.Element {
                 className={`task-dependencies-segmented__button ${graphMode === "all" ? "task-dependencies-segmented__button--active" : ""}`}
                 type="button"
                 title="Show every task, including tasks without dependency links."
-                onClick={() => setGraphMode("all")}
+                onClick={() => setViewPreferences((currentPreferences) => ({ ...currentPreferences, graphMode: "all" }))}
               >
                 Every task
               </button>
@@ -339,7 +363,7 @@ export function TaskDependenciesPage(): React.JSX.Element {
               className={`task-dependencies-toggle${hideDonePaths ? " task-dependencies-toggle--active" : ""}`}
               type="button"
               aria-pressed={hideDonePaths}
-              onClick={() => setHideDonePaths((currentValue) => !currentValue)}
+              onClick={() => setViewPreferences((currentPreferences) => ({ ...currentPreferences, hideDonePaths: !currentPreferences.hideDonePaths }))}
               aria-label="Show unfinished paths only"
               title={unfinishedPathsTooltip}
             >
@@ -536,6 +560,39 @@ function getVisibleGraphStatusTag(status: TaskStatus, hasActiveExecution = false
   }
 
   return null;
+}
+
+function loadDependencyViewPreferences(): DependencyViewPreferences {
+  try {
+    const storedPreferences = localStorage.getItem(DEPENDENCY_VIEW_PREFERENCES_KEY);
+    if (!storedPreferences) {
+      return DEFAULT_DEPENDENCY_VIEW_PREFERENCES;
+    }
+
+    const parsedPreferences = JSON.parse(storedPreferences) as Partial<DependencyViewPreferences>;
+    return {
+      graphMode: isGraphMode(parsedPreferences.graphMode) ? parsedPreferences.graphMode : DEFAULT_DEPENDENCY_VIEW_PREFERENCES.graphMode,
+      hideDonePaths: typeof parsedPreferences.hideDonePaths === "boolean" ? parsedPreferences.hideDonePaths : DEFAULT_DEPENDENCY_VIEW_PREFERENCES.hideDonePaths,
+      selectedTagNames: Array.isArray(parsedPreferences.selectedTagNames)
+        ? parsedPreferences.selectedTagNames.filter((tagName): tagName is string => typeof tagName === "string")
+        : DEFAULT_DEPENDENCY_VIEW_PREFERENCES.selectedTagNames,
+    };
+  } catch (preferencesError) {
+    console.error("Failed to load dependency view preferences:", preferencesError);
+    return DEFAULT_DEPENDENCY_VIEW_PREFERENCES;
+  }
+}
+
+function saveDependencyViewPreferences(preferences: DependencyViewPreferences) {
+  try {
+    localStorage.setItem(DEPENDENCY_VIEW_PREFERENCES_KEY, JSON.stringify(preferences));
+  } catch (preferencesError) {
+    console.error("Failed to save dependency view preferences:", preferencesError);
+  }
+}
+
+function isGraphMode(value: unknown): value is GraphMode {
+  return value === "dependencies" || value === "all";
 }
 
 function ConnectionLayer({ connections, width, height }: { connections: GraphConnection[]; width: number; height: number }) {
