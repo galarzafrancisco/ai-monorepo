@@ -24,7 +24,8 @@ describe('TasksService.createTaskInThread', () => {
       createThread: jest
         .fn()
         .mockRejectedValue(new ParentTaskThreadAlreadyExistsError('parent-task-1')),
-      findThreadByTaskId: jest.fn().mockResolvedValue({ id: 'thread-1' }),
+      findThreadByParentTaskId: jest.fn().mockResolvedValue({ id: 'thread-1' }),
+      findThreadByTaskId: jest.fn(),
       attachTask: jest.fn().mockResolvedValue({ id: 'thread-1' }),
     };
 
@@ -57,7 +58,10 @@ describe('TasksService.createTaskInThread', () => {
       parentTaskId: 'parent-task-1',
       taskIds: ['child-task-1'],
     });
-    expect(threadsService.findThreadByTaskId).toHaveBeenCalledWith('parent-task-1');
+    expect(threadsService.findThreadByParentTaskId).toHaveBeenCalledWith(
+      'parent-task-1',
+    );
+    expect(threadsService.findThreadByTaskId).not.toHaveBeenCalled();
     expect(threadsService.attachTask).toHaveBeenCalledWith(
       'thread-1',
       'child-task-1',
