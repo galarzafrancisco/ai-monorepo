@@ -211,38 +211,38 @@ background: linear-gradient(
 
 /* chip variants (same as your row) */
 .chip--gray {
-  --chip-bg: rgba(142, 142, 147, 0.14);
+  --chip-bg: color-mix(in srgb, var(--text-muted) 12%, transparent);
   --chip-fg: var(--text-muted);
 }
 
 .chip--blue {
-  --chip-bg: rgba(0, 122, 255, 0.14);
-  --chip-fg: rgb(0, 122, 255);
+  --chip-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+  --chip-fg: var(--accent);
 }
 
 .chip--green {
-  --chip-bg: rgba(52, 199, 89, 0.14);
-  --chip-fg: rgb(52, 199, 89);
+  --chip-bg: color-mix(in srgb, var(--success) 14%, transparent);
+  --chip-fg: var(--success);
 }
 
 .chip--yellow {
-  --chip-bg: rgba(255, 204, 0, 0.18);
-  --chip-fg: rgb(163, 128, 0);
+  --chip-bg: color-mix(in srgb, var(--warning) 18%, transparent);
+  --chip-fg: var(--warning);
 }
 
 .chip--orange {
-  --chip-bg: rgba(255, 149, 0, 0.16);
-  --chip-fg: rgb(255, 149, 0);
+  --chip-bg: color-mix(in srgb, var(--warning) 16%, transparent);
+  --chip-fg: var(--warning);
 }
 
 .chip--red {
-  --chip-bg: rgba(255, 59, 48, 0.14);
-  --chip-fg: rgb(255, 59, 48);
+  --chip-bg: color-mix(in srgb, var(--danger) 14%, transparent);
+  --chip-fg: var(--danger);
 }
 
 .chip--purple {
-  --chip-bg: rgba(175, 82, 222, 0.14);
-  --chip-fg: rgb(175, 82, 222);
+  --chip-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+  --chip-fg: var(--accent);
 }
 
 /* useful utility */

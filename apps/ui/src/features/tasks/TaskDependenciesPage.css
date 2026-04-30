@@ -130,7 +130,7 @@
   border-radius: var(--r-2);
   background: var(--card-bg);
   color: var(--text);
-  padding: var(--space-2) var(--space-3);
+  padding: 10px var(--space-3);
   text-align: left;
   cursor: pointer;
   user-select: text;
@@ -142,6 +142,11 @@
 
 .dependency-task-card--done {
   border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 10%, var(--card-bg));
+}
+
+.dependency-task-card--in-progress {
+  border-color: var(--accent);
 }
 
 .dependency-task-card__content {
@@ -149,7 +154,7 @@
   min-width: 0;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
 }
 
 .dependency-task-card__title {
@@ -190,32 +195,12 @@
   color: var(--text-inverse);
 }
 
-.dependency-task-card__status-badge {
-  display: inline-flex;
-  align-items: center;
+.dependency-task-card__status-chip {
   align-self: flex-start;
-  height: 16px;
-  max-width: 76px;
-  padding: 0 6px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
+  max-width: 92px;
   overflow: hidden;
-  color: var(--text);
-  font-size: 10px;
-  font-weight: var(--fw-medium);
-  line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.dependency-task-card__status-badge--active {
-  border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
-  background: color-mix(in srgb, var(--warning) 14%, transparent);
-}
-
-.dependency-task-card__status-badge--review {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .dependency-task-card__spinner {
