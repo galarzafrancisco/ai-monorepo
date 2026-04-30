@@ -426,6 +426,10 @@
   vector-effect: non-scaling-stroke;
 }
 
+.task-dependencies-connection-arrow {
+  fill: color-mix(in srgb, var(--text-muted) 48%, transparent);
+}
+
 @keyframes dependency-spin {
   to {
     transform: rotate(360deg);
