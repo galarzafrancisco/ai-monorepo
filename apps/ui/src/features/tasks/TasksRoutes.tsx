@@ -30,6 +30,7 @@ export function TasksRoutes() {
           <Route path="in-review" element={<TasksPage status={TaskStatus.FOR_REVIEW} />} />
           <Route path="done" element={<TasksPage status={TaskStatus.DONE} />} />
           <Route path="dependencies" element={<TaskDependenciesPage />} />
+          <Route path="dependencies/:taskId" element={<TaskDependenciesPage />} />
           <Route path="task/:d" element={<TaskDetailPage />} />
           <Route element={<ScheduledTasksSection />}>
             <Route path="schedule" element={<ScheduledTasksPage />} />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import { Chip, Text } from "../../ui/primitives";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
@@ -72,9 +72,11 @@ export function TaskDependenciesPage(): React.JSX.Element {
   const { tasks, isLoading, error, setSectionTitle, activityByTaskId } = useTasksCtx();
   const { active } = useExecutions();
   const navigate = useNavigate();
+  const { taskId: focusedTaskId } = useParams<{ taskId?: string }>();
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef({ x: 0, y: 0 });
   const panDragRef = useRef<{ pointerId: number; startClientX: number; startClientY: number; startPanX: number; startPanY: number } | null>(null);
+  const focusedTaskIdRef = useRef<string | undefined>(undefined);
   const tagPickerRef = useRef<HTMLDivElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -137,8 +139,8 @@ export function TaskDependenciesPage(): React.JSX.Element {
     return new Set(Object.values(activityByTaskId).filter(isActiveExecutionActivity).map((activity) => activity.taskId));
   }, [activityByTaskId]);
   const graph = useMemo(
-    () => buildDependencyGraph(filteredTasks, activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, { includeAllTasks: graphMode === "all", hideDonePaths }),
-    [activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, filteredTasks, graphMode, hideDonePaths],
+    () => buildDependencyGraph(filteredTasks, activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, { includeAllTasks: graphMode === "all", hideDonePaths, focusedTaskId }),
+    [activeStatusByTaskId, activeTaskIds, activityActiveTaskIds, filteredTasks, focusedTaskId, graphMode, hideDonePaths],
   );
   const hasSelectedTags = selectedTagNames.length > 0;
   const graphCountLabel = `${graph.nodes.length} shown`;
@@ -239,9 +241,25 @@ export function TaskDependenciesPage(): React.JSX.Element {
     setZoom((currentZoom) => clampZoom(currentZoom + delta));
   }, []);
   const resetZoom = useCallback(() => {
-    setPan({ x: 0, y: 0 });
+    setPan(getInitialGraphPan(graph, viewportRef.current, focusedTaskId));
     setZoom(1);
-  }, []);
+  }, [focusedTaskId, graph]);
+
+  useEffect(() => {
+    const shouldCenterFocusedTask = focusedTaskId && focusedTaskIdRef.current !== focusedTaskId;
+    if (!shouldCenterFocusedTask || graph.nodes.length === 0) {
+      return;
+    }
+
+    const focusedNode = graph.nodes.find((node) => node.task.id === focusedTaskId);
+    if (!focusedNode) {
+      return;
+    }
+
+    focusedTaskIdRef.current = focusedTaskId;
+    setZoom(1);
+    setPan(getPanForNode(focusedNode, viewportRef.current));
+  }, [focusedTaskId, graph]);
 
   const handleCanvasWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
     if (graph.nodes.length === 0) {
@@ -632,10 +650,14 @@ function buildDependencyGraph(
   activeStatusByTaskId: Map<string, TaskStatus>,
   activeTaskIds: Set<string>,
   activityActiveTaskIds: Set<string>,
-  options: { includeAllTasks: boolean; hideDonePaths: boolean },
+  options: { includeAllTasks: boolean; hideDonePaths: boolean; focusedTaskId?: string },
 ): DependencyGraph {
   const taskById = new Map(tasks.map((task) => [task.id, task]));
   const graphTaskIds = new Set<string>(options.includeAllTasks ? tasks.map((task) => task.id) : []);
+
+  if (options.focusedTaskId && taskById.has(options.focusedTaskId)) {
+    graphTaskIds.add(options.focusedTaskId);
+  }
 
   for (const task of tasks) {
     const knownDependencies = task.dependsOnIds.filter((dependencyId) => taskById.has(dependencyId));
@@ -653,7 +675,7 @@ function buildDependencyGraph(
   }
 
   if (options.hideDonePaths) {
-    hideDoneOnlyPaths(graphTaskIds, taskById, activeStatusByTaskId);
+    hideDoneOnlyPaths(graphTaskIds, taskById, activeStatusByTaskId, options.focusedTaskId);
   }
 
   if (graphTaskIds.size === 0) {
@@ -804,7 +826,7 @@ function filterTasksByTags(tasks: Task[], selectedTagNames: string[]): Task[] {
   return tasks.filter((task) => task.tags.some((tag) => selectedTagNameSet.has(tag.name)));
 }
 
-function hideDoneOnlyPaths(graphTaskIds: Set<string>, taskById: Map<string, Task>, activeStatusByTaskId: Map<string, TaskStatus>) {
+function hideDoneOnlyPaths(graphTaskIds: Set<string>, taskById: Map<string, Task>, activeStatusByTaskId: Map<string, TaskStatus>, focusedTaskId?: string) {
   const dependencyIdsByTaskId = new Map<string, string[]>();
   const dependentIdsByTaskId = new Map<string, string[]>();
 
@@ -825,6 +847,10 @@ function hideDoneOnlyPaths(graphTaskIds: Set<string>, taskById: Map<string, Task
   }
 
   for (const taskId of Array.from(graphTaskIds)) {
+    if (taskId === focusedTaskId) {
+      continue;
+    }
+
     if (!isDoneGraphTask(taskId, taskById, activeStatusByTaskId)) {
       continue;
     }
@@ -957,6 +983,22 @@ function moveDirectBlockersNearDependents(graphTaskIds: Set<string>, taskById: M
       }
     }
   }
+}
+
+function getInitialGraphPan(graph: DependencyGraph, viewport: HTMLDivElement | null, focusedTaskId?: string) {
+  const focusedNode = focusedTaskId ? graph.nodes.find((node) => node.task.id === focusedTaskId) : undefined;
+  return focusedNode ? getPanForNode(focusedNode, viewport) : { x: 0, y: 0 };
+}
+
+function getPanForNode(node: GraphNode, viewport: HTMLDivElement | null) {
+  if (!viewport) {
+    return { x: 0, y: 0 };
+  }
+
+  return {
+    x: viewport.clientWidth / 2 - node.x - NODE_WIDTH / 2,
+    y: viewport.clientHeight / 2 - node.y - node.height / 2,
+  };
 }
 
 function clampZoom(zoom: number): number {
