@@ -14,6 +14,9 @@ module.exports = {
   collectCoverageFrom: ['apps/backend/src/**/*.(t|j)s'],
   coverageDirectory: '<rootDir>/apps/backend/coverage',
   testEnvironment: 'node',
+  moduleNameMapper: {
+    '^src/(.*)$': '<rootDir>/apps/backend/src/$1',
+  },
   transformIgnorePatterns: [
     'node_modules/(?!(@modelcontextprotocol|.*\\.mjs$))',
   ],
