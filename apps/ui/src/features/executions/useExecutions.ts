@@ -12,6 +12,12 @@ import type {
 const EXECUTIONS_POLL_INTERVAL_MS = 5000;
 const SOCKET_URL = getUIWebSocketUrl('/tasks');
 
+type ExecutionTotals = {
+  queue: number;
+  active: number;
+  history: number;
+};
+
 export const useExecutions = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -21,6 +27,7 @@ export const useExecutions = () => {
   const [queue, setQueue] = useState<TaskExecutionQueueEntryResponseDto[]>([]);
   const [active, setActive] = useState<ActiveTaskExecutionResponseDto[]>([]);
   const [history, setHistory] = useState<TaskExecutionHistoryResponseDto[]>([]);
+  const [totals, setTotals] = useState<ExecutionTotals>({ queue: 0, active: 0, history: 0 });
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const inFlightRef = useRef(false);
 
@@ -50,6 +57,11 @@ export const useExecutions = () => {
       setQueue(queueResponse.items);
       setActive(activeResponse.items);
       setHistory(historyResponse.items);
+      setTotals({
+        queue: queueResponse.total,
+        active: activeResponse.total,
+        history: historyResponse.total,
+      });
       setLastUpdatedAt(new Date().toISOString());
       setError(null);
     } catch (err) {
@@ -107,6 +119,7 @@ export const useExecutions = () => {
     queue,
     active,
     history,
+    totals,
     loadExecutions,
     lastUpdatedAt,
   };

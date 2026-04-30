@@ -30,7 +30,7 @@ export function ExecutionsPage() {
   const navigate = useNavigate();
   const { actors } = useActorsCtx();
   const { showToast, showError } = useToast();
-  const { queue, active, history, isLoading, hasLoadedOnce, error, loadExecutions } = useExecutions();
+  const { queue, active, history, totals, isLoading, hasLoadedOnce, error, loadExecutions } = useExecutions();
   const { workers } = useWorkers();
   const [interruptingExecutions, setInterruptingExecutions] = useState<Set<string>>(() => new Set());
 
@@ -97,7 +97,7 @@ export function ExecutionsPage() {
             </Text>
           </div>
           <Text as="div" size="2" tone="muted" className="executions-run-counts">
-            {queue.length.toLocaleString()} queued · {active.length.toLocaleString()} running · {history.length.toLocaleString()} finished
+            {totals.queue.toLocaleString()} queued · {totals.active.toLocaleString()} running · {totals.history.toLocaleString()} finished
           </Text>
         </div>
         {error ? <span className="executions-error-copy">Fetch failed</span> : null}
