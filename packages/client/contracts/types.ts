@@ -3836,12 +3836,12 @@ export interface components {
              */
             page: number;
             /**
-             * @description Number of items per page
+             * @description Number of items per status per page when no status filter is provided
              * @example 20
              */
             limit: number;
             /**
-             * @description Total number of pages
+             * @description Total number of pages based on the largest matching status bucket
              * @example 3
              */
             totalPages: number;

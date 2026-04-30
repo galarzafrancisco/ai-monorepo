@@ -223,7 +223,7 @@ export class TasksController {
       total: result.total,
       page: result.page,
       limit: result.limit,
-      totalPages: Math.ceil(result.total / result.limit),
+      totalPages: result.totalPages,
     };
   }
 

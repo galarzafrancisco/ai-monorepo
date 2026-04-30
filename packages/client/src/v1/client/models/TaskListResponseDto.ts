@@ -17,11 +17,11 @@ export type TaskListResponseDto = {
      */
     page: number;
     /**
-     * Number of items per page
+     * Number of items per status per page when no status filter is provided
      */
     limit: number;
     /**
-     * Total number of pages
+     * Total number of pages based on the largest matching status bucket
      */
     totalPages: number;
 };
