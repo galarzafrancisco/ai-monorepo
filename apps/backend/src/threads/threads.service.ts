@@ -390,7 +390,7 @@ export class ThreadsService {
       taskId,
     });
 
-    await this.getThreadWithRelations(threadId);
+    const thread = await this.getThreadWithRelations(threadId);
     const task = await this.taskRepository.findOne({ where: { id: taskId } });
 
     if (!task) {
@@ -419,6 +419,15 @@ export class ThreadsService {
         threadId,
         taskId,
       });
+    }
+
+    if (
+      task.assigneeActorId &&
+      !thread.participants.some(
+        (participant) => participant.id === task.assigneeActorId,
+      )
+    ) {
+      await this.addParticipant(threadId, task.assigneeActorId);
     }
 
     const updatedThread = await this.getThreadWithRelations(threadId);
