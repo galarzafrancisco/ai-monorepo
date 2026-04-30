@@ -524,6 +524,155 @@ describe('ThreadsService - Parent Task ID', () => {
         expect(result.parentTaskId).toBe('parent-task-uuid');
         expect(result.tasks.length).toBe(1);
       });
+
+      it('should add the attached task assignee as a participant', async () => {
+        const assignedActor = {
+          ...mockActor,
+          id: 'assigned-actor-uuid',
+          slug: 'assigned-actor',
+          displayName: 'Assigned Actor',
+        } as ActorEntity;
+        const assignedTask = {
+          ...mockParentTask,
+          id: 'assigned-task-uuid',
+          name: 'Assigned Task',
+          assigneeActorId: assignedActor.id,
+        } as TaskEntity;
+        const threadWithAssignedTask = {
+          ...mockThread,
+          tasks: [mockParentTask, assignedTask],
+          participants: [assignedActor],
+        } as ThreadEntity;
+        const relationQueryBuilder = {
+          relation: jest.fn().mockReturnThis(),
+          of: jest.fn().mockReturnThis(),
+          add: jest.fn().mockResolvedValue(undefined),
+        };
+        const addParticipantSpy = jest
+          .spyOn(service, 'addParticipant')
+          .mockResolvedValue(threadWithAssignedTask as any);
+
+        threadRepository.createQueryBuilder.mockReturnValue(
+          relationQueryBuilder as any,
+        );
+        threadRepository.findOne
+          .mockResolvedValueOnce(mockThread)
+          .mockResolvedValueOnce(threadWithAssignedTask);
+        taskRepository.findOne.mockResolvedValue(assignedTask);
+
+        const result = await service.attachTask(
+          'thread-uuid',
+          'assigned-task-uuid',
+        );
+
+        expect(addParticipantSpy).toHaveBeenCalledWith(
+          'thread-uuid',
+          'assigned-actor-uuid',
+        );
+        expect(result.participants).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ id: 'assigned-actor-uuid' }),
+          ]),
+        );
+      });
+
+      it('should not add the attached task assignee when already participating', async () => {
+        const assignedTask = {
+          ...mockParentTask,
+          id: 'assigned-task-uuid',
+          assigneeActorId: mockActor.id,
+        } as TaskEntity;
+        const threadWithParticipant = {
+          ...mockThread,
+          participants: [mockActor],
+        } as ThreadEntity;
+        const relationQueryBuilder = {
+          relation: jest.fn().mockReturnThis(),
+          of: jest.fn().mockReturnThis(),
+          add: jest.fn().mockResolvedValue(undefined),
+        };
+        const addParticipantSpy = jest.spyOn(service, 'addParticipant');
+
+        threadRepository.createQueryBuilder.mockReturnValue(
+          relationQueryBuilder as any,
+        );
+        threadRepository.findOne
+          .mockResolvedValueOnce(threadWithParticipant)
+          .mockResolvedValueOnce(threadWithParticipant);
+        taskRepository.findOne.mockResolvedValue(assignedTask);
+
+        await service.attachTask('thread-uuid', 'assigned-task-uuid');
+
+        expect(addParticipantSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Participant Tests', () => {
+      it('should add participants through relation insert to avoid overwriting concurrent additions', async () => {
+        const threadWithParticipant = {
+          ...mockThread,
+          participants: [mockActor],
+        } as ThreadEntity;
+        const relationQueryBuilder = {
+          relation: jest.fn().mockReturnThis(),
+          of: jest.fn().mockReturnThis(),
+          add: jest.fn().mockResolvedValue(undefined),
+        };
+
+        threadRepository.createQueryBuilder.mockReturnValue(
+          relationQueryBuilder as any,
+        );
+        threadRepository.findOne
+          .mockResolvedValueOnce(mockThread)
+          .mockResolvedValueOnce(threadWithParticipant);
+        actorRepository.findOne.mockResolvedValue(mockActor);
+
+        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+
+        expect(relationQueryBuilder.relation).toHaveBeenCalledWith(
+          ThreadEntity,
+          'participants',
+        );
+        expect(relationQueryBuilder.of).toHaveBeenCalledWith('thread-uuid');
+        expect(relationQueryBuilder.add).toHaveBeenCalledWith('actor-uuid');
+        expect(threadRepository.save).not.toHaveBeenCalled();
+        expect(result.participants).toEqual(
+          expect.arrayContaining([expect.objectContaining({ id: 'actor-uuid' })]),
+        );
+      });
+
+      it('should treat duplicate participant relation insert as idempotent success', async () => {
+        const threadWithParticipant = {
+          ...mockThread,
+          participants: [mockActor],
+        } as ThreadEntity;
+        const relationQueryBuilder = {
+          relation: jest.fn().mockReturnThis(),
+          of: jest.fn().mockReturnThis(),
+          add: jest.fn().mockRejectedValue(
+            new QueryFailedError('INSERT INTO thread_participants ...', [], {
+              code: 'SQLITE_CONSTRAINT',
+              message:
+                'UNIQUE constraint failed: thread_participants.thread_id, thread_participants.actor_id',
+            } as any),
+          ),
+        };
+
+        threadRepository.createQueryBuilder.mockReturnValue(
+          relationQueryBuilder as any,
+        );
+        threadRepository.findOne
+          .mockResolvedValueOnce(mockThread)
+          .mockResolvedValueOnce(threadWithParticipant);
+        actorRepository.findOne.mockResolvedValue(mockActor);
+
+        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+
+        expect(relationQueryBuilder.add).toHaveBeenCalledWith('actor-uuid');
+        expect(result.participants).toEqual(
+          expect.arrayContaining([expect.objectContaining({ id: 'actor-uuid' })]),
+        );
+      });
     });
   });
 
