@@ -3,7 +3,7 @@ import { SqliteSessionService } from '../src/index.js';
 
 const agent = new LlmAgent({
   name: 'assistant',
-  model: 'gemini-2.5-flash',
+  model: 'gemini-2.5-pro',
   instruction: 'You are helpful.',
 });
 

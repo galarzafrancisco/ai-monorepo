@@ -30,8 +30,8 @@ export const ANTHROPIC_CLAUDE: MODEL_CONFIG = {
   name: 'claude',
 };
 // Good for ADK runner
-export const GEMINI_FLASH: MODEL_CONFIG = {
+export const GEMINI_PRO: MODEL_CONFIG = {
   providerId: '',
-  modelId: 'gemini-2.5-flash',
+  modelId: 'gemini-2.5-pro',
   name: 'gemini',
 };

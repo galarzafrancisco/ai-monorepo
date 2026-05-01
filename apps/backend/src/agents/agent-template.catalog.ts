@@ -8,7 +8,7 @@ import {
   ANTHROPIC_CLAUDE,
   CODEX,
   COPILOT_CLAUDE,
-  GEMINI_FLASH,
+  GEMINI_PRO,
   GPT_5_4,
 } from 'src/app-init/models/models';
 import { AgentType } from './enums';
@@ -100,9 +100,9 @@ export const AGENT_TEMPLATE_HARNESSES: AgentTemplateHarnessDto[] = [
     modelOptions: [
       defaultModelOption,
       modelOption({
-        label: 'Gemini 2.5 Flash',
-        providerId: GEMINI_FLASH.providerId,
-        modelId: GEMINI_FLASH.modelId,
+        label: 'Gemini 2.5 Pro',
+        providerId: GEMINI_PRO.providerId,
+        modelId: GEMINI_PRO.modelId,
       }),
     ],
   },
@@ -172,7 +172,7 @@ export const AGENT_TEMPLATES: AgentTemplateDto[] = [
     label: 'General helper',
     description: 'Handles general tasks and asks for clarification when needed.',
     type: AgentType.ADK,
-    modelId: GEMINI_FLASH.modelId,
+    modelId: GEMINI_PRO.modelId,
     agentDescription: 'General helper for task execution.',
     systemPrompt: ASSISTANT_PROMPT,
     statusTriggers: [TaskStatus.NOT_STARTED],
