@@ -52,7 +52,6 @@ import {
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
-  private static readonly GEMINI_FLASH_MODEL_ID = 'gemini-2.5-flash';
   private logger = new Logger(AppInitRunner.name);
 
   constructor(
@@ -188,15 +187,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring codex-dev Agent exists');
     }
     try {
-      await this.ensureAgentExists(createGeminiAssistant, (agent) => {
-        if (agent.modelId !== AppInitRunner.GEMINI_FLASH_MODEL_ID) {
-          return agent;
-        }
-
-        return this.agentsService.patchAgent(agent.actorId, {
-          modelId: createGeminiAssistant.modelId,
-        });
-      });
+      await this.ensureAgentExists(createGeminiAssistant);
     } catch (error) {
       this.logger.error('Error ensuring gemini-assistant Agent exists');
     }
@@ -258,7 +249,6 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
   async ensureAgentExists(
     agentConfig: CreateAgentInput,
-    patchSeed?: (agent: AgentResult) => Promise<AgentResult> | AgentResult,
   ): Promise<AgentResult | null> {
     let agent: AgentResult | null = null;
     try {
@@ -287,9 +277,6 @@ export class AppInitRunner implements OnApplicationBootstrap {
       }
     }
 
-    if (agent && patchSeed) {
-      agent = await patchSeed(agent);
-    }
     return agent;
   }
 
