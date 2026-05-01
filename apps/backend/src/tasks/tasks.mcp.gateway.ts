@@ -302,12 +302,13 @@ export class TasksMcpGateway {
         'create_task',
         {
           title: 'Create a new task',
-          description: 'Create task with name and description',
+          description: 'Create task with name, description, assignee, dependencies, and tags',
           inputSchema: {
             name: z.string(),
             description: z.string(),
             assigneeActorId: z.string().optional(),
             dependsOnIds: z.array(z.string()).optional(),
+            tagNames: z.array(z.string()).optional(),
           },
         },
         async ({
@@ -315,6 +316,7 @@ export class TasksMcpGateway {
           description,
           assigneeActorId,
           dependsOnIds,
+          tagNames,
         }) => {
           let task;
           if (executionId || runId) {
@@ -324,6 +326,7 @@ export class TasksMcpGateway {
               assigneeActorId,
               createdByActorId: user.actorId,
               dependsOnIds,
+              tagNames,
               executionId,
               runId,
             });
@@ -334,6 +337,7 @@ export class TasksMcpGateway {
               assigneeActorId,
               createdByActorId: user.actorId,
               dependsOnIds,
+              tagNames,
             });
           }
 
