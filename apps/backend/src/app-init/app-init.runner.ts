@@ -18,7 +18,10 @@ import {
   AgentResult,
   CreateAgentInput,
 } from 'src/agents/dto/service/agents.service.types';
-import { AgentSlugConflictError } from 'src/agents/errors/agents.errors';
+import {
+  AgentNotFoundError,
+  AgentSlugConflictError,
+} from 'src/agents/errors/agents.errors';
 import { createContext, createContextScopes } from './mcp/context.mcp';
 import { getConfig } from 'src/config/env.config';
 import { devUser, devUserRole } from './user/dev.user';
@@ -49,6 +52,7 @@ import {
 
 @Injectable()
 export class AppInitRunner implements OnApplicationBootstrap {
+  private static readonly GEMINI_FLASH_MODEL_ID = 'gemini-2.5-flash';
   private logger = new Logger(AppInitRunner.name);
 
   constructor(
@@ -184,7 +188,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring codex-dev Agent exists');
     }
     try {
-      await this.ensureAgentExists(createGeminiAssistant);
+      await this.ensureGeminiAssistantExists();
     } catch (error) {
       this.logger.error('Error ensuring gemini-assistant Agent exists');
     }
@@ -262,6 +266,30 @@ export class AppInitRunner implements OnApplicationBootstrap {
       }
     }
     return agent;
+  }
+
+  async ensureGeminiAssistantExists(): Promise<AgentResult | null> {
+    let agent: AgentResult | null = null;
+
+    try {
+      agent = await this.agentsService.getAgentBySlug({
+        slug: createGeminiAssistant.slug,
+      });
+    } catch (error) {
+      if (error instanceof AgentNotFoundError) {
+        return this.ensureAgentExists(createGeminiAssistant);
+      }
+
+      throw error;
+    }
+
+    if (agent?.modelId !== AppInitRunner.GEMINI_FLASH_MODEL_ID) {
+      return agent;
+    }
+
+    return this.agentsService.patchAgent(agent.actorId, {
+      modelId: createGeminiAssistant.modelId,
+    });
   }
 
   async ensureMcpServerExists(
