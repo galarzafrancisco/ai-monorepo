@@ -188,7 +188,15 @@ export class AppInitRunner implements OnApplicationBootstrap {
       this.logger.error('Error ensuring codex-dev Agent exists');
     }
     try {
-      await this.ensureGeminiAssistantExists();
+      await this.ensureAgentExists(createGeminiAssistant, (agent) => {
+        if (agent.modelId !== AppInitRunner.GEMINI_FLASH_MODEL_ID) {
+          return agent;
+        }
+
+        return this.agentsService.patchAgent(agent.actorId, {
+          modelId: createGeminiAssistant.modelId,
+        });
+      });
     } catch (error) {
       this.logger.error('Error ensuring gemini-assistant Agent exists');
     }
@@ -250,46 +258,39 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
   async ensureAgentExists(
     agentConfig: CreateAgentInput,
+    patchSeed?: (agent: AgentResult) => Promise<AgentResult> | AgentResult,
   ): Promise<AgentResult | null> {
     let agent: AgentResult | null = null;
     try {
-      agent = await this.agentsService.createAgent(agentConfig);
+      agent = await this.agentsService.getAgentBySlug({
+        slug: agentConfig.slug,
+      });
     } catch (error) {
-      if (error instanceof AgentSlugConflictError) {
-        agent = await this.agentsService.getAgentBySlug({
-          slug: agentConfig.slug,
-        });
-        // TODO: rework the update method
-        // agent = await this.agentsService.updateAgent(agent.id, createClaudeDev);
-      } else {
+      if (!(error instanceof AgentNotFoundError)) {
         throw error;
       }
     }
-    return agent;
-  }
 
-  async ensureGeminiAssistantExists(): Promise<AgentResult | null> {
-    let agent: AgentResult | null = null;
-
-    try {
-      agent = await this.agentsService.getAgentBySlug({
-        slug: createGeminiAssistant.slug,
-      });
-    } catch (error) {
-      if (error instanceof AgentNotFoundError) {
-        return this.ensureAgentExists(createGeminiAssistant);
+    if (!agent) {
+      try {
+        agent = await this.agentsService.createAgent(agentConfig);
+      } catch (error) {
+        if (error instanceof AgentSlugConflictError) {
+          agent = await this.agentsService.getAgentBySlug({
+            slug: agentConfig.slug,
+          });
+          // TODO: rework the update method
+          // agent = await this.agentsService.updateAgent(agent.id, createClaudeDev);
+        } else {
+          throw error;
+        }
       }
-
-      throw error;
     }
 
-    if (agent?.modelId !== AppInitRunner.GEMINI_FLASH_MODEL_ID) {
-      return agent;
+    if (agent && patchSeed) {
+      agent = await patchSeed(agent);
     }
-
-    return this.agentsService.patchAgent(agent.actorId, {
-      modelId: createGeminiAssistant.modelId,
-    });
+    return agent;
   }
 
   async ensureMcpServerExists(
