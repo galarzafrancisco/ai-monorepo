@@ -2,9 +2,9 @@
 
 Taico is source-available.
 
-Taico is free to use under the PolyForm Small Business License 1.0.0 for individuals, personal projects, research, education, and qualifying small businesses.
+Taico is free to use under PolyForm-Small-Business-1.0.0 for individuals, personal projects, research, education, and qualifying small businesses.
 
-A separate commercial license is required for organisations that do not qualify under the PolyForm Small Business License 1.0.0.
+A separate commercial license is required for organisations that do not qualify under PolyForm-Small-Business-1.0.0.
 
 This includes, but is not limited to:
 
@@ -28,7 +28,7 @@ Commercial licensing may cover:
 - commercial redistribution
 - acquisition of the project or related intellectual property
 
-If your organisation wants to use Taico and does not qualify under the PolyForm Small Business License 1.0.0, please contact:
+If your organisation wants to use Taico and does not qualify under PolyForm-Small-Business-1.0.0, please contact:
 
 **franciscogalarza@gmail.com**
 
