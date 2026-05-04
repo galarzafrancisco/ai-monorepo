@@ -84,7 +84,7 @@ At runtime, the backend owns tasks, threads, auth, and execution lifecycle. Work
 
 Taico is source-available.
 
-Taico is licensed under the [PolyForm Small Business License 1.0.0](LICENSE.md).
+Taico is licensed under the [PolyForm Small Business License 1.0.0](LICENSE).
 
 It is free to use for individuals, personal projects, research, education, and qualifying small businesses.
 
