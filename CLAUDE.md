@@ -134,6 +134,10 @@ Extensive documentation in `/docs/`:
 - `how-to-guides/realtime-events.md` - Real-time domain events, gateway wiring, room topology, and UI sync principles
 - `DEPLOYMENT.md` - Production deployment with Kubernetes and GitOps workflow
 
+## Licensing
+
+This project is licensed under the **PolyForm Small Business License 1.0.0**. Any license-related references added or modified in this codebase — including `package.json` `"license"` fields, README sections, file headers, or documentation — must use `PolyForm-Small-Business-1.0.0`. Do not introduce MIT, ISC, Apache, or any other license identifier.
+
 ## MCP Integration
 
 The project includes MCP (Model Context Protocol) support:

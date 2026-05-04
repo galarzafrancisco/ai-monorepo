@@ -2,7 +2,7 @@
   "name": "llm-benchmarker",
   "version": "0.1.0",
   "private": true,
-  "license": "MIT",
+  "license": "PolyForm-Small-Business-1.0.0",
   "type": "module",
   "bin": {
     "llm-bench": "./dist/index.js"
