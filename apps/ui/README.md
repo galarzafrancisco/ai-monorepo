@@ -188,4 +188,4 @@ No CSS-in-JS, no UI framework dependencies - just modern CSS and React.
 
 ## License
 
-[Your license here]
+PolyForm-Small-Business-1.0.0. See [LICENSE](../../LICENSE) for details.
