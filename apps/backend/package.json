@@ -2,7 +2,7 @@
   "name": "@taico/taico",
   "version": "0.2.18",
   "private": false,
-  "license": "MIT",
+  "license": "PolyForm-Small-Business-1.0.0",
   "main": "./dist/main.js",
   "types": "./dist/main.d.ts",
   "bin": {
