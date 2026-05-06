@@ -1,0 +1,11 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@taico/authorization-server",
+  "targets": {
+    "build:prod": {
+      "inputs": ["production", "^production"],
+      "outputs": ["{projectRoot}/dist", "{projectRoot}/test-app/dist"],
+      "cache": true
+    }
+  }
+}

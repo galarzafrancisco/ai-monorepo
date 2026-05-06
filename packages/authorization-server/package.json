@@ -1,0 +1,53 @@
+{
+  "name": "@taico/authorization-server",
+  "version": "0.1.0",
+  "type": "module",
+  "private": false,
+  "license": "PolyForm-Small-Business-1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./express": {
+      "types": "./dist/express.d.ts",
+      "import": "./dist/express.js",
+      "default": "./dist/express.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp.d.ts",
+      "import": "./dist/mcp.js",
+      "default": "./dist/mcp.js"
+    },
+    "./storage/sqlite": {
+      "types": "./dist/storage/sqlite.d.ts",
+      "import": "./dist/storage/sqlite.js",
+      "default": "./dist/storage/sqlite.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p test-app/tsconfig.json",
+    "build:prod": "npm run build",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit && tsc -p test-app/tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "cookie": "^0.7.2",
+    "express": "^5.1.0",
+    "jose": "^6.1.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.7.3"
+  }
+}
