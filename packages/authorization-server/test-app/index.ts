@@ -1,7 +1,9 @@
 import { rm } from 'node:fs/promises';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { Test } from '@nestjs/testing';
 import { createAuthorizationServer, sqliteKeyStore, sqliteStorage } from '../src/index.js';
-import { createNestAdapter, RequireScopes } from '../src/nest.js';
-import type { ExpressRequestLike, ExpressResponseLike, Principal } from '../src/index.js';
+import { AccessTokenGuard, AuthorizationServerModule, createNestAdapter, CurrentPrincipal, RequireScopes, ScopesGuard } from '../src/nest.js';
+import type { AuthorizationServerOptions, ExpressRequestLike, ExpressResponseLike, Principal } from '../src/index.js';
 
 const sqliteFile = './test-app/auth-server-test.sqlite';
 await rm(sqliteFile, { force: true });
@@ -15,8 +17,9 @@ const alice: Principal = {
 const storage = await sqliteStorage({ file: sqliteFile });
 const keys = await sqliteKeyStore({ file: sqliteFile });
 
-const auth = await createAuthorizationServer({
+const authOptions: AuthorizationServerOptions = {
   issuer: 'https://auth.example.test',
+  basePath: '/auth',
   storage,
   keys,
   identityProvider: {
@@ -33,7 +36,8 @@ const auth = await createAuthorizationServer({
     { id: 'tasks:write', description: 'Write tasks' },
     { id: 'mcp:use', description: 'Use MCP endpoints' },
   ],
-});
+};
+const auth = await createAuthorizationServer(authOptions);
 
 const mcp = await auth.registerMcpServer({
   id: 'tasks',
@@ -125,11 +129,26 @@ assert(!unauthenticatedNextCalled, 'Express requireScopes should fail closed wit
 assert(unauthenticatedRes.statusCode === 401, 'Express requireScopes should return 401 without auth context');
 
 const routeAdapter = auth.express().routes();
+const metadataRes = statusRecorder();
+await routeAdapter(
+  { method: 'GET', path: '/.well-known/oauth-authorization-server' },
+  metadataRes,
+  unexpectedNext,
+);
+assert(
+  (metadataRes.body as { authorization_endpoint?: string }).authorization_endpoint === 'https://auth.example.test/auth/authorize',
+  'Express routes should expose root well-known metadata that points to basePath OAuth endpoints',
+);
+
+const jwksRes = statusRecorder();
+await routeAdapter({ method: 'GET', path: '/.well-known/jwks.json' }, jwksRes, unexpectedNext);
+assert(Array.isArray((jwksRes.body as { keys?: unknown[] }).keys), 'Express routes should expose root JWKS metadata');
+
 const registrationRes = statusRecorder();
 await routeAdapter(
   {
     method: 'POST',
-    path: '/clients/register',
+    path: '/auth/clients/register',
     body: {
       client_name: 'Runtime Client',
       redirect_uris: ['https://app.example.test/callback'],
@@ -147,7 +166,7 @@ const loginRes = statusRecorder();
 await routeAdapter(
   {
     method: 'POST',
-    path: '/login',
+    path: '/auth/login',
     body: { email: alice.email, password: 'correct-horse-battery-staple' },
   },
   loginRes,
@@ -158,7 +177,7 @@ assert(typeof loginToken === 'string', 'Express routes should issue a cookie-cap
 
 const sessionRes = statusRecorder();
 await routeAdapter(
-  { method: 'GET', path: '/session', headers: { authorization: `Bearer ${loginToken}` } },
+  { method: 'GET', path: '/auth/session', headers: { authorization: `Bearer ${loginToken}` } },
   sessionRes,
   unexpectedNext,
 );
@@ -168,7 +187,7 @@ const authorizeRes = statusRecorder();
 await routeAdapter(
   {
     method: 'GET',
-    path: '/authorize',
+    path: '/auth/authorize',
     query: {
       client_id: registeredClientId,
       redirect_uri: 'https://app.example.test/callback',
@@ -183,10 +202,14 @@ await routeAdapter(
 );
 const flowId = (authorizeRes.body as { interaction?: { flowId?: string } }).interaction?.flowId;
 assert(typeof flowId === 'string', 'Express routes should create authorization interactions');
+assert(
+  (authorizeRes.body as { login_url?: string; consent_url?: string }).login_url === `/auth/login?flow=${flowId}`,
+  'Express authorize route should return basePath-aware login URLs',
+);
 
 const approveRes = statusRecorder();
 await routeAdapter(
-  { method: 'POST', path: `/consent/${flowId}/approve`, headers: { authorization: `Bearer ${loginToken}` } },
+  { method: 'POST', path: `/auth/consent/${flowId}/approve`, headers: { authorization: `Bearer ${loginToken}` } },
   approveRes,
   unexpectedNext,
 );
@@ -198,7 +221,7 @@ const tokenRes = statusRecorder();
 await routeAdapter(
   {
     method: 'POST',
-    path: '/token',
+    path: '/auth/token',
     body: {
       grant_type: 'authorization_code',
       code: authorizationCode,
@@ -214,7 +237,7 @@ assert(typeof routeIssuedToken === 'string', 'Express token route should exchang
 
 const introspectRes = statusRecorder();
 await routeAdapter(
-  { method: 'POST', path: '/introspect', body: { token: routeIssuedToken } },
+  { method: 'POST', path: '/auth/introspect', body: { token: routeIssuedToken } },
   introspectRes,
   unexpectedNext,
 );
@@ -224,7 +247,7 @@ const exchangeRes = statusRecorder();
 await routeAdapter(
   {
     method: 'POST',
-    path: '/token-exchange',
+    path: '/auth/token-exchange',
     body: { subject_token: issued.accessToken, audience: mcp.resource, connection: 'github', scope: 'repo' },
   },
   exchangeRes,
@@ -247,6 +270,28 @@ const nestContext = {
 const nest = createNestAdapter(auth);
 assert(await nest.accessTokenGuard({ audience: mcp.resource }).canActivate(nestContext), 'Nest access token guard should validate bearer tokens');
 assert(nest.scopesGuard().canActivate(nestContext), 'Nest scopes guard should enforce RequireScopes metadata');
+
+class NestParamController {
+  show(_principal: Principal) {
+    return undefined;
+  }
+}
+CurrentPrincipal()(NestParamController.prototype, 'show', 0);
+const paramMetadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, NestParamController, 'show') as Record<string, unknown> | undefined;
+assert(paramMetadata && Object.keys(paramMetadata).length > 0, 'CurrentPrincipal should register Nest route parameter metadata');
+
+const nestModule = await Test.createTestingModule({ imports: [AuthorizationServerModule.forRoot(authOptions)] }).compile();
+const injectedAccessTokenGuard = nestModule.get(AccessTokenGuard);
+const injectedScopesGuard = nestModule.get(ScopesGuard);
+const injectedRequest: ExpressRequestLike = { headers: { authorization: `Bearer ${issued.accessToken}` } };
+const injectedContext = {
+  getHandler: () => NestController.prototype.list,
+  getClass: () => NestController,
+  switchToHttp: () => ({ getRequest: () => injectedRequest }),
+};
+assert(await injectedAccessTokenGuard.canActivate(injectedContext), 'AuthorizationServerModule should provide a DI-wired access token guard');
+assert(injectedScopesGuard.canActivate(injectedContext), 'AuthorizationServerModule should provide a DI-wired scopes guard');
+await nestModule.close();
 
 await storage.close();
 await keys.close();

@@ -1,13 +1,13 @@
+import { createParamDecorator, type ExecutionContext, type InjectionToken, type Provider } from '@nestjs/common';
 import { extractBearerToken, requireScopes } from './authorization-server.js';
+import { createAuthorizationServer } from './authorization-server.js';
 import { InvalidTokenError } from './errors.js';
-import type { AuthContext, Principal, ValidateTokenOptions } from './types.js';
+import type { AuthContext, AuthorizationServerOptions, Principal, ValidateTokenOptions } from './types.js';
 
 const AUTH_SERVER = Symbol.for('@taico/authorization-server/auth-server');
 const AUTH_SERVER_OPTIONS = Symbol.for('@taico/authorization-server/options');
 const REQUIRED_SCOPES = Symbol.for('@taico/authorization-server/required-scopes');
 const AUTHENTICATED = Symbol.for('@taico/authorization-server/authenticated');
-const CURRENT_AUTH_PARAM = Symbol.for('@taico/authorization-server/current-auth-param');
-const CURRENT_PRINCIPAL_PARAM = Symbol.for('@taico/authorization-server/current-principal-param');
 
 type CoreAuth = {
   sessionCookieName?: string;
@@ -48,31 +48,36 @@ export function createNestAdapter(auth: CoreAuth) {
 }
 
 export class AuthorizationServerModule {
-  static forRoot(options: unknown) {
+  static forRoot(options: AuthorizationServerOptions | CoreAuth) {
+    const authProvider: Provider = {
+      provide: AUTH_SERVER,
+      useFactory: () => resolveAuthServer(options),
+    };
     return {
       module: AuthorizationServerModule,
       providers: [
         { provide: AUTH_SERVER_OPTIONS, useValue: options },
-        { provide: AUTH_SERVER, useValue: options },
-        AccessTokenGuard,
-        ScopesGuard,
+        authProvider,
+        accessTokenGuardProvider(),
+        { provide: ScopesGuard, useClass: ScopesGuard },
       ],
       exports: [AUTH_SERVER_OPTIONS, AUTH_SERVER, AccessTokenGuard, ScopesGuard],
     };
   }
 
-  static forRootAsync(options: { useFactory?: (...args: unknown[]) => unknown; inject?: unknown[] } | unknown) {
+  static forRootAsync(options: { useFactory: (...args: unknown[]) => AuthorizationServerOptions | CoreAuth | Promise<AuthorizationServerOptions | CoreAuth>; inject?: InjectionToken[] }) {
+    const authProvider: Provider = {
+      provide: AUTH_SERVER,
+      useFactory: async (...args: unknown[]) => resolveAuthServer(await options.useFactory(...args)),
+      inject: options.inject ?? [],
+    };
     return {
       module: AuthorizationServerModule,
       providers: [
         { provide: AUTH_SERVER_OPTIONS, useValue: options },
-        {
-          provide: AUTH_SERVER,
-          useFactory: typeof options === 'object' && options !== null && 'useFactory' in options ? options.useFactory : () => options,
-          inject: typeof options === 'object' && options !== null && 'inject' in options ? options.inject : [],
-        },
-        AccessTokenGuard,
-        ScopesGuard,
+        authProvider,
+        accessTokenGuardProvider(),
+        { provide: ScopesGuard, useClass: ScopesGuard },
       ],
       exports: [AUTH_SERVER_OPTIONS, AUTH_SERVER, AccessTokenGuard, ScopesGuard],
     };
@@ -136,17 +141,9 @@ export class ScopesGuard {
   }
 }
 
-export function CurrentAuth(): ParameterDecorator {
-  return (target, propertyKey, parameterIndex) => {
-    setParamMetadata(target, propertyKey, CURRENT_AUTH_PARAM, parameterIndex);
-  };
-}
+export const CurrentAuth = createParamDecorator((_data: unknown, context: ExecutionContext) => getContextTarget(context).auth);
 
-export function CurrentPrincipal(): ParameterDecorator {
-  return (target, propertyKey, parameterIndex) => {
-    setParamMetadata(target, propertyKey, CURRENT_PRINCIPAL_PARAM, parameterIndex);
-  };
-}
+export const CurrentPrincipal = createParamDecorator((_data: unknown, context: ExecutionContext) => getContextTarget(context).auth?.principal);
 
 export function currentAuthFromRequest(req: NestRequestLike) {
   return req.auth;
@@ -201,10 +198,21 @@ function getMetadata(key: symbol, target: unknown) {
   return typeof target === 'object' && target !== null ? metadataFallback.get(target)?.get(key) : undefined;
 }
 
-function setParamMetadata(target: object, propertyKey: string | symbol | undefined, key: symbol, parameterIndex: number) {
-  const receiver = propertyKey ? (target as Record<string | symbol, unknown>)[propertyKey] : target;
-  const existing = (getMetadata(key, receiver) as number[] | undefined) ?? [];
-  setMetadata(receiver as object, undefined, key, [...existing, parameterIndex]);
+const metadataFallback = new WeakMap<object, Map<symbol, unknown>>();
+
+function accessTokenGuardProvider(): Provider {
+  return {
+    provide: AccessTokenGuard,
+    useFactory: (auth: CoreAuth) => new AccessTokenGuard(auth),
+    inject: [AUTH_SERVER],
+  };
 }
 
-const metadataFallback = new WeakMap<object, Map<symbol, unknown>>();
+async function resolveAuthServer(optionsOrAuth: AuthorizationServerOptions | CoreAuth): Promise<CoreAuth> {
+  if (isCoreAuth(optionsOrAuth)) return optionsOrAuth;
+  return createAuthorizationServer(optionsOrAuth);
+}
+
+function isCoreAuth(value: AuthorizationServerOptions | CoreAuth): value is CoreAuth {
+  return typeof (value as CoreAuth).validateToken === 'function';
+}

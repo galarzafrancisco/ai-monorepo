@@ -12,6 +12,7 @@ import type {
 } from './types.js';
 
 type CoreAuth = {
+  basePath: string;
   sessionCookieName: string;
   validateToken(token: string, options?: ValidateTokenOptions): Promise<AuthContext>;
   issueToken(input: { subject: string; principal?: Principal; audience?: string; scopes?: string[] }): Promise<unknown>;
@@ -80,6 +81,7 @@ export function createExpressAdapter(auth: CoreAuth) {
       return async (req, res, next) => {
         try {
           const path = routePath(req);
+          const authPath = stripBasePath(path, auth.basePath);
           if (path === '/.well-known/jwks.json') {
             res.json(await auth.discovery.jwks());
             return;
@@ -92,7 +94,7 @@ export function createExpressAdapter(auth: CoreAuth) {
             res.json(await auth.discovery.protectedResourceMetadata(path.split('/').filter(Boolean).at(-1) ?? ''));
             return;
           }
-          if (req.method === 'POST' && path === '/clients/register') {
+          if (req.method === 'POST' && authPath === '/clients/register') {
             const body = objectBody(req);
             const client = auth.registerClient({
               id: stringField(body.client_id) ?? crypto.randomUUID(),
@@ -103,7 +105,7 @@ export function createExpressAdapter(auth: CoreAuth) {
             res.status(201).json({ client_id: client.id, client_name: client.name, redirect_uris: client.redirectUris, scope: client.scopes?.join(' ') ?? '' });
             return;
           }
-          if (req.method === 'GET' && path === '/authorize') {
+          if (req.method === 'GET' && authPath === '/authorize') {
             const query = req.query ?? queryFromUrl(req.url);
             const token = extractBearerToken(req.headers) ?? req.cookies?.[auth.sessionCookieName];
             const existingAuth = token ? await auth.validateToken(token).catch(() => undefined) : undefined;
@@ -118,16 +120,16 @@ export function createExpressAdapter(auth: CoreAuth) {
               codeChallengeMethod: codeChallengeMethod(query.code_challenge_method),
               principal: existingAuth?.principal,
             });
-            res.json({ interaction: flow, login_url: `/login?flow=${flow.flowId}`, consent_url: `/consent/${flow.flowId}` });
+            res.json({ interaction: flow, login_url: `${auth.basePath}/login?flow=${flow.flowId}`, consent_url: `${auth.basePath}/consent/${flow.flowId}` });
             return;
           }
-          if (req.method === 'GET' && path === '/session') {
+          if (req.method === 'GET' && authPath === '/session') {
             const token = extractBearerToken(req.headers) ?? req.cookies?.[auth.sessionCookieName];
             const session = token ? await auth.validateToken(token).catch(() => undefined) : undefined;
             res.json({ authenticated: Boolean(session), principal: session?.principal, subject: session?.subject, scopes: session?.scopes ?? [] });
             return;
           }
-          if (req.method === 'POST' && path === '/login') {
+          if (req.method === 'POST' && authPath === '/login') {
             const body = objectBody(req);
             const issued = await auth.authenticatePassword({
               email: stringField(body.email),
@@ -142,17 +144,17 @@ export function createExpressAdapter(auth: CoreAuth) {
             res.json(issued);
             return;
           }
-          if (req.method === 'POST' && path === '/logout') {
+          if (req.method === 'POST' && authPath === '/logout') {
             res.clearCookie?.(auth.sessionCookieName);
             res.status(204).send?.('');
             return;
           }
-          const consentMatch = path.match(/^\/consent\/([^/]+)(?:\/(approve|deny|switch-account))?$/);
+          const consentMatch = authPath.match(/^\/consent\/([^/]+)(?:\/(approve|deny|switch-account))?$/);
           if (consentMatch && req.method === 'POST') {
             const [, flowId, action = 'approve'] = consentMatch;
             if (action === 'switch-account') {
               res.clearCookie?.(auth.sessionCookieName);
-              res.json({ login_url: `/login?flow=${flowId}`, flow_id: flowId });
+              res.json({ login_url: `${auth.basePath}/login?flow=${flowId}`, flow_id: flowId });
               return;
             }
             if (action === 'deny') {
@@ -168,7 +170,7 @@ export function createExpressAdapter(auth: CoreAuth) {
             res.json({ code: grant.code, redirect_uri: grant.redirectUri, state: grant.state });
             return;
           }
-          if (req.method === 'POST' && path === '/token') {
+          if (req.method === 'POST' && authPath === '/token') {
             const body = objectBody(req);
             const grantType = requiredString(body.grant_type, 'grant_type');
             if (grantType === 'authorization_code') {
@@ -199,14 +201,14 @@ export function createExpressAdapter(auth: CoreAuth) {
             res.status(400).json({ error: 'unsupported_grant_type' });
             return;
           }
-          if (req.method === 'POST' && path === '/introspect') {
+          if (req.method === 'POST' && authPath === '/introspect') {
             const body = objectBody(req);
             const token = requiredString(body.token, 'token');
             const context = await auth.validateToken(token).catch(() => undefined);
             res.json({ active: Boolean(context), sub: context?.subject, scope: context?.scopes.join(' '), principal: context?.principal });
             return;
           }
-          if (req.method === 'POST' && path === '/token-exchange') {
+          if (req.method === 'POST' && authPath === '/token-exchange') {
             const body = objectBody(req);
             res.json(await auth.exchangeDownstreamToken({
               subjectToken: requiredString(body.subject_token, 'subject_token'),
@@ -239,6 +241,12 @@ export function writeAuthError(res: ExpressResponseLike, error: unknown) {
 
 function routePath(req: ExpressRequestLike) {
   return (req.path ?? req.url ?? '').split('?')[0] || '/';
+}
+
+function stripBasePath(path: string, basePath: string) {
+  if (path === basePath) return '/';
+  if (path.startsWith(`${basePath}/`)) return path.slice(basePath.length) || '/';
+  return path;
 }
 
 function queryFromUrl(url: string | undefined) {

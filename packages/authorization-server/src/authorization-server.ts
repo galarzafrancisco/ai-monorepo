@@ -48,7 +48,7 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
 
 class CoreAuthorizationServer {
   private readonly issuer: string;
-  private readonly basePath: string;
+  readonly basePath: string;
   private readonly storage: AuthorizationStorage;
   private readonly keys: KeyStore;
   private readonly identityProvider?: IdentityProvider;

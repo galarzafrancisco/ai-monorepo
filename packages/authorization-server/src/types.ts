@@ -242,6 +242,7 @@ export type ExpressRequestLike = {
   auth?: AuthContext;
   method?: string;
   path?: string;
+  originalUrl?: string;
   url?: string;
   body?: unknown;
   query?: Record<string, string | string[] | undefined>;
