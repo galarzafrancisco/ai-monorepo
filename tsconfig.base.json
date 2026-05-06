@@ -31,6 +31,9 @@
       ],
       "@taico/errors": [
         "packages/errors/src/index.ts"
+      ],
+      "@taico/authorization-server": [
+        "packages/authorization-server/src/index.ts"
       ]
     }
   }
