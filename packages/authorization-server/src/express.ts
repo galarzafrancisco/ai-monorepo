@@ -37,7 +37,10 @@ export function createExpressAdapter(auth: CoreAuth) {
       const requiredScopes = Array.isArray(scopes) ? scopes : [scopes];
       return (req, res, next) => {
         try {
-          req.auth?.requireScopes(requiredScopes, mode);
+          if (!req.auth) {
+            throw new InvalidTokenError('Missing authenticated request context');
+          }
+          req.auth.requireScopes(requiredScopes, mode);
           next();
         } catch (error) {
           writeAuthError(res, error);

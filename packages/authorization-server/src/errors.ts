@@ -20,3 +20,10 @@ export class UnknownDownstreamConnectionError extends Error {
     this.name = 'UnknownDownstreamConnectionError';
   }
 }
+
+export class DownstreamTokenUnavailableError extends Error {
+  constructor(connection: string) {
+    super(`No downstream token exchange is configured for connection: ${connection}`);
+    this.name = 'DownstreamTokenUnavailableError';
+  }
+}

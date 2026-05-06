@@ -116,6 +116,13 @@ export type DownstreamConnectionDefinition = {
   resource?: string;
   scopes?: string[];
   mappings?: Array<{ from: string; to: string }>;
+  exchangeToken?(input: {
+    subject: string;
+    principal?: Principal;
+    subjectToken: string;
+    audience?: string;
+    scopes: string[];
+  }): Promise<DownstreamToken | null>;
 };
 
 export type DownstreamTokenExchangeInput = {
