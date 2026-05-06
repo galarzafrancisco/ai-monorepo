@@ -10,6 +10,7 @@ import type {
   AuthorizationCode,
   AuthorizationServer,
   AuthorizationServerOptions,
+  ScopeDefinition,
   StoredAuthorizationInteraction,
 } from './types.js';
 
@@ -36,6 +37,7 @@ type AdapterState = {
   issuer: string;
   basePath: string;
   mcpServers: Map<string, McpServerHandle>;
+  configuredScopes: Map<string, ScopeDefinition>;
 };
 
 export async function createExpressAuthorizationServer(options: AuthorizationServerOptions): Promise<AuthorizationServer> {
@@ -60,10 +62,12 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
         res.json(await state.auth.discovery.protectedResourceMetadata(resource));
       }));
       router.post('/clients/register', asyncHandler(async (req, res) => {
+        const requestedScopes = asArray(req.body.scope ?? req.body.scopes);
+        validateConfiguredScopes(state, requestedScopes);
         const client = createPublicClient({
           name: req.body.client_name,
           redirectUris: asArray(req.body.redirect_uris),
-          scopes: asArray(req.body.scope ?? req.body.scopes),
+          scopes: requestedScopes,
         });
         await storage.saveClient(client);
         res.status(201).json({
@@ -87,7 +91,7 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
           subject: principal.id,
           principal,
           audience: state.issuer,
-          scopes: asArray(req.body.scope ?? req.body.scopes),
+          scopes: validateConfiguredScopes(state, asArray(req.body.scope ?? req.body.scopes)),
           ttlSeconds: state.options.session?.ttlSeconds,
         });
         setAuthCookie(res, cookieName, token.accessToken, state.options);
@@ -164,7 +168,7 @@ async function authorize(state: AdapterState, req: Request, res: Response): Prom
   const client = await state.options.storage.getClient(clientId);
   if (!client || !client.redirectUris.includes(redirectUri)) throw new InvalidClientError();
   await state.options.storage.touchClient(client.id);
-  const requestedScopes = stringParam(req.query.scope)?.split(' ').filter(Boolean) ?? [];
+  const requestedScopes = validateClientScopes(state, client, asArray(req.query.scope));
   const flowId = crypto.randomUUID();
   let principal: AuthContext['principal'];
   const existingToken = extractToken(req, state.options.session?.cookieName ?? 'access_token');
@@ -183,7 +187,7 @@ async function authorize(state: AdapterState, req: Request, res: Response): Prom
     state: stringParam(req.query.state),
     resource: stringParam(req.query.resource),
     audience: stringParam(req.query.resource) ?? stringParam(req.query.audience),
-    scopes: requestedScopes.map((id) => ({ id })),
+    scopes: requestedScopes.map((id) => state.configuredScopes.get(id) ?? { id }),
     principal,
     loginRequired: !principal,
     consentRequired: true,
@@ -263,7 +267,7 @@ async function token(state: AdapterState, req: Request, res: Response): Promise<
   if (grantType === 'password') {
     const principal = await state.options.identityProvider.authenticatePassword?.({ email: req.body.email ?? req.body.username, username: req.body.username, password: req.body.password });
     if (!principal) throw new AuthorizationServerError('Invalid credentials', 'invalid_grant', 401);
-    const token = await state.auth.issueToken({ subject: principal.id, principal, audience: stringBody(req.body.audience) ?? stringBody(req.body.resource), scopes: asArray(req.body.scope) });
+    const token = await state.auth.issueToken({ subject: principal.id, principal, audience: stringBody(req.body.audience) ?? stringBody(req.body.resource), scopes: validateConfiguredScopes(state, asArray(req.body.scope)) });
     res.json(toOAuthToken(token));
     return;
   }
@@ -307,6 +311,20 @@ function flowIdFromReturnTo(returnTo: string | undefined, basePath: string): str
 
 function pkceS256(codeVerifier: string): string {
   return createHash('sha256').update(codeVerifier).digest('base64url');
+}
+
+function validateClientScopes(state: AdapterState, client: { scopes: string[] }, requestedScopes: string[]): string[] {
+  const knownScopes = validateConfiguredScopes(state, requestedScopes);
+  const allowed = new Set(client.scopes);
+  const unauthorized = knownScopes.filter((scope) => !allowed.has(scope));
+  if (unauthorized.length > 0) throw new AuthorizationServerError(`Client is not allowed to request scopes: ${unauthorized.join(', ')}`, 'invalid_scope', 400);
+  return knownScopes;
+}
+
+function validateConfiguredScopes(state: AdapterState, requestedScopes: string[]): string[] {
+  const unknown = requestedScopes.filter((scope) => !state.configuredScopes.has(scope));
+  if (unknown.length > 0) throw new AuthorizationServerError(`Unknown scopes: ${unknown.join(', ')}`, 'invalid_scope', 400);
+  return requestedScopes;
 }
 
 function toOAuthToken(token: { accessToken: string; expiresIn: number; scope: string; tokenType: 'Bearer' }) {

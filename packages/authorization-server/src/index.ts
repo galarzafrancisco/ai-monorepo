@@ -35,7 +35,7 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
 
   const publicApi: AuthorizationServer = {
     express() {
-      return createExpressAdapter({ auth: publicApi, options, issuer, basePath, mcpServers });
+      return createExpressAdapter({ auth: publicApi, options, issuer, basePath, mcpServers, configuredScopes });
     },
     async issueToken(input: IssueTokenInput) {
       return issueJwt({
@@ -80,7 +80,7 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
           registration_endpoint: `${issuer}${basePath}/clients/register`,
           introspection_endpoint: `${issuer}${basePath}/introspect`,
           response_types_supported: ['code'],
-          grant_types_supported: ['authorization_code', 'password', 'client_credentials'],
+          grant_types_supported: ['authorization_code', 'password'],
           code_challenge_methods_supported: ['S256'],
           scopes_supported: [...configuredScopes.keys()],
         };
