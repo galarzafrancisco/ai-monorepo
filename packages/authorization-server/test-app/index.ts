@@ -1,5 +1,9 @@
-import { createAuthorizationServer, memoryKeyStore, memoryStorage } from '../src/index.js';
+import { rm } from 'node:fs/promises';
+import { createAuthorizationServer, sqliteKeyStore, sqliteStorage } from '../src/index.js';
 import type { ExpressRequestLike, ExpressResponseLike, Principal } from '../src/index.js';
+
+const sqliteFile = './test-app/auth-server-test.sqlite';
+await rm(sqliteFile, { force: true });
 
 const alice: Principal = {
   id: 'user-alice',
@@ -7,10 +11,13 @@ const alice: Principal = {
   displayName: 'Alice',
 };
 
+const storage = await sqliteStorage({ file: sqliteFile });
+const keys = await sqliteKeyStore({ file: sqliteFile });
+
 const auth = await createAuthorizationServer({
   issuer: 'https://auth.example.test',
-  storage: memoryStorage(),
-  keys: await memoryKeyStore(),
+  storage,
+  keys,
   identityProvider: {
     async authenticatePassword({ email, password }) {
       return email === alice.email && password === 'correct-horse-battery-staple' ? alice : null;
@@ -53,6 +60,21 @@ await auth.registerDownstreamConnection({
     };
   },
 });
+storage.interactions.set('flow-id', {
+  flowId: 'flow-id',
+  client: {
+    id: 'client-id',
+    name: 'Example Client',
+    redirectUris: ['https://app.example.test/callback'],
+    scopes: ['profile:read'],
+  },
+  scopes: [{ id: 'profile:read' }],
+  loginRequired: false,
+  consentRequired: true,
+  downstreamConnectionsRequired: [],
+});
+storage.grants.set('grant-id', { subject: alice.id, clientId: 'client-id', scopes: ['profile:read'] });
+await storage.flush();
 
 const issued = await auth.issueToken({
   subject: alice.id,
@@ -100,6 +122,50 @@ await auth.express().requireScopes('tasks:write')(unauthenticatedReq, unauthenti
 });
 assert(!unauthenticatedNextCalled, 'Express requireScopes should fail closed without auth context');
 assert(unauthenticatedRes.statusCode === 401, 'Express requireScopes should return 401 without auth context');
+
+await storage.close();
+await keys.close();
+
+const reopenedStorage = await sqliteStorage({ file: sqliteFile });
+const reopenedKeys = await sqliteKeyStore({ file: sqliteFile });
+const restartedAuth = await createAuthorizationServer({
+  issuer: 'https://auth.example.test',
+  storage: reopenedStorage,
+  keys: reopenedKeys,
+  identityProvider: {
+    async findPrincipalById(id) {
+      return id === alice.id ? alice : null;
+    },
+  },
+});
+
+const restartedContext = await restartedAuth.validateToken(issued.accessToken, { audience: mcp.resource });
+assert(restartedContext.subject === alice.id, 'SQLite key store should validate tokens after restart');
+assert(
+  reopenedStorage.downstreamConnections.get('github')?.clientId === 'client-id',
+  'SQLite storage should persist downstream connection metadata',
+);
+assert(reopenedStorage.interactions.get('flow-id')?.client.id === 'client-id', 'SQLite storage should persist auth flows');
+assert(
+  (reopenedStorage.grants.get('grant-id') as { subject?: string } | undefined)?.subject === alice.id,
+  'SQLite storage should persist grants',
+);
+
+reopenedStorage.clients.set('client-id', {
+  id: 'client-id',
+  name: 'Example Client',
+  redirectUris: ['https://app.example.test/callback'],
+  scopes: ['profile:read'],
+});
+await reopenedStorage.flush();
+
+const clientStorage = await sqliteStorage({ file: sqliteFile });
+assert(clientStorage.clients.get('client-id')?.name === 'Example Client', 'SQLite storage should persist auth clients');
+await clientStorage.close();
+
+await reopenedStorage.close();
+await reopenedKeys.close();
+await rm(sqliteFile, { force: true });
 
 console.log('authorization-server test app passed');
 
