@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import {
+  DownstreamTokenUnavailableError,
   InsufficientScopeError,
   InvalidTokenError,
   UnknownDownstreamConnectionError,
@@ -205,10 +206,24 @@ class CoreAuthorizationServer {
       throw new InsufficientScopeError(unmapped);
     }
 
-    return {
-      accessToken: input.subjectToken,
-      tokenType: 'Bearer',
+    if (!connection.exchangeToken) {
+      throw new DownstreamTokenUnavailableError(input.connection);
+    }
+
+    const downstreamToken = await connection.exchangeToken({
+      subject: auth.subject,
+      principal: auth.principal,
+      subjectToken: input.subjectToken,
+      audience: input.audience,
       scopes: requestedScopes,
+    });
+    if (!downstreamToken) {
+      throw new DownstreamTokenUnavailableError(input.connection);
+    }
+
+    return {
+      ...downstreamToken,
+      scopes: downstreamToken.scopes.length > 0 ? downstreamToken.scopes : requestedScopes,
       connection: input.connection,
     };
   }

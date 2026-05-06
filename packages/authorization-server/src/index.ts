@@ -2,6 +2,7 @@ export { createAuthorizationServer, requireScopes } from './authorization-server
 export { memoryKeyStore } from './key-store.js';
 export { memoryStorage } from './storage/memory.js';
 export {
+  DownstreamTokenUnavailableError,
   InsufficientScopeError,
   InvalidTokenError,
   RequireScopesError,

@@ -44,6 +44,14 @@ await auth.registerDownstreamConnection({
   clientId: 'client-id',
   clientSecret: 'client-secret',
   mappings: [{ from: 'tasks:write', to: 'repo' }],
+  async exchangeToken({ scopes }) {
+    return {
+      accessToken: 'github-downstream-access-token',
+      tokenType: 'Bearer',
+      scopes,
+      connection: 'github',
+    };
+  },
 });
 
 const issued = await auth.issueToken({
@@ -66,6 +74,7 @@ const downstream = await auth.exchangeDownstreamToken({
   scopes: ['repo'],
 });
 assert(downstream.connection === 'github', 'downstream exchange should return the requested connection');
+assert(downstream.accessToken !== issued.accessToken, 'downstream exchange must not pass through the subject token');
 
 const metadata = await auth.discovery.protectedResourceMetadata(mcp.resource);
 assert(metadata.scopes_supported.includes('tasks:read'), 'MCP protected resource metadata should expose server scopes');
@@ -83,6 +92,15 @@ assert(req.auth?.subject === alice.id, 'Express authenticate middleware should a
 
 await auth.express().requireScopes('tasks:write')(req, res, () => undefined);
 
+const unauthenticatedReq: ExpressRequestLike = { headers: {} };
+const unauthenticatedRes = statusRecorder();
+let unauthenticatedNextCalled = false;
+await auth.express().requireScopes('tasks:write')(unauthenticatedReq, unauthenticatedRes, () => {
+  unauthenticatedNextCalled = true;
+});
+assert(!unauthenticatedNextCalled, 'Express requireScopes should fail closed without auth context');
+assert(unauthenticatedRes.statusCode === 401, 'Express requireScopes should return 401 without auth context');
+
 console.log('authorization-server test app passed');
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -98,6 +116,18 @@ function responseRecorder(): ExpressResponseLike {
     },
     json(body: unknown) {
       throw new Error(`unexpected response: ${JSON.stringify(body)}`);
+    },
+  };
+}
+
+function statusRecorder(): ExpressResponseLike & { statusCode?: number; body?: unknown } {
+  return {
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(body: unknown) {
+      this.body = body;
     },
   };
 }
