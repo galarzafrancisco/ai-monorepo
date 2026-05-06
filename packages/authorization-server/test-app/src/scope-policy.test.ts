@@ -48,6 +48,32 @@ test('authorization requests cannot escalate beyond configured client scopes', a
     const discoveredMetadata = await fetch(discoveredMetadataUrl);
     assert.equal(discoveredMetadata.status, 200);
     assert.equal((await discoveredMetadata.json()).issuer, metadata.issuer);
+
+    await auth.registerMcpServer({
+      id: 'tasks',
+      name: 'Tasks',
+      version: '1.0.0',
+      resource: `${origin}/api/tasks/mcp`,
+      scopes: ['mcp:use'],
+      requiredScopes: ['mcp:use'],
+    });
+    app.get('/api/tasks/mcp', auth.express().authenticate({ audience: `${origin}/api/tasks/mcp` }), (_req, res) => res.status(204).send());
+
+    const challenge = await fetch(new URL('/api/tasks/mcp', origin));
+    assert.equal(challenge.status, 401);
+    const authenticate = challenge.headers.get('www-authenticate');
+    assert.equal(authenticate, `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource/api/tasks/mcp"`);
+    const advertisedResourceMetadataUrl = authenticate.match(/resource_metadata="([^"]+)"/)?.[1];
+    assert(advertisedResourceMetadataUrl);
+    const advertisedResourceMetadata = await fetch(advertisedResourceMetadataUrl);
+    assert.equal(advertisedResourceMetadata.status, 200);
+    assert.deepEqual(await advertisedResourceMetadata.json(), {
+      resource: `${origin}/api/tasks/mcp`,
+      authorization_servers: [`${origin}/auth`],
+      scopes_supported: ['mcp:use'],
+      bearer_methods_supported: ['header'],
+      resource_name: 'Tasks',
+    });
   } finally {
     await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   }

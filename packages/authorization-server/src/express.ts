@@ -63,6 +63,9 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
         const resource = typeof req.query.resource === 'string' ? req.query.resource : state.authorizationServerIssuer;
         res.json(await state.auth.discovery.protectedResourceMetadata(resource));
       }));
+      router.get(/^\/\.well-known\/oauth-protected-resource\/(.+)$/, asyncHandler(async (req, res) => {
+        res.json(await state.auth.discovery.protectedResourceMetadata(resourceFromMetadataPath(req)));
+      }));
       router.get(`${state.basePath}/.well-known/oauth-protected-resource`, asyncHandler(async (req, res) => {
         const resource = typeof req.query.resource === 'string' ? req.query.resource : state.authorizationServerIssuer;
         res.json(await state.auth.discovery.protectedResourceMetadata(resource));
@@ -128,7 +131,7 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
       return asyncHandler(async (req, res, next) => {
         const raw = extractToken(req, cookieName);
         if (!raw) {
-          res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${state.authorizationServerIssuer}/.well-known/oauth-protected-resource"`);
+          res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${protectedResourceMetadataUrl(state, req, options?.audience)}"`);
           throw new InvalidTokenError('Missing bearer token');
         }
         req.auth = await state.auth.validateToken(raw, options);
@@ -321,6 +324,23 @@ function pkceS256(codeVerifier: string): string {
 
 function pathfulAuthorizationServerMetadataPath(basePath: string): string {
   return `/.well-known/oauth-authorization-server${basePath}`;
+}
+
+function resourceFromMetadataPath(req: Request): string {
+  const path = `/${String(req.params[0] ?? '').replace(/^\/+/, '')}`;
+  return `${requestOrigin(req)}${path}`;
+}
+
+function protectedResourceMetadataUrl(state: AdapterState, req: Request, audience?: string): string {
+  const resource = audience ?? `${requestOrigin(req)}${req.originalUrl.split('?')[0]}`;
+  const resourceUrl = new URL(resource);
+  const authServerOrigin = new URL(state.authorizationServerIssuer).origin;
+  if (resourceUrl.origin === authServerOrigin) return `${resourceUrl.origin}/.well-known/oauth-protected-resource${resourceUrl.pathname}`;
+  return `${authServerOrigin}/.well-known/oauth-protected-resource?resource=${encodeURIComponent(resourceUrl.toString())}`;
+}
+
+function requestOrigin(req: Request): string {
+  return `${req.protocol}://${req.get('host')}`;
 }
 
 function validateClientScopes(state: AdapterState, client: { scopes: string[] }, requestedScopes: string[]): string[] {
