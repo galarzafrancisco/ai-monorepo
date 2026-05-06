@@ -8,6 +8,7 @@ export type SqliteStorageOptions = { file: string };
 export async function sqliteStorage(options: SqliteStorageOptions): Promise<AuthorizationStorage> {
   const db = new sqlite3.Database(options.file);
   const run = (sql: string, params: unknown[] = []) => new Promise<void>((resolve, reject) => db.run(sql, params, (error) => error ? reject(error) : resolve()));
+  const runWithChanges = (sql: string, params: unknown[] = []) => new Promise<number>((resolve, reject) => db.run(sql, params, function (error) { return error ? reject(error) : resolve(this.changes); }));
   const get = <T>(sql: string, params: unknown[] = []) => new Promise<T | undefined>((resolve, reject) => db.get(sql, params, (error, row) => error ? reject(error) : resolve(row as T | undefined)));
   const all = <T>(sql: string, params: unknown[] = []) => new Promise<T[]>((resolve, reject) => db.all(sql, params, (error, rows) => error ? reject(error) : resolve(rows as T[])));
 
@@ -33,9 +34,11 @@ export async function sqliteStorage(options: SqliteStorageOptions): Promise<Auth
       await run('INSERT INTO auth_codes (code, data, expires_at, used_at) VALUES (?, ?, ?, NULL)', [code.code, JSON.stringify(code), code.expiresAt]);
     },
     async consumeAuthorizationCode(codeValue) {
-      const row = await get<{ data: string; expires_at: string; used_at: string | null }>('SELECT data, expires_at, used_at FROM auth_codes WHERE code = ?', [codeValue]);
-      if (!row || row.used_at || Date.parse(row.expires_at) < Date.now()) return null;
-      await run('UPDATE auth_codes SET used_at = ? WHERE code = ?', [new Date().toISOString(), codeValue]);
+      const now = new Date().toISOString();
+      const changes = await runWithChanges('UPDATE auth_codes SET used_at = ? WHERE code = ? AND used_at IS NULL AND expires_at >= ?', [now, codeValue, now]);
+      if (changes !== 1) return null;
+      const row = await get<{ data: string }>('SELECT data FROM auth_codes WHERE code = ?', [codeValue]);
+      if (!row) return null;
       return JSON.parse(row.data) as AuthorizationCode;
     },
     async saveInteraction(interaction) {

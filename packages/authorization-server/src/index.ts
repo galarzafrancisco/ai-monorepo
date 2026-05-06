@@ -26,7 +26,9 @@ import type {
 
 export async function createAuthorizationServer(options: AuthorizationServerOptions): Promise<AuthorizationServer> {
   const basePath = normalizeBasePath(options.basePath ?? '/auth');
-  const issuer = options.accessTokens?.issuer ?? options.issuer.replace(/\/$/, '');
+  const publicOrigin = options.issuer.replace(/\/$/, '');
+  const authorizationServerIssuer = publicOrigin.endsWith(basePath) ? publicOrigin : `${publicOrigin}${basePath}`;
+  const issuer = options.accessTokens?.issuer ?? authorizationServerIssuer;
   const keys = options.keys ?? (await createDatabaseKeyStore(options.storage));
   await keys.getActiveSigningKey();
   const configuredScopes = new Map((options.scopes ?? []).map((scope) => [scope.id, scope]));
@@ -35,7 +37,7 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
 
   const publicApi: AuthorizationServer = {
     express() {
-      return createExpressAdapter({ auth: publicApi, options, issuer, basePath, mcpServers, configuredScopes });
+      return createExpressAdapter({ auth: publicApi, options, issuer, authorizationServerIssuer, basePath, mcpServers, configuredScopes });
     },
     async issueToken(input: IssueTokenInput) {
       return issueJwt({
@@ -73,12 +75,12 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
     discovery: {
       async authorizationServerMetadata(): Promise<AuthorizationServerMetadata> {
         return {
-          issuer,
-          authorization_endpoint: `${issuer}${basePath}/authorize`,
-          token_endpoint: `${issuer}${basePath}/token`,
-          jwks_uri: `${issuer}${basePath}/.well-known/jwks.json`,
-          registration_endpoint: `${issuer}${basePath}/clients/register`,
-          introspection_endpoint: `${issuer}${basePath}/introspect`,
+          issuer: authorizationServerIssuer,
+          authorization_endpoint: `${authorizationServerIssuer}/authorize`,
+          token_endpoint: `${authorizationServerIssuer}/token`,
+          jwks_uri: `${authorizationServerIssuer}/.well-known/jwks.json`,
+          registration_endpoint: `${authorizationServerIssuer}/clients/register`,
+          introspection_endpoint: `${authorizationServerIssuer}/introspect`,
           response_types_supported: ['code'],
           grant_types_supported: ['authorization_code', 'password'],
           code_challenge_methods_supported: ['S256'],
@@ -89,7 +91,7 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
         const mcp = mcpServers.get(resource);
         return {
           resource,
-          authorization_servers: [issuer],
+          authorization_servers: [authorizationServerIssuer],
           scopes_supported: mcp ? mcp.scopes.map((scope) => scope.id) : [...configuredScopes.keys()],
           bearer_methods_supported: ['header'],
           resource_name: mcp?.name,

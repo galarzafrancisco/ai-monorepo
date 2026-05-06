@@ -35,6 +35,7 @@ type AdapterState = {
   auth: AuthorizationServer;
   options: AuthorizationServerOptions;
   issuer: string;
+  authorizationServerIssuer: string;
   basePath: string;
   mcpServers: Map<string, McpServerHandle>;
   configuredScopes: Map<string, ScopeDefinition>;
@@ -58,7 +59,7 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
       router.get('/.well-known/jwks.json', asyncHandler(async (_req, res) => { res.json(await state.auth.discovery.jwks()); }));
       router.get('/.well-known/oauth-authorization-server', asyncHandler(async (_req, res) => { res.json(await state.auth.discovery.authorizationServerMetadata()); }));
       router.get('/.well-known/oauth-protected-resource', asyncHandler(async (req, res) => {
-        const resource = typeof req.query.resource === 'string' ? req.query.resource : state.issuer;
+        const resource = typeof req.query.resource === 'string' ? req.query.resource : state.authorizationServerIssuer;
         res.json(await state.auth.discovery.protectedResourceMetadata(resource));
       }));
       router.post('/clients/register', asyncHandler(async (req, res) => {
@@ -122,7 +123,7 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
       return asyncHandler(async (req, res, next) => {
         const raw = extractToken(req, cookieName);
         if (!raw) {
-          res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${state.issuer}${state.basePath}/.well-known/oauth-protected-resource"`);
+          res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${state.authorizationServerIssuer}/.well-known/oauth-protected-resource"`);
           throw new InvalidTokenError('Missing bearer token');
         }
         req.auth = await state.auth.validateToken(raw, options);
