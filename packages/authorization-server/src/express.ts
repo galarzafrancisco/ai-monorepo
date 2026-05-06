@@ -46,7 +46,7 @@ export function createExpressAdapter(auth: CoreAuth) {
     authenticate(options: ValidateTokenOptions = {}): ExpressMiddleware {
       return async (req, res, next) => {
         try {
-          const token = extractBearerToken(req.headers) ?? req.cookies?.access_token;
+          const token = extractBearerToken(req.headers) ?? req.cookies?.[auth.sessionCookieName];
           if (!token) {
             throw new InvalidTokenError('Missing bearer token');
           }

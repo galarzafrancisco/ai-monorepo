@@ -30,6 +30,9 @@ const authOptions: AuthorizationServerOptions = {
       return id === alice.id ? alice : null;
     },
   },
+  session: {
+    cookieName: 'taico_session',
+  },
   scopes: [
     { id: 'profile:read', description: 'Read profile' },
     { id: 'tasks:read', description: 'Read tasks' },
@@ -116,6 +119,17 @@ await auth.express().authenticate({ audience: mcp.resource })(req, res, () => {
 });
 assert(nextCalled, 'Express authenticate middleware should call next for valid tokens');
 assert(req.auth?.subject === alice.id, 'Express authenticate middleware should attach auth context');
+
+const cookieReq: ExpressRequestLike = {
+  headers: {},
+  cookies: { taico_session: issued.accessToken },
+};
+let cookieNextCalled = false;
+await auth.express().authenticate({ audience: mcp.resource })(cookieReq, responseRecorder(), () => {
+  cookieNextCalled = true;
+});
+assert(cookieNextCalled, 'Express authenticate middleware should honor configured session cookie name');
+assert(cookieReq.auth?.subject === alice.id, 'Express authenticate middleware should attach auth context from custom session cookie');
 
 await auth.express().requireScopes('tasks:write')(req, res, () => undefined);
 
