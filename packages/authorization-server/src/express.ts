@@ -56,13 +56,18 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
       router.use(express.urlencoded({ extended: false }));
       router.use(express.json());
 
-      router.get('/.well-known/jwks.json', asyncHandler(async (_req, res) => { res.json(await state.auth.discovery.jwks()); }));
-      router.get('/.well-known/oauth-authorization-server', asyncHandler(async (_req, res) => { res.json(await state.auth.discovery.authorizationServerMetadata()); }));
+      router.get(`${state.basePath}/.well-known/jwks.json`, asyncHandler(async (_req, res) => { res.json(await state.auth.discovery.jwks()); }));
+      router.get(`${state.basePath}/.well-known/oauth-authorization-server`, asyncHandler(async (_req, res) => { res.json(await state.auth.discovery.authorizationServerMetadata()); }));
+      router.get(pathfulAuthorizationServerMetadataPath(state.basePath), asyncHandler(async (_req, res) => { res.json(await state.auth.discovery.authorizationServerMetadata()); }));
       router.get('/.well-known/oauth-protected-resource', asyncHandler(async (req, res) => {
         const resource = typeof req.query.resource === 'string' ? req.query.resource : state.authorizationServerIssuer;
         res.json(await state.auth.discovery.protectedResourceMetadata(resource));
       }));
-      router.post('/clients/register', asyncHandler(async (req, res) => {
+      router.get(`${state.basePath}/.well-known/oauth-protected-resource`, asyncHandler(async (req, res) => {
+        const resource = typeof req.query.resource === 'string' ? req.query.resource : state.authorizationServerIssuer;
+        res.json(await state.auth.discovery.protectedResourceMetadata(resource));
+      }));
+      router.post(`${state.basePath}/clients/register`, asyncHandler(async (req, res) => {
         const requestedScopes = asArray(req.body.scope ?? req.body.scopes);
         validateConfiguredScopes(state, requestedScopes);
         const client = createPublicClient({
@@ -78,8 +83,8 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
           scope: client.scopes.join(' '),
         });
       }));
-      router.get('/login', asyncHandler(async (req, res) => renderDefaultLogin(state, req, res)));
-      router.post('/login', asyncHandler(async (req, res) => {
+      router.get(`${state.basePath}/login`, asyncHandler(async (req, res) => renderDefaultLogin(state, req, res)));
+      router.post(`${state.basePath}/login`, asyncHandler(async (req, res) => {
         const principal = await state.options.identityProvider.authenticatePassword?.({
           email: req.body.email,
           username: req.body.username,
@@ -99,17 +104,17 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
         if (req.body.returnTo) return res.redirect(String(req.body.returnTo));
         res.json(token);
       }));
-      router.post('/logout', (_req, res) => {
+      router.post(`${state.basePath}/logout`, (_req, res) => {
         clearAuthCookie(res, cookieName, state.options);
         res.status(204).send();
       });
-      router.get('/session', adapter.authenticate({ audience: state.issuer }), (req, res) => res.json({ principal: req.auth?.principal, subject: req.auth?.subject, scopes: req.auth?.scopes }));
-      router.get('/authorize', asyncHandler(async (req, res) => authorize(state, req, res)));
-      router.get('/consent/:flowId', asyncHandler(async (req, res) => renderDefaultConsent(state, req, res)));
-      router.post('/consent/:flowId', adapter.submitConsent());
-      router.post('/consent/:flowId/switch-account', adapter.switchAccount());
-      router.post('/token', asyncHandler(async (req, res) => token(state, req, res)));
-      router.post('/introspect', asyncHandler(async (req, res) => {
+      router.get(`${state.basePath}/session`, adapter.authenticate({ audience: state.issuer }), (req, res) => res.json({ principal: req.auth?.principal, subject: req.auth?.subject, scopes: req.auth?.scopes }));
+      router.get(`${state.basePath}/authorize`, asyncHandler(async (req, res) => authorize(state, req, res)));
+      router.get(`${state.basePath}/consent/:flowId`, asyncHandler(async (req, res) => renderDefaultConsent(state, req, res)));
+      router.post(`${state.basePath}/consent/:flowId`, adapter.submitConsent());
+      router.post(`${state.basePath}/consent/:flowId/switch-account`, adapter.switchAccount());
+      router.post(`${state.basePath}/token`, asyncHandler(async (req, res) => token(state, req, res)));
+      router.post(`${state.basePath}/introspect`, asyncHandler(async (req, res) => {
         try {
           const ctx = await state.auth.validateToken(String(req.body.token ?? ''));
           res.json({ active: true, sub: ctx.subject, scope: ctx.scopes.join(' '), principal: ctx.principal });
@@ -312,6 +317,10 @@ function flowIdFromReturnTo(returnTo: string | undefined, basePath: string): str
 
 function pkceS256(codeVerifier: string): string {
   return createHash('sha256').update(codeVerifier).digest('base64url');
+}
+
+function pathfulAuthorizationServerMetadataPath(basePath: string): string {
+  return `/.well-known/oauth-authorization-server${basePath}`;
 }
 
 function validateClientScopes(state: AdapterState, client: { scopes: string[] }, requestedScopes: string[]): string[] {

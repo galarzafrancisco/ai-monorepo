@@ -35,7 +35,7 @@ export async function createTestApp() {
     requiredScopes: ['mcp:use'],
   });
 
-  app.use('/auth', auth.express().routes());
+  app.use(auth.express().routes());
   app.get('/api/me', auth.express().authenticate(), auth.express().requireScopes('profile:read'), (req, res) => {
     res.json({ principal: req.auth?.principal });
   });

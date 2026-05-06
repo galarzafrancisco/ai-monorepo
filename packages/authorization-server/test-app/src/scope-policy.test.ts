@@ -10,8 +10,14 @@ import { sqliteStorage } from '@taico/authorization-server/storage/sqlite';
 
 test('authorization requests cannot escalate beyond configured client scopes', async () => {
   const storage = await sqliteStorage({ file: join(tmpdir(), `taico-auth-scope-${crypto.randomUUID()}.sqlite`) });
+  const app = express();
+  const server = app.listen(0);
+  await new Promise<void>((resolve) => server.once('listening', resolve));
+  const address = server.address();
+  assert(address && typeof address === 'object');
+  const origin = `http://127.0.0.1:${address.port}`;
   const auth = await createAuthorizationServer({
-    issuer: 'http://127.0.0.1:0',
+    issuer: origin,
     storage,
     identityProvider: {},
     scopes: [{ id: 'mcp:use' }, { id: 'tasks:write' }],
@@ -22,26 +28,26 @@ test('authorization requests cannot escalate beyond configured client scopes', a
     scopes: ['mcp:use'],
   });
   await storage.saveClient(client);
-
-  const app = express();
-  app.use('/auth', auth.express().routes());
-  const server = app.listen(0);
-  await new Promise<void>((resolve) => server.once('listening', resolve));
+  app.use(auth.express().routes());
 
   try {
-    const address = server.address();
-    assert(address && typeof address === 'object');
-    const response = await fetch(new URL(`/auth/authorize?client_id=${client.id}&redirect_uri=${encodeURIComponent('http://localhost/callback')}&response_type=code&scope=tasks:write&code_challenge=abc&code_challenge_method=S256`, `http://127.0.0.1:${address.port}`));
+    const response = await fetch(new URL(`/auth/authorize?client_id=${client.id}&redirect_uri=${encodeURIComponent('http://localhost/callback')}&response_type=code&scope=tasks:write&code_challenge=abc&code_challenge_method=S256`, origin));
     assert.equal(response.status, 400);
     assert.equal((await response.json()).error, 'invalid_scope');
 
     const metadata = await auth.discovery.authorizationServerMetadata();
-    assert.equal(metadata.issuer, 'http://127.0.0.1:0/auth');
-    assert.equal(metadata.authorization_endpoint, 'http://127.0.0.1:0/auth/authorize');
+    assert.equal(metadata.issuer, `${origin}/auth`);
+    assert.equal(metadata.authorization_endpoint, `${origin}/auth/authorize`);
     assert.deepEqual(metadata.grant_types_supported, ['authorization_code', 'password']);
 
     const resourceMetadata = await auth.discovery.protectedResourceMetadata('http://localhost/resource');
-    assert.deepEqual(resourceMetadata.authorization_servers, ['http://127.0.0.1:0/auth']);
+    assert.deepEqual(resourceMetadata.authorization_servers, [`${origin}/auth`]);
+
+    const discoveredIssuer = new URL(resourceMetadata.authorization_servers[0]);
+    const discoveredMetadataUrl = new URL(`/.well-known/oauth-authorization-server${discoveredIssuer.pathname}`, discoveredIssuer.origin);
+    const discoveredMetadata = await fetch(discoveredMetadataUrl);
+    assert.equal(discoveredMetadata.status, 200);
+    assert.equal((await discoveredMetadata.json()).issuer, metadata.issuer);
   } finally {
     await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   }
