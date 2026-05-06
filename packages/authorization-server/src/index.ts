@@ -73,6 +73,12 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
       return input;
     },
     discovery: {
+      wellKnownUrl(): string {
+        return wellKnownAuthorizationServerMetadataUrl(authorizationServerIssuer);
+      },
+      protectedResourceMetadataUrl(resource: string): string {
+        return protectedResourceMetadataUrl(authorizationServerIssuer, resource);
+      },
       async authorizationServerMetadata(): Promise<AuthorizationServerMetadata> {
         return {
           issuer: authorizationServerIssuer,
@@ -82,7 +88,7 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
           registration_endpoint: `${authorizationServerIssuer}/clients/register`,
           introspection_endpoint: `${authorizationServerIssuer}/introspect`,
           response_types_supported: ['code'],
-          grant_types_supported: ['authorization_code', 'password'],
+          grant_types_supported: options.grants?.password ? ['authorization_code', 'password'] : ['authorization_code'],
           code_challenge_methods_supported: ['S256'],
           scopes_supported: [...configuredScopes.keys()],
         };
@@ -121,6 +127,18 @@ export function createPublicClient(input: { name?: string; redirectUris: string[
 function normalizeBasePath(path: string): string {
   const prefixed = path.startsWith('/') ? path : `/${path}`;
   return prefixed.endsWith('/') ? prefixed.slice(0, -1) : prefixed;
+}
+
+function wellKnownAuthorizationServerMetadataUrl(issuer: string): string {
+  const url = new URL(issuer);
+  return `${url.origin}/.well-known/oauth-authorization-server${url.pathname}`;
+}
+
+function protectedResourceMetadataUrl(issuer: string, resource: string): string {
+  const resourceUrl = new URL(resource);
+  const authServerOrigin = new URL(issuer).origin;
+  if (resourceUrl.origin === authServerOrigin) return `${resourceUrl.origin}/.well-known/oauth-protected-resource${resourceUrl.pathname}`;
+  return `${authServerOrigin}/.well-known/oauth-protected-resource?resource=${encodeURIComponent(resourceUrl.toString())}`;
 }
 
 function rememberScope(scopes: Map<string, ScopeDefinition>, scope: ScopeDefinition): ScopeDefinition {

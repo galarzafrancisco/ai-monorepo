@@ -1,4 +1,4 @@
-import { exportJWK, generateKeyPair, importJWK, jwtVerify, SignJWT, type JWK, type JWTPayload } from 'jose';
+import { decodeJwt, exportJWK, generateKeyPair, importJWK, jwtVerify, SignJWT, type JWK, type JWTPayload } from 'jose';
 
 import { InvalidTokenError, InsufficientScopeError } from './errors.js';
 import type { AuthContext, AuthorizationStorage, IssueTokenInput, IssuedToken, KeyStore, ValidateTokenOptions } from './types.js';
@@ -81,7 +81,21 @@ export async function validateJwt(input: {
       errors.push(error);
     }
   }
+  const expectedAudience = input.options?.audience;
+  if (expectedAudience && errors.length > 0 && !tokenHasAudience(input.token, expectedAudience)) {
+    throw new InvalidTokenError(`Token audience does not match this protected resource. Request the token with audience/resource "${expectedAudience}".`);
+  }
   throw new InvalidTokenError(errors.length > 0 ? 'Token verification failed' : 'No signing keys available');
+}
+
+function tokenHasAudience(token: string, expectedAudience: string): boolean {
+  try {
+    const audience = decodeJwt(token).aud;
+    if (Array.isArray(audience)) return audience.includes(expectedAudience);
+    return audience === expectedAudience;
+  } catch {
+    return true;
+  }
 }
 
 export function normalizeScopes(scopes: Array<string | { id: string; description?: string }> = []): Array<{ id: string; description?: string }> {
