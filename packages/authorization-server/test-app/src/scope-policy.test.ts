@@ -38,10 +38,12 @@ test('authorization requests cannot escalate beyond configured client scopes', a
     const metadata = await auth.discovery.authorizationServerMetadata();
     assert.equal(metadata.issuer, `${origin}/auth`);
     assert.equal(metadata.authorization_endpoint, `${origin}/auth/authorize`);
-    assert.deepEqual(metadata.grant_types_supported, ['authorization_code', 'password']);
+    assert.deepEqual(metadata.grant_types_supported, ['authorization_code']);
+    assert.equal(auth.discovery.wellKnownUrl(), `${origin}/.well-known/oauth-authorization-server/auth`);
 
     const resourceMetadata = await auth.discovery.protectedResourceMetadata('http://localhost/resource');
     assert.deepEqual(resourceMetadata.authorization_servers, [`${origin}/auth`]);
+    assert.equal(auth.discovery.protectedResourceMetadataUrl(`${origin}/api/tasks/mcp`), `${origin}/.well-known/oauth-protected-resource/api/tasks/mcp`);
 
     const discoveredIssuer = new URL(resourceMetadata.authorization_servers[0]);
     const discoveredMetadataUrl = new URL(`/.well-known/oauth-authorization-server${discoveredIssuer.pathname}`, discoveredIssuer.origin);
@@ -74,6 +76,41 @@ test('authorization requests cannot escalate beyond configured client scopes', a
       bearer_methods_supported: ['header'],
       resource_name: 'Tasks',
     });
+
+    const wrongAudienceToken = await auth.issueToken({ subject: 'user-1', audience: `${origin}/auth`, scopes: ['mcp:use'] });
+    const wrongAudience = await fetch(new URL('/api/tasks/mcp', origin), { headers: { authorization: `Bearer ${wrongAudienceToken.accessToken}` } });
+    assert.equal(wrongAudience.status, 401);
+    assert.match((await wrongAudience.json()).error_description, /audience\/resource/);
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  }
+});
+
+test('CORS and password grant are explicit opt-ins', async () => {
+  const storage = await sqliteStorage({ file: join(tmpdir(), `taico-auth-cors-${crypto.randomUUID()}.sqlite`) });
+  const app = express();
+  const server = app.listen(0);
+  await new Promise<void>((resolve) => server.once('listening', resolve));
+  const address = server.address();
+  assert(address && typeof address === 'object');
+  const origin = `http://127.0.0.1:${address.port}`;
+  const auth = await createAuthorizationServer({
+    issuer: origin,
+    storage,
+    identityProvider: { async authenticatePassword() { return { id: 'user-1' }; } },
+    scopes: [{ id: 'mcp:use' }],
+    grants: { password: true },
+    cors: { origins: ['https://client.example'], credentials: true },
+  });
+  app.use(auth.express().routes());
+
+  try {
+    const metadata = await auth.discovery.authorizationServerMetadata();
+    assert.deepEqual(metadata.grant_types_supported, ['authorization_code', 'password']);
+    const preflight = await fetch(new URL('/auth/token', origin), { method: 'OPTIONS', headers: { origin: 'https://client.example' } });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get('access-control-allow-origin'), 'https://client.example');
+    assert.equal(preflight.headers.get('access-control-allow-credentials'), 'true');
   } finally {
     await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   }

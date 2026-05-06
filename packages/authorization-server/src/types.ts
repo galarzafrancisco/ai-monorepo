@@ -214,6 +214,17 @@ export type AuthorizationServerOptions = {
   accessTokens?: { ttlSeconds?: number; issuer?: string };
   refreshTokens?: { ttlSeconds?: number; rotate?: boolean };
   mcp?: { enabled?: boolean; dynamicClientRegistration?: { enabled?: boolean; pruneAfterDays?: number } };
+  grants?: {
+    password?: boolean;
+  };
+  cors?:
+    | boolean
+    | {
+        origins?: '*' | string[];
+        methods?: string[];
+        headers?: string[];
+        credentials?: boolean;
+      };
   screens?: {
     login?: { mode?: 'default' | 'hosted'; path?: string; allowPassword?: boolean; allowExternalProviders?: boolean };
     consent?: { mode?: 'default' | 'hosted'; path?: string; allowSwitchAccount?: boolean; rememberGrants?: boolean };
@@ -228,6 +239,8 @@ export type AuthorizationServer = {
   registerMcpServer(input: McpServerDefinition): Promise<import('./mcp.js').McpServerHandle>;
   registerDownstreamConnection(input: DownstreamConnectionDefinition): Promise<DownstreamConnectionDefinition>;
   discovery: {
+    wellKnownUrl(): string;
+    protectedResourceMetadataUrl(resource: string): string;
     authorizationServerMetadata(): Promise<AuthorizationServerMetadata>;
     protectedResourceMetadata(resource: string): Promise<ProtectedResourceMetadata>;
     jwks(): Promise<JsonWebKeySet>;

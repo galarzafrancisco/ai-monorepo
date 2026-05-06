@@ -53,6 +53,7 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
   const adapter: ExpressAuthAdapter = {
     routes() {
       const router = express.Router();
+      router.use(corsMiddleware(state.options));
       router.use(express.urlencoded({ extended: false }));
       router.use(express.json());
 
@@ -274,6 +275,7 @@ async function token(state: AdapterState, req: Request, res: Response): Promise<
     return;
   }
   if (grantType === 'password') {
+    if (!state.options.grants?.password) throw new AuthorizationServerError('Password grant is disabled', 'unsupported_grant_type', 400);
     const principal = await state.options.identityProvider.authenticatePassword?.({ email: req.body.email ?? req.body.username, username: req.body.username, password: req.body.password });
     if (!principal) throw new AuthorizationServerError('Invalid credentials', 'invalid_grant', 401);
     const token = await state.auth.issueToken({ subject: principal.id, principal, audience: stringBody(req.body.audience) ?? stringBody(req.body.resource), scopes: validateConfiguredScopes(state, asArray(req.body.scope)) });
@@ -337,6 +339,26 @@ function protectedResourceMetadataUrl(state: AdapterState, req: Request, audienc
   const authServerOrigin = new URL(state.authorizationServerIssuer).origin;
   if (resourceUrl.origin === authServerOrigin) return `${resourceUrl.origin}/.well-known/oauth-protected-resource${resourceUrl.pathname}`;
   return `${authServerOrigin}/.well-known/oauth-protected-resource?resource=${encodeURIComponent(resourceUrl.toString())}`;
+}
+
+function corsMiddleware(options: AuthorizationServerOptions): RequestHandler {
+  return (req, res, next) => {
+    const cors = options.cors;
+    if (!cors) return next();
+    const origin = req.header('origin');
+    const config = cors === true ? {} : cors;
+    const allowedOrigins = config.origins ?? '*';
+    const allowOrigin = allowedOrigins === '*' ? '*' : origin && allowedOrigins.includes(origin) ? origin : undefined;
+    if (allowOrigin) res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+    if (config.credentials) res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', (config.methods ?? ['GET', 'POST', 'OPTIONS']).join(', '));
+    res.setHeader('Access-Control-Allow-Headers', (config.headers ?? ['authorization', 'content-type']).join(', '));
+    if (req.method === 'OPTIONS') {
+      res.status(204).send();
+      return;
+    }
+    next();
+  };
 }
 
 function requestOrigin(req: Request): string {
