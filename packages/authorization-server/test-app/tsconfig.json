@@ -1,0 +1,16 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "noEmit": false,
+    "declaration": false,
+    "types": ["node"],
+    "paths": {
+      "@taico/authorization-server": ["../src/index.ts"],
+      "@taico/authorization-server/express": ["../src/express.ts"],
+      "@taico/authorization-server/storage/sqlite": ["../src/storage/sqlite.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

@@ -31,6 +31,18 @@
       ],
       "@taico/errors": [
         "packages/errors/src/index.ts"
+      ],
+      "@taico/authorization-server": [
+        "packages/authorization-server/src/index.ts"
+      ],
+      "@taico/authorization-server/express": [
+        "packages/authorization-server/src/express.ts"
+      ],
+      "@taico/authorization-server/mcp": [
+        "packages/authorization-server/src/mcp.ts"
+      ],
+      "@taico/authorization-server/storage/sqlite": [
+        "packages/authorization-server/src/storage/sqlite.ts"
       ]
     }
   }
