@@ -106,14 +106,10 @@ class CoreAuthorizationServer {
 
   async validateToken(token: string, options: ValidateTokenOptions = {}): Promise<AuthContext> {
     try {
-      const { protectedHeader, payload } = await jwtVerify(
-        token,
-        await this.keys.getVerificationKey(),
-        {
-          issuer: this.issuer,
-          audience: options.audience,
-        },
-      );
+      const { protectedHeader, payload } = await jwtVerify(token, (header) => this.keys.getVerificationKey(header.kid), {
+        issuer: this.issuer,
+        audience: options.audience,
+      });
 
       if (!protectedHeader.kid) {
         throw new InvalidTokenError('Access token is missing a key id');
