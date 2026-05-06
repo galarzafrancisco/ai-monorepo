@@ -1,5 +1,6 @@
 import { rm } from 'node:fs/promises';
 import { createAuthorizationServer, sqliteKeyStore, sqliteStorage } from '../src/index.js';
+import { createNestAdapter, RequireScopes } from '../src/nest.js';
 import type { ExpressRequestLike, ExpressResponseLike, Principal } from '../src/index.js';
 
 const sqliteFile = './test-app/auth-server-test.sqlite';
@@ -123,6 +124,130 @@ await auth.express().requireScopes('tasks:write')(unauthenticatedReq, unauthenti
 assert(!unauthenticatedNextCalled, 'Express requireScopes should fail closed without auth context');
 assert(unauthenticatedRes.statusCode === 401, 'Express requireScopes should return 401 without auth context');
 
+const routeAdapter = auth.express().routes();
+const registrationRes = statusRecorder();
+await routeAdapter(
+  {
+    method: 'POST',
+    path: '/clients/register',
+    body: {
+      client_name: 'Runtime Client',
+      redirect_uris: ['https://app.example.test/callback'],
+      scope: 'profile:read tasks:read',
+    },
+  },
+  registrationRes,
+  unexpectedNext,
+);
+assert(registrationRes.statusCode === 201, 'Express routes should support dynamic client registration');
+const registeredClientId = (registrationRes.body as { client_id?: string }).client_id;
+assert(typeof registeredClientId === 'string', 'dynamic client registration should return a client id');
+
+const loginRes = statusRecorder();
+await routeAdapter(
+  {
+    method: 'POST',
+    path: '/login',
+    body: { email: alice.email, password: 'correct-horse-battery-staple' },
+  },
+  loginRes,
+  unexpectedNext,
+);
+const loginToken = (loginRes.body as { accessToken?: string }).accessToken;
+assert(typeof loginToken === 'string', 'Express routes should issue a cookie-capable login token');
+
+const sessionRes = statusRecorder();
+await routeAdapter(
+  { method: 'GET', path: '/session', headers: { authorization: `Bearer ${loginToken}` } },
+  sessionRes,
+  unexpectedNext,
+);
+assert((sessionRes.body as { authenticated?: boolean }).authenticated, 'Express routes should expose authenticated session state');
+
+const authorizeRes = statusRecorder();
+await routeAdapter(
+  {
+    method: 'GET',
+    path: '/authorize',
+    query: {
+      client_id: registeredClientId,
+      redirect_uri: 'https://app.example.test/callback',
+      scope: 'profile:read',
+      state: 'state-value',
+      resource: mcp.resource,
+    },
+    headers: { authorization: `Bearer ${loginToken}` },
+  },
+  authorizeRes,
+  unexpectedNext,
+);
+const flowId = (authorizeRes.body as { interaction?: { flowId?: string } }).interaction?.flowId;
+assert(typeof flowId === 'string', 'Express routes should create authorization interactions');
+
+const approveRes = statusRecorder();
+await routeAdapter(
+  { method: 'POST', path: `/consent/${flowId}/approve`, headers: { authorization: `Bearer ${loginToken}` } },
+  approveRes,
+  unexpectedNext,
+);
+const authorizationCode = (approveRes.body as { code?: string; state?: string }).code;
+assert(typeof authorizationCode === 'string', 'Express consent route should approve and issue an authorization code');
+assert((approveRes.body as { state?: string }).state === 'state-value', 'Express consent route should preserve OAuth state');
+
+const tokenRes = statusRecorder();
+await routeAdapter(
+  {
+    method: 'POST',
+    path: '/token',
+    body: {
+      grant_type: 'authorization_code',
+      code: authorizationCode,
+      client_id: registeredClientId,
+      redirect_uri: 'https://app.example.test/callback',
+    },
+  },
+  tokenRes,
+  unexpectedNext,
+);
+const routeIssuedToken = (tokenRes.body as { accessToken?: string }).accessToken;
+assert(typeof routeIssuedToken === 'string', 'Express token route should exchange authorization codes');
+
+const introspectRes = statusRecorder();
+await routeAdapter(
+  { method: 'POST', path: '/introspect', body: { token: routeIssuedToken } },
+  introspectRes,
+  unexpectedNext,
+);
+assert((introspectRes.body as { active?: boolean }).active, 'Express introspection route should report active tokens');
+
+const exchangeRes = statusRecorder();
+await routeAdapter(
+  {
+    method: 'POST',
+    path: '/token-exchange',
+    body: { subject_token: issued.accessToken, audience: mcp.resource, connection: 'github', scope: 'repo' },
+  },
+  exchangeRes,
+  unexpectedNext,
+);
+assert((exchangeRes.body as { connection?: string }).connection === 'github', 'Express token-exchange route should call downstream exchange');
+
+class NestController {
+  list() {
+    return undefined;
+  }
+}
+RequireScopes('tasks:write')(NestController.prototype, 'list', Object.getOwnPropertyDescriptor(NestController.prototype, 'list'));
+const nestRequest: ExpressRequestLike = { headers: { authorization: `Bearer ${issued.accessToken}` } };
+const nestContext = {
+  getHandler: () => NestController.prototype.list,
+  getClass: () => NestController,
+  switchToHttp: () => ({ getRequest: () => nestRequest }),
+};
+const nest = createNestAdapter(auth);
+assert(await nest.accessTokenGuard({ audience: mcp.resource }).canActivate(nestContext), 'Nest access token guard should validate bearer tokens');
+assert(nest.scopesGuard().canActivate(nestContext), 'Nest scopes guard should enforce RequireScopes metadata');
+
 await storage.close();
 await keys.close();
 
@@ -195,5 +320,19 @@ function statusRecorder(): ExpressResponseLike & { statusCode?: number; body?: u
     json(body: unknown) {
       this.body = body;
     },
+    send(body: unknown) {
+      this.body = body;
+    },
+    cookie(name: string, value: string) {
+      const recorder = this as ExpressResponseLike & { cookies?: Record<string, string> };
+      recorder.cookies = { ...recorder.cookies, [name]: value };
+    },
+    clearCookie(name: string) {
+      (this as ExpressResponseLike & { clearedCookie?: string }).clearedCookie = name;
+    },
   };
+}
+
+function unexpectedNext(error?: unknown) {
+  throw error instanceof Error ? error : new Error('Express route should have handled the request');
 }

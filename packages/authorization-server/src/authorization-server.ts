@@ -12,9 +12,12 @@ import { createNestAdapter } from './nest.js';
 import type {
   AccessTokenClaims,
   AuthContext,
+  AuthorizationGrant,
+  AuthorizationInteraction,
   AuthorizationServerMetadata,
   AuthorizationServerOptions,
   AuthorizationStorage,
+  ClientDefinition,
   DownstreamConnectionDefinition,
   DownstreamToken,
   DownstreamTokenExchangeInput,
@@ -52,6 +55,7 @@ class CoreAuthorizationServer {
   private readonly scopes = new Map<string, ScopeDefinition>();
   private readonly mcpServers = new Map<string, McpServerHandle>();
   private readonly defaultTtlSeconds: number;
+  readonly sessionCookieName: string;
 
   constructor(options: AuthorizationServerOptions & { storage: AuthorizationStorage; keys: KeyStore }) {
     this.issuer = options.accessTokens?.issuer ?? options.issuer;
@@ -60,6 +64,7 @@ class CoreAuthorizationServer {
     this.keys = options.keys;
     this.identityProvider = options.identityProvider;
     this.defaultTtlSeconds = options.accessTokens?.ttlSeconds ?? 15 * 60;
+    this.sessionCookieName = options.session?.cookieName ?? 'access_token';
 
     for (const scope of options.scopes ?? []) {
       const definition = normalizeScope(scope);
@@ -184,6 +189,112 @@ class CoreAuthorizationServer {
     return { id: input.id, displayName: input.displayName };
   }
 
+  registerClient(input: ClientDefinition): ClientDefinition {
+    const id = input.id || crypto.randomUUID();
+    const client = { ...input, id };
+    this.storage.clients.set(id, client);
+    return client;
+  }
+
+  getClient(clientId: string) {
+    return this.storage.clients.get(clientId);
+  }
+
+  async authenticatePassword(input: { username?: string; email?: string; password: string }) {
+    const principal = await this.identityProvider?.authenticatePassword?.(input);
+    if (!principal) return null;
+    return this.issueToken({ subject: principal.id, principal, scopes: [...this.scopes.keys()] });
+  }
+
+  async createAuthorizationInteraction(input: {
+    clientId: string;
+    redirectUri?: string;
+    scope?: string;
+    state?: string;
+    resource?: string;
+    audience?: string;
+    codeChallenge?: string;
+    codeChallengeMethod?: 'plain' | 'S256';
+    principal?: Principal;
+  }): Promise<AuthorizationInteraction> {
+    const client = this.storage.clients.get(input.clientId);
+    if (!client) {
+      throw new InvalidTokenError(`Unknown OAuth client: ${input.clientId}`);
+    }
+    if (input.redirectUri && !client.redirectUris.includes(input.redirectUri)) {
+      throw new InvalidTokenError('Redirect URI is not registered for this client');
+    }
+
+    const requestedScopes = parseScope(input.scope || client.scopes?.join(' ') || '');
+    const flow: AuthorizationInteraction = {
+      flowId: crypto.randomUUID(),
+      client,
+      redirectUri: input.redirectUri,
+      state: input.state,
+      resource: input.resource,
+      audience: input.audience ?? input.resource,
+      codeChallenge: input.codeChallenge,
+      codeChallengeMethod: input.codeChallengeMethod,
+      scopes: requestedScopes.map((scope) => this.scopes.get(scope) ?? { id: scope }),
+      principal: input.principal,
+      loginRequired: !input.principal,
+      consentRequired: true,
+      downstreamConnectionsRequired: [],
+    };
+    this.storage.interactions.set(flow.flowId, flow);
+    return flow;
+  }
+
+  approveAuthorizationInteraction(flowId: string, principal: Principal): AuthorizationGrant {
+    const flow = this.storage.interactions.get(flowId);
+    if (!flow) {
+      throw new InvalidTokenError('Unknown authorization flow');
+    }
+    const grant: AuthorizationGrant = {
+      code: crypto.randomUUID(),
+      clientId: flow.client.id,
+      redirectUri: flow.redirectUri,
+      state: flow.state,
+      subject: principal.id,
+      principal,
+      audience: flow.audience,
+      scopes: flow.scopes.map((scope) => scope.id),
+      codeChallenge: flow.codeChallenge,
+      codeChallengeMethod: flow.codeChallengeMethod,
+      createdAt: Date.now(),
+    };
+    this.storage.grants.set(grant.code, grant);
+    this.storage.interactions.delete(flowId);
+    return grant;
+  }
+
+  denyAuthorizationInteraction(flowId: string) {
+    const flow = this.storage.interactions.get(flowId);
+    if (flow) {
+      this.storage.interactions.delete(flowId);
+    }
+    return flow;
+  }
+
+  async exchangeAuthorizationCode(input: { code: string; clientId?: string; redirectUri?: string; codeVerifier?: string }) {
+    const grant = this.storage.grants.get(input.code) as AuthorizationGrant | undefined;
+    if (!grant || grant.consumed) {
+      throw new InvalidTokenError('Invalid authorization code');
+    }
+    if (input.clientId && grant.clientId !== input.clientId) {
+      throw new InvalidTokenError('Authorization code was issued to a different client');
+    }
+    if (grant.redirectUri && input.redirectUri && grant.redirectUri !== input.redirectUri) {
+      throw new InvalidTokenError('Redirect URI does not match authorization code');
+    }
+    if (grant.codeChallenge && !(await verifyCodeChallenge(input.codeVerifier ?? '', grant.codeChallenge, grant.codeChallengeMethod))) {
+      throw new InvalidTokenError('PKCE verifier does not match authorization code');
+    }
+    grant.consumed = true;
+    this.storage.grants.set(input.code, grant);
+    return this.issueToken({ subject: grant.subject, principal: grant.principal, audience: grant.audience, scopes: grant.scopes });
+  }
+
   async exchangeDownstreamToken(input: DownstreamTokenExchangeInput): Promise<DownstreamToken> {
     const connection = this.storage.downstreamConnections.get(input.connection);
     if (!connection) {
@@ -269,6 +380,17 @@ export function extractBearerToken(headers: Record<string, string | string[] | u
   const value = Array.isArray(header) ? header[0] : header;
   const match = value?.match(/^Bearer\s+(.+)$/i);
   return match?.[1];
+}
+
+export function parseScope(scope: string | undefined) {
+  return (scope ?? '').split(/\s+/).map((value) => value.trim()).filter(Boolean);
+}
+
+async function verifyCodeChallenge(verifier: string, challenge: string, method: 'plain' | 'S256' = 'plain') {
+  if (method === 'plain') return verifier === challenge;
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  const encoded = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return encoded === challenge;
 }
 
 function normalizeBasePath(path: string) {

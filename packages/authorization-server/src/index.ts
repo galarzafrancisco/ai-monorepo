@@ -12,6 +12,7 @@ export {
 } from './errors.js';
 export type {
   AccessTokenClaims,
+  AuthorizationGrant,
   AuthContext,
   AuthorizationInteraction,
   AuthorizationServerMetadata,

@@ -165,11 +165,30 @@ export type AuthorizationInteraction = {
   client: ClientDefinition;
   resource?: string;
   audience?: string;
+  redirectUri?: string;
+  state?: string;
+  codeChallenge?: string;
+  codeChallengeMethod?: 'plain' | 'S256';
   scopes: ScopeDefinition[];
   principal?: Principal;
   loginRequired: boolean;
   consentRequired: boolean;
   downstreamConnectionsRequired: DownstreamConnectionDefinition[];
+};
+
+export type AuthorizationGrant = {
+  code: string;
+  clientId: string;
+  redirectUri?: string;
+  state?: string;
+  subject: string;
+  principal?: Principal;
+  audience?: string;
+  scopes: string[];
+  codeChallenge?: string;
+  codeChallengeMethod?: 'plain' | 'S256';
+  consumed?: boolean;
+  createdAt: number;
 };
 
 export type AuthorizationStorage = {
@@ -225,6 +244,7 @@ export type ExpressRequestLike = {
   path?: string;
   url?: string;
   body?: unknown;
+  query?: Record<string, string | string[] | undefined>;
 };
 
 export type ExpressResponseLike = {
@@ -232,6 +252,9 @@ export type ExpressResponseLike = {
   json(body: unknown): void;
   set?(name: string, value: string): ExpressResponseLike | void;
   send?(body: unknown): void;
+  redirect?(url: string): void;
+  cookie?(name: string, value: string, options?: Record<string, unknown>): void;
+  clearCookie?(name: string, options?: Record<string, unknown>): void;
 };
 
 export type ExpressNextFunction = (error?: unknown) => void;
