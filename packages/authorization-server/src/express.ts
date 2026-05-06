@@ -1,4 +1,5 @@
 import cookie from 'cookie';
+import { createHash } from 'node:crypto';
 import express, { type NextFunction, type Request, type RequestHandler, type Response, type Router } from 'express';
 
 import { createPublicClient } from './index.js';
@@ -72,6 +73,7 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
           scope: client.scopes.join(' '),
         });
       }));
+      router.get('/login', asyncHandler(async (req, res) => renderDefaultLogin(state, req, res)));
       router.post('/login', asyncHandler(async (req, res) => {
         const principal = await state.options.identityProvider.authenticatePassword?.({
           email: req.body.email,
@@ -79,6 +81,8 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
           password: req.body.password,
         });
         if (!principal) throw new AuthorizationServerError('Invalid credentials', 'invalid_grant', 401);
+        const flowId = stringBody(req.body.flow) ?? flowIdFromReturnTo(stringBody(req.body.returnTo), state.basePath);
+        if (flowId) await attachPrincipalToInteraction(state, flowId, principal);
         const token = await state.auth.issueToken({
           subject: principal.id,
           principal,
@@ -114,7 +118,7 @@ export function createExpressAdapter(state: AdapterState): ExpressAuthAdapter {
       return asyncHandler(async (req, res, next) => {
         const raw = extractToken(req, cookieName);
         if (!raw) {
-          res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${state.issuer}/.well-known/oauth-protected-resource"`);
+          res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${state.issuer}${state.basePath}/.well-known/oauth-protected-resource"`);
           throw new InvalidTokenError('Missing bearer token');
         }
         req.auth = await state.auth.validateToken(raw, options);
@@ -154,6 +158,9 @@ async function authorize(state: AdapterState, req: Request, res: Response): Prom
   const clientId = stringParam(req.query.client_id);
   const redirectUri = stringParam(req.query.redirect_uri);
   if (!clientId || !redirectUri) throw new AuthorizationServerError('client_id and redirect_uri are required', 'invalid_request');
+  const codeChallenge = stringParam(req.query.code_challenge);
+  const codeChallengeMethod = stringParam(req.query.code_challenge_method);
+  if (!codeChallenge || codeChallengeMethod !== 'S256') throw new AuthorizationServerError('S256 PKCE is required', 'invalid_request');
   const client = await state.options.storage.getClient(clientId);
   if (!client || !client.redirectUris.includes(redirectUri)) throw new InvalidClientError();
   await state.options.storage.touchClient(client.id);
@@ -180,8 +187,8 @@ async function authorize(state: AdapterState, req: Request, res: Response): Prom
     principal,
     loginRequired: !principal,
     consentRequired: true,
-    codeChallenge: stringParam(req.query.code_challenge),
-    codeChallengeMethod: stringParam(req.query.code_challenge_method),
+    codeChallenge,
+    codeChallengeMethod,
     createdAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
   };
@@ -190,17 +197,21 @@ async function authorize(state: AdapterState, req: Request, res: Response): Prom
 }
 
 async function renderDefaultConsent(state: AdapterState, req: Request, res: Response): Promise<void> {
-  const interaction = await state.options.storage.getInteraction(String(req.params.flowId));
+  let interaction = await state.options.storage.getInteraction(String(req.params.flowId));
   if (!interaction) throw new AuthorizationServerError('Unknown authorization flow', 'invalid_request', 404);
   if (interaction.loginRequired) {
-    res.status(401).type('html').send(`<h1>Login required</h1><p>POST credentials to ${state.basePath}/login with returnTo=${state.basePath}/consent/${interaction.flowId}</p>`);
+    const principal = await getSessionPrincipal(state, req);
+    if (principal) interaction = await attachPrincipalToInteraction(state, interaction.flowId, principal);
+  }
+  if (interaction.loginRequired) {
+    res.status(401).type('html').send(loginHtml(state, interaction.flowId));
     return;
   }
   res.type('html').send(`<!doctype html><html><body><h1>Authorize ${escapeHtml(interaction.client.name ?? interaction.client.id)}</h1><p>Principal: ${escapeHtml(interaction.principal?.displayName ?? interaction.principal?.email ?? interaction.principal?.id ?? '')}</p><p>Scopes: ${escapeHtml(interaction.scopes.map((scope) => scope.id).join(', '))}</p><form method="post"><button name="decision" value="approve">Approve</button><button name="decision" value="deny">Deny</button></form><form method="post" action="${state.basePath}/consent/${interaction.flowId}/switch-account"><button>Log in as a different user</button></form></body></html>`);
 }
 
 async function submitConsent(state: AdapterState, req: Request, res: Response): Promise<void> {
-  const interaction = await state.options.storage.getInteraction(String(req.params.flowId));
+  let interaction = await state.options.storage.getInteraction(String(req.params.flowId));
   if (!interaction) throw new AuthorizationServerError('Unknown authorization flow', 'invalid_request', 404);
   if (req.body.decision === 'deny') {
     await state.options.storage.deleteInteraction(interaction.flowId);
@@ -209,6 +220,10 @@ async function submitConsent(state: AdapterState, req: Request, res: Response): 
     if (interaction.state) url.searchParams.set('state', interaction.state);
     res.redirect(url.toString());
     return;
+  }
+  if (!interaction.principal) {
+    const principal = await getSessionPrincipal(state, req);
+    if (principal) interaction = await attachPrincipalToInteraction(state, interaction.flowId, principal);
   }
   if (!interaction.principal) throw new AuthorizationServerError('Login required', 'login_required', 401);
   const code: AuthorizationCode = {
@@ -234,8 +249,13 @@ async function submitConsent(state: AdapterState, req: Request, res: Response): 
 async function token(state: AdapterState, req: Request, res: Response): Promise<void> {
   const grantType = String(req.body.grant_type ?? '');
   if (grantType === 'authorization_code') {
+    const clientId = stringBody(req.body.client_id);
+    const redirectUri = stringBody(req.body.redirect_uri);
+    const codeVerifier = stringBody(req.body.code_verifier);
+    if (!clientId || !redirectUri || !codeVerifier) throw new AuthorizationServerError('client_id, redirect_uri, and code_verifier are required', 'invalid_request', 400);
     const code = await state.options.storage.consumeAuthorizationCode(String(req.body.code ?? ''));
-    if (!code || code.redirectUri !== String(req.body.redirect_uri ?? '')) throw new AuthorizationServerError('Invalid authorization code', 'invalid_grant', 400);
+    if (!code || code.clientId !== clientId || code.redirectUri !== redirectUri) throw new AuthorizationServerError('Invalid authorization code', 'invalid_grant', 400);
+    if (!code.codeChallenge || code.codeChallengeMethod !== 'S256' || pkceS256(codeVerifier) !== code.codeChallenge) throw new AuthorizationServerError('Invalid code verifier', 'invalid_grant', 400);
     const token = await state.auth.issueToken({ subject: code.subject, principal: code.principal, audience: code.audience, scopes: code.scopes });
     res.json(toOAuthToken(token));
     return;
@@ -248,6 +268,45 @@ async function token(state: AdapterState, req: Request, res: Response): Promise<
     return;
   }
   throw new AuthorizationServerError('Unsupported grant type', 'unsupported_grant_type', 400);
+}
+
+async function renderDefaultLogin(state: AdapterState, req: Request, res: Response): Promise<void> {
+  const flowId = stringParam(req.query.flow);
+  if (flowId && !(await state.options.storage.getInteraction(flowId))) throw new AuthorizationServerError('Unknown authorization flow', 'invalid_request', 404);
+  res.type('html').send(loginHtml(state, flowId));
+}
+
+function loginHtml(state: AdapterState, flowId?: string): string {
+  const returnTo = flowId ? `${state.basePath}/consent/${flowId}` : '';
+  return `<!doctype html><html><body><h1>Login required</h1><form method="post" action="${state.basePath}/login"><input name="email" type="email" placeholder="Email"><input name="password" type="password" placeholder="Password"><input type="hidden" name="flow" value="${escapeHtml(flowId ?? '')}"><input type="hidden" name="returnTo" value="${escapeHtml(returnTo)}"><button>Login</button></form></body></html>`;
+}
+
+async function attachPrincipalToInteraction(state: AdapterState, flowId: string, principal: AuthContext['principal']): Promise<StoredAuthorizationInteraction> {
+  const interaction = await state.options.storage.getInteraction(flowId);
+  if (!interaction) throw new AuthorizationServerError('Unknown authorization flow', 'invalid_request', 404);
+  const updated = { ...interaction, principal, loginRequired: false };
+  await state.options.storage.saveInteraction(updated);
+  return updated;
+}
+
+async function getSessionPrincipal(state: AdapterState, req: Request): Promise<AuthContext['principal'] | undefined> {
+  const token = extractToken(req, state.options.session?.cookieName ?? 'access_token');
+  if (!token) return undefined;
+  try {
+    return (await state.auth.validateToken(token, { audience: state.issuer })).principal;
+  } catch {
+    return undefined;
+  }
+}
+
+function flowIdFromReturnTo(returnTo: string | undefined, basePath: string): string | undefined {
+  if (!returnTo) return undefined;
+  const prefix = `${basePath}/consent/`;
+  return returnTo.startsWith(prefix) ? returnTo.slice(prefix.length).split(/[/?#]/)[0] : undefined;
+}
+
+function pkceS256(codeVerifier: string): string {
+  return createHash('sha256').update(codeVerifier).digest('base64url');
 }
 
 function toOAuthToken(token: { accessToken: string; expiresIn: number; scope: string; tokenType: 'Bearer' }) {

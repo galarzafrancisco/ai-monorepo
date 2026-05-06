@@ -5,7 +5,7 @@ export { createExpressAuthorizationServer } from './express.js';
 export { sqliteStorage } from './storage/sqlite.js';
 
 import { createDatabaseKeyStore, issueJwt, normalizeScopes, validateJwt } from './crypto.js';
-import { InsufficientScopeError } from './errors.js';
+import { AuthorizationServerError, InsufficientScopeError } from './errors.js';
 import { createExpressAdapter } from './express.js';
 import { createMcpServerHandle, type McpServerHandle } from './mcp.js';
 import type {
@@ -58,12 +58,7 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
       );
       const missing = requested.filter((scope) => !allowed.has(scope));
       if (missing.length > 0) throw new InsufficientScopeError(`Missing downstream entitlements: ${missing.join(', ')}`);
-      return {
-        accessToken: input.subjectToken,
-        tokenType: 'Bearer',
-        scope: requested.join(' '),
-        connection: connection.id,
-      };
+      throw new AuthorizationServerError('Downstream token exchange requires a provider-specific exchange implementation', 'unsupported_grant_type', 501);
     },
     async registerMcpServer(input: McpServerDefinition) {
       const scopes = normalizeScopes(input.scopes ?? []).map((scope) => rememberScope(configuredScopes, scope));
@@ -81,7 +76,7 @@ export async function createAuthorizationServer(options: AuthorizationServerOpti
           issuer,
           authorization_endpoint: `${issuer}${basePath}/authorize`,
           token_endpoint: `${issuer}${basePath}/token`,
-          jwks_uri: `${issuer}/.well-known/jwks.json`,
+          jwks_uri: `${issuer}${basePath}/.well-known/jwks.json`,
           registration_endpoint: `${issuer}${basePath}/clients/register`,
           introspection_endpoint: `${issuer}${basePath}/introspect`,
           response_types_supported: ['code'],
