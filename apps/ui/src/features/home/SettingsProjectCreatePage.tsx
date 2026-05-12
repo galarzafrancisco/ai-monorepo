@@ -14,7 +14,6 @@ export function SettingsProjectCreatePage() {
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
   const [repoUrl, setRepoUrl] = useState('');
-  const [color, setColor] = useState('#0969da');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
 
@@ -32,7 +31,6 @@ export function SettingsProjectCreatePage() {
         slug: slug.trim(),
         description: description.trim() || undefined,
         repoUrl: repoUrl.trim() || undefined,
-        color,
       });
 
       navigate('/settings/projects');
@@ -94,20 +92,6 @@ export function SettingsProjectCreatePage() {
                 onChange={(event) => setRepoUrl(event.target.value)}
                 className="login-input"
                 placeholder="https://github.com/username/repo"
-                disabled={isCreating}
-              />
-            </Stack>
-
-            <Stack spacing="2">
-              <label htmlFor="project-color" className="login-label">
-                <Text size="2" weight="medium">Color</Text>
-              </label>
-              <input
-                id="project-color"
-                type="color"
-                value={color}
-                onChange={(event) => setColor(event.target.value)}
-                className="settings-projects__color-input"
                 disabled={isCreating}
               />
             </Stack>
