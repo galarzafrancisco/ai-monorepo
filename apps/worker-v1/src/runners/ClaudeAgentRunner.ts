@@ -29,6 +29,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
         persistSession: true,
         settingSources: ['user', 'project', 'local'],
         ...(ctx.options ?? {}),
+        strictMcpConfig: true,
         mcpServers: {
           tasks: {
             type: "http",

@@ -96,6 +96,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
             persistSession: true,
             settingSources: ['user', 'project', 'local'],
             ...(ctx.options ?? {}),
+            strictMcpConfig: true,
             ...(latestSessionId ? { resume: latestSessionId } : {}),
             mcpServers,
             allowedTools: ctx.allowedTools ?? [...DEFAULT_AGENT_ALLOWED_TOOLS],
