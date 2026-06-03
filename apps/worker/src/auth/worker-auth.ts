@@ -64,7 +64,20 @@ export class WorkerAuth {
 
   async getCredentials(): Promise<WorkerCredentials> {
     await this.ensureAuthenticated();
-    return this.ensureFreshCredentials();
+    try {
+      return await this.ensureFreshCredentials();
+    } catch (error) {
+      if (!isAuthFailure(error)) {
+        throw error;
+      }
+
+      console.warn(
+        '[worker] Stored worker credentials were rejected. Re-authorizing.',
+      );
+      this.credentials = null;
+      const bootstrap = await this.ensureAuthenticated();
+      return bootstrap.credentials;
+    }
   }
 
   async getAccessToken(): Promise<string> {
@@ -73,7 +86,21 @@ export class WorkerAuth {
   }
 
   async refreshAccessToken(): Promise<string> {
-    const credentials = await this.ensureFreshCredentials(true);
+    let credentials: WorkerCredentials;
+    try {
+      credentials = await this.ensureFreshCredentials(true);
+    } catch (error) {
+      if (!isAuthFailure(error)) {
+        throw error;
+      }
+
+      console.warn(
+        '[worker] Worker refresh token was rejected. Re-authorizing.',
+      );
+      this.credentials = null;
+      credentials = (await this.ensureAuthenticated()).credentials;
+    }
+
     return credentials.accessToken;
   }
 
@@ -308,6 +335,15 @@ function normalizeBaseUrl(serverUrl: string): string {
 }
 
 function isAuthFailure(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const status = (error as { status?: unknown }).status;
+  if (status === 401 || status === 403) {
+    return true;
+  }
+
   return (
     error instanceof Error &&
     (error.message.startsWith('HTTP 401:') ||
