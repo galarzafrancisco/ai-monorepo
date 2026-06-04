@@ -205,9 +205,13 @@ function isRetryableStartupError(error: unknown): boolean {
     'code' in cause &&
     typeof cause.code === 'string'
   ) {
-    return ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND'].includes(
-      cause.code,
-    );
+    return [
+      'ECONNREFUSED',
+      'ECONNRESET',
+      'ETIMEDOUT',
+      'ENOTFOUND',
+      'UND_ERR_CONNECT_TIMEOUT',
+    ].includes(cause.code);
   }
 
   return false;

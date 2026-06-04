@@ -13,6 +13,7 @@ import { WORKER_VERSION } from './version.js';
 const DEFAULT_TOKEN_REFRESH_SKEW_MS = 60_000;
 const ACK_TIMEOUT_MS = 5_000;
 const WORKER_HEARTBEAT_INTERVAL_MS = 30_000;
+const RECONNECT_RETRY_DELAY_MS = 5_000;
 
 type ActivityAck = {
   ok: boolean;
@@ -38,6 +39,7 @@ export class ExecutionActivityGatewayClient {
   private started = false;
   private reconnectAttempts = 0;
   private tokenRefreshTimer?: ReturnType<typeof setTimeout>;
+  private reconnectRetryTimer?: ReturnType<typeof setTimeout>;
   private workerHeartbeatTimer?: ReturnType<typeof setInterval>;
   private reconnectPromise: Promise<void> | null = null;
   private resolveInitialConnect?: () => void;
@@ -65,6 +67,7 @@ export class ExecutionActivityGatewayClient {
   async stop(): Promise<void> {
     this.started = false;
     this.clearTokenRefreshTimer();
+    this.clearReconnectRetryTimer();
     this.clearWorkerHeartbeatTimer();
     this.clearInitialConnectHandlers();
 
@@ -173,6 +176,8 @@ export class ExecutionActivityGatewayClient {
       console.log(`[execution-activity] connecting to ${url}`);
     }
 
+    this.clearReconnectRetryTimer();
+
     this.socket = io(url, {
       transports,
       auth: { token: credentials.accessToken, workerVersion: WORKER_VERSION },
@@ -213,7 +218,9 @@ export class ExecutionActivityGatewayClient {
       }
 
       if (reason === 'io server disconnect') {
-        void this.reconnectWithFreshToken();
+        void this.reconnectWithFreshToken().catch((error) => {
+          this.handleReconnectError(error);
+        });
       }
     });
 
@@ -248,7 +255,9 @@ export class ExecutionActivityGatewayClient {
       }
 
       if (isAuthError(err)) {
-        void this.reconnectWithFreshToken(true);
+        void this.reconnectWithFreshToken(true).catch((error) => {
+          this.handleReconnectError(error);
+        });
       }
     });
   }
@@ -270,12 +279,16 @@ export class ExecutionActivityGatewayClient {
 
     const delayMs = expiresAtMs - Date.now() - refreshSkewMs;
     if (delayMs <= 0) {
-      void this.reconnectWithFreshToken(true);
+      void this.reconnectWithFreshToken(true).catch((error) => {
+        this.handleReconnectError(error);
+      });
       return;
     }
 
     this.tokenRefreshTimer = setTimeout(() => {
-      void this.reconnectWithFreshToken(true);
+      void this.reconnectWithFreshToken(true).catch((error) => {
+        this.handleReconnectError(error);
+      });
     }, delayMs);
   }
 
@@ -285,6 +298,14 @@ export class ExecutionActivityGatewayClient {
     }
     clearTimeout(this.tokenRefreshTimer);
     this.tokenRefreshTimer = undefined;
+  }
+
+  private clearReconnectRetryTimer(): void {
+    if (!this.reconnectRetryTimer) {
+      return;
+    }
+    clearTimeout(this.reconnectRetryTimer);
+    this.reconnectRetryTimer = undefined;
   }
 
   private startWorkerHeartbeatTimer(): void {
@@ -334,6 +355,22 @@ export class ExecutionActivityGatewayClient {
     })();
 
     return this.reconnectPromise;
+  }
+
+  private handleReconnectError(error: unknown): void {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[execution-activity] reconnect failed: ${message}`);
+
+    if (!this.started || this.reconnectRetryTimer) {
+      return;
+    }
+
+    this.reconnectRetryTimer = setTimeout(() => {
+      this.reconnectRetryTimer = undefined;
+      void this.reconnectWithFreshToken().catch((retryError) => {
+        this.handleReconnectError(retryError);
+      });
+    }, RECONNECT_RETRY_DELAY_MS);
   }
 }
 
