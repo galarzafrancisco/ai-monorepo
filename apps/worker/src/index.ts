@@ -28,6 +28,7 @@ async function main(): Promise<void> {
   const workingDirectory = resolve(
     readCliOption(args, '--working-directory') ?? DEFAULT_WORKER_WORKSPACES_PATH,
   );
+  const retryStartup = !args.includes('--no-startup-retry');
 
   const version = getAppVersion();
   console.log(`🚀 Starting Taico worker v${version}...`);
@@ -36,15 +37,17 @@ async function main(): Promise<void> {
     serverUrl,
     credentialsPath,
     workingDirectory,
+    retryStartup,
   });
 }
 
 function printUsage(): void {
   console.log(`taico-worker usage:
 
-  taico-worker --serverurl <url> [--credentials-path <path>] [--working-directory <path>]
+  taico-worker --serverurl <url> [--credentials-path <path>] [--working-directory <path>] [--no-startup-retry]
     Start worker mode against an existing Taico server.
     Working directory defaults to ~/.taico/workspaces.
+    --no-startup-retry exits immediately on startup connection failure so a supervisor can restart it.
 `);
 }
 

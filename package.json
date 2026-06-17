@@ -28,6 +28,7 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:rebuild": "docker-compose down && docker-compose build && docker-compose up -d",
+    "docker:worker:build": "docker build -f Dockerfile.worker -t taico-worker:local .",
     "build:dev": "npm run zero-to-prod",
     "build:packages": "nx run-many -t build -p @taico/shared,@taico/events,@taico/errors,@taico/adk-session-store,@taico/openapi-sdkgen,@taico/authorization-server",
     "build:prod": "nx run-many -t assemble-public,build:prod -p @taico/authorization-server,@taico/taico,@taico/worker",

@@ -7,9 +7,9 @@ This guide walks through the recommended user-facing path for running and using 
 For most people, the best setup is:
 
 1. Run the Taico server in Docker so it is always available and restarts with your machine.
-2. Run the worker locally via `npx` so it can use the tools, CLIs, and provider logins you already have on your machine.
+2. Run the worker in Docker so it restarts automatically and only sees explicitly mounted credentials.
 
-Helper scripts for both live in [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh) and [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh).
+Helper scripts for both live in [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh) and [`helpers/start-worker-docker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker-docker.sh).
 
 ## Start The Server
 
@@ -35,19 +35,22 @@ On first startup, Taico guides you through creating the first account inside the
 
 ## Start The Worker
 
-Use the helper script:
+Build the worker image and use the Docker helper script:
 
 ```bash
-./helpers/start-worker.sh
+npm run docker:worker:build
+./helpers/start-worker-docker.sh
 ```
 
-The recommended way to run the worker is via `npx` on your local machine. That gives the worker direct access to:
+The Docker helper mounts common host credential locations for Taico, provider CLIs, `gh`, git, GitHub Copilot, OpenCode, and Claude so restarts do not trigger new auth flows. Review those mounts and remove anything the worker does not need.
+
+For local worker development, you can still run via `npx` on your machine. That gives the worker direct access to:
 
 - your local toolchain
 - your authenticated provider CLIs and SDKs
 - repositories and developer tools already available on your machine
 
-That convenience cuts both ways. The worker is powerful, and the agents it launches can act with the capabilities available on the host. Only run it on a machine you trust for that level of access.
+That convenience cuts both ways. The worker is powerful, and the agents it launches can act with the capabilities available on the host. Prefer Docker unless you intentionally need unrestricted host access.
 
 If you plan to use Google models via ADK, set the Google environment variables in the helper script before starting it.
 
@@ -127,7 +130,7 @@ A practical flow looks like this:
 
 1. Start the server with Docker.
 2. Create your first account in-app.
-3. Start the worker locally with `npx`.
+3. Start the worker in Docker.
 4. Review the pre-populated agents and adjust them as needed.
 5. Create a task and assign it to an agent.
 6. Add a `project:slug` tag if the task should run against a repository.
