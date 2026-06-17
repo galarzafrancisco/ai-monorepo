@@ -57,6 +57,8 @@ import { ThreadsService } from '../threads/threads.service';
 import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
 import { ActiveExecutionContextResolverService } from '../executions/active/active-execution-context-resolver.service';
 
+const AUTO_PRUNE_TAG_NAME = 'auto-prune';
+
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
@@ -813,7 +815,53 @@ export class TasksService {
       TaskStatusChangedEvent.INTERNAL,
       new TaskStatusChangedEvent({ id: actorId }, taskWithRelations),
     );
+
+    if (this.shouldAutoPrune(taskWithRelations)) {
+      await this.autoPruneCompletedTask(taskWithRelations.id, actorId);
+    }
+
     return this.mapTaskToResult(taskWithRelations);
+  }
+
+  private shouldAutoPrune(task: TaskEntity): boolean {
+    return (
+      task.status === TaskStatus.DONE
+      && (task.tags || []).some((tag) => tag.name === AUTO_PRUNE_TAG_NAME)
+    );
+  }
+
+  private async autoPruneCompletedTask(
+    taskId: string,
+    actorId: string,
+  ): Promise<void> {
+    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(
+      taskId,
+    );
+    if (threadsWithParent.length > 0) {
+      this.logger.log({
+        message: 'Auto-prune skipped because task is a thread parent',
+        taskId,
+        threadCount: threadsWithParent.length,
+      });
+      return;
+    }
+
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (!task) {
+      return;
+    }
+
+    await this.taskRepository.softRemove(task);
+
+    this.logger.log({
+      message: 'Task auto-pruned after completion',
+      taskId,
+    });
+
+    this.eventEmitter.emit(
+      TaskDeletedEvent.INTERNAL,
+      new TaskDeletedEvent({ id: actorId }, taskId),
+    );
   }
 
   async addTagToTask(
