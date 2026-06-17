@@ -49,6 +49,7 @@ import {
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
 import { MetaService } from '../meta/meta.service';
+import { AUTO_PRUNE_TAG_NAME } from '../meta/system-tags';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { SearchService } from '../search/search.service';
@@ -56,8 +57,6 @@ import { AgentRunsService } from '../agent-runs/agent-runs.service';
 import { ThreadsService } from '../threads/threads.service';
 import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
 import { ActiveExecutionContextResolverService } from '../executions/active/active-execution-context-resolver.service';
-
-const AUTO_PRUNE_TAG_NAME = 'auto-prune';
 
 @Injectable()
 export class TasksService {
