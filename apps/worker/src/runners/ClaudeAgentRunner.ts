@@ -95,6 +95,7 @@ export class ClaudeAgentRunner extends BaseAgentRunner {
             cwd: ctx.cwd,
             persistSession: true,
             settingSources: ['user', 'project', 'local'],
+            ...(this.model ? { model: this.model.modelId } : {}),
             ...(ctx.options ?? {}),
             strictMcpConfig: true,
             ...(latestSessionId ? { resume: latestSessionId } : {}),
