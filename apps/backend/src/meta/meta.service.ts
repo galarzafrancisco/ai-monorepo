@@ -56,7 +56,15 @@ export class MetaService implements OnModuleInit {
 
   private async ensureSystemTags(): Promise<void> {
     for (const systemTag of SYSTEM_TAGS) {
-      await this.findOrCreateTagEntity(systemTag.name, systemTag.color);
+      const tag = await this.findOrCreateTagEntity(
+        systemTag.name,
+        systemTag.color,
+      );
+      if (tag.name !== systemTag.name || tag.color !== systemTag.color) {
+        tag.name = systemTag.name;
+        tag.color = systemTag.color;
+        await this.tagRepository.save(tag);
+      }
     }
   }
 

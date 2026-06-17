@@ -133,10 +133,39 @@ describe('TasksService auto-prune', () => {
     );
   });
 
-  it('keeps an auto-prune tagged task when it is a thread parent', async () => {
-    const { service, taskRepository, eventEmitter, threadsService } = createService({
-      threadsWithParent: [{ id: 'thread-1' }],
+  it('soft-deletes a case-variant auto-prune tagged task after completion', async () => {
+    const { service, taskRepository, threadsService } = createService();
+    const task = createTask({
+      tags: [{ id: 'tag-1', name: 'Auto-Prune' }],
     });
+    const completedTask = createTask({
+      status: TaskStatus.DONE,
+      comments: [{ id: 'comment-1' }],
+      tags: [{ id: 'tag-1', name: 'Auto-Prune' }],
+    });
+
+    taskRepository.findOne
+      .mockResolvedValueOnce(task)
+      .mockResolvedValueOnce(completedTask)
+      .mockResolvedValueOnce(completedTask);
+
+    await service.changeStatus(
+      task.id,
+      { status: TaskStatus.DONE, comment: 'Finished' },
+      actor.id,
+    );
+
+    expect(threadsService.findThreadsByParentTaskId).toHaveBeenCalledWith(
+      task.id,
+    );
+    expect(taskRepository.softRemove).toHaveBeenCalledWith(completedTask);
+  });
+
+  it('keeps an auto-prune tagged task when it is a thread parent', async () => {
+    const { service, taskRepository, eventEmitter, threadsService } =
+      createService({
+        threadsWithParent: [{ id: 'thread-1' }],
+      });
     const task = createTask();
     const completedTask = createTask({
       status: TaskStatus.DONE,

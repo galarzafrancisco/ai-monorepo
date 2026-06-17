@@ -49,7 +49,7 @@ import {
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
 import { MetaService } from '../meta/meta.service';
-import { AUTO_PRUNE_TAG_NAME } from '../meta/system-tags';
+import { isSystemTagName } from '../meta/system-tags';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { SearchService } from '../search/search.service';
@@ -824,8 +824,8 @@ export class TasksService {
 
   private shouldAutoPrune(task: TaskEntity): boolean {
     return (
-      task.status === TaskStatus.DONE
-      && (task.tags || []).some((tag) => tag.name === AUTO_PRUNE_TAG_NAME)
+      task.status === TaskStatus.DONE &&
+      (task.tags || []).some((tag) => isSystemTagName(tag.name))
     );
   }
 

@@ -49,6 +49,25 @@ describe('MetaService system tags', () => {
     expect(tagRepository.save).toHaveBeenCalled();
   });
 
+  it('canonicalizes an existing case-variant auto-prune system tag on module init', async () => {
+    const { service, tagRepository } = createService();
+    const tag = {
+      id: 'tag-1',
+      name: 'Auto-Prune',
+      color: '#FF0000',
+    };
+    tagRepository.findOne.mockResolvedValue(tag);
+
+    await service.onModuleInit();
+
+    expect(tagRepository.create).not.toHaveBeenCalled();
+    expect(tagRepository.save).toHaveBeenCalledWith({
+      ...tag,
+      name: AUTO_PRUNE_TAG_NAME,
+      color: '#8E7CC3',
+    });
+  });
+
   it('does not delete the auto-prune system tag directly', async () => {
     const { service, tagRepository } = createService();
     tagRepository.findOne.mockResolvedValue({
@@ -61,11 +80,37 @@ describe('MetaService system tags', () => {
     expect(tagRepository.delete).not.toHaveBeenCalled();
   });
 
+  it('does not delete a case-variant auto-prune system tag directly', async () => {
+    const { service, tagRepository } = createService();
+    tagRepository.findOne.mockResolvedValue({
+      id: 'tag-1',
+      name: 'Auto-Prune',
+    });
+
+    await service.deleteTag('tag-1');
+
+    expect(tagRepository.delete).not.toHaveBeenCalled();
+  });
+
   it('does not delete the auto-prune system tag as an orphan', async () => {
     const { service, tagRepository } = createService();
     tagRepository.findOne.mockResolvedValue({
       id: 'tag-1',
       name: AUTO_PRUNE_TAG_NAME,
+      tasks: [],
+      blocks: [],
+    });
+
+    await service.cleanupOrphanedTag('tag-1');
+
+    expect(tagRepository.delete).not.toHaveBeenCalled();
+  });
+
+  it('does not delete a case-variant auto-prune system tag as an orphan', async () => {
+    const { service, tagRepository } = createService();
+    tagRepository.findOne.mockResolvedValue({
+      id: 'tag-1',
+      name: 'Auto-Prune',
       tasks: [],
       blocks: [],
     });
