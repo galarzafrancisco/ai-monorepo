@@ -37,6 +37,14 @@ Default container paths:
 
 The helper mounts common credential locations for Taico, gh, git/SSH, GitHub Copilot, OpenCode, and Claude. Review those mounts before running it on a shared machine.
 
+The helper also mounts a dedicated host-owned Docker home at `~/.taico/docker-home` by default. This gives CLIs writable cache and runtime state paths such as `/home/taico/.cache` without mounting your full host home into the container. Override it with `TAICO_DOCKER_HOME` if needed.
+
+Smoke-check the image and helper mount shape with:
+
+```bash
+npm run docker:worker:smoke
+```
+
 ## Recommended Usage
 
 For the smallest trust boundary, run the worker in Docker and mount only the credentials and directories it needs. Running locally via `npx` is still useful while developing the worker or when you need unrestricted access to your host toolchain.

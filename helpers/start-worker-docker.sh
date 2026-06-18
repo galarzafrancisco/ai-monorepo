@@ -5,9 +5,15 @@ IMAGE=taico-worker:local
 PORT=1234
 CONTAINER_NAME=taico-worker
 TAICO_HOME=${TAICO_HOME:-$HOME/.taico}
+TAICO_DOCKER_HOME=${TAICO_DOCKER_HOME:-$TAICO_HOME/docker-home}
 
 mkdir -p \
   "$TAICO_HOME" \
+  "$TAICO_DOCKER_HOME" \
+  "$TAICO_DOCKER_HOME/.cache" \
+  "$TAICO_DOCKER_HOME/.config" \
+  "$TAICO_DOCKER_HOME/.local/share" \
+  "$TAICO_DOCKER_HOME/.local/state" \
   "$HOME/.config/gh" \
   "$HOME/.config/github-copilot" \
   "$HOME/.config/opencode" \
@@ -26,6 +32,7 @@ docker run --name "$CONTAINER_NAME" --restart unless-stopped -d \
   -e GOOGLE_CLOUD_LOCATION="${GOOGLE_CLOUD_LOCATION:-}" \
   -e GOOGLE_GENAI_USE_VERTEXAI="${GOOGLE_GENAI_USE_VERTEXAI:-True}" \
   --add-host=host.docker.internal:host-gateway \
+  -v "$TAICO_DOCKER_HOME:/home/taico" \
   -v "$TAICO_HOME:/home/taico/.taico" \
   -v "$HOME/.config/gh:/home/taico/.config/gh" \
   -v "$HOME/.config/github-copilot:/home/taico/.config/github-copilot" \
