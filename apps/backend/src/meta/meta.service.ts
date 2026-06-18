@@ -1,4 +1,4 @@
-import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
@@ -8,6 +8,7 @@ import { TagEntity } from './tag.entity';
 import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
 import { CreateTagInput, TagResult, VersionResult } from './dto/service/meta.service.types';
+import { SYSTEM_TAGS, isSystemTagName } from './system-tags';
 
 /**
  * Predefined color palette for tags
@@ -37,7 +38,7 @@ export const TAG_COLOR_PALETTE = [
 ] as const;
 
 @Injectable()
-export class MetaService {
+export class MetaService implements OnModuleInit {
   private readonly logger = new Logger(MetaService.name);
 
   constructor(
@@ -48,6 +49,24 @@ export class MetaService {
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.ensureSystemTags();
+  }
+
+  private async ensureSystemTags(): Promise<void> {
+    for (const systemTag of SYSTEM_TAGS) {
+      const tag = await this.findOrCreateTagEntity(
+        systemTag.name,
+        systemTag.color,
+      );
+      if (tag.name !== systemTag.name || tag.color !== systemTag.color) {
+        tag.name = systemTag.name;
+        tag.color = systemTag.color;
+        await this.tagRepository.save(tag);
+      }
+    }
+  }
 
   /**
    * Returns a random color from the predefined palette
@@ -213,6 +232,25 @@ export class MetaService {
       message: 'Deleting tag',
       tagId,
     });
+
+    const tag = await this.tagRepository.findOne({ where: { id: tagId } });
+
+    if (!tag) {
+      this.logger.warn({
+        message: 'Tag not found for deletion',
+        tagId,
+      });
+      return;
+    }
+
+    if (isSystemTagName(tag.name)) {
+      this.logger.warn({
+        message: 'System tag cannot be deleted',
+        tagId,
+        tagName: tag.name,
+      });
+      return;
+    }
 
     const result = await this.tagRepository.delete(tagId);
 
@@ -386,6 +424,15 @@ export class MetaService {
       this.logger.warn({
         message: 'Tag not found for cleanup check',
         tagId,
+      });
+      return;
+    }
+
+    if (isSystemTagName(tagWithRelations.name)) {
+      this.logger.log({
+        message: 'System tag kept during orphan cleanup',
+        tagId,
+        tagName: tagWithRelations.name,
       });
       return;
     }
