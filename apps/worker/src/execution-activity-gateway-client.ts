@@ -40,10 +40,10 @@ export class ExecutionActivityGatewayClient {
   private reconnectAttempts = 0;
   private tokenRefreshTimer?: ReturnType<typeof setTimeout>;
   private reconnectRetryTimer?: ReturnType<typeof setTimeout>;
+  private reconnectRetryForceRefresh = false;
   private workerHeartbeatTimer?: ReturnType<typeof setInterval>;
   private reconnectPromise: Promise<void> | null = null;
   private resolveInitialConnect?: () => void;
-  private rejectInitialConnect?: (error: unknown) => void;
 
   constructor(
     private readonly options: ExecutionActivityGatewayClientOptions,
@@ -55,9 +55,8 @@ export class ExecutionActivityGatewayClient {
     }
     this.started = true;
 
-    const initialConnectPromise = new Promise<void>((resolve, reject) => {
+    const initialConnectPromise = new Promise<void>((resolve) => {
       this.resolveInitialConnect = resolve;
-      this.rejectInitialConnect = reject;
     });
 
     await this.connectWithFreshToken();
@@ -199,6 +198,7 @@ export class ExecutionActivityGatewayClient {
       }
 
       this.reconnectAttempts = 0;
+      this.clearReconnectRetryTimer();
       this.scheduleTokenRefresh(credentials.expiresAt);
       this.startWorkerHeartbeatTimer();
       this.resolveInitialConnect?.();
@@ -217,11 +217,10 @@ export class ExecutionActivityGatewayClient {
         return;
       }
 
-      if (reason === 'io server disconnect') {
-        void this.reconnectWithFreshToken().catch((error) => {
-          this.handleReconnectError(error);
-        });
-      }
+      this.scheduleReconnectRetry(
+        false,
+        reason === 'io server disconnect' ? 0 : RECONNECT_RETRY_DELAY_MS,
+      );
     });
 
     this.socket.on(ExecutionWireEvents.WORKER_HARNESSES_REPORT_REQUESTED, () => {
@@ -249,15 +248,8 @@ export class ExecutionActivityGatewayClient {
         err.message,
       );
 
-      if (!this.socket?.connected) {
-        this.rejectInitialConnect?.(err);
-        this.clearInitialConnectHandlers();
-      }
-
-      if (isAuthError(err)) {
-        void this.reconnectWithFreshToken(true).catch((error) => {
-          this.handleReconnectError(error);
-        });
+      if (this.started) {
+        this.scheduleReconnectRetry(isAuthError(err));
       }
     });
   }
@@ -302,10 +294,12 @@ export class ExecutionActivityGatewayClient {
 
   private clearReconnectRetryTimer(): void {
     if (!this.reconnectRetryTimer) {
+      this.reconnectRetryForceRefresh = false;
       return;
     }
     clearTimeout(this.reconnectRetryTimer);
     this.reconnectRetryTimer = undefined;
+    this.reconnectRetryForceRefresh = false;
   }
 
   private startWorkerHeartbeatTimer(): void {
@@ -325,7 +319,6 @@ export class ExecutionActivityGatewayClient {
 
   private clearInitialConnectHandlers(): void {
     this.resolveInitialConnect = undefined;
-    this.rejectInitialConnect = undefined;
   }
 
   private async reconnectWithFreshToken(
@@ -361,16 +354,37 @@ export class ExecutionActivityGatewayClient {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[execution-activity] reconnect failed: ${message}`);
 
-    if (!this.started || this.reconnectRetryTimer) {
+    this.scheduleReconnectRetry();
+  }
+
+  private scheduleReconnectRetry(
+    forceRefresh = false,
+    delayMs = RECONNECT_RETRY_DELAY_MS,
+  ): void {
+    if (!this.started) {
+      return;
+    }
+
+    this.reconnectRetryForceRefresh ||= forceRefresh;
+
+    if (this.reconnectRetryTimer) {
       return;
     }
 
     this.reconnectRetryTimer = setTimeout(() => {
+      const shouldForceRefresh = this.reconnectRetryForceRefresh;
       this.reconnectRetryTimer = undefined;
-      void this.reconnectWithFreshToken().catch((retryError) => {
-        this.handleReconnectError(retryError);
-      });
-    }, RECONNECT_RETRY_DELAY_MS);
+      this.reconnectRetryForceRefresh = false;
+      this.reconnectAttempts++;
+      console.log(
+        `[execution-activity] reconnect attempt ${this.reconnectAttempts}`,
+      );
+      void this.reconnectWithFreshToken(shouldForceRefresh).catch(
+        (retryError) => {
+          this.handleReconnectError(retryError);
+        },
+      );
+    }, delayMs);
   }
 }
 
