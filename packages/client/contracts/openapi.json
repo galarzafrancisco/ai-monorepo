@@ -8702,6 +8702,7 @@
           "actor": {
             "description": "The actor (user) associated with this authorization journey",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -9412,6 +9413,7 @@
           "commenterActor": {
             "description": "Actor who created this comment",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -9597,6 +9599,7 @@
           "assigneeActor": {
             "description": "Actor assigned to this task",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -9951,6 +9954,7 @@
           "actor": {
             "description": "Actor information",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -9965,6 +9969,7 @@
           "parentTask": {
             "description": "Parent task information",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/TaskInfoDto"
@@ -10162,6 +10167,7 @@
           "assigneeActor": {
             "description": "Assignee actor details",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -10528,6 +10534,7 @@
           "createdByActor": {
             "description": "Actor who created the message",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"
@@ -12466,6 +12473,7 @@
           "stats": {
             "description": "Execution metadata and usage stats",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ExecutionStatsResponseDto"
@@ -12656,6 +12664,7 @@
           "stats": {
             "description": "Execution metadata and usage stats",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ExecutionStatsResponseDto"
@@ -12912,6 +12921,7 @@
           "assigneeActor": {
             "description": "Actor assigned to tasks created from this blueprint",
             "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ActorResponseDto"

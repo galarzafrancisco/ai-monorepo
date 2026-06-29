@@ -115,11 +115,28 @@ export class SqliteSessionService extends BaseSessionService {
     return this.mergeState(session);
   }
 
-  async listSessions({ appName, userId }: ListSessionsRequest): Promise<ListSessionsResponse> {
+  async listSessions({ appName, userId, limit, offset, page, order }: ListSessionsRequest): Promise<ListSessionsResponse> {
     await this.ready;
-    const rows = await this.all<SessionRow>(
-      'SELECT app_name, user_id, session_id, last_update_time FROM sessions WHERE app_name = ? AND user_id = ?',
+    const countRow = await this.get<{ total: number }>(
+      'SELECT COUNT(*) as total FROM sessions WHERE app_name = ? AND user_id = ?',
       [appName, userId],
+    );
+    const totalItems = countRow?.total ?? 0;
+    const pageSize = limit && limit > 0 ? limit : totalItems;
+    const pageOffset = pageSize > 0 ? (page ? (page - 1) * pageSize : (offset ?? 0)) : 0;
+    const currentPage = pageSize > 0 ? (page ?? Math.floor(pageOffset / pageSize) + 1) : 1;
+    const totalPages = pageSize > 0 ? Math.ceil(totalItems / pageSize) : 0;
+
+    const orderClause = order ? ` ORDER BY last_update_time ${order === 'asc' ? 'ASC' : 'DESC'}` : '';
+    const paginationClause = limit && limit > 0 ? ' LIMIT ? OFFSET ?' : '';
+    const params: Array<string | number> = [appName, userId];
+    if (limit && limit > 0) {
+      params.push(pageSize, pageOffset);
+    }
+
+    const rows = await this.all<SessionRow>(
+      `SELECT app_name, user_id, session_id, last_update_time FROM sessions WHERE app_name = ? AND user_id = ?${orderClause}${paginationClause}`,
+      params,
     );
 
     return {
@@ -133,6 +150,10 @@ export class SqliteSessionService extends BaseSessionService {
           lastUpdateTime: row.last_update_time,
         }),
       ),
+      page: currentPage,
+      limit: pageSize,
+      totalItems,
+      totalPages,
     };
   }
 
