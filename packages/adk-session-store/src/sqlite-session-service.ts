@@ -122,15 +122,29 @@ export class SqliteSessionService extends BaseSessionService {
       [appName, userId],
     );
     const totalItems = countRow?.total ?? 0;
-    const pageSize = limit && limit > 0 ? limit : totalItems;
-    const pageOffset = pageSize > 0 ? (page ? (page - 1) * pageSize : (offset ?? 0)) : 0;
-    const currentPage = pageSize > 0 ? (page ?? Math.floor(pageOffset / pageSize) + 1) : 1;
-    const totalPages = pageSize > 0 ? Math.ceil(totalItems / pageSize) : 0;
+    if (limit === 0) {
+      return {
+        sessions: [],
+        page: page ?? 1,
+        limit,
+        totalItems,
+        totalPages: 0,
+      };
+    }
+
+    const pageSize = limit ?? totalItems;
+    const pageOffset = limit === undefined ? (offset ?? 0) : (page ? (page - 1) * limit : (offset ?? 0));
+    const currentPage = limit === undefined ? 1 : (page ?? Math.floor(pageOffset / limit) + 1);
+    const totalPages = limit === undefined ? (totalItems === 0 ? 0 : 1) : Math.ceil(totalItems / limit);
 
     const orderClause = order ? ` ORDER BY last_update_time ${order === 'asc' ? 'ASC' : 'DESC'}` : '';
-    const paginationClause = limit && limit > 0 ? ' LIMIT ? OFFSET ?' : '';
+    const paginationClause = limit === undefined ? (offset ? ' LIMIT -1 OFFSET ?' : '') : ' LIMIT ? OFFSET ?';
     const params: Array<string | number> = [appName, userId];
-    if (limit && limit > 0) {
+    if (limit === undefined) {
+      if (offset) {
+        params.push(offset);
+      }
+    } else {
       params.push(pageSize, pageOffset);
     }
 
