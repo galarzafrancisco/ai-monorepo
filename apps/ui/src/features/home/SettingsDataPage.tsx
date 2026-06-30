@@ -1,53 +1,74 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Row, Stack, Text } from '../../ui/primitives';
-import { ErrorText } from '../../ui/primitives/ErrorText';
-import { BFF_BASE_URL } from '../../config/api';
-import { useHomeCtx } from './HomeProvider';
-import './SettingsPage.css';
-import './SettingsDataPage.css';
+import { useEffect, useMemo, useState } from "react";
+import { Button, Card, Row, Stack, Text } from "../../ui/primitives";
+import { ErrorText } from "../../ui/primitives/ErrorText";
+import { BFF_BASE_URL } from "../../config/api";
+import { useHomeCtx } from "./HomeProvider";
+import "./SettingsPage.css";
+import "./SettingsDataPage.css";
 
 type ImportResponse = {
   importedCount?: number;
 };
+
+type DataSet = "blocks" | "projects";
 
 export function SettingsDataPage() {
   const { setSectionTitle } = useHomeCtx();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [selectedProjectFile, setSelectedProjectFile] = useState<File | null>(
+    null,
+  );
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    setSectionTitle('Import / Export');
+    setSectionTitle("Import / Export");
   }, [setSectionTitle]);
 
-  const exportUrl = useMemo(() => `${BFF_BASE_URL}/api/v1/context/blocks/export`, []);
-  const importUrl = useMemo(() => `${BFF_BASE_URL}/api/v1/context/blocks/import`, []);
+  const exportUrl = useMemo(
+    () => `${BFF_BASE_URL}/api/v1/context/blocks/export`,
+    [],
+  );
+  const importUrl = useMemo(
+    () => `${BFF_BASE_URL}/api/v1/context/blocks/import`,
+    [],
+  );
+  const projectsExportUrl = useMemo(
+    () => `${BFF_BASE_URL}/api/v1/meta/projects/export`,
+    [],
+  );
+  const projectsImportUrl = useMemo(
+    () => `${BFF_BASE_URL}/api/v1/meta/projects/import`,
+    [],
+  );
 
-  const handleExportBlocks = async () => {
+  const handleExport = async (url: string, dataSet: DataSet) => {
     setIsExporting(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      const response = await fetch(exportUrl, {
-        method: 'GET',
-        credentials: 'include',
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to export blocks');
+        throw new Error(`Failed to export ${dataSet}`);
       }
 
       const blob = await response.blob();
       const headerFileName = response.headers
-        .get('content-disposition')
+        .get("content-disposition")
         ?.match(/filename="?([^";]+)"?/)?.[1];
-      const fileName = headerFileName || 'context-blocks.zip';
+      const fileName =
+        headerFileName ||
+        (dataSet === "blocks" ? "context-blocks.zip" : "projects.json");
 
       const objectUrl = window.URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
+      const anchor = document.createElement("a");
       anchor.href = objectUrl;
       anchor.download = fileName;
       document.body.appendChild(anchor);
@@ -55,45 +76,64 @@ export function SettingsDataPage() {
       anchor.remove();
       window.URL.revokeObjectURL(objectUrl);
 
-      setSuccess('Blocks export downloaded successfully.');
+      setSuccess(
+        `${dataSet === "blocks" ? "Blocks" : "Projects"} export downloaded successfully.`,
+      );
     } catch {
-      setError('Failed to export blocks. Please try again.');
+      setError(`Failed to export ${dataSet}. Please try again.`);
     } finally {
       setIsExporting(false);
     }
   };
 
-  const handleImportBlocks = async () => {
-    if (!selectedFile) {
-      setError('Please choose a .zip file first.');
-      setSuccess('');
+  const handleImport = async (
+    url: string,
+    file: File | null,
+    dataSet: DataSet,
+  ) => {
+    if (!file) {
+      setError(
+        `Please choose a ${dataSet === "blocks" ? ".zip" : ".json"} file first.`,
+      );
+      setSuccess("");
       return;
     }
 
     setIsImporting(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append("file", file);
 
-      const response = await fetch(importUrl, {
-        method: 'POST',
-        credentials: 'include',
+      const response = await fetch(url, {
+        method: "POST",
+        credentials: "include",
         body: formData,
       });
 
-      const payload = (await response.json().catch(() => ({}))) as ImportResponse;
+      const payload = (await response
+        .json()
+        .catch(() => ({}))) as ImportResponse;
       if (!response.ok) {
-        throw new Error('Failed to import blocks');
+        throw new Error(`Failed to import ${dataSet}`);
       }
 
       const importedCount = payload.importedCount ?? 0;
-      setSuccess(`Import complete. ${importedCount} block${importedCount === 1 ? '' : 's'} created.`);
-      setSelectedFile(null);
+      const noun = dataSet === "blocks" ? "block" : "project";
+      setSuccess(
+        `Import complete. ${importedCount} ${noun}${importedCount === 1 ? "" : "s"} imported.`,
+      );
+      if (dataSet === "blocks") {
+        setSelectedFile(null);
+      } else {
+        setSelectedProjectFile(null);
+      }
     } catch {
-      setError('Failed to import blocks. Verify the archive format and try again.');
+      setError(
+        `Failed to import ${dataSet}. Verify the file format and try again.`,
+      );
     } finally {
       setIsImporting(false);
     }
@@ -102,7 +142,7 @@ export function SettingsDataPage() {
   return (
     <Stack spacing="6" className="settings-subpage">
       <Text tone="muted" className="settings-subpage__intro">
-        Import and export workspace data. Blocks are available now; task support can be added in this section later.
+        Import and export workspace data for backup or migration.
       </Text>
 
       {error ? (
@@ -120,17 +160,21 @@ export function SettingsDataPage() {
       <Card padding="5" className="settings-panel-card">
         <Stack spacing="4">
           <Stack spacing="1">
-            <Text size="4" weight="semibold">Export Blocks</Text>
-            <Text tone="muted">Download all context blocks as a nested markdown zip archive.</Text>
+            <Text size="4" weight="semibold">
+              Export Blocks
+            </Text>
+            <Text tone="muted">
+              Download all context blocks as a nested markdown zip archive.
+            </Text>
           </Stack>
           <Row justify="end">
             <Button
               variant="primary"
               size="sm"
-              onClick={handleExportBlocks}
+              onClick={() => handleExport(exportUrl, "blocks")}
               disabled={isExporting}
             >
-              {isExporting ? 'Exporting...' : 'Export Blocks'}
+              {isExporting ? "Exporting..." : "Export Blocks"}
             </Button>
           </Row>
         </Stack>
@@ -139,32 +183,112 @@ export function SettingsDataPage() {
       <Card padding="5" className="settings-panel-card">
         <Stack spacing="4">
           <Stack spacing="1">
-            <Text size="4" weight="semibold">Import Blocks</Text>
-            <Text tone="muted">Upload a blocks archive to create context blocks in this workspace.</Text>
+            <Text size="4" weight="semibold">
+              Import Blocks
+            </Text>
+            <Text tone="muted">
+              Upload a blocks archive to create context blocks in this
+              workspace.
+            </Text>
           </Stack>
 
-          <label htmlFor="blocks-import-file" className="settings-data__file-label">
+          <label
+            htmlFor="blocks-import-file"
+            className="settings-data__file-label"
+          >
             Select archive (.zip)
           </label>
           <input
             id="blocks-import-file"
             type="file"
             accept=".zip,application/zip"
-            onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+            onChange={(event) =>
+              setSelectedFile(event.target.files?.[0] ?? null)
+            }
             className="settings-data__file-input"
           />
           <Text size="1" tone="muted">
-            {selectedFile ? `Selected: ${selectedFile.name}` : 'No file selected'}
+            {selectedFile
+              ? `Selected: ${selectedFile.name}`
+              : "No file selected"}
           </Text>
 
           <Row justify="end">
             <Button
               variant="secondary"
               size="sm"
-              onClick={handleImportBlocks}
+              onClick={() => handleImport(importUrl, selectedFile, "blocks")}
               disabled={isImporting}
             >
-              {isImporting ? 'Importing...' : 'Import Blocks'}
+              {isImporting ? "Importing..." : "Import Blocks"}
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
+
+      <Card padding="5" className="settings-panel-card">
+        <Stack spacing="4">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">
+              Export Projects
+            </Text>
+            <Text tone="muted">Download all projects as a JSON file.</Text>
+          </Stack>
+          <Row justify="end">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => handleExport(projectsExportUrl, "projects")}
+              disabled={isExporting}
+            >
+              {isExporting ? "Exporting..." : "Export Projects"}
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
+
+      <Card padding="5" className="settings-panel-card">
+        <Stack spacing="4">
+          <Stack spacing="1">
+            <Text size="4" weight="semibold">
+              Import Projects
+            </Text>
+            <Text tone="muted">
+              Upload a projects JSON file to create or update projects.
+            </Text>
+          </Stack>
+
+          <label
+            htmlFor="projects-import-file"
+            className="settings-data__file-label"
+          >
+            Select projects file (.json)
+          </label>
+          <input
+            id="projects-import-file"
+            type="file"
+            accept=".json,application/json"
+            onChange={(event) =>
+              setSelectedProjectFile(event.target.files?.[0] ?? null)
+            }
+            className="settings-data__file-input"
+          />
+          <Text size="1" tone="muted">
+            {selectedProjectFile
+              ? `Selected: ${selectedProjectFile.name}`
+              : "No file selected"}
+          </Text>
+
+          <Row justify="end">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                handleImport(projectsImportUrl, selectedProjectFile, "projects")
+              }
+              disabled={isImporting}
+            >
+              {isImporting ? "Importing..." : "Import Projects"}
             </Button>
           </Row>
         </Stack>

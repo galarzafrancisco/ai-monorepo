@@ -108,6 +108,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/meta/projects/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export all projects as JSON */
+        get: operations["ProjectsController_exportProjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meta/projects/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import projects from JSON */
+        post: operations["ProjectsController_importProjects"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meta/projects/search": {
         parameters: {
             query?: never;
@@ -2316,6 +2350,10 @@ export interface components {
              * @example 2024-01-01T00:00:00.000Z
              */
             updatedAt: string;
+        };
+        ImportProjectsResponseDto: {
+            /** @example 3 */
+            importedCount: number;
         };
         PatchProjectDto: {
             /**
@@ -6376,6 +6414,63 @@ export interface operations {
                 };
             };
             /** @description Invalid input data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProjectsController_exportProjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Projects JSON downloaded successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    ProjectsController_importProjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description JSON file exported from projects
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Projects imported successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportProjectsResponseDto"];
+                };
+            };
+            /** @description No JSON file uploaded or invalid file type */
             400: {
                 headers: {
                     [name: string]: unknown;
