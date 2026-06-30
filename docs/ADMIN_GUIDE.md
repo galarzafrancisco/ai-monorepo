@@ -7,9 +7,9 @@ This guide covers operating a Taico instance and the recommended way to run the 
 For a typical self-hosted setup:
 
 - run the Taico server in Docker so it is stable and restarts automatically
-- run the worker directly on your machine via `npx` so it can use the local tools and provider logins you already have
+- run the worker in Docker with explicit credential mounts so it is isolated and restarts automatically
 
-The helper scripts in [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh) and [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh) reflect that setup.
+The helper scripts in [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh) and [`helpers/start-worker-docker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker-docker.sh) reflect that setup.
 
 ## Server
 
@@ -37,26 +37,29 @@ Any documentation or workflow that refers to manually creating users with a scri
 
 ## Worker
 
-Start the worker with:
+Build and start the Dockerized worker with:
 
 ```bash
-./helpers/start-worker.sh
+npm run docker:worker:build
+./helpers/start-worker-docker.sh
 ```
 
-The helper uses:
+The helper runs the container with `--restart unless-stopped` and mounts the host credential directories needed for Taico worker OAuth, provider logins, `gh`, git, GitHub Copilot, OpenCode, and Claude. Review those mounts before using it on a shared machine.
+
+For local development, you can still run:
 
 ```bash
 npx @taico/worker --serverurl http://localhost:$PORT
 ```
 
-This is the recommended path because the worker then runs on the same machine that already has your:
+That path gives the worker direct access to your:
 
 - provider authentication
 - developer toolchain
 - shells and CLIs
 - local repository access
 
-That is powerful, but it is also a risk boundary. The worker can launch agents with direct access to what the host machine can access. Only run it where you are comfortable with that.
+That is powerful, but it is also a risk boundary. The Docker path keeps that boundary explicit by requiring credential and workspace mounts.
 
 ## Worker Authentication
 
@@ -103,6 +106,5 @@ Each thread has a parent goal and a shared context block that acts as thread sta
 ## Security Notes
 
 - Running the server in Docker is recommended for durability and isolation.
-- Running the worker locally is recommended for convenience and tool access.
-- Those recommendations intentionally split trust boundaries: the server stays stable, while the worker stays close to your real tools.
-- Review what provider logins, repositories, shell access, and credentials are available on the worker host.
+- Running the worker in Docker is recommended for isolation and automatic restart.
+- Mount only the provider logins, repositories, shell access, and credentials the worker needs.

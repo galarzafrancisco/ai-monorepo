@@ -1,0 +1,76 @@
+# Build stage
+FROM node:24-bookworm-slim AS builder
+
+WORKDIR /workdir
+
+COPY package*.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY apps/worker/package*.json ./apps/worker/
+COPY apps/ui-v1/package*.json ./apps/ui-v1/
+COPY apps/ui/package*.json ./apps/ui/
+COPY packages/shared/package*.json ./packages/shared/
+COPY packages/client/package*.json ./packages/client/
+COPY packages/adk-session-store/package*.json ./packages/adk-session-store/
+COPY packages/errors/package*.json ./packages/errors/
+COPY packages/events/package*.json ./packages/events/
+COPY packages/openapi-sdkgen/package*.json ./packages/openapi-sdkgen/
+
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+COPY . .
+
+RUN --mount=type=cache,target=/workdir/.nx/cache npm run build:prod
+
+# Runtime stage
+FROM node:24-bookworm-slim
+
+WORKDIR /workdir
+
+ENV NODE_ENV=production \
+    TAICO_WORKER_WORKING_DIRECTORY=/home/taico/.taico/workspaces
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    bash \
+    build-essential \
+    ca-certificates \
+    curl \
+    git \
+    gh \
+    openssh-client \
+    python-is-python3 \
+    python3 \
+    python3-pip \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install -g opencode-ai@1 @anthropic-ai/claude-code@2 @github/copilot@1 \
+  && groupadd --system --gid 10001 taico \
+  && useradd --system --uid 10001 --gid taico --home-dir /home/taico --create-home --shell /bin/bash taico \
+  && mkdir -p /home/taico/.taico/workspaces /workdir \
+  && chown -R taico:taico /home/taico /workdir
+
+COPY package*.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY apps/worker/package*.json ./apps/worker/
+COPY apps/ui-v1/package*.json ./apps/ui-v1/
+COPY apps/ui/package*.json ./apps/ui/
+COPY packages/shared/package*.json ./packages/shared/
+COPY packages/client/package*.json ./packages/client/
+COPY packages/adk-session-store/package*.json ./packages/adk-session-store/
+COPY packages/errors/package*.json ./packages/errors/
+COPY packages/events/package*.json ./packages/events/
+COPY packages/openapi-sdkgen/package*.json ./packages/openapi-sdkgen/
+
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
+
+COPY --from=builder /workdir/apps/worker/dist ./apps/worker/dist
+COPY --from=builder /workdir/packages/client/dist ./packages/client/dist
+COPY --from=builder /workdir/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /workdir/packages/errors/dist ./packages/errors/dist
+COPY --from=builder /workdir/packages/events/dist ./packages/events/dist
+
+COPY docker/worker-entrypoint.sh /usr/local/bin/taico-worker-entrypoint
+RUN chmod +x /usr/local/bin/taico-worker-entrypoint
+
+USER taico
+
+ENTRYPOINT ["taico-worker-entrypoint"]

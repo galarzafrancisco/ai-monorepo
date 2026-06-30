@@ -14,6 +14,7 @@ export type WorkerOptions = {
   serverUrl: string;
   credentialsPath?: string;
   workingDirectory: string;
+  retryStartup?: boolean;
 };
 
 type WorkerBootstrapResult = Awaited<
@@ -33,7 +34,9 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
 
   let bootstrap: WorkerBootstrapResult;
   try {
-    bootstrap = await ensureAuthenticatedWithRetry(auth);
+    bootstrap = options.retryStartup === false
+      ? await auth.ensureAuthenticated()
+      : await ensureAuthenticatedWithRetry(auth);
   } catch (error) {
     if (error instanceof WorkerStartupCanceledError) {
       console.log('[worker] Startup canceled.');
