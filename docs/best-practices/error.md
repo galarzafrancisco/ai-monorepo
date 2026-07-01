@@ -114,7 +114,7 @@ All public HTTP APIs must emit errors as
 
 ## 🧭 Error Codes
 
-- Declared centrally in a shared package (`packages/shared/errors`).
+- Declared centrally in a shared package (`packages/errors`).
 - Exported as constants for reuse across services.
 
 ```ts
@@ -162,7 +162,7 @@ Example:
 
 ## 🧱 Schema Sharing
 
-A lightweight shared package (`packages/shared/errors`) contains:
+A lightweight shared package (`packages/errors`) contains:
 
 - `ErrorCodes` (constants)
 - `ProblemDetails` TypeScript type and runtime schema (e.g. Zod)

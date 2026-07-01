@@ -96,7 +96,7 @@ All domain errors have corresponding catalog entries. No missing mappings detect
 
 ## Error Code Definitions
 
-All error codes are centrally defined in: `/packages/shared/errors/error-codes.ts`
+All error codes are centrally defined in: `/packages/errors/src/error-codes.ts`
 
 This ensures consistency across the monorepo and prevents code duplication.
 
@@ -133,7 +133,7 @@ The error system follows the established architecture patterns:
 
 ### Code Organization
 ```
-packages/shared/errors/
+packages/errors/src/
   └── error-codes.ts          # Central error code definitions
 
 apps/backend/src/
@@ -153,7 +153,7 @@ The error catalog is complete and well-maintained. All domain errors have proper
 ### Future Additions
 When adding new domain errors:
 
-1. **Define the error code** in `/packages/shared/errors/error-codes.ts`
+1. **Define the error code** in `/packages/errors/src/error-codes.ts`
 2. **Create the domain error class** in the appropriate module's errors file
 3. **Add catalog entry** in `/apps/backend/src/errors/http/error-catalog.ts`
 4. **Update this document** to reflect the new error

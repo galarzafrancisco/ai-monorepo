@@ -24,7 +24,7 @@ RFC 7807 defines a standard format for HTTP API error responses with the followi
 ### Core Components
 
 #### 1. Type Definition
-**Location:** `../../packages/shared/errors/problem-details.type.ts`
+**Location:** `../../packages/errors/src/problem-details.type.ts`
 
 ```typescript
 export type ProblemDetails = {
@@ -289,5 +289,5 @@ The implementation is RFC 7807 compliant with all required fields properly imple
 - Implementation files:
   - `../../apps/backend/src/http/problem-details.filter.ts`
   - `../../apps/backend/src/errors/http/problem-details.ts`
-  - `../../packages/shared/errors/problem-details.type.ts`
+  - `../../packages/errors/src/problem-details.type.ts`
   - `../../apps/backend/src/errors/http/domain-to-problem.mapper.ts`

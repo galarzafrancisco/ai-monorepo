@@ -32,7 +32,7 @@ Reviewed all backend services for compliance with error handling best practices:
 | Domain errors extend base `DomainError` class | ✅ PASS | All modules define module-scoped base classes: `TasksDomainError`, `ContextDomainError`, `McpRegistryDomainError`, `ClientRegistrationDomainError` |
 | Errors contain `message`, `code`, `context` | ✅ PASS | All domain error classes follow the pattern with required fields |
 | No HTTP references in domain errors | ✅ PASS | Zero HTTP status codes or transport details in any domain error classes |
-| Errors reference centralized error codes | ✅ PASS | All errors reference codes from `packages/shared/errors/error-codes.ts` |
+| Errors reference centralized error codes | ✅ PASS | All errors reference codes from `packages/errors/src/error-codes.ts` |
 
 ### ✅ Transport Layer (RFC 7807)
 
@@ -101,7 +101,7 @@ async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
 
 | Requirement | Status | Evidence |
 |------------|--------|----------|
-| Codes defined in shared package | ✅ PASS | `packages/shared/errors/error-codes.ts` |
+| Codes defined in shared package | ✅ PASS | `packages/errors/src/error-codes.ts` |
 | Module-scoped re-exports | ✅ PASS | Each module re-exports only codes it uses |
 | Stable, uppercase snake_case naming | ✅ PASS | All codes follow convention (e.g., `TASK_NOT_FOUND`) |
 | No duplicates | ✅ PASS | All 22 codes unique |
@@ -178,8 +178,8 @@ async getTask(@Param() params: TaskParamsDto): Promise<TaskResponseDto> {
 - `apps/backend/src/authorization-server/client-registration.controller.ts`
 
 ### Infrastructure
-- `packages/shared/errors/error-codes.ts`
-- `packages/shared/errors/index.ts`
+- `packages/errors/src/error-codes.ts`
+- `packages/errors/src/index.ts`
 - `apps/backend/src/errors/http/error-catalog.ts`
 - `apps/backend/src/errors/http/domain-to-problem.mapper.ts`
 - `apps/backend/src/http/problem-details.filter.ts`

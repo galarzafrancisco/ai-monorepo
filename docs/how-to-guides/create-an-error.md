@@ -8,7 +8,7 @@ This guide turns the Error Best Practices into concrete steps, files, and naming
 
 - **Domain errors live inside each module** (e.g., `product/errors/product.errors.ts`). They’re **HTTP‑agnostic** and include a stable `code` and safe `context`.
 - **Transport mapping happens at the boundary** (controller/global filter) via a service‑local **Error Catalog** → emits **`application/problem+json`** (RFC 7807 shape + our extensions).
-- **Codes + schema are shared** under `packages/shared/errors` so UI can reason on the same `code`, `status`, `retryable`, `requestId`, etc.
+- **Codes + schema are shared** under `packages/errors` so UI can reason on the same `code`, `status`, `retryable`, `requestId`, etc.
 - Modules may **re‑export their subset of codes** for convenience (so engineers rarely open the shared package).
 
 ---
@@ -43,8 +43,8 @@ This guide turns the Error Best Practices into concrete steps, files, and naming
 │  └─ ui/
 │     └─ src/errors/…                        # code -> i18n & UX mapping
 ├─ packages/
-│  └─ shared/
-│     └─ errors/
+│  └─ errors/
+│     └─ src/
 │        ├─ error-codes.ts                   # SOURCE OF TRUTH for codes
 │        ├─ problem-details.type.ts          # TS type + Zod validator
 │        └─ index.ts
@@ -57,7 +57,7 @@ This guide turns the Error Best Practices into concrete steps, files, and naming
 
 ## 2) Shared package (unchanged)
 
-### `packages/shared/errors/error-codes.ts`
+### `packages/errors/src/error-codes.ts`
 ```ts
 export const ErrorCodes = {
   PRODUCT_NOT_FOUND: 'PRODUCT_NOT_FOUND',
@@ -70,7 +70,7 @@ export const ErrorCodes = {
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
 ```
 
-### `packages/shared/errors/problem-details.type.ts`
+### `packages/errors/src/problem-details.type.ts`
 ```ts
 import { z } from 'zod';
 import type { ErrorCode } from './error-codes';
@@ -113,7 +113,7 @@ Owns **domain error classes** for the Product module, plus a **module‑scoped v
 ```ts
 // apps/backend/src/product/errors/product.errors.ts
 
-import { ErrorCodes } from '../../../../packages/shared/errors/error-codes';
+import { ErrorCodes } from '@taico/errors';
 
 // Optional: module-scoped re-export of just what Product uses.
 export const ProductErrorCodes = {
@@ -165,7 +165,7 @@ async getById(id: string) {
 
 ### `apps/backend/src/errors/http/error-catalog.ts`
 ```ts
-import { ErrorCodes } from '../../../../packages/shared/errors/error-codes';
+import { ErrorCodes } from '@taico/errors';
 
 export const ErrorCatalog: Record<string, {
   status: number; title: string; type: string; retryable?: boolean;
@@ -190,7 +190,7 @@ export const ErrorCatalog: Record<string, {
 
 ### `apps/backend/src/errors/http/problem-details.ts`
 ```ts
-import { ProblemDetails } from '../../../../packages/shared/errors/problem-details.type';
+import { ProblemDetails } from '@taico/errors';
 
 export const toProblem = (p: Partial<ProblemDetails>): ProblemDetails => ({
   type: p.type ?? '/catalog/internal',
@@ -295,7 +295,7 @@ export class ProblemExceptionFilter implements ExceptionFilter {
 
 ## 7) Adding a new error (with module‑local errors)
 
-1) **Register the code once** in `packages/shared/errors/error-codes.ts`.
+1) **Register the code once** in `packages/errors/src/error-codes.ts`.
    ```ts
    export const ErrorCodes = {
      ...ErrorCodes,
@@ -334,7 +334,7 @@ export class ProblemExceptionFilter implements ExceptionFilter {
 - **Module file name:** `apps/backend/src/<module>/errors/<module>.errors.ts`
 - **Domain base class:** `<Module>DomainError` (e.g., `ProductDomainError`).
 - **Class names:** `<Module><What><Error>` (e.g., `ProductNotFoundError`).
-- **Codes:** live centrally in `packages/shared/errors/error-codes.ts`; module files **re‑export** their subset (`ProductErrorCodes`) for clarity.
+- **Codes:** live centrally in `packages/errors/src/error-codes.ts`; module files **re‑export** their subset (`ProductErrorCodes`) for clarity.
 - **Transport files (global):** `apps/backend/src/errors/http/*` (shared for the service).
 - **Never** leak HTTP into domain errors; never leak secrets/PII into `detail/context`.
 
