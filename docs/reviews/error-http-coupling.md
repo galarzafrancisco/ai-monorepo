@@ -91,7 +91,7 @@ export abstract class ContextDomainError extends Error {
 
 ### 2. Error Codes (✅ CLEAN)
 
-**File:** `/packages/shared/errors/error-codes.ts`
+**File:** `/packages/errors/src/error-codes.ts`
 
 Error codes are pure string constants with NO HTTP information:
 ```typescript

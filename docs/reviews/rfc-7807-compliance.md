@@ -24,7 +24,7 @@ RFC 7807 defines a standard format for HTTP API error responses with the followi
 ### Core Components
 
 #### 1. Type Definition
-**Location:** `/Users/franciscogalarza/github/ai-monorepo/packages/shared/errors/problem-details.type.ts`
+**Location:** `../../packages/errors/src/problem-details.type.ts`
 
 ```typescript
 export type ProblemDetails = {
@@ -46,7 +46,7 @@ export type ProblemDetails = {
 - Extension fields properly added without conflicting with spec
 
 #### 2. Problem Details Filter
-**Location:** `/Users/franciscogalarza/github/ai-monorepo/apps/backend/src/http/problem-details.filter.ts`
+**Location:** `../../apps/backend/src/http/problem-details.filter.ts`
 
 **Key Features:**
 - Global exception handler using `@Catch()` decorator
@@ -63,7 +63,7 @@ export type ProblemDetails = {
 - Consistent error response format
 
 #### 3. Problem Builder Function
-**Location:** `/Users/franciscogalarza/github/ai-monorepo/apps/backend/src/errors/http/problem-details.ts`
+**Location:** `../../apps/backend/src/errors/http/problem-details.ts`
 
 ```typescript
 export const toProblem = (p: Partial<ProblemDetails>): ProblemDetails => ({
@@ -287,7 +287,7 @@ The implementation is RFC 7807 compliant with all required fields properly imple
 
 - [RFC 7807: Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807)
 - Implementation files:
-  - `/Users/franciscogalarza/github/ai-monorepo/apps/backend/src/http/problem-details.filter.ts`
-  - `/Users/franciscogalarza/github/ai-monorepo/apps/backend/src/errors/http/problem-details.ts`
-  - `/Users/franciscogalarza/github/ai-monorepo/packages/shared/errors/problem-details.type.ts`
-  - `/Users/franciscogalarza/github/ai-monorepo/apps/backend/src/errors/http/domain-to-problem.mapper.ts`
+  - `../../apps/backend/src/http/problem-details.filter.ts`
+  - `../../apps/backend/src/errors/http/problem-details.ts`
+  - `../../packages/errors/src/problem-details.type.ts`
+  - `../../apps/backend/src/errors/http/domain-to-problem.mapper.ts`

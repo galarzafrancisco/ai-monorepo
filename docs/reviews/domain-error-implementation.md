@@ -27,13 +27,13 @@ This document analyzes the domain error implementation patterns across the Tasks
 
 The application uses a three-tiered error architecture:
 
-1. **Shared Error Codes** - Central registry in `packages/shared/errors`
+1. **Shared Error Codes** - Central registry in `packages/errors`
 2. **Module Domain Errors** - Domain-specific error classes per module
 3. **HTTP Mapping Layer** - Transport concerns handled at boundaries
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│         packages/shared/errors/error-codes.ts             │
+│         packages/errors/src/error-codes.ts                │
 │               (Single Source of Truth)                    │
 │                                                           │
 │  ErrorCodes = {                                          │
@@ -977,7 +977,7 @@ export abstract class TasksDomainError extends Error {
 - `/docs/review-guides/error.md` - Error review checklist
 
 ### Implementation Files
-- `/packages/shared/errors/error-codes.ts` - Central error registry
+- `/packages/errors/src/error-codes.ts` - Central error registry
 - `/apps/backend/src/errors/http/error-catalog.ts` - HTTP mapping
 - `/apps/backend/src/http/problem-details.filter.ts` - Global filter
 - `/apps/backend/src/errors/http/domain-to-problem.mapper.ts` - Mapper

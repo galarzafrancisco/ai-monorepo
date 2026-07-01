@@ -11,8 +11,8 @@ The migration from the old worker model to the current execution-centric worker 
 
 If you need the current architecture, use:
 
-- [`docs/PRIMITIVES.md`](/Users/franciscogalarza/github/ai-monorepo/docs/PRIMITIVES.md)
-- [`apps/backend/src/executions/ARCHITECTURE.md`](/Users/franciscogalarza/github/ai-monorepo/apps/backend/src/executions/ARCHITECTURE.md)
-- [`apps/worker/README.md`](/Users/franciscogalarza/github/ai-monorepo/apps/worker/README.md)
+- [`docs/PRIMITIVES.md`](PRIMITIVES.md)
+- [`apps/backend/src/executions/ARCHITECTURE.md`](../apps/backend/src/executions/ARCHITECTURE.md)
+- [`apps/worker/README.md`](../apps/worker/README.md)
 
 Do not use this file as an implementation plan for new work.

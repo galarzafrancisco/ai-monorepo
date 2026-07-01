@@ -100,10 +100,10 @@ Key rules:
 
 See:
 
-- [Controller Responsibilities](/Users/franciscogalarza/github/ai-monorepo/docs/architecture/controller-responsibilities.md)
-- [Service Transport Independence](/Users/franciscogalarza/github/ai-monorepo/docs/architecture/service-transport-independence.md)
-- [DTO Mapping Patterns](/Users/franciscogalarza/github/ai-monorepo/docs/architecture/dto-mapping-patterns.md)
-- [Enum Management](/Users/franciscogalarza/github/ai-monorepo/docs/architecture/enum-management.md)
+- [Controller Responsibilities](architecture/controller-responsibilities.md)
+- [Service Transport Independence](architecture/service-transport-independence.md)
+- [DTO Mapping Patterns](architecture/dto-mapping-patterns.md)
+- [Enum Management](architecture/enum-management.md)
 
 ### Execution Model
 
@@ -137,11 +137,11 @@ The OpenAPI pipeline is:
 
 Socket.io gateways provide real-time behavior across the app. Workers also use realtime channels alongside execution APIs.
 
-For implementation details, see [Realtime Events](/Users/franciscogalarza/github/ai-monorepo/docs/how-to-guides/realtime-events.md).
+For implementation details, see [Realtime Events](how-to-guides/realtime-events.md).
 
 ## UI Development
 
-Read [`apps/ui/CLAUDE.md`](/Users/franciscogalarza/github/ai-monorepo/apps/ui/CLAUDE.md) before making UI changes.
+Read [`apps/ui/CLAUDE.md`](../apps/ui/CLAUDE.md) before making UI changes.
 
 ## Backend Development
 

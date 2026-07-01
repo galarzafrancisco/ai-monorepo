@@ -9,7 +9,7 @@ For most people, the best setup is:
 1. Run the Taico server in Docker so it is always available and restarts with your machine.
 2. Run the worker locally via `npx` so it can use the tools, CLIs, and provider logins you already have on your machine.
 
-Helper scripts for both live in [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh) and [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh).
+Helper scripts for both live in [`helpers/start-server.sh`](../helpers/start-server.sh) and [`helpers/start-worker.sh`](../helpers/start-worker.sh).
 
 ## Start The Server
 

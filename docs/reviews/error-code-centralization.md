@@ -24,7 +24,7 @@ The codebase demonstrates **exemplary error code centralization** following RFC 
 
 ### 1. Single Source of Truth
 
-**Location**: `/packages/shared/errors/error-codes.ts`
+**Location**: `/packages/errors/src/error-codes.ts`
 
 ```typescript
 export const ErrorCodes = {
@@ -140,7 +140,7 @@ export abstract class [Module]DomainError extends Error {
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    packages/shared/errors/                   │
+│                    packages/errors/src/                      │
 │                      error-codes.ts                          │
 │                   (SINGLE SOURCE OF TRUTH)                   │
 │                                                              │
@@ -189,7 +189,7 @@ export abstract class [Module]DomainError extends Error {
 ## Error Flow Analysis
 
 ### 1. Error Definition Flow
-1. New error code added to `/packages/shared/errors/error-codes.ts`
+1. New error code added to `/packages/errors/src/error-codes.ts`
 2. HTTP mapping added to `/apps/backend/src/errors/http/error-catalog.ts`
 3. Module re-exports relevant codes in `[module]/errors/[module].errors.ts`
 4. Module defines domain error class using the re-exported code
@@ -224,7 +224,7 @@ ErrorCodes (central)
 - Zero instances of ad-hoc error codes
 
 **Error Code References**:
-- Central definition: 1 file (`packages/shared/errors/error-codes.ts`)
+- Central definition: 1 file (`packages/errors/src/error-codes.ts`)
 - Catalog mapping: 1 file (`apps/backend/src/errors/http/error-catalog.ts`)
 - Module re-exports: 2 files (Tasks, Context)
 - Domain error classes: 2 files (Tasks, Context)
@@ -499,7 +499,7 @@ The error code centralization in this codebase is **exemplary** and represents a
 ### Internal Documentation
 - `/docs/best-practices/error.md`
 - `/docs/how-to-guides/create-an-error.md`
-- `/packages/shared/errors/error-codes.ts`
+- `/packages/errors/src/error-codes.ts`
 - `/apps/backend/src/errors/http/error-catalog.ts`
 
 ### External Standards

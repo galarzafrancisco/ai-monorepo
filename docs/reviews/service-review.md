@@ -258,7 +258,7 @@ export class AuthFlowAlreadyCompletedError extends AuthorizationDomainError {
 
 ### Step 2: Add Error Codes to Shared Package
 
-In `packages/shared/errors/error-codes.ts`:
+In `packages/errors/src/error-codes.ts`:
 
 ```typescript
 export const ErrorCodes = {

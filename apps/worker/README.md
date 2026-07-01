@@ -10,7 +10,7 @@ The worker connects to an existing Taico server, claims eligible work, starts ex
 npx @taico/worker --serverurl http://localhost:1234
 ```
 
-The helper script [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh) wraps this for the common local setup.
+The helper script [`helpers/start-worker.sh`](../../helpers/start-worker.sh) wraps this for the common local setup.
 
 ## Recommended Usage
 

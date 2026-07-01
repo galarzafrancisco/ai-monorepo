@@ -9,7 +9,7 @@ For a typical self-hosted setup:
 - run the Taico server in Docker so it is stable and restarts automatically
 - run the worker directly on your machine via `npx` so it can use the local tools and provider logins you already have
 
-The helper scripts in [`helpers/start-server.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-server.sh) and [`helpers/start-worker.sh`](/Users/franciscogalarza/github/ai-monorepo/helpers/start-worker.sh) reflect that setup.
+The helper scripts in [`helpers/start-server.sh`](../helpers/start-server.sh) and [`helpers/start-worker.sh`](../helpers/start-worker.sh) reflect that setup.
 
 ## Server
 
