@@ -48,5 +48,5 @@ npm -w apps/backend run test:e2e
 
 See the repo-level guides for broader setup and architecture:
 
-- [`docs/PRIMITIVES.md`](/Users/franciscogalarza/github/ai-monorepo/docs/PRIMITIVES.md)
-- [`docs/DEVELOPER_GUIDE.md`](/Users/franciscogalarza/github/ai-monorepo/docs/DEVELOPER_GUIDE.md)
+- [`docs/PRIMITIVES.md`](../../docs/PRIMITIVES.md)
+- [`docs/DEVELOPER_GUIDE.md`](../../docs/DEVELOPER_GUIDE.md)
