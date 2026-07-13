@@ -15,7 +15,6 @@ export const createPlanner: CreateAgentInput = {
   description: 'Planner agent for creating implementation plans.',
   systemPrompt: PLANNER_PROMPT,
   statusTriggers: [TaskStatus.NOT_STARTED],
-  tagTriggers: ['plan'],
   allowedTools: [],
   isActive: true,
   concurrencyLimit: 1,
