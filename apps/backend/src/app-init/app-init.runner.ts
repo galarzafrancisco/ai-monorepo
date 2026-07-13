@@ -33,6 +33,7 @@ import { Scope } from 'src/auth/core/types/scope.type';
 import { createCodexDev } from './agent/codex-dev.agent';
 import { createGeminiAssistant } from './agent/gemini-assistant.agent';
 import { createCodeReviewer } from './agent/code-reviewer.agent';
+import { createLead } from './agent/lead.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './prompts/prompts';
@@ -192,6 +193,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createCodeReviewer);
     } catch (error) {
       this.logger.error('Error ensuring code-reviewer Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createLead);
+    } catch (error) {
+      this.logger.error('Error ensuring lead Agent exists');
     }
   }
 
