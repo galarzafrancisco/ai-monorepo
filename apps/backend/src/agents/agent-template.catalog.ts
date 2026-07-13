@@ -11,6 +11,9 @@ import {
   GEMINI_FLASH,
   GPT_5_4,
   GPT_5_5,
+  GPT_5_6_LUNA,
+  GPT_5_6_SOL,
+  GPT_5_6_TERRA,
 } from 'src/app-init/models/models';
 import { AgentType } from './enums';
 import {
@@ -91,6 +94,21 @@ export const AGENT_TEMPLATE_HARNESSES: AgentTemplateHarnessDto[] = [
         label: 'GPT-5.4',
         providerId: GPT_5_4.providerId,
         modelId: GPT_5_4.modelId,
+      }),
+      modelOption({
+        label: 'GPT-5.6 Sol',
+        providerId: GPT_5_6_SOL.providerId,
+        modelId: GPT_5_6_SOL.modelId,
+      }),
+      modelOption({
+        label: 'GPT-5.6 Terra',
+        providerId: GPT_5_6_TERRA.providerId,
+        modelId: GPT_5_6_TERRA.modelId,
+      }),
+      modelOption({
+        label: 'GPT-5.6 Luna',
+        providerId: GPT_5_6_LUNA.providerId,
+        modelId: GPT_5_6_LUNA.modelId,
       }),
       modelOption({
         label: 'GPT-5.5',

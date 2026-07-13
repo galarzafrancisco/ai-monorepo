@@ -17,6 +17,24 @@ export const GPT_5_4: MODEL_CONFIG = {
   name: 'gpt-5.4',
 };
 
+export const GPT_5_6_SOL: MODEL_CONFIG = {
+  providerId: 'openai',
+  modelId: 'gpt-5.6-sol',
+  name: 'gpt-5.6-sol',
+};
+
+export const GPT_5_6_TERRA: MODEL_CONFIG = {
+  providerId: 'openai',
+  modelId: 'gpt-5.6-terra',
+  name: 'gpt-5.6-terra',
+};
+
+export const GPT_5_6_LUNA: MODEL_CONFIG = {
+  providerId: 'openai',
+  modelId: 'gpt-5.6-luna',
+  name: 'gpt-5.6-luna',
+};
+
 export const GPT_5_5: MODEL_CONFIG = {
   providerId: 'openai',
   modelId: 'gpt-5.5',
