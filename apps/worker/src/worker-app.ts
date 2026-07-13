@@ -103,7 +103,21 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
   });
 
   try {
-    await activityGatewayClient.start();
+    const gatewayStart = activityGatewayClient.start();
+    const startupResult = await Promise.race([
+      gatewayStart.then(() => 'started' as const),
+      shutdownCoordinator.waitForShutdownStart().then(() => 'shutdown' as const),
+    ]);
+
+    if (startupResult === 'shutdown') {
+      void gatewayStart.catch((error) => {
+        console.warn(
+          `[worker] Activity gateway startup failed after shutdown started: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+      await shutdownCoordinator.shutdown(activityGatewayClient, client);
+      return;
+    }
 
     if (shutdownCoordinator.isShuttingDown()) {
       await shutdownCoordinator.shutdown(activityGatewayClient, client);
