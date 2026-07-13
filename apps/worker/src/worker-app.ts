@@ -9,11 +9,14 @@ export const activeExecutionAbortControllers = new Map<string, AbortController>(
 export const activeExecutionInterruptHandlers = new Map<string, () => void | Promise<void>>();
 
 const STARTUP_RETRY_DELAY_MS = 2_000;
+const DEFAULT_WORKER_SHUTDOWN_GRACE_MS = 60_000;
+const WORKER_SHUTDOWN_MESSAGE = 'Worker shutdown interrupted active execution.';
 
 export type WorkerOptions = {
   serverUrl: string;
   credentialsPath?: string;
   workingDirectory: string;
+  shutdownGraceMs?: number;
 };
 
 type WorkerBootstrapResult = Awaited<
@@ -21,6 +24,15 @@ type WorkerBootstrapResult = Awaited<
 >;
 
 export async function startWorkerApp(options: WorkerOptions): Promise<void> {
+  const startupAbortController = new AbortController();
+  const shutdownCoordinator = new WorkerShutdownCoordinator({
+    graceMs: options.shutdownGraceMs ?? readShutdownGraceMs(),
+  });
+  const removeSignalHandlers = installSignalHandlers((signal) => {
+    startupAbortController.abort();
+    shutdownCoordinator.beginShutdown(signal);
+  });
+
   const auth = new WorkerAuth({
     serverUrl: options.serverUrl,
     credentialsPath: options.credentialsPath,
@@ -33,13 +45,19 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
 
   let bootstrap: WorkerBootstrapResult;
   try {
-    bootstrap = await ensureAuthenticatedWithRetry(auth);
+    bootstrap = await ensureAuthenticatedWithRetry(auth, startupAbortController.signal);
   } catch (error) {
+    removeSignalHandlers();
     if (error instanceof WorkerStartupCanceledError) {
       console.log('[worker] Startup canceled.');
       return;
     }
     throw error;
+  }
+
+  if (shutdownCoordinator.isShuttingDown()) {
+    removeSignalHandlers();
+    return;
   }
 
   if (bootstrap.didBootstrap) {
@@ -64,6 +82,7 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
         options.workingDirectory,
         auth.serverUrl,
         activityGatewayClient,
+        shutdownCoordinator.getTaskClaimOptions(),
       );
     },
     onExecutionInterruptRequest: (event) => {
@@ -83,25 +102,51 @@ export async function startWorkerApp(options: WorkerOptions): Promise<void> {
     },
   });
 
-  await activityGatewayClient.start();
+  try {
+    await activityGatewayClient.start();
 
-  console.log('[worker] Connectivity check succeeded.');
+    if (shutdownCoordinator.isShuttingDown()) {
+      await shutdownCoordinator.shutdown(activityGatewayClient, client);
+      return;
+    }
 
-  await runTaskClaimWorker(
-    client,
-    options.workingDirectory,
-    auth.serverUrl,
-    activityGatewayClient,
-  );
+    console.log('[worker] Connectivity check succeeded.');
+
+    const taskClaimWorker = runTaskClaimWorker(
+      client,
+      options.workingDirectory,
+      auth.serverUrl,
+      activityGatewayClient,
+      shutdownCoordinator.getTaskClaimOptions(),
+    );
+
+    await Promise.race([
+      taskClaimWorker,
+      shutdownCoordinator.waitForShutdownStart(),
+    ]);
+
+    if (shutdownCoordinator.isShuttingDown()) {
+      await shutdownCoordinator.shutdown(activityGatewayClient, client);
+      await taskClaimWorker;
+    } else {
+      await taskClaimWorker;
+    }
+  } finally {
+    removeSignalHandlers();
+  }
 }
 
-async function ensureAuthenticatedWithRetry(auth: WorkerAuth): Promise<{
+async function ensureAuthenticatedWithRetry(auth: WorkerAuth, signal?: AbortSignal): Promise<{
   credentials: Awaited<ReturnType<WorkerAuth['getCredentials']>>;
   didBootstrap: boolean;
 }> {
   let attempt = 1;
 
   while (true) {
+    if (signal?.aborted) {
+      throw new WorkerStartupCanceledError();
+    }
+
     try {
       clearRetryStatusLine();
       return await auth.ensureAuthenticated();
@@ -112,10 +157,10 @@ async function ensureAuthenticatedWithRetry(auth: WorkerAuth): Promise<{
       }
 
       renderRetryStatus(attempt);
-      const canceled = await waitForRetryOrCancel(STARTUP_RETRY_DELAY_MS);
+      const canceled = await waitForRetryOrCancel(STARTUP_RETRY_DELAY_MS, signal);
       clearRetryStatusLine();
 
-      if (canceled) {
+      if (canceled || signal?.aborted) {
         throw new WorkerStartupCanceledError();
       }
 
@@ -138,9 +183,16 @@ function clearRetryStatusLine(): void {
   process.stdout.write('\r\x1b[2K');
 }
 
-async function waitForRetryOrCancel(delayMs: number): Promise<boolean> {
+async function waitForRetryOrCancel(delayMs: number, signal?: AbortSignal): Promise<boolean> {
   if (!canCaptureEscapeKey()) {
-    await sleep(delayMs);
+    try {
+      await sleep(delayMs, undefined, { signal });
+    } catch (error) {
+      if (isAbortError(error)) {
+        return true;
+      }
+      throw error;
+    }
     return false;
   }
 
@@ -164,10 +216,16 @@ async function waitForRetryOrCancel(delayMs: number): Promise<boolean> {
       reject(error);
     };
 
+    const onAbort = () => {
+      cleanup();
+      resolve(true);
+    };
+
     const cleanup = () => {
       clearTimeout(timeout);
       stdin.off('data', onData);
       stdin.off('error', onError);
+      signal?.removeEventListener('abort', onAbort);
       if (typeof stdin.setRawMode === 'function') {
         stdin.setRawMode(false);
       }
@@ -180,6 +238,7 @@ async function waitForRetryOrCancel(delayMs: number): Promise<boolean> {
     stdin.resume();
     stdin.on('data', onData);
     stdin.on('error', onError);
+    signal?.addEventListener('abort', onAbort, { once: true });
   });
 }
 
@@ -222,4 +281,181 @@ class WorkerStartupCanceledError extends Error {
     super('Worker startup canceled by user.');
     this.name = 'WorkerStartupCanceledError';
   }
+}
+
+type WorkerSignal = 'SIGTERM' | 'SIGINT';
+
+type WorkerShutdownCoordinatorOptions = {
+  graceMs: number;
+};
+
+export class WorkerShutdownCoordinator {
+  private readonly abortController = new AbortController();
+  private readonly activeTaskExecutions = new Set<Promise<void>>();
+  private shuttingDown = false;
+  private shutdownStartedResolver!: () => void;
+  private readonly shutdownStarted = new Promise<void>((resolve) => {
+    this.shutdownStartedResolver = resolve;
+  });
+
+  constructor(private readonly options: WorkerShutdownCoordinatorOptions) {}
+
+  beginShutdown(signal: WorkerSignal | string): void {
+    if (this.shuttingDown) {
+      console.log(`[worker] Received ${signal} while shutdown is already in progress.`);
+      return;
+    }
+
+    this.shuttingDown = true;
+    console.log(`[worker] Received ${signal}; starting graceful shutdown.`);
+    this.abortController.abort();
+    this.shutdownStartedResolver();
+  }
+
+  isShuttingDown(): boolean {
+    return this.shuttingDown;
+  }
+
+  waitForShutdownStart(): Promise<void> {
+    return this.shutdownStarted;
+  }
+
+  getTaskClaimOptions() {
+    return {
+      signal: this.abortController.signal,
+      shouldClaimTask: () => !this.shuttingDown,
+      trackTaskExecution: (taskId: string, execution: Promise<void>) => {
+        this.trackTaskExecution(taskId, execution);
+      },
+    };
+  }
+
+  async shutdown(
+    activityGatewayClient: Pick<ExecutionActivityGatewayClient, 'stop'>,
+    client?: ApiClient,
+  ): Promise<void> {
+    if (!this.shuttingDown) {
+      this.beginShutdown('shutdown');
+    }
+
+    await activityGatewayClient.stop();
+    await this.drainOrCancelActiveExecutions(client);
+  }
+
+  private trackTaskExecution(taskId: string, execution: Promise<void>): void {
+    this.activeTaskExecutions.add(execution);
+    void execution.then(
+      () => this.activeTaskExecutions.delete(execution),
+      () => this.activeTaskExecutions.delete(execution),
+    );
+    console.log(`[worker] Tracking active execution for task ${taskId}.`);
+  }
+
+  private async drainOrCancelActiveExecutions(client?: ApiClient): Promise<void> {
+    if (this.activeTaskExecutions.size === 0) {
+      console.log('[worker] No active executions to drain.');
+      return;
+    }
+
+    console.log(
+      `[worker] Waiting up to ${this.options.graceMs}ms for ${this.activeTaskExecutions.size} active execution(s) to finish.`,
+    );
+
+    const completed = await waitForPromisesToSettle(
+      Array.from(this.activeTaskExecutions),
+      this.options.graceMs,
+    );
+
+    if (completed) {
+      console.log('[worker] Active executions drained cleanly.');
+      return;
+    }
+
+    const executionIds = Array.from(activeExecutionAbortControllers.keys());
+    console.warn(
+      `[worker] Shutdown grace elapsed; interrupting active execution(s): ${executionIds.join(', ') || 'unknown'}.`,
+    );
+
+    await Promise.allSettled(
+      executionIds.map(async (executionId) => {
+        activeExecutionAbortControllers.get(executionId)?.abort();
+        await Promise.resolve(activeExecutionInterruptHandlers.get(executionId)?.());
+        await this.markExecutionInterrupted(client, executionId);
+      }),
+    );
+  }
+
+  private async markExecutionInterrupted(client: ApiClient | undefined, executionId: string): Promise<void> {
+    if (!client) {
+      return;
+    }
+
+    try {
+      await client.executions.ActiveTaskExecutionController_stopTaskExecution({
+        executionId,
+        body: {
+          status: 'CANCELLED',
+          errorCode: 'INTERRUPTED',
+          errorMessage: WORKER_SHUTDOWN_MESSAGE,
+        },
+      });
+    } catch (error) {
+      console.warn(
+        `[worker] Failed to mark execution ${executionId} interrupted during shutdown; stale execution pruning remains the backstop: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+}
+
+function installSignalHandlers(onSignal: (signal: WorkerSignal) => void): () => void {
+  const handleSigterm = () => onSignal('SIGTERM');
+  const handleSigint = () => onSignal('SIGINT');
+  process.once('SIGTERM', handleSigterm);
+  process.once('SIGINT', handleSigint);
+
+  return () => {
+    process.off('SIGTERM', handleSigterm);
+    process.off('SIGINT', handleSigint);
+  };
+}
+
+function readShutdownGraceMs(): number {
+  const configured = process.env.WORKER_SHUTDOWN_GRACE_MS;
+  if (!configured) {
+    return DEFAULT_WORKER_SHUTDOWN_GRACE_MS;
+  }
+
+  const parsed = Number(configured);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    console.warn(
+      `[worker] Ignoring invalid WORKER_SHUTDOWN_GRACE_MS=${configured}; using ${DEFAULT_WORKER_SHUTDOWN_GRACE_MS}.`,
+    );
+    return DEFAULT_WORKER_SHUTDOWN_GRACE_MS;
+  }
+
+  return parsed;
+}
+
+async function waitForPromisesToSettle(promises: Promise<void>[], timeoutMs: number): Promise<boolean> {
+  if (promises.length === 0) {
+    return true;
+  }
+
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.allSettled(promises).then(() => true),
+      new Promise<boolean>((resolve) => {
+        timeout = setTimeout(() => resolve(false), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }
