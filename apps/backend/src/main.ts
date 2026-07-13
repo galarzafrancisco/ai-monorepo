@@ -43,6 +43,9 @@ async function bootstrap() {
     return;
   }
 
+  app.enableShutdownHooks(['SIGTERM', 'SIGINT']);
+  logger.log('Shutdown hooks enabled for SIGTERM and SIGINT');
+
   const document = createSwaggerDocument(app);
 
   SwaggerModule.setup('api/v1/docs', app, document);
@@ -107,11 +110,19 @@ async function createConfiguredApp(
   app.setGlobalPrefix('api/v1', {
     exclude: [
       {
+        path: '/',
+        method: RequestMethod.ALL,
+      },
+      {
         path: '/.well-known/*path',
         method: RequestMethod.ALL,
       },
       {
         path: '/launch',
+        method: RequestMethod.ALL,
+      },
+      {
+        path: '/health/*path',
         method: RequestMethod.ALL,
       },
     ],

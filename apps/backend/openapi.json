@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "paths": {
-    "/api/v1": {
+    "/": {
       "get": {
         "operationId": "AppController_getHello",
         "parameters": [],
@@ -19,6 +19,71 @@
           }
         },
         "summary": "Health check endpoint",
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/health/live": {
+      "get": {
+        "operationId": "AppController_getLive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The process is alive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Liveness check endpoint",
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "AppController_getReady",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The server is ready to accept traffic",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ready"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Shutdown has started and the server is not ready"
+          }
+        },
+        "summary": "Readiness check endpoint",
         "tags": [
           "App"
         ]

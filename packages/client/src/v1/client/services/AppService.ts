@@ -15,7 +15,36 @@ export class AppService {
     public static appControllerGetHello(config: OpenAPIConfig = OpenAPI): CancelablePromise<string> {
         return __request(config, {
             method: 'GET',
-            url: '/api/v1',
+            url: '/',
+        });
+    }
+    /**
+     * Liveness check endpoint
+     * @returns any The process is alive
+     * @throws ApiError
+     */
+    public static appControllerGetLive(config: OpenAPIConfig = OpenAPI): CancelablePromise<{
+        status: string;
+    }> {
+        return __request(config, {
+            method: 'GET',
+            url: '/health/live',
+        });
+    }
+    /**
+     * Readiness check endpoint
+     * @returns any The server is ready to accept traffic
+     * @throws ApiError
+     */
+    public static appControllerGetReady(config: OpenAPIConfig = OpenAPI): CancelablePromise<{
+        status: string;
+    }> {
+        return __request(config, {
+            method: 'GET',
+            url: '/health/ready',
+            errors: {
+                503: `Shutdown has started and the server is not ready`,
+            },
         });
     }
 }
