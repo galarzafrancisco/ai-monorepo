@@ -45,6 +45,7 @@ import { RenameHasSeenWalkthroughToOnboardingDisplayMode1742400000000 } from './
 import { AllowInterruptedExecutionErrorCode1742500000000 } from './migrations/1742500000000-AllowInterruptedExecutionErrorCode';
 import { AddExecutionStatsTable1742600000000 } from './migrations/1742600000000-AddExecutionStatsTable';
 import { AddWorkerVersionFields1742700000000 } from './migrations/1742700000000-AddWorkerVersionFields';
+import { RemovePlannerPlanTagTrigger1742800000000 } from './migrations/1742800000000-RemovePlannerPlanTagTrigger';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -88,6 +89,7 @@ import { WalkthroughModule } from './walkthrough/walkthrough.module';
         AllowInterruptedExecutionErrorCode1742500000000,
         AddExecutionStatsTable1742600000000,
         AddWorkerVersionFields1742700000000,
+        RemovePlannerPlanTagTrigger1742800000000,
       ],
     }),
     EventEmitterModule.forRoot(),
