@@ -17,6 +17,12 @@ export const GPT_5_4: MODEL_CONFIG = {
   name: 'gpt-5.4',
 };
 
+export const GPT_5_5: MODEL_CONFIG = {
+  providerId: 'openai',
+  modelId: 'gpt-5.5',
+  name: 'gpt-5.5',
+};
+
 // Good for GitHub Copilot runner
 export const COPILOT_CLAUDE: MODEL_CONFIG = {
   providerId: '',

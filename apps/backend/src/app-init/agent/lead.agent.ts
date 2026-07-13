@@ -3,14 +3,14 @@ import { getAgentAvatarUrlById } from 'src/agents/agent-avatar.library';
 import { AgentType } from 'src/agents/enums';
 import { TaskStatus } from 'src/tasks/enums';
 import { LEAD_PROMPT } from '../prompts/prompts';
-import { CODEX } from '../models/models';
+import { GPT_5_5 } from '../models/models';
 
 export const createLead: CreateAgentInput = {
   slug: 'lead',
   name: 'Lead',
-  type: AgentType.CODEX,
-  providerId: CODEX.providerId,
-  modelId: CODEX.modelId,
+  type: AgentType.OPENCODE,
+  providerId: GPT_5_5.providerId,
+  modelId: GPT_5_5.modelId,
   description:
     'Leads a team of subagents to achieve an outcome. Breaks down a goal into planning and implementation.',
   systemPrompt: LEAD_PROMPT,

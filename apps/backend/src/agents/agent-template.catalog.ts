@@ -10,6 +10,7 @@ import {
   COPILOT_CLAUDE,
   GEMINI_FLASH,
   GPT_5_4,
+  GPT_5_5,
 } from 'src/app-init/models/models';
 import { AgentType } from './enums';
 import {
@@ -90,6 +91,11 @@ export const AGENT_TEMPLATE_HARNESSES: AgentTemplateHarnessDto[] = [
         label: 'GPT-5.4',
         providerId: GPT_5_4.providerId,
         modelId: GPT_5_4.modelId,
+      }),
+      modelOption({
+        label: 'GPT-5.5',
+        providerId: GPT_5_5.providerId,
+        modelId: GPT_5_5.modelId,
       }),
     ],
   },
