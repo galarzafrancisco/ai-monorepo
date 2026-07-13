@@ -17,10 +17,6 @@ describe('AppController (e2e)', () => {
     app.setGlobalPrefix('api/v1', {
       exclude: [
         {
-          path: '/',
-          method: RequestMethod.ALL,
-        },
-        {
           path: '/health/*path',
           method: RequestMethod.ALL,
         },
@@ -33,9 +29,9 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  it('/ (GET)', () => {
+  it('/api/v1 (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/api/v1')
       .expect(200)
       .expect('Hello World!');
   });

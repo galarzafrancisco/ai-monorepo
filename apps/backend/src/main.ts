@@ -114,10 +114,6 @@ async function createConfiguredApp(
   app.setGlobalPrefix('api/v1', {
     exclude: [
       {
-        path: '/',
-        method: RequestMethod.ALL,
-      },
-      {
         path: '/.well-known/*path',
         method: RequestMethod.ALL,
       },

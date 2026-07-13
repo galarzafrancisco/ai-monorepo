@@ -15,7 +15,7 @@ export class AppService {
     public static appControllerGetHello(config: OpenAPIConfig = OpenAPI): CancelablePromise<string> {
         return __request(config, {
             method: 'GET',
-            url: '/',
+            url: '/api/v1',
         });
     }
     /**
