@@ -4,7 +4,6 @@ import react from "@vitejs/plugin-react";
 // If you prefer no plugin, you can omit react() and rely on default.
 // The plugin adds fast refresh and sensible defaults.
 export default defineConfig({
-  // @ts-expect-error - monorepo vite version mismatch
   plugins: [react()],
   base: '/beta/',
   server: {

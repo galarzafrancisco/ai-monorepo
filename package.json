@@ -51,19 +51,20 @@
     "@hono/node-server": "^1.19.10",
     "@nestjs/cli": "^11.0.10",
     "brace-expansion": "^2.0.3",
-    "concurrently": "^9.0.0",
+    "concurrently": "^10.0.3",
     "dotenv-cli": "^11.0.0",
-    "express-rate-limit": "^8.2.2",
-    "fast-xml-parser": "^5.5.7",
+    "express-rate-limit": "^8.5.2",
+    "fast-xml-parser": "^5.9.3",
     "handlebars": "^4.7.9",
-    "hono": "^4.12.7",
-    "js-yaml": "^4.1.1",
+    "hono": "^4.12.27",
+    "lightningcss": "^1.32.0",
     "minimatch": "^5.1.8",
-    "nx": "^21.0.0",
+    "nx": "^23.0.1",
     "path-to-regexp": "^8.4.0",
     "socket.io-parser": "^4.2.6",
     "tsc-alias": "^1.8.16",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vite": "7.3.6"
   },
   "repository": {
     "type": "git",
@@ -84,9 +85,14 @@
     "@unrs/resolver-binding-linux-arm64-gnu": "^1.11.1"
   },
   "overrides": {
+    "@grpc/grpc-js": "1.14.4",
+    "@protobufjs/utf8": "1.1.1",
     "ajv": "^8.18.0",
+    "fast-uri": "4.0.0",
     "path-to-regexp": "^8.4.0",
     "picomatch": "^4.0.4",
+    "qs": "6.15.3",
+    "vite": "7.3.6",
     "esbuild": "0.25.12"
   }
 }
