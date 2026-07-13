@@ -11,6 +11,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
 import { Request, Response } from 'express';
+import { ServerLifecycleService } from './server-lifecycle.service';
 
 const logger = new Logger('Bootstrap');
 
@@ -43,6 +44,9 @@ async function bootstrap() {
     return;
   }
 
+  const lifecycle = app.get(ServerLifecycleService);
+  process.once('SIGTERM', () => lifecycle.beginShutdown('SIGTERM'));
+  process.once('SIGINT', () => lifecycle.beginShutdown('SIGINT'));
   app.enableShutdownHooks(['SIGTERM', 'SIGINT']);
   logger.log('Shutdown hooks enabled for SIGTERM and SIGINT');
 

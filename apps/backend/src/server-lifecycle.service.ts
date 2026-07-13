@@ -3,11 +3,12 @@ import {
   Injectable,
   Logger,
   OnApplicationShutdown,
+  OnModuleDestroy,
 } from '@nestjs/common';
 
 @Injectable()
 export class ServerLifecycleService
-  implements BeforeApplicationShutdown, OnApplicationShutdown
+  implements OnModuleDestroy, BeforeApplicationShutdown, OnApplicationShutdown
 {
   private readonly logger = new Logger(ServerLifecycleService.name);
   private shuttingDown = false;
@@ -37,6 +38,10 @@ export class ServerLifecycleService
       `Shutdown started${this.formatSignal(signal)}; readiness is now false`,
     );
     return true;
+  }
+
+  onModuleDestroy(): void {
+    this.beginShutdown();
   }
 
   beforeApplicationShutdown(signal?: string): void {
