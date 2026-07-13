@@ -10,4 +10,14 @@ export class AppResource extends BaseClient {
     return this.request('GET', '/api/v1', { signal: params?.signal });
   }
 
+  /** Liveness check endpoint */
+  async AppController_getLive(params?: { signal?: AbortSignal }): Promise<{ status: string }> {
+    return this.request('GET', '/health/live', { signal: params?.signal });
+  }
+
+  /** Readiness check endpoint */
+  async AppController_getReady(params?: { signal?: AbortSignal }): Promise<{ status: string }> {
+    return this.request('GET', '/health/ready', { signal: params?.signal });
+  }
+
 }

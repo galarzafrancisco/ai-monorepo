@@ -52,6 +52,7 @@ import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
 import { WalkthroughModule } from './walkthrough/walkthrough.module';
+import { ServerLifecycleService } from './server-lifecycle.service';
 
 @Module({
   imports: [
@@ -115,6 +116,6 @@ import { WalkthroughModule } from './walkthrough/walkthrough.module';
     WalkthroughModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, ServerLifecycleService],
 })
 export class AppModule { }
