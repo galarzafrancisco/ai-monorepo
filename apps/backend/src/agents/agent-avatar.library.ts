@@ -45,6 +45,12 @@ export const AGENT_AVATARS: AgentAvatarDefinition[] = [
     description: 'Bundled Stacy avatar for agent profiles.',
   },
   {
+    id: 'tracy',
+    label: 'Tracy',
+    url: '/avatar/stacy.png',
+    description: 'Bundled Tracy avatar alias for planner profiles.',
+  },
+  {
     id: 'claude',
     label: 'Claude',
     url: '/avatar/claude.webp',
