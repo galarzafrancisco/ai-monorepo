@@ -31,6 +31,7 @@ import { AgentEntity } from 'src/agents/agent.entity';
 import { IdentityProviderService } from 'src/identity-provider/identity-provider.service';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { createCodexDev } from './agent/codex-dev.agent';
+import { createDeveloper } from './agent/developer.agent';
 import { createGeminiAssistant } from './agent/gemini-assistant.agent';
 import { createCodeReviewer } from './agent/code-reviewer.agent';
 import { createLead } from './agent/lead.agent';
@@ -178,6 +179,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createClaudeDev);
     } catch (error) {
       this.logger.error('Error ensuring claude-dev Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createDeveloper);
+    } catch (error) {
+      this.logger.error('Error ensuring developer Agent exists');
     }
     try {
       await this.ensureAgentExists(createCodexDev);
