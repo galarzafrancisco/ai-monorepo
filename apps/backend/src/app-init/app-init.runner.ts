@@ -35,6 +35,7 @@ import { createDeveloper } from './agent/developer.agent';
 import { createGeminiAssistant } from './agent/gemini-assistant.agent';
 import { createCodeReviewer } from './agent/code-reviewer.agent';
 import { createLead } from './agent/lead.agent';
+import { createPlanner } from './agent/planner.agent';
 import { MetaService } from 'src/meta/meta.service';
 import { ContextService } from 'src/context/context.service';
 import { DEV_PROMPT, ASSISTANT_PROMPT, REVIEWER_PROMPT } from './prompts/prompts';
@@ -204,6 +205,11 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.ensureAgentExists(createLead);
     } catch (error) {
       this.logger.error('Error ensuring lead Agent exists');
+    }
+    try {
+      await this.ensureAgentExists(createPlanner);
+    } catch (error) {
+      this.logger.error('Error ensuring planner Agent exists');
     }
   }
 
