@@ -3,13 +3,12 @@ import {
   Injectable,
   Logger,
   OnApplicationShutdown,
-  OnModuleDestroy,
 } from '@nestjs/common';
 import { getConfig } from './config/env.config';
 
 @Injectable()
 export class ServerLifecycleService
-  implements OnModuleDestroy, BeforeApplicationShutdown, OnApplicationShutdown
+  implements BeforeApplicationShutdown, OnApplicationShutdown
 {
   private readonly logger = new Logger(ServerLifecycleService.name);
   private shuttingDown = false;
@@ -17,6 +16,7 @@ export class ServerLifecycleService
   private shutdownSignal: string | undefined;
   private activeRequestCount = 0;
   private drainWaiters: Array<() => void> = [];
+  private requestDrainCompleted = false;
 
   isShuttingDown(): boolean {
     return this.shuttingDown;
@@ -41,6 +41,10 @@ export class ServerLifecycleService
       `Shutdown started${this.formatSignal(signal)}; readiness is now false`,
     );
     return true;
+  }
+
+  getShutdownSignal(): string | undefined {
+    return this.shutdownSignal;
   }
 
   trackRequest(): () => void {
@@ -92,13 +96,19 @@ export class ServerLifecycleService
     });
   }
 
-  onModuleDestroy(): void {
-    this.beginShutdown();
+  async drainRequestsOnce(timeoutMs: number): Promise<boolean> {
+    if (this.requestDrainCompleted) {
+      return true;
+    }
+
+    const drained = await this.waitForRequestsToDrain(timeoutMs);
+    this.requestDrainCompleted = true;
+    return drained;
   }
 
   async beforeApplicationShutdown(signal?: string): Promise<void> {
     this.beginShutdown(signal);
-    await this.waitForRequestsToDrain(getConfig().httpDrainTimeoutMs);
+    await this.drainRequestsOnce(getConfig().httpDrainTimeoutMs);
   }
 
   onApplicationShutdown(signal?: string): void {

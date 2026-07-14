@@ -1,6 +1,5 @@
 import {
   Logger,
-  OnApplicationShutdown,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -54,8 +53,7 @@ export class ExecutionsWorkerGateway
   implements
     OnGatewayInit,
     OnGatewayConnection,
-    OnGatewayDisconnect,
-    OnApplicationShutdown
+    OnGatewayDisconnect
 {
   @WebSocketServer()
   server!: Namespace | Server;
@@ -126,7 +124,7 @@ export class ExecutionsWorkerGateway
     }
   }
 
-  async onApplicationShutdown(signal?: string): Promise<void> {
+  async drainWorkerSockets(signal?: string): Promise<void> {
     if (!this.server) {
       return;
     }

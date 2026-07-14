@@ -13,6 +13,7 @@ import { getConfig } from './config/env.config';
 import { Request, Response } from 'express';
 import { ServerLifecycleService } from './server-lifecycle.service';
 import { createHttpDrainMiddleware } from './http-drain.middleware';
+import { installGracefulShutdownDrain } from './graceful-shutdown';
 
 const logger = new Logger('Bootstrap');
 
@@ -101,6 +102,7 @@ async function createConfiguredApp(
 
   app.use(cookieParser());
   app.use(createHttpDrainMiddleware(app.get(ServerLifecycleService)));
+  installGracefulShutdownDrain(app);
   app.enableCors({
     origin: true,
     credentials: true,

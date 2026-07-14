@@ -38,7 +38,7 @@ describe('ExecutionsWorkerGateway shutdown', () => {
     (gateway as any).harnessReportRequestedSocketIds.add('socket-1');
     (gateway as any).workerSocketsByClientId.set('worker-client', new Set(['socket-1']));
 
-    const shutdown = gateway.onApplicationShutdown('SIGTERM');
+    const shutdown = gateway.drainWorkerSockets('SIGTERM');
     jest.advanceTimersByTime(1_000);
     await shutdown;
 
