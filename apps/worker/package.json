@@ -1,6 +1,6 @@
 {
   "name": "@taico/worker",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "private": false,
   "license": "PolyForm-Small-Business-1.0.0",
@@ -35,9 +35,9 @@
     "@github/copilot-sdk": "^0.2.0",
     "@google/adk": "^0.2.4",
     "@opencode-ai/sdk": "^1.1.28",
-    "@taico/client": "^0.3.2",
-    "@taico/events": "^0.3.2",
-    "@taico/shared": "^0.3.2",
+    "@taico/client": "^0.3.3",
+    "@taico/events": "^0.3.3",
+    "@taico/shared": "^0.3.3",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
