@@ -1,4 +1,9 @@
 import {
+  Logger,
+  OnApplicationShutdown,
+  UseGuards,
+} from '@nestjs/common';
+import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
@@ -8,8 +13,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
+import { Namespace, Server, Socket } from 'socket.io';
 import * as cookie from 'cookie';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
@@ -35,6 +39,8 @@ import { TaskExecutionQueuedEvent } from './queue/task-execution-queued.event';
 import { ExecutionInterruptEvent } from './events/execution-interrupt.event';
 
 const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
+const WORKER_SOCKET_DRAIN_EVENT = 'server:draining';
+const WORKER_SOCKET_DRAIN_DISCONNECT_DELAY_MS = 1_000;
 
 @UseGuards(WsAccessTokenGuard, WsScopesGuard)
 @RequireScopes(WorkersScopes.CONNECT.id)
@@ -45,10 +51,14 @@ const SOCKET_AUTH_EXPIRY_SKEW_MS = 1_000;
   namespace: '/executions/worker',
 })
 export class ExecutionsWorkerGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnApplicationShutdown
 {
   @WebSocketServer()
-  server!: Server;
+  server!: Namespace | Server;
 
   private readonly logger = new Logger(ExecutionsWorkerGateway.name);
   private readonly socketExpiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -114,6 +124,37 @@ export class ExecutionsWorkerGateway
         }
       }
     }
+  }
+
+  async onApplicationShutdown(signal?: string): Promise<void> {
+    if (!this.server) {
+      return;
+    }
+
+    const sockets = this.getConnectedWorkerSockets();
+    if (sockets.length === 0) {
+      this.clearAllTokenExpiryDisconnects();
+      return;
+    }
+
+    this.logger.log(
+      `Draining ${sockets.length} worker WebSocket connection(s)${
+        signal ? ` for ${signal}` : ''
+      }`,
+    );
+    this.server.emit(WORKER_SOCKET_DRAIN_EVENT, { signal });
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, WORKER_SOCKET_DRAIN_DISCONNECT_DELAY_MS),
+    );
+
+    for (const client of sockets) {
+      client.disconnect(true);
+      this.clearTokenExpiryDisconnect(client.id);
+      this.harnessReportRequestedSocketIds.delete(client.id);
+    }
+    this.workerSocketsByClientId.clear();
+    this.clearAllTokenExpiryDisconnects();
   }
 
   @SubscribeMessage(ExecutionWireEvents.EXECUTION_ACTIVITY_POST)
@@ -224,6 +265,21 @@ export class ExecutionsWorkerGateway
     }
     clearTimeout(timer);
     this.socketExpiryTimers.delete(socketId);
+  }
+
+  private clearAllTokenExpiryDisconnects(): void {
+    for (const timer of this.socketExpiryTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.socketExpiryTimers.clear();
+  }
+
+  private getConnectedWorkerSockets(): Socket[] {
+    const socketContainer = this.server.sockets;
+    if (socketContainer instanceof Map) {
+      return [...socketContainer.values()];
+    }
+    return [...socketContainer.sockets.values()];
   }
 
   private async recordWorkerSeen(
