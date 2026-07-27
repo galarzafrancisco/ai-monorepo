@@ -12,12 +12,10 @@ import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.ent
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
 import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
-import { JwksService } from '../auth/crypto/jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { TokenExchangeResponseDto } from './dto/token-exchange-response.dto';
 import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
 import { TokenVerifierService } from 'src/auth/crypto/token-verifier.service';
-import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 
 interface DownstreamTokenInfo {
@@ -92,8 +90,8 @@ export class TokenExchangeService {
     // Step 7: Get or refresh downstream token
     const downstreamToken = await this.getDownstreamToken(
       connection,
-      mcpTokenPayload.client_id,
-      requestedScopes,
+      mcpTokenPayload,
+      serverIdentifier,
     );
 
     // Step 8: Return RFC 8693 response
@@ -120,12 +118,22 @@ export class TokenExchangeService {
       throw new UnauthorizedException('Token validation failed');
     }
 
-    // Additional checks: audience
     if (claims.aud !== expectedAudience) {
       this.logger.warn(
         `MCP JWT audience mismatch: expected ${expectedAudience}, got ${claims.aud}`,
       );
       throw new UnauthorizedException('MCP JWT audience mismatch');
+    }
+
+    if (
+      !claims.sub ||
+      !claims.client_id ||
+      !claims.resource ||
+      !claims.authorization_journey_id ||
+      !claims.mcp_authorization_flow_id
+    ) {
+      this.logger.warn('MCP JWT missing required grant-binding claims');
+      throw new UnauthorizedException('MCP JWT missing required claims');
     }
 
     return claims;
@@ -211,26 +219,46 @@ export class TokenExchangeService {
    */
   private async getDownstreamToken(
     connection: McpConnectionEntity,
-    clientId: string,
-    requestedScopes: string[],
+    claims: AccessTokenClaims,
+    serverIdentifier: string,
   ): Promise<DownstreamTokenInfo> {
-    // Find the authorization flow for this connection + client
-    const authFlow = await this.connectionAuthorizationFlowRepository.findOne({
-      where: {
-        mcpConnectionId: connection.id,
+    const authFlows = await this.connectionAuthorizationFlowRepository
+      .createQueryBuilder('connectionFlow')
+      .innerJoin('connectionFlow.authJourney', 'authJourney')
+      .innerJoin('authJourney.mcpAuthorizationFlow', 'mcpFlow')
+      .innerJoin('mcpFlow.client', 'client')
+      .innerJoin('mcpFlow.server', 'server')
+      .where('connectionFlow.mcpConnectionId = :connectionId', {
+        connectionId: connection.id,
+      })
+      .andWhere('connectionFlow.status = :status', {
         status: ConnectionAuthorizationFlowStatus.AUTHORIZED,
-      },
-      relations: ['authJourney', 'authJourney.mcpAuthorizationFlow'],
-    });
+      })
+      .andWhere(
+        'connectionFlow.authorizationJourneyId = :authorizationJourneyId',
+        { authorizationJourneyId: claims.authorization_journey_id },
+      )
+      .andWhere('authJourney.actorId = :actorId', { actorId: claims.sub })
+      .andWhere('mcpFlow.id = :mcpAuthorizationFlowId', {
+        mcpAuthorizationFlowId: claims.mcp_authorization_flow_id,
+      })
+      .andWhere('client.clientId = :clientId', { clientId: claims.client_id })
+      .andWhere('mcpFlow.resource = :resource', { resource: claims.resource })
+      .andWhere('server.providedId = :serverIdentifier', { serverIdentifier })
+      .take(2)
+      .getMany();
 
-    if (!authFlow || !authFlow.accessToken) {
+    const [authFlow] = authFlows;
+    if (authFlows.length !== 1 || !authFlow?.accessToken) {
       this.logger.warn(
-        `No authorized connection found for connection: ${connection.id}`,
+        `No uniquely bound authorized connection found for connection: ${connection.id}`,
       );
       throw new UnauthorizedException(
         'No authorized connection found for this client',
       );
     }
+
+    const accessToken = authFlow.accessToken;
 
     // Check if token is valid (not expired, has required scopes)
     const now = new Date();
@@ -248,7 +276,7 @@ export class TokenExchangeService {
 
     // Token is valid
     return {
-      accessToken: authFlow.accessToken,
+      accessToken,
       expiresAt: authFlow.tokenExpiresAt,
     };
   }
