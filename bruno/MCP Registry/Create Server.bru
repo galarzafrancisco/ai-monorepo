@@ -1,0 +1,28 @@
+meta {
+  name: Create Server
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/mcp/servers
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "providedId": "bruno-demo",
+    "name": "Bruno Demo Server",
+    "description": "Example MCP server created from Bruno",
+    "type": "http"
+  }
+}

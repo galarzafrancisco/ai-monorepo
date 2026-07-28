@@ -1,0 +1,15 @@
+meta {
+  name: List Connections
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}{{apiPrefix}}/mcp/servers/{{serverId}}/connections
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

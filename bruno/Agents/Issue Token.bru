@@ -1,0 +1,26 @@
+meta {
+  name: Issue Token
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/agents/{{agentSlug}}/tokens
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Bruno API Token",
+    "scopes": ["tasks:read", "tasks:write"]
+  }
+}

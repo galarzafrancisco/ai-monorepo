@@ -1,0 +1,27 @@
+meta {
+  name: Create Task
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/tasks/tasks
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Bruno example task",
+    "description": "Created from the Taico Backend API Bruno collection",
+    "tagNames": ["{{tagName}}"]
+  }
+}

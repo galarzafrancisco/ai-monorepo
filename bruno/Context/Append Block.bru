@@ -1,0 +1,25 @@
+meta {
+  name: Append Block
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/context/blocks/{{contextBlockId}}/append
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "\n\nAppended from Bruno."
+  }
+}

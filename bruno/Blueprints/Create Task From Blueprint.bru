@@ -1,0 +1,15 @@
+meta {
+  name: Create Task From Blueprint
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/task-blueprints/{{taskBlueprintId}}/create-task
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Create Managed User
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/auth/users
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "new-user@example.com",
+    "role": "standard"
+  }
+}

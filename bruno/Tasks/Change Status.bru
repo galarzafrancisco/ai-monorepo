@@ -1,0 +1,26 @@
+meta {
+  name: Change Status
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}{{apiPrefix}}/tasks/tasks/{{taskId}}/status
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "IN_PROGRESS",
+    "comment": "Moved from Bruno"
+  }
+}
