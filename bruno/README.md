@@ -4,13 +4,12 @@ This collection covers the main Taico backend REST workflows: health checks, aut
 
 ## Environments
 
-- `Local Dev`: `http://localhost:3000`
+- `Local Dev`: `http://localhost:2003` for `npm run dev:1`
 - `Production`: `https://taico.app`
 
 Set environment variables before running mutating requests:
 
 - `email` / `password` for `Auth/Login`.
-- `accessToken` after login, or paste a bearer token manually.
 - Resource IDs such as `taskId`, `threadId`, `actorId`, `contextBlockId`, `serverId`, and `secretId` after creating or listing resources.
 
-The login request includes a post-response script that stores `accessToken` when the response body contains `accessToken` or `token`.
+Run `Auth/Login` first for cookie-authenticated requests. The backend sets httpOnly auth cookies, so Bruno should send the stored cookies on subsequent requests when its cookie jar is enabled.

@@ -20,11 +20,3 @@ body:json {
     "password": "{{password}}"
   }
 }
-
-script:post-response {
-  const body = res.getBody();
-  const token = body?.accessToken || body?.token || body?.access_token;
-  if (token) {
-    bru.setEnvVar("accessToken", token);
-  }
-}

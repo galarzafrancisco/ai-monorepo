@@ -7,11 +7,7 @@ meta {
 patch {
   url: {{baseUrl}}{{apiPrefix}}/tasks/tasks/{{taskId}}/status
   body: json
-  auth: bearer
-}
-
-auth:bearer {
-  token: {{accessToken}}
+  auth: none
 }
 
 headers {

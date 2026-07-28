@@ -7,11 +7,7 @@ meta {
 post {
   url: {{baseUrl}}{{apiPrefix}}/tasks/tasks/{{taskId}}/tags
   body: json
-  auth: bearer
-}
-
-auth:bearer {
-  token: {{accessToken}}
+  auth: none
 }
 
 headers {

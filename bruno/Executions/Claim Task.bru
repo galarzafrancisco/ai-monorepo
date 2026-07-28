@@ -7,9 +7,5 @@ meta {
 post {
   url: {{baseUrl}}{{apiPrefix}}/executions/queue/{{taskId}}/claim
   body: none
-  auth: bearer
-}
-
-auth:bearer {
-  token: {{accessToken}}
+  auth: none
 }
