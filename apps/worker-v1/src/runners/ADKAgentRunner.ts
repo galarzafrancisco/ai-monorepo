@@ -71,7 +71,7 @@ export class ADKAgentRunner extends BaseAgentRunner {
 
   constructor(modelConfig: AgentModelConfig = {}) {
     super();
-    this.modelId = modelConfig.modelId ?? 'gemini-2.5-flash';
+    this.modelId = modelConfig.modelId ?? 'gemini-2.5-pro';
   }
 
   protected async runInternal(
