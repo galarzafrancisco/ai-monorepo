@@ -1,0 +1,11 @@
+meta {
+  name: List Messages
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}{{apiPrefix}}/threads/{{threadId}}/messages
+  body: none
+  auth: none
+}

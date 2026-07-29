@@ -1,0 +1,21 @@
+meta {
+  name: Append Thread State
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/threads/{{threadId}}/state/append
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "\nDecision: tested thread state append from Bruno."
+  }
+}

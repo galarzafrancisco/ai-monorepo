@@ -1,0 +1,11 @@
+meta {
+  name: List Tasks
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}{{apiPrefix}}/tasks/tasks?page=1&limit=20
+  body: none
+  auth: none
+}

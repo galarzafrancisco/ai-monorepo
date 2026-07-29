@@ -1,0 +1,21 @@
+meta {
+  name: Add Tag
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/tasks/tasks/{{taskId}}/tags
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "{{tagName}}"
+  }
+}

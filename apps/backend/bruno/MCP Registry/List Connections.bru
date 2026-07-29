@@ -1,0 +1,11 @@
+meta {
+  name: List Connections
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}{{apiPrefix}}/mcp/servers/{{serverId}}/connections
+  body: none
+  auth: none
+}

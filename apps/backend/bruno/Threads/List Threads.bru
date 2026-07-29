@@ -1,0 +1,11 @@
+meta {
+  name: List Threads
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}{{apiPrefix}}/threads?page=1&limit=20
+  body: none
+  auth: none
+}

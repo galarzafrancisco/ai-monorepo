@@ -1,0 +1,11 @@
+meta {
+  name: Claim Task
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/executions/queue/{{taskId}}/claim
+  body: none
+  auth: none
+}

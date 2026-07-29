@@ -1,0 +1,11 @@
+meta {
+  name: Get Thread State
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}{{apiPrefix}}/threads/{{threadId}}/state
+  body: none
+  auth: none
+}

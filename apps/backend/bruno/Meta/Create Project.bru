@@ -1,0 +1,23 @@
+meta {
+  name: Create Project
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/meta/projects
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "slug": "example-project",
+    "description": "Example project created from Bruno",
+    "repoUrl": "https://github.com/example/repo"
+  }
+}

@@ -1,0 +1,11 @@
+meta {
+  name: Get Agent
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}{{apiPrefix}}/agents/{{agentSlug}}
+  body: none
+  auth: none
+}

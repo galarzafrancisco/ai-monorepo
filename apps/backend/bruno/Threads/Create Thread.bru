@@ -1,0 +1,22 @@
+meta {
+  name: Create Thread
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/threads
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Bruno API exploration",
+    "parentTaskId": "{{taskId}}"
+  }
+}

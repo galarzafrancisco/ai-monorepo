@@ -1,0 +1,21 @@
+meta {
+  name: Create Tag
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/meta/tags
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "{{tagName}}"
+  }
+}

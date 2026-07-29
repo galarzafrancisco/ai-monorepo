@@ -1,0 +1,23 @@
+meta {
+  name: Create Provider
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/chat-providers
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "OpenAI via Bruno",
+    "type": "openai",
+    "secretId": "{{secretId}}"
+  }
+}

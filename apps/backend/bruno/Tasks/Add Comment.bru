@@ -1,0 +1,21 @@
+meta {
+  name: Add Comment
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}{{apiPrefix}}/tasks/tasks/{{taskId}}/comments
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Comment created from Bruno"
+  }
+}
