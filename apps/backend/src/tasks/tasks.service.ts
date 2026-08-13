@@ -32,31 +32,29 @@ import {
 } from './dto/service/tasks.service.types';
 import {
   TaskNotFoundError,
-  InvalidStatusTransitionError,
-  CommentRequiredError,
   ActorNotFoundError,
-  TaskIsThreadParentError,
   InputRequestSelfAssignmentError,
 } from './errors/tasks.errors';
 import {
-  TaskCreatedEvent,
   TaskUpdatedEvent,
-  TaskAssignedEvent,
-  TaskDeletedEvent,
-  CommentAddedEvent,
-  ArtefactAddedEvent,
-  TaskStatusChangedEvent,
   InputRequestAnsweredEvent,
 } from './events/tasks.events';
 import { MetaService } from '../meta/meta.service';
-import { isSystemTagName } from '../meta/system-tags';
 import { TagEntity } from '../meta/tag.entity';
 import { ActorService } from 'src/identity-provider/actor.service';
 import { SearchService } from '../search/search.service';
-import { AgentRunsService } from '../agent-runs/agent-runs.service';
-import { ThreadsService } from '../threads/threads.service';
-import { ParentTaskThreadAlreadyExistsError } from '../threads/errors/threads.errors';
 import { ActiveExecutionContextResolverService } from '../executions/active/active-execution-context-resolver.service';
+import { ChangeTaskStatusUseCase } from './use-cases/change-task-status.use-case';
+import { CreateTaskUseCase } from './use-cases/create-task.use-case';
+import { UpdateTaskUseCase } from './use-cases/update-task.use-case';
+import { DeleteTaskUseCase } from './use-cases/delete-task.use-case';
+import { AssignTaskUseCase } from './use-cases/assign-task.use-case';
+import { AddTaskCommentUseCase } from './use-cases/add-task-comment.use-case';
+import { CreateInputRequestUseCase } from './use-cases/create-input-request.use-case';
+import { AnswerInputRequestUseCase } from './use-cases/answer-input-request.use-case';
+import { AddTaskArtefactUseCase } from './use-cases/add-task-artefact.use-case';
+import { ChangeTaskTagUseCase } from './use-cases/change-task-tag.use-case';
+import { CreateTaskInThreadUseCase } from './use-cases/create-task-in-thread.use-case';
 
 @Injectable()
 export class TasksService {
@@ -77,9 +75,18 @@ export class TasksService {
     private readonly metaService: MetaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly searchService: SearchService,
-    private readonly agentRunsService: AgentRunsService,
-    private readonly threadsService: ThreadsService,
     private readonly executionContextResolver: ActiveExecutionContextResolverService,
+    private readonly changeTaskStatusUseCase: ChangeTaskStatusUseCase,
+    private readonly createTaskUseCase: CreateTaskUseCase,
+    private readonly updateTaskUseCase: UpdateTaskUseCase,
+    private readonly deleteTaskUseCase: DeleteTaskUseCase,
+    private readonly assignTaskUseCase: AssignTaskUseCase,
+    private readonly addTaskCommentUseCase: AddTaskCommentUseCase,
+    private readonly createInputRequestUseCase: CreateInputRequestUseCase,
+    private readonly answerInputRequestUseCase: AnswerInputRequestUseCase,
+    private readonly addTaskArtefactUseCase: AddTaskArtefactUseCase,
+    private readonly changeTaskTagUseCase: ChangeTaskTagUseCase,
+    private readonly createTaskInThreadUseCase: CreateTaskInThreadUseCase,
   ) {}
 
   async createTask(input: CreateTaskInput): Promise<TaskResult> {
@@ -90,81 +97,7 @@ export class TasksService {
       sessionId: input.sessionId,
     });
 
-    // Look up actor IDs from slugs
-    let assigneeActorId: string | null = null;
-
-    if (input.assigneeActorId) {
-      const assigneeActor = await this.actorService.getActorByIdOrSlug(
-        input.assigneeActorId,
-      );
-      if (!assigneeActor) {
-        throw new Error(`Assignee actor not found: ${input.assigneeActorId}`);
-      }
-      assigneeActorId = assigneeActor.id;
-    }
-
-    // createdBy is required - look up the actor first by id then slug
-    const createdByActor = await this.actorService.getActorByIdOrSlug(
-      input.createdByActorId,
-    );
-    if (!createdByActor) {
-      throw new Error(`Creator actor not found: ${input.createdByActorId}`);
-    }
-    const createdByActorId = createdByActor.id;
-
-    const task = this.taskRepository.create({
-      name: input.name,
-      description: input.description,
-      assigneeActorId,
-      sessionId: input.sessionId ?? null,
-      status: TaskStatus.NOT_STARTED,
-      createdByActorId,
-    });
-
-    const savedTask = await this.taskRepository.save(task);
-
-    // Handle tags if provided
-    if (input.tagNames && input.tagNames.length > 0) {
-      const tags = await this.metaService.findOrCreateTagEntities(
-        input.tagNames,
-      );
-      savedTask.tags = tags;
-      await this.taskRepository.save(savedTask);
-
-      // Increment usage tracking for all tags
-      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
-    }
-
-    // Handle dependencies if provided
-    if (input.dependsOnIds && input.dependsOnIds.length > 0) {
-      const dependencyTasks = await this.taskRepository.findBy({
-        id: In(input.dependsOnIds),
-      });
-      if (dependencyTasks.length !== input.dependsOnIds.length) {
-        throw new Error('One or more dependency tasks not found');
-      }
-      savedTask.dependsOn = dependencyTasks;
-      await this.taskRepository.save(savedTask);
-    }
-
-    // Reload with relations
-    const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: savedTask.id },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!taskWithRelations) {
-      throw new TaskNotFoundError(savedTask.id);
-    }
+    const taskWithRelations = await this.createTaskUseCase.execute(input);
 
     this.logger.log({
       message: 'Task created',
@@ -172,13 +105,6 @@ export class TasksService {
       name: taskWithRelations.name,
     });
 
-    this.eventEmitter.emit(
-      TaskCreatedEvent.INTERNAL,
-      new TaskCreatedEvent(
-        { id: taskWithRelations.createdByActorId },
-        taskWithRelations,
-      ),
-    );
     return this.mapTaskToResult(taskWithRelations);
   }
 
@@ -207,61 +133,20 @@ export class TasksService {
     // Get the parent task from the execution context
     const parentTaskId = context.parentTaskId;
 
-    // Create the task using the existing method
-    const task = await this.createTask({
-      name: input.name,
-      description: input.description,
-      assigneeActorId: input.assigneeActorId,
-      sessionId: input.sessionId,
-      createdByActorId: input.createdByActorId,
-      tagNames: input.tagNames,
-      dependsOnIds: input.dependsOnIds,
-    });
-
-    // Create thread optimistically. If another call created it first,
-    // recover by attaching this task to the already-created thread.
-    let thread: Awaited<ReturnType<ThreadsService['createThread']>> | null =
-      null;
-    try {
-      thread = await this.threadsService.createThread({
-        createdByActorId: input.createdByActorId,
-        parentTaskId,
-        taskIds: [task.id],
-      });
-    } catch (error) {
-      if (!(error instanceof ParentTaskThreadAlreadyExistsError)) {
-        throw error;
-      }
-
-      this.logger.log({
-        message:
-          'Parent thread was created concurrently, attaching task to existing thread',
-        parentTaskId,
-        newTaskId: task.id,
-      });
-
-      thread = await this.threadsService.findThreadByParentTaskId(parentTaskId);
-      if (!thread) {
-        throw error;
-      }
-      await this.threadsService.attachTask(thread.id, task.id);
-    }
-
-    if (!thread) {
-      throw new Error(
-        `Failed to resolve thread for parent task ${parentTaskId}`,
-      );
-    }
+    const task = await this.createTaskInThreadUseCase.execute(
+      input,
+      parentTaskId,
+    );
 
     this.logger.log({
       message: 'Task created in thread',
       taskId: task.id,
-      threadId: thread.id,
+      parentTaskId,
       executionId: input.executionId,
       runId: input.runId,
     });
 
-    return task;
+    return this.mapTaskToResult(task);
   }
 
   async updateTask(
@@ -274,101 +159,17 @@ export class TasksService {
       taskId,
     });
 
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    // Apply partial updates
-    if (input.name !== undefined) task.name = input.name;
-    if (input.description !== undefined) task.description = input.description;
-    if (input.sessionId !== undefined) task.sessionId = input.sessionId ?? null;
-
-    // Look up actor IDs from slugs for assignee and createdBy
-    if (input.assigneeActorId !== undefined) {
-      if (input.assigneeActorId === null) {
-        task.assigneeActorId = null; // defined but null means they're removing assignee
-      } else {
-        const assigneeActor = await this.actorService.getActorByIdOrSlug(
-          input.assigneeActorId,
-        );
-        if (assigneeActor) {
-          task.assigneeActorId = assigneeActor.id;
-        } else {
-          // TODO: Assignee doesn't exist. Should we throw?
-        }
-      }
-    }
-
-    // Handle tags if provided
-    if (input.tagNames !== undefined) {
-      if (input.tagNames.length === 0) {
-        task.tags = [];
-      } else {
-        task.tags = await this.metaService.findOrCreateTagEntities(
-          input.tagNames,
-        );
-      }
-    }
-
-    // Handle dependencies if provided
-    if (input.dependsOnIds !== undefined) {
-      if (input.dependsOnIds.length === 0) {
-        task.dependsOn = [];
-      } else {
-        const dependencyTasks = await this.taskRepository.findBy({
-          id: In(input.dependsOnIds),
-        });
-        if (dependencyTasks.length !== input.dependsOnIds.length) {
-          throw new Error('One or more dependency tasks not found');
-        }
-        task.dependsOn = dependencyTasks;
-      }
-    }
-
-    const updatedTask = await this.taskRepository.save(task);
-
-    // Reload with relations to ensure we have updated tags
-    const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!taskWithRelations) {
-      throw new TaskNotFoundError(taskId);
-    }
+    const taskWithRelations = await this.updateTaskUseCase.execute(
+      taskId,
+      input,
+      actorId,
+    );
 
     this.logger.log({
       message: 'Task updated',
       taskId: taskWithRelations.id,
     });
 
-    this.eventEmitter.emit(
-      TaskUpdatedEvent.INTERNAL,
-      new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
-    );
     return this.mapTaskToResult(taskWithRelations);
   }
 
@@ -384,71 +185,20 @@ export class TasksService {
       sessionId: input.sessionId,
     });
 
-    this.logger.debug(`finding task ${taskId}`);
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-    if (!task) {
-      this.logger.debug(`task ${taskId} not found`);
-      throw new TaskNotFoundError(taskId);
-    }
-    this.logger.debug(`task ${taskId} found`);
-
-    if (task.assigneeActorId === input.assigneeActorId) {
-      // Already assigned, no op
-      return this.mapTaskToResult(task);
-    }
-
-    // Update assignee
-    task.assigneeActorId = input.assigneeActorId;
-    task.assigneeActor = undefined;
-
-    // Update session if any
-    if (input.sessionId !== undefined) {
-      task.sessionId = input.sessionId || null;
-    }
-    this.logger.debug(`task ready to save:`, task);
-    const assignedTask = await this.taskRepository.save(task);
-    this.logger.debug(`saved task: ${assignedTask}`);
-
-    // Reload with relations
-    const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-    this.logger.debug(`task from db`, taskWithRelations);
+    const taskWithRelations = await this.assignTaskUseCase.execute(
+      taskId,
+      input,
+      actorId,
+    );
 
     this.logger.log({
       message: 'Task assigned',
-      taskId: assignedTask.id,
-      assignee: taskWithRelations?.assignee,
-      sessionId: assignedTask.sessionId,
+      taskId: taskWithRelations.id,
+      assignee: taskWithRelations.assignee,
+      sessionId: taskWithRelations.sessionId,
     });
 
-    this.eventEmitter.emit(
-      TaskAssignedEvent.INTERNAL,
-      new TaskAssignedEvent({ id: actorId }, taskWithRelations!),
-    );
-    return this.mapTaskToResult(taskWithRelations!);
+    return this.mapTaskToResult(taskWithRelations);
   }
 
   async deleteTask(taskId: string, actorId: string): Promise<void> {
@@ -457,29 +207,12 @@ export class TasksService {
       taskId,
     });
 
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
-
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    // Check if task is a parent of any threads
-    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(taskId);
-    if (threadsWithParent.length > 0) {
-      throw new TaskIsThreadParentError(taskId, threadsWithParent.length);
-    }
-
-    await this.taskRepository.softRemove(task);
+    await this.deleteTaskUseCase.execute(taskId, actorId);
 
     this.logger.log({
       message: 'Task deleted',
       taskId,
     });
-
-    this.eventEmitter.emit(
-      TaskDeletedEvent.INTERNAL,
-      new TaskDeletedEvent({ id: actorId }, taskId),
-    );
   }
 
   async listTasks(input: ListTasksInput): Promise<ListTasksResult> {
@@ -498,61 +231,63 @@ export class TasksService {
 
     const skip = (input.page - 1) * input.limit;
 
-    const result = await this.taskRepository.manager.transaction(async (manager) => {
-      const taskRepository = manager.getRepository(TaskEntity);
+    const result = await this.taskRepository.manager.transaction(
+      async (manager) => {
+        const taskRepository = manager.getRepository(TaskEntity);
 
-      if (input.status) {
-        const queryBuilder = this.createListTasksQuery(taskRepository, input)
-          .orderBy('task.updatedAt', 'DESC')
-          .skip(skip)
-          .take(input.limit);
-        const [tasks, total] = await queryBuilder.getManyAndCount();
+        if (input.status) {
+          const queryBuilder = this.createListTasksQuery(taskRepository, input)
+            .orderBy('task.updatedAt', 'DESC')
+            .skip(skip)
+            .take(input.limit);
+          const [tasks, total] = await queryBuilder.getManyAndCount();
+
+          return {
+            tasks,
+            total,
+            totalPages: Math.ceil(total / input.limit),
+          };
+        }
+
+        const tasks: TaskEntity[] = [];
+        const totalsByStatus: number[] = [];
+
+        for (const status of Object.values(TaskStatus)) {
+          const count = await this.createListTasksQuery(
+            taskRepository,
+            input,
+            status,
+          ).getCount();
+          totalsByStatus.push(count);
+
+          if (count <= skip) {
+            continue;
+          }
+
+          const statusTasks = await this.createListTasksQuery(
+            taskRepository,
+            input,
+            status,
+          )
+            .orderBy('task.updatedAt', 'DESC')
+            .skip(skip)
+            .take(input.limit)
+            .getMany();
+          tasks.push(...statusTasks);
+        }
+
+        tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
         return {
           tasks,
-          total,
-          totalPages: Math.ceil(total / input.limit),
+          total: totalsByStatus.reduce((sum, count) => sum + count, 0),
+          totalPages: Math.max(
+            0,
+            ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
+          ),
         };
-      }
-
-      const tasks: TaskEntity[] = [];
-      const totalsByStatus: number[] = [];
-
-      for (const status of Object.values(TaskStatus)) {
-        const count = await this.createListTasksQuery(
-          taskRepository,
-          input,
-          status,
-        ).getCount();
-        totalsByStatus.push(count);
-
-        if (count <= skip) {
-          continue;
-        }
-
-        const statusTasks = await this.createListTasksQuery(
-          taskRepository,
-          input,
-          status,
-        )
-          .orderBy('task.updatedAt', 'DESC')
-          .skip(skip)
-          .take(input.limit)
-          .getMany();
-        tasks.push(...statusTasks);
-      }
-
-      tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-
-      return {
-        tasks,
-        total: totalsByStatus.reduce((sum, count) => sum + count, 0),
-        totalPages: Math.max(
-          0,
-          ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
-        ),
-      };
-    });
+      },
+    );
 
     this.logger.log({
       message: 'Tasks listed',
@@ -646,40 +381,18 @@ export class TasksService {
       taskId,
     });
 
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
-
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    const comment = this.commentRepository.create({
-      task,
-      commenterActorId: input.commenterActorId,
-      content: input.content,
-    });
-
-    const savedComment = await this.commentRepository.save(comment);
-
-    // Reload with actor relation
-    const commentWithRelations = await this.commentRepository.findOne({
-      where: { id: savedComment.id },
-      relations: ['commenterActor', 'task'],
-    });
+    const commentWithRelations = await this.addTaskCommentUseCase.execute(
+      taskId,
+      input,
+    );
 
     this.logger.log({
       message: 'Comment added',
-      commentId: savedComment.id,
+      commentId: commentWithRelations.id,
       taskId,
     });
 
-    this.eventEmitter.emit(
-      CommentAddedEvent.INTERNAL,
-      new CommentAddedEvent(
-        { id: input.commenterActorId },
-        commentWithRelations!,
-      ),
-    );
-    return this.mapCommentToResult(commentWithRelations!);
+    return this.mapCommentToResult(commentWithRelations);
   }
 
   async addArtefact(
@@ -692,37 +405,19 @@ export class TasksService {
       taskId,
     });
 
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
-
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    const artefact = this.artefactRepository.create({
-      task,
-      name: input.name,
-      link: input.link,
-    });
-
-    const savedArtefact = await this.artefactRepository.save(artefact);
-
-    // Reload with task relation
-    const artefactWithRelations = await this.artefactRepository.findOne({
-      where: { id: savedArtefact.id },
-      relations: ['task'],
-    });
+    const artefactWithRelations = await this.addTaskArtefactUseCase.execute(
+      taskId,
+      input,
+      actorId,
+    );
 
     this.logger.log({
       message: 'Artefact added',
-      artefactId: savedArtefact.id,
+      artefactId: artefactWithRelations.id,
       taskId,
     });
 
-    this.eventEmitter.emit(
-      ArtefactAddedEvent.INTERNAL,
-      new ArtefactAddedEvent({ id: actorId }, artefactWithRelations!),
-    );
-    return this.mapArtefactToResult(artefactWithRelations!);
+    return this.mapArtefactToResult(artefactWithRelations);
   }
 
   async changeStatus(
@@ -736,73 +431,8 @@ export class TasksService {
       status: input.status,
     });
 
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    // Validate status transition rules
-    if (input.status === TaskStatus.IN_PROGRESS && !task.assigneeActorId) {
-      throw new InvalidStatusTransitionError(
-        task.status,
-        input.status,
-        'Task must be assigned before moving to in progress',
-      );
-    }
-
-    if (input.status === TaskStatus.DONE) {
-      const hasExistingComments = task.comments?.length > 0;
-
-      if (!input.comment && !hasExistingComments) {
-        throw new CommentRequiredError();
-      }
-    }
-
-    // If changing to DONE and comment is provided, add the comment
-    if (input.status === TaskStatus.DONE && input.comment) {
-      await this.commentRepository.save(
-        this.commentRepository.create({
-          task,
-          commenterActorId: task.assigneeActorId,
-          content: input.comment,
-        }),
-      );
-    }
-
-    task.status = input.status;
-    const updatedTask = await this.taskRepository.save(task);
-
-    // Reload to get updated comments if any were added
-    const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!taskWithRelations) {
-      throw new TaskNotFoundError(taskId);
-    }
+    const { task: taskWithRelations } =
+      await this.changeTaskStatusUseCase.execute(taskId, input, actorId);
 
     this.logger.log({
       message: 'Task status changed',
@@ -810,57 +440,7 @@ export class TasksService {
       status: taskWithRelations.status,
     });
 
-    this.eventEmitter.emit(
-      TaskStatusChangedEvent.INTERNAL,
-      new TaskStatusChangedEvent({ id: actorId }, taskWithRelations),
-    );
-
-    if (this.shouldAutoPrune(taskWithRelations)) {
-      await this.autoPruneCompletedTask(taskWithRelations.id, actorId);
-    }
-
     return this.mapTaskToResult(taskWithRelations);
-  }
-
-  private shouldAutoPrune(task: TaskEntity): boolean {
-    return (
-      task.status === TaskStatus.DONE &&
-      (task.tags || []).some((tag) => isSystemTagName(tag.name))
-    );
-  }
-
-  private async autoPruneCompletedTask(
-    taskId: string,
-    actorId: string,
-  ): Promise<void> {
-    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(
-      taskId,
-    );
-    if (threadsWithParent.length > 0) {
-      this.logger.log({
-        message: 'Auto-prune skipped because task is a thread parent',
-        taskId,
-        threadCount: threadsWithParent.length,
-      });
-      return;
-    }
-
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
-    if (!task) {
-      return;
-    }
-
-    await this.taskRepository.softRemove(task);
-
-    this.logger.log({
-      message: 'Task auto-pruned after completion',
-      taskId,
-    });
-
-    this.eventEmitter.emit(
-      TaskDeletedEvent.INTERNAL,
-      new TaskDeletedEvent({ id: actorId }, taskId),
-    );
   }
 
   async addTagToTask(
@@ -874,64 +454,10 @@ export class TasksService {
       tagName: input.name,
     });
 
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    // Find or create the tag using MetaService
-    const tag = await this.metaService.findOrCreateTagEntity(input.name);
-
-    // Add tag to task if not already present
-    if (!task.tags.some((t) => t.id === tag.id)) {
-      task.tags.push(tag);
-      await this.taskRepository.save(task);
-
-      // Increment tag usage tracking
-      await this.metaService.incrementTagUsage(tag.id);
-
-      this.logger.log({
-        message: 'Tag added to task',
-        taskId,
-        tagId: tag.id,
-      });
-    }
-
-    // Reload with relations
-    const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!taskWithRelations) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    this.eventEmitter.emit(
-      TaskUpdatedEvent.INTERNAL,
-      new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
+    const taskWithRelations = await this.changeTaskTagUseCase.add(
+      taskId,
+      input.name,
+      actorId,
     );
     return this.mapTaskToResult(taskWithRelations);
   }
@@ -947,26 +473,11 @@ export class TasksService {
       tagId,
     });
 
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!task) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    task.tags = task.tags.filter((tag) => tag.id !== tagId);
-    await this.taskRepository.save(task);
+    const taskWithRelations = await this.changeTaskTagUseCase.remove(
+      taskId,
+      tagId,
+      actorId,
+    );
 
     this.logger.log({
       message: 'Tag removed from task',
@@ -974,32 +485,6 @@ export class TasksService {
       tagId,
     });
 
-    // Check if tag is now orphaned and clean it up using MetaService
-    await this.metaService.cleanupOrphanedTag(tagId);
-
-    // Reload with relations to get updated task
-    const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
-      relations: [
-        'comments',
-        'comments.commenterActor',
-        'artefacts',
-        'inputRequests',
-        'tags',
-        'dependsOn',
-        'assigneeActor',
-        'createdByActor',
-      ],
-    });
-
-    if (!taskWithRelations) {
-      throw new TaskNotFoundError(taskId);
-    }
-
-    this.eventEmitter.emit(
-      TaskUpdatedEvent.INTERNAL,
-      new TaskUpdatedEvent({ id: actorId }, taskWithRelations),
-    );
     return this.mapTaskToResult(taskWithRelations);
   }
 
@@ -1102,95 +587,17 @@ export class TasksService {
       assignedToActorId: input.assignedToActorId,
     });
 
-    // Get task to find creator if assignedToActorId is not provided
-    const task = await this.taskRepository.findOne({
-      where: { id: input.taskId },
-      relations: ['createdByActor'],
-    });
+    const savedInputRequest =
+      await this.createInputRequestUseCase.execute(input);
 
-    if (!task) {
-      throw new TaskNotFoundError(input.taskId);
-    }
-
-    // Default to task creator if assignedToActorId is not provided
-    const assignedToActorId = input.assignedToActorId ?? task.createdByActorId;
-
-    if (input.askedByActorId === assignedToActorId) {
-      throw new InputRequestSelfAssignmentError(
-        input.askedByActorId,
-        assignedToActorId,
-      );
-    }
-
-    const inputRequest = this.inputRequestRepository.create({
+    this.logger.log({
+      message: 'Input request created',
+      inputRequestId: savedInputRequest.id,
       taskId: input.taskId,
-      askedByActorId: input.askedByActorId,
-      assignedToActorId: assignedToActorId,
-      question: input.question,
-      answer: null,
-      resolvedAt: null,
+      assignedToActorId: savedInputRequest.assignedToActorId,
     });
 
-    try {
-      const savedInputRequest =
-        await this.inputRequestRepository.save(inputRequest);
-
-      this.logger.log({
-        message: 'Input request created',
-        inputRequestId: savedInputRequest.id,
-        taskId: input.taskId,
-        assignedToActorId: assignedToActorId,
-      });
-
-      // Reload with relations
-      const taskWithRelations = await this.taskRepository.findOne({
-        where: { id: input.taskId },
-        relations: [
-          'comments',
-          'comments.commenterActor',
-          'inputRequests',
-          'tags',
-          'dependsOn',
-          'assigneeActor',
-          'createdByActor',
-        ],
-      });
-
-      if (!taskWithRelations) {
-        throw new TaskNotFoundError(input.taskId);
-      }
-
-      this.eventEmitter.emit(
-        TaskUpdatedEvent.INTERNAL,
-        new TaskUpdatedEvent({ id: input.askedByActorId }, taskWithRelations),
-      );
-      return this.mapInputRequestToResult(savedInputRequest);
-    } catch (error: any) {
-      // If save fails, check what entity doesn't exist to provide a proper error message
-      this.logger.debug({
-        message: 'Input request creation failed, checking entities',
-        error: error.message,
-      });
-
-      // Check if askedBy actor exists
-      const askedByActor = await this.actorRepository.findOne({
-        where: { id: input.askedByActorId },
-      });
-      if (!askedByActor) {
-        throw new ActorNotFoundError(input.askedByActorId);
-      }
-
-      // Check if assignedTo actor exists
-      const assignedToActor = await this.actorRepository.findOne({
-        where: { id: assignedToActorId },
-      });
-      if (!assignedToActor) {
-        throw new ActorNotFoundError(assignedToActorId);
-      }
-
-      // If all entities exist but save still failed, rethrow the original error
-      throw error;
-    }
+    return this.mapInputRequestToResult(savedInputRequest);
   }
 
   async answerInputRequest(
@@ -1205,32 +612,18 @@ export class TasksService {
       inputRequestId,
     });
 
-    const inputRequest = await this.inputRequestRepository.findOne({
-      where: { id: inputRequestId, taskId },
-    });
-
-    if (!inputRequest) {
-      throw new Error(
-        `Input request ${inputRequestId} not found for task ${taskId}`,
-      );
-    }
-
-    inputRequest.answer = input.answer;
-    inputRequest.resolvedAt = new Date();
-
-    const updatedInputRequest =
-      await this.inputRequestRepository.save(inputRequest);
+    const updatedInputRequest = await this.answerInputRequestUseCase.execute(
+      taskId,
+      inputRequestId,
+      input,
+      actorId,
+    );
 
     this.logger.log({
       message: 'Input request answered',
       inputRequestId,
       taskId,
     });
-
-    this.eventEmitter.emit(
-      InputRequestAnsweredEvent.INTERNAL,
-      new InputRequestAnsweredEvent({ id: actorId }, updatedInputRequest),
-    );
 
     return this.mapInputRequestToResult(updatedInputRequest);
   }

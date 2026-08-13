@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskExecutionQueuePopulatorService } from './task-execution-queue-populator.service';
 import { TaskExecutionQueueEntity } from '../queue/task-execution-queue.entity';
-import { TaskExecutionQueuedEvent } from '../queue/task-execution-queued.event';
 import { AgentsService } from '../../agents/agents.service';
 import { ReadinessCandidateRepository } from './readiness-candidate.repository';
 import { TaskExecutionHistoryService } from '../history/task-execution-history.service';
@@ -74,7 +73,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
   });
 
   describe('upsertQueueEntry', () => {
-    it('should emit TaskExecutionQueuedEvent when a new row is inserted (SQLite changes > 0)', async () => {
+    it('reports a new insertion without emitting from the persistence helper', async () => {
       const taskId = 'test-task-id';
 
       // Mock the query builder chain
@@ -98,17 +97,12 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       // Call the private method through reflection
       await (service as any).upsertQueueEntry(taskId);
 
-      // Verify the event was emitted
-      expect(eventEmitter.emit).toHaveBeenCalledWith(
-        TaskExecutionQueuedEvent.INTERNAL,
-        expect.objectContaining({
-          taskId,
-        }),
-      );
-      expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
+      // Event emission belongs to reconcileTask, which knows the task is
+      // eligible. The persistence helper only reports whether it inserted.
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
 
-    it('should NOT emit TaskExecutionQueuedEvent when insert is ignored (SQLite changes = 0)', async () => {
+    it('reports no insertion when insert is ignored (SQLite changes = 0)', async () => {
       const taskId = 'test-task-id';
 
       // Mock the query builder chain

@@ -46,6 +46,8 @@ import { AllowInterruptedExecutionErrorCode1742500000000 } from './migrations/17
 import { AddExecutionStatsTable1742600000000 } from './migrations/1742600000000-AddExecutionStatsTable';
 import { AddWorkerVersionFields1742700000000 } from './migrations/1742700000000-AddWorkerVersionFields';
 import { RemovePlannerPlanTagTrigger1742800000000 } from './migrations/1742800000000-RemovePlannerPlanTagTrigger';
+import { AddTransactionalOutbox1742900000000 } from './migrations/1742900000000-AddTransactionalOutbox';
+import { EnforceSingleActiveJwksKey1743000000000 } from './migrations/1743000000000-EnforceSingleActiveJwksKey';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -53,6 +55,7 @@ import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
 import { WalkthroughModule } from './walkthrough/walkthrough.module';
 import { ServerLifecycleService } from './server-lifecycle.service';
+import { OutboxModule } from './outbox/outbox.module';
 
 @Module({
   imports: [
@@ -91,10 +94,13 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         AddExecutionStatsTable1742600000000,
         AddWorkerVersionFields1742700000000,
         RemovePlannerPlanTagTrigger1742800000000,
+        AddTransactionalOutbox1742900000000,
+        EnforceSingleActiveJwksKey1743000000000,
       ],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
+    OutboxModule,
     MetaModule,
     TasksModule,
     TaskBlueprintsModule,
@@ -118,4 +124,4 @@ import { ServerLifecycleService } from './server-lifecycle.service';
   controllers: [AppController],
   providers: [AppService, ServerLifecycleService],
 })
-export class AppModule { }
+export class AppModule {}

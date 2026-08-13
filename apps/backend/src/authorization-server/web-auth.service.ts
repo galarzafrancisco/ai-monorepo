@@ -12,13 +12,9 @@ import { Scope } from 'src/auth/core/types/scope.type';
 import { UserScopes } from 'src/auth/core/scopes/user.scopes';
 import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { User } from 'src/identity-provider/user.entity';
-import { ActorService } from 'src/identity-provider/actor.service';
 import { ALL_WEB_SCOPES } from 'src/auth/core/scopes/all-web.scopes';
 import { ALL_MCP_REGISTRY_SCOPES } from 'src/mcp-registry/mcp-registry.scopes';
-import {
-  RefreshTokenActorMissingError,
-  RefreshTokenUserMissingError,
-} from './errors/web-auth.errors';
+import { RotateWebRefreshTokenUseCase } from './use-cases/rotate-web-refresh-token.use-case';
 
 @Injectable()
 export class WebAuthService {
@@ -26,10 +22,10 @@ export class WebAuthService {
 
   constructor(
     private readonly identityProviderService: IdentityProviderService,
-    private readonly actorService: ActorService,
     private readonly jwksService: JwksService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
+    private readonly rotateWebRefreshTokenUseCase: RotateWebRefreshTokenUseCase,
   ) {}
 
   /**
@@ -179,63 +175,11 @@ export class WebAuthService {
   }> {
     this.logger.debug('Refresh token request');
 
-    // Hash the provided refresh token to compare with stored hash
-    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
-
-    // Find the refresh token in database with user and actor relations
-    const storedToken = await this.refreshTokenRepository.findOne({
-      where: { tokenHash },
-      relations: ['user', 'user.actor'],
-    });
-
-    if (!storedToken) {
-      this.logger.warn('Refresh token not found');
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    if (!storedToken.user) {
-      this.logger.warn('Refresh token user missing');
-      if (!storedToken.revokedAt) {
-        storedToken.revokedAt = new Date();
-        await this.refreshTokenRepository.save(storedToken);
-      }
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    // Check if token is revoked
-    if (storedToken.revokedAt) {
-      this.logger.warn('Refresh token has been revoked');
-      throw new UnauthorizedException('Refresh token revoked');
-    }
-
-    // Check if token is expired
-    if (new Date() > storedToken.expiresAt) {
-      this.logger.warn('Refresh token expired');
-      throw new UnauthorizedException('Refresh token expired');
-    }
-
-    // Revoke the old refresh token
-    storedToken.revokedAt = new Date();
-    await this.refreshTokenRepository.save(storedToken);
-
-    // Generate new tokens
-    const user = storedToken.user;
-    if (!user) {
-      this.logger.error(
-        'User not found for refresh token. This should not happen',
-      );
-      throw new RefreshTokenUserMissingError(storedToken.id);
-    }
-    if (!user.isActive || this.identityProviderService.isPasswordSetupPending(user)) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-    const actor = storedToken.user.actor;
-    if (!actor) {
-      this.logger.error(
-        'Actor not found for refresh token. This should not happen',
-      );
-      throw new RefreshTokenActorMissingError(storedToken.id);
-    }
+    const {
+      user,
+      actor,
+      refreshToken: rotatedRefreshToken,
+    } = await this.rotateWebRefreshTokenUseCase.execute(refreshToken);
 
     const refreshConfig = getConfig();
     const newAccessToken = await this.generateWebAccessToken(
@@ -243,15 +187,13 @@ export class WebAuthService {
       actor,
       user,
     );
-    const newRefreshToken = await this.generateAndStoreRefreshToken(user.id);
-
     this.logger.log(
       `Refresh token exchanged successfully for user: ${user.email}`,
     );
 
     return {
       accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
+      refreshToken: rotatedRefreshToken,
       expiresIn: refreshConfig.webAccessTokenDurationMinutes * 60, // Convert minutes to seconds
       actor,
       user,

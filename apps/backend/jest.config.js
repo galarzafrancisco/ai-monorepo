@@ -8,6 +8,9 @@ module.exports = {
       tsconfig: {
         ...require('./tsconfig.json').compilerOptions,
         esModuleInterop: true,
+        module: 'commonjs',
+        moduleResolution: 'node',
+        resolvePackageJsonExports: false,
       }
     }],
   },
@@ -16,8 +19,10 @@ module.exports = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/apps/backend/src/$1',
+    '^@taico/errors$': '<rootDir>/packages/errors/src/index.ts',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@modelcontextprotocol|.*\\.mjs$))',
+    'node_modules/(?!(@modelcontextprotocol|@google/adk|jose|lodash-es|.*\\.mjs$))',
   ],
 };

@@ -7,35 +7,15 @@ import { join } from 'path';
 import { TagEntity } from './tag.entity';
 import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
-import { CreateTagInput, TagResult, VersionResult } from './dto/service/meta.service.types';
+import {
+  CreateTagInput,
+  TagResult,
+  VersionResult,
+} from './dto/service/meta.service.types';
 import { SYSTEM_TAGS, isSystemTagName } from './system-tags';
+import { TAG_COLOR_PALETTE } from './tag-color-palette';
 
-/**
- * Predefined color palette for tags
- * Colors are chosen to be visually distinct and accessible
- */
-export const TAG_COLOR_PALETTE = [
-  '#FF6B6B', // Red
-  '#4ECDC4', // Teal
-  '#45B7D1', // Blue
-  '#FFA07A', // Light Salmon
-  '#98D8C8', // Mint
-  '#F7DC6F', // Yellow
-  '#BB8FCE', // Purple
-  '#85C1E2', // Sky Blue
-  '#F8B739', // Orange
-  '#52B788', // Green
-  '#E76F51', // Coral
-  '#8E7CC3', // Lavender
-  '#FF9FF3', // Pink
-  '#54A0FF', // Bright Blue
-  '#48DBFB', // Cyan
-  '#1DD1A1', // Emerald
-  '#FFA502', // Amber
-  '#FF6348', // Tomato
-  '#5F27CD', // Deep Purple
-  '#00D2D3', // Turquoise
-] as const;
+export { TAG_COLOR_PALETTE } from './tag-color-palette';
 
 @Injectable()
 export class MetaService implements OnModuleInit {
@@ -544,14 +524,19 @@ export class MetaService implements OnModuleInit {
       } catch {
         // If not found, try development path
         try {
-          const uiDevPackageJsonPath = join(__dirname, '../../../ui/package.json');
+          const uiDevPackageJsonPath = join(
+            __dirname,
+            '../../../ui/package.json',
+          );
           const uiPackageJson = JSON.parse(
             readFileSync(uiDevPackageJsonPath, 'utf-8'),
           );
           uiVersion = uiPackageJson.version;
         } catch {
           // If still not found, use backend version as fallback
-          this.logger.warn('Could not read UI package.json, using backend version as fallback');
+          this.logger.warn(
+            'Could not read UI package.json, using backend version as fallback',
+          );
         }
       }
 

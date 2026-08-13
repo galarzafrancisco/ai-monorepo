@@ -10,7 +10,8 @@ import { TokenExchangeService } from './token-exchange.service';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
-import { JwksService } from '../auth/crypto/jwks.service';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
+import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 
@@ -21,7 +22,8 @@ describe('TokenExchangeService', () => {
   let connectionAuthorizationFlowRepository: jest.Mocked<
     Repository<ConnectionAuthorizationFlowEntity>
   >;
-  let jwksService: jest.Mocked<JwksService>;
+  let mcpRegistryService: jest.Mocked<McpRegistryService>;
+  let tokenVerifierService: jest.Mocked<TokenVerifierService>;
 
   const mockConnection: McpConnectionEntity = {
     id: 'connection-uuid',
@@ -71,9 +73,15 @@ describe('TokenExchangeService', () => {
           },
         },
         {
-          provide: JwksService,
+          provide: McpRegistryService,
           useValue: {
-            getPublicKeys: jest.fn(),
+            resolveServerIdFromProvidedId: jest.fn(),
+          },
+        },
+        {
+          provide: TokenVerifierService,
+          useValue: {
+            verifyAndDecode: jest.fn(),
           },
         },
       ],
@@ -89,7 +97,8 @@ describe('TokenExchangeService', () => {
     connectionAuthorizationFlowRepository = module.get(
       getRepositoryToken(ConnectionAuthorizationFlowEntity),
     );
-    jwksService = module.get(JwksService);
+    mcpRegistryService = module.get(McpRegistryService);
+    tokenVerifierService = module.get(TokenVerifierService);
   });
 
   it('should be defined', () => {
@@ -106,16 +115,12 @@ describe('TokenExchangeService', () => {
       };
 
       mcpConnectionRepository.findOne.mockResolvedValue(null);
-      jwksService.getPublicKeys.mockResolvedValue([
-        {
-          kid: 'test-key',
-          kty: 'RSA',
-          alg: 'RS256',
-          use: 'sig',
-          n: 'test-n',
-          e: 'test-e',
-        },
-      ] as any);
+      mcpRegistryService.resolveServerIdFromProvidedId.mockResolvedValue(
+        'server-uuid',
+      );
+      tokenVerifierService.verifyAndDecode.mockRejectedValue(
+        new Error('invalid token'),
+      );
 
       // This will fail at JWT validation, but testing the flow
       await expect(
@@ -242,24 +247,28 @@ describe('TokenExchangeService', () => {
       mcpConnectionRepository.findOne.mockResolvedValue(mockConnection);
 
       const findMethod = (service as any).findConnection.bind(service);
-      const result = await findMethod('connection-uuid', 'server-uuid');
+      const result = await findMethod(
+        '550e8400-e29b-41d4-a716-446655440000',
+        'server-uuid',
+      );
 
       expect(result).toEqual(mockConnection);
       expect(mcpConnectionRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'connection-uuid', serverId: 'server-uuid' },
+        where: {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          serverId: 'server-uuid',
+        },
       });
     });
 
     it('should find connection by providedId', async () => {
-      mcpConnectionRepository.findOne
-        .mockResolvedValueOnce(null) // First call with UUID fails
-        .mockResolvedValueOnce(mockConnection); // Second call with providedId succeeds
+      mcpConnectionRepository.findOne.mockResolvedValue(mockConnection);
 
       const findMethod = (service as any).findConnection.bind(service);
       const result = await findMethod('test-connection', 'server-uuid');
 
       expect(result).toEqual(mockConnection);
-      expect(mcpConnectionRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(mcpConnectionRepository.findOne).toHaveBeenCalledTimes(1);
     });
 
     it('should return null when connection is not found', async () => {

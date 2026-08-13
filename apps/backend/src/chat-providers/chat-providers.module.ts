@@ -5,6 +5,7 @@ import { ChatProvidersService } from './chat-providers.service';
 import { ChatProvidersController } from './chat-providers.controller';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { SecretsModule } from '../secrets/secrets.module';
+import { UpdateChatProviderUseCase } from './use-cases/update-chat-provider.use-case';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { SecretsModule } from '../secrets/secrets.module';
     SecretsModule,
   ],
   controllers: [ChatProvidersController],
-  providers: [ChatProvidersService],
+  providers: [ChatProvidersService, UpdateChatProviderUseCase],
   exports: [ChatProvidersService],
 })
 export class ChatProvidersModule {}

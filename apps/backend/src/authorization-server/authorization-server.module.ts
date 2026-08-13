@@ -21,6 +21,14 @@ import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mappin
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
 import { AuthCryptoModule } from '../auth/crypto/auth-crypto.module';
 import { WebAuthService } from './web-auth.service';
+import { RotateMcpRefreshTokenUseCase } from './use-cases/rotate-mcp-refresh-token.use-case';
+import { RotateWebRefreshTokenUseCase } from './use-cases/rotate-web-refresh-token.use-case';
+import { ConsumeMcpAuthorizationCodeUseCase } from './use-cases/consume-mcp-authorization-code.use-case';
+import { RegisterClientUseCase } from './use-cases/register-client.use-case';
+import { IssueMcpAuthorizationCodeUseCase } from './use-cases/issue-mcp-authorization-code.use-case';
+import { StartMcpAuthorizationRequestUseCase } from './use-cases/start-mcp-authorization-request.use-case';
+import { RejectMcpConsentUseCase } from './use-cases/reject-mcp-consent.use-case';
+import { ApproveMcpConsentUseCase } from './use-cases/approve-mcp-consent.use-case';
 
 @Module({
   imports: [
@@ -46,6 +54,14 @@ import { WebAuthService } from './web-auth.service';
     TokenExchangeService,
     IssuedAccessTokenService,
     WebAuthService,
+    RotateMcpRefreshTokenUseCase,
+    RotateWebRefreshTokenUseCase,
+    ConsumeMcpAuthorizationCodeUseCase,
+    RegisterClientUseCase,
+    IssueMcpAuthorizationCodeUseCase,
+    StartMcpAuthorizationRequestUseCase,
+    RejectMcpConsentUseCase,
+    ApproveMcpConsentUseCase,
   ],
   controllers: [
     ClientRegistrationController,

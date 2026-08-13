@@ -1,7 +1,7 @@
 - No HTTP/Swagger/validators in services.
-- Only interacts with other domains via their **public services**.
+- Does not orchestrate a multi-repository/domain command; that belongs in a named use case.
 - Throws **typed domain errors** only.
-- Uses own repositories/ports; transactions where needed.
+- Uses own repositories/ports; a use case owns transactions and writes its outbox records.
 - Service DTOs are **pure TS**; mapping done at the controller/mapper.
 - Clear decision on single vs split services; naming matches criteria.
 - Logs/metrics at domain level; no transport concerns.
