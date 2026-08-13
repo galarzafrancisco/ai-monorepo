@@ -6,7 +6,11 @@ import {
   RuntimeMcpServerConfig,
   TokenUsage,
 } from "./AgentRunner.js";
-import { approveAll, CopilotClient, MCPRemoteServerConfig, MCPLocalServerConfig } from "@github/copilot-sdk";
+import {
+  approveAll,
+  CopilotClient,
+  MCPServerConfig,
+} from "@github/copilot-sdk";
 import { InterruptedExecutionError } from "../task-execution-errors.js";
 
 export class GitHubCopilotAgentRunner extends BaseAgentRunner {
@@ -49,7 +53,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
       try {
         // Init client
         this.client = new CopilotClient({
-          cwd: ctx.cwd,
+          workingDirectory: ctx.cwd,
         });
         await this.client.start();
 
@@ -139,7 +143,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
 
   private buildMcpServers(
     ctx: AgentRunContext,
-  ): Record<string, MCPRemoteServerConfig | MCPLocalServerConfig> {
+  ): Record<string, MCPServerConfig> {
     const runtimeMcpServers =
       ctx.mcpServers ?? {
         tasks: {
@@ -170,7 +174,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
 
   private toCopilotMcpServerConfig(
     serverConfig: RuntimeMcpServerConfig,
-  ): MCPRemoteServerConfig | MCPLocalServerConfig {
+  ): MCPServerConfig {
     if (serverConfig.type === 'http') {
       return {
         type: "http",
@@ -181,7 +185,7 @@ export class GitHubCopilotAgentRunner extends BaseAgentRunner {
     }
 
     return {
-      type: "local",
+      type: "stdio",
       command: serverConfig.command,
       args: serverConfig.args,
       tools: ["*"],
