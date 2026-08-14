@@ -1,5 +1,7 @@
 # @taico/adk-session-store
 
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.3.4)](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.3.4)
+
 SQLite-backed session storage for Google ADK.
 
 `SqliteSessionService` extends ADK `BaseSessionService` and is intended as a drop-in replacement for `InMemorySessionService` when you need persistence.

@@ -1,5 +1,7 @@
 # @taico/worker
 
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/worker/0.3.4)](https://badge.socket.dev/npm/package/@taico/worker/0.3.4)
+
 Runtime for the current Taico worker.
 
 The worker connects to an existing Taico server, claims eligible work, starts executions, prepares workspaces, and launches the configured agent runtime.
