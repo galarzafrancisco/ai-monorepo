@@ -149,9 +149,9 @@ export const SETTINGS_THEME_OPTIONS: SettingsThemeOption[] = [
     },
   },
   {
-    value: 'mono',
-    label: 'Mono',
-    description: 'Black and white minimalism with restrained contrast.',
+    value: 'kindling',
+    label: 'Kindling',
+    description: 'Black and white minimalism inspired by e-reader focus.',
     preview: {
       background: '#ffffff',
       surface: '#f5f5f5',
