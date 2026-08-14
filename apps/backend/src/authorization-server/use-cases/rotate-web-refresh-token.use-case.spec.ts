@@ -5,9 +5,40 @@ import { ActorEntity } from '../../identity-provider/actor.entity';
 import { IdentityProviderService } from '../../identity-provider/identity-provider.service';
 import { User } from '../../identity-provider/user.entity';
 import { RefreshTokenEntity } from '../entities/refresh-token.entity';
+import { InvalidWebRefreshTokenError } from '../errors/web-auth.errors';
 import { RotateWebRefreshTokenUseCase } from './rotate-web-refresh-token.use-case';
 
 describe('RotateWebRefreshTokenUseCase', () => {
+  it('throws a web-auth domain error for an unknown refresh token', async () => {
+    const repository = Object.create(
+      Repository.prototype,
+    ) as Repository<RefreshTokenEntity>;
+    jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+    const manager = Object.create(EntityManager.prototype) as EntityManager;
+    Object.defineProperty(manager, 'getRepository', {
+      value: () => repository,
+    });
+    const dataSource = Object.create(DataSource.prototype) as DataSource;
+    Object.defineProperty(dataSource, 'transaction', {
+      value: jest.fn(
+        async (
+          callback: (transactionManager: EntityManager) => Promise<unknown>,
+        ) => callback(manager),
+      ),
+    });
+    const identityProvider = Object.create(
+      IdentityProviderService.prototype,
+    ) as IdentityProviderService;
+    const useCase = new RotateWebRefreshTokenUseCase(
+      dataSource,
+      identityProvider,
+    );
+
+    await expect(useCase.execute('unknown-token')).rejects.toBeInstanceOf(
+      InvalidWebRefreshTokenError,
+    );
+  });
+
   it('validates the user then conditionally revokes and replaces the token in one transaction', async () => {
     const actor = Object.assign(new ActorEntity(), { id: 'actor-1' });
     const user = Object.assign(new User(), {

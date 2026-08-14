@@ -125,6 +125,13 @@ export class CreateThreadUseCase {
           ...tags.map((tag) => tag.id),
         ]);
         await this.outboxWriter.enqueue(manager, {
+          type: OutboxEventTypes.CONTEXT_BLOCK_CREATED,
+          actorId: creator.id,
+          aggregateType: 'context-block',
+          aggregateId: stateBlock.id,
+          payload: { blockId: stateBlock.id, actorId: creator.id },
+        });
+        await this.outboxWriter.enqueue(manager, {
           type: OutboxEventTypes.THREAD_CREATED,
           actorId: creator.id,
           aggregateType: 'thread',

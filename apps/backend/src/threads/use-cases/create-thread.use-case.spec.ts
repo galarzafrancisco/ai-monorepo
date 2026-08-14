@@ -144,7 +144,17 @@ describe('CreateThreadUseCase', () => {
       stateTag.id,
       threadTag.id,
     ]);
-    expect(enqueue).toHaveBeenCalledWith(
+    expect(enqueue).toHaveBeenNthCalledWith(
+      1,
+      manager,
+      expect.objectContaining({
+        type: OutboxEventTypes.CONTEXT_BLOCK_CREATED,
+        aggregateId: stateBlock.id,
+        payload: { blockId: stateBlock.id, actorId: creator.id },
+      }),
+    );
+    expect(enqueue).toHaveBeenNthCalledWith(
+      2,
       manager,
       expect.objectContaining({
         type: OutboxEventTypes.THREAD_CREATED,

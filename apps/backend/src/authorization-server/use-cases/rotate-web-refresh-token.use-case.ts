@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import { DataSource } from 'typeorm';
 import { getConfig } from '../../config/env.config';
@@ -6,8 +6,11 @@ import { ActorEntity } from '../../identity-provider/actor.entity';
 import { IdentityProviderService } from '../../identity-provider/identity-provider.service';
 import { User } from '../../identity-provider/user.entity';
 import {
+  InvalidWebRefreshTokenError,
   RefreshTokenActorMissingError,
   RefreshTokenUserMissingError,
+  WebRefreshTokenExpiredError,
+  WebRefreshTokenRevokedError,
 } from '../errors/web-auth.errors';
 import { RefreshTokenEntity } from '../entities/refresh-token.entity';
 
@@ -47,18 +50,18 @@ export class RotateWebRefreshTokenUseCase {
         relations: ['user', 'user.actor'],
       });
       if (!storedToken)
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new InvalidWebRefreshTokenError();
       if (storedToken.revokedAt)
-        throw new UnauthorizedException('Refresh token revoked');
+        throw new WebRefreshTokenRevokedError();
       if (new Date() > storedToken.expiresAt)
-        throw new UnauthorizedException('Refresh token expired');
+        throw new WebRefreshTokenExpiredError();
       if (!storedToken.user)
         throw new RefreshTokenUserMissingError(storedToken.id);
       if (
         !storedToken.user.isActive ||
         this.identityProviderService.isPasswordSetupPending(storedToken.user)
       ) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new InvalidWebRefreshTokenError();
       }
       if (!storedToken.user.actor)
         throw new RefreshTokenActorMissingError(storedToken.id);
@@ -71,7 +74,7 @@ export class RotateWebRefreshTokenUseCase {
         .andWhere('revoked_at IS NULL')
         .execute();
       if (result.affected !== 1)
-        throw new UnauthorizedException('Refresh token revoked');
+        throw new WebRefreshTokenRevokedError();
 
       await repository.save(
         repository.create({
