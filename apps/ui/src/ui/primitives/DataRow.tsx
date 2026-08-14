@@ -7,6 +7,7 @@ export type DataRowTag = {
   color?: ChipProps["color"];
   onClick?: () => void;
   clickLabel?: string;
+  title?: string;
   onRemove?: () => void;
   removeLabel?: string;
 };
@@ -81,6 +82,7 @@ export function DataRow({
                   color={t.color}
                   onClick={t.onClick}
                   clickLabel={t.clickLabel ?? t.label}
+                  title={t.title}
                   onRemove={t.onRemove}
                   removeLabel={t.removeLabel ?? `Remove ${t.label}`}
                 >

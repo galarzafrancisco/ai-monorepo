@@ -251,6 +251,10 @@
   color: var(--danger);
 }
 
+.task-detail-page__section .chip[title] {
+  cursor: help;
+}
+
 @keyframes task-detail-activity-in {
   from {
     opacity: 0;
