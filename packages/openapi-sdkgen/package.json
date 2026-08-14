@@ -1,6 +1,6 @@
 {
   "name": "@taico/openapi-sdkgen",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "type": "module",
   "private": false,
   "license": "PolyForm-Small-Business-1.0.0",
