@@ -273,6 +273,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
   const [executions, setExecutions] = useState<TaskExecutionListItem[]>([]);
   const [isLoadingExecutions, setIsLoadingExecutions] = useState(false);
   const [executionsError, setExecutionsError] = useState<string | null>(null);
+  const [stalenessNow, setStalenessNow] = useState(() => Date.now());
   const [expandedExecutionErrorIds, setExpandedExecutionErrorIds] = useState<Set<string>>(new Set());
   const [interruptingExecutions, setInterruptingExecutions] = useState<Set<string>>(new Set());
 
@@ -564,6 +565,19 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
     ? executions
     : executions.slice(0, COLLAPSED_EXECUTION_COUNT);
   const hasMoreExecutions = executions.length > COLLAPSED_EXECUTION_COUNT;
+
+  useEffect(() => {
+    if (!executions.some((execution) => execution.source === 'active')) {
+      return;
+    }
+
+    setStalenessNow(Date.now());
+    const intervalId = window.setInterval(() => {
+      setStalenessNow(Date.now());
+    }, 30 * 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [executions]);
 
   useEffect(() => {
     if (!task) {
@@ -963,7 +977,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             execution.status === 'FAILED' && Boolean(execution.errorCode || execution.errorMessage);
           const isFailureDetailsExpanded = expandedExecutionErrorIds.has(execution.id);
           const isActive = execution.source === 'active';
-          const isPotentiallyStale = isActive && isExecutionPotentiallyStale(execution);
+          const isPotentiallyStale = isActive && isExecutionPotentiallyStale(execution, stalenessNow);
           const isInterrupting = interruptingExecutions.has(execution.executionId);
           const sourceTag: DataRowTag = {
             label: isActive ? 'active' : 'history',
@@ -1354,8 +1368,8 @@ function getExecutionStatusTag(
   return { label: 'cancelled', color: 'gray' };
 }
 
-function isExecutionPotentiallyStale(execution: TaskExecutionListItem): boolean {
-  return Date.now() - new Date(execution.lastActivityAt).getTime() >= POTENTIALLY_STALE_THRESHOLD_MS;
+function isExecutionPotentiallyStale(execution: TaskExecutionListItem, now: number): boolean {
+  return now - new Date(execution.lastActivityAt).getTime() >= POTENTIALLY_STALE_THRESHOLD_MS;
 }
 
 function shortId(value: string): string {
