@@ -1,6 +1,6 @@
 # @taico/adk-session-store
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.3.4)](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.3.4)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.3.5)](https://badge.socket.dev/npm/package/@taico/adk-session-store/0.3.5)
 
 SQLite-backed session storage for Google ADK.
 
