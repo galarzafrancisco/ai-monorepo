@@ -61,6 +61,7 @@ type TaskExecutionListItem = {
   status: 'ACTIVE' | TaskExecutionHistoryResponseDto['status'];
   source: 'active' | 'history';
   timestamp: string;
+  lastActivityAt: string;
   runnerSessionId: string | null;
   toolCallCount: number;
   errorCode: TaskExecutionHistoryResponseDto['errorCode'] | null;
@@ -69,6 +70,8 @@ type TaskExecutionListItem = {
 
 const COLLAPSED_TIMELINE_COUNT = 3;
 const COLLAPSED_EXECUTION_COUNT = 3;
+const POTENTIALLY_STALE_THRESHOLD_MS = 10 * 60 * 1000;
+const POTENTIALLY_STALE_MESSAGE = "We haven't seen activity in a while. If the worker doesn't report back, we'll mark this run as stale and revert the task to its previous state, where another agent will pick it";
 
 export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask = false, activityByTaskId = {}, handlers, allTasks }: TaskDetailViewProps) {
   const navigate = useNavigate();
@@ -490,6 +493,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           status: 'ACTIVE',
           source: 'active',
           timestamp: entry.claimedAt,
+          lastActivityAt: entry.lastHeartbeatAt ?? entry.claimedAt,
           runnerSessionId: entry.runnerSessionId,
           toolCallCount: entry.toolCallCount,
           errorCode: null,
@@ -504,6 +508,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
           status: entry.status,
           source: 'history',
           timestamp: entry.transitionedAt,
+          lastActivityAt: entry.transitionedAt,
           runnerSessionId: entry.runnerSessionId,
           toolCallCount: entry.toolCallCount,
           errorCode: entry.errorCode,
@@ -958,17 +963,23 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             execution.status === 'FAILED' && Boolean(execution.errorCode || execution.errorMessage);
           const isFailureDetailsExpanded = expandedExecutionErrorIds.has(execution.id);
           const isActive = execution.source === 'active';
+          const isPotentiallyStale = isActive && isExecutionPotentiallyStale(execution);
           const isInterrupting = interruptingExecutions.has(execution.executionId);
           const sourceTag: DataRowTag = {
             label: isActive ? 'active' : 'history',
             color: 'gray',
           };
+          const staleTag: DataRowTag | null = isPotentiallyStale ? {
+            label: 'Potentially stale',
+            color: 'orange',
+            title: POTENTIALLY_STALE_MESSAGE,
+          } : null;
 
           return (
             <DataRow
               key={execution.id}
               leading={<Avatar size={'sm'} name={actorName} src={actor?.avatarUrl || undefined} />}
-              tags={[statusTag, sourceTag]}
+              tags={staleTag ? [statusTag, sourceTag, staleTag] : [statusTag, sourceTag]}
               topRight={
                 isActive ? (
                   <Button
@@ -1018,7 +1029,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
                     {isActive ? (
                       <>
                         <span className='task-detail-page__execution-stats-separator'>|</span>
-                        {elapsedTime(execution.timestamp)}
+                        heartbeat {elapsedTime(execution.lastActivityAt)}
                       </>
                     ) : null}
                   </span>
@@ -1341,6 +1352,10 @@ function getExecutionStatusTag(
   }
 
   return { label: 'cancelled', color: 'gray' };
+}
+
+function isExecutionPotentiallyStale(execution: TaskExecutionListItem): boolean {
+  return Date.now() - new Date(execution.lastActivityAt).getTime() >= POTENTIALLY_STALE_THRESHOLD_MS;
 }
 
 function shortId(value: string): string {

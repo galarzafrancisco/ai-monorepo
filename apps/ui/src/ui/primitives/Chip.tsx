@@ -15,6 +15,8 @@ export interface ChipProps {
 
   clickLabel?: string;
 
+  title?: string;
+
   onRemove?: () => void;
 
   removeLabel?: string;
@@ -34,6 +36,7 @@ export function Chip(props: ChipProps) {
         type="button"
         className={chipClassName}
         style={props.style}
+        title={props.title}
         aria-label={props.clickLabel}
         onClick={(event) => {
           event.stopPropagation();
@@ -46,7 +49,7 @@ export function Chip(props: ChipProps) {
   }
 
   return (
-    <span className={chipClassName} style={props.style}>
+    <span className={chipClassName} style={props.style} title={props.title}>
       {props.children}
       {props.onRemove ? (
         <button

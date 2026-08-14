@@ -14,6 +14,9 @@ import { useToast } from "../../shared/context/ToastContext";
 import { useExecutions } from "./useExecutions";
 import "./ExecutionsPage.css";
 
+const POTENTIALLY_STALE_THRESHOLD_MS = 10 * 60 * 1000;
+const POTENTIALLY_STALE_MESSAGE = "We haven't seen activity in a while. If the worker doesn't report back, we'll mark this run as stale and revert the task to its previous state, where another agent will pick it";
+
 type ExecutionDetailResult =
   | { kind: "queue"; entry: TaskExecutionQueueEntryResponseDto }
   | { kind: "active"; entry: ActiveTaskExecutionResponseDto }
@@ -268,6 +271,7 @@ function RunFeedRow({
   const statusDetail = getRunStatusDetail(feedEntry);
   const timeDetail = getRunTimeDetail(feedEntry);
   const agentDetail = actor ? `picked by @${actor.slug ?? actor.displayName ?? actor.id}` : "waiting to be picked";
+  const isPotentiallyStale = isPotentiallyStaleRun(feedEntry);
 
   return (
     <div
@@ -289,7 +293,10 @@ function RunFeedRow({
         <Text as="div" size="2" tone="muted" wrap>{agentDetail}</Text>
       </div>
       <div className="executions-feed-row__meta">
-        <Text as="div" size="2" weight="medium">{statusDetail}</Text>
+        <div className="executions-feed-row__status-line">
+          <Text as="span" size="2" weight="medium">{statusDetail}</Text>
+          {isPotentiallyStale ? <PotentiallyStaleBadge /> : null}
+        </div>
         <Text as="div" size="1" tone="muted">{timeDetail}</Text>
       </div>
       <div className="executions-feed-row__stats">
@@ -336,11 +343,18 @@ function RunExecutionDetails({ execution, actor }: { execution: ActiveTaskExecut
   const endTime = isHistory ? new Date(execution.transitionedAt) : new Date();
   const durationText = formatDuration(endTime.getTime() - claimedAt.getTime());
   const stats = execution.stats;
+  const isPotentiallyStale = !isHistory && isActiveExecutionPotentiallyStale(execution);
 
   return (
     <>
       <section className="executions-detail-section">
         <Text as="div" size="1" weight="semibold" tone="muted" className="executions-detail-section__title">Timing</Text>
+        {isPotentiallyStale ? (
+          <div className="executions-stale-callout" role="status">
+            <Text as="div" size="2" weight="semibold">Potentially stale</Text>
+            <Text as="div" size="2" wrap>{POTENTIALLY_STALE_MESSAGE}</Text>
+          </div>
+        ) : null}
         <div className="executions-detail-list">
           <DetailRow label="Claimed at" value={formatDateTime(execution.claimedAt)} />
           {isHistory ? <DetailRow label="Finished at" value={formatDateTime(execution.transitionedAt)} /> : null}
@@ -391,6 +405,23 @@ function DetailRow({ label, value, mono }: { label: string; value: string; mono?
       <Text as="span" size="2" style={mono ? "mono" : "sans"} wrap>{value}</Text>
     </div>
   );
+}
+
+function PotentiallyStaleBadge() {
+  return (
+    <span className="executions-stale-badge" title={POTENTIALLY_STALE_MESSAGE}>
+      Potentially stale
+    </span>
+  );
+}
+
+function isPotentiallyStaleRun(feedEntry: RunFeedEntry | ExecutionDetailResult) {
+  return feedEntry.kind === "active" && isActiveExecutionPotentiallyStale(feedEntry.entry);
+}
+
+function isActiveExecutionPotentiallyStale(execution: ActiveTaskExecutionResponseDto) {
+  const activityAt = execution.lastHeartbeatAt ?? execution.claimedAt;
+  return Date.now() - new Date(activityAt).getTime() >= POTENTIALLY_STALE_THRESHOLD_MS;
 }
 
 function getActorForRun(feedEntry: RunFeedEntry | ExecutionDetailResult, actors: ActorSummary[]) {
