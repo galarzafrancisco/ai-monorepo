@@ -407,8 +407,8 @@
   --shadow-3: 0 8px 24px rgba(30, 36, 51, 0.18);
 }
 
-/* ===== MONO THEME (Black & white) ===== */
-[data-theme='mono'] {
+/* ===== KINDLING THEME (Black & white) ===== */
+[data-theme='kindling'] {
   /* Theme color values */
   --theme-bg: #ffffff;
   --theme-app-surface: #f0f0f0;

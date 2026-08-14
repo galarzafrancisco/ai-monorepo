@@ -10,7 +10,7 @@ export type Theme =
   | 'terminal'
   | 'ai-vibes'
   | 'halo'
-  | 'mono'
+  | 'kindling'
   | 'terminal-amber'
   | 'oceanic'
   | 'party'
@@ -30,7 +30,10 @@ export interface ThemeProviderProps {
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
     // Try to load theme from localStorage
-    const stored = localStorage.getItem('theme') as Theme | null;
+    const stored = localStorage.getItem('theme') as Theme | 'mono' | null;
+    if (stored === 'mono') {
+      return 'kindling';
+    }
     return stored || 'light';
   });
 
