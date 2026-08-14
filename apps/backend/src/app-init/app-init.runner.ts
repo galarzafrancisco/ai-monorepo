@@ -18,7 +18,10 @@ import {
   AgentResult,
   CreateAgentInput,
 } from 'src/agents/dto/service/agents.service.types';
-import { AgentSlugConflictError } from 'src/agents/errors/agents.errors';
+import {
+  AgentNotFoundError,
+  AgentSlugConflictError,
+} from 'src/agents/errors/agents.errors';
 import { createContext, createContextScopes } from './mcp/context.mcp';
 import { getConfig } from 'src/config/env.config';
 import { devUser, devUserRole } from './user/dev.user';
@@ -174,7 +177,12 @@ export class AppInitRunner implements OnApplicationBootstrap {
   async ensureAgents() {
     // Create agents
     try {
-      await this.ensureAgentExists(createTaico);
+      const agent = await this.ensureAgentExists(createTaico);
+      if (agent && agent.systemPrompt !== createTaico.systemPrompt) {
+        await this.agentsService.patchAgent(agent.actorId, {
+          systemPrompt: createTaico.systemPrompt,
+        });
+      }
     } catch (error) {
       this.logger.error('Error ensuring taico Agent exists');
     }
@@ -279,14 +287,22 @@ export class AppInitRunner implements OnApplicationBootstrap {
   ): Promise<AgentResult | null> {
     let agent: AgentResult | null = null;
     try {
+      return await this.agentsService.getAgentBySlug({
+        slug: agentConfig.slug,
+      });
+    } catch (error) {
+      if (!(error instanceof AgentNotFoundError)) {
+        throw error;
+      }
+    }
+
+    try {
       agent = await this.agentsService.createAgent(agentConfig);
     } catch (error) {
       if (error instanceof AgentSlugConflictError) {
         agent = await this.agentsService.getAgentBySlug({
           slug: agentConfig.slug,
         });
-        // TODO: rework the update method
-        // agent = await this.agentsService.updateAgent(agent.id, createClaudeDev);
       } else {
         throw error;
       }
