@@ -28,6 +28,7 @@ const packageReleaseOrder = [
 ];
 
 const appReleaseOrder = ["apps/backend", "apps/worker"];
+const socketBadgeMarker = "[![Socket Badge]";
 
 const releaseVersionTextTargets = [
   {
@@ -181,6 +182,67 @@ function bumpTextFile(target, fromVersion, toVersion) {
   return { changed: true, relativePath };
 }
 
+function socketBadgeMarkdown(name, version) {
+  const badgeUrl = `https://badge.socket.dev/npm/package/${name}/${version}`;
+  return `[![Socket Badge](${badgeUrl})](${badgeUrl})`;
+}
+
+function defaultReadmeTitle(manifest) {
+  return `# ${manifest.name}\n`;
+}
+
+function syncSocketBadge(workspace) {
+  const packageJsonPath = path.join(repoRoot, workspace, "package.json");
+  const readmePath = path.join(repoRoot, workspace, "README.md");
+  const manifest = readJson(packageJsonPath);
+  const badge = socketBadgeMarkdown(manifest.name, manifest.version);
+  const current = existsSync(readmePath)
+    ? readFileSync(readmePath, "utf8")
+    : defaultReadmeTitle(manifest);
+  const lines = current.split("\n");
+  const existingBadgeIndex = lines.findIndex((line) =>
+    line.startsWith(socketBadgeMarker),
+  );
+
+  let next;
+  if (existingBadgeIndex >= 0) {
+    lines[existingBadgeIndex] = badge;
+    next = lines.join("\n");
+  } else {
+    const insertAt = lines[0]?.startsWith("# ") ? 1 : 0;
+    lines.splice(insertAt, 0, "", badge);
+    next = lines.join("\n");
+  }
+
+  if (!next.endsWith("\n")) {
+    next = `${next}\n`;
+  }
+
+  if (next !== current) {
+    writeFileSync(readmePath, next);
+    return { changed: true, relativePath: path.relative(repoRoot, readmePath) };
+  }
+
+  return { changed: false, relativePath: path.relative(repoRoot, readmePath) };
+}
+
+function syncSocketBadges() {
+  const results = [...packageReleaseOrder, ...appReleaseOrder].map((workspace) =>
+    syncSocketBadge(workspace),
+  );
+  const changed = results.filter((result) => result.changed);
+
+  if (changed.length === 0) {
+    console.log("Socket badges already up to date.");
+    return;
+  }
+
+  console.log("Updated Socket badges:");
+  for (const result of changed) {
+    console.log(`- ${result.relativePath}`);
+  }
+}
+
 function parseFlag(name, fallback) {
   const prefix = `--${name}=`;
   const match = process.argv.find((arg) => arg.startsWith(prefix));
@@ -231,6 +293,7 @@ function bump(fromVersion, toVersion) {
   );
   if (changed.length === 0) {
     console.log(`No @taico versions or dependencies matched ${fromVersion}.`);
+    syncSocketBadges();
     return;
   }
 
@@ -238,6 +301,8 @@ function bump(fromVersion, toVersion) {
   for (const result of changed) {
     console.log(`- ${result.relativePath}`);
   }
+
+  syncSocketBadges();
 }
 
 function printPlan() {
@@ -283,11 +348,14 @@ async function release() {
 function usage() {
   console.log(`Usage:
   node scripts/release-taico.mjs bump [--from=${defaultFromVersion}] [--to=${defaultToVersion}]
+  node scripts/release-taico.mjs socket-badges
   node scripts/release-taico.mjs release
   node scripts/release-taico.mjs all [--from=${defaultFromVersion}] [--to=${defaultToVersion}]
 
 Commands:
   bump     Update every @taico package version and @taico dependency range.
+  socket-badges
+           Update Socket badge URLs from release target package manifests.
   release  Login, build, then publish packages followed by backend and worker.
   all      Run bump and then release.
 `);
@@ -300,6 +368,9 @@ try {
   switch (commandName()) {
     case "bump":
       bump(fromVersion, toVersion);
+      break;
+    case "socket-badges":
+      syncSocketBadges();
       break;
     case "release":
       await release();
