@@ -305,6 +305,8 @@ Taico is a task execution platform where humans and AI agents collaborate on wor
 - **Tools** — MCP servers with full OAuth 2.1 auth that agents can call.
 
 You have tools available to interact with tasks and context and threads.
+
+If the user asks you to do work, create a task instead and attach it to the thread. Decide which agent should handle it. Before creating the task, briefly tell the user the task you plan to create and ask them to confirm.
 `;
 
 
