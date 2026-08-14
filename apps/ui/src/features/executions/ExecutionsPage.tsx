@@ -294,7 +294,6 @@ function RunFeedRow({
       </div>
       <div className="executions-feed-row__stats">
         <Text as="div" size="2" weight="medium">{getRunToolCount(feedEntry)}</Text>
-        <Text as="div" size="1" tone="muted">{getRunTokenCount(feedEntry)}</Text>
       </div>
       {onInterrupt ? (
         <div className="executions-feed-row__actions">
@@ -355,7 +354,6 @@ function RunExecutionDetails({ execution, actor }: { execution: ActiveTaskExecut
         <div className="executions-detail-list">
           <DetailRow label="Agent" value={actor ? `@${actor.slug ?? actor.displayName ?? actor.id}` : execution.agentActorId} mono={!actor} />
           <DetailRow label="Tool calls" value={execution.toolCallCount.toLocaleString()} />
-          <DetailRow label="Tokens used" value={formatTokenStats(stats)} />
           <DetailRow label="Harness" value={stats?.harness ?? "Unknown"} />
           <DetailRow label="Provider" value={stats?.providerId ?? "Unknown"} />
           <DetailRow label="Model" value={stats?.modelId ?? "Unknown"} />
@@ -458,25 +456,6 @@ function getRunToolCount(feedEntry: RunFeedEntry) {
   }
 
   return `${feedEntry.entry.toolCallCount.toLocaleString()} tool calls`;
-}
-
-function getRunTokenCount(feedEntry: RunFeedEntry) {
-  if (feedEntry.kind === "queue") {
-    return "No tokens yet";
-  }
-
-  const totalTokens = feedEntry.entry.stats?.totalTokens;
-  return totalTokens === null || totalTokens === undefined ? "tokens unknown" : `${totalTokens.toLocaleString()} tokens`;
-}
-
-function formatTokenStats(stats: ActiveTaskExecutionResponseDto["stats"] | TaskExecutionHistoryResponseDto["stats"]) {
-  if (!stats || stats.totalTokens === null) {
-    return "Unknown";
-  }
-
-  const input = stats.inputTokens === null ? "unknown" : stats.inputTokens.toLocaleString();
-  const output = stats.outputTokens === null ? "unknown" : stats.outputTokens.toLocaleString();
-  return `${stats.totalTokens.toLocaleString()} total (${input} input / ${output} output)`;
 }
 
 function sentenceCase(value: string) {
