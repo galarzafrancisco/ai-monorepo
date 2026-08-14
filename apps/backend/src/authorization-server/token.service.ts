@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { createHash, randomBytes } from 'crypto';
 import { McpAuthorizationFlowEntity } from '../auth-journeys/entities';
 import { AuthJourneysService } from '../auth-journeys/auth-journeys.service';
@@ -12,7 +10,6 @@ import {
 } from './dto/service/token.service.types';
 import { GrantType } from './enums/grant-type.enum';
 import { TokenType } from './enums/token-type.enum';
-import { McpAuthorizationFlowStatus } from '../auth-journeys/enums/mcp-authorization-flow-status.enum';
 import { getConfig } from '../config/env.config';
 import {
   InvalidGrantTypeError,
@@ -24,15 +21,12 @@ import {
   RedirectUriMismatchError,
   MissingPkceParametersError,
   InvalidCodeVerifierError,
-  InvalidRefreshTokenError,
-  RefreshTokenExpiredError,
-  RefreshTokenRevokedError,
 } from './errors/token.errors';
 import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
 import { AccessTokenClaims } from '../auth/core/types/access-token-claims.type';
 import { TokenSignerService } from '../auth/crypto/token-signer.service';
-import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.enum';
-import { McpRefreshTokenEntity } from './entities/mcp-refresh-token.entity';
+import { RotateMcpRefreshTokenUseCase } from './use-cases/rotate-mcp-refresh-token.use-case';
+import { ConsumeMcpAuthorizationCodeUseCase } from './use-cases/consume-mcp-authorization-code.use-case';
 
 @Injectable()
 export class TokenService {
@@ -42,8 +36,8 @@ export class TokenService {
     private readonly authJourneysService: AuthJourneysService,
     private readonly tokenVerifierService: TokenVerifierService,
     private readonly tokenSignerService: TokenSignerService,
-    @InjectRepository(McpRefreshTokenEntity)
-    private readonly mcpRefreshTokenRepository: Repository<McpRefreshTokenEntity>,
+    private readonly rotateMcpRefreshTokenUseCase: RotateMcpRefreshTokenUseCase,
+    private readonly consumeMcpAuthorizationCodeUseCase: ConsumeMcpAuthorizationCodeUseCase,
   ) {}
 
   /**
@@ -155,23 +149,12 @@ export class TokenService {
       throw new InvalidCodeVerifierError();
     }
 
-    // Mark authorization code as used
-    mcpAuthFlow.authorizationCodeUsed = true;
-    mcpAuthFlow.status =
-      McpAuthorizationFlowStatus.AUTHORIZATION_CODE_EXCHANGED;
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-    await this.authJourneysService.updateAuthJourneyStatus(
-      mcpAuthFlow.authorizationJourneyId,
-      AuthJourneyStatus.AUTHORIZATION_CODE_EXCHANGED,
-    );
-
-    // Generate tokens
-    const config = getConfig();
-    const accessToken = await this.generateAccessToken(mcpAuthFlow);
-    const refreshToken = await this.generateAndStoreRefreshToken(
+    const refreshToken = await this.consumeMcpAuthorizationCodeUseCase.execute(
       mcpAuthFlow,
       tokenRequest.client_id,
     );
+    const config = getConfig();
+    const accessToken = await this.generateAccessToken(mcpAuthFlow);
 
     // Build token response
     const tokenResponse: TokenResponseDto = {
@@ -204,67 +187,20 @@ export class TokenService {
       throw new MissingRequiredParametersError(tokenRequest.grant_type);
     }
 
-    // Hash the provided refresh token to compare with stored hash
-    const tokenHash = createHash('sha256')
-      .update(tokenRequest.refresh_token)
-      .digest('hex');
-
-    // Find the refresh token in database with related authorization flow
-    const storedToken = await this.mcpRefreshTokenRepository.findOne({
-      where: { tokenHash },
-      relations: [
-        'mcpAuthorizationFlow',
-        'mcpAuthorizationFlow.client',
-        'mcpAuthorizationFlow.server',
-        'mcpAuthorizationFlow.authJourney',
-        'mcpAuthorizationFlow.authJourney.actor',
-        'mcpAuthorizationFlow.authJourney.actor.user',
-      ],
-    });
-
-    if (!storedToken) {
-      this.logger.warn('Refresh token not found');
-      throw new InvalidRefreshTokenError();
-    }
-
-    // Validate client_id matches the refresh token
-    if (storedToken.clientId !== tokenRequest.client_id) {
-      this.logger.warn('Client ID mismatch for refresh token');
-      throw new ClientIdMismatchError();
-    }
-
-    // Check if token is revoked
-    if (storedToken.revokedAt) {
-      this.logger.warn('Refresh token has been revoked');
-      throw new RefreshTokenRevokedError();
-    }
-
-    // Check if token is expired
-    if (new Date() > storedToken.expiresAt) {
-      this.logger.warn('Refresh token expired');
-      throw new RefreshTokenExpiredError();
-    }
-
-    const mcpAuthFlow = storedToken.mcpAuthorizationFlow;
-
-    // Revoke the old refresh token (rotation)
-    storedToken.revokedAt = new Date();
-    await this.mcpRefreshTokenRepository.save(storedToken);
-
-    // Generate new tokens
+    const { mcpAuthFlow, refreshToken } =
+      await this.rotateMcpRefreshTokenUseCase.execute(
+        tokenRequest.refresh_token,
+        tokenRequest.client_id,
+      );
     const config = getConfig();
     const accessToken = await this.generateAccessToken(mcpAuthFlow);
-    const newRefreshToken = await this.generateAndStoreRefreshToken(
-      mcpAuthFlow,
-      tokenRequest.client_id,
-    );
 
     // Build token response
     const tokenResponse: TokenResponseDto = {
       access_token: accessToken,
       token_type: TokenType.BEARER,
       expires_in: config.mcpAccessTokenDurationSeconds,
-      refresh_token: newRefreshToken,
+      refresh_token: refreshToken,
       scope: mcpAuthFlow.client.scopes
         ? mcpAuthFlow.client.scopes.join(' ')
         : undefined,
@@ -340,44 +276,6 @@ export class TokenService {
     const jwt = await this.tokenSignerService.signToken(payload);
 
     return jwt;
-  }
-
-  /**
-   * Generate and store a refresh token in the database
-   * Returns the unhashed token (to be sent to client)
-   */
-  private async generateAndStoreRefreshToken(
-    mcpAuthFlow: McpAuthorizationFlowEntity,
-    clientId: string,
-  ): Promise<string> {
-    // Generate a cryptographically secure random token
-    const token = randomBytes(32).toString('base64url');
-
-    // Hash the token before storing
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-
-    // Calculate expiration based on config
-    const config = getConfig();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + config.mcpRefreshTokenDurationDays);
-
-    // Store in database
-    const refreshToken = this.mcpRefreshTokenRepository.create({
-      mcpAuthorizationFlowId: mcpAuthFlow.id,
-      clientId,
-      tokenHash,
-      expiresAt,
-      revokedAt: null,
-    });
-
-    await this.mcpRefreshTokenRepository.save(refreshToken);
-
-    this.logger.debug(
-      `Stored refresh token for flow: ${mcpAuthFlow.id}, expires: ${expiresAt.toISOString()}`,
-    );
-
-    // Return the unhashed token
-    return token;
   }
 
   /**

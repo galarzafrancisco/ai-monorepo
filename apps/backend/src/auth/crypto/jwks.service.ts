@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan, LessThan } from 'typeorm';
+import { DataSource, Repository, MoreThan, LessThan } from 'typeorm';
 import { JwksKeyEntity } from './jwks-key.entity';
 import {
   generateKeyPair,
@@ -23,6 +23,7 @@ export class JwksService {
   constructor(
     @InjectRepository(JwksKeyEntity)
     private readonly keyRepository: Repository<JwksKeyEntity>,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -57,10 +58,7 @@ export class JwksService {
   async rotateKey(): Promise<JwksKeyEntity> {
     this.logger.log('Rotating JWKS key');
 
-    // Mark all currently active keys as inactive
-    await this.keyRepository.update({ isActive: true }, { isActive: false });
-
-    // Generate new RSA key pair
+    // Key generation is deliberately outside the database transaction.
     const { publicKey, privateKey } = await generateKeyPair(ALG, {
       modulusLength: 2048,
       extractable: true, // Required to export keys to PEM format
@@ -81,17 +79,20 @@ export class JwksService {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + config.jwksKeySigningTtlHours);
 
-    // Create and save the new key
-    const newKey = this.keyRepository.create({
-      kid,
-      publicKeyPem: publicKeyPem,
-      privateKeyPem: privateKeyPem,
-      algorithm: ALG,
-      isActive: true,
-      expiresAt,
+    const savedKey = await this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(JwksKeyEntity);
+      await repository.update({ isActive: true }, { isActive: false });
+      return repository.save(
+        repository.create({
+          kid,
+          publicKeyPem,
+          privateKeyPem,
+          algorithm: ALG,
+          isActive: true,
+          expiresAt,
+        }),
+      );
     });
-
-    const savedKey = await this.keyRepository.save(newKey);
     this.logger.log(
       `Created new key: ${savedKey.kid}, expires at: ${savedKey.expiresAt.toISOString()}`,
     );

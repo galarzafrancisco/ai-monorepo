@@ -33,6 +33,10 @@ import { AuthJourneyStatus } from 'src/auth-journeys/enums/auth-journey-status.e
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 import { Scope } from 'src/auth/core/types/scope.type';
 import { ALL_API_SCOPES } from 'src/auth/core/scopes/all-api.scopes';
+import { IssueMcpAuthorizationCodeUseCase } from './use-cases/issue-mcp-authorization-code.use-case';
+import { StartMcpAuthorizationRequestUseCase } from './use-cases/start-mcp-authorization-request.use-case';
+import { RejectMcpConsentUseCase } from './use-cases/reject-mcp-consent.use-case';
+import { ApproveMcpConsentUseCase } from './use-cases/approve-mcp-consent.use-case';
 
 @Injectable()
 export class AuthorizationService {
@@ -44,6 +48,10 @@ export class AuthorizationService {
     private readonly mcpRegistryService: McpRegistryService,
     private readonly tokenService: TokenService,
     private readonly tokenVerifierService: TokenVerifierService,
+    private readonly issueMcpAuthorizationCodeUseCase: IssueMcpAuthorizationCodeUseCase,
+    private readonly startMcpAuthorizationRequestUseCase: StartMcpAuthorizationRequestUseCase,
+    private readonly rejectMcpConsentUseCase: RejectMcpConsentUseCase,
+    private readonly approveMcpConsentUseCase: ApproveMcpConsentUseCase,
   ) {}
 
   async getAllAPIScopes(): Promise<Scope[]> {
@@ -107,23 +115,16 @@ export class AuthorizationService {
       );
     }
 
-    // Change status
-    mcpAuthFlow.status =
-      McpAuthorizationFlowStatus.AUTHORIZATION_REQUEST_STARTED;
-
-    // Store the PKCE parameters and other OAuth request data
-    mcpAuthFlow.codeChallenge = authRequest.code_challenge;
-    mcpAuthFlow.codeChallengeMethod = authRequest.code_challenge_method;
-    mcpAuthFlow.state = authRequest.state;
-    mcpAuthFlow.redirectUri = authRequest.redirect_uri;
-    mcpAuthFlow.resource = authRequest.resource;
-    mcpAuthFlow.scopes = scopes;
-
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-    await this.authJourneysService.updateAuthJourneyStatus(
-      mcpAuthFlow.authorizationJourneyId,
-      AuthJourneyStatus.MCP_AUTH_FLOW_STARTED,
-    );
+    await this.startMcpAuthorizationRequestUseCase.execute({
+      flowId: mcpAuthFlow.id,
+      journeyId: mcpAuthFlow.authorizationJourneyId,
+      codeChallenge: authRequest.code_challenge,
+      codeChallengeMethod: authRequest.code_challenge_method,
+      state: authRequest.state,
+      redirectUri: authRequest.redirect_uri,
+      resource: authRequest.resource,
+      scopes,
+    });
 
     // Return the flow ID to be used in the consent screen
     return mcpAuthFlow.id;
@@ -206,12 +207,9 @@ export class AuthorizationService {
 
     // Handle denial
     if (!consentDecision.approved) {
-      // Mark as rejected
-      mcpAuthFlow.status = McpAuthorizationFlowStatus.USER_CONSENT_REJECTED;
-      await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-      await this.authJourneysService.updateAuthJourneyStatus(
+      await this.rejectMcpConsentUseCase.execute(
+        mcpAuthFlow.id,
         mcpAuthFlow.authorizationJourneyId,
-        AuthJourneyStatus.USER_CONSENT_REJECTED,
       );
       const errorUrl = new URL(mcpAuthFlow.redirectUri);
       errorUrl.searchParams.set('error', 'access_denied');
@@ -223,14 +221,14 @@ export class AuthorizationService {
       return errorUrl.toString();
     }
 
-    // Extract user ID from access token cookie and update the auth journey
+    let actorId: string | undefined;
+    // Extract user ID from the cookie before the database transition.
     const accessToken = req.cookies?.[COOKIE_KEYS.ACCESS_TOKEN];
     if (accessToken && mcpAuthFlow.authJourney) {
       try {
         const payload =
           await this.tokenVerifierService.verifyAndDecode(accessToken);
-        mcpAuthFlow.authJourney.actorId = payload.sub;
-        await this.authJourneysService.saveAuthJourney(mcpAuthFlow.authJourney);
+        actorId = payload.sub;
       } catch (error) {
         this.logger.warn(
           `Failed to extract user ID from access token: ${error}`,
@@ -239,12 +237,10 @@ export class AuthorizationService {
       }
     }
 
-    // Mark as consent
-    mcpAuthFlow.status = McpAuthorizationFlowStatus.USER_CONSENT_OK;
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-    await this.authJourneysService.updateAuthJourneyStatus(
+    await this.approveMcpConsentUseCase.execute(
+      mcpAuthFlow.id,
       mcpAuthFlow.authorizationJourneyId,
-      AuthJourneyStatus.MCP_AUTH_FLOW_COMPLETED,
+      actorId,
     );
 
     // Process the next downstream flow (or complete if no connections)
@@ -413,21 +409,11 @@ export class AuthorizationService {
       throw new InvalidFlowStateError('missing redirect URI or state');
     }
 
-    // Generate authorization code for the MCP client
-    const authorizationCode = randomBytes(32).toString('base64url');
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
-
-    mcpAuthFlow.authorizationCode = authorizationCode;
-    mcpAuthFlow.authorizationCodeExpiresAt = expiresAt;
-    mcpAuthFlow.authorizationCodeUsed = false;
-    mcpAuthFlow.status = McpAuthorizationFlowStatus.AUTHORIZATION_CODE_ISSUED;
-
-    await this.authJourneysService.saveMcpAuthFlow(mcpAuthFlow);
-    await this.authJourneysService.updateAuthJourneyStatus(
-      mcpAuthFlow.authorizationJourneyId,
-      AuthJourneyStatus.AUTHORIZATION_CODE_ISSUED,
-    );
+    const authorizationCode =
+      await this.issueMcpAuthorizationCodeUseCase.execute(
+        mcpAuthFlow.id,
+        mcpAuthFlow.authorizationJourneyId,
+      );
 
     // Redirect back to the MCP client with the authorization code
     const redirectUrl = new URL(mcpAuthFlow.redirectUri);

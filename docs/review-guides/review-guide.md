@@ -1,4 +1,4 @@
 - Is a list
 - Each point is an assertion
 - Points are objective, not subjective
-- Points arenot vague
+- Points are not vague

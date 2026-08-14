@@ -100,8 +100,8 @@ export class TasksMcpGateway {
           const result = {
             id: task.id,
             name: task.name,
-            status: task.status
-          }
+            status: task.status,
+          };
           if (task.id === thread.parentTaskId) {
             result['isParent'] = true;
           }
@@ -302,7 +302,8 @@ export class TasksMcpGateway {
         'create_task',
         {
           title: 'Create a new task',
-          description: 'Create task with name, description, assignee, dependencies, and tags',
+          description:
+            'Create task with name, description, assignee, dependencies, and tags',
           inputSchema: {
             name: z.string(),
             description: z.string(),
@@ -578,15 +579,10 @@ export class TasksMcpGateway {
             taskId,
             {
               status: TaskStatus.DONE,
+              comment,
             },
             user.actorId,
           );
-
-          // Add a comment
-          await this.tasksService.addComment(taskId, {
-            commenterActorId: user.actorId,
-            content: comment,
-          });
 
           return {
             content: [
@@ -846,7 +842,10 @@ export class TasksMcpGateway {
           }
 
           // Add new dependency
-          const updatedDependencyIds = [...currentDependencyIds, dependsOnTaskId];
+          const updatedDependencyIds = [
+            ...currentDependencyIds,
+            dependsOnTaskId,
+          ];
           await this.tasksService.updateTask(
             taskId,
             { dependsOnIds: updatedDependencyIds },

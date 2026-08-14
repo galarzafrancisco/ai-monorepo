@@ -11,11 +11,11 @@ import {
   ClientNotFoundError,
 } from './errors/client-registration.errors';
 import { randomBytes } from 'crypto';
-import { AuthJourneysService } from 'src/auth-journeys/auth-journeys.service';
 import { McpRegistryService } from 'src/mcp-registry/mcp-registry.service';
 import { getConfig } from 'src/config/env.config';
 import * as bcrypt from 'bcrypt';
 import { ClientRegistrationResult } from './dto/service/client-registration.service.types';
+import { RegisterClientUseCase } from './use-cases/register-client.use-case';
 
 @Injectable()
 export class ClientRegistrationService {
@@ -25,8 +25,8 @@ export class ClientRegistrationService {
     @InjectRepository(RegisteredClientEntity)
     private readonly clientRepository: Repository<RegisteredClientEntity>,
 
-    private readonly authJourneyService: AuthJourneysService,
     private readonly mcpRegistryService: McpRegistryService,
+    private readonly registerClientUseCase: RegisterClientUseCase,
   ) {}
 
   /**
@@ -64,25 +64,15 @@ export class ClientRegistrationService {
     if (dto.scope && dto.scope.trim() != '') {
       scopes = dto.scope.split(' ');
     }
-    const client = this.clientRepository.create({
+    const savedClient = await this.registerClientUseCase.execute({
+      dto,
       clientId,
-      clientSecret: clientSecret ? await this.hashSecret(clientSecret) : null,
-      clientName: dto.client_name,
-      redirectUris: dto.redirect_uris,
-      grantTypes: dto.grant_types,
-      tokenEndpointAuthMethod: dto.token_endpoint_auth_method,
-      scopes: scopes,
-      contacts: dto.contacts || null,
+      clientSecretHash: clientSecret
+        ? await this.hashSecret(clientSecret)
+        : null,
+      scopes,
+      server: mcpServer,
     });
-
-    const savedClient = await this.clientRepository.save(client);
-
-    // Create an Authorization Journey
-    const authJourney =
-      await this.authJourneyService.createJourneyForMcpRegistration({
-        mcpServerId: mcpServer.id,
-        mcpClientId: savedClient.id,
-      });
 
     // Return the client with the plaintext secret (only time it's exposed)
     return this.mapClientToResult({
@@ -195,10 +185,7 @@ export class ClientRegistrationService {
    * @param hash - The hashed secret to compare against
    * @returns True if the secret matches, false otherwise
    */
-  async verifyClientSecret(
-    plaintext: string,
-    hash: string,
-  ): Promise<boolean> {
+  async verifyClientSecret(plaintext: string, hash: string): Promise<boolean> {
     return bcrypt.compare(plaintext, hash);
   }
 

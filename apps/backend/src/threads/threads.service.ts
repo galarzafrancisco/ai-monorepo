@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, QueryFailedError } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 import { ThreadEntity } from './thread.entity';
@@ -30,10 +30,7 @@ import {
 } from './dto/service/threads.service.types';
 import {
   ThreadNotFoundError,
-  TaskNotFoundForThreadError,
-  ContextBlockNotFoundError,
   ActorNotFoundForThreadError,
-  ParentTaskThreadAlreadyExistsError,
 } from './errors/threads.errors';
 import {
   MessageCreatedEvent,
@@ -41,13 +38,19 @@ import {
   ThreadAgentActivityKind,
   ThreadAgentResponseDeltaEvent,
   ThreadTitleUpdatedEvent,
-  ThreadUpdatedEvent,
 } from './events/threads.events';
 import { ChatService } from './chat.service';
 import { ChatStreamEvent } from './backends/chat-backend.interface';
 import { NoActiveChatProviderError } from '../chat-providers/errors/chat-providers.errors';
 import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
+import { UpdateThreadUseCase } from './use-cases/update-thread.use-case';
+import { DeleteThreadUseCase } from './use-cases/delete-thread.use-case';
+import { CreateThreadUseCase } from './use-cases/create-thread.use-case';
+import { ChangeThreadTagUseCase } from './use-cases/change-thread-tag.use-case';
+import { ChangeThreadTaskUseCase } from './use-cases/change-thread-task.use-case';
+import { ChangeThreadRelationsUseCase } from './use-cases/change-thread-relations.use-case';
+import { CreateThreadMessageUseCase } from './use-cases/create-thread-message.use-case';
 
 type GenerateTitleFromFirstMessageInput = {
   thread: ThreadEntity;
@@ -74,13 +77,6 @@ export class ThreadsService {
   private readonly logger = new Logger(ThreadsService.name);
   private static readonly DEFAULT_THREAD_TITLE = 'New thread';
 
-  private emitThreadUpdated(thread: ThreadEntity): void {
-    this.eventEmitter.emit(
-      ThreadUpdatedEvent.INTERNAL,
-      new ThreadUpdatedEvent({ id: thread.createdByActorId }, thread),
-    );
-  }
-
   constructor(
     @InjectRepository(ThreadEntity)
     private readonly threadRepository: Repository<ThreadEntity>,
@@ -99,7 +95,14 @@ export class ThreadsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly chatService: ChatService,
     private readonly threadTitleService: ThreadTitleService,
-  ) { }
+    private readonly updateThreadUseCase: UpdateThreadUseCase,
+    private readonly deleteThreadUseCase: DeleteThreadUseCase,
+    private readonly createThreadUseCase: CreateThreadUseCase,
+    private readonly changeThreadTagUseCase: ChangeThreadTagUseCase,
+    private readonly changeThreadTaskUseCase: ChangeThreadTaskUseCase,
+    private readonly changeThreadRelationsUseCase: ChangeThreadRelationsUseCase,
+    private readonly createThreadMessageUseCase: CreateThreadMessageUseCase,
+  ) {}
 
   private async ensureThreadConversationSession(
     thread: ThreadEntity,
@@ -129,156 +132,7 @@ export class ThreadsService {
       parentTaskId: input.parentTaskId,
     });
 
-    // Verify creator exists
-    const createdByActor = await this.actorRepository.findOne({
-      where: { id: input.createdByActorId },
-    });
-    if (!createdByActor) {
-      throw new ActorNotFoundForThreadError(input.createdByActorId);
-    }
-
-    // Verify parent task exists if provided
-    let parentTask: TaskEntity | null = null;
-    if (input.parentTaskId) {
-      parentTask = await this.taskRepository.findOne({
-        where: { id: input.parentTaskId },
-      });
-      if (!parentTask) {
-        throw new TaskNotFoundForThreadError(input.parentTaskId);
-      }
-    }
-
-    // Generate title based on available context
-    const title = input.title
-      || (parentTask
-        ? ((await this.threadTitleService.generateFromParentTask(parentTask))
-          || ThreadsService.DEFAULT_THREAD_TITLE)
-        : ThreadsService.DEFAULT_THREAD_TITLE);
-
-    await this.chatService.ensureConversationAvailable();
-
-    // Create state context block for the thread
-    const stateBlockContent = parentTask
-      ? [
-          `This thread was created to achieve task ${parentTask.name} (id ${parentTask.id}).`,
-          `Parent goal: ${parentTask.description || 'No description provided.'}`,
-        ].join('\n')
-      : `This thread was created by @${createdByActor.slug}.`;
-    const stateBlock = await this.contextService.createBlock({
-      title: `Thread State: ${title}`,
-      content: stateBlockContent,
-      createdByActorId: input.createdByActorId,
-      parentId: null,
-      tagNames: ['thread:state'],
-    });
-
-    const thread = this.threadRepository.create({
-      id: randomUUID(),
-      title,
-      chatSessionId: null,
-      createdByActorId: input.createdByActorId,
-      parentTaskId: input.parentTaskId || null,
-      stateContextBlockId: stateBlock.id,
-    });
-
-    let savedThread: ThreadEntity;
-    try {
-      savedThread = await this.threadRepository.save(thread);
-    } catch (error) {
-      if (this.isParentTaskThreadUniqueViolation(error, input.parentTaskId)) {
-        await this.contextBlockRepository.delete({ id: stateBlock.id });
-        throw new ParentTaskThreadAlreadyExistsError(input.parentTaskId!);
-      }
-      throw error;
-    }
-
-    // Create provider-side conversation/session and persist its ID on the thread.
-    try {
-      const conversation = await this.chatService.createConversation({
-        threadId: savedThread.id,
-      });
-      savedThread.chatSessionId = conversation.id;
-      await this.threadRepository.save(savedThread);
-    } catch (error) {
-      if (error instanceof NoActiveChatProviderError) {
-        // No provider configured — thread is created with chatSessionId: null.
-        // The session will be lazily initialized when the first message is sent.
-        this.logger.warn({
-          message: 'No active chat provider; thread created without a chat session',
-          threadId: savedThread.id,
-        });
-      } else {
-        await this.threadRepository.delete({ id: savedThread.id });
-        await this.contextBlockRepository.delete({ id: stateBlock.id });
-
-        this.logger.error({
-          message: 'Failed to create chat conversation for thread, rolling back thread creation',
-          threadId: savedThread.id,
-          error:
-            error instanceof Error
-              ? { message: error.message, stack: error.stack, name: error.name }
-              : String(error),
-        });
-
-        throw error;
-      }
-    }
-
-    // Handle tags if provided
-    if (input.tagNames && input.tagNames.length > 0) {
-      const tags = await this.metaService.findOrCreateTagEntities(
-        input.tagNames,
-      );
-      savedThread.tags = tags;
-      await this.threadRepository.save(savedThread);
-
-      // Increment usage tracking for all tags
-      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
-    }
-
-    // Handle tasks if provided
-    // Include parent task in the tasks relation if it exists
-    const taskIdsToAttach = new Set(input.taskIds || []);
-    if (input.parentTaskId) {
-      taskIdsToAttach.add(input.parentTaskId);
-    }
-
-    if (taskIdsToAttach.size > 0) {
-      const tasks = await this.taskRepository.findBy({
-        id: In(Array.from(taskIdsToAttach)),
-      });
-      if (tasks.length !== taskIdsToAttach.size) {
-        throw new TaskNotFoundForThreadError('One or more tasks not found');
-      }
-      savedThread.tasks = tasks;
-      await this.threadRepository.save(savedThread);
-    }
-
-    // Handle context blocks if provided
-    if (input.contextBlockIds && input.contextBlockIds.length > 0) {
-      const blocks = await this.contextBlockRepository.findBy({
-        id: In(input.contextBlockIds),
-      });
-      if (blocks.length !== input.contextBlockIds.length) {
-        throw new ContextBlockNotFoundError('One or more blocks not found');
-      }
-      savedThread.referencedContextBlocks = blocks;
-      await this.threadRepository.save(savedThread);
-    }
-
-    // Handle participants if provided
-    if (input.participantActorIds && input.participantActorIds.length > 0) {
-      const participants = await this.actorRepository.findBy({
-        id: In(input.participantActorIds),
-      });
-      if (participants.length !== input.participantActorIds.length) {
-        throw new ActorNotFoundForThreadError('One or more actors not found');
-      }
-      savedThread.participants = participants;
-      await this.threadRepository.save(savedThread);
-    }
-
-    // Reload with relations
+    const savedThread = await this.createThreadUseCase.execute(input);
     const threadWithRelations = await this.getThreadWithRelations(
       savedThread.id,
     );
@@ -302,13 +156,7 @@ export class ThreadsService {
       threadId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-
-    if (input.title !== undefined) {
-      thread.title = input.title;
-    }
-
-    await this.threadRepository.save(thread);
+    await this.updateThreadUseCase.execute(threadId, input, actorId);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
 
@@ -327,15 +175,7 @@ export class ThreadsService {
       actorId,
     });
 
-    const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
-    });
-
-    if (!thread) {
-      throw new ThreadNotFoundError(threadId);
-    }
-
-    await this.threadRepository.softRemove(thread);
+    await this.deleteThreadUseCase.execute(threadId, actorId);
 
     this.logger.log({
       message: 'Thread deleted',
@@ -390,48 +230,9 @@ export class ThreadsService {
       taskId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
-
-    if (!task) {
-      throw new TaskNotFoundForThreadError(taskId);
-    }
-
-    try {
-      await this.threadRepository
-        .createQueryBuilder()
-        .relation(ThreadEntity, 'tasks')
-        .of(threadId)
-        .add(taskId);
-
-      this.logger.log({
-        message: 'Task attached to thread',
-        threadId,
-        taskId,
-      });
-    } catch (error) {
-      if (!this.isThreadTaskUniqueViolation(error)) {
-        throw error;
-      }
-
-      this.logger.log({
-        message: 'Task was already attached to thread',
-        threadId,
-        taskId,
-      });
-    }
-
-    if (
-      task.assigneeActorId &&
-      !thread.participants.some(
-        (participant) => participant.id === task.assigneeActorId,
-      )
-    ) {
-      await this.addParticipant(threadId, task.assigneeActorId);
-    }
+    await this.changeThreadTaskUseCase.attach(threadId, taskId);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -442,9 +243,7 @@ export class ThreadsService {
       taskId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    thread.tasks = thread.tasks.filter((task) => task.id !== taskId);
-    await this.threadRepository.save(thread);
+    await this.changeThreadTaskUseCase.detach(threadId, taskId);
 
     this.logger.log({
       message: 'Task detached from thread',
@@ -453,7 +252,6 @@ export class ThreadsService {
     });
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -467,28 +265,12 @@ export class ThreadsService {
       contextBlockId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    const block = await this.contextBlockRepository.findOne({
-      where: { id: contextBlockId },
-    });
-
-    if (!block) {
-      throw new ContextBlockNotFoundError(contextBlockId);
-    }
-
-    // Check if block is already referenced
-    if (!thread.referencedContextBlocks.some((b) => b.id === contextBlockId)) {
-      thread.referencedContextBlocks.push(block);
-      await this.threadRepository.save(thread);
-      this.logger.log({
-        message: 'Context block referenced in thread',
-        threadId,
-        contextBlockId,
-      });
-    }
+    await this.changeThreadRelationsUseCase.referenceContextBlock(
+      threadId,
+      contextBlockId,
+    );
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -502,11 +284,10 @@ export class ThreadsService {
       contextBlockId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    thread.referencedContextBlocks = thread.referencedContextBlocks.filter(
-      (block) => block.id !== contextBlockId,
+    await this.changeThreadRelationsUseCase.unreferenceContextBlock(
+      threadId,
+      contextBlockId,
     );
-    await this.threadRepository.save(thread);
 
     this.logger.log({
       message: 'Referenced context block removed from thread',
@@ -515,7 +296,6 @@ export class ThreadsService {
     });
 
     const updatedThread = await this.getThreadWithRelations(threadId);
-    this.emitThreadUpdated(updatedThread);
     return await this.buildThreadResult(updatedThread);
   }
 
@@ -530,23 +310,7 @@ export class ThreadsService {
       tagName: input.name,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    const tag = await this.metaService.findOrCreateTagEntity(input.name);
-
-    // Add tag if not already present
-    if (!thread.tags.some((t) => t.id === tag.id)) {
-      thread.tags.push(tag);
-      await this.threadRepository.save(thread);
-
-      // Increment tag usage tracking
-      await this.metaService.incrementTagUsage(tag.id);
-
-      this.logger.log({
-        message: 'Tag added to thread',
-        threadId,
-        tagId: tag.id,
-      });
-    }
+    await this.changeThreadTagUseCase.add(threadId, input.name, actorId);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(updatedThread);
@@ -563,18 +327,13 @@ export class ThreadsService {
       tagId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    thread.tags = thread.tags.filter((tag) => tag.id !== tagId);
-    await this.threadRepository.save(thread);
+    await this.changeThreadTagUseCase.remove(threadId, tagId, actorId);
 
     this.logger.log({
       message: 'Tag removed from thread',
       threadId,
       tagId,
     });
-
-    // Check if tag is now orphaned and clean it up
-    await this.metaService.cleanupOrphanedTag(tagId);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(updatedThread);
@@ -590,34 +349,7 @@ export class ThreadsService {
       actorId,
     });
 
-    const thread = await this.getThreadWithRelations(threadId);
-    const actor = await this.actorRepository.findOne({
-      where: { id: actorId },
-    });
-
-    if (!actor) {
-      throw new ActorNotFoundForThreadError(actorId);
-    }
-
-    if (!thread.participants.some((p) => p.id === actorId)) {
-      try {
-        await this.threadRepository
-          .createQueryBuilder()
-          .relation(ThreadEntity, 'participants')
-          .of(threadId)
-          .add(actorId);
-      } catch (error) {
-        if (!this.isThreadParticipantUniqueViolation(error)) {
-          throw error;
-        }
-      }
-
-      this.logger.log({
-        message: 'Participant added to thread',
-        threadId,
-        actorId,
-      });
-    }
+    await this.changeThreadRelationsUseCase.addParticipant(threadId, actorId);
 
     const updatedThread = await this.getThreadWithRelations(threadId);
     return await this.buildThreadResult(updatedThread);
@@ -638,7 +370,10 @@ export class ThreadsService {
       .leftJoinAndSelect('tasks.tags', 'taskTags')
       .leftJoinAndSelect('tasks.comments', 'taskComments')
       .leftJoinAndSelect('tasks.inputRequests', 'taskInputRequests')
-      .leftJoinAndSelect('thread.referencedContextBlocks', 'referencedContextBlocks')
+      .leftJoinAndSelect(
+        'thread.referencedContextBlocks',
+        'referencedContextBlocks',
+      )
       .leftJoinAndSelect('thread.tags', 'tags')
       .leftJoinAndSelect('thread.participants', 'participants')
       .innerJoin('thread.tasks', 'filterTask')
@@ -652,7 +387,9 @@ export class ThreadsService {
     return await this.buildThreadResult(thread);
   }
 
-  async findThreadsByParentTaskId(parentTaskId: string): Promise<ThreadResult[]> {
+  async findThreadsByParentTaskId(
+    parentTaskId: string,
+  ): Promise<ThreadResult[]> {
     this.logger.log({
       message: 'Finding threads by parent task ID',
       parentTaskId,
@@ -708,7 +445,9 @@ export class ThreadsService {
     return this.mapThreadToResult(thread);
   }
 
-  async findThreadsByStateBlockId(stateBlockId: string): Promise<ThreadResult[]> {
+  async findThreadsByStateBlockId(
+    stateBlockId: string,
+  ): Promise<ThreadResult[]> {
     this.logger.log({
       message: 'Finding threads by state block ID',
       stateBlockId,
@@ -813,7 +552,9 @@ export class ThreadsService {
     return updatedBlock.content;
   }
 
-  private async getThreadWithRelations(threadId: string): Promise<ThreadEntity> {
+  private async getThreadWithRelations(
+    threadId: string,
+  ): Promise<ThreadEntity> {
     const thread = await this.threadRepository.findOne({
       where: { id: threadId },
       relations: [
@@ -842,7 +583,10 @@ export class ThreadsService {
       return true;
     }
 
-    return title.trim().toLowerCase() === ThreadsService.DEFAULT_THREAD_TITLE.toLowerCase();
+    return (
+      title.trim().toLowerCase() ===
+      ThreadsService.DEFAULT_THREAD_TITLE.toLowerCase()
+    );
   }
 
   private async maybeGenerateTitleFromFirstMessage(
@@ -863,7 +607,8 @@ export class ThreadsService {
       return;
     }
 
-    const generatedTitle = await this.threadTitleService.generateFromMessage(content);
+    const generatedTitle =
+      await this.threadTitleService.generateFromMessage(content);
     if (!generatedTitle || this.isPlaceholderTitle(generatedTitle)) {
       return;
     }
@@ -887,7 +632,8 @@ export class ThreadsService {
       });
     } catch (error) {
       this.logger.warn({
-        message: 'Failed to update thread state block title after generating thread title',
+        message:
+          'Failed to update thread state block title after generating thread title',
         threadId: input.thread.id,
         stateContextBlockId: input.thread.stateContextBlockId,
         error:
@@ -927,74 +673,6 @@ export class ThreadsService {
       updatedAt: thread.updatedAt,
       deletedAt: thread.deletedAt,
     };
-  }
-
-  private isParentTaskThreadUniqueViolation(
-    error: unknown,
-    parentTaskId?: string,
-  ): boolean {
-    if (!parentTaskId || !(error instanceof QueryFailedError)) {
-      return false;
-    }
-
-    const driverError = (error as any).driverError;
-    const code = driverError?.code;
-    const message = driverError?.message ?? '';
-
-    const isUniqueConstraintCode =
-      code === 'SQLITE_CONSTRAINT' || code === '23505';
-    if (!isUniqueConstraintCode) {
-      return false;
-    }
-
-    return (
-      message.includes('uq_threads_parent_task_id_non_null')
-      || message.includes('threads.parent_task_id')
-    );
-  }
-
-  private isThreadTaskUniqueViolation(error: unknown): boolean {
-    if (!(error instanceof QueryFailedError)) {
-      return false;
-    }
-
-    const driverError = (error as any).driverError;
-    const code = driverError?.code;
-    const message = driverError?.message ?? '';
-
-    const isUniqueConstraintCode =
-      code === 'SQLITE_CONSTRAINT' || code === '23505';
-    if (!isUniqueConstraintCode) {
-      return false;
-    }
-
-    return (
-      message.includes('thread_tasks')
-      && message.includes('thread_id')
-      && message.includes('task_id')
-    );
-  }
-
-  private isThreadParticipantUniqueViolation(error: unknown): boolean {
-    if (!(error instanceof QueryFailedError)) {
-      return false;
-    }
-
-    const driverError = (error as any).driverError;
-    const code = driverError?.code;
-    const message = driverError?.message ?? '';
-
-    const isUniqueConstraintCode =
-      code === 'SQLITE_CONSTRAINT' || code === '23505';
-    if (!isUniqueConstraintCode) {
-      return false;
-    }
-
-    return (
-      message.includes('thread_participants')
-      && message.includes('thread_id')
-      && message.includes('actor_id')
-    );
   }
 
   private mapActorToResult(actor: ActorEntity): ActorResult {
@@ -1055,78 +733,40 @@ export class ThreadsService {
       threadId: input.threadId,
     });
 
-    // Verify thread exists
-    const thread = await this.threadRepository.findOne({
-      where: { id: input.threadId },
-    });
-    if (!thread) {
-      throw new ThreadNotFoundError(input.threadId);
-    }
-    const threadWithConversation = await this.ensureThreadConversationSession(
-      thread,
-    );
-
-    // Verify actor exists if provided
-    const actor = await this.actorRepository.findOne({
-      where: { id: input.createdByActorId },
-    });
-    if (!actor) {
-      throw new ActorNotFoundForThreadError(input.createdByActorId);
-    }
-    const existingMessageCount = await this.threadMessageRepository.count({
-      where: { threadId: input.threadId },
-    });
-
-    const message = this.threadMessageRepository.create({
-      threadId: input.threadId,
-      content: input.content,
-      createdByActorId: input.createdByActorId,
-    });
-
-    const savedMessage = await this.threadMessageRepository.save(message);
-
-    // Reload with relations
-    const messageWithRelations = await this.threadMessageRepository.findOne({
-      where: { id: savedMessage.id },
-      relations: ['createdByActor'],
-    });
-
-    if (!messageWithRelations) {
-      throw new Error('Failed to reload message after creation');
-    }
+    const { thread, actor, message, existingMessageCount } =
+      await this.createThreadMessageUseCase.execute(input);
+    const threadWithConversation =
+      await this.ensureThreadConversationSession(thread);
 
     this.logger.log({
       message: 'Thread message created',
-      messageId: savedMessage.id,
+      messageId: message.id,
       threadId: input.threadId,
     });
-
-    // Emit domain event
-    this.eventEmitter.emit(
-      MessageCreatedEvent.INTERNAL,
-      new MessageCreatedEvent(
-        { id: input.createdByActorId },
-        messageWithRelations,
-      ),
-    );
 
     // Send to chat (fire-and-forget with error handling to prevent unhandled rejection)
     void (async () => {
       try {
-        const { agentActorId, events } = await this.chatService.streamMessageToConversation({
-          conversationId: threadWithConversation.chatSessionId!,
-          threadId: threadWithConversation.id,
-          message: input.content,
-          actor,
-        });
-        await this.consumeResponseStream(events, threadWithConversation.id, agentActorId);
+        const { agentActorId, events } =
+          await this.chatService.streamMessageToConversation({
+            conversationId: threadWithConversation.chatSessionId!,
+            threadId: threadWithConversation.id,
+            message: input.content,
+            actor,
+          });
+        await this.consumeResponseStream(
+          events,
+          threadWithConversation.id,
+          agentActorId,
+        );
       } catch (error) {
         this.logger.error({
           message: 'Failed to process agent response stream',
           threadId: threadWithConversation.id,
-          error: error instanceof Error
-            ? { message: error.message, stack: error.stack, name: error.name }
-            : String(error),
+          error:
+            error instanceof Error
+              ? { message: error.message, stack: error.stack, name: error.name }
+              : String(error),
         });
       }
     })();
@@ -1138,7 +778,7 @@ export class ThreadsService {
       existingMessageCount,
     });
 
-    return this.mapThreadMessageToResult(messageWithRelations);
+    return this.mapThreadMessageToResult(message);
   }
 
   private emitAgentActivity(input: EmitAgentActivityInput): void {
@@ -1178,7 +818,11 @@ export class ThreadsService {
     for await (const event of events) {
       switch (event.type) {
         case 'agent_activity':
-          this.emitAgentActivity({ threadId, actorId: agentActorId, kind: event.kind });
+          this.emitAgentActivity({
+            threadId,
+            actorId: agentActorId,
+            kind: event.kind,
+          });
           break;
         case 'response_delta':
           this.emitAgentResponseDelta({
@@ -1189,11 +833,19 @@ export class ThreadsService {
           });
           break;
         case 'final_response':
-          await this.persistAgentMessage({ threadId, content: event.content, actorId: agentActorId });
+          await this.persistAgentMessage({
+            threadId,
+            content: event.content,
+            actorId: agentActorId,
+          });
           break;
         case 'error': {
           const errorMessage = `I encountered an error while processing your message: ${event.error.message}`;
-          await this.persistAgentMessage({ threadId, content: errorMessage, actorId: agentActorId });
+          await this.persistAgentMessage({
+            threadId,
+            content: errorMessage,
+            actorId: agentActorId,
+          });
           break;
         }
       }
@@ -1236,9 +888,10 @@ export class ThreadsService {
       this.logger.error({
         message: 'Failed to persist agent message',
         threadId: input.threadId,
-        error: error instanceof Error
-          ? { message: error.message, stack: error.stack, name: error.name }
-          : String(error),
+        error:
+          error instanceof Error
+            ? { message: error.message, stack: error.stack, name: error.name }
+            : String(error),
       });
     }
   }
