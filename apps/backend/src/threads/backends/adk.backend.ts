@@ -53,7 +53,7 @@ export class AdkBackend implements ChatBackend, OnModuleDestroy {
       });
       const runner = await this.createRunner(
         args.token,
-        args.modelId ?? 'gemini-2.5-flash',
+        args.modelId ?? 'gemini-3.6-flash',
         instructions,
       );
       const stream = runner.runAsync({
@@ -122,7 +122,7 @@ export class AdkBackend implements ChatBackend, OnModuleDestroy {
 
       const agent = new LlmAgent({
         name: 'text_generator',
-        model: modelId ?? 'gemini-2.5-flash',
+        model: modelId ?? 'gemini-3.6-flash',
         description: '',
         instruction: '',
         tools: [],
@@ -181,7 +181,7 @@ export class AdkBackend implements ChatBackend, OnModuleDestroy {
 
     const runner = await this.createRunner(
       args.token,
-      args.modelId ?? 'gemini-2.5-flash',
+      args.modelId ?? 'gemini-3.6-flash',
       args.instructions,
     );
 

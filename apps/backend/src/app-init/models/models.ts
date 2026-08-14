@@ -56,6 +56,6 @@ export const ANTHROPIC_CLAUDE: MODEL_CONFIG = {
 // Good for ADK runner
 export const GEMINI_FLASH: MODEL_CONFIG = {
   providerId: '',
-  modelId: 'gemini-2.5-flash',
+  modelId: 'gemini-3.6-flash',
   name: 'gemini',
 };
