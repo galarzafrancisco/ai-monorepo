@@ -1,10 +1,32 @@
 import { setTimeout as sleep } from 'timers/promises';
-import { ApiClient } from '@taico/client/v2';
-import { pickTask } from './task-picker.js';
-import { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
+import type { ApiClient } from '@taico/client/v2';
+import type { ExecutionActivityGatewayClient } from './execution-activity-gateway-client.js';
 import { isTaskClaimDeferred } from './task-claim-deferral.js';
 
 const QUEUE_POLL_INTERVAL_MS = 60_000;
+const inFlightTaskClaims = new Set<string>();
+
+export async function claimIfNotInFlight(
+  taskId: string,
+  claimTask: () => Promise<void>,
+): Promise<void> {
+  if (isTaskClaimDeferred(taskId)) {
+    console.log(`[worker] Skipping task ${taskId}; recently unclaimed by this worker.`);
+    return;
+  }
+
+  if (inFlightTaskClaims.has(taskId)) {
+    console.debug(`[worker] Skipping duplicate claim attempt for task ${taskId}; already in flight.`);
+    return;
+  }
+
+  inFlightTaskClaims.add(taskId);
+  try {
+    await claimTask();
+  } finally {
+    inFlightTaskClaims.delete(taskId);
+  }
+}
 
 export async function runTaskClaimWorker(
   client: ApiClient,
@@ -42,22 +64,27 @@ export async function attemptClaimTask(
 ): Promise<void> {
   console.log(`[worker] Received queue notification for task ${taskId}, attempting to claim...`);
 
-  if (isTaskClaimDeferred(taskId)) {
-    console.log(`[worker] Skipping task ${taskId}; recently unclaimed by this worker.`);
-    return;
-  }
-
   try {
-    await pickTask({
-      client,
-      taskId,
-      baseDir: workingDirectory,
-      baseUrl,
-      activityGatewayClient,
-    });
+    await claimIfNotInFlight(taskId, () =>
+      pickQueuedTask({
+        client,
+        taskId,
+        baseDir: workingDirectory,
+        baseUrl,
+        activityGatewayClient,
+      }),
+    );
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.log(`[worker] Failed to claim task ${taskId}: ${message}`);
+    logClaimFailure(taskId, error);
+  }
+}
+
+function logClaimFailure(taskId: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/\b(404|409)\b|conflict|not found|queue entry/i.test(message)) {
+    console.info(`[worker] Task ${taskId} was claimed by another worker: ${message}`);
+  } else {
+    console.error(`[worker] Failed to claim task ${taskId}: ${message}`);
   }
 }
 
@@ -77,17 +104,26 @@ async function processNextQueuedTask(
     return;
   }
 
-  void pickTask({
-    client,
-    taskId: nextTask.taskId,
-    baseDir: workingDirectory,
-    baseUrl,
-    activityGatewayClient,
-  })
-    .catch((error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(
-        `[worker] Task processing failed for ${nextTask.taskId}: ${message}`,
-      );
-    });
+  void claimIfNotInFlight(nextTask.taskId, () =>
+    pickQueuedTask({
+      client,
+      taskId: nextTask.taskId,
+      baseDir: workingDirectory,
+      baseUrl,
+      activityGatewayClient,
+    }),
+  ).catch((error) => {
+    logClaimFailure(nextTask.taskId, error);
+  });
+}
+
+async function pickQueuedTask(params: {
+  client: ApiClient;
+  taskId: string;
+  baseDir: string;
+  baseUrl: string;
+  activityGatewayClient: ExecutionActivityGatewayClient;
+}): Promise<void> {
+  const { pickTask } = await import('./task-picker.js');
+  await pickTask(params);
 }
