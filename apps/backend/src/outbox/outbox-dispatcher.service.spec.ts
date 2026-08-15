@@ -121,4 +121,61 @@ describe('OutboxDispatcherService', () => {
       }),
     );
   });
+
+  it('retains retry state when a durable task listener rejects', async () => {
+    const event = createEvent();
+    const selectBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getOne: jest
+        .fn()
+        .mockResolvedValueOnce(event)
+        .mockResolvedValueOnce(null),
+    };
+    const updateBuilder = {
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
+    const repository = {
+      createQueryBuilder: jest
+        .fn()
+        .mockReturnValueOnce(selectBuilder)
+        .mockReturnValueOnce(updateBuilder)
+        .mockReturnValueOnce(selectBuilder),
+      findOne: jest.fn().mockResolvedValue(event),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
+    } as Pick<
+      Repository<OutboxEventEntity>,
+      'createQueryBuilder' | 'findOne' | 'update'
+    >;
+    const eventEmitter = {
+      emitAsync: jest
+        .fn()
+        .mockRejectedValue(new Error('readiness reconciliation failed')),
+    } as Pick<EventEmitter2, 'emitAsync'>;
+    const dispatcher = new OutboxDispatcherService(
+      repository as Repository<OutboxEventEntity>,
+      eventEmitter as EventEmitter2,
+    );
+
+    await dispatcher.dispatchAvailableEvents();
+
+    expect(repository.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: event.id }),
+      expect.objectContaining({
+        processingStartedAt: null,
+        availableAt: expect.any(Date),
+        lastError: 'readiness reconciliation failed',
+      }),
+    );
+    expect(repository.update).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ processedAt: expect.any(Date) }),
+    );
+  });
 });

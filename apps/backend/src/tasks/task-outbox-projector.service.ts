@@ -38,7 +38,7 @@ export class TaskOutboxProjectorService {
     const taskId = this.requiredString(event.payload.taskId, 'taskId');
     const actorId = this.requiredString(event.payload.actorId, 'actorId');
     const task = await this.loadTask(taskId);
-    this.eventEmitter.emit(
+    await this.eventEmitter.emitAsync(
       TaskCreatedEvent.INTERNAL,
       new TaskCreatedEvent({ id: actorId }, task),
     );
@@ -49,7 +49,7 @@ export class TaskOutboxProjectorService {
     const taskId = this.requiredString(event.payload.taskId, 'taskId');
     const actorId = this.requiredString(event.payload.actorId, 'actorId');
     const task = await this.loadTask(taskId);
-    this.eventEmitter.emit(
+    await this.eventEmitter.emitAsync(
       TaskUpdatedEvent.INTERNAL,
       new TaskUpdatedEvent({ id: actorId }, task),
     );
@@ -60,7 +60,7 @@ export class TaskOutboxProjectorService {
     const taskId = this.requiredString(event.payload.taskId, 'taskId');
     const actorId = this.requiredString(event.payload.actorId, 'actorId');
     const task = await this.loadTask(taskId);
-    this.eventEmitter.emit(
+    await this.eventEmitter.emitAsync(
       TaskAssignedEvent.INTERNAL,
       new TaskAssignedEvent({ id: actorId }, task),
     );
@@ -79,7 +79,7 @@ export class TaskOutboxProjectorService {
         `Outbox task event references missing comment ${commentId}`,
       );
     }
-    this.eventEmitter.emit(
+    await this.eventEmitter.emitAsync(
       CommentAddedEvent.INTERNAL,
       new CommentAddedEvent({ id: actorId }, comment),
     );
@@ -100,7 +100,7 @@ export class TaskOutboxProjectorService {
         `Outbox task event references missing input request ${inputRequestId}`,
       );
     }
-    this.eventEmitter.emit(
+    await this.eventEmitter.emitAsync(
       InputRequestAnsweredEvent.INTERNAL,
       new InputRequestAnsweredEvent({ id: actorId }, request),
     );
@@ -122,7 +122,7 @@ export class TaskOutboxProjectorService {
         `Outbox task event references missing artefact ${artefactId}`,
       );
     }
-    this.eventEmitter.emit(
+    await this.eventEmitter.emitAsync(
       ArtefactAddedEvent.INTERNAL,
       new ArtefactAddedEvent({ id: actorId }, artefact),
     );
@@ -141,10 +141,10 @@ export class TaskOutboxProjectorService {
   }
 
   @OnEvent(OutboxEventTypes.TASK_DELETED)
-  projectDeleted(event: OutboxEventEntity): void {
+  async projectDeleted(event: OutboxEventEntity): Promise<void> {
     const taskId = this.requiredString(event.payload.taskId, 'taskId');
     const actorId = this.requiredString(event.payload.actorId, 'actorId');
-    this.eventEmitter.emit(
+    await this.eventEmitter.emitAsync(
       TaskDeletedEvent.INTERNAL,
       new TaskDeletedEvent({ id: actorId }, taskId),
     );
