@@ -134,7 +134,7 @@ export class TaskOutboxProjectorService {
     const actorId = this.requiredString(event.payload.actorId, 'actorId');
     const task = await this.loadTask(taskId);
 
-    this.eventEmitter.emit(
+    await this.eventEmitter.emitAsync(
       TaskStatusChangedEvent.INTERNAL,
       new TaskStatusChangedEvent({ id: actorId }, task),
     );

@@ -2,7 +2,10 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import { OutboxEventEntity } from '../outbox/outbox-event.entity';
 import { OutboxEventTypes } from '../outbox/outbox-event-types';
-import { TaskCreatedEvent } from './events/tasks.events';
+import {
+  TaskCreatedEvent,
+  TaskStatusChangedEvent,
+} from './events/tasks.events';
 import { TaskEntity } from './task.entity';
 import { CommentEntity } from './comment.entity';
 import { InputRequestEntity } from './input-request.entity';
@@ -73,5 +76,40 @@ describe('TaskOutboxProjectorService', () => {
     });
 
     await expect(service.projectCreated(event)).rejects.toThrow(failure);
+  });
+
+  it('propagates a status-change readiness reconciliation failure for retry', async () => {
+    const task = Object.assign(new TaskEntity(), {
+      id: 'task-1',
+      createdByActorId: 'actor-1',
+    });
+    const taskRepository = Object.create(
+      Repository.prototype,
+    ) as Repository<TaskEntity>;
+    jest.spyOn(taskRepository, 'findOne').mockResolvedValue(task);
+    const eventEmitter = Object.create(
+      EventEmitter2.prototype,
+    ) as EventEmitter2;
+    const failure = new Error('readiness reconciliation failed');
+    const emitAsync = jest
+      .spyOn(eventEmitter, 'emitAsync')
+      .mockRejectedValue(failure);
+    const service = new TaskOutboxProjectorService(
+      taskRepository,
+      Object.create(Repository.prototype) as Repository<CommentEntity>,
+      Object.create(Repository.prototype) as Repository<InputRequestEntity>,
+      Object.create(Repository.prototype) as Repository<ArtefactEntity>,
+      eventEmitter,
+    );
+    const event = Object.assign(new OutboxEventEntity(), {
+      type: OutboxEventTypes.TASK_STATUS_CHANGED,
+      payload: { taskId: task.id, actorId: 'actor-1' },
+    });
+
+    await expect(service.projectStatusChanged(event)).rejects.toThrow(failure);
+    expect(emitAsync).toHaveBeenCalledWith(
+      TaskStatusChangedEvent.INTERNAL,
+      expect.objectContaining({ payload: task }),
+    );
   });
 });
