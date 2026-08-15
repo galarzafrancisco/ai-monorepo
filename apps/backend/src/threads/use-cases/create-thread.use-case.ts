@@ -6,7 +6,6 @@ import { TransactionalTagWriterService } from '../../meta/transactional-tag-writ
 import { OutboxEventTypes } from '../../outbox/outbox-event-types';
 import { OutboxWriterService } from '../../outbox/outbox-writer.service';
 import { TaskEntity } from '../../tasks/task.entity';
-import { ThreadTitleService } from '../thread-title.service';
 import { CreateThreadInput } from '../dto/service/threads.service.types';
 import {
   ActorNotFoundForThreadError,
@@ -24,22 +23,10 @@ export class CreateThreadUseCase {
     private readonly dataSource: DataSource,
     private readonly tagWriter: TransactionalTagWriterService,
     private readonly outboxWriter: OutboxWriterService,
-    private readonly threadTitleService: ThreadTitleService,
   ) {}
 
   async execute(input: CreateThreadInput): Promise<ThreadEntity> {
-    const parentForTitle = input.parentTaskId
-      ? await this.dataSource.getRepository(TaskEntity).findOne({
-          where: { id: input.parentTaskId },
-        })
-      : null;
-    const title =
-      input.title ??
-      (parentForTitle
-        ? ((await this.threadTitleService.generateFromParentTask(
-            parentForTitle,
-          )) ?? DEFAULT_THREAD_TITLE)
-        : DEFAULT_THREAD_TITLE);
+    const title = input.title ?? DEFAULT_THREAD_TITLE;
 
     try {
       return await this.dataSource.transaction(async (manager) => {

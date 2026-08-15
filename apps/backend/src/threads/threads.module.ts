@@ -19,6 +19,7 @@ import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
 import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
 import { ThreadTitleService } from './thread-title.service';
+import { ThreadTitleWorkflowService } from './thread-title-workflow.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
 import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-projector.service';
@@ -59,6 +60,7 @@ import { CreateThreadMessageUseCase } from './use-cases/create-thread-message.us
     OpenAiBackend,
     OpenAiMcpServerFactoryService,
     ThreadTitleService,
+    ThreadTitleWorkflowService,
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,
     UpdateThreadUseCase,

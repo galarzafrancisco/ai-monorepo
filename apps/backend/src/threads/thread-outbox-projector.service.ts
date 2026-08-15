@@ -12,6 +12,7 @@ import {
 } from './events/threads.events';
 import { ThreadMessageEntity } from './thread-message.entity';
 import { ThreadEntity } from './thread.entity';
+import { ThreadTitleWorkflowService } from './thread-title-workflow.service';
 
 @Injectable()
 export class ThreadOutboxProjectorService {
@@ -21,6 +22,7 @@ export class ThreadOutboxProjectorService {
     private readonly eventEmitter: EventEmitter2,
     @InjectRepository(ThreadMessageEntity)
     private readonly messageRepository: Repository<ThreadMessageEntity>,
+    private readonly threadTitleWorkflow: ThreadTitleWorkflowService,
   ) {}
 
   @OnEvent(OutboxEventTypes.THREAD_CREATED)
@@ -28,6 +30,18 @@ export class ThreadOutboxProjectorService {
     const threadId = this.requiredString(event.payload.threadId, 'threadId');
     const actorId = this.requiredString(event.payload.actorId, 'actorId');
     const thread = await this.loadThread(threadId);
+    if (thread.parentTaskId) {
+      if (!thread.parentTask) {
+        throw new Error(
+          `Thread ${threadId} is missing parent task ${thread.parentTaskId}`,
+        );
+      }
+      await this.threadTitleWorkflow.generateFromParentTask(
+        thread,
+        actorId,
+        thread.parentTask,
+      );
+    }
     this.eventEmitter.emit(
       ThreadCreatedEvent.INTERNAL,
       new ThreadCreatedEvent({ id: actorId }, thread),
@@ -68,6 +82,7 @@ export class ThreadOutboxProjectorService {
       where: { id: threadId },
       relations: [
         'createdByActor',
+        'parentTask',
         'tasks',
         'referencedContextBlocks',
         'tags',
