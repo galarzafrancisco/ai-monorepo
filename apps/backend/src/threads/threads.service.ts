@@ -37,13 +37,12 @@ import {
   ThreadAgentActivityEvent,
   ThreadAgentActivityKind,
   ThreadAgentResponseDeltaEvent,
-  ThreadTitleUpdatedEvent,
 } from './events/threads.events';
 import { ChatService } from './chat.service';
 import { ChatStreamEvent } from './backends/chat-backend.interface';
 import { NoActiveChatProviderError } from '../chat-providers/errors/chat-providers.errors';
 import { ActorType } from '../identity-provider/enums';
-import { ThreadTitleService } from './thread-title.service';
+import { ThreadTitleWorkflowService } from './thread-title-workflow.service';
 import { UpdateThreadUseCase } from './use-cases/update-thread.use-case';
 import { DeleteThreadUseCase } from './use-cases/delete-thread.use-case';
 import { CreateThreadUseCase } from './use-cases/create-thread.use-case';
@@ -94,7 +93,7 @@ export class ThreadsService {
     private readonly contextService: ContextService,
     private readonly eventEmitter: EventEmitter2,
     private readonly chatService: ChatService,
-    private readonly threadTitleService: ThreadTitleService,
+    private readonly threadTitleWorkflow: ThreadTitleWorkflowService,
     private readonly updateThreadUseCase: UpdateThreadUseCase,
     private readonly deleteThreadUseCase: DeleteThreadUseCase,
     private readonly createThreadUseCase: CreateThreadUseCase,
@@ -607,41 +606,11 @@ export class ThreadsService {
       return;
     }
 
-    const generatedTitle =
-      await this.threadTitleService.generateFromMessage(content);
-    if (!generatedTitle || this.isPlaceholderTitle(generatedTitle)) {
-      return;
-    }
-
-    input.thread.title = generatedTitle;
-    await this.threadRepository.save(input.thread);
-    this.eventEmitter.emit(
-      ThreadTitleUpdatedEvent.INTERNAL,
-      new ThreadTitleUpdatedEvent(
-        { id: input.actor.id },
-        {
-          threadId: input.thread.id,
-          title: generatedTitle,
-        },
-      ),
+    await this.threadTitleWorkflow.generateFromFirstMessage(
+      input.thread,
+      input.actor.id,
+      content,
     );
-
-    try {
-      await this.contextService.updateBlock(input.thread.stateContextBlockId, {
-        title: `Thread State: ${generatedTitle}`,
-      });
-    } catch (error) {
-      this.logger.warn({
-        message:
-          'Failed to update thread state block title after generating thread title',
-        threadId: input.thread.id,
-        stateContextBlockId: input.thread.stateContextBlockId,
-        error:
-          error instanceof Error
-            ? { message: error.message, stack: error.stack }
-            : String(error),
-      });
-    }
   }
 
   private async buildThreadResult(thread: ThreadEntity): Promise<ThreadResult> {

@@ -1,8 +1,4 @@
 jest.mock('@taico/errors', () => ({ ErrorCodes: {} }));
-jest.mock('../thread-title.service', () => ({
-  ThreadTitleService: jest.fn(),
-}));
-
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ActorEntity } from '../../identity-provider/actor.entity';
 import { ContextBlockEntity } from '../../context/block.entity';
@@ -12,7 +8,6 @@ import { OutboxEventEntity } from '../../outbox/outbox-event.entity';
 import { OutboxEventTypes } from '../../outbox/outbox-event-types';
 import { OutboxWriterService } from '../../outbox/outbox-writer.service';
 import { TaskEntity } from '../../tasks/task.entity';
-import { ThreadTitleService } from '../thread-title.service';
 import { ThreadEntity } from '../thread.entity';
 import { CreateThreadUseCase } from './create-thread.use-case';
 
@@ -110,14 +105,10 @@ describe('CreateThreadUseCase', () => {
       .mockResolvedValue(
         Object.assign(new OutboxEventEntity(), { id: 'event-1' }),
       );
-    const titleService = Object.create(
-      ThreadTitleService.prototype,
-    ) as ThreadTitleService;
     const useCase = new CreateThreadUseCase(
       dataSource,
       tagWriter,
       outboxWriter,
-      titleService,
     );
 
     await useCase.execute({
