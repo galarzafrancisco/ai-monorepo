@@ -64,6 +64,10 @@ The worker authenticates with the server and stores credentials locally. On firs
 
 You do not need to provision a long-lived token per agent just to get the worker connected.
 
+## Provider Credentials
+
+Provider credentials belong only in the worker process environment. To run an OpenCode agent using Grok 4.6, inject `XAI_API_KEY` into the worker process through the host's secret manager, service configuration, or a gitignored local environment file before starting the worker. Do not add it to an agent, the Taico server, deployment `env.env`, API/UI state, logs, or source control.
+
 ## Agents
 
 Taico can come with agents pre-populated so a fresh instance is immediately usable.
