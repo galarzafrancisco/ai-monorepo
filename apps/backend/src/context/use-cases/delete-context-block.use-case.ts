@@ -28,7 +28,6 @@ export class DeleteContextBlockUseCase {
       if (childCount > 0) throw new BlockHasChildrenError(blockId, childCount);
       const threadCount = await manager.getRepository(ThreadEntity).count({
         where: { stateContextBlockId: blockId },
-        withDeleted: true,
       });
       if (threadCount > 0)
         throw new BlockIsThreadStateError(blockId, threadCount);
