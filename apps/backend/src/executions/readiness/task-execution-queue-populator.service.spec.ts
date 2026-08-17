@@ -73,7 +73,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
   });
 
   describe('upsertQueueEntry', () => {
-    it('reports a new insertion without emitting from the persistence helper', async () => {
+    it('does not emit from the persistence helper', async () => {
       const taskId = 'test-task-id';
 
       // Mock the query builder chain
@@ -102,7 +102,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
 
-    it('reports no insertion when insert is ignored (SQLite changes = 0)', async () => {
+    it('does not emit when an insert is ignored', async () => {
       const taskId = 'test-task-id';
 
       // Mock the query builder chain
@@ -130,7 +130,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
 
-    it('should handle missing raw result gracefully', async () => {
+    it('does not depend on insert result metadata', async () => {
       const taskId = 'test-task-id';
 
       // Mock the query builder chain with no raw result
@@ -184,7 +184,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       taskExecutionHistoryService.getLatestHistoryForTask.mockResolvedValue(null);
     });
 
-    it('emits one wake-up across repeated reconciliation after one insertion', async () => {
+    it('wakes workers for event-driven reconciliation of an existing queue entry', async () => {
       const queryBuilder = {
         insert: jest.fn().mockReturnThis(),
         into: jest.fn().mockReturnThis(),
@@ -192,16 +192,55 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
         orIgnore: jest.fn().mockReturnThis(),
         execute: jest
           .fn()
-          .mockResolvedValueOnce({ raw: { changes: 1 } })
-          .mockResolvedValueOnce({ raw: { changes: 0 } }),
+          .mockResolvedValue({ raw: { changes: 0 } }),
       };
       queueRepository.createQueryBuilder.mockReturnValue(queryBuilder as any);
       const task = createMockTask();
+      readinessCandidateRepository.findCandidateTaskById.mockResolvedValue(task);
 
-      await (service as any).reconcileTask(task);
-      await (service as any).reconcileTask(task);
+      await service.populateTask(task.id);
 
-      expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ taskId: task.id }),
+      );
+    });
+
+    it('does not wake workers when scheduled reconciliation finds an existing queue entry', async () => {
+      const queryBuilder = {
+        insert: jest.fn().mockReturnThis(),
+        into: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        orIgnore: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ raw: { changes: 0 } }),
+      };
+      queueRepository.createQueryBuilder.mockReturnValue(queryBuilder as any);
+      const task = createMockTask();
+      readinessCandidateRepository.listCandidateTasks.mockResolvedValue([task]);
+
+      await service.populateAllTasks();
+
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('wakes workers when scheduled reconciliation inserts a queue entry', async () => {
+      const queryBuilder = {
+        insert: jest.fn().mockReturnThis(),
+        into: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        orIgnore: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ raw: { changes: 1 } }),
+      };
+      queueRepository.createQueryBuilder.mockReturnValue(queryBuilder as any);
+      const task = createMockTask();
+      readinessCandidateRepository.listCandidateTasks.mockResolvedValue([task]);
+
+      await service.populateAllTasks();
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ taskId: task.id }),
+      );
     });
 
     it('removes a stale queue entry instead of requeueing an active task', async () => {

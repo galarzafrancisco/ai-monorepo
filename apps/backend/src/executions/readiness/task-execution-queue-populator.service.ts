@@ -35,7 +35,7 @@ export class TaskExecutionQueuePopulatorService {
       return;
     }
 
-    await this.reconcileTask(task);
+    await this.reconcileTask(task, undefined, true);
   }
 
   async populateAllTasks(): Promise<void> {
@@ -45,7 +45,7 @@ export class TaskExecutionQueuePopulatorService {
     const agentsByActorId = await this.loadAgentsByActorId(tasks);
 
     for (const task of tasks) {
-      await this.reconcileTask(task, agentsByActorId);
+      await this.reconcileTask(task, agentsByActorId, false);
     }
 
     const taskIds = tasks.map((task) => task.id);
@@ -62,12 +62,14 @@ export class TaskExecutionQueuePopulatorService {
   private async reconcileTask(
     task: TaskEntity,
     agentsByActorId?: Map<string, AgentResult>,
+    wakeForExistingEntry = false,
   ): Promise<void> {
     const shouldBeQueued = await this.shouldQueueTask(task, agentsByActorId);
 
     if (shouldBeQueued) {
       this.logger.debug(`Queueing task ${task.id} (${task.name})`);
-      if (await this.upsertQueueEntry(task.id)) {
+      const wasInserted = await this.upsertQueueEntry(task.id);
+      if (wasInserted || wakeForExistingEntry) {
         this.eventEmitter.emit(
           TaskExecutionQueuedEvent.INTERNAL,
           new TaskExecutionQueuedEvent(task.id),
@@ -234,11 +236,13 @@ export class TaskExecutionQueuePopulatorService {
   }
 
   private wasInserted(raw: unknown): boolean {
-    if (typeof raw !== 'object' || raw === null || !('changes' in raw)) {
-      return false;
-    }
-
-    return typeof raw.changes === 'number' && raw.changes > 0;
+    return (
+      typeof raw === 'object' &&
+      raw !== null &&
+      'changes' in raw &&
+      typeof raw.changes === 'number' &&
+      raw.changes > 0
+    );
   }
 
   private async deleteQueueEntry(taskId: string): Promise<void> {
