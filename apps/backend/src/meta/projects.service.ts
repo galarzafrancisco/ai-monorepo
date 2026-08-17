@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProjectEntity } from './project.entity';
@@ -8,6 +13,8 @@ import {
   UpdateProjectInput,
   ProjectResult,
   SearchProjectsInput,
+  ExportedProject,
+  ProjectsExportPayload,
 } from './dto/service/projects.service.types';
 import { DeleteProjectUseCase } from './use-cases/delete-project.use-case';
 import { CreateProjectUseCase } from './use-cases/create-project.use-case';
@@ -123,6 +130,53 @@ export class ProjectsService {
     return searchResults.map((result) => result.item);
   }
 
+  async exportProjectsAsJson(): Promise<Buffer> {
+    this.logger.log({ message: 'Exporting projects to JSON' });
+
+    const projects = await this.getAllProjects();
+    const payload: ProjectsExportPayload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      projects: projects.map((project) => ({
+        slug: project.slug,
+        description: project.description,
+        repoUrl: project.repoUrl,
+        color: project.tagColor,
+      })),
+    };
+
+    return Buffer.from(`${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  }
+
+  async importProjectsFromJson(
+    fileBuffer: Buffer,
+  ): Promise<{ importedCount: number }> {
+    this.logger.log({ message: 'Importing projects from JSON' });
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(fileBuffer.toString('utf8'));
+    } catch {
+      throw new BadRequestException('Invalid projects JSON file');
+    }
+
+    const rawProjects = this.extractProjectsFromImportPayload(parsed);
+    let importedCount = 0;
+
+    for (const rawProject of rawProjects) {
+      const project = this.normalizeImportedProject(rawProject);
+      await this.createProject(project);
+      importedCount += 1;
+    }
+
+    this.logger.log({
+      message: 'Imported projects from JSON',
+      importedCount,
+    });
+
+    return { importedCount };
+  }
+
   /**
    * Update project (partial update)
    */
@@ -198,5 +252,60 @@ export class ProjectsService {
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
     };
+  }
+
+  private extractProjectsFromImportPayload(payload: unknown): unknown[] {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      Array.isArray((payload as { projects?: unknown }).projects)
+    ) {
+      return (payload as { projects: unknown[] }).projects;
+    }
+
+    throw new BadRequestException(
+      'Projects JSON must contain a projects array',
+    );
+  }
+
+  private normalizeImportedProject(project: unknown): ExportedProject {
+    if (!project || typeof project !== 'object') {
+      throw new BadRequestException('Each imported project must be an object');
+    }
+
+    const rawProject = project as Record<string, unknown>;
+    if (typeof rawProject.slug !== 'string' || rawProject.slug.trim() === '') {
+      throw new BadRequestException(
+        'Each imported project must include a slug',
+      );
+    }
+
+    return {
+      slug: rawProject.slug.trim(),
+      description: this.optionalString(rawProject.description, 'description'),
+      repoUrl: this.optionalString(rawProject.repoUrl, 'repoUrl'),
+      color: this.optionalString(rawProject.color, 'color'),
+    };
+  }
+
+  private optionalString(
+    value: unknown,
+    fieldName: string,
+  ): string | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (typeof value !== 'string') {
+      throw new BadRequestException(
+        `Imported project ${fieldName} must be a string`,
+      );
+    }
+
+    return value;
   }
 }
