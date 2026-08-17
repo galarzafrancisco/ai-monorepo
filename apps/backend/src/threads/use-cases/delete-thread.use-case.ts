@@ -17,7 +17,7 @@ export class DeleteThreadUseCase {
       const repository = manager.getRepository(ThreadEntity);
       const thread = await repository.findOne({ where: { id: threadId } });
       if (!thread) throw new ThreadNotFoundError(threadId);
-      await repository.softRemove(thread);
+      await repository.remove(thread);
       await this.outboxWriter.enqueue(manager, {
         type: OutboxEventTypes.THREAD_DELETED,
         actorId,
