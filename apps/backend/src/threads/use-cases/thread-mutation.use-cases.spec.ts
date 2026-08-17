@@ -22,9 +22,7 @@ describe('Thread mutation use cases', () => {
     ) as Repository<ThreadEntity>;
     jest.spyOn(repository, 'findOne').mockResolvedValue(thread);
     const save = jest.spyOn(repository, 'save').mockResolvedValue(thread);
-    const softRemove = jest
-      .spyOn(repository, 'softRemove')
-      .mockResolvedValue(thread);
+    const remove = jest.spyOn(repository, 'remove').mockResolvedValue(thread);
     const manager = Object.create(EntityManager.prototype) as EntityManager;
     jest.spyOn(manager, 'getRepository').mockReturnValue(repository);
     const dataSource = Object.create(DataSource.prototype) as DataSource;
@@ -49,7 +47,7 @@ describe('Thread mutation use cases', () => {
       dataSource,
       outboxWriter,
       save,
-      softRemove,
+      remove,
       enqueue,
     };
   }
@@ -73,14 +71,14 @@ describe('Thread mutation use cases', () => {
     );
   });
 
-  it('soft-deletes a thread and enqueues deletion in the same transaction', async () => {
-    const { thread, manager, dataSource, outboxWriter, softRemove, enqueue } =
+  it('hard-deletes a thread and enqueues deletion in the same transaction', async () => {
+    const { thread, manager, dataSource, outboxWriter, remove, enqueue } =
       setup();
     const useCase = new DeleteThreadUseCase(dataSource, outboxWriter);
 
     await useCase.execute(thread.id, 'actor-1');
 
-    expect(softRemove).toHaveBeenCalledWith(thread);
+    expect(remove).toHaveBeenCalledWith(thread);
     expect(enqueue).toHaveBeenCalledWith(
       manager,
       expect.objectContaining({
