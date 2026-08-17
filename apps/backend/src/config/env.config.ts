@@ -24,6 +24,7 @@ export interface AppConfig {
   // Server Configuration
   port: number;
   nodeEnv: NodeEnv;
+  httpDrainTimeoutMs: number;
 
   // Authorization Server URLs
   issuerUrl: string;
@@ -69,6 +70,7 @@ export function loadConfig(): AppConfig {
     // Server Configuration
     port: parseInt(backendPortValue, 10),
     nodeEnv: getEnv(),
+    httpDrainTimeoutMs: getHttpDrainTimeoutMs(),
 
     // Authorization Server URLs
     issuerUrl: getIssuerUrl(),
@@ -126,6 +128,7 @@ export function loadConfig(): AppConfig {
   logger.log(`  - App Version: ${config.appVersion}`);
   logger.log(`  - Port: ${config.port}`);
   logger.log(`  - Node Environment: ${config.nodeEnv}`);
+  logger.log(`  - HTTP Drain Timeout Ms: ${config.httpDrainTimeoutMs}`);
   logger.log(`  - Issuer URL: ${config.issuerUrl}`);
   logger.log(`  - Callback URL: ${config.callbackUrl}`);
   logger.log(`  - Database Path: ${config.databasePath}`);
@@ -182,6 +185,14 @@ function getBackendPort(): string {
     return process.env.PORT;
   }
   return getEnv() === 'development' ? '3000' : '2000';
+}
+
+function getHttpDrainTimeoutMs(): number {
+  const parsed = parseInt(process.env.HTTP_DRAIN_TIMEOUT_MS || '20000', 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 20000;
+  }
+  return parsed;
 }
 
 function getTypeormSchemaMode(): TypeormSchemaMode {
