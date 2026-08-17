@@ -48,6 +48,7 @@ import { AddWorkerVersionFields1742700000000 } from './migrations/1742700000000-
 import { RemovePlannerPlanTagTrigger1742800000000 } from './migrations/1742800000000-RemovePlannerPlanTagTrigger';
 import { AddTransactionalOutbox1742900000000 } from './migrations/1742900000000-AddTransactionalOutbox';
 import { EnforceSingleActiveJwksKey1743000000000 } from './migrations/1743000000000-EnforceSingleActiveJwksKey';
+import { PurgeSoftDeletedThreads1743100000000 } from './migrations/1743100000000-PurgeSoftDeletedThreads';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -96,6 +97,7 @@ import { OutboxModule } from './outbox/outbox.module';
         RemovePlannerPlanTagTrigger1742800000000,
         AddTransactionalOutbox1742900000000,
         EnforceSingleActiveJwksKey1743000000000,
+        PurgeSoftDeletedThreads1743100000000,
       ],
     }),
     EventEmitterModule.forRoot(),
