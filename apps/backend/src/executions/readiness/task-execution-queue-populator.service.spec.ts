@@ -184,7 +184,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       taskExecutionHistoryService.getLatestHistoryForTask.mockResolvedValue(null);
     });
 
-    it('emits a wake-up for every eligible reconciliation, including an existing queue entry', async () => {
+    it('wakes workers for event-driven reconciliation of an existing queue entry', async () => {
       const queryBuilder = {
         insert: jest.fn().mockReturnThis(),
         into: jest.fn().mockReturnThis(),
@@ -192,23 +192,52 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
         orIgnore: jest.fn().mockReturnThis(),
         execute: jest
           .fn()
-          .mockResolvedValueOnce({ raw: { changes: 1 } })
-          .mockResolvedValueOnce({ raw: { changes: 0 } }),
+          .mockResolvedValue({ raw: { changes: 0 } }),
       };
       queueRepository.createQueryBuilder.mockReturnValue(queryBuilder as any);
       const task = createMockTask();
+      readinessCandidateRepository.findCandidateTaskById.mockResolvedValue(task);
 
-      await (service as any).reconcileTask(task);
-      await (service as any).reconcileTask(task);
+      await service.populateTask(task.id);
 
-      expect(eventEmitter.emit).toHaveBeenCalledTimes(2);
-      expect(eventEmitter.emit).toHaveBeenNthCalledWith(
-        1,
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ taskId: task.id }),
       );
-      expect(eventEmitter.emit).toHaveBeenNthCalledWith(
-        2,
+    });
+
+    it('does not wake workers when scheduled reconciliation finds an existing queue entry', async () => {
+      const queryBuilder = {
+        insert: jest.fn().mockReturnThis(),
+        into: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        orIgnore: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ raw: { changes: 0 } }),
+      };
+      queueRepository.createQueryBuilder.mockReturnValue(queryBuilder as any);
+      const task = createMockTask();
+      readinessCandidateRepository.listCandidateTasks.mockResolvedValue([task]);
+
+      await service.populateAllTasks();
+
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('wakes workers when scheduled reconciliation inserts a queue entry', async () => {
+      const queryBuilder = {
+        insert: jest.fn().mockReturnThis(),
+        into: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        orIgnore: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ raw: { changes: 1 } }),
+      };
+      queueRepository.createQueryBuilder.mockReturnValue(queryBuilder as any);
+      const task = createMockTask();
+      readinessCandidateRepository.listCandidateTasks.mockResolvedValue([task]);
+
+      await service.populateAllTasks();
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ taskId: task.id }),
       );
