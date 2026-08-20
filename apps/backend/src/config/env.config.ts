@@ -191,7 +191,8 @@ function getTypeormSchemaMode(): TypeormSchemaMode {
 function getIssuerUrl(): string {
   const issuerUrl = process.env.ISSUER_URL;
   if (issuerUrl) {
-    return issuerUrl;
+    // Normalize by removing trailing slash to ensure consistent issuer claim validation
+    return issuerUrl.replace(/\/$/, '');
   }
   const defaultPort = getEnv() === 'development' ? getUiPort() : getBackendPort();
   // Development mode is typically proxied through Vite, so the issuer should
