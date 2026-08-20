@@ -24,6 +24,7 @@ export const TaskWireEvents = {
   INPUT_REQUEST_ANSWERED: 'input.request.answered',
   TASK_ACTIVITY: 'task.activity',
   TASK_ACTIVITY_POST: 'task.activity.post',
+  TASKS_SNAPSHOT: 'tasks.snapshot',
 } as const;
 
 export type TaskWireEventName =
@@ -206,6 +207,11 @@ export interface TaskActivityWireEvent {
   by?: string;
 }
 
+export interface TasksSnapshotWireEvent {
+  payload: TaskWirePayload[];
+  actor: MinimalEventActor;
+}
+
 /**
  * Union type of all task wire events
  */
@@ -217,7 +223,8 @@ export type TaskWireEvent =
   | TaskStatusChangedWireEvent
   | TaskCommentedWireEvent
   | TaskArtefactAddedWireEvent
-  | InputRequestAnsweredWireEvent;
+  | InputRequestAnsweredWireEvent
+  | TasksSnapshotWireEvent;
 
 /**
  * Type guards for event identification
