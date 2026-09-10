@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThreadEntity } from './thread.entity';
 import { ThreadMessageEntity } from './thread-message.entity';
@@ -19,19 +19,9 @@ import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
 import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
 import { ThreadTitleService } from './thread-title.service';
-import { ThreadTitleWorkflowService } from './thread-title-workflow.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
 import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-projector.service';
-import { OutboxModule } from '../outbox/outbox.module';
-import { UpdateThreadUseCase } from './use-cases/update-thread.use-case';
-import { DeleteThreadUseCase } from './use-cases/delete-thread.use-case';
-import { ThreadOutboxProjectorService } from './thread-outbox-projector.service';
-import { CreateThreadUseCase } from './use-cases/create-thread.use-case';
-import { ChangeThreadTagUseCase } from './use-cases/change-thread-tag.use-case';
-import { ChangeThreadTaskUseCase } from './use-cases/change-thread-task.use-case';
-import { ChangeThreadRelationsUseCase } from './use-cases/change-thread-relations.use-case';
-import { CreateThreadMessageUseCase } from './use-cases/create-thread-message.use-case';
 
 @Module({
   imports: [
@@ -47,9 +37,8 @@ import { CreateThreadMessageUseCase } from './use-cases/create-thread-message.us
     AuthorizationServerModule,
     AuthGuardsModule,
     MetaModule,
-    forwardRef(() => ContextModule),
+    ContextModule,
     ChatProvidersModule,
-    OutboxModule,
   ],
   controllers: [ThreadsController],
   providers: [
@@ -60,17 +49,8 @@ import { CreateThreadMessageUseCase } from './use-cases/create-thread-message.us
     OpenAiBackend,
     OpenAiMcpServerFactoryService,
     ThreadTitleService,
-    ThreadTitleWorkflowService,
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,
-    UpdateThreadUseCase,
-    DeleteThreadUseCase,
-    ThreadOutboxProjectorService,
-    CreateThreadUseCase,
-    ChangeThreadTagUseCase,
-    ChangeThreadTaskUseCase,
-    ChangeThreadRelationsUseCase,
-    CreateThreadMessageUseCase,
   ],
   exports: [ThreadsService],
 })

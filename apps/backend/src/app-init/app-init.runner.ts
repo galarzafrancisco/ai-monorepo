@@ -88,7 +88,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     await this.ensureDefaultChatProvider();
 
     if (config.nodeEnv === 'development') {
-      await this.ensureUsers();
+      this.ensureUsers();
     }
   }
 
@@ -409,7 +409,10 @@ export class AppInitRunner implements OnApplicationBootstrap {
       await this.metaService.createTag({ name: 'prompt' });
       this.logger.log('Prompt tag ensured');
     } catch (error) {
-      this.logger.error('Error ensuring prompt tag exists');
+      this.logger.error(
+        'Error ensuring prompt tag exists',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 
@@ -430,13 +433,19 @@ export class AppInitRunner implements OnApplicationBootstrap {
       const reviewerPromptExists = existingPages.some(
         (page) => page.title === 'Code Reviewer Prompt',
       );
+      const systemActor = await this.actorRepository.findOne({
+        where: { slug: 'taico' },
+      });
+      if (!systemActor) {
+        throw new Error('Taico actor is required before creating prompt blocks');
+      }
 
       if (!devPromptExists) {
         this.logger.log('Creating developer agent prompt context block');
         await this.contextService.createBlock({
           title: 'Developer Agent Prompt',
           content: DEV_PROMPT,
-          createdByActorId: 'system',
+          createdByActorId: systemActor.id,
           tagNames: ['prompt'],
         });
         this.logger.log('Developer agent prompt context block created');
@@ -447,7 +456,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
         await this.contextService.createBlock({
           title: 'Personal Assistant Prompt',
           content: ASSISTANT_PROMPT,
-          createdByActorId: 'system',
+          createdByActorId: systemActor.id,
           tagNames: ['prompt'],
         });
         this.logger.log('Personal assistant prompt context block created');
@@ -458,7 +467,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
         await this.contextService.createBlock({
           title: 'Code Reviewer Prompt',
           content: REVIEWER_PROMPT,
-          createdByActorId: 'system',
+          createdByActorId: systemActor.id,
           tagNames: ['prompt'],
         });
         this.logger.log('Code reviewer prompt context block created');
@@ -466,7 +475,10 @@ export class AppInitRunner implements OnApplicationBootstrap {
 
       this.logger.log('Prompt context blocks ensured');
     } catch (error) {
-      this.logger.error('Error ensuring prompt context blocks exist');
+      this.logger.error(
+        'Error ensuring prompt context blocks exist',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 

@@ -11,15 +11,12 @@ This document describes how the service layer maintains transport independence i
 Services in this application follow a strict transport-agnostic design:
 
 ```
-Controller / MCP / Gateway (Transport) → Use Case (Application command) → Domain Service / Repository (Data)
+Controller (Transport Layer) → Service (Business Logic) → Repository (Data Layer)
 ```
 
-1. **Transports**: Handle transport-specific concerns (HTTP, MCP, WebSockets)
-2. **Use cases**: Own a command's business invariant, transaction boundary, and durable post-commit work.
-3. **Domain services**: Provide focused, transport-independent business rules and must not become cross-service transaction orchestrators.
-4. **Repositories**: Data access with no business logic
-
-For persistence and concurrency rules, see [Use Cases and Atomic Writes](use-cases-and-atomic-writes.md).
+1. **Controllers**: Handle transport-specific concerns (HTTP, gRPC, WebSockets)
+2. **Services**: Pure business logic with no transport dependencies
+3. **Repositories**: Data access with no business logic
 
 ## Transport Independence Principles
 
@@ -29,9 +26,9 @@ Services must never import or use HTTP-specific types:
 
 ```typescript
 // ✅ GOOD - Transport agnostic
-import { Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TasksService {
@@ -45,15 +42,15 @@ export class TasksService {
 
 ```typescript
 // ❌ BAD - Transport specific
-import { Injectable, HttpException, HttpStatus } from "@nestjs/common";
-import { NotFoundException, BadRequestException } from "@nestjs/common";
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class TasksService {
   async getTask(id: string) {
     const task = await this.repository.findOne({ where: { id } });
     if (!task) {
-      throw new NotFoundException("Task not found"); // ❌ HTTP-specific
+      throw new NotFoundException('Task not found'); // ❌ HTTP-specific
     }
     return task;
   }
@@ -79,7 +76,7 @@ export abstract class TasksDomainError extends Error {
 
 export class TaskNotFoundError extends TasksDomainError {
   constructor(taskId: string) {
-    super("Task not found.", TasksErrorCodes.TASK_NOT_FOUND, { taskId });
+    super('Task not found.', TasksErrorCodes.TASK_NOT_FOUND, { taskId });
   }
 }
 ```
@@ -116,8 +113,8 @@ export type TaskResult = {
 
 ```typescript
 // ❌ BAD - HTTP-specific DTO with decorators
-import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsNotEmpty } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 export class CreateTaskInput {
   @ApiProperty()
@@ -220,7 +217,6 @@ export class ContextService {
 **File**: `/apps/backend/src/tasks/tasks.service.ts`
 
 ✅ **Compliant**:
-
 - No HTTP exception imports
 - Uses domain-specific errors (`TaskNotFoundError`, `InvalidStatusTransitionError`, `CommentRequiredError`)
 - Service types are transport-agnostic (no decorators)
@@ -228,13 +224,11 @@ export class ContextService {
 - Only allowed dependencies: `@Injectable`, `Logger`, TypeORM
 
 **Service Type Definitions**: `/apps/backend/src/tasks/dto/service/tasks.service.types.ts`
-
 - Pure TypeScript types and interfaces
 - No decorators
 - Comment explicitly states: "Service layer types - transport agnostic"
 
 **Error Definitions**: `/apps/backend/src/tasks/errors/tasks.errors.ts`
-
 - Domain errors extend base `TasksDomainError`
 - No HTTP status codes or exceptions
 - Comment explicitly states: "Keeps HTTP concerns out of the domain layer"
@@ -244,7 +238,6 @@ export class ContextService {
 **File**: `/apps/backend/src/context/context.service.ts`
 
 ✅ **Compliant**:
-
 - No HTTP exception imports
 - Uses domain-specific error (`PageNotFoundError`)
 - Service types are transport-agnostic (no decorators)
@@ -252,13 +245,11 @@ export class ContextService {
 - Only allowed dependencies: `@Injectable`, `Logger`, TypeORM
 
 **Service Type Definitions**: `/apps/backend/src/context/dto/service/context.service.types.ts`
-
 - Pure TypeScript interfaces
 - No decorators
 - Clean separation of concerns
 
 **Error Definitions**: `/apps/backend/src/context/errors/context.errors.ts`
-
 - Domain errors extend base `ContextDomainError`
 - No HTTP status codes or exceptions
 
@@ -292,7 +283,7 @@ if (error instanceof TaskNotFoundError) {
 // Or in GraphQL resolver
 if (error instanceof TaskNotFoundError) {
   return new GraphQLError(error.message, {
-    extensions: { code: "TASK_NOT_FOUND" },
+    extensions: { code: 'TASK_NOT_FOUND' }
   });
 }
 
@@ -300,7 +291,7 @@ if (error instanceof TaskNotFoundError) {
 if (error instanceof TaskNotFoundError) {
   throw new RpcException({
     code: status.NOT_FOUND,
-    message: error.message,
+    message: error.message
   });
 }
 ```

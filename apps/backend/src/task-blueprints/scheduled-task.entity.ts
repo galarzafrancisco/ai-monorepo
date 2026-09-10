@@ -36,21 +36,21 @@ export class ScheduledTaskEntity {
   @Column({ type: 'boolean', default: true })
   enabled!: boolean;
 
-  @Column({ type: 'datetime', nullable: true, name: 'last_run_at' })
+  @Column({ type: 'timestamptz', nullable: true, name: 'last_run_at' })
   lastRunAt!: Date | null;
 
-  @Column({ type: 'datetime', nullable: false, name: 'next_run_at' })
+  @Column({ type: 'timestamptz', nullable: false, name: 'next_run_at' })
   nextRunAt!: Date;
 
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
-  @DeleteDateColumn({ type: 'datetime', name: 'deleted_at', nullable: true })
+  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
   deletedAt?: Date | null;
 }

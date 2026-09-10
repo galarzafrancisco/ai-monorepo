@@ -23,7 +23,7 @@ export class WorkerEntity {
   @JoinColumn({ name: 'oauth_client_id', referencedColumnName: 'clientId' })
   oauthClient?: RegisteredClientEntity;
 
-  @Column({ type: 'datetime', name: 'last_seen_at' })
+  @Column({ type: 'timestamptz', name: 'last_seen_at' })
   lastSeenAt!: Date;
 
   @Column({ type: 'text', name: 'worker_version', nullable: true })
@@ -35,9 +35,9 @@ export class WorkerEntity {
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 }

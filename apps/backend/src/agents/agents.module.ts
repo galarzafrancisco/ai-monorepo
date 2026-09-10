@@ -13,11 +13,6 @@ import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { IdentityProviderModule } from '../identity-provider/identity-provider.module';
 import { McpServerEntity } from '../mcp-registry/entities/mcp-server.entity';
 import { AgentToolPermissionsService } from './agent-tool-permissions.service';
-import { OutboxModule } from '../outbox/outbox.module';
-import { CreateAgentUseCase } from './use-cases/create-agent.use-case';
-import { AgentOutboxProjectorService } from './agent-outbox-projector.service';
-import { PatchAgentUseCase } from './use-cases/patch-agent.use-case';
-import { DeleteAgentUseCase } from './use-cases/delete-agent.use-case';
 
 @Module({
   imports: [
@@ -30,7 +25,6 @@ import { DeleteAgentUseCase } from './use-cases/delete-agent.use-case';
     AuthorizationServerModule,
     AuthGuardsModule,
     IdentityProviderModule,
-    OutboxModule,
   ],
   controllers: [
     AgentsController,
@@ -38,14 +32,7 @@ import { DeleteAgentUseCase } from './use-cases/delete-agent.use-case';
     AgentTokensController,
     AgentExecutionTokensController,
   ],
-  providers: [
-    AgentsService,
-    AgentToolPermissionsService,
-    CreateAgentUseCase,
-    AgentOutboxProjectorService,
-    PatchAgentUseCase,
-    DeleteAgentUseCase,
-  ],
+  providers: [AgentsService, AgentToolPermissionsService],
   exports: [AgentsService],
 })
 export class AgentsModule {}

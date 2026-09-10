@@ -58,19 +58,9 @@ export class TaskSchedulerService {
             scheduledTask.taskBlueprintId,
           );
 
-          const completed =
-            await this.scheduledTasksService.completeClaimedExecution(
-              scheduledTask.id,
-              claimedNextRunAt,
-            );
-
-          if (!completed) {
-            this.logger.warn({
-              message:
-                'Scheduled task execution completed after its schedule was changed',
-              scheduledTaskId: scheduledTask.id,
-            });
-          }
+          await this.scheduledTasksService.completeClaimedExecution(
+            scheduledTask.id,
+          );
 
           this.logger.log({
             message: 'Task created from scheduled blueprint',

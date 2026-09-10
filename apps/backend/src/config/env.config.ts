@@ -30,7 +30,8 @@ export interface AppConfig {
   callbackUrl: string;
 
   // Database Configuration
-  databasePath: string;
+  databaseUrl: string;
+  databaseSsl: boolean;
   typeormSchemaMode: TypeormSchemaMode;
 
   // Security Configuration
@@ -75,7 +76,8 @@ export function loadConfig(): AppConfig {
     callbackUrl: getCallbackUrl(),
 
     // Database Configuration
-    databasePath: process.env.DATABASE_PATH || 'data/database.sqlite',
+    databaseUrl: getDatabaseUrl(),
+    databaseSsl: process.env.DATABASE_SSL === 'true',
     typeormSchemaMode: getTypeormSchemaMode(),
 
     // Security Configuration
@@ -128,7 +130,8 @@ export function loadConfig(): AppConfig {
   logger.log(`  - Node Environment: ${config.nodeEnv}`);
   logger.log(`  - Issuer URL: ${config.issuerUrl}`);
   logger.log(`  - Callback URL: ${config.callbackUrl}`);
-  logger.log(`  - Database Path: ${config.databasePath}`);
+  logger.log('  - Database: PostgreSQL');
+  logger.log(`  - Database SSL: ${config.databaseSsl ? 'enabled' : 'disabled'}`);
   logger.log(`  - TypeORM Schema Mode: ${config.typeormSchemaMode}`);
   logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
   logger.log(`  - Thread State Reconciler Enabled: ${config.threadStateReconcilerEnabled}`);
@@ -186,6 +189,28 @@ function getBackendPort(): string {
 
 function getTypeormSchemaMode(): TypeormSchemaMode {
   return process.env.TYPEORM_SCHEMA_MODE === 'sync' ? 'sync' : 'migrate';
+}
+
+function getDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (databaseUrl) {
+    let parsed: URL;
+    try {
+      parsed = new URL(databaseUrl);
+    } catch {
+      throw new Error('DATABASE_URL must be a valid PostgreSQL connection URL');
+    }
+    if (parsed.protocol !== 'postgres:' && parsed.protocol !== 'postgresql:') {
+      throw new Error('DATABASE_URL must use the postgres or postgresql protocol');
+    }
+    return databaseUrl;
+  }
+
+  if (getEnv() === 'production') {
+    throw new Error('DATABASE_URL is required in production');
+  }
+
+  return 'postgresql://taico:taico@localhost:5432/taico';
 }
 
 function getIssuerUrl(): string {

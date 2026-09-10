@@ -52,6 +52,7 @@ install/manifests/
 │   ├── configmap.yaml             # Non-sensitive environment variables
 │   ├── deployment.yaml            # Main application deployment
 │   ├── service.yaml               # Kubernetes service
+│   ├── postgres-service.yaml      # Selectorless service to host PostgreSQL
 │   ├── ingress.yaml               # Ingress configuration
 │   └── certificate.yaml           # TLS certificate
 └── overlays/
@@ -76,9 +77,8 @@ data:
   SECRETS_ENABLED: "false"
   ALLOW_PLAINTEXT_SECRETS_INSECURE: "false"
   ISSUER_URL: PLACEHOLDER_ISSUER_URL
-  ADK_URL: PLACEHOLDER_ADK_URL
-  OLLAMA_URL: PLACEHOLDER_OLLAMA_URL
-  DATABASE_PATH: "/app/data/database.sqlite"
+  DATABASE_SSL: "false"
+  TYPEORM_SCHEMA_MODE: "migrate"
 ```
 
 ### Overlay Kustomization
@@ -119,7 +119,9 @@ replacements:
 |----------|-------------|---------|
 | `BACKEND_PORT` | Backend server port | `3000` |
 | `ISSUER_URL` | OAuth issuer URL (must match public URL, defaults to localhost) | `https://taico.example.com` |
-| `DATABASE_PATH` | SQLite database path | `/app/data/database.sqlite` |
+| `DATABASE_URL` | PostgreSQL URL from the `taico-database` Secret | `postgresql://taico:...@taico-postgres:5432/taico` |
+| `DATABASE_SSL` | Require verified TLS to PostgreSQL | `false` for the private host endpoint |
+| `TYPEORM_SCHEMA_MODE` | Schema management; production uses migrations | `migrate` |
 | `SECRETS_ENABLED` | Enables in-app secret storage | `true` |
 | `ALLOW_PLAINTEXT_SECRETS_INSECURE` | Dangerous escape hatch for storing secrets without encryption | `false` |
 

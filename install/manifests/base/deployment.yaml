@@ -18,39 +18,41 @@ spec:
         app: taico
     spec:
       containers:
-      - name: taico
-        image: ghcr.io/galarzafrancisco/ai-monorepo:main-6a2a84c
-        ports:
-        - containerPort: 3000
-          name: http
-          protocol: TCP
-        envFrom:
-        - configMapRef:
-            name: taico-config
-        volumeMounts:
-        - name: data
-          mountPath: /app/data
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 5
+        - name: taico
+          image: ghcr.io/galarzafrancisco/ai-monorepo:main-6a2a84c
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: taico-config
+            - secretRef:
+                name: taico-database
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
       volumes:
-      - name: data
-        hostPath:
-          path: PLACEHOLDER_STORAGE_PATH
-          type: DirectoryOrCreate
+        - name: data
+          hostPath:
+            path: PLACEHOLDER_STORAGE_PATH
+            type: DirectoryOrCreate

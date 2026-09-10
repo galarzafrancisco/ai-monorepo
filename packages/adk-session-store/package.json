@@ -28,9 +28,11 @@
   },
   "dependencies": {
     "@google/adk": "^0.2.5",
+    "pg": "^8.16.3",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "@types/pg": "^8.15.5",
     "typescript": "^5.6.3"
   }
 }

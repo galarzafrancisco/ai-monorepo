@@ -6,6 +6,7 @@ This guide covers local development, architecture, and validation.
 
 - Node.js 24+
 - npm 10+
+- Docker with Compose
 
 ## Local Development
 
@@ -13,6 +14,12 @@ Build everything:
 
 ```bash
 npm run build:dev
+```
+
+Start the shared local PostgreSQL server once:
+
+```bash
+npm run db:up
 ```
 
 This is `npm ci` + a full nx-orchestrated prod build. nx caches by content hash, so re-runs are near-instant. For details on the build system (dep graph, cache, troubleshooting), see [Build System](how-to-guides/build-system.md).
@@ -33,7 +40,8 @@ npm run dev:4
 npm run dev:5
 ```
 
-Each stack has its own ports and SQLite database via `stack[1-5].env`.
+Each stack has its own ports and PostgreSQL database via `stack[1-5].env`.
+The databases are created by the Compose initialization script on the first start.
 
 ## Worker Against A Dev Stack
 

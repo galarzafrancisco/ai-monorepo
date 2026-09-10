@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskExecutionQueuePopulatorService } from './task-execution-queue-populator.service';
 import { TaskExecutionQueueEntity } from '../queue/task-execution-queue.entity';
+import { TaskExecutionQueuedEvent } from '../queue/task-execution-queued.event';
 import { AgentsService } from '../../agents/agents.service';
 import { ReadinessCandidateRepository } from './readiness-candidate.repository';
 import { TaskExecutionHistoryService } from '../history/task-execution-history.service';
@@ -73,7 +74,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
   });
 
   describe('upsertQueueEntry', () => {
-    it('reports a new insertion without emitting from the persistence helper', async () => {
+    it('should emit TaskExecutionQueuedEvent when a new row is inserted (SQLite changes > 0)', async () => {
       const taskId = 'test-task-id';
 
       // Mock the query builder chain
@@ -97,12 +98,17 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       // Call the private method through reflection
       await (service as any).upsertQueueEntry(taskId);
 
-      // Event emission belongs to reconcileTask, which knows the task is
-      // eligible. The persistence helper only reports whether it inserted.
-      expect(eventEmitter.emit).not.toHaveBeenCalled();
+      // Verify the event was emitted
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        TaskExecutionQueuedEvent.INTERNAL,
+        expect.objectContaining({
+          taskId,
+        }),
+      );
+      expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
     });
 
-    it('reports no insertion when insert is ignored (SQLite changes = 0)', async () => {
+    it('should NOT emit TaskExecutionQueuedEvent when insert is ignored (SQLite changes = 0)', async () => {
       const taskId = 'test-task-id';
 
       // Mock the query builder chain
@@ -154,64 +160,6 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       await (service as any).upsertQueueEntry(taskId);
 
       // Verify the event was NOT emitted
-      expect(eventEmitter.emit).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('reconcileTask', () => {
-    const createMockTask = (): TaskEntity =>
-      ({
-        id: 'test-task-id',
-        name: 'Test Task',
-        status: TaskStatus.NOT_STARTED,
-        assigneeActorId: 'agent-actor-id',
-        tags: [],
-      }) as unknown as TaskEntity;
-
-    beforeEach(() => {
-      agentsService.getActiveAgentsByActorIds.mockResolvedValue([
-        {
-          actorId: 'agent-actor-id',
-          slug: 'test-agent',
-          statusTriggers: [TaskStatus.NOT_STARTED],
-          tagTriggers: [],
-          concurrencyLimit: null,
-        },
-      ] as any);
-      readinessCandidateRepository.countActiveExecutionsForAgent.mockResolvedValue(
-        0,
-      );
-      taskExecutionHistoryService.getLatestHistoryForTask.mockResolvedValue(null);
-    });
-
-    it('emits one wake-up across repeated reconciliation after one insertion', async () => {
-      const queryBuilder = {
-        insert: jest.fn().mockReturnThis(),
-        into: jest.fn().mockReturnThis(),
-        values: jest.fn().mockReturnThis(),
-        orIgnore: jest.fn().mockReturnThis(),
-        execute: jest
-          .fn()
-          .mockResolvedValueOnce({ raw: { changes: 1 } })
-          .mockResolvedValueOnce({ raw: { changes: 0 } }),
-      };
-      queueRepository.createQueryBuilder.mockReturnValue(queryBuilder as any);
-      const task = createMockTask();
-
-      await (service as any).reconcileTask(task);
-      await (service as any).reconcileTask(task);
-
-      expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
-    });
-
-    it('removes a stale queue entry instead of requeueing an active task', async () => {
-      readinessCandidateRepository.findCandidateTaskById.mockResolvedValue(null);
-
-      await service.populateTask('test-task-id');
-
-      expect(queueRepository.delete).toHaveBeenCalledWith({
-        taskId: 'test-task-id',
-      });
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
   });

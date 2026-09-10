@@ -64,25 +64,25 @@ export class IssuedAccessTokenEntity {
   /**
    * Token expiration timestamp
    */
-  @Column({ type: 'datetime', name: 'expires_at' })
+  @Column({ type: 'timestamptz', name: 'expires_at' })
   expiresAt!: Date;
 
   /**
    * When the token was revoked (null if still active)
    */
-  @Column({ type: 'datetime', name: 'revoked_at', nullable: true })
+  @Column({ type: 'timestamptz', name: 'revoked_at', nullable: true })
   revokedAt!: Date | null;
 
   /**
    * When the token was created
    */
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
   /**
    * When the token was last used (for audit/cleanup purposes)
    */
-  @Column({ type: 'datetime', name: 'last_used_at', nullable: true })
+  @Column({ type: 'timestamptz', name: 'last_used_at', nullable: true })
   lastUsedAt!: Date | null;
 
   /**

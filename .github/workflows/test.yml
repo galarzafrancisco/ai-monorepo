@@ -17,6 +17,26 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-24.04-arm
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: taico_ci
+          POSTGRES_USER: taico
+          POSTGRES_PASSWORD: taico_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U taico -d taico_ci"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://taico:taico_ci@127.0.0.1:5432/taico_ci
+      POSTGRES_ADMIN_URL: postgresql://taico:taico_ci@127.0.0.1:5432/postgres
+      TYPEORM_SCHEMA_MODE: migrate
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

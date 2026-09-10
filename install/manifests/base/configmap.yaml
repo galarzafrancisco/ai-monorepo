@@ -9,7 +9,8 @@ data:
   SECRETS_ENABLED: "true"
   ALLOW_PLAINTEXT_SECRETS_INSECURE: "true"
   ISSUER_URL: PLACEHOLDER_ISSUER_URL
-  DATABASE_PATH: "/app/data/database.sqlite"
+  DATABASE_SSL: "false"
+  TYPEORM_SCHEMA_MODE: "migrate"
   GOOGLE_GENAI_USE_VERTEXAI: "True"
   GOOGLE_CLOUD_PROJECT: "placeholder"
   GOOGLE_CLOUD_LOCATION: "placeholder"

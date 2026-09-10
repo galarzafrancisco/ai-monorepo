@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProjectEntity } from './project.entity';
+import { MetaService } from './meta.service';
 import { SearchService } from '../search/search.service';
 import {
   CreateProjectInput,
@@ -9,8 +10,6 @@ import {
   ProjectResult,
   SearchProjectsInput,
 } from './dto/service/projects.service.types';
-import { DeleteProjectUseCase } from './use-cases/delete-project.use-case';
-import { CreateProjectUseCase } from './use-cases/create-project.use-case';
 
 @Injectable()
 export class ProjectsService {
@@ -19,9 +18,8 @@ export class ProjectsService {
   constructor(
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
+    private readonly metaService: MetaService,
     private readonly searchService: SearchService,
-    private readonly deleteProjectUseCase: DeleteProjectUseCase,
-    private readonly createProjectUseCase: CreateProjectUseCase,
   ) {}
 
   /**
@@ -33,14 +31,49 @@ export class ProjectsService {
       slug: input.slug,
     });
 
-    const project = await this.createProjectUseCase.execute(input);
+    // Create tag with project: prefix
+    const tagName = `project:${input.slug}`;
+    const tag = await this.metaService.findOrCreateTagEntity(
+      tagName,
+      input.color,
+    );
 
-    this.logger.log({
-      message: 'Project created or updated',
-      projectId: project.id,
-      slug: project.slug,
-      tagId: project.tagId,
+    // Check if project already exists
+    let project = await this.projectRepository.findOne({
+      where: { tagId: tag.id },
+      relations: ['tag'],
     });
+
+    if (!project) {
+      // Create new project
+      project = this.projectRepository.create({
+        tagId: tag.id,
+        slug: input.slug,
+        description: input.description,
+        repoUrl: input.repoUrl,
+      });
+      project = await this.projectRepository.save(project);
+      project.tag = tag;
+
+      this.logger.log({
+        message: 'Project created',
+        projectId: project.id,
+        slug: project.slug,
+        tagId: tag.id,
+      });
+    } else {
+      // Update existing project with new data
+      project.slug = input.slug;
+      project.description = input.description;
+      project.repoUrl = input.repoUrl;
+      project = await this.projectRepository.save(project);
+
+      this.logger.log({
+        message: 'Project already exists, updated with new data',
+        projectId: project.id,
+        slug: project.slug,
+      });
+    }
 
     return this.mapProjectToResult(project);
   }
@@ -171,14 +204,23 @@ export class ProjectsService {
       projectId,
     });
 
-    const deleted = await this.deleteProjectUseCase.execute(projectId);
-    if (!deleted) {
+    const project = await this.projectRepository.findOne({
+      where: { id: projectId },
+    });
+
+    if (!project) {
       this.logger.warn({
         message: 'Project not found for deletion',
         projectId,
       });
       return;
     }
+
+    // Soft delete project
+    await this.projectRepository.softDelete(projectId);
+
+    // Also delete the associated tag
+    await this.metaService.deleteTag(project.tagId);
 
     this.logger.log({
       message: 'Project deleted',

@@ -6,6 +6,7 @@ import { ActorType } from './enums';
 import { CreateActorInput } from './dto/service/actor.service.types';
 import { SearchService } from '../search/search.service';
 import { SearchResult } from '../search/search.types';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class ActorService {
@@ -84,8 +85,10 @@ export class ActorService {
   }
 
   async getActorByIdOrSlug(idOrSlug: string): Promise<ActorEntity | null> {
-    const actor = await this.getActorById(idOrSlug);
-    if (actor) return actor;
+    if (isUUID(idOrSlug)) {
+      const actor = await this.getActorById(idOrSlug);
+      if (actor) return actor;
+    }
     return this.getActorBySlug(idOrSlug);
   }
 

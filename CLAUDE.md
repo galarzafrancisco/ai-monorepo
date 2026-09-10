@@ -47,7 +47,7 @@ apps/
 ├── worker/          # Current worker runtime
 └── worker-v1/       # Legacy worker runtime (being phased out)
 packages/
-├── adk-session-store/ # SQLite-backed Google ADK session service
+├── adk-session-store/ # PostgreSQL/SQLite Google ADK session services
 ├── client/            # Generated TypeScript API client package (`@taico/client`)
 ├── errors/            # Shared error classes and codes
 ├── events/            # Shared real-time event contracts

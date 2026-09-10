@@ -51,9 +51,6 @@ COPY --from=builder /workdir/packages/adk-session-store/dist ./packages/adk-sess
 COPY --from=builder /workdir/packages/errors/dist ./packages/errors/dist
 COPY --from=builder /workdir/packages/events/dist ./packages/events/dist
 
-# Create directory for SQLite database
-RUN mkdir -p /workdir/data
-
 # Set environment variables
 # NODE_ENV defaults to production (no need to set explicitly)
 ENV PORT=3000

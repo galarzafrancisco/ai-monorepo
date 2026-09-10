@@ -7,7 +7,7 @@ configMapGenerator:
       - env.env
 
 resources:
-- ../../base
+  - ../../base
 
 replacements:
   # Replace STORAGE_PATH in volume hostPath
@@ -32,6 +32,17 @@ replacements:
           name: taico-config
         fieldPaths:
           - data.ISSUER_URL
+  # Point the selectorless PostgreSQL service at the Docker host.
+  - source:
+      kind: ConfigMap
+      name: env
+      fieldPath: data.POSTGRES_HOST_IP
+    targets:
+      - select:
+          kind: EndpointSlice
+          name: taico-postgres-host
+        fieldPaths:
+          - endpoints.0.addresses.0
   # Replace GOOGLE_GENAI_USE_VERTEXAI in taico-config ConfigMap
   - source:
       kind: ConfigMap

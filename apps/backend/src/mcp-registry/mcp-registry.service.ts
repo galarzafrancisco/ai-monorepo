@@ -90,7 +90,7 @@ export class McpRegistryService {
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
-        String(error.message).includes('UNIQUE constraint failed')
+        (error.driverError as { code?: string }).code === '23505'
       ) {
         throw new ServerAlreadyExistsError(input.providedId);
       }
@@ -549,7 +549,7 @@ export class McpRegistryService {
     } catch (error) {
       if (
         error instanceof QueryFailedError &&
-        (error as { code?: string }).code === '23505'
+        (error.driverError as { code?: string }).code === '23505'
       ) {
         throw new InvalidMappingError(
           `Mapping already exists for scope '${input.scopeId}' and downstream scope '${input.downstreamScope}'.`,

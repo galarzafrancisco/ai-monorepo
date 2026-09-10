@@ -23,7 +23,7 @@ Before running it, review and adjust:
 
 - `IMAGE`: keep the image tag current
 - `PORT`: choose the port you want to expose
-- `DATABASE_PATH`: point this at a persistent directory you control
+- `DATABASE_URL`: provide the PostgreSQL user, password, host, and database; keep it in a secret or protected environment file
 
 The script runs the container with `--restart unless-stopped`, which is recommended so Taico comes back with the machine.
 
@@ -63,10 +63,6 @@ That is powerful, but it is also a risk boundary. The worker can launch agents w
 The worker authenticates with the server and stores credentials locally. On first run it will guide you through browser-based authorization and then reuse stored credentials on later runs.
 
 You do not need to provision a long-lived token per agent just to get the worker connected.
-
-## Provider Credentials
-
-Provider credentials belong only in the worker process environment. To run an OpenCode agent using Grok 4.6, inject `XAI_API_KEY` into the worker process through the host's secret manager, service configuration, or a gitignored local environment file before starting the worker. Do not add it to an agent, the Taico server, deployment `env.env`, API/UI state, logs, or source control.
 
 ## Agents
 

@@ -110,7 +110,7 @@ This document outlines the comprehensive test strategy for the `parentTaskId` co
 ## Test Implementation Notes
 
 - **Unit Tests:** Service layer tests with mocked repositories
-- **Integration Tests:** Full database tests with real SQLite database
+- **Integration Tests:** Full database tests with an isolated PostgreSQL database
 - **E2E Tests:** HTTP endpoint tests validating full request/response cycle
 - **Migration Tests:** Test migration up/down with various database states
 

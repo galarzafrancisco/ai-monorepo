@@ -1,21 +1,41 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Raw, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { TagEntity } from './tag.entity';
 import { TagUsageEntity } from './tag-usage.entity';
 import { ProjectEntity } from './project.entity';
-import {
-  CreateTagInput,
-  TagResult,
-  VersionResult,
-} from './dto/service/meta.service.types';
+import { CreateTagInput, TagResult, VersionResult } from './dto/service/meta.service.types';
 import { SYSTEM_TAGS, isSystemTagName } from './system-tags';
-import { TAG_COLOR_PALETTE } from './tag-color-palette';
 
-export { TAG_COLOR_PALETTE } from './tag-color-palette';
+/**
+ * Predefined color palette for tags
+ * Colors are chosen to be visually distinct and accessible
+ */
+export const TAG_COLOR_PALETTE = [
+  '#FF6B6B', // Red
+  '#4ECDC4', // Teal
+  '#45B7D1', // Blue
+  '#FFA07A', // Light Salmon
+  '#98D8C8', // Mint
+  '#F7DC6F', // Yellow
+  '#BB8FCE', // Purple
+  '#85C1E2', // Sky Blue
+  '#F8B739', // Orange
+  '#52B788', // Green
+  '#E76F51', // Coral
+  '#8E7CC3', // Lavender
+  '#FF9FF3', // Pink
+  '#54A0FF', // Bright Blue
+  '#48DBFB', // Cyan
+  '#1DD1A1', // Emerald
+  '#FFA502', // Amber
+  '#FF6348', // Tomato
+  '#5F27CD', // Deep Purple
+  '#00D2D3', // Turquoise
+] as const;
 
 @Injectable()
 export class MetaService implements OnModuleInit {
@@ -69,9 +89,13 @@ export class MetaService implements OnModuleInit {
       tagName: input.name,
     });
 
-    // Check if tag already exists (case-insensitive due to NOCASE collation)
+    // Check if tag already exists case-insensitively.
     let tag = await this.tagRepository.findOne({
-      where: { name: input.name },
+      where: {
+        name: Raw((column) => `lower(${column}) = lower(:name)`, {
+          name: input.name,
+        }),
+      },
       withDeleted: true,
     });
 
@@ -203,7 +227,11 @@ export class MetaService implements OnModuleInit {
   }
 
   async getTagByName(name: string): Promise<TagResult | null> {
-    const tag = await this.tagRepository.findOne({ where: { name } });
+    const tag = await this.tagRepository.findOne({
+      where: {
+        name: Raw((column) => `lower(${column}) = lower(:name)`, { name }),
+      },
+    });
     return tag ? this.mapTagToResult(tag) : null;
   }
 
@@ -259,9 +287,13 @@ export class MetaService implements OnModuleInit {
       const normalizedName = tagName.trim();
       if (!normalizedName) continue;
 
-      // Try to find existing tag (case-insensitive due to NOCASE collation)
+      // Try to find an existing tag case-insensitively.
       let tag = await this.tagRepository.findOne({
-        where: { name: normalizedName },
+        where: {
+          name: Raw((column) => `lower(${column}) = lower(:name)`, {
+            name: normalizedName,
+          }),
+        },
         withDeleted: true,
       });
 
@@ -310,7 +342,11 @@ export class MetaService implements OnModuleInit {
       if (!normalizedName) continue;
 
       let tag = await this.tagRepository.findOne({
-        where: { name: normalizedName },
+        where: {
+          name: Raw((column) => `lower(${column}) = lower(:name)`, {
+            name: normalizedName,
+          }),
+        },
         withDeleted: true,
       });
 
@@ -354,7 +390,11 @@ export class MetaService implements OnModuleInit {
     const normalizedName = name.trim();
 
     let tag = await this.tagRepository.findOne({
-      where: { name: normalizedName },
+      where: {
+        name: Raw((column) => `lower(${column}) = lower(:name)`, {
+          name: normalizedName,
+        }),
+      },
       withDeleted: true,
     });
 
@@ -456,14 +496,14 @@ export class MetaService implements OnModuleInit {
 
     const now = new Date().toISOString();
 
-    // Use INSERT ... ON CONFLICT (SQLite upsert) to handle concurrent updates atomically
+    // Use PostgreSQL INSERT ... ON CONFLICT to handle concurrent updates atomically
     // This prevents duplicate rows and race conditions
     await this.tagUsageRepository.query(
       `
       INSERT INTO tag_usage (id, tag_id, usage_count, last_used_at, created_at, updated_at)
-      VALUES (?, ?, 1, ?, ?, ?)
+      VALUES ($1, $2, 1, $3, $4, $5)
       ON CONFLICT(tag_id) DO UPDATE SET
-        usage_count = usage_count + 1,
+        usage_count = tag_usage.usage_count + 1,
         last_used_at = excluded.last_used_at,
         updated_at = excluded.updated_at
       `,
@@ -524,19 +564,14 @@ export class MetaService implements OnModuleInit {
       } catch {
         // If not found, try development path
         try {
-          const uiDevPackageJsonPath = join(
-            __dirname,
-            '../../../ui/package.json',
-          );
+          const uiDevPackageJsonPath = join(__dirname, '../../../ui/package.json');
           const uiPackageJson = JSON.parse(
             readFileSync(uiDevPackageJsonPath, 'utf-8'),
           );
           uiVersion = uiPackageJson.version;
         } catch {
           // If still not found, use backend version as fallback
-          this.logger.warn(
-            'Could not read UI package.json, using backend version as fallback',
-          );
+          this.logger.warn('Could not read UI package.json, using backend version as fallback');
         }
       }
 
