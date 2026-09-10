@@ -32,11 +32,11 @@ replacements:
           name: taico-config
         fieldPaths:
           - data.ISSUER_URL
-  # Point the selectorless PostgreSQL service at the Docker host.
+  # Route PostgreSQL through the hydrated Spark host address used by other services.
   - source:
       kind: ConfigMap
       name: env
-      fieldPath: data.POSTGRES_HOST_IP
+      fieldPath: data.SPARK_IP
     targets:
       - select:
           kind: EndpointSlice

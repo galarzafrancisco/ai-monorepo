@@ -23,4 +23,5 @@ ports:
     port: 5432
 endpoints:
   - addresses:
-      - PLACEHOLDER_POSTGRES_HOST_IP
+      - PLACEHOLDER_SPARK_IP
+    conditions: {}
