@@ -59,11 +59,11 @@ jobs:
           restore-keys: |
             nx-${{ runner.os }}-
 
-      - name: Generate OpenAPI against PostgreSQL
-        run: npm -w apps/backend run generate:openapi
-
       - name: Build everything (cached via nx)
         run: npm run build:prod
+
+      - name: Generate OpenAPI against PostgreSQL
+        run: npm -w apps/backend run generate:openapi
 
       - name: Run openapi-sdkgen tests
         run: npx nx run @taico/openapi-sdkgen:test
