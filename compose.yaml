@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taico
+      POSTGRES_USER: taico
+      POSTGRES_PASSWORD: taico
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - taico-postgres-data:/var/lib/postgresql/data
+      - ./dev/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taico -d taico"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  taico-postgres-data:

@@ -73,10 +73,11 @@ export class AgentsService {
       // Convert DB unique constraint violation on actor.slug to domain error
       if (error instanceof QueryFailedError) {
         const driverError = (error as any).driverError;
-        // Check for SQLite UNIQUE constraint on actor.slug
+        // PostgreSQL reports unique violations with SQLSTATE 23505.
         if (
-          driverError?.code === 'SQLITE_CONSTRAINT' &&
-          driverError?.message?.includes('actor.slug')
+          driverError?.code === '23505' &&
+          (driverError?.constraint === 'UQ_d728e8d8a38480121d06532aabf' ||
+            driverError?.message?.includes('actors_slug'))
         ) {
           throw new AgentSlugConflictError(input.slug);
         }
@@ -385,8 +386,9 @@ export class AgentsService {
         if (error instanceof QueryFailedError) {
           const driverError = (error as any).driverError;
           if (
-            driverError?.code === 'SQLITE_CONSTRAINT' &&
-            driverError?.message?.includes('actor.slug')
+            driverError?.code === '23505' &&
+            (driverError?.constraint === 'UQ_d728e8d8a38480121d06532aabf' ||
+              driverError?.message?.includes('actors_slug'))
           ) {
             throw new AgentSlugConflictError(agent.actor.slug);
           }

@@ -30,16 +30,16 @@ export class AgentRunEntity {
   @JoinColumn({ name: 'parent_task_id' })
   parentTask?: TaskEntity;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @Column({ type: 'datetime', nullable: true, name: 'started_at' })
+  @Column({ type: 'timestamptz', nullable: true, name: 'started_at' })
   startedAt!: Date | null;
 
-  @Column({ type: 'datetime', nullable: true, name: 'ended_at' })
+  @Column({ type: 'timestamptz', nullable: true, name: 'ended_at' })
   endedAt!: Date | null;
 
-  @Column({ type: 'datetime', nullable: true, name: 'last_ping' })
+  @Column({ type: 'timestamptz', nullable: true, name: 'last_ping' })
   lastPing!: Date | null;
 
   @Column({ type: 'uuid', nullable: true, name: 'task_execution_id' })

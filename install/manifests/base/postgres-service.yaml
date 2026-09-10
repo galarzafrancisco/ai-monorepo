@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: taico-postgres
+  namespace: taico
+spec:
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: taico-postgres-host
+  namespace: taico
+  labels:
+    kubernetes.io/service-name: taico-postgres
+addressType: IPv4
+ports:
+  - name: postgres
+    protocol: TCP
+    port: 5432
+endpoints:
+  - addresses:
+      - PLACEHOLDER_POSTGRES_HOST_IP

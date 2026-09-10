@@ -26,12 +26,12 @@ export class TagUsageEntity {
   @Column({ type: 'integer', name: 'usage_count', default: 0 })
   usageCount!: number;
 
-  @Column({ type: 'datetime', name: 'last_used_at', nullable: true })
+  @Column({ type: 'timestamptz', name: 'last_used_at', nullable: true })
   lastUsedAt?: Date | null;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 }

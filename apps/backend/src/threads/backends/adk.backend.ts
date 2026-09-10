@@ -1,20 +1,20 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { BaseTool, Event, LlmAgent, MCPToolset, Runner } from '@google/adk';
-import { SqliteSessionService } from '@taico/adk-session-store';
+import { PostgresSessionService } from '@taico/adk-session-store';
 import { getConfig } from 'src/config/env.config';
 import { randomUUID } from 'crypto';
-import { basename, dirname, extname, join } from 'node:path';
 import { ChatBackend, ChatStreamEvent, RunTaskArgs, StreamMessageArgs } from './chat-backend.interface';
 import { buildThreadScopedInstructions, formatMessage } from './chat-backend.utils';
 
 @Injectable()
 export class AdkBackend implements ChatBackend, OnModuleDestroy {
   private readonly logger = new Logger(AdkBackend.name);
-  private readonly sessionService: SqliteSessionService;
+  private readonly sessionService: PostgresSessionService;
 
   constructor() {
-    this.sessionService = new SqliteSessionService({
-      filename: this.getChatDatabasePath(getConfig().databasePath),
+    this.sessionService = new PostgresSessionService({
+      connectionString: getConfig().databaseUrl,
+      ssl: getConfig().databaseSsl,
     });
   }
 
@@ -256,19 +256,6 @@ export class AdkBackend implements ChatBackend, OnModuleDestroy {
     }
   }
 
-  private getChatDatabasePath(databasePath: string): string {
-    if (databasePath === ':memory:') {
-      return databasePath;
-    }
-
-    const extension = extname(databasePath);
-    if (!extension) {
-      return `${databasePath}-chat`;
-    }
-
-    const filename = basename(databasePath, extension);
-    return join(dirname(databasePath), `${filename}-chat${extension}`);
-  }
 }
 
 class NamespacedTool extends BaseTool {

@@ -32,7 +32,7 @@ export class ActiveTaskExecutionEntity {
   @JoinColumn({ name: 'task_id' })
   task?: TaskEntity;
 
-  @Column({ type: 'datetime', name: 'claimed_at' })
+  @Column({ type: 'timestamptz', name: 'claimed_at' })
   claimedAt!: Date;
 
   @Column({
@@ -62,7 +62,7 @@ export class ActiveTaskExecutionEntity {
   @Column({ type: 'text', name: 'worker_client_id' })
   workerClientId!: string;
 
-  @Column({ type: 'datetime', name: 'last_heartbeat_at', nullable: true })
+  @Column({ type: 'timestamptz', name: 'last_heartbeat_at', nullable: true })
   lastHeartbeatAt!: Date | null;
 
   @Column({ type: 'text', name: 'runner_session_id', nullable: true })
@@ -81,12 +81,12 @@ export class ActiveTaskExecutionEntity {
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
-  @DeleteDateColumn({ type: 'datetime', name: 'deleted_at', nullable: true })
+  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
   deletedAt?: Date | null;
 }

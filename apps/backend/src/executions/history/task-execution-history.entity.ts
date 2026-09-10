@@ -28,10 +28,10 @@ export class TaskExecutionHistoryEntity {
   @JoinColumn({ name: 'task_id' })
   task?: TaskEntity;
 
-  @Column({ type: 'datetime', name: 'claimed_at' })
+  @Column({ type: 'timestamptz', name: 'claimed_at' })
   claimedAt!: Date;
 
-  @Column({ type: 'datetime', name: 'transitioned_at' })
+  @Column({ type: 'timestamptz', name: 'transitioned_at' })
   transitionedAt!: Date;
 
   @Column({ type: 'uuid', name: 'agent_actor_id' })
@@ -81,12 +81,12 @@ export class TaskExecutionHistoryEntity {
   @VersionColumn({ name: 'row_version' })
   rowVersion!: number;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
-  @DeleteDateColumn({ type: 'datetime', name: 'deleted_at', nullable: true })
+  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
   deletedAt?: Date | null;
 }

@@ -67,7 +67,7 @@ export class McpAuthorizationFlowEntity {
 
   // Authorization code expiry timestamp
   @Column({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'authorization_code_expires_at',
     nullable: true,
   })
@@ -96,9 +96,9 @@ export class McpAuthorizationFlowEntity {
   @JoinColumn({ name: 'client_id' })
   client!: RegisteredClientEntity;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 }

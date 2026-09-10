@@ -345,13 +345,12 @@ export class IdentityProviderService {
     } catch (error: any) {
       // Handle database constraint violations
       if (
-        error.code === 'SQLITE_CONSTRAINT' ||
-        error.message?.includes('UNIQUE constraint failed')
+        error.code === '23505'
       ) {
         // Determine which constraint was violated
-        if (error.message?.includes('actors.slug')) {
+        if (error.constraint?.includes('actor') || error.detail?.includes('(slug)')) {
           throw new UserSlugConflictError(createUserInput.slug);
-        } else if (error.message?.includes('users.email')) {
+        } else if (error.constraint?.includes('email') || error.detail?.includes('(email)')) {
           throw new UserEmailConflictError(createUserInput.email);
         }
       }

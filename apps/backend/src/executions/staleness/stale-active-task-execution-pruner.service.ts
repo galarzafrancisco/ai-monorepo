@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DataSource, EntityManager, In } from 'typeorm';
+import { DataSource, EntityManager, In, Raw } from 'typeorm';
 import {
   ActiveTaskExecutionEntity,
   type ActiveTaskExecutionTagSnapshot,
@@ -122,7 +122,11 @@ export class StaleActiveTaskExecutionPrunerService {
       }
 
       const byName = await manager.findOne(TagEntity, {
-        where: { name: snapshotTag.name },
+        where: {
+          name: Raw((column) => `lower(${column}) = lower(:name)`, {
+            name: snapshotTag.name,
+          }),
+        },
         withDeleted: true,
       });
 

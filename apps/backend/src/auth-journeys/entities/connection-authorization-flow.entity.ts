@@ -51,15 +51,15 @@ export class ConnectionAuthorizationFlowEntity {
   @Column({ type: 'text', nullable: true, name: 'refresh_token' })
   refreshToken?: string;
 
-  @Column({ type: 'datetime', nullable: true, name: 'token_expires_at' })
+  @Column({ type: 'timestamptz', nullable: true, name: 'token_expires_at' })
   tokenExpiresAt?: Date;
 
   @Column({ type: 'varchar', length: 50, default: 'pending' })
   status!: ConnectionAuthorizationFlowStatus;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 }

@@ -31,6 +31,6 @@ export class ThreadMessageEntity {
   @JoinColumn({ name: 'created_by_actor_id' })
   createdByActor?: ActorEntity;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 }

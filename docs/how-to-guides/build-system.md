@@ -122,7 +122,7 @@ This persists nx cache across image builds when running with BuildKit (`DOCKER_B
 
 ## Known limits
 
-- **E2E tests bypass nx by design.** They have SQLite side effects and aren't safe to cache. They always run in CI.
+- **E2E tests bypass nx by design.** Each run creates an isolated `taico_test_*` PostgreSQL database and safely drops only that prefixed database afterward. They always run in CI.
 - **`openapi-sdkgen:test` mutates the workspace** (`clean && generate && lint && run`). Cache hit means "passed before, skip" — fine for CI, but if you later run `node test/run.mjs` standalone after a hit, the generated files won't exist on disk.
 - **Generated client sources are committed** (`packages/client/src/v1/client/`, `src/v2/`, `contracts/`). Builds regenerate them, so a fresh checkout looks "modified" after building. Doesn't break caching (they're stable across machines because committed) but is noisy.
 - **No remote cache yet.** Each CI run benefits only from its own restored `.nx/cache`. Sign up for Nx Cloud (`npx nx connect`) to share cache across runners.

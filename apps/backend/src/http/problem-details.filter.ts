@@ -37,6 +37,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         code: exception.code,
         detail: exception.message,
         context: exception.context,
+        stack: exception.stack,
         requestId,
         url: instance,
       });

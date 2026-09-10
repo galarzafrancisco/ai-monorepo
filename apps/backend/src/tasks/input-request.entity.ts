@@ -43,13 +43,13 @@ export class InputRequestEntity {
   @Column({ type: 'text', nullable: true })
   answer!: string | null;
 
-  @Column({ type: 'datetime', nullable: true, name: 'resolved_at' })
+  @Column({ type: 'timestamptz', nullable: true, name: 'resolved_at' })
   resolvedAt!: Date | null;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
   @BeforeUpdate()

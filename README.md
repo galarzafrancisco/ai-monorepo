@@ -68,7 +68,7 @@ apps/
 └── worker-v1/        # Legacy worker runtime
 
 packages/
-├── adk-session-store/  # SQLite-backed Google ADK session store
+├── adk-session-store/  # PostgreSQL-backed Google ADK session store
 ├── client/             # Generated TypeScript API client
 ├── errors/             # Shared error classes and codes
 ├── events/             # Shared realtime event contracts

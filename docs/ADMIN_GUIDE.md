@@ -23,7 +23,7 @@ Before running it, review and adjust:
 
 - `IMAGE`: keep the image tag current
 - `PORT`: choose the port you want to expose
-- `DATABASE_PATH`: point this at a persistent directory you control
+- `DATABASE_URL`: provide the PostgreSQL user, password, host, and database; keep it in a secret or protected environment file
 
 The script runs the container with `--restart unless-stopped`, which is recommended so Taico comes back with the machine.
 

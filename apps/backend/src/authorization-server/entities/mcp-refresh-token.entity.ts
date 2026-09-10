@@ -32,13 +32,13 @@ export class McpRefreshTokenEntity {
   @Column({ type: 'text', name: 'client_id' })
   clientId!: string;
 
-  @Column({ type: 'datetime', name: 'expires_at' })
+  @Column({ type: 'timestamptz', name: 'expires_at' })
   expiresAt!: Date;
 
-  @Column({ type: 'datetime', name: 'revoked_at', nullable: true })
+  @Column({ type: 'timestamptz', name: 'revoked_at', nullable: true })
   revokedAt!: Date | null;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
   @ManyToOne(() => McpAuthorizationFlowEntity, { onDelete: 'CASCADE' })

@@ -23,7 +23,7 @@ Before running it, review the variables at the top of the script:
 
 - `IMAGE`: keep this updated to the image tag you want to run
 - `PORT`: the local port the app will use
-- `DATABASE_PATH`: set this to a stable location on your machine so your data persists where you expect it
+- `DATABASE_URL`: a PostgreSQL connection URL. Keep its password outside source control.
 
 The script starts the server in Docker with `--restart unless-stopped`, which is the recommended default for a personal or small-team instance.
 
