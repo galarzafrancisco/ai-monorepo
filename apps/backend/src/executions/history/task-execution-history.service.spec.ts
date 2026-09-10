@@ -47,7 +47,6 @@ describe('TaskExecutionHistoryService', () => {
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { taskId },
         order: { transitionedAt: 'DESC' },
-        relations: ['stats'],
       });
     });
 

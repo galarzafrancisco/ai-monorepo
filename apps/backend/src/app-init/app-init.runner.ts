@@ -88,7 +88,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     await this.ensureDefaultChatProvider();
 
     if (config.nodeEnv === 'development') {
-      await this.ensureUsers();
+      this.ensureUsers();
     }
   }
 

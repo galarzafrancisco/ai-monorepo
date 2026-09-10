@@ -1,20 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import JSZip from 'jszip';
 import { ContextBlockEntity } from './block.entity';
+import { MetaService } from '../meta/meta.service';
 import { TagEntity } from '../meta/tag.entity';
+import { ThreadsService } from '../threads/threads.service';
 import { SearchService } from '../search/search.service';
-import { CreateContextBlockUseCase } from './use-cases/create-context-block.use-case';
-import { UpdateContextBlockUseCase } from './use-cases/update-context-block.use-case';
-import { AppendContextBlockUseCase } from './use-cases/append-context-block.use-case';
-import { DeleteContextBlockUseCase } from './use-cases/delete-context-block.use-case';
-import { ChangeContextBlockTagUseCase } from './use-cases/change-context-block-tag.use-case';
-import { MoveContextBlockUseCase } from './use-cases/move-context-block.use-case';
-import {
-  ContextBlockImportEntry,
-  ImportContextBlockTreeUseCase,
-} from './use-cases/import-context-block-tree.use-case';
 
 import {
   AddTagInput,
@@ -31,8 +24,17 @@ import {
 } from './dto/service/context.service.types';
 import {
   BlockNotFoundError,
+  ParentBlockNotFoundError,
+  CircularReferenceError,
+  BlockIsThreadStateError,
   InvalidContextArchiveError,
+  BlockHasChildrenError,
 } from './errors/context.errors';
+import {
+  BlockCreatedEvent,
+  BlockUpdatedEvent,
+  BlockDeletedEvent,
+} from './events/context.events';
 
 interface ArchiveDirectory {
   name: string;
@@ -49,14 +51,11 @@ export class ContextService {
   constructor(
     @InjectRepository(ContextBlockEntity)
     private readonly blockRepository: Repository<ContextBlockEntity>,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly metaService: MetaService,
+    @Inject(forwardRef(() => ThreadsService))
+    private readonly threadsService: ThreadsService,
     private readonly searchService: SearchService,
-    private readonly createContextBlockUseCase: CreateContextBlockUseCase,
-    private readonly updateContextBlockUseCase: UpdateContextBlockUseCase,
-    private readonly appendContextBlockUseCase: AppendContextBlockUseCase,
-    private readonly deleteContextBlockUseCase: DeleteContextBlockUseCase,
-    private readonly changeContextBlockTagUseCase: ChangeContextBlockTagUseCase,
-    private readonly moveContextBlockUseCase: MoveContextBlockUseCase,
-    private readonly importContextBlockTreeUseCase: ImportContextBlockTreeUseCase,
   ) {}
 
   async createBlock(input: CreateBlockInput): Promise<BlockResult> {
@@ -66,14 +65,75 @@ export class ContextService {
       author: input.createdByActorId,
     });
 
-    const blockWithTags = await this.createContextBlockUseCase.execute(input);
+    // Validate parent exists if provided
+    if (input.parentId) {
+      const parent = await this.blockRepository.findOne({
+        where: { id: input.parentId },
+      });
+      if (!parent) {
+        throw new ParentBlockNotFoundError(input.parentId);
+      }
+    }
+
+    // Calculate default order (max sibling order + 1)
+    let order = 0;
+    if (input.parentId !== undefined) {
+      const whereClause =
+        input.parentId === null
+          ? { parentId: null as any }
+          : { parentId: input.parentId };
+
+      const siblings = await this.blockRepository.find({
+        where: whereClause,
+        order: { order: 'DESC' },
+        take: 1,
+      });
+      if (siblings.length > 0) {
+        order = siblings[0].order + 1;
+      }
+    }
+
+    const block = this.blockRepository.create({
+      title: input.title,
+      content: input.content,
+      createdByActorId: input.createdByActorId,
+      parentId: input.parentId,
+      order,
+      tags: [],
+    });
+
+    const saved = await this.blockRepository.save(block);
+
+    // Handle tags if provided
+    if (input.tagNames && input.tagNames.length > 0) {
+      const tags = await this.metaService.findOrCreateTagEntities(
+        input.tagNames,
+      );
+      saved.tags = tags;
+      await this.blockRepository.save(saved);
+
+      // Increment usage tracking for all tags
+      await this.metaService.incrementTagsUsage(tags.map((t) => t.id));
+    }
+
+    // Reload with relations
+    const blockWithTags = await this.blockRepository.findOne({
+      where: { id: saved.id },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
+    });
 
     this.logger.log({
       message: 'Context block.created',
-      blockId: blockWithTags.id,
+      blockId: saved.id,
     });
 
-    return this.mapToResult(blockWithTags);
+    // Emit domain event with actor information
+    this.eventEmitter.emit(
+      BlockCreatedEvent.INTERNAL,
+      new BlockCreatedEvent(blockWithTags!, { id: input.createdByActorId }),
+    );
+
+    return this.mapToResult(blockWithTags!);
   }
 
   async listBlocks(input?: ListBlocksInput): Promise<BlockSummaryResult[]> {
@@ -85,7 +145,7 @@ export class ContextService {
         parentId: input?.parentId,
         updatedAfter: input?.updatedAfter,
         limit: input?.limit,
-      },
+      }
     });
 
     // Use query builder for complex filtering
@@ -104,12 +164,9 @@ export class ContextService {
 
     // Apply createdByActorId filter if provided
     if (input?.createdByActorId) {
-      queryBuilder = queryBuilder.andWhere(
-        'block.createdByActorId = :createdByActorId',
-        {
-          createdByActorId: input.createdByActorId,
-        },
-      );
+      queryBuilder = queryBuilder.andWhere('block.createdByActorId = :createdByActorId', {
+        createdByActorId: input.createdByActorId,
+      });
     }
 
     // Apply parentId filter if provided (including explicit null)
@@ -164,16 +221,78 @@ export class ContextService {
   ): Promise<BlockResult> {
     this.logger.log({ message: 'Updating context block', blockId });
 
-    const blockWithTags = await this.updateContextBlockUseCase.execute(
-      blockId,
-      input,
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
+    });
+
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
+    }
+
+    // Validate parent changes
+    if (input.parentId !== undefined) {
+      // Prevent self-reference
+      if (input.parentId === blockId) {
+        throw new CircularReferenceError();
+      }
+
+      // Validate parent exists if not null
+      if (input.parentId !== null) {
+        const parent = await this.blockRepository.findOne({
+          where: { id: input.parentId },
+        });
+        if (!parent) {
+          throw new ParentBlockNotFoundError(input.parentId);
+        }
+
+        // Check for circular reference
+        await this.validateNoCircularReference(blockId, input.parentId);
+      }
+
+      block.parentId = input.parentId;
+    }
+
+    if (input.title !== undefined) {
+      block.title = input.title;
+    }
+    if (input.content !== undefined) {
+      block.content = input.content;
+    }
+    if (input.order !== undefined) {
+      block.order = input.order;
+    }
+
+    // Handle tags if provided
+    if (input.tagNames !== undefined) {
+      if (input.tagNames.length === 0) {
+        block.tags = [];
+      } else {
+        block.tags = await this.metaService.findOrCreateTagEntities(
+          input.tagNames,
+        );
+      }
+    }
+
+    const saved = await this.blockRepository.save(block);
+
+    // Reload with relations
+    const blockWithTags = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
+    });
+
+    this.logger.log({ message: 'Context block.updated', blockId: saved.id });
+
+    // Emit domain event with actor information
+    // Use actorId from input if provided, otherwise fall back to the block's creator
+    const actorId = input.actorId ?? blockWithTags!.createdByActorId;
+    this.eventEmitter.emit(
+      BlockUpdatedEvent.INTERNAL,
+      new BlockUpdatedEvent(blockWithTags!, { id: actorId }),
     );
 
-    this.logger.log({
-      message: 'Context block.updated',
-      blockId: blockWithTags.id,
-    });
-    return this.mapToResult(blockWithTags);
+    return this.mapToResult(blockWithTags!);
   }
 
   async appendToBlock(
@@ -182,12 +301,31 @@ export class ContextService {
   ): Promise<BlockResult> {
     this.logger.log({ message: 'Appending context block content', blockId });
 
-    const saved = await this.appendContextBlockUseCase.execute(blockId, input);
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
+    });
+
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
+    }
+
+    block.content = `${block.content}\n${input.content}`;
+
+    const saved = await this.blockRepository.save(block);
 
     this.logger.log({
       message: 'Context block content appended',
       blockId: saved.id,
     });
+
+    // Emit domain event (appending is an update)
+    // Use actorId from input if provided, otherwise fall back to the block's creator
+    const actorId = input.actorId ?? saved.createdByActorId;
+    this.eventEmitter.emit(
+      BlockUpdatedEvent.INTERNAL,
+      new BlockUpdatedEvent(saved, { id: actorId }),
+    );
 
     return this.mapToResult(saved);
   }
@@ -195,9 +333,47 @@ export class ContextService {
   async deleteBlock(blockId: string, actorId?: string): Promise<void> {
     this.logger.log({ message: 'Deleting context block', blockId });
 
-    await this.deleteContextBlockUseCase.execute(blockId, actorId);
+    // Get block first to retrieve creator actorId if none provided
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      select: ['id', 'createdByActorId'],
+    });
+
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
+    }
+
+    // Check if block has children
+    const children = await this.blockRepository.find({
+      where: { parentId: blockId },
+      select: ['id'],
+    });
+
+    if (children.length > 0) {
+      throw new BlockHasChildrenError(blockId, children.length);
+    }
+
+    // Check if block is a state block for any threads
+    const threadsWithState = await this.threadsService.findThreadsByStateBlockId(blockId);
+    if (threadsWithState.length > 0) {
+      throw new BlockIsThreadStateError(blockId, threadsWithState.length);
+    }
+
+    const result = await this.blockRepository.delete(blockId);
+
+    if (!result.affected) {
+      throw new BlockNotFoundError(blockId);
+    }
 
     this.logger.log({ message: 'Context block.deleted', blockId });
+
+    // Emit domain event with actor information
+    // Use provided actorId or fall back to the block's creator
+    const eventActorId = actorId ?? block.createdByActorId;
+    this.eventEmitter.emit(
+      BlockDeletedEvent.INTERNAL,
+      new BlockDeletedEvent(blockId, { id: eventActorId }),
+    );
   }
 
   async addTagToBlock(
@@ -211,12 +387,46 @@ export class ContextService {
       tagName: input.name,
     });
 
-    const block = await this.changeContextBlockTagUseCase.add(
-      blockId,
-      input.name,
-      actorId,
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
+    });
+
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
+    }
+
+    // Find or create the tag using MetaService
+    const tag = await this.metaService.findOrCreateTagEntity(input.name);
+
+    // Add tag to block if not already present
+    if (!block.tags.some((t) => t.id === tag.id)) {
+      block.tags.push(tag);
+      await this.blockRepository.save(block);
+
+      // Increment tag usage tracking
+      await this.metaService.incrementTagUsage(tag.id);
+
+      this.logger.log({
+        message: 'Tag added to block',
+        blockId,
+        tagId: tag.id,
+      });
+    }
+
+    // Reload with relations
+    const blockWithRelations = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
+    });
+
+    // Emit domain event (tag changes are updates)
+    this.eventEmitter.emit(
+      BlockUpdatedEvent.INTERNAL,
+      new BlockUpdatedEvent(blockWithRelations!, { id: actorId }),
     );
-    return this.mapToResult(block);
+
+    return this.mapToResult(blockWithRelations!);
   }
 
   async removeTagFromBlock(
@@ -226,12 +436,31 @@ export class ContextService {
   ): Promise<BlockResult> {
     this.logger.log({ message: 'Removing tag from block', blockId, tagId });
 
-    const block = await this.changeContextBlockTagUseCase.remove(
-      blockId,
-      tagId,
-      actorId,
-    );
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
+    });
+
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
+    }
+
+    block.tags = block.tags.filter((tag) => tag.id !== tagId);
+    await this.blockRepository.save(block);
+
     this.logger.log({ message: 'Tag removed from block', blockId, tagId });
+
+    // Check if tag is now orphaned and clean it up using MetaService
+    await this.metaService.cleanupOrphanedTag(tagId);
+
+    // Emit domain event (tag changes are updates)
+    // Use provided actorId or fall back to the block's creator
+    const eventActorId = actorId ?? block.createdByActorId;
+    this.eventEmitter.emit(
+      BlockUpdatedEvent.INTERNAL,
+      new BlockUpdatedEvent(block, { id: eventActorId }),
+    );
+
     return this.mapToResult(block);
   }
 
@@ -299,9 +528,19 @@ export class ContextService {
 
   async reorderBlock(blockId: string, newOrder: number): Promise<BlockResult> {
     this.logger.log({ message: 'Reordering page', blockId, newOrder });
-    const block = await this.updateContextBlockUseCase.execute(blockId, {
-      order: newOrder,
+
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
+
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
+    }
+
+    block.order = newOrder;
+    await this.blockRepository.save(block);
+
     return this.mapToResult(block);
   }
 
@@ -311,10 +550,50 @@ export class ContextService {
   ): Promise<BlockResult> {
     this.logger.log({ message: 'Moving page', blockId, newParentId });
 
-    const block = await this.moveContextBlockUseCase.execute(
-      blockId,
-      newParentId,
-    );
+    const block = await this.blockRepository.findOne({
+      where: { id: blockId },
+      relations: ['tags', 'createdByActor', 'assigneeActor'],
+    });
+
+    if (!block) {
+      throw new BlockNotFoundError(blockId);
+    }
+
+    // Prevent self-reference
+    if (newParentId === blockId) {
+      throw new CircularReferenceError();
+    }
+
+    // Validate parent exists if not null
+    if (newParentId !== null) {
+      const parent = await this.blockRepository.findOne({
+        where: { id: newParentId },
+      });
+      if (!parent) {
+        throw new ParentBlockNotFoundError(newParentId);
+      }
+
+      // Check for circular reference
+      await this.validateNoCircularReference(blockId, newParentId);
+    }
+
+    block.parentId = newParentId;
+
+    // Calculate new order (append to end of siblings)
+    const whereClause =
+      newParentId === null
+        ? { parentId: null as any }
+        : { parentId: newParentId };
+
+    const siblings = await this.blockRepository.find({
+      where: whereClause,
+      order: { order: 'DESC' },
+      take: 1,
+    });
+    block.order = siblings.length > 0 ? siblings[0].order + 1 : 0;
+
+    await this.blockRepository.save(block);
+
     return this.mapToResult(block);
   }
 
@@ -452,10 +731,7 @@ export class ContextService {
     }
 
     const importRoot = this.resolveImportRootDirectory(root);
-    const importedCount = await this.importContextBlockTreeUseCase.execute(
-      this.buildImportEntries(importRoot),
-      createdByActorId,
-    );
+    const importedCount = await this.importArchiveDirectory(importRoot, null, createdByActorId);
 
     this.logger.log({
       message: 'Imported context blocks from zip archive',
@@ -463,6 +739,40 @@ export class ContextService {
     });
 
     return { importedCount };
+  }
+
+  private async validateNoCircularReference(
+    blockId: string,
+    newParentId: string,
+  ): Promise<void> {
+    // Walk up the ancestor chain to check if blockId appears
+    let currentId: string | null = newParentId;
+    const visited = new Set<string>();
+
+    while (currentId !== null) {
+      // Detect infinite loop
+      if (visited.has(currentId)) {
+        throw new CircularReferenceError();
+      }
+      visited.add(currentId);
+
+      // Check if we've reached the block being moved
+      if (currentId === blockId) {
+        throw new CircularReferenceError();
+      }
+
+      // Get parent of current page
+      const current = await this.blockRepository.findOne({
+        where: { id: currentId },
+        select: ['id', 'parentId'],
+      });
+
+      if (!current) {
+        break;
+      }
+
+      currentId = current.parentId ?? null;
+    }
   }
 
   private addBlocksToArchive(
@@ -517,8 +827,7 @@ export class ContextService {
     const [directoryName, directory] = [...root.directories.entries()][0];
     const normalizedName = directoryName.toLowerCase();
     const isExpectedArchiveRoot =
-      normalizedName === 'context-blocks' ||
-      normalizedName.startsWith('context-blocks-');
+      normalizedName === 'context-blocks' || normalizedName.startsWith('context-blocks-');
     if (!isExpectedArchiveRoot) {
       return root;
     }
@@ -533,22 +842,26 @@ export class ContextService {
     return directory;
   }
 
-  private buildImportEntries(
+  private async importArchiveDirectory(
     directory: ArchiveDirectory,
-    parentEntryIndex: number | null = null,
-    entries: ContextBlockImportEntry[] = [],
-  ): ContextBlockImportEntry[] {
+    parentId: string | null,
+    createdByActorId: string,
+  ): Promise<number> {
+    let importedCount = 0;
+
     const leafFiles = [...directory.files.entries()]
       .filter(([fileName]) => fileName.toLowerCase() !== 'index.md')
       .sort(([left], [right]) => left.localeCompare(right));
 
     for (const [fileName, content] of leafFiles) {
       const title = this.extractTitleFromMarkdownFileName(fileName);
-      entries.push({
+      await this.createBlock({
         title,
         content,
-        parentEntryIndex,
+        createdByActorId,
+        parentId,
       });
+      importedCount += 1;
     }
 
     const childDirectories = [...directory.directories.entries()].sort(
@@ -561,15 +874,22 @@ export class ContextService {
       );
       const content = indexEntry?.[1] ?? '.';
 
-      const entryIndex = entries.length;
-      entries.push({
+      const block = await this.createBlock({
         title: this.normalizeImportedTitle(directoryName),
         content,
-        parentEntryIndex,
+        createdByActorId,
+        parentId,
       });
-      this.buildImportEntries(childDirectory, entryIndex, entries);
+      importedCount += 1;
+
+      importedCount += await this.importArchiveDirectory(
+        childDirectory,
+        block.id,
+        createdByActorId,
+      );
     }
-    return entries;
+
+    return importedCount;
   }
 
   private sanitizeNameForFs(name: string): string {

@@ -16,7 +16,6 @@ import {
   NoActiveChatProviderError,
 } from './errors/chat-providers.errors';
 import { ChatProviderType } from './enums';
-import { UpdateChatProviderUseCase } from './use-cases/update-chat-provider.use-case';
 
 @Injectable()
 export class ChatProvidersService {
@@ -27,7 +26,6 @@ export class ChatProvidersService {
     private readonly chatProviderRepository: Repository<ChatProviderEntity>,
     private readonly secretsService: SecretsService,
     private readonly dataSource: DataSource,
-    private readonly updateChatProviderUseCase: UpdateChatProviderUseCase,
   ) {}
 
   async createChatProvider(
@@ -77,7 +75,49 @@ export class ChatProvidersService {
   ): Promise<ChatProviderResult> {
     this.logger.log({ message: 'Updating chat provider', id });
 
-    const provider = await this.updateChatProviderUseCase.execute(id, input);
+    const provider = await this.chatProviderRepository.findOne({
+      where: { id },
+    });
+
+    if (!provider) {
+      throw new ChatProviderNotFoundError(id);
+    }
+
+    if (input.name !== undefined) {
+      provider.name = input.name;
+    }
+
+    // If apiKey is provided, create a secret automatically
+    if (input.apiKey !== undefined) {
+      if (!input.createdByActorId) {
+        throw new Error('createdByActorId is required when providing an API key');
+      }
+
+      if (provider.secretId) {
+        this.logger.log({ message: 'Updating secret for API key', providerId: id });
+
+        await this.secretsService.updateSecret(provider.secretId, {
+          value: input.apiKey,
+          description: `API key for ${provider.name} chat provider`,
+        });
+      } else {
+        this.logger.log({ message: 'Creating secret for API key', providerId: id });
+
+        const secret = await this.secretsService.createSecret({
+          name: `${provider.name} API Key`,
+          description: `API key for ${provider.name} chat provider`,
+          value: input.apiKey,
+          createdByActorId: input.createdByActorId,
+        });
+
+        provider.secretId = secret.id;
+      }
+    } else if (input.secretId !== undefined) {
+      // Fallback to direct secretId assignment if provided
+      provider.secretId = input.secretId;
+    }
+
+    await this.chatProviderRepository.save(provider);
 
     return this.mapToResult(provider);
   }
@@ -190,8 +230,7 @@ export class ChatProvidersService {
       type: provider.type,
       secretId: provider.secretId,
       isActive: provider.isActive,
-      isConfigured:
-        provider.type === ChatProviderType.ADK ? true : !!provider.secretId,
+      isConfigured: provider.type === ChatProviderType.ADK ? true : !!provider.secretId,
       rowVersion: provider.rowVersion,
       createdAt: provider.createdAt,
       updatedAt: provider.updatedAt,

@@ -25,7 +25,6 @@ import {
   UserNotFoundError,
   UserSlugConflictError,
 } from './errors/identity-provider.errors';
-import { CreateUserUseCase } from './use-cases/create-user.use-case';
 
 @Injectable()
 export class IdentityProviderService {
@@ -36,7 +35,6 @@ export class IdentityProviderService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly actorService: ActorService,
-    private readonly createUserUseCase: CreateUserUseCase,
   ) {}
 
   async validateUser(
@@ -86,20 +84,32 @@ export class IdentityProviderService {
 
   async createManagedUser(input: CreateManagedUserInput): Promise<User> {
     const email = input.email.trim().toLowerCase();
+    const existing = await this.userRepository.findOne({ where: { email } });
+    if (existing) {
+      throw new UserEmailConflictError(email);
+    }
+
     const slug = await this.createAvailableSlug(email);
     const displayName = email.split('@')[0] || email;
-    return this.createUserUseCase.execute({
-      email,
-      passwordHash: this.createPendingPasswordHash(),
+
+    const actor = await this.actorService.createUserActor({
       slug,
       displayName,
-      role: input.role,
     });
+
+    const user = this.userRepository.create({
+      email,
+      passwordHash: this.createPendingPasswordHash(),
+      actorId: actor.id,
+      role: input.role,
+      isActive: true,
+    });
+    const savedUser = await this.userRepository.save(user);
+    savedUser.actor = actor;
+    return savedUser;
   }
 
-  async getManagedAccountSetupStatus(
-    email: string,
-  ): Promise<{ email: string; canSetup: boolean }> {
+  async getManagedAccountSetupStatus(email: string): Promise<{ email: string; canSetup: boolean }> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.userRepository.findOne({
       where: { email: normalizedEmail, isActive: true },
@@ -126,9 +136,7 @@ export class IdentityProviderService {
       throw new InvalidCredentialsError();
     }
     if (!user.actor) {
-      this.logger.error(
-        'User returned no actor during account setup. This should not happen!',
-      );
+      this.logger.error('User returned no actor during account setup. This should not happen!');
       throw new InternalServerErrorException('Failed to retrieve actor');
     }
 
@@ -211,13 +219,24 @@ export class IdentityProviderService {
       createUserInput;
     const passwordHash = await this.hashPassword(password);
 
-    return this.createUserUseCase.execute({
-      email,
-      passwordHash,
+    // Create actor first (use email as slug for users)
+    const actor = await this.actorService.createUserActor({
       slug,
       displayName,
       introduction,
     });
+
+    // Create user with actor reference
+    const user = this.userRepository.create({
+      email,
+      passwordHash,
+      actorId: actor.id,
+    });
+    const savedUser = await this.userRepository.save(user);
+
+    // Load actor relation for the returned user
+    savedUser.actor = actor;
+    return savedUser;
   }
 
   async changePassword(
@@ -280,7 +299,7 @@ export class IdentityProviderService {
     // Use a transaction to ensure atomicity of check + create
     try {
       return await this.userRepository.manager.transaction(
-        async (transactionalEntityManager) => {
+        async transactionalEntityManager => {
           // Check if admin users exist within the transaction
           const adminCount = await transactionalEntityManager.count(User, {
             where: { role: UserRole.ADMIN, isActive: true },
@@ -379,9 +398,7 @@ export class IdentityProviderService {
       slug = `${baseSlug}-${suffix}`;
       suffix += 1;
       if (suffix > 1000) {
-        throw new InternalServerErrorException(
-          'Could not generate a unique username',
-        );
+        throw new InternalServerErrorException('Could not generate a unique username');
       }
     }
 

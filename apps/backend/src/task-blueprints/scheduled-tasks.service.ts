@@ -137,12 +137,7 @@ export class ScheduledTasksService {
   ): Promise<ScheduledTaskResult> {
     const scheduledTask = await this.scheduledTaskRepository.findOne({
       where: { id: scheduledTaskId },
-      relations: [
-        'taskBlueprint',
-        'taskBlueprint.tags',
-        'taskBlueprint.assigneeActor',
-        'taskBlueprint.createdByActor',
-      ],
+      relations: ['taskBlueprint', 'taskBlueprint.tags', 'taskBlueprint.assigneeActor', 'taskBlueprint.createdByActor'],
     });
 
     if (!scheduledTask) {
@@ -210,12 +205,7 @@ export class ScheduledTasksService {
         enabled: true,
         nextRunAt: LessThanOrEqual(now),
       },
-      relations: [
-        'taskBlueprint',
-        'taskBlueprint.tags',
-        'taskBlueprint.assigneeActor',
-        'taskBlueprint.createdByActor',
-      ],
+      relations: ['taskBlueprint', 'taskBlueprint.tags', 'taskBlueprint.assigneeActor', 'taskBlueprint.createdByActor'],
       order: {
         nextRunAt: 'ASC',
       },
@@ -254,18 +244,13 @@ export class ScheduledTasksService {
   /**
    * Completes an already-claimed execution by setting lastRunAt.
    */
-  async completeClaimedExecution(
-    scheduledTaskId: string,
-    claimedNextRunAt: Date,
-  ): Promise<boolean> {
-    const result = await this.scheduledTaskRepository
+  async completeClaimedExecution(scheduledTaskId: string): Promise<void> {
+    await this.scheduledTaskRepository
       .createQueryBuilder()
       .update(ScheduledTaskEntity)
       .set({ lastRunAt: new Date() })
       .where('id = :scheduledTaskId', { scheduledTaskId })
-      .andWhere('next_run_at = :claimedNextRunAt', { claimedNextRunAt })
       .execute();
-    return (result.affected ?? 0) === 1;
   }
 
   /**
@@ -319,24 +304,24 @@ export class ScheduledTasksService {
     });
   }
 
-  /**
-   * Validates cron expression and calculates the next run time
-   * Uses Australia/Sydney timezone for all cron calculations
-   */
-  private calculateNextRun(cronExpression: string, from?: Date): Date {
-    try {
-      const interval = CronExpressionParser.parse(cronExpression, {
-        currentDate: from || new Date(),
-        tz: 'Australia/Sydney',
-      });
-      return interval.next().toDate();
-    } catch (error) {
-      throw new InvalidCronExpressionError(
-        cronExpression,
-        error instanceof Error ? error.message : undefined,
-      );
-    }
-  }
+   /**
+    * Validates cron expression and calculates the next run time
+    * Uses Australia/Sydney timezone for all cron calculations
+    */
+   private calculateNextRun(cronExpression: string, from?: Date): Date {
+     try {
+       const interval = CronExpressionParser.parse(cronExpression, {
+         currentDate: from || new Date(),
+         tz: 'Australia/Sydney',
+       });
+       return interval.next().toDate();
+     } catch (error) {
+       throw new InvalidCronExpressionError(
+         cronExpression,
+         error instanceof Error ? error.message : undefined,
+       );
+     }
+   }
 
   private mapScheduledTaskToResult(
     scheduledTask: ScheduledTaskEntity,
@@ -345,9 +330,7 @@ export class ScheduledTasksService {
       id: scheduledTask.id,
       taskBlueprintId: scheduledTask.taskBlueprintId,
       taskBlueprint: scheduledTask.taskBlueprint
-        ? this.taskBlueprintsService.mapBlueprintToResult(
-            scheduledTask.taskBlueprint,
-          )
+        ? this.taskBlueprintsService.mapBlueprintToResult(scheduledTask.taskBlueprint)
         : undefined,
       cronExpression: scheduledTask.cronExpression,
       enabled: scheduledTask.enabled,

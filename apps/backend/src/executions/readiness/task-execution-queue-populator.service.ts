@@ -67,12 +67,11 @@ export class TaskExecutionQueuePopulatorService {
 
     if (shouldBeQueued) {
       this.logger.debug(`Queueing task ${task.id} (${task.name})`);
-      if (await this.upsertQueueEntry(task.id)) {
-        this.eventEmitter.emit(
-          TaskExecutionQueuedEvent.INTERNAL,
-          new TaskExecutionQueuedEvent(task.id),
-        );
-      }
+      await this.upsertQueueEntry(task.id);
+      this.eventEmitter.emit(
+        TaskExecutionQueuedEvent.INTERNAL,
+        new TaskExecutionQueuedEvent(task.id),
+      );
       return;
     }
 
@@ -221,24 +220,14 @@ export class TaskExecutionQueuePopulatorService {
     return new Map(agents.map((agent) => [agent.actorId, agent]));
   }
 
-  private async upsertQueueEntry(taskId: string): Promise<boolean> {
-    const result = await this.taskExecutionQueueRepository
+  private async upsertQueueEntry(taskId: string): Promise<void> {
+    await this.taskExecutionQueueRepository
       .createQueryBuilder()
       .insert()
       .into(TaskExecutionQueueEntity)
       .values({ taskId })
       .orIgnore()
       .execute();
-
-    return this.wasInserted(result.raw);
-  }
-
-  private wasInserted(raw: unknown): boolean {
-    if (typeof raw !== 'object' || raw === null || !('changes' in raw)) {
-      return false;
-    }
-
-    return typeof raw.changes === 'number' && raw.changes > 0;
   }
 
   private async deleteQueueEntry(taskId: string): Promise<void> {

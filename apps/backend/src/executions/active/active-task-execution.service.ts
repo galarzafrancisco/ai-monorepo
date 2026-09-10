@@ -95,14 +95,13 @@ export class ActiveTaskExecutionService {
 
     const where = options?.taskId ? { taskId: options.taskId } : {};
 
-    const [items, total] =
-      await this.activeTaskExecutionRepository.findAndCount({
-        where,
-        relations: ['task', 'stats'],
-        order: { claimedAt: 'DESC' },
-        skip,
-        take: limit,
-      });
+    const [items, total] = await this.activeTaskExecutionRepository.findAndCount({
+      where,
+      relations: ['task', 'stats'],
+      order: { claimedAt: 'DESC' },
+      skip,
+      take: limit,
+    });
 
     return {
       items: items.map((item) => this.mapActiveExecutionToResult(item)),
@@ -169,18 +168,13 @@ export class ActiveTaskExecutionService {
 
       const savedExecution = await manager.save(activeExecution);
 
-      const hydratedExecution = await manager.findOne(
-        ActiveTaskExecutionEntity,
-        {
-          where: { id: savedExecution.id },
-          relations: ['task', 'stats'],
-        },
-      );
+      const hydratedExecution = await manager.findOne(ActiveTaskExecutionEntity, {
+        where: { id: savedExecution.id },
+        relations: ['task', 'stats'],
+      });
 
       if (!hydratedExecution) {
-        throw new Error(
-          'Active task execution was created but could not be reloaded.',
-        );
+        throw new Error('Active task execution was created but could not be reloaded.');
       }
 
       const stats = manager.create(ExecutionStatsEntity, {
@@ -221,10 +215,6 @@ export class ActiveTaskExecutionService {
 
       if (!activeExecution) {
         throw new ActiveTaskExecutionNotFoundError(input.executionId);
-      }
-
-      if (activeExecution.workerClientId !== input.workerClientId) {
-        throw new ActiveTaskExecutionWorkerMismatchError(input.executionId);
       }
 
       await manager.delete(ActiveTaskExecutionEntity, {
@@ -321,9 +311,7 @@ export class ActiveTaskExecutionService {
     });
   }
 
-  async updateRunnerSessionId(
-    input: UpdateRunnerSessionIdInput,
-  ): Promise<void> {
+  async updateRunnerSessionId(input: UpdateRunnerSessionIdInput): Promise<void> {
     const result = await this.activeTaskExecutionRepository
       .createQueryBuilder()
       .update(ActiveTaskExecutionEntity)
@@ -351,11 +339,10 @@ export class ActiveTaskExecutionService {
   }
 
   async updateExecutionStats(input: UpdateExecutionStatsInput): Promise<void> {
-    const valuesToSet: Record<string, string | number | (() => string) | null> =
-      {
-        rowVersion: () => 'row_version + 1',
-        updatedAt: () => 'CURRENT_TIMESTAMP',
-      };
+    const valuesToSet: Record<string, string | number | (() => string) | null> = {
+      rowVersion: () => 'row_version + 1',
+      updatedAt: () => 'CURRENT_TIMESTAMP',
+    };
 
     if (input.harness !== undefined) {
       valuesToSet.harness = input.harness;
@@ -395,9 +382,7 @@ export class ActiveTaskExecutionService {
     }
   }
 
-  async incrementToolCallCount(
-    input: IncrementToolCallCountInput,
-  ): Promise<void> {
+  async incrementToolCallCount(input: IncrementToolCallCountInput): Promise<void> {
     const result = await this.activeTaskExecutionRepository
       .createQueryBuilder()
       .update(ActiveTaskExecutionEntity)
@@ -489,9 +474,7 @@ export class ActiveTaskExecutionService {
       status: historyEntry.status,
       errorCode: historyEntry.errorCode,
       errorMessage: historyEntry.errorMessage,
-      stats: historyEntry.stats
-        ? this.mapStatsToResult(historyEntry.stats)
-        : null,
+      stats: historyEntry.stats ? this.mapStatsToResult(historyEntry.stats) : null,
     };
   }
 

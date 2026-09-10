@@ -7,7 +7,6 @@ import { ActorService } from './actor.service';
 import { ActorController } from './actor.controller';
 import { AuthGuardsModule } from 'src/auth/guards/auth-guards.module';
 import { SearchModule } from 'src/search/search.module';
-import { CreateUserUseCase } from './use-cases/create-user.use-case';
 
 @Module({
   imports: [
@@ -16,7 +15,7 @@ import { CreateUserUseCase } from './use-cases/create-user.use-case';
     SearchModule,
   ],
   controllers: [ActorController],
-  providers: [IdentityProviderService, ActorService, CreateUserUseCase],
+  providers: [IdentityProviderService, ActorService],
   exports: [IdentityProviderService, ActorService, TypeOrmModule],
 })
 export class IdentityProviderModule {}
