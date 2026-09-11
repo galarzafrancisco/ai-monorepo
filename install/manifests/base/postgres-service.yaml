@@ -7,7 +7,7 @@ spec:
   ports:
     - name: postgres
       port: 5432
-      targetPort: 5432
+      targetPort: 15432
 ---
 apiVersion: discovery.k8s.io/v1
 kind: EndpointSlice
@@ -20,8 +20,9 @@ addressType: IPv4
 ports:
   - name: postgres
     protocol: TCP
-    port: 5432
+    port: 15432
 endpoints:
   - addresses:
       - PLACEHOLDER_SPARK_IP
     conditions: {}
+    
