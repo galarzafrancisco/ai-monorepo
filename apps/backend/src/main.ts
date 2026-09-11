@@ -61,7 +61,7 @@ async function bootstrap() {
   const betaStaticPath = join(__dirname, 'public/beta'); // ui-v1 build
   if (existsSync(staticPath)) {
     app.useStaticAssets(staticPath);
-    console.log(`Serving static files from ${staticPath}`);
+    logger.log(`Serving static files from ${staticPath}`);
 
     // SPA fallback: serve index.html for all non-API, non-asset routes
     // This allows client-side routing to work.
@@ -98,8 +98,6 @@ async function createConfiguredApp(
 ): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: new ConsoleLogger({
-      compact: true,
-      breakLength: Infinity,
       json: true,
     }),
   });
