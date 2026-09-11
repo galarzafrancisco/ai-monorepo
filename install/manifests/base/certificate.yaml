@@ -7,6 +7,8 @@ spec:
   dnsNames:
     - taico.app
   secretName: taico-tls
+  privateKey:
+    rotationPolicy: Always
   issuerRef:
     name: letsencrypt-cluster-issuer
     kind: ClusterIssuer

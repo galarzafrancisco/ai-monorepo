@@ -53,7 +53,9 @@ install/manifests/
 │   ├── deployment.yaml            # Main application deployment
 │   ├── service.yaml               # Kubernetes service
 │   ├── postgres-service.yaml      # Selectorless service to host PostgreSQL
-│   ├── ingress.yaml               # Ingress configuration
+│   ├── listener-set.yaml           # Gateway API HTTPS listener
+│   ├── route.yaml                 # Gateway API HTTPS application route
+│   ├── https-redirect.yaml        # Gateway API HTTP-to-HTTPS redirect
 │   └── certificate.yaml           # TLS certificate
 └── overlays/
     └── main/                      # Production overlay

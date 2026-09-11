@@ -6,6 +6,8 @@ resources:
   - ./configmap.yaml
   - ./deployment.yaml
   - ./service.yaml
-  - ./ingress.yaml
+  - ./listener-set.yaml
+  - ./route.yaml
+  - ./https-redirect.yaml
   - ./certificate.yaml
   - ./postgres-service.yaml
