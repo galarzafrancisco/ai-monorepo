@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import './config/cli-env';
-import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { ConsoleLogger, Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -96,7 +96,13 @@ async function bootstrap() {
 async function createConfiguredApp(
   AppModule: typeof import('./app.module').AppModule,
 ): Promise<NestExpressApplication> {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: new ConsoleLogger({
+      compact: true,
+      breakLength: Infinity,
+      json: true,
+    }),
+  });
 
   app.use(cookieParser());
   app.enableCors({
