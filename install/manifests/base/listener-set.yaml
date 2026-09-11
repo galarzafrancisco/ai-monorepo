@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: taico
+  namespace: taico
+spec:
+  parentRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: public
+    namespace: gateways
+  listeners:
+    - name: https
+      hostname: taico.app
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: taico-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
