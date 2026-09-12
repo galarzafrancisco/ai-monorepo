@@ -1,0 +1,22 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: taico-access-logs
+  namespace: taico
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: taico
+  frontend:
+    accessLog:
+      attributes:
+        add:
+          - name: user_agent
+            expression: 'request.headers["user-agent"]'
+          - name: forwarded_for
+            expression: 'request.headers["x-forwarded-for"]'
+          - name: real_ip
+            expression: 'request.headers["x-real-ip"]'
