@@ -8,6 +8,7 @@ const RETRY_DELAY_MS = 5_000;
 const TOKEN_REFRESH_SKEW_MS = 60_000;
 const SNAPSHOT_REFRESH_MS = 60_000;
 const EVENT_DEBOUNCE_MS = 250;
+const WORKER_LIVE_WINDOW_MS = 90_000;
 
 export type DisplayOptions = {
   serverUrl: string;
@@ -58,7 +59,7 @@ class Dashboard {
     this.refreshInProgress = true;
     try {
       const [tasks, workers, activeExecutions] = await Promise.all([
-        this.client.task.TasksController_listTasks({ page: 1, limit: 100 }),
+        this.fetchAllTasks(),
         this.client.workers.WorkersController_listWorkers(),
         this.client.executions.ActiveTaskExecutionController_listActiveExecutions({
           page: 1,
@@ -67,8 +68,10 @@ class Dashboard {
       ]);
 
       this.display.update({
-        ...countTasks(tasks.items),
-        workers: workers.length,
+        ...countTasks(tasks),
+        workers: workers.filter(
+          (worker) => Date.parse(worker.lastSeenAt) >= Date.now() - WORKER_LIVE_WINDOW_MS,
+        ).length,
         active: activeExecutions.total,
       });
     } catch (error) {
@@ -84,6 +87,17 @@ class Dashboard {
         void this.refresh();
       }
     }
+  }
+
+  private async fetchAllTasks(): Promise<Array<{ status: string }>> {
+    const firstPage = await this.client.task.TasksController_listTasks({ page: 1, limit: 100 });
+    const tasks = [...firstPage.items];
+    for (let page = 2; tasks.length < firstPage.total; page += 1) {
+      const nextPage = await this.client.task.TasksController_listTasks({ page, limit: 100 });
+      tasks.push(...nextPage.items);
+      if (nextPage.items.length === 0) break;
+    }
+    return tasks;
   }
 }
 

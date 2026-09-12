@@ -1,5 +1,6 @@
 const WRITE_CHARACTERISTIC = '12345678-1234-5678-1234-56789abcdef2';
 const RETRY_DELAY_MS = 5_000;
+const FULL_REFRESH_INTERVAL = 20;
 
 type Noble = {
   state: string;
@@ -21,6 +22,7 @@ type BleCharacteristic = {
 type BlePeripheral = {
   advertisement?: { localName?: string };
   connect(callback: (error: Error | null) => void): void;
+  disconnect(callback?: () => void): void;
   once(event: 'disconnect', listener: () => void): void;
   discoverSomeServicesAndCharacteristics(
     serviceUuids: string[],
@@ -45,8 +47,12 @@ export type DisplaySnapshot = {
 export class BleDisplay {
   private characteristic: BleCharacteristic | null = null;
   private latestSnapshot: DisplaySnapshot | null = null;
+  private renderedSnapshot: DisplaySnapshot | null = null;
+  private renderPromise: Promise<void> | null = null;
   private layoutDefined = false;
+  private partialRefreshes = 0;
   private started = false;
+  private connectedPeripheral: BlePeripheral | null = null;
 
   constructor(private readonly deviceName: string) {}
 
@@ -60,8 +66,14 @@ export class BleDisplay {
   }
 
   update(snapshot: DisplaySnapshot): void {
+    if (sameSnapshot(snapshot, this.latestSnapshot)) {
+      return;
+    }
     this.latestSnapshot = snapshot;
-    void this.renderLatest();
+    void this.renderLatest().catch((error) => {
+      console.warn(`[display] Failed to write display: ${message(error)}.`);
+      this.disconnect();
+    });
   }
 
   private async runConnectionLoop(): Promise<void> {
@@ -72,8 +84,10 @@ export class BleDisplay {
 
         const peripheral = await discover(noble, this.deviceName);
         await connect(peripheral);
+        this.connectedPeripheral = peripheral;
         this.characteristic = await getWriteCharacteristic(peripheral);
         this.layoutDefined = false;
+        this.partialRefreshes = 0;
 
         console.log(`[display] Connected to ${this.deviceName}.`);
         await this.renderLatest();
@@ -84,8 +98,11 @@ export class BleDisplay {
           `[display] Bluetooth unavailable: ${message(error)}. Retrying in 5 seconds.`,
         );
       } finally {
+        this.disconnect();
+        this.connectedPeripheral = null;
         this.characteristic = null;
         this.layoutDefined = false;
+        this.renderedSnapshot = null;
       }
 
       await sleep(RETRY_DELAY_MS);
@@ -104,35 +121,41 @@ export class BleDisplay {
   }
 
   private async renderLatest(): Promise<void> {
-    if (!this.characteristic || !this.latestSnapshot) {
-      return;
-    }
+    if (this.renderPromise) return this.renderPromise;
 
-    try {
+    this.renderPromise = this.renderPendingSnapshots().finally(() => {
+      this.renderPromise = null;
+    });
+    return this.renderPromise;
+  }
+
+  private async renderPendingSnapshots(): Promise<void> {
+    while (this.characteristic && this.latestSnapshot) {
+      const snapshot = this.latestSnapshot;
+      if (sameSnapshot(snapshot, this.renderedSnapshot)) return;
+
       if (!this.layoutDefined) {
         await this.send('CLEAR_ALL');
         for (const field of FIELDS) {
           await this.send(`FIELD ${field}`);
         }
         this.layoutDefined = true;
-        await this.render('FULL');
-        return;
+        await this.render(snapshot, 'FULL');
+        this.partialRefreshes = 0;
+      } else {
+        const refreshType =
+          this.partialRefreshes >= FULL_REFRESH_INTERVAL ? 'FULL' : 'PARTIAL';
+        await this.render(snapshot, refreshType);
+        this.partialRefreshes = refreshType === 'FULL' ? 0 : this.partialRefreshes + 1;
       }
+      this.renderedSnapshot = snapshot;
 
-      await this.render('PARTIAL');
-    } catch (error) {
-      console.warn(`[display] Failed to write display: ${message(error)}.`);
-      this.characteristic = null;
-      this.layoutDefined = false;
+      if (sameSnapshot(snapshot, this.latestSnapshot)) return;
     }
   }
 
-  private async render(refreshType: 'FULL' | 'PARTIAL'): Promise<void> {
-    if (!this.latestSnapshot) {
-      return;
-    }
-
-    const { todo, doing, review, done, workers, active } = this.latestSnapshot;
+  private async render(snapshot: DisplaySnapshot, refreshType: 'FULL' | 'PARTIAL'): Promise<void> {
+    const { todo, doing, review, done, workers, active } = snapshot;
     await this.send(`TEXT todo To do:  ${formatCount(todo)}`);
     await this.send(`TEXT doing Doing:  ${formatCount(doing)}`);
     await this.send(`TEXT review Review: ${formatCount(review)}`);
@@ -159,6 +182,13 @@ export class BleDisplay {
         resolve();
       });
     });
+  }
+
+  private disconnect(): void {
+    const peripheral = this.connectedPeripheral;
+    if (!peripheral) return;
+    this.connectedPeripheral = null;
+    peripheral.disconnect(() => undefined);
   }
 }
 
@@ -267,4 +297,14 @@ function message(error: unknown): string {
 
 function formatCount(count: number): string {
   return count > 99 ? '99+' : String(count);
+}
+
+function sameSnapshot(a: DisplaySnapshot, b: DisplaySnapshot | null): boolean {
+  return !!b &&
+    a.todo === b.todo &&
+    a.doing === b.doing &&
+    a.review === b.review &&
+    a.done === b.done &&
+    a.workers === b.workers &&
+    a.active === b.active;
 }

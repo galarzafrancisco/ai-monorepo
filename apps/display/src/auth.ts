@@ -102,65 +102,69 @@ export class DisplayAuth {
 
   private async authorize(): Promise<Credentials> {
     const callback = await createCallbackServer();
-    const verifier = randomBytes(32).toString('base64url');
-    const challenge = createHash('sha256').update(verifier).digest('base64url');
-    const metadata =
-      await this.publicClient.discovery.DiscoveryController_getAuthorizationServerMetadata(
-        {
-          mcpServerId: DISPLAY_AUTH_TARGET_ID,
-          version: DISPLAY_AUTH_TARGET_VERSION,
-        },
-      );
-    const registration =
-      await this.publicClient.authorizationServer.ClientRegistrationController_registerClient(
-        {
-          serverId: DISPLAY_AUTH_TARGET_ID,
+    try {
+      const verifier = randomBytes(32).toString('base64url');
+      const challenge = createHash('sha256').update(verifier).digest('base64url');
+      const metadata =
+        await this.publicClient.discovery.DiscoveryController_getAuthorizationServerMetadata(
+          {
+            mcpServerId: DISPLAY_AUTH_TARGET_ID,
+            version: DISPLAY_AUTH_TARGET_VERSION,
+          },
+        );
+      const registration =
+        await this.publicClient.authorizationServer.ClientRegistrationController_registerClient(
+          {
+            serverId: DISPLAY_AUTH_TARGET_ID,
+            version: DISPLAY_AUTH_TARGET_VERSION,
+            body: {
+              client_name: `Taico Display (${process.pid})`,
+              redirect_uris: [callback.redirectUri],
+              grant_types: ['authorization_code', 'refresh_token'],
+              response_types: ['code'],
+              token_endpoint_auth_method: 'none',
+              scope: getDisplayScope(),
+            },
+          },
+        );
+      const state = randomBytes(16).toString('base64url');
+      const authorizationUrl = new URL(metadata.authorization_endpoint);
+      authorizationUrl.searchParams.set('response_type', 'code');
+      authorizationUrl.searchParams.set('client_id', registration.client_id);
+      authorizationUrl.searchParams.set('redirect_uri', callback.redirectUri);
+      authorizationUrl.searchParams.set('scope', getDisplayScope());
+      authorizationUrl.searchParams.set('state', state);
+      authorizationUrl.searchParams.set('code_challenge', challenge);
+      authorizationUrl.searchParams.set('code_challenge_method', 'S256');
+      authorizationUrl.searchParams.set('resource', `${this.serverUrl}/api/v1`);
+      console.log('[display] Open this URL to authorize the display:');
+      console.log(authorizationUrl.toString());
+      const code = await callback.waitForCode(state);
+      const token =
+        await this.publicClient.authorizationServer.AuthorizationController_token({
+          serverIdentifier: DISPLAY_AUTH_TARGET_ID,
           version: DISPLAY_AUTH_TARGET_VERSION,
           body: {
-            client_name: `Taico Display (${process.pid})`,
-            redirect_uris: [callback.redirectUri],
-            grant_types: ['authorization_code', 'refresh_token'],
-            response_types: ['code'],
-            token_endpoint_auth_method: 'none',
-            scope: getDisplayScope(),
+            grant_type: 'authorization_code',
+            client_id: registration.client_id,
+            code,
+            redirect_uri: callback.redirectUri,
+            code_verifier: verifier,
           },
-        },
-      );
-    const state = randomBytes(16).toString('base64url');
-    const authorizationUrl = new URL(metadata.authorization_endpoint);
-    authorizationUrl.searchParams.set('response_type', 'code');
-    authorizationUrl.searchParams.set('client_id', registration.client_id);
-    authorizationUrl.searchParams.set('redirect_uri', callback.redirectUri);
-    authorizationUrl.searchParams.set('scope', getDisplayScope());
-    authorizationUrl.searchParams.set('state', state);
-    authorizationUrl.searchParams.set('code_challenge', challenge);
-    authorizationUrl.searchParams.set('code_challenge_method', 'S256');
-    authorizationUrl.searchParams.set('resource', `${this.serverUrl}/api/v1`);
-    console.log('[display] Open this URL to authorize the display:');
-    console.log(authorizationUrl.toString());
-    const code = await callback.waitForCode(state);
-    const token =
-      await this.publicClient.authorizationServer.AuthorizationController_token({
-        serverIdentifier: DISPLAY_AUTH_TARGET_ID,
-        version: DISPLAY_AUTH_TARGET_VERSION,
-        body: {
-          grant_type: 'authorization_code',
-          client_id: registration.client_id,
-          code,
-          redirect_uri: callback.redirectUri,
-          code_verifier: verifier,
-        },
-      });
+        });
 
-    return {
-      serverUrl: this.serverUrl,
-      clientId: registration.client_id,
-      redirectUri: callback.redirectUri,
-      scope: token.scope ?? getDisplayScope(),
-      accessToken: token.access_token,
-      refreshToken: token.refresh_token,
-      expiresAt: expiration(token.expires_in),
-    };
+      return {
+        serverUrl: this.serverUrl,
+        clientId: registration.client_id,
+        redirectUri: callback.redirectUri,
+        scope: token.scope ?? getDisplayScope(),
+        accessToken: token.access_token,
+        refreshToken: token.refresh_token,
+        expiresAt: expiration(token.expires_in),
+      };
+    } finally {
+      await callback.close();
+    }
   }
 
   private async refresh(credentials: Credentials): Promise<Credentials> {
@@ -222,9 +226,20 @@ function hasDisplayScopes(value: string): boolean {
   return DISPLAY_AUTH_SCOPES.every(({ id }) => granted.has(id));
 }
 
-async function createCallbackServer(): Promise<{ redirectUri: string; waitForCode: (state: string) => Promise<string> }> {
+async function createCallbackServer(): Promise<{
+  redirectUri: string;
+  waitForCode: (state: string) => Promise<string>;
+  close: () => Promise<void>;
+}> {
   const server = createServer();
   let resolveCode: ((value: { code: string; state: string }) => void) | undefined;
+  let rejectCode: ((error: Error) => void) | undefined;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const close = async (): Promise<void> => {
+    if (timeout) clearTimeout(timeout);
+    if (!server.listening) return;
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  };
   server.on('request', (request, response) => {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
     const code = url.searchParams.get('code');
@@ -243,15 +258,30 @@ async function createCallbackServer(): Promise<{ redirectUri: string; waitForCod
     redirectUri: `http://127.0.0.1:${address.port}/callback`,
     waitForCode: (expectedState) =>
       new Promise((resolve, reject) => {
+        const fail = (error: Error) => {
+          void close();
+          reject(error);
+        };
         resolveCode = ({ code, state }) => {
-          server.close();
+          void close();
           if (state === expectedState) {
             resolve(code);
             return;
           }
           reject(new Error('OAuth callback state mismatch.'));
         };
+        rejectCode = fail;
+        server.once('error', fail);
+        timeout = setTimeout(
+          () => fail(new Error('Timed out waiting for OAuth callback.')),
+          5 * 60_000,
+        );
       }),
+    close: async () => {
+      rejectCode = undefined;
+      resolveCode = undefined;
+      await close();
+    },
   };
 }
 
