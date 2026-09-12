@@ -11,4 +11,3 @@ resources:
   - ./https-redirect.yaml
   - ./certificate.yaml
   - ./postgres-service.yaml
-  - ./access-log-policy.yaml
