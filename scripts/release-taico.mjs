@@ -27,7 +27,7 @@ const packageReleaseOrder = [
   "packages/client",
 ];
 
-const appReleaseOrder = ["apps/backend", "apps/worker"];
+const appReleaseOrder = ["apps/backend", "apps/worker", "apps/display"];
 const socketBadgeMarker = "[![Socket Badge]";
 
 const releaseVersionTextTargets = [

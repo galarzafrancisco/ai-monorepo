@@ -10,6 +10,7 @@ import { TaskEntity } from '../../tasks/task.entity';
 import { TaskExecutionHistoryEntity } from '../history/task-execution-history.entity';
 import { TaskExecutionHistoryStatus } from '../history/task-execution-history-status.enum';
 import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
+import { ActiveExecutionsChangedEvent } from '../events/active-executions-changed.event';
 
 const STALE_EXECUTION_INTERRUPT_ACTOR_ID = 'system';
 
@@ -89,6 +90,10 @@ export class StaleActiveTaskExecutionPrunerService {
           workerClientId: prunedExecution.workerClientId,
         },
       ),
+    );
+    this.eventEmitter.emit(
+      ActiveExecutionsChangedEvent.INTERNAL,
+      new ActiveExecutionsChangedEvent(),
     );
 
     return true;

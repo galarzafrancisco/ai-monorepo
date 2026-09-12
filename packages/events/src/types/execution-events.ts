@@ -26,6 +26,7 @@ export const ExecutionWireEvents = {
   WORKER_HARNESSES_REPORT_REQUESTED: 'worker.harnesses.report.requested',
   TASK_EXECUTION_QUEUED: 'task.execution.queued',
   EXECUTION_INTERRUPT_REQUEST: 'execution.interrupt.request',
+  EXECUTIONS_CHANGED: 'executions.changed',
 } as const;
 
 export type ExecutionWireEventName =
@@ -140,6 +141,14 @@ export interface ExecutionInterruptRequestWireEvent {
 }
 
 /**
+ * Emitted after an active execution is claimed, stopped, or returned to queue.
+ * Clients should reload their active-execution snapshot rather than infer it.
+ */
+export interface ExecutionsChangedWireEvent {
+  occurredAt: string;
+}
+
+/**
  * Union type of all execution wire events
  */
 export type ExecutionWireEvent =
@@ -148,7 +157,8 @@ export type ExecutionWireEvent =
   | ExecutionDeletedWireEvent
   | ExecutionActivityWireEvent
   | TaskExecutionQueuedWireEvent
-  | ExecutionInterruptRequestWireEvent;
+  | ExecutionInterruptRequestWireEvent
+  | ExecutionsChangedWireEvent;
 
 /**
  * Type guards for event identification
