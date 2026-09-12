@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -198,7 +198,7 @@ export class DisplayAuth {
   }
 
   private async persistCredentials(credentials: Credentials): Promise<void> {
-    await mkdir(dirname(this.credentialsPath), { recursive: true });
+    await mkdir(dirname(this.credentialsPath), { recursive: true, mode: 0o700 });
     let servers: Record<string, Credentials> = {};
     try {
       const config = JSON.parse(await readFile(this.credentialsPath, 'utf8')) as {
@@ -209,7 +209,11 @@ export class DisplayAuth {
       // Create a new credential store.
     }
     servers[this.serverUrl] = credentials;
-    await writeFile(this.credentialsPath, JSON.stringify({ servers }, null, 2), 'utf8');
+    await writeFile(this.credentialsPath, JSON.stringify({ servers }, null, 2), {
+      encoding: 'utf8',
+      mode: 0o600,
+    });
+    await chmod(this.credentialsPath, 0o600);
   }
 }
 
