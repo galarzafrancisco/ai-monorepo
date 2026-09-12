@@ -1,5 +1,5 @@
 import { ApiClient } from '@taico/client/v2';
-import { ExecutionWireEvents, TaskWireEvents, WorkerWireEvents } from '@taico/events';
+import { ExecutionWireEvents, TaskWireEvents } from '@taico/events';
 import { io, type Socket } from 'socket.io-client';
 import { DisplayAuth } from './auth.js';
 import { BleDisplay, type DisplaySnapshot } from './ble-display.js';
@@ -134,7 +134,6 @@ class TaicoSocketNotifier {
         TaskWireEvents.TASK_ASSIGNED,
         TaskWireEvents.TASK_STATUS_CHANGED,
       ]);
-      this.connectNamespace('/workers', token, [WorkerWireEvents.WORKER_SEEN]);
       this.connectNamespace('/executions', token, [
         ExecutionWireEvents.EXECUTIONS_CHANGED,
       ]);

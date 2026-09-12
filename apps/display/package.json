@@ -24,6 +24,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "build": "tsc -p tsconfig.build.json",
+    "test": "npm run build && node --test test/*.test.mjs",
     "build:prod": "npm run build",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "pack": "npm run build && npm pack",

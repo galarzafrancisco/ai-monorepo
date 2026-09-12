@@ -1,6 +1,7 @@
 const WRITE_CHARACTERISTIC = '12345678-1234-5678-1234-56789abcdef2';
 const RETRY_DELAY_MS = 5_000;
 const FULL_REFRESH_INTERVAL = 20;
+const WRITE_TIMEOUT_MS = 5_000;
 
 type Noble = {
   state: string;
@@ -44,6 +45,11 @@ export type DisplaySnapshot = {
   active: number;
 };
 
+export type BleDisplayOptions = {
+  retryDelayMs?: number;
+  writeTimeoutMs?: number;
+};
+
 export class BleDisplay {
   private characteristic: BleCharacteristic | null = null;
   private latestSnapshot: DisplaySnapshot | null = null;
@@ -54,7 +60,10 @@ export class BleDisplay {
   private started = false;
   private connectedPeripheral: BlePeripheral | null = null;
 
-  constructor(private readonly deviceName: string) {}
+  constructor(
+    private readonly deviceName: string,
+    private readonly options: BleDisplayOptions = {},
+  ) {}
 
   start(): void {
     if (this.started) {
@@ -105,7 +114,7 @@ export class BleDisplay {
         this.renderedSnapshot = null;
       }
 
-      await sleep(RETRY_DELAY_MS);
+      await sleep(this.options.retryDelayMs ?? RETRY_DELAY_MS);
     }
   }
 
@@ -174,12 +183,23 @@ export class BleDisplay {
     }
 
     await new Promise<void>((resolve, reject) => {
-      characteristic.write(Buffer.from(command, 'ascii'), false, (error) => {
+      let settled = false;
+      const finish = (error?: Error | null) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
         if (error) {
           reject(error);
           return;
         }
         resolve();
+      };
+      const timeout = setTimeout(() => {
+        finish(new Error(`Timed out writing display command: ${command}.`));
+      }, this.options.writeTimeoutMs ?? WRITE_TIMEOUT_MS);
+
+      characteristic.write(Buffer.from(command, 'ascii'), false, (error) => {
+        finish(error);
       });
     });
   }
