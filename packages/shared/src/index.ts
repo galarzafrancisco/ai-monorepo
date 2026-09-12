@@ -45,6 +45,27 @@ export const INTERNAL_WORKER_AUTH_SCOPES: Scope[] = [
   },
 ];
 
+export const DISPLAY_AUTH_TARGET_ID = 'taico-display';
+export const DISPLAY_AUTH_TARGET_VERSION = '0.0.0';
+export const DISPLAY_AUTH_TARGET_NAME = 'Taico Display';
+export const DISPLAY_AUTH_TARGET_DESCRIPTION =
+  'OAuth target for read-only Taico status displays.';
+
+export const DISPLAY_AUTH_SCOPES: Scope[] = [
+  {
+    id: 'tasks:read',
+    description: 'Allows users to read tasks, tags, comments, etc from Tasks.',
+  },
+  {
+    id: 'run:read',
+    description: 'Allows reading agent run information.',
+  },
+  {
+    id: 'workers:read',
+    description: 'Read workers.',
+  },
+];
+
 export const DEFAULT_AGENT_TOKEN_SCOPES = [
   'meta:read',
   'meta:write',

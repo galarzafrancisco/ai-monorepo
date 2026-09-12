@@ -27,6 +27,7 @@ import { StaleActiveTaskExecutionPrunerService } from './staleness/stale-active-
 import { StaleActiveTaskExecutionSchedulerService } from './staleness/stale-active-task-execution-scheduler.service';
 import { WorkersModule } from '../workers/workers.module';
 import { ExecutionStatsEntity } from './stats/execution-stats.entity';
+import { ExecutionsGateway } from './executions.gateway';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { ExecutionStatsEntity } from './stats/execution-stats.entity';
     ExecutionActivityService,
     TaskActivityProjectionService,
     ExecutionsWorkerGateway,
+    ExecutionsGateway,
     ReadinessCandidateRepository,
     TaskExecutionQueuePopulatorService,
     TaskEligibilityEventSourceService,

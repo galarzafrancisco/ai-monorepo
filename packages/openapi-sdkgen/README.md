@@ -1,6 +1,6 @@
 # @taico/openapi-sdkgen
 
-[![Socket Badge](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.4.0)](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.4.0)
+[![Socket Badge](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.4.1)](https://badge.socket.dev/npm/package/@taico/openapi-sdkgen/0.4.1)
 
 A TypeScript SDK generator from OpenAPI specs with focus on developer ergonomics and maintainability.
 

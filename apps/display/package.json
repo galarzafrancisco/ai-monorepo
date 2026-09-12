@@ -1,5 +1,5 @@
 {
-  "name": "@taico/worker",
+  "name": "@taico/display",
   "version": "0.4.1",
   "type": "module",
   "private": false,
@@ -7,7 +7,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "worker": "./dist/index.js"
+    "taico-display": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -23,18 +23,15 @@
   },
   "scripts": {
     "start": "tsx src/index.ts",
-    "test": "tsx src/test.ts",
     "build": "tsc -p tsconfig.build.json",
+    "test": "npm run build && node --test test/*.test.mjs",
     "build:prod": "npm run build",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "pack": "npm run build && npm pack",
     "release": "npm run build && npm publish --access public"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.3.161",
-    "@github/copilot-sdk": "^1.0.9",
-    "@google/adk": "^0.2.4",
-    "@opencode-ai/sdk": "^1.18.18",
+    "@stoprocent/noble": "^2.8.0",
     "@taico/client": "^0.4.1",
     "@taico/events": "^0.4.1",
     "@taico/shared": "^0.4.1",
@@ -42,7 +39,6 @@
   },
   "devDependencies": {
     "@types/node": "^24.12.2",
-    "esbuild": "0.25.12",
     "tsx": "4.21.0",
     "typescript": "^5.7.3"
   }

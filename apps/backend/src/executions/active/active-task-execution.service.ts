@@ -24,6 +24,7 @@ import {
 } from '../errors/executions.errors';
 import { ExecutionActivityService } from '../execution-activity.service';
 import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
+import { ActiveExecutionsChangedEvent } from '../events/active-executions-changed.event';
 import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
 import {
   ActiveTaskExecutionListResult,
@@ -201,6 +202,7 @@ export class ActiveTaskExecutionService {
       kind: 'execution.started',
       message: 'Execution started',
     });
+    this.eventEmitter.emit(ActiveExecutionsChangedEvent.INTERNAL, new ActiveExecutionsChangedEvent());
 
     return this.mapActiveExecutionToResult(execution);
   }
@@ -269,6 +271,7 @@ export class ActiveTaskExecutionService {
       kind: 'execution.history.added',
       message: `Execution history recorded (${historyEntry.status.toLowerCase()})`,
     });
+    this.eventEmitter.emit(ActiveExecutionsChangedEvent.INTERNAL, new ActiveExecutionsChangedEvent());
 
     return this.mapHistoryEntryToResult(historyEntry);
   }
@@ -309,6 +312,7 @@ export class ActiveTaskExecutionService {
       kind: 'execution.unclaimed',
       message: 'Execution unclaimed and returned to queue',
     });
+    this.eventEmitter.emit(ActiveExecutionsChangedEvent.INTERNAL, new ActiveExecutionsChangedEvent());
   }
 
   async updateRunnerSessionId(input: UpdateRunnerSessionIdInput): Promise<void> {

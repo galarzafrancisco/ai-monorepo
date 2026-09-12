@@ -53,6 +53,8 @@ import { ChatProviderType } from 'src/chat-providers/enums';
 import {
   createInternalWorkerAuthScopes,
   createInternalWorkerAuthTarget,
+  createDisplayAuthScopes,
+  createDisplayAuthTarget,
 } from './mcp/internal-worker-auth.mcp';
 
 @Injectable()
@@ -241,6 +243,14 @@ export class AppInitRunner implements OnApplicationBootstrap {
       );
     } catch (error) {
       this.logger.error('Error ensuring internal worker auth target exists');
+    }
+    try {
+      await this.ensureMcpServerExists(
+        createDisplayAuthTarget(),
+        createDisplayAuthScopes,
+      );
+    } catch (error) {
+      this.logger.error('Error ensuring display auth target exists');
     }
     try {
       await this.ensureMcpServerExists(createTasks(), createTasksScopes);

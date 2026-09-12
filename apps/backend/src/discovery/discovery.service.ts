@@ -19,6 +19,8 @@ import { InvalidServerConfigurationError } from 'src/mcp-registry/errors/mcp-reg
 import {
   createInternalWorkerAuthScopes,
   createInternalWorkerAuthTarget,
+  createDisplayAuthScopes,
+  createDisplayAuthTarget,
 } from 'src/app-init/mcp/internal-worker-auth.mcp';
 
 @Injectable()
@@ -33,6 +35,7 @@ export class DiscoveryService {
       createInternalWorkerAuthTarget(),
       createInternalWorkerAuthScopes,
     );
+    this.populateSystemServer(createDisplayAuthTarget(), createDisplayAuthScopes);
     this.populateSystemServer(createTasks(), createTasksScopes);
     this.populateSystemServer(createContext(), createContextScopes);
   }
