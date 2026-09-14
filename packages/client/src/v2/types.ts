@@ -37,6 +37,10 @@ export interface ProjectResponseDto {
   updatedAt: string;
 }
 
+export interface ImportProjectsResponseDto {
+  importedCount: number;
+}
+
 export interface PatchProjectDto {
   description?: string;
   repoUrl?: string;

@@ -1,5 +1,5 @@
 import { BaseClient, ClientConfig } from './base-client.js';
-import type { CreateProjectDto, PatchProjectDto, ProjectResponseDto } from './types.js';
+import type { CreateProjectDto, ImportProjectsResponseDto, PatchProjectDto, ProjectResponseDto } from './types.js';
 
 export class MetaProjectsResource extends BaseClient {
   constructor(config: ClientConfig) {
@@ -14,6 +14,16 @@ export class MetaProjectsResource extends BaseClient {
   /** Get all projects */
   async ProjectsController_getAllProjects(params?: { signal?: AbortSignal }): Promise<ProjectResponseDto[]> {
     return this.request('GET', '/api/v1/meta/projects', { signal: params?.signal });
+  }
+
+  /** Export all projects as JSON */
+  async ProjectsController_exportProjects(params?: { signal?: AbortSignal }): Promise<Blob> {
+    return this.request('GET', '/api/v1/meta/projects/export', { signal: params?.signal });
+  }
+
+  /** Import projects from JSON */
+  async ProjectsController_importProjects(params: { body: FormData; signal?: AbortSignal }): Promise<ImportProjectsResponseDto> {
+    return this.request('POST', '/api/v1/meta/projects/import', { body: params.body, bodyType: 'form-data', signal: params?.signal });
   }
 
   /** Search projects by name and description */

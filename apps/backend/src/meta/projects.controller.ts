@@ -11,6 +11,11 @@ import {
   HttpStatus,
   UseGuards,
   NotFoundException,
+  BadRequestException,
+  Res,
+  StreamableFile,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,11 +27,17 @@ import {
   ApiNotFoundResponse,
   ApiCookieAuth,
   ApiQuery,
+  ApiProduces,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { PatchProjectDto } from './dto/patch-project.dto';
 import { ProjectResponseDto } from './dto/project-response.dto';
+import { ImportProjectsResponseDto } from './dto/import-projects-response.dto';
 import { ProjectResult } from './dto/service/projects.service.types';
 import { AccessTokenGuard } from '../auth/guards/guards/access-token.guard';
 import { ScopesGuard } from '../auth/guards/guards/scopes.guard';
@@ -70,6 +81,79 @@ export class ProjectsController {
   async getAllProjects(): Promise<ProjectResponseDto[]> {
     const result = await this.projectsService.getAllProjects();
     return result.map((project) => this.mapProjectResultToResponse(project));
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Export all projects as JSON' })
+  @ApiProduces('application/json')
+  @ApiOkResponse({
+    description: 'Projects JSON downloaded successfully',
+    schema: {
+      type: 'string',
+      format: 'binary',
+    },
+  })
+  async exportProjects(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const file = await this.projectsService.exportProjectsAsJson();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `projects-${timestamp}.json`;
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', file.byteLength.toString());
+
+    return new StreamableFile(file);
+  }
+
+  @Post('import')
+  @RequireScopes(MetaScopes.WRITE.id)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Import projects from JSON' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'JSON file exported from projects',
+        },
+      },
+    },
+  })
+  @ApiCreatedResponse({
+    type: ImportProjectsResponseDto,
+    description: 'Projects imported successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'No JSON file uploaded or invalid file type',
+  })
+  async importProjects(
+    @UploadedFile()
+    file:
+      | {
+          buffer: Buffer;
+          originalname: string;
+          mimetype: string;
+        }
+      | undefined,
+  ): Promise<ImportProjectsResponseDto> {
+    if (!file) {
+      throw new BadRequestException('A JSON file is required');
+    }
+
+    const lowerName = file.originalname.toLowerCase();
+    const isJsonMime =
+      file.mimetype === 'application/json' || file.mimetype === 'text/json';
+    if (!lowerName.endsWith('.json') && !isJsonMime) {
+      throw new BadRequestException('Only .json files are supported');
+    }
+
+    return this.projectsService.importProjectsFromJson(file.buffer);
   }
 
   @Get('search')

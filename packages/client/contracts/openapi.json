@@ -314,6 +314,84 @@
         ]
       }
     },
+    "/api/v1/meta/projects/export": {
+      "get": {
+        "operationId": "ProjectsController_exportProjects",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Projects JSON downloaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Export all projects as JSON",
+        "tags": [
+          "Meta - Projects"
+        ]
+      }
+    },
+    "/api/v1/meta/projects/import": {
+      "post": {
+        "operationId": "ProjectsController_importProjects",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JSON file exported from projects"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Projects imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportProjectsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No JSON file uploaded or invalid file type"
+          }
+        },
+        "security": [
+          {
+            "JWT-Cookie": []
+          }
+        ],
+        "summary": "Import projects from JSON",
+        "tags": [
+          "Meta - Projects"
+        ]
+      }
+    },
     "/api/v1/meta/projects/search": {
       "get": {
         "operationId": "ProjectsController_searchProjects",
@@ -7565,6 +7643,18 @@
           "slug",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "ImportProjectsResponseDto": {
+        "type": "object",
+        "properties": {
+          "importedCount": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "importedCount"
         ]
       },
       "PatchProjectDto": {
