@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, In, SelectQueryBuilder } from 'typeorm';
+import { Repository, In, IsNull, SelectQueryBuilder } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
@@ -149,7 +149,8 @@ export class TasksService {
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: savedTask.id },
+      where: { id: savedTask.id, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -275,7 +276,8 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -343,7 +345,8 @@ export class TasksService {
 
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -386,7 +389,8 @@ export class TasksService {
 
     this.logger.debug(`finding task ${taskId}`);
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -423,7 +427,8 @@ export class TasksService {
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -580,6 +585,7 @@ export class TasksService {
   ): SelectQueryBuilder<TaskEntity> {
     const queryBuilder = taskRepository
       .createQueryBuilder('task')
+      .withDeleted()
       .leftJoinAndSelect('task.comments', 'comments')
       .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
       .leftJoinAndSelect('task.artefacts', 'artefacts')
@@ -587,7 +593,8 @@ export class TasksService {
       .leftJoinAndSelect('task.tags', 'tags')
       .leftJoinAndSelect('task.dependsOn', 'dependsOn')
       .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
-      .leftJoinAndSelect('task.createdByActor', 'createdByActor');
+      .leftJoinAndSelect('task.createdByActor', 'createdByActor')
+      .andWhere('task.deletedAt IS NULL');
 
     if (input.tag) {
       queryBuilder
@@ -620,7 +627,8 @@ export class TasksService {
 
   async getTaskById(taskId: string): Promise<TaskResult> {
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -740,7 +748,8 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -790,7 +799,8 @@ export class TasksService {
 
     // Reload to get updated comments if any were added
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -877,7 +887,8 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -914,7 +925,8 @@ export class TasksService {
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -950,7 +962,8 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -981,7 +994,8 @@ export class TasksService {
 
     // Reload with relations to get updated task
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
