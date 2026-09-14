@@ -292,7 +292,12 @@ export class AgentsService {
       throw new AgentNotFoundError(actorId);
     }
 
-    await this.agentRepository.softRemove(agent);
+    await this.agentRepository.manager.transaction(async (manager) => {
+      await manager.getRepository(ActorEntity).update(agent.actorId, {
+        deactivatedAt: new Date(),
+      });
+      await manager.getRepository(AgentEntity).softRemove(agent);
+    });
 
     this.eventEmitter.emit('agent.deleted', new AgentDeletedEvent(actorId));
   }

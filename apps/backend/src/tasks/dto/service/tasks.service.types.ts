@@ -13,6 +13,7 @@ export type ActorResult = {
   displayName: string;
   avatarUrl: string | null;
   introduction: string | null;
+  isDeactivated?: boolean;
 };
 
 // Input types (for service methods)

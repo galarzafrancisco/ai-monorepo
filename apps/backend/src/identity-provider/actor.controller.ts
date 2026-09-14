@@ -25,14 +25,7 @@ export class ActorController {
   })
   async listActors(): Promise<ActorResponseDto[]> {
     const actors = await this.actorService.listActors();
-    return actors.map((actor) => ({
-      id: actor.id,
-      type: actor.type,
-      slug: actor.slug,
-      displayName: actor.displayName,
-      avatarUrl: actor.avatarUrl,
-      introduction: actor.introduction,
-    }));
+    return actors.map(ActorResponseDto.fromEntity);
   }
 
   @Get('search')
@@ -50,13 +43,6 @@ export class ActorController {
       threshold: query.threshold,
     });
 
-    return results.map(({ item: actor }) => ({
-      id: actor.id,
-      type: actor.type,
-      slug: actor.slug,
-      displayName: actor.displayName,
-      avatarUrl: actor.avatarUrl,
-      introduction: actor.introduction,
-    }));
+    return results.map(({ item: actor }) => ActorResponseDto.fromEntity(actor));
   }
 }

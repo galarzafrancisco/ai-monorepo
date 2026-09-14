@@ -133,9 +133,14 @@ export class ActorService {
    * List all actors
    */
   async listActors(): Promise<ActorEntity[]> {
-    return this.actorRepository.find({
-      order: { displayName: 'ASC' },
-    });
+    return this.actorRepository
+      .createQueryBuilder('actor')
+      .leftJoin('actor.agent', 'agent')
+      .where('(actor.type != :agentType OR agent.id IS NOT NULL)', {
+        agentType: ActorType.AGENT,
+      })
+      .orderBy('actor.displayName', 'ASC')
+      .getMany();
   }
 
   /**

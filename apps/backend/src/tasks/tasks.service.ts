@@ -464,7 +464,8 @@ export class TasksService {
     }
 
     // Check if task is a parent of any threads
-    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(taskId);
+    const threadsWithParent =
+      await this.threadsService.findThreadsByParentTaskId(taskId);
     if (threadsWithParent.length > 0) {
       throw new TaskIsThreadParentError(taskId, threadsWithParent.length);
     }
@@ -498,61 +499,63 @@ export class TasksService {
 
     const skip = (input.page - 1) * input.limit;
 
-    const result = await this.taskRepository.manager.transaction(async (manager) => {
-      const taskRepository = manager.getRepository(TaskEntity);
+    const result = await this.taskRepository.manager.transaction(
+      async (manager) => {
+        const taskRepository = manager.getRepository(TaskEntity);
 
-      if (input.status) {
-        const queryBuilder = this.createListTasksQuery(taskRepository, input)
-          .orderBy('task.updatedAt', 'DESC')
-          .skip(skip)
-          .take(input.limit);
-        const [tasks, total] = await queryBuilder.getManyAndCount();
+        if (input.status) {
+          const queryBuilder = this.createListTasksQuery(taskRepository, input)
+            .orderBy('task.updatedAt', 'DESC')
+            .skip(skip)
+            .take(input.limit);
+          const [tasks, total] = await queryBuilder.getManyAndCount();
+
+          return {
+            tasks,
+            total,
+            totalPages: Math.ceil(total / input.limit),
+          };
+        }
+
+        const tasks: TaskEntity[] = [];
+        const totalsByStatus: number[] = [];
+
+        for (const status of Object.values(TaskStatus)) {
+          const count = await this.createListTasksQuery(
+            taskRepository,
+            input,
+            status,
+          ).getCount();
+          totalsByStatus.push(count);
+
+          if (count <= skip) {
+            continue;
+          }
+
+          const statusTasks = await this.createListTasksQuery(
+            taskRepository,
+            input,
+            status,
+          )
+            .orderBy('task.updatedAt', 'DESC')
+            .skip(skip)
+            .take(input.limit)
+            .getMany();
+          tasks.push(...statusTasks);
+        }
+
+        tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
         return {
           tasks,
-          total,
-          totalPages: Math.ceil(total / input.limit),
+          total: totalsByStatus.reduce((sum, count) => sum + count, 0),
+          totalPages: Math.max(
+            0,
+            ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
+          ),
         };
-      }
-
-      const tasks: TaskEntity[] = [];
-      const totalsByStatus: number[] = [];
-
-      for (const status of Object.values(TaskStatus)) {
-        const count = await this.createListTasksQuery(
-          taskRepository,
-          input,
-          status,
-        ).getCount();
-        totalsByStatus.push(count);
-
-        if (count <= skip) {
-          continue;
-        }
-
-        const statusTasks = await this.createListTasksQuery(
-          taskRepository,
-          input,
-          status,
-        )
-          .orderBy('task.updatedAt', 'DESC')
-          .skip(skip)
-          .take(input.limit)
-          .getMany();
-        tasks.push(...statusTasks);
-      }
-
-      tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-
-      return {
-        tasks,
-        total: totalsByStatus.reduce((sum, count) => sum + count, 0),
-        totalPages: Math.max(
-          0,
-          ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
-        ),
-      };
-    });
+      },
+    );
 
     this.logger.log({
       message: 'Tasks listed',
@@ -833,9 +836,8 @@ export class TasksService {
     taskId: string,
     actorId: string,
   ): Promise<void> {
-    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(
-      taskId,
-    );
+    const threadsWithParent =
+      await this.threadsService.findThreadsByParentTaskId(taskId);
     if (threadsWithParent.length > 0) {
       this.logger.log({
         message: 'Auto-prune skipped because task is a thread parent',
@@ -1064,6 +1066,7 @@ export class TasksService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      isDeactivated: actor.deactivatedAt !== null,
     };
   }
 

@@ -36,6 +36,9 @@ export class ActorEntity {
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
+  @Column({ type: 'timestamptz', name: 'deactivated_at', nullable: true })
+  deactivatedAt!: Date | null;
+
   @OneToOne(() => User, (user) => user.actor)
   user?: User;
 
