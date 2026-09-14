@@ -217,6 +217,8 @@ export class ScheduledTasksService {
       where: {
         enabled: true,
         nextRunAt: LessThanOrEqual(now),
+        // withDeleted retains actor history; keep deleted schedules out of execution.
+        deletedAt: IsNull(),
       },
       relations: [
         'taskBlueprint',

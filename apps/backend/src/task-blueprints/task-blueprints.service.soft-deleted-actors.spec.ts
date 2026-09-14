@@ -9,6 +9,7 @@ jest.mock('../threads/chat.service', () => ({
 import { TaskBlueprintsService } from './task-blueprints.service';
 import { ScheduledTasksService } from './scheduled-tasks.service';
 import { ActorType } from '../identity-provider/enums';
+import { IsNull } from 'typeorm';
 
 describe('task blueprint soft-deleted actors', () => {
   const deletedAt = new Date('2026-09-14T08:00:00.000Z');
@@ -110,5 +111,28 @@ describe('task blueprint soft-deleted actors', () => {
       id: actor.id,
       isDeactivated: true,
     });
+  });
+
+  it('excludes deleted schedules from due execution while retaining actors', async () => {
+    const scheduledTaskRepository = {
+      find: jest.fn().mockResolvedValue([]),
+    };
+    const service = new ScheduledTasksService(
+      scheduledTaskRepository as any,
+      {} as any,
+      {} as any,
+    );
+
+    await service.getDueScheduledTasks();
+
+    expect(scheduledTaskRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        withDeleted: true,
+        where: expect.objectContaining({
+          enabled: true,
+          deletedAt: IsNull(),
+        }),
+      }),
+    );
   });
 });
