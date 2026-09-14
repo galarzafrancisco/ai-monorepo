@@ -1308,6 +1308,7 @@ export class ThreadsService {
     const [messages, total] = await this.threadMessageRepository.findAndCount({
       where: { threadId: input.threadId },
       relations: ['createdByActor'],
+      withDeleted: true,
       order: { createdAt: 'ASC' },
       skip,
       take: input.limit,
