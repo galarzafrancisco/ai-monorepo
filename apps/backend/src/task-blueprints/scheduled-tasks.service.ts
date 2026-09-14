@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThanOrEqual, Repository } from 'typeorm';
+import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
 import { CronExpressionParser } from 'cron-parser';
 import { ScheduledTaskEntity } from './scheduled-task.entity';
 import { TaskBlueprintEntity } from './task-blueprint.entity';
@@ -82,7 +82,8 @@ export class ScheduledTasksService {
     });
 
     const scheduledTask = await this.scheduledTaskRepository.findOne({
-      where: { id: scheduledTaskId },
+      where: { id: scheduledTaskId, deletedAt: IsNull() },
+      withDeleted: true,
     });
 
     if (!scheduledTask) {
@@ -137,7 +138,12 @@ export class ScheduledTasksService {
   ): Promise<ScheduledTaskResult> {
     const scheduledTask = await this.scheduledTaskRepository.findOne({
       where: { id: scheduledTaskId },
-      relations: ['taskBlueprint', 'taskBlueprint.tags', 'taskBlueprint.assigneeActor', 'taskBlueprint.createdByActor'],
+      relations: [
+        'taskBlueprint',
+        'taskBlueprint.tags',
+        'taskBlueprint.assigneeActor',
+        'taskBlueprint.createdByActor',
+      ],
     });
 
     if (!scheduledTask) {
@@ -161,6 +167,7 @@ export class ScheduledTasksService {
 
     const queryBuilder = this.scheduledTaskRepository
       .createQueryBuilder('scheduledTask')
+      .withDeleted()
       .leftJoinAndSelect('scheduledTask.taskBlueprint', 'taskBlueprint')
       .leftJoinAndSelect('taskBlueprint.tags', 'tags')
       .leftJoinAndSelect('taskBlueprint.assigneeActor', 'assigneeActor')
@@ -168,6 +175,10 @@ export class ScheduledTasksService {
       .orderBy('scheduledTask.nextRunAt', 'ASC')
       .skip(skip)
       .take(input.limit);
+
+    queryBuilder
+      .andWhere('scheduledTask.deletedAt IS NULL')
+      .andWhere('taskBlueprint.deletedAt IS NULL');
 
     if (input.enabled !== undefined) {
       queryBuilder.andWhere('scheduledTask.enabled = :enabled', {
@@ -205,13 +216,21 @@ export class ScheduledTasksService {
         enabled: true,
         nextRunAt: LessThanOrEqual(now),
       },
-      relations: ['taskBlueprint', 'taskBlueprint.tags', 'taskBlueprint.assigneeActor', 'taskBlueprint.createdByActor'],
+      relations: [
+        'taskBlueprint',
+        'taskBlueprint.tags',
+        'taskBlueprint.assigneeActor',
+        'taskBlueprint.createdByActor',
+      ],
+      withDeleted: true,
       order: {
         nextRunAt: 'ASC',
       },
     });
 
-    return dueTasks.map((task) => this.mapScheduledTaskToResult(task));
+    return dueTasks
+      .filter((task) => task.taskBlueprint?.deletedAt == null)
+      .map((task) => this.mapScheduledTaskToResult(task));
   }
 
   /**
@@ -304,24 +323,24 @@ export class ScheduledTasksService {
     });
   }
 
-   /**
-    * Validates cron expression and calculates the next run time
-    * Uses Australia/Sydney timezone for all cron calculations
-    */
-   private calculateNextRun(cronExpression: string, from?: Date): Date {
-     try {
-       const interval = CronExpressionParser.parse(cronExpression, {
-         currentDate: from || new Date(),
-         tz: 'Australia/Sydney',
-       });
-       return interval.next().toDate();
-     } catch (error) {
-       throw new InvalidCronExpressionError(
-         cronExpression,
-         error instanceof Error ? error.message : undefined,
-       );
-     }
-   }
+  /**
+   * Validates cron expression and calculates the next run time
+   * Uses Australia/Sydney timezone for all cron calculations
+   */
+  private calculateNextRun(cronExpression: string, from?: Date): Date {
+    try {
+      const interval = CronExpressionParser.parse(cronExpression, {
+        currentDate: from || new Date(),
+        tz: 'Australia/Sydney',
+      });
+      return interval.next().toDate();
+    } catch (error) {
+      throw new InvalidCronExpressionError(
+        cronExpression,
+        error instanceof Error ? error.message : undefined,
+      );
+    }
+  }
 
   private mapScheduledTaskToResult(
     scheduledTask: ScheduledTaskEntity,
@@ -329,9 +348,13 @@ export class ScheduledTasksService {
     return {
       id: scheduledTask.id,
       taskBlueprintId: scheduledTask.taskBlueprintId,
-      taskBlueprint: scheduledTask.taskBlueprint
-        ? this.taskBlueprintsService.mapBlueprintToResult(scheduledTask.taskBlueprint)
-        : undefined,
+      taskBlueprint:
+        scheduledTask.taskBlueprint?.deletedAt == null &&
+        scheduledTask.taskBlueprint
+          ? this.taskBlueprintsService.mapBlueprintToResult(
+              scheduledTask.taskBlueprint,
+            )
+          : undefined,
       cronExpression: scheduledTask.cronExpression,
       enabled: scheduledTask.enabled,
       lastRunAt: scheduledTask.lastRunAt,

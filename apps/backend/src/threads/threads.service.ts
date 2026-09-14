@@ -648,7 +648,7 @@ export class ThreadsService {
       )
       .leftJoinAndSelect('thread.tags', 'tags')
       .leftJoinAndSelect('thread.participants', 'participants')
-      .innerJoin('thread.tasks', 'filterTask')
+      .innerJoin('thread.tasks', 'filterTask', 'filterTask.deletedAt IS NULL')
       .where('filterTask.id = :taskId', { taskId })
       .andWhere('thread.deletedAt IS NULL')
       .getOne();
@@ -937,10 +937,12 @@ export class ThreadsService {
       createdByActor: this.mapActorToResult(thread.createdByActor),
       parentTaskId: thread.parentTaskId || null,
       stateContextBlockId: thread.stateContextBlockId,
-      tasks: (thread.tasks || []).map((task) => this.mapTaskToSummary(task)),
-      referencedContextBlocks: (thread.referencedContextBlocks || []).map(
-        (block) => this.mapContextBlockToSummary(block),
-      ),
+      tasks: (thread.tasks || [])
+        .filter((task) => task.deletedAt == null)
+        .map((task) => this.mapTaskToSummary(task)),
+      referencedContextBlocks: (thread.referencedContextBlocks || [])
+        .filter((block) => block.deletedAt == null)
+        .map((block) => this.mapContextBlockToSummary(block)),
       tags: (thread.tags || []).map((tag) => this.mapTagToResult(tag)),
       participants: (thread.participants || []).map((actor) =>
         this.mapActorToResult(actor),
