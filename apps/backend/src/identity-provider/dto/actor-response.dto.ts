@@ -39,11 +39,19 @@ export class ActorResponseDto {
 
   @ApiPropertyOptional({
     type: String,
-    description: 'Short description of what this actor is good at and when to assign them tasks',
-    example: 'Expert in React and TypeScript development. Assign me frontend tasks.',
+    description:
+      'Short description of what this actor is good at and when to assign them tasks',
+    example:
+      'Expert in React and TypeScript development. Assign me frontend tasks.',
     nullable: true,
   })
   introduction!: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Whether this actor has been deactivated while retaining history',
+  })
+  isDeactivated?: boolean;
 
   /**
    * Factory method to create an ActorResponseDto from an ActorResult.
@@ -57,6 +65,7 @@ export class ActorResponseDto {
       displayName: result.displayName,
       avatarUrl: result.avatarUrl,
       introduction: result.introduction,
+      isDeactivated: result.isDeactivated,
     };
   }
 
@@ -72,6 +81,7 @@ export class ActorResponseDto {
       displayName: entity.displayName,
       avatarUrl: entity.avatarUrl,
       introduction: entity.introduction,
+      isDeactivated: entity.deletedAt !== null,
     };
   }
 }

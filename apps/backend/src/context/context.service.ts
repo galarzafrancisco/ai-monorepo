@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import JSZip from 'jszip';
 import { ContextBlockEntity } from './block.entity';
@@ -118,7 +118,8 @@ export class ContextService {
 
     // Reload with relations
     const blockWithTags = await this.blockRepository.findOne({
-      where: { id: saved.id },
+      where: { id: saved.id, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -145,15 +146,17 @@ export class ContextService {
         parentId: input?.parentId,
         updatedAfter: input?.updatedAfter,
         limit: input?.limit,
-      }
+      },
     });
 
     // Use query builder for complex filtering
     let queryBuilder = this.blockRepository
       .createQueryBuilder('block')
+      .withDeleted()
       .leftJoinAndSelect('block.tags', 'tags')
       .leftJoinAndSelect('block.createdByActor', 'createdByActor')
-      .leftJoinAndSelect('block.assigneeActor', 'assigneeActor');
+      .leftJoinAndSelect('block.assigneeActor', 'assigneeActor')
+      .andWhere('block.deletedAt IS NULL');
 
     // Apply tag filter if provided
     if (input?.tag) {
@@ -164,9 +167,12 @@ export class ContextService {
 
     // Apply createdByActorId filter if provided
     if (input?.createdByActorId) {
-      queryBuilder = queryBuilder.andWhere('block.createdByActorId = :createdByActorId', {
-        createdByActorId: input.createdByActorId,
-      });
+      queryBuilder = queryBuilder.andWhere(
+        'block.createdByActorId = :createdByActorId',
+        {
+          createdByActorId: input.createdByActorId,
+        },
+      );
     }
 
     // Apply parentId filter if provided (including explicit null)
@@ -204,7 +210,8 @@ export class ContextService {
     this.logger.log({ message: 'Fetching context block', blockId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -222,7 +229,8 @@ export class ContextService {
     this.logger.log({ message: 'Updating context block', blockId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -278,7 +286,8 @@ export class ContextService {
 
     // Reload with relations
     const blockWithTags = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -302,7 +311,8 @@ export class ContextService {
     this.logger.log({ message: 'Appending context block content', blockId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -354,7 +364,8 @@ export class ContextService {
     }
 
     // Check if block is a state block for any threads
-    const threadsWithState = await this.threadsService.findThreadsByStateBlockId(blockId);
+    const threadsWithState =
+      await this.threadsService.findThreadsByStateBlockId(blockId);
     if (threadsWithState.length > 0) {
       throw new BlockIsThreadStateError(blockId, threadsWithState.length);
     }
@@ -471,7 +482,8 @@ export class ContextService {
       parentId === null ? { parentId: null as any } : { parentId };
 
     const children = await this.blockRepository.find({
-      where: whereClause,
+      where: { ...whereClause, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
       order: { order: 'ASC' },
     });
@@ -484,6 +496,8 @@ export class ContextService {
 
     // Get all blocks with actor relations
     const allBlocks = await this.blockRepository.find({
+      where: { deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['createdByActor'],
       order: { order: 'ASC' },
     });
@@ -731,7 +745,11 @@ export class ContextService {
     }
 
     const importRoot = this.resolveImportRootDirectory(root);
-    const importedCount = await this.importArchiveDirectory(importRoot, null, createdByActorId);
+    const importedCount = await this.importArchiveDirectory(
+      importRoot,
+      null,
+      createdByActorId,
+    );
 
     this.logger.log({
       message: 'Imported context blocks from zip archive',
@@ -827,7 +845,8 @@ export class ContextService {
     const [directoryName, directory] = [...root.directories.entries()][0];
     const normalizedName = directoryName.toLowerCase();
     const isExpectedArchiveRoot =
-      normalizedName === 'context-blocks' || normalizedName.startsWith('context-blocks-');
+      normalizedName === 'context-blocks' ||
+      normalizedName.startsWith('context-blocks-');
     if (!isExpectedArchiveRoot) {
       return root;
     }

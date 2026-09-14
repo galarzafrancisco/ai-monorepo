@@ -3022,6 +3022,8 @@ export interface components {
              * @example Expert in React and TypeScript development. Assign me frontend tasks.
              */
             introduction?: string | null;
+            /** @description Whether this actor has been deactivated while retaining history */
+            isDeactivated?: boolean;
         };
         McpFlowResponseDto: {
             /**

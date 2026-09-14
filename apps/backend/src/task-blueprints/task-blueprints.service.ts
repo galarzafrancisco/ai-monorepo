@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, In } from 'typeorm';
+import { Repository, In, IsNull } from 'typeorm';
 import { TaskBlueprintEntity } from './task-blueprint.entity';
 import { ScheduledTaskEntity } from './scheduled-task.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -20,7 +20,11 @@ import {
   TaskBlueprintHasActiveSchedulesError,
 } from './errors/task-blueprints.errors';
 import { TagEntity } from '../meta/tag.entity';
-import { ActorResult, TagResult, TaskResult } from '../tasks/dto/service/tasks.service.types';
+import {
+  ActorResult,
+  TagResult,
+  TaskResult,
+} from '../tasks/dto/service/tasks.service.types';
 
 @Injectable()
 export class TaskBlueprintsService {
@@ -94,7 +98,8 @@ export class TaskBlueprintsService {
 
     // Reload with relations
     const blueprintWithRelations = await this.taskBlueprintRepository.findOne({
-      where: { id: savedBlueprint.id },
+      where: { id: savedBlueprint.id, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
@@ -121,7 +126,8 @@ export class TaskBlueprintsService {
     });
 
     const blueprint = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { id: blueprintId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
@@ -164,12 +170,12 @@ export class TaskBlueprintsService {
       blueprint.dependsOnIds = input.dependsOnIds;
     }
 
-    const updatedBlueprint =
-      await this.taskBlueprintRepository.save(blueprint);
+    const updatedBlueprint = await this.taskBlueprintRepository.save(blueprint);
 
     // Reload with relations to ensure we have updated tags
     const blueprintWithRelations = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { id: blueprintId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
@@ -192,7 +198,8 @@ export class TaskBlueprintsService {
     });
 
     const blueprint = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { id: blueprintId, deletedAt: IsNull() },
+      withDeleted: true,
     });
 
     if (!blueprint) {
@@ -218,9 +225,13 @@ export class TaskBlueprintsService {
     });
   }
 
-  async getTaskBlueprintById(blueprintId: string): Promise<TaskBlueprintResult> {
+  async getTaskBlueprintById(
+    blueprintId: string,
+  ): Promise<TaskBlueprintResult> {
     const blueprint = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { id: blueprintId, deletedAt: IsNull() },
+      // Keep a deleted actor available for historical blueprint attribution.
+      withDeleted: true,
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
@@ -244,12 +255,15 @@ export class TaskBlueprintsService {
 
     const queryBuilder = this.taskBlueprintRepository
       .createQueryBuilder('blueprint')
+      .withDeleted()
       .leftJoinAndSelect('blueprint.tags', 'tags')
       .leftJoinAndSelect('blueprint.assigneeActor', 'assigneeActor')
       .leftJoinAndSelect('blueprint.createdByActor', 'createdByActor')
       .orderBy('blueprint.updatedAt', 'DESC')
       .skip(skip)
       .take(input.limit);
+
+    queryBuilder.andWhere('blueprint.deletedAt IS NULL');
 
     const [blueprints, total] = await queryBuilder.getManyAndCount();
 
@@ -288,6 +302,7 @@ export class TaskBlueprintsService {
       tagNames: blueprint.tags.map((tag) => tag.name),
       dependsOnIds: blueprint.dependsOnIds,
       createdByActorId: blueprint.createdByActor.id,
+      allowDeletedCreator: true,
     });
 
     this.logger.log({
@@ -303,9 +318,7 @@ export class TaskBlueprintsService {
    * Maps a TaskBlueprintEntity to TaskBlueprintResult.
    * Public to allow reuse by ScheduledTasksService.
    */
-  mapBlueprintToResult(
-    blueprint: TaskBlueprintEntity,
-  ): TaskBlueprintResult {
+  mapBlueprintToResult(blueprint: TaskBlueprintEntity): TaskBlueprintResult {
     if (!blueprint.createdByActor) {
       throw new Error(
         `Blueprint ${blueprint.id} is missing createdByActor relation`,
@@ -338,6 +351,7 @@ export class TaskBlueprintsService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      isDeactivated: actor.deletedAt !== null,
     };
   }
 

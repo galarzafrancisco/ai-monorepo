@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Repository, In, SelectQueryBuilder } from 'typeorm';
+import { Repository, In, IsNull, SelectQueryBuilder } from 'typeorm';
 import { TaskEntity } from './task.entity';
 import { TaskStatus } from './enums';
 import { CommentEntity } from './comment.entity';
@@ -106,6 +106,7 @@ export class TasksService {
     // createdBy is required - look up the actor first by id then slug
     const createdByActor = await this.actorService.getActorByIdOrSlug(
       input.createdByActorId,
+      input.allowDeletedCreator,
     );
     if (!createdByActor) {
       throw new Error(`Creator actor not found: ${input.createdByActorId}`);
@@ -149,7 +150,8 @@ export class TasksService {
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: savedTask.id },
+      where: { id: savedTask.id, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -275,7 +277,8 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -343,7 +346,8 @@ export class TasksService {
 
     // Reload with relations to ensure we have updated tags
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -386,7 +390,8 @@ export class TasksService {
 
     this.logger.debug(`finding task ${taskId}`);
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -423,7 +428,8 @@ export class TasksService {
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -464,7 +470,8 @@ export class TasksService {
     }
 
     // Check if task is a parent of any threads
-    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(taskId);
+    const threadsWithParent =
+      await this.threadsService.findThreadsByParentTaskId(taskId);
     if (threadsWithParent.length > 0) {
       throw new TaskIsThreadParentError(taskId, threadsWithParent.length);
     }
@@ -498,61 +505,63 @@ export class TasksService {
 
     const skip = (input.page - 1) * input.limit;
 
-    const result = await this.taskRepository.manager.transaction(async (manager) => {
-      const taskRepository = manager.getRepository(TaskEntity);
+    const result = await this.taskRepository.manager.transaction(
+      async (manager) => {
+        const taskRepository = manager.getRepository(TaskEntity);
 
-      if (input.status) {
-        const queryBuilder = this.createListTasksQuery(taskRepository, input)
-          .orderBy('task.updatedAt', 'DESC')
-          .skip(skip)
-          .take(input.limit);
-        const [tasks, total] = await queryBuilder.getManyAndCount();
+        if (input.status) {
+          const queryBuilder = this.createListTasksQuery(taskRepository, input)
+            .orderBy('task.updatedAt', 'DESC')
+            .skip(skip)
+            .take(input.limit);
+          const [tasks, total] = await queryBuilder.getManyAndCount();
+
+          return {
+            tasks,
+            total,
+            totalPages: Math.ceil(total / input.limit),
+          };
+        }
+
+        const tasks: TaskEntity[] = [];
+        const totalsByStatus: number[] = [];
+
+        for (const status of Object.values(TaskStatus)) {
+          const count = await this.createListTasksQuery(
+            taskRepository,
+            input,
+            status,
+          ).getCount();
+          totalsByStatus.push(count);
+
+          if (count <= skip) {
+            continue;
+          }
+
+          const statusTasks = await this.createListTasksQuery(
+            taskRepository,
+            input,
+            status,
+          )
+            .orderBy('task.updatedAt', 'DESC')
+            .skip(skip)
+            .take(input.limit)
+            .getMany();
+          tasks.push(...statusTasks);
+        }
+
+        tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
         return {
           tasks,
-          total,
-          totalPages: Math.ceil(total / input.limit),
+          total: totalsByStatus.reduce((sum, count) => sum + count, 0),
+          totalPages: Math.max(
+            0,
+            ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
+          ),
         };
-      }
-
-      const tasks: TaskEntity[] = [];
-      const totalsByStatus: number[] = [];
-
-      for (const status of Object.values(TaskStatus)) {
-        const count = await this.createListTasksQuery(
-          taskRepository,
-          input,
-          status,
-        ).getCount();
-        totalsByStatus.push(count);
-
-        if (count <= skip) {
-          continue;
-        }
-
-        const statusTasks = await this.createListTasksQuery(
-          taskRepository,
-          input,
-          status,
-        )
-          .orderBy('task.updatedAt', 'DESC')
-          .skip(skip)
-          .take(input.limit)
-          .getMany();
-        tasks.push(...statusTasks);
-      }
-
-      tasks.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-
-      return {
-        tasks,
-        total: totalsByStatus.reduce((sum, count) => sum + count, 0),
-        totalPages: Math.max(
-          0,
-          ...totalsByStatus.map((count) => Math.ceil(count / input.limit)),
-        ),
-      };
-    });
+      },
+    );
 
     this.logger.log({
       message: 'Tasks listed',
@@ -577,6 +586,7 @@ export class TasksService {
   ): SelectQueryBuilder<TaskEntity> {
     const queryBuilder = taskRepository
       .createQueryBuilder('task')
+      .withDeleted()
       .leftJoinAndSelect('task.comments', 'comments')
       .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
       .leftJoinAndSelect('task.artefacts', 'artefacts')
@@ -584,12 +594,13 @@ export class TasksService {
       .leftJoinAndSelect('task.tags', 'tags')
       .leftJoinAndSelect('task.dependsOn', 'dependsOn')
       .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
-      .leftJoinAndSelect('task.createdByActor', 'createdByActor');
+      .leftJoinAndSelect('task.createdByActor', 'createdByActor')
+      .andWhere('task.deletedAt IS NULL');
 
     if (input.tag) {
       queryBuilder
         .innerJoin('task.tags', 'filterTag')
-        .where('filterTag.name = :tagName', { tagName: input.tag });
+        .andWhere('filterTag.name = :tagName', { tagName: input.tag });
     }
     if (input.assignee) {
       queryBuilder.andWhere('assigneeActor.slug = :assignee', {
@@ -617,7 +628,8 @@ export class TasksService {
 
   async getTaskById(taskId: string): Promise<TaskResult> {
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -737,7 +749,8 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -787,7 +800,8 @@ export class TasksService {
 
     // Reload to get updated comments if any were added
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -833,9 +847,8 @@ export class TasksService {
     taskId: string,
     actorId: string,
   ): Promise<void> {
-    const threadsWithParent = await this.threadsService.findThreadsByParentTaskId(
-      taskId,
-    );
+    const threadsWithParent =
+      await this.threadsService.findThreadsByParentTaskId(taskId);
     if (threadsWithParent.length > 0) {
       this.logger.log({
         message: 'Auto-prune skipped because task is a thread parent',
@@ -875,7 +888,8 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -912,7 +926,8 @@ export class TasksService {
 
     // Reload with relations
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -948,7 +963,8 @@ export class TasksService {
     });
 
     const task = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -979,7 +995,8 @@ export class TasksService {
 
     // Reload with relations to get updated task
     const taskWithRelations = await this.taskRepository.findOne({
-      where: { id: taskId },
+      where: { id: taskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'comments',
         'comments.commenterActor',
@@ -1064,6 +1081,7 @@ export class TasksService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      isDeactivated: actor.deletedAt !== null,
     };
   }
 

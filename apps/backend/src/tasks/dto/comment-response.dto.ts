@@ -51,14 +51,7 @@ export class CommentResponseDto {
       taskId: comment.taskId,
       commenterName: comment.commenterName,
       commenterActor: comment.commenterActor
-        ? {
-            id: comment.commenterActor.id,
-            type: comment.commenterActor.type,
-            slug: comment.commenterActor.slug,
-            displayName: comment.commenterActor.displayName,
-            avatarUrl: comment.commenterActor.avatarUrl,
-            introduction: comment.commenterActor.introduction,
-          }
+        ? ActorResponseDto.fromEntity(comment.commenterActor)
         : null,
       content: comment.content,
       createdAt: comment.createdAt.toISOString(),

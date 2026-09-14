@@ -8589,6 +8589,10 @@
             "description": "Short description of what this actor is good at and when to assign them tasks",
             "example": "Expert in React and TypeScript development. Assign me frontend tasks.",
             "nullable": true
+          },
+          "isDeactivated": {
+            "type": "boolean",
+            "description": "Whether this actor has been deactivated while retaining history"
           }
         },
         "required": [
