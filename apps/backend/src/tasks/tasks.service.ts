@@ -1066,7 +1066,7 @@ export class TasksService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
-      isDeactivated: actor.deactivatedAt !== null,
+      isDeactivated: actor.deletedAt !== null,
     };
   }
 

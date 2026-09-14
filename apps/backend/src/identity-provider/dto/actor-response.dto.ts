@@ -81,7 +81,7 @@ export class ActorResponseDto {
       displayName: entity.displayName,
       avatarUrl: entity.avatarUrl,
       introduction: entity.introduction,
-      isDeactivated: entity.deactivatedAt !== null,
+      isDeactivated: entity.deletedAt !== null,
     };
   }
 }

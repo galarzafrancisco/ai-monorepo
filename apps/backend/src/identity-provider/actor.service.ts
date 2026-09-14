@@ -135,6 +135,7 @@ export class ActorService {
   async listActors(): Promise<ActorEntity[]> {
     return this.actorRepository.find({
       order: { displayName: 'ASC' },
+      withDeleted: true,
     });
   }
 

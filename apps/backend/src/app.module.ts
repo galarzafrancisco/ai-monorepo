@@ -19,7 +19,7 @@ import { getConfig, isTypeormSchemaSyncEnabled } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
 import { TaskBlueprintsModule } from './task-blueprints/task-blueprints.module';
 import { PostgresBaseline1750000000000 } from './migrations/1750000000000-PostgresBaseline';
-import { AddActorDeactivatedAt1760000000000 } from './migrations/1760000000000-AddActorDeactivatedAt';
+import { AddActorSoftDelete1760000000000 } from './migrations/1760000000000-AddActorSoftDelete';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -40,7 +40,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
       migrationsRun: !isTypeormSchemaSyncEnabled(),
       migrations: [
         PostgresBaseline1750000000000,
-        AddActorDeactivatedAt1760000000000,
+        AddActorSoftDelete1760000000000,
       ],
     }),
     EventEmitterModule.forRoot(),

@@ -293,9 +293,7 @@ export class AgentsService {
     }
 
     await this.agentRepository.manager.transaction(async (manager) => {
-      await manager.getRepository(ActorEntity).update(agent.actorId, {
-        deactivatedAt: new Date(),
-      });
+      await manager.getRepository(ActorEntity).softDelete(agent.actorId);
       await manager.getRepository(AgentEntity).softRemove(agent);
     });
 
