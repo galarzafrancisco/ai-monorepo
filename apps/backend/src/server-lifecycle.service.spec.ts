@@ -58,4 +58,33 @@ describe('ServerLifecycleService', () => {
 
     expect(probe.observedReadyDuringModuleDestroy).toBe(false);
   });
+
+  it('tracks active requests until they release', () => {
+    const releaseFirst = service.trackRequest();
+    const releaseSecond = service.trackRequest();
+
+    expect(service.getActiveRequestCount()).toBe(2);
+
+    releaseFirst();
+    releaseFirst();
+    expect(service.getActiveRequestCount()).toBe(1);
+
+    releaseSecond();
+    expect(service.getActiveRequestCount()).toBe(0);
+  });
+
+  it('waits for active requests to drain', async () => {
+    const release = service.trackRequest();
+    const drained = service.waitForRequestsToDrain(100);
+
+    release();
+
+    await expect(drained).resolves.toBe(true);
+  });
+
+  it('times out when active requests do not drain', async () => {
+    service.trackRequest();
+
+    await expect(service.waitForRequestsToDrain(1)).resolves.toBe(false);
+  });
 });

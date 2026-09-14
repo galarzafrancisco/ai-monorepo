@@ -12,6 +12,7 @@ import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
 import { Request, Response } from 'express';
 import { ServerLifecycleService } from './server-lifecycle.service';
+import { createHttpDrainMiddleware } from './http-drain.middleware';
 
 const logger = new Logger('Bootstrap');
 
@@ -103,6 +104,7 @@ async function createConfiguredApp(
   });
 
   app.use(cookieParser());
+  app.use(createHttpDrainMiddleware(app.get(ServerLifecycleService)));
   app.enableCors({
     origin: true,
     credentials: true,
