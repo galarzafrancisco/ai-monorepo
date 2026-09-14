@@ -137,7 +137,9 @@ export class ScheduledTasksService {
     scheduledTaskId: string,
   ): Promise<ScheduledTaskResult> {
     const scheduledTask = await this.scheduledTaskRepository.findOne({
-      where: { id: scheduledTaskId },
+      where: { id: scheduledTaskId, deletedAt: IsNull() },
+      // Keep deleted actor relations available without restoring deleted schedules.
+      withDeleted: true,
       relations: [
         'taskBlueprint',
         'taskBlueprint.tags',

@@ -229,7 +229,9 @@ export class TaskBlueprintsService {
     blueprintId: string,
   ): Promise<TaskBlueprintResult> {
     const blueprint = await this.taskBlueprintRepository.findOne({
-      where: { id: blueprintId },
+      where: { id: blueprintId, deletedAt: IsNull() },
+      // Keep a deleted actor available for historical blueprint attribution.
+      withDeleted: true,
       relations: ['tags', 'assigneeActor', 'createdByActor'],
     });
 
