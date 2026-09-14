@@ -8,6 +8,7 @@ import {
   TaskExecutionHistoryResult,
 } from '../dto/service/execution-results.service.types';
 import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
+import { ActorResult } from '../../tasks/dto/service/tasks.service.types';
 
 @Injectable()
 export class TaskExecutionHistoryService {
@@ -29,7 +30,7 @@ export class TaskExecutionHistoryService {
 
     const [items, total] = await this.taskExecutionHistoryRepository.findAndCount({
       where,
-      relations: ['task', 'stats'],
+      relations: ['task', 'stats', 'agentActor'],
       order: { transitionedAt: 'DESC' },
       skip,
       take: limit,
@@ -87,6 +88,9 @@ export class TaskExecutionHistoryService {
       claimedAt: historyEntry.claimedAt,
       transitionedAt: historyEntry.transitionedAt,
       agentActorId: historyEntry.agentActorId,
+      agentActor: historyEntry.agentActor
+        ? this.mapActorToResult(historyEntry.agentActor)
+        : null,
       workerClientId: historyEntry.workerClientId,
       runnerSessionId: historyEntry.runnerSessionId,
       toolCallCount: historyEntry.toolCallCount,
@@ -106,6 +110,18 @@ export class TaskExecutionHistoryService {
       inputTokens: stats.inputTokens,
       outputTokens: stats.outputTokens,
       totalTokens: stats.totalTokens,
+    };
+  }
+
+  private mapActorToResult(actor: import('../../identity-provider/actor.entity').ActorEntity): ActorResult {
+    return {
+      id: actor.id,
+      type: actor.type,
+      slug: actor.slug,
+      displayName: actor.displayName,
+      avatarUrl: actor.avatarUrl,
+      introduction: actor.introduction,
+      isDeactivated: actor.deactivatedAt !== null,
     };
   }
 }

@@ -5,6 +5,7 @@ import {
   ActiveTaskExecutionTagSnapshotResult,
 } from '../../../dto/service/execution-results.service.types';
 import { ExecutionStatsResponseDto } from '../../../dto/http/execution-stats-response.dto';
+import { ActorResponseDto } from '../../../../identity-provider/dto/actor-response.dto';
 
 class ActiveTaskExecutionTagSnapshotResponseDto {
   @ApiProperty({
@@ -118,6 +119,13 @@ export class ActiveTaskExecutionResponseDto {
   agentActorId!: string;
 
   @ApiProperty({
+    description: 'Agent persona that picked up the task, including deactivated agents',
+    type: () => ActorResponseDto,
+    nullable: true,
+  })
+  agentActor!: ActorResponseDto | null;
+
+  @ApiProperty({
     description: 'Execution metadata and usage stats',
     type: ExecutionStatsResponseDto,
     nullable: true,
@@ -143,6 +151,9 @@ export class ActiveTaskExecutionResponseDto {
       workerClientId: result.workerClientId,
       taskAssigneeActorIdBeforeClaim: result.taskAssigneeActorIdBeforeClaim,
       agentActorId: result.agentActorId,
+      agentActor: result.agentActor
+        ? ActorResponseDto.fromResult(result.agentActor)
+        : null,
       stats: result.stats ? ExecutionStatsResponseDto.fromResult(result.stats) : null,
     };
   }

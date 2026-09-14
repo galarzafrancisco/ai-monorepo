@@ -89,6 +89,7 @@ type TaskExecutionListItem = {
   id: string;
   executionId: string;
   agentActorId: string;
+  agentActor: HistoricalActor | null;
   status: "ACTIVE" | TaskExecutionHistoryResponseDto["status"];
   source: "active" | "history";
   timestamp: string;
@@ -98,6 +99,11 @@ type TaskExecutionListItem = {
   errorCode: TaskExecutionHistoryResponseDto["errorCode"] | null;
   errorMessage: string | null;
 };
+
+type HistoricalActor = Pick<
+  Actor,
+  "id" | "displayName" | "slug" | "avatarUrl" | "isDeactivated"
+>;
 
 const COLLAPSED_TIMELINE_COUNT = 3;
 const COLLAPSED_EXECUTION_COUNT = 3;
@@ -600,6 +606,7 @@ export function TaskDetailView({
           id: `active-${entry.id}`,
           executionId: entry.id,
           agentActorId: entry.agentActorId,
+          agentActor: entry.agentActor,
           status: "ACTIVE",
           source: "active",
           timestamp: entry.claimedAt,
@@ -616,6 +623,7 @@ export function TaskDetailView({
           id: `history-${entry.id}`,
           executionId: entry.id,
           agentActorId: entry.agentActorId,
+          agentActor: entry.agentActor,
           status: entry.status,
           source: "history",
           timestamp: entry.transitionedAt,
@@ -1021,10 +1029,10 @@ export function TaskDetailView({
           }
 
           const inputRequest = item.data;
-          const askedByActor = actors.find(
+          const askedByActor = inputRequest.askedByActor ?? actors.find(
             (a) => a.id === inputRequest.askedByActorId,
           );
-          const assignedToActor = actors.find(
+          const assignedToActor = inputRequest.assignedToActor ?? actors.find(
             (a) => a.id === inputRequest.assignedToActorId,
           );
           const name = askedByActor?.displayName || "Unknown";
@@ -1084,6 +1092,11 @@ export function TaskDetailView({
                       <Text as="span" weight="medium" size="3">
                         {name}
                       </Text>
+                      {askedByActor?.isDeactivated ? (
+                        <Text as="span" size="1" tone="muted">
+                          deactivated
+                        </Text>
+                      ) : null}
                       <Text as="span" weight="normal" tone="muted" size="3">
                         {` @${slug}`}
                       </Text>
@@ -1101,6 +1114,11 @@ export function TaskDetailView({
                         <Text as="span" weight="medium" size="3">
                           {answerName}
                         </Text>
+                        {assignedToActor?.isDeactivated ? (
+                          <Text as="span" size="1" tone="muted">
+                            deactivated
+                          </Text>
+                        ) : null}
                         <Text as="span" weight="normal" tone="muted" size="3">
                           {` @${answerSlug}`}
                         </Text>
@@ -1183,7 +1201,7 @@ export function TaskDetailView({
           </Text>
         ) : null}
         {visibleExecutions.map((execution) => {
-          const actor = actors.find(
+          const actor = execution.agentActor ?? actors.find(
             (candidate) => candidate.id === execution.agentActorId,
           );
           const actorName =
@@ -1257,6 +1275,11 @@ export function TaskDetailView({
                   <Text as="span" weight="medium" size="3">
                     {actorName}
                   </Text>
+                  {actor?.isDeactivated ? (
+                    <Text as="span" size="1" tone="muted">
+                      deactivated
+                    </Text>
+                  ) : null}
                   <Text as="span" weight="normal" tone="muted" size="3">
                     {actorSlug ? ` @${actorSlug}` : ""}
                   </Text>

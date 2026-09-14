@@ -26,6 +26,7 @@ import { ExecutionActivityService } from '../execution-activity.service';
 import { ExecutionInterruptEvent } from '../events/execution-interrupt.event';
 import { ActiveExecutionsChangedEvent } from '../events/active-executions-changed.event';
 import { ExecutionStatsEntity } from '../stats/execution-stats.entity';
+import { ActorResult } from '../../tasks/dto/service/tasks.service.types';
 import {
   ActiveTaskExecutionListResult,
   ActiveTaskExecutionResult,
@@ -98,7 +99,7 @@ export class ActiveTaskExecutionService {
 
     const [items, total] = await this.activeTaskExecutionRepository.findAndCount({
       where,
-      relations: ['task', 'stats'],
+      relations: ['task', 'stats', 'agentActor'],
       order: { claimedAt: 'DESC' },
       skip,
       take: limit,
@@ -171,7 +172,7 @@ export class ActiveTaskExecutionService {
 
       const hydratedExecution = await manager.findOne(ActiveTaskExecutionEntity, {
         where: { id: savedExecution.id },
-        relations: ['task', 'stats'],
+        relations: ['task', 'stats', 'agentActor'],
       });
 
       if (!hydratedExecution) {
@@ -243,7 +244,7 @@ export class ActiveTaskExecutionService {
         TaskExecutionHistoryEntity,
         {
           where: { id: savedHistoryEntry.id },
-          relations: ['task', 'stats'],
+          relations: ['task', 'stats', 'agentActor'],
         },
       );
 
@@ -457,6 +458,9 @@ export class ActiveTaskExecutionService {
       workerClientId: execution.workerClientId,
       taskAssigneeActorIdBeforeClaim: execution.taskAssigneeActorIdBeforeClaim,
       agentActorId: execution.agentActorId,
+      agentActor: execution.agentActor
+        ? this.mapActorToResult(execution.agentActor)
+        : null,
       stats: execution.stats ? this.mapStatsToResult(execution.stats) : null,
     };
   }
@@ -472,6 +476,9 @@ export class ActiveTaskExecutionService {
       claimedAt: historyEntry.claimedAt,
       transitionedAt: historyEntry.transitionedAt,
       agentActorId: historyEntry.agentActorId,
+      agentActor: historyEntry.agentActor
+        ? this.mapActorToResult(historyEntry.agentActor)
+        : null,
       workerClientId: historyEntry.workerClientId,
       runnerSessionId: historyEntry.runnerSessionId,
       toolCallCount: historyEntry.toolCallCount,
@@ -491,6 +498,18 @@ export class ActiveTaskExecutionService {
       inputTokens: stats.inputTokens,
       outputTokens: stats.outputTokens,
       totalTokens: stats.totalTokens,
+    };
+  }
+
+  private mapActorToResult(actor: import('../../identity-provider/actor.entity').ActorEntity): ActorResult {
+    return {
+      id: actor.id,
+      type: actor.type,
+      slug: actor.slug,
+      displayName: actor.displayName,
+      avatarUrl: actor.avatarUrl,
+      introduction: actor.introduction,
+      isDeactivated: actor.deactivatedAt !== null,
     };
   }
 }

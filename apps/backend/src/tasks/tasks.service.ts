@@ -155,6 +155,8 @@ export class TasksService {
         'comments.commenterActor',
         'artefacts',
         'inputRequests',
+        'inputRequests.askedByActor',
+        'inputRequests.assignedToActor',
         'tags',
         'dependsOn',
         'assigneeActor',
@@ -281,6 +283,8 @@ export class TasksService {
         'comments.commenterActor',
         'artefacts',
         'inputRequests',
+        'inputRequests.askedByActor',
+        'inputRequests.assignedToActor',
         'tags',
         'dependsOn',
         'assigneeActor',
@@ -349,6 +353,8 @@ export class TasksService {
         'comments.commenterActor',
         'artefacts',
         'inputRequests',
+        'inputRequests.askedByActor',
+        'inputRequests.assignedToActor',
         'tags',
         'dependsOn',
         'assigneeActor',
@@ -584,6 +590,8 @@ export class TasksService {
       .leftJoinAndSelect('comments.commenterActor', 'commenterActor')
       .leftJoinAndSelect('task.artefacts', 'artefacts')
       .leftJoinAndSelect('task.inputRequests', 'inputRequests')
+      .leftJoinAndSelect('inputRequests.askedByActor', 'askedByActor')
+      .leftJoinAndSelect('inputRequests.assignedToActor', 'assignedToActor')
       .leftJoinAndSelect('task.tags', 'tags')
       .leftJoinAndSelect('task.dependsOn', 'dependsOn')
       .leftJoinAndSelect('task.assigneeActor', 'assigneeActor')
@@ -626,6 +634,8 @@ export class TasksService {
         'comments.commenterActor',
         'artefacts',
         'inputRequests',
+        'inputRequests.askedByActor',
+        'inputRequests.assignedToActor',
         'tags',
         'dependsOn',
         'assigneeActor',
@@ -1088,6 +1098,12 @@ export class TasksService {
       taskId: inputRequest.taskId,
       askedByActorId: inputRequest.askedByActorId,
       assignedToActorId: inputRequest.assignedToActorId,
+      askedByActor: inputRequest.askedByActor
+        ? this.mapActorToResult(inputRequest.askedByActor)
+        : null,
+      assignedToActor: inputRequest.assignedToActor
+        ? this.mapActorToResult(inputRequest.assignedToActor)
+        : null,
       question: inputRequest.question,
       answer: inputRequest.answer,
       resolvedAt: inputRequest.resolvedAt,

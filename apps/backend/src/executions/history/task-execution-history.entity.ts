@@ -11,6 +11,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { AgentEntity } from '../../agents/agent.entity';
+import { ActorEntity } from '../../identity-provider/actor.entity';
 import { TaskEntity } from '../../tasks/task.entity';
 import { TaskExecutionHistoryErrorCode } from './task-execution-history-error-code.enum';
 import { TaskExecutionHistoryStatus } from './task-execution-history-status.enum';
@@ -40,6 +41,10 @@ export class TaskExecutionHistoryEntity {
   @ManyToOne(() => AgentEntity)
   @JoinColumn({ name: 'agent_actor_id', referencedColumnName: 'actorId' })
   agent?: AgentEntity;
+
+  @ManyToOne(() => ActorEntity)
+  @JoinColumn({ name: 'agent_actor_id' })
+  agentActor?: ActorEntity;
 
   @Column({ type: 'text', name: 'worker_client_id' })
   workerClientId!: string;

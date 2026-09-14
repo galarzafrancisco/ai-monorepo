@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ActorResponseDto } from './ActorResponseDto.js';
 export type InputRequestResponseDto = {
     /**
      * Unique identifier for the input request
@@ -19,6 +20,14 @@ export type InputRequestResponseDto = {
      * ID of the actor assigned to answer the question
      */
     assignedToActorId: string;
+    /**
+     * Actor who asked the question, including deactivated personas
+     */
+    askedByActor?: ActorResponseDto | null;
+    /**
+     * Actor assigned to answer, including deactivated personas
+     */
+    assignedToActor?: ActorResponseDto | null;
     /**
      * The question being asked
      */
