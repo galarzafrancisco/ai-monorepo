@@ -77,19 +77,27 @@ export class ActorService {
   async getActorById(
     id: string,
     withUser?: boolean,
+    withDeleted = false,
   ): Promise<ActorEntity | null> {
     return this.actorRepository.findOne({
       where: { id },
       relations: { user: withUser },
+      withDeleted,
     });
   }
 
-  async getActorByIdOrSlug(idOrSlug: string): Promise<ActorEntity | null> {
+  async getActorByIdOrSlug(
+    idOrSlug: string,
+    withDeleted = false,
+  ): Promise<ActorEntity | null> {
     if (isUUID(idOrSlug)) {
-      const actor = await this.getActorById(idOrSlug);
+      const actor = await this.getActorById(idOrSlug, false, withDeleted);
       if (actor) return actor;
     }
-    return this.getActorBySlug(idOrSlug);
+    return this.actorRepository.findOne({
+      where: { slug: idOrSlug },
+      withDeleted,
+    });
   }
 
   /**

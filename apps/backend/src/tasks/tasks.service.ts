@@ -106,6 +106,7 @@ export class TasksService {
     // createdBy is required - look up the actor first by id then slug
     const createdByActor = await this.actorService.getActorByIdOrSlug(
       input.createdByActorId,
+      input.allowDeletedCreator,
     );
     if (!createdByActor) {
       throw new Error(`Creator actor not found: ${input.createdByActorId}`);

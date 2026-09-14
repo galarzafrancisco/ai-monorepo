@@ -24,6 +24,8 @@ export type CreateTaskInput = {
   sessionId?: string;
   tagNames?: string[];
   createdByActorId: string;
+  /** Allows internal history-preserving flows to retain a deleted creator. */
+  allowDeletedCreator?: boolean;
   dependsOnIds?: string[];
 };
 

@@ -8,6 +8,7 @@ jest.mock('../threads/chat.service', () => ({
 
 import { TaskBlueprintsService } from './task-blueprints.service';
 import { ScheduledTasksService } from './scheduled-tasks.service';
+import { TaskSchedulerService } from './task-scheduler.service';
 import { ActorType } from '../identity-provider/enums';
 import { IsNull } from 'typeorm';
 
@@ -161,5 +162,71 @@ describe('task blueprint soft-deleted actors', () => {
 
     expect(result).toBeNull();
     expect(queryBuilder.andWhere).toHaveBeenCalledWith('deleted_at IS NULL');
+  });
+
+  it('keeps running a schedule owned by a deleted agent', async () => {
+    const scheduledTasksService = {
+      getDueScheduledTasks: jest.fn().mockResolvedValue([
+        {
+          id: 'schedule-1',
+          taskBlueprintId: 'blueprint-1',
+          nextRunAt: deletedAt,
+          cronExpression: '* * * * *',
+        },
+      ]),
+      claimDueTaskExecution: jest.fn().mockResolvedValue(deletedAt),
+      completeClaimedExecution: jest.fn(),
+      rollbackExecutionClaim: jest.fn(),
+    };
+    const taskBlueprintsService = {
+      createTaskFromBlueprint: jest.fn().mockResolvedValue({ id: 'task-1' }),
+    };
+    const service = new TaskSchedulerService(
+      scheduledTasksService as any,
+      taskBlueprintsService as any,
+    );
+
+    await service.handleScheduledTasks();
+
+    expect(taskBlueprintsService.createTaskFromBlueprint).toHaveBeenCalledWith(
+      'blueprint-1',
+    );
+    expect(scheduledTasksService.completeClaimedExecution).toHaveBeenCalledWith(
+      'schedule-1',
+    );
+    expect(scheduledTasksService.rollbackExecutionClaim).not.toHaveBeenCalled();
+  });
+
+  it('creates blueprint tasks with their deleted creator allowed', async () => {
+    const tasksService = {
+      createTask: jest.fn().mockResolvedValue({ id: 'task-1' }),
+    };
+    const service = new TaskBlueprintsService(
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      tasksService as any,
+      {} as any,
+    );
+    jest.spyOn(service, 'getTaskBlueprintById').mockResolvedValue({
+      id: 'blueprint-1',
+      name: 'Blueprint',
+      description: '',
+      assigneeActorId: null,
+      tags: [],
+      dependsOnIds: [],
+      createdByActor: actor,
+    } as any);
+
+    await service.createTaskFromBlueprint('blueprint-1');
+
+    expect(tasksService.createTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        createdByActorId: actor.id,
+        allowDeletedCreator: true,
+      }),
+    );
   });
 });

@@ -302,6 +302,7 @@ export class TaskBlueprintsService {
       tagNames: blueprint.tags.map((tag) => tag.name),
       dependsOnIds: blueprint.dependsOnIds,
       createdByActorId: blueprint.createdByActor.id,
+      allowDeletedCreator: true,
     });
 
     this.logger.log({
