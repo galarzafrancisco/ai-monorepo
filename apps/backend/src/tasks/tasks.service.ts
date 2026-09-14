@@ -599,7 +599,7 @@ export class TasksService {
     if (input.tag) {
       queryBuilder
         .innerJoin('task.tags', 'filterTag')
-        .where('filterTag.name = :tagName', { tagName: input.tag });
+        .andWhere('filterTag.name = :tagName', { tagName: input.tag });
     }
     if (input.assignee) {
       queryBuilder.andWhere('assigneeActor.slug = :assignee', {
