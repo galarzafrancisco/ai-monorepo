@@ -440,8 +440,6 @@ export interface InputRequestResponseDto {
   taskId: string;
   askedByActorId: string;
   assignedToActorId: string;
-  askedByActor?: ActorResponseDto;
-  assignedToActor?: ActorResponseDto;
   question: string;
   answer?: Record<string, any> | null;
   resolvedAt?: Record<string, any> | null;
@@ -1026,7 +1024,6 @@ export interface ActiveTaskExecutionResponseDto {
   workerClientId: string;
   taskAssigneeActorIdBeforeClaim: string | null;
   agentActorId: string;
-  agentActor: ActorResponseDto;
   stats: ExecutionStatsResponseDto;
 }
 
@@ -1052,7 +1049,6 @@ export interface TaskExecutionHistoryResponseDto {
   claimedAt: string;
   transitionedAt: string;
   agentActorId: string;
-  agentActor: ActorResponseDto;
   workerClientId: string;
   runnerSessionId: string | null;
   toolCallCount: number;

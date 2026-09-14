@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { InputRequestEntity } from '../input-request.entity';
 import { InputRequestResult } from './service/tasks.service.types';
-import { ActorResponseDto } from '../../identity-provider/dto/actor-response.dto';
 
 export class InputRequestResponseDto {
   @ApiProperty({
@@ -27,20 +26,6 @@ export class InputRequestResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174003',
   })
   assignedToActorId!: string;
-
-  @ApiPropertyOptional({
-    description: 'Actor who asked the question, including deactivated personas',
-    type: () => ActorResponseDto,
-    nullable: true,
-  })
-  askedByActor!: ActorResponseDto | null;
-
-  @ApiPropertyOptional({
-    description: 'Actor assigned to answer, including deactivated personas',
-    type: () => ActorResponseDto,
-    nullable: true,
-  })
-  assignedToActor!: ActorResponseDto | null;
 
   @ApiProperty({
     description: 'The question being asked',
@@ -86,12 +71,6 @@ export class InputRequestResponseDto {
       taskId: inputRequest.taskId,
       askedByActorId: inputRequest.askedByActorId,
       assignedToActorId: inputRequest.assignedToActorId,
-      askedByActor: inputRequest.askedByActor
-        ? ActorResponseDto.fromEntity(inputRequest.askedByActor)
-        : null,
-      assignedToActor: inputRequest.assignedToActor
-        ? ActorResponseDto.fromEntity(inputRequest.assignedToActor)
-        : null,
       question: inputRequest.question,
       answer: inputRequest.answer,
       resolvedAt: inputRequest.resolvedAt
@@ -112,12 +91,6 @@ export class InputRequestResponseDto {
       taskId: result.taskId,
       askedByActorId: result.askedByActorId,
       assignedToActorId: result.assignedToActorId,
-      askedByActor: result.askedByActor
-        ? ActorResponseDto.fromResult(result.askedByActor)
-        : null,
-      assignedToActor: result.assignedToActor
-        ? ActorResponseDto.fromResult(result.assignedToActor)
-        : null,
       question: result.question,
       answer: result.answer,
       resolvedAt: result.resolvedAt ? result.resolvedAt.toISOString() : null,

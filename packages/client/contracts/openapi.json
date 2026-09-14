@@ -9566,24 +9566,6 @@
             "description": "ID of the actor assigned to answer the question",
             "example": "123e4567-e89b-12d3-a456-426614174003"
           },
-          "askedByActor": {
-            "description": "Actor who asked the question, including deactivated personas",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
-          "assignedToActor": {
-            "description": "Actor assigned to answer, including deactivated personas",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
           "question": {
             "type": "string",
             "description": "The question being asked",
@@ -12550,15 +12532,6 @@
             "description": "Agent actor id that picked up the task",
             "example": "19dc147c-6051-49e3-bf7a-404e3bb575d3"
           },
-          "agentActor": {
-            "description": "Agent persona that picked up the task, including deactivated agents",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
           "stats": {
             "description": "Execution metadata and usage stats",
             "nullable": true,
@@ -12583,7 +12556,6 @@
           "workerClientId",
           "taskAssigneeActorIdBeforeClaim",
           "agentActorId",
-          "agentActor",
           "stats"
         ]
       },
@@ -12708,15 +12680,6 @@
             "description": "Actor id of the agent that worked on the task",
             "example": "19dc147c-6051-49e3-bf7a-404e3bb575d3"
           },
-          "agentActor": {
-            "description": "Agent persona that worked on the task, including deactivated agents",
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ActorResponseDto"
-              }
-            ]
-          },
           "workerClientId": {
             "type": "string",
             "description": "OAuth client id of the worker that executed the task",
@@ -12777,7 +12740,6 @@
           "claimedAt",
           "transitionedAt",
           "agentActorId",
-          "agentActor",
           "workerClientId",
           "runnerSessionId",
           "toolCallCount",

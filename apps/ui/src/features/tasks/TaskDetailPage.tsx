@@ -89,7 +89,6 @@ type TaskExecutionListItem = {
   id: string;
   executionId: string;
   agentActorId: string;
-  agentActor: HistoricalActor | null;
   status: "ACTIVE" | TaskExecutionHistoryResponseDto["status"];
   source: "active" | "history";
   timestamp: string;
@@ -99,11 +98,6 @@ type TaskExecutionListItem = {
   errorCode: TaskExecutionHistoryResponseDto["errorCode"] | null;
   errorMessage: string | null;
 };
-
-type HistoricalActor = Pick<
-  Actor,
-  "id" | "displayName" | "slug" | "avatarUrl" | "isDeactivated"
->;
 
 const COLLAPSED_TIMELINE_COUNT = 3;
 const COLLAPSED_EXECUTION_COUNT = 3;
@@ -606,7 +600,6 @@ export function TaskDetailView({
           id: `active-${entry.id}`,
           executionId: entry.id,
           agentActorId: entry.agentActorId,
-          agentActor: entry.agentActor,
           status: "ACTIVE",
           source: "active",
           timestamp: entry.claimedAt,
@@ -623,7 +616,6 @@ export function TaskDetailView({
           id: `history-${entry.id}`,
           executionId: entry.id,
           agentActorId: entry.agentActorId,
-          agentActor: entry.agentActor,
           status: entry.status,
           source: "history",
           timestamp: entry.transitionedAt,
@@ -1029,10 +1021,10 @@ export function TaskDetailView({
           }
 
           const inputRequest = item.data;
-          const askedByActor = inputRequest.askedByActor ?? actors.find(
+          const askedByActor = actors.find(
             (a) => a.id === inputRequest.askedByActorId,
           );
-          const assignedToActor = inputRequest.assignedToActor ?? actors.find(
+          const assignedToActor = actors.find(
             (a) => a.id === inputRequest.assignedToActorId,
           );
           const name = askedByActor?.displayName || "Unknown";
@@ -1201,7 +1193,7 @@ export function TaskDetailView({
           </Text>
         ) : null}
         {visibleExecutions.map((execution) => {
-          const actor = execution.agentActor ?? actors.find(
+          const actor = actors.find(
             (candidate) => candidate.id === execution.agentActorId,
           );
           const actorName =

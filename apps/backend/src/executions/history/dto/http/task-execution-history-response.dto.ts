@@ -4,7 +4,6 @@ import { TaskExecutionHistoryErrorCode } from '../../task-execution-history-erro
 import { TaskExecutionHistoryStatus } from '../../task-execution-history-status.enum';
 import { ExecutionStatsResponseDto } from '../../../dto/http/execution-stats-response.dto';
 import { TaskExecutionHistoryResult } from '../../../dto/service/execution-results.service.types';
-import { ActorResponseDto } from '../../../../identity-provider/dto/actor-response.dto';
 
 export class TaskExecutionHistoryResponseDto {
   @ApiProperty({
@@ -51,13 +50,6 @@ export class TaskExecutionHistoryResponseDto {
     example: '19dc147c-6051-49e3-bf7a-404e3bb575d3',
   })
   agentActorId!: string;
-
-  @ApiProperty({
-    description: 'Agent persona that worked on the task, including deactivated agents',
-    type: () => ActorResponseDto,
-    nullable: true,
-  })
-  agentActor!: ActorResponseDto | null;
 
   @ApiProperty({
     description: 'OAuth client id of the worker that executed the task',
@@ -118,9 +110,6 @@ export class TaskExecutionHistoryResponseDto {
       claimedAt: result.claimedAt.toISOString(),
       transitionedAt: result.transitionedAt.toISOString(),
       agentActorId: result.agentActorId,
-      agentActor: result.agentActor
-        ? ActorResponseDto.fromResult(result.agentActor)
-        : null,
       workerClientId: result.workerClientId,
       runnerSessionId: result.runnerSessionId,
       toolCallCount: result.toolCallCount,

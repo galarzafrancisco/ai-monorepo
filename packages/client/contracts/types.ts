@@ -3702,10 +3702,6 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174003
              */
             assignedToActorId: string;
-            /** @description Actor who asked the question, including deactivated personas */
-            askedByActor?: components["schemas"]["ActorResponseDto"] | null;
-            /** @description Actor assigned to answer, including deactivated personas */
-            assignedToActor?: components["schemas"]["ActorResponseDto"] | null;
             /**
              * @description The question being asked
              * @example Should we use OAuth or JWT for authentication?
@@ -5648,8 +5644,6 @@ export interface components {
              * @example 19dc147c-6051-49e3-bf7a-404e3bb575d3
              */
             agentActorId: string;
-            /** @description Agent persona that picked up the task, including deactivated agents */
-            agentActor: components["schemas"]["ActorResponseDto"] | null;
             /** @description Execution metadata and usage stats */
             stats: components["schemas"]["ExecutionStatsResponseDto"] | null;
         };
@@ -5732,8 +5726,6 @@ export interface components {
              * @example 19dc147c-6051-49e3-bf7a-404e3bb575d3
              */
             agentActorId: string;
-            /** @description Agent persona that worked on the task, including deactivated agents */
-            agentActor: components["schemas"]["ActorResponseDto"] | null;
             /**
              * @description OAuth client id of the worker that executed the task
              * @example 24f52f295c990c1d6cdc6034fa3d1900

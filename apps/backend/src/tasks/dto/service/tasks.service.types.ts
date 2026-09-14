@@ -137,8 +137,6 @@ export type InputRequestResult = {
   taskId: string;
   askedByActorId: string;
   assignedToActorId: string;
-  askedByActor: ActorResult | null;
-  assignedToActor: ActorResult | null;
   question: string;
   answer: string | null;
   resolvedAt: Date | null;

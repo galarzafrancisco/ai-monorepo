@@ -2,7 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ActorResponseDto } from './ActorResponseDto.js';
 import type { ExecutionStatsResponseDto } from './ExecutionStatsResponseDto.js';
 export type TaskExecutionHistoryResponseDto = {
     /**
@@ -33,10 +32,6 @@ export type TaskExecutionHistoryResponseDto = {
      * Actor id of the agent that worked on the task
      */
     agentActorId: string;
-    /**
-     * Agent persona that worked on the task, including deactivated agents
-     */
-    agentActor: ActorResponseDto | null;
     /**
      * OAuth client id of the worker that executed the task
      */

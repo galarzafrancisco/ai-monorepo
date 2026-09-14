@@ -32,7 +32,7 @@ describe('TaskExecutionHistoryService', () => {
   });
 
   describe('listHistory', () => {
-    it('retains the deactivated agent persona for historical executions', async () => {
+    it('returns historical executions by actor id', async () => {
       const transitionedAt = new Date('2026-01-01T00:00:00.000Z');
       repository.findAndCount.mockResolvedValue([
         [
@@ -42,15 +42,6 @@ describe('TaskExecutionHistoryService', () => {
             claimedAt: transitionedAt,
             transitionedAt,
             agentActorId: 'agent-actor-1',
-            agentActor: {
-              id: 'agent-actor-1',
-              type: 'agent',
-              slug: 'retired-agent',
-              displayName: 'Retired Agent',
-              avatarUrl: '/avatar/retired.png',
-              introduction: null,
-              deactivatedAt: transitionedAt,
-            },
             workerClientId: 'worker-1',
             runnerSessionId: null,
             toolCallCount: 2,
@@ -65,13 +56,9 @@ describe('TaskExecutionHistoryService', () => {
 
       const result = await service.listHistory({ taskId: 'task-1' });
 
-      expect(result.items[0].agentActor).toMatchObject({
-        displayName: 'Retired Agent',
-        slug: 'retired-agent',
-        isDeactivated: true,
-      });
+      expect(result.items[0].agentActorId).toBe('agent-actor-1');
       expect(repository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({ relations: ['task', 'stats', 'agentActor'] }),
+        expect.objectContaining({ relations: ['task', 'stats'] }),
       );
     });
   });

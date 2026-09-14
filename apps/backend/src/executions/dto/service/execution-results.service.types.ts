@@ -1,7 +1,6 @@
 import { TaskStatus } from '../../../tasks/enums';
 import { TaskExecutionHistoryErrorCode } from '../../history/task-execution-history-error-code.enum';
 import { TaskExecutionHistoryStatus } from '../../history/task-execution-history-status.enum';
-import { ActorResult } from '../../../tasks/dto/service/tasks.service.types';
 
 export type ExecutionStatsResult = {
   harness: string | null;
@@ -45,7 +44,6 @@ export type ActiveTaskExecutionResult = {
   workerClientId: string;
   taskAssigneeActorIdBeforeClaim: string | null;
   agentActorId: string;
-  agentActor: ActorResult | null;
   stats: ExecutionStatsResult | null;
 };
 
@@ -64,7 +62,6 @@ export type TaskExecutionHistoryResult = {
   claimedAt: Date;
   transitionedAt: Date;
   agentActorId: string;
-  agentActor: ActorResult | null;
   workerClientId: string;
   runnerSessionId: string | null;
   toolCallCount: number;
