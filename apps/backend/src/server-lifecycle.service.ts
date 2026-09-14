@@ -3,17 +3,20 @@ import {
   Injectable,
   Logger,
   OnApplicationShutdown,
-  OnModuleDestroy,
 } from '@nestjs/common';
+import { getConfig } from './config/env.config';
 
 @Injectable()
 export class ServerLifecycleService
-  implements OnModuleDestroy, BeforeApplicationShutdown, OnApplicationShutdown
+  implements BeforeApplicationShutdown, OnApplicationShutdown
 {
   private readonly logger = new Logger(ServerLifecycleService.name);
   private shuttingDown = false;
   private shutdownStartedAt: number | null = null;
   private shutdownSignal: string | undefined;
+  private activeRequestCount = 0;
+  private drainWaiters: Array<() => void> = [];
+  private requestDrainCompleted = false;
 
   isShuttingDown(): boolean {
     return this.shuttingDown;
@@ -40,12 +43,72 @@ export class ServerLifecycleService
     return true;
   }
 
-  onModuleDestroy(): void {
-    this.beginShutdown();
+  getShutdownSignal(): string | undefined {
+    return this.shutdownSignal;
   }
 
-  beforeApplicationShutdown(signal?: string): void {
+  trackRequest(): () => void {
+    this.activeRequestCount += 1;
+    let released = false;
+
+    return () => {
+      if (released) {
+        return;
+      }
+      released = true;
+      this.activeRequestCount -= 1;
+      if (this.activeRequestCount === 0) {
+        this.resolveDrainWaiters();
+      }
+    };
+  }
+
+  getActiveRequestCount(): number {
+    return this.activeRequestCount;
+  }
+
+  async waitForRequestsToDrain(timeoutMs: number): Promise<boolean> {
+    if (this.activeRequestCount === 0) {
+      return true;
+    }
+
+    this.logger.log(
+      `Waiting up to ${timeoutMs}ms for ${this.activeRequestCount} active HTTP request(s) to drain`,
+    );
+
+    return new Promise<boolean>((resolve) => {
+      const complete = (drained: boolean) => {
+        clearTimeout(timeout);
+        this.drainWaiters = this.drainWaiters.filter(
+          (waiter) => waiter !== onDrain,
+        );
+        if (!drained) {
+          this.logger.warn(
+            `HTTP drain timed out with ${this.activeRequestCount} active request(s) remaining`,
+          );
+        }
+        resolve(drained);
+      };
+
+      const onDrain = () => complete(true);
+      const timeout = setTimeout(() => complete(false), timeoutMs);
+      this.drainWaiters.push(onDrain);
+    });
+  }
+
+  async drainRequestsOnce(timeoutMs: number): Promise<boolean> {
+    if (this.requestDrainCompleted) {
+      return true;
+    }
+
+    const drained = await this.waitForRequestsToDrain(timeoutMs);
+    this.requestDrainCompleted = true;
+    return drained;
+  }
+
+  async beforeApplicationShutdown(signal?: string): Promise<void> {
     this.beginShutdown(signal);
+    await this.drainRequestsOnce(getConfig().httpDrainTimeoutMs);
   }
 
   onApplicationShutdown(signal?: string): void {
@@ -61,5 +124,13 @@ export class ServerLifecycleService
 
   private formatSignal(signal?: string): string {
     return signal ? ` for ${signal}` : '';
+  }
+
+  private resolveDrainWaiters(): void {
+    const waiters = this.drainWaiters;
+    this.drainWaiters = [];
+    for (const waiter of waiters) {
+      waiter();
+    }
   }
 }
