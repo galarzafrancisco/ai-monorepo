@@ -135,4 +135,31 @@ describe('task blueprint soft-deleted actors', () => {
       }),
     );
   });
+
+  it('does not claim a schedule deleted after due-task listing', async () => {
+    const queryBuilder = {
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({ affected: 0 }),
+    };
+    const scheduledTaskRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+    };
+    const service = new ScheduledTasksService(
+      scheduledTaskRepository as any,
+      {} as any,
+      {} as any,
+    );
+
+    const result = await service.claimDueTaskExecution(
+      'schedule-1',
+      deletedAt,
+      '* * * * *',
+    );
+
+    expect(result).toBeNull();
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith('deleted_at IS NULL');
+  });
 });

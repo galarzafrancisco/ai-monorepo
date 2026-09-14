@@ -255,6 +255,7 @@ export class ScheduledTasksService {
       .where('id = :scheduledTaskId', { scheduledTaskId })
       .andWhere('enabled = :enabled', { enabled: true })
       .andWhere('next_run_at = :expectedNextRunAt', { expectedNextRunAt })
+      .andWhere('deleted_at IS NULL')
       .execute();
 
     if ((result.affected ?? 0) === 0) {
