@@ -330,6 +330,8 @@ export class TokenService {
       iat: now,
       jti: randomBytes(16).toString('hex'), // Unique token ID
       client_id: mcpAuthFlow.client.clientId,
+      authorization_journey_id: mcpAuthFlow.authorizationJourneyId,
+      mcp_authorization_flow_id: mcpAuthFlow.id,
       scope: mcpAuthFlow.scopes || [], // Handle null scopes
       mcp_server_identifier: mcpAuthFlow.server.providedId,
       resource: mcpAuthFlow.resource || '',

@@ -59,6 +59,16 @@ export interface AccessTokenClaims {
   client_id: string;
 
   /**
+   * Authorization journey that minted this token.
+   */
+  authorization_journey_id?: string;
+
+  /**
+   * MCP authorization flow that minted this token.
+   */
+  mcp_authorization_flow_id?: string;
+
+  /**
    * Scopes granted to the client, stored as individual scope strings
    */
   scope: string[];

@@ -1,18 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import {
-  NotFoundException,
-  ForbiddenException,
-  UnauthorizedException,
-} from '@nestjs/common';
+
+jest.mock('../mcp-registry/mcp-registry.service', () => ({
+  McpRegistryService: class McpRegistryService {},
+}));
+
+jest.mock('src/auth/crypto/token-verifier.service', () => ({
+  TokenVerifierService: class TokenVerifierService {},
+}));
+
 import { TokenExchangeService } from './token-exchange.service';
 import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.entity';
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
-import { JwksService } from '../auth/crypto/jwks.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
+import { TokenVerifierService } from 'src/auth/crypto/token-verifier.service';
+import { AccessTokenClaims } from 'src/auth/core/types/access-token-claims.type';
+import { ActorType } from 'src/identity-provider/enums';
 
 describe('TokenExchangeService', () => {
   let service: TokenExchangeService;
@@ -21,33 +29,77 @@ describe('TokenExchangeService', () => {
   let connectionAuthorizationFlowRepository: jest.Mocked<
     Repository<ConnectionAuthorizationFlowEntity>
   >;
-  let jwksService: jest.Mocked<JwksService>;
+  let mcpRegistryService: jest.Mocked<McpRegistryService>;
+  let tokenVerifierService: jest.Mocked<TokenVerifierService>;
+  let queryBuilder: {
+    innerJoin: jest.Mock;
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    take: jest.Mock;
+    getMany: jest.Mock;
+  };
 
   const mockConnection: McpConnectionEntity = {
     id: 'connection-uuid',
     serverId: 'server-uuid',
     friendlyName: 'Test Connection',
     providedId: 'test-connection',
-    clientId: 'test-client-id',
-    clientSecret: 'test-client-secret',
+    clientId: 'downstream-client-id',
+    clientSecret: 'downstream-client-secret',
     authorizeUrl: 'https://example.com/authorize',
     tokenUrl: 'https://example.com/token',
     createdAt: new Date(),
     updatedAt: new Date(),
   } as McpConnectionEntity;
 
+  const mockClaims: AccessTokenClaims = {
+    iss: 'https://issuer.example.com',
+    sub: 'actor-uuid',
+    actor_id: 'actor-uuid',
+    actor_slug: 'actor',
+    actor_type: ActorType.HUMAN,
+    aud: 'test-server',
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    iat: Math.floor(Date.now() / 1000),
+    jti: 'token-id',
+    client_id: 'registered-client-id',
+    authorization_journey_id: 'journey-uuid',
+    mcp_authorization_flow_id: 'mcp-flow-uuid',
+    scope: ['tasks:read'],
+    mcp_server_identifier: 'test-server',
+    resource: 'resource-uri',
+    version: '1.0.0',
+  };
+
   const mockAuthFlow: ConnectionAuthorizationFlowEntity = {
     id: 'flow-uuid',
+    authorizationJourneyId: 'journey-uuid',
     mcpConnectionId: 'connection-uuid',
     status: ConnectionAuthorizationFlowStatus.AUTHORIZED,
     accessToken: 'downstream-access-token',
     refreshToken: 'downstream-refresh-token',
-    tokenExpiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+    tokenExpiresAt: new Date(Date.now() + 3600000),
     createdAt: new Date(),
     updatedAt: new Date(),
   } as ConnectionAuthorizationFlowEntity;
 
+  const request: TokenExchangeRequestDto = {
+    grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+    subject_token: 'mcp-jwt',
+    subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+    resource: 'test-connection',
+    scope: 'downstream.scope',
+  };
+
   beforeEach(async () => {
+    queryBuilder = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([mockAuthFlow]),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TokenExchangeService,
@@ -66,14 +118,20 @@ describe('TokenExchangeService', () => {
         {
           provide: getRepositoryToken(ConnectionAuthorizationFlowEntity),
           useValue: {
-            findOne: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
             save: jest.fn(),
           },
         },
         {
-          provide: JwksService,
+          provide: McpRegistryService,
           useValue: {
-            getPublicKeys: jest.fn(),
+            resolveServerIdFromProvidedId: jest.fn(),
+          },
+        },
+        {
+          provide: TokenVerifierService,
+          useValue: {
+            verifyAndDecode: jest.fn(),
           },
         },
       ],
@@ -89,250 +147,178 @@ describe('TokenExchangeService', () => {
     connectionAuthorizationFlowRepository = module.get(
       getRepositoryToken(ConnectionAuthorizationFlowEntity),
     );
-    jwksService = module.get(JwksService);
+    mcpRegistryService = module.get(McpRegistryService);
+    tokenVerifierService = module.get(TokenVerifierService);
+
+    mcpRegistryService.resolveServerIdFromProvidedId.mockResolvedValue(
+      'server-uuid',
+    );
+    tokenVerifierService.verifyAndDecode.mockResolvedValue(mockClaims);
+    mcpConnectionRepository.findOne.mockResolvedValue(mockConnection);
+    mcpScopeMappingRepository.find.mockResolvedValue([
+      {
+        id: 'mapping-1',
+        scopeId: 'tasks:read',
+        connectionId: 'connection-uuid',
+        serverId: 'server-uuid',
+        downstreamScope: 'downstream.scope',
+      } as McpScopeMappingEntity,
+    ]);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('returns a downstream token when connection and grant bindings match', async () => {
+    const result = await service.exchangeToken(request, 'test-server');
+
+    expect(result.access_token).toBe('downstream-access-token');
+    expect(queryBuilder.getMany).toHaveBeenCalledTimes(1);
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'connectionFlow.authorizationJourneyId = :authorizationJourneyId',
+      { authorizationJourneyId: 'journey-uuid' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'authJourney.actorId = :actorId',
+      { actorId: 'actor-uuid' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'mcpFlow.id = :mcpAuthorizationFlowId',
+      { mcpAuthorizationFlowId: 'mcp-flow-uuid' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'client.clientId = :clientId',
+      { clientId: 'registered-client-id' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'mcpFlow.resource = :resource',
+      { resource: 'resource-uri' },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'server.providedId = :serverIdentifier',
+      { serverIdentifier: 'test-server' },
+    );
+    expect(queryBuilder.take).toHaveBeenCalledWith(2);
   });
 
-  describe('exchangeToken - validation', () => {
-    it('should throw NotFoundException when connection is not found', async () => {
-      const request: TokenExchangeRequestDto = {
-        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-        subject_token: 'invalid-jwt',
-        subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-        resource: 'non-existent-connection',
-      };
+  it.each([
+    [
+      'different actor',
+      { sub: 'other-actor' },
+      'authJourney.actorId = :actorId',
+      { actorId: 'other-actor' },
+    ],
+    [
+      'different client',
+      { client_id: 'other-client' },
+      'client.clientId = :clientId',
+      { clientId: 'other-client' },
+    ],
+    [
+      'different authorization journey',
+      { authorization_journey_id: 'other-journey' },
+      'connectionFlow.authorizationJourneyId = :authorizationJourneyId',
+      { authorizationJourneyId: 'other-journey' },
+    ],
+    [
+      'different MCP authorization flow',
+      { mcp_authorization_flow_id: 'other-flow' },
+      'mcpFlow.id = :mcpAuthorizationFlowId',
+      { mcpAuthorizationFlowId: 'other-flow' },
+    ],
+    [
+      'different resource',
+      { resource: 'other-resource' },
+      'mcpFlow.resource = :resource',
+      { resource: 'other-resource' },
+    ],
+  ])(
+    'rejects when the only downstream grant has a %s',
+    async (_label, claimPatch, predicate, params) => {
+      tokenVerifierService.verifyAndDecode.mockResolvedValue({
+        ...mockClaims,
+        ...claimPatch,
+      });
+      queryBuilder.getMany.mockResolvedValue([]);
 
-      mcpConnectionRepository.findOne.mockResolvedValue(null);
-      jwksService.getPublicKeys.mockResolvedValue([
-        {
-          kid: 'test-key',
-          kty: 'RSA',
-          alg: 'RS256',
-          use: 'sig',
-          n: 'test-n',
-          e: 'test-e',
-        },
-      ] as any);
-
-      // This will fail at JWT validation, but testing the flow
       await expect(
         service.exchangeToken(request, 'test-server'),
       ).rejects.toThrow(UnauthorizedException);
-    });
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(predicate, params);
+    },
+  );
 
-    it('should throw ForbiddenException when requested scope is not entitled', async () => {
-      // This test would require mocking the entire JWT validation flow
-      // Skipping for now as it requires complex jose library mocking
-      expect(true).toBe(true);
-    });
+  it('rejects when no bound downstream flow matches', async () => {
+    queryBuilder.getMany.mockResolvedValue([]);
+
+    await expect(service.exchangeToken(request, 'test-server')).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
-  describe('scope resolution', () => {
-    it('should resolve downstream scopes from MCP scopes', async () => {
-      const mockMappings: McpScopeMappingEntity[] = [
-        {
-          id: 'mapping-1',
-          scopeId: 'tasks:read',
-          connectionId: 'connection-uuid',
-          serverId: 'server-uuid',
-          downstreamScope: 'https://www.googleapis.com/auth/tasks.readonly',
-        } as McpScopeMappingEntity,
-        {
-          id: 'mapping-2',
-          scopeId: 'tasks:write',
-          connectionId: 'connection-uuid',
-          serverId: 'server-uuid',
-          downstreamScope: 'https://www.googleapis.com/auth/tasks',
-        } as McpScopeMappingEntity,
-      ];
+  it('rejects ambiguous downstream grant matches', async () => {
+    queryBuilder.getMany.mockResolvedValue([mockAuthFlow, mockAuthFlow]);
 
-      mcpScopeMappingRepository.find.mockResolvedValue(mockMappings);
-
-      // Using reflection to access private method for testing
-      const resolveMethod = (service as any).resolveDownstreamScopes.bind(
-        service,
-      );
-      const result = await resolveMethod(
-        ['tasks:read', 'tasks:write'],
-        'connection-uuid',
-      );
-
-      expect(result).toEqual([
-        'https://www.googleapis.com/auth/tasks.readonly',
-        'https://www.googleapis.com/auth/tasks',
-      ]);
-    });
-
-    it('should remove duplicate downstream scopes', async () => {
-      const mockMappings: McpScopeMappingEntity[] = [
-        {
-          id: 'mapping-1',
-          scopeId: 'tasks:read',
-          connectionId: 'connection-uuid',
-          serverId: 'server-uuid',
-          downstreamScope: 'https://www.googleapis.com/auth/tasks',
-        } as McpScopeMappingEntity,
-        {
-          id: 'mapping-2',
-          scopeId: 'tasks:write',
-          connectionId: 'connection-uuid',
-          serverId: 'server-uuid',
-          downstreamScope: 'https://www.googleapis.com/auth/tasks',
-        } as McpScopeMappingEntity,
-      ];
-
-      mcpScopeMappingRepository.find.mockResolvedValue(mockMappings);
-
-      const resolveMethod = (service as any).resolveDownstreamScopes.bind(
-        service,
-      );
-      const result = await resolveMethod(
-        ['tasks:read', 'tasks:write'],
-        'connection-uuid',
-      );
-
-      expect(result).toEqual(['https://www.googleapis.com/auth/tasks']);
-      expect(result.length).toBe(1);
-    });
+    await expect(service.exchangeToken(request, 'test-server')).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
-  describe('scope validation', () => {
-    it('should allow subset of entitled scopes', () => {
-      const validateMethod = (service as any).validateScopeEntitlement.bind(
-        service,
-      );
-      const requestedScopes = ['scope1'];
-      const entitledScopes = ['scope1', 'scope2', 'scope3'];
+  it('refreshes only after selecting the bound downstream flow', async () => {
+    const expiringAuthFlow = {
+      ...mockAuthFlow,
+      tokenExpiresAt: new Date(Date.now() + 60 * 1000),
+    } as ConnectionAuthorizationFlowEntity;
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        access_token: 'refreshed-downstream-access-token',
+        expires_in: 3600,
+      }),
+    } as Response);
+    queryBuilder.getMany.mockResolvedValue([expiringAuthFlow]);
 
-      expect(() =>
-        validateMethod(requestedScopes, entitledScopes),
-      ).not.toThrow();
-    });
+    const result = await service.exchangeToken(request, 'test-server');
 
-    it('should throw ForbiddenException for scope escalation', () => {
-      const validateMethod = (service as any).validateScopeEntitlement.bind(
-        service,
-      );
-      const requestedScopes = ['scope1', 'scope2', 'scope-not-entitled'];
-      const entitledScopes = ['scope1', 'scope2'];
+    expect(result.access_token).toBe('refreshed-downstream-access-token');
+    expect(connectionAuthorizationFlowRepository.save).toHaveBeenCalledWith(
+      expiringAuthFlow,
+    );
+    expect(expiringAuthFlow.accessToken).toBe(
+      'refreshed-downstream-access-token',
+    );
 
-      expect(() => validateMethod(requestedScopes, entitledScopes)).toThrow(
-        ForbiddenException,
-      );
-    });
-
-    it('should allow empty requested scopes', () => {
-      const validateMethod = (service as any).validateScopeEntitlement.bind(
-        service,
-      );
-      const requestedScopes: string[] = [];
-      const entitledScopes = ['scope1', 'scope2'];
-
-      expect(() =>
-        validateMethod(requestedScopes, entitledScopes),
-      ).not.toThrow();
-    });
+    fetchMock.mockRestore();
   });
 
-  describe('connection lookup', () => {
-    it('should find connection by UUID', async () => {
-      mcpConnectionRepository.findOne.mockResolvedValue(mockConnection);
-
-      const findMethod = (service as any).findConnection.bind(service);
-      const result = await findMethod('connection-uuid', 'server-uuid');
-
-      expect(result).toEqual(mockConnection);
-      expect(mcpConnectionRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'connection-uuid', serverId: 'server-uuid' },
-      });
+  it('rejects tokens missing grant-binding claims', async () => {
+    tokenVerifierService.verifyAndDecode.mockResolvedValue({
+      ...mockClaims,
+      authorization_journey_id: undefined,
     });
 
-    it('should find connection by providedId', async () => {
-      mcpConnectionRepository.findOne
-        .mockResolvedValueOnce(null) // First call with UUID fails
-        .mockResolvedValueOnce(mockConnection); // Second call with providedId succeeds
-
-      const findMethod = (service as any).findConnection.bind(service);
-      const result = await findMethod('test-connection', 'server-uuid');
-
-      expect(result).toEqual(mockConnection);
-      expect(mcpConnectionRepository.findOne).toHaveBeenCalledTimes(2);
-    });
-
-    it('should return null when connection is not found', async () => {
-      mcpConnectionRepository.findOne.mockResolvedValue(null);
-
-      const findMethod = (service as any).findConnection.bind(service);
-      const result = await findMethod('non-existent', 'server-uuid');
-
-      expect(result).toBeNull();
-    });
+    await expect(service.exchangeToken(request, 'test-server')).rejects.toThrow(
+      UnauthorizedException,
+    );
+    expect(
+      connectionAuthorizationFlowRepository.createQueryBuilder,
+    ).not.toHaveBeenCalled();
   });
 
-  describe('UUID validation', () => {
-    it('should identify valid UUIDs', () => {
-      const isUuidMethod = (service as any).isUuid.bind(service);
-
-      expect(isUuidMethod('550e8400-e29b-41d4-a716-446655440000')).toBe(true);
-      expect(isUuidMethod('123e4567-e89b-12d3-a456-426614174000')).toBe(true);
+  it('rejects array audiences even when they include the expected server', async () => {
+    tokenVerifierService.verifyAndDecode.mockResolvedValue({
+      ...mockClaims,
+      aud: ['test-server'],
     });
 
-    it('should reject invalid UUIDs', () => {
-      const isUuidMethod = (service as any).isUuid.bind(service);
-
-      expect(isUuidMethod('test-connection')).toBe(false);
-      expect(isUuidMethod('not-a-uuid')).toBe(false);
-      expect(isUuidMethod('123456')).toBe(false);
-      expect(isUuidMethod('')).toBe(false);
-    });
+    await expect(service.exchangeToken(request, 'test-server')).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
-  describe('expires_in calculation', () => {
-    it('should calculate correct expires_in from future date', () => {
-      const calculateMethod = (service as any).calculateExpiresIn.bind(service);
-      const futureDate = new Date(Date.now() + 3600000); // 1 hour from now
-
-      const result = calculateMethod(futureDate);
-
-      expect(result).toBeGreaterThan(3590); // Allow some time for test execution
-      expect(result).toBeLessThanOrEqual(3600);
-    });
-
-    it('should return 0 for past dates', () => {
-      const calculateMethod = (service as any).calculateExpiresIn.bind(service);
-      const pastDate = new Date(Date.now() - 3600000); // 1 hour ago
-
-      const result = calculateMethod(pastDate);
-
-      expect(result).toBe(0);
-    });
-
-    it('should return default 3600 when no expiration date provided', () => {
-      const calculateMethod = (service as any).calculateExpiresIn.bind(service);
-
-      const result = calculateMethod(undefined);
-
-      expect(result).toBe(3600);
-    });
-  });
-
-  describe('token refresh', () => {
-    it('should throw UnauthorizedException when no refresh token available', async () => {
-      const authFlowWithoutRefreshToken = {
-        ...mockAuthFlow,
-        refreshToken: undefined,
-      };
-
-      const refreshMethod = (service as any).refreshDownstreamToken.bind(
-        service,
-      );
-
-      await expect(
-        refreshMethod(authFlowWithoutRefreshToken, mockConnection),
-      ).rejects.toThrow(UnauthorizedException);
-    });
+  it('throws ForbiddenException when requested scope is not entitled', async () => {
+    await expect(
+      service.exchangeToken(
+        { ...request, scope: 'other.scope' },
+        'test-server',
+      ),
+    ).rejects.toThrow(ForbiddenException);
   });
 });
