@@ -4,6 +4,7 @@ export type {
   ServerResponseDto as Tool,
   ScopeResponseDto as ToolScope,
   ConnectionResponseDto as ToolClient,
+  MappingResponseDto as ToolScopeMapping,
   ServerListResponseDto as ToolListResponse,
   AuthJourneyResponseDto as ToolAuthorization,
 } from "@taico/client/v2";
