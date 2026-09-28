@@ -22,7 +22,7 @@ export function ContextBlockRow({ blockSummary, onClick }: { blockSummary: Conte
         </Text>
       </div>
       <div style={{ fontSize: 12 }} className="text--tone-muted">
-        Created by {blockSummary.createdBy || 'unknown'}
+        Created by {blockSummary.createdBy || 'unknown'}{blockSummary.createdByIsDeactivated ? ' (deactivated)' : ''}
       </div>
     </DataRow>
   );

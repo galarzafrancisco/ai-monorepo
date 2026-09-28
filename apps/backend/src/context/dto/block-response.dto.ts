@@ -36,6 +36,29 @@ export class BlockResponseDto {
   createdBy!: string | null;
 
   @ApiProperty({
+    description: 'Whether the creator has been deactivated',
+  })
+  createdByIsDeactivated!: boolean;
+
+  @ApiProperty({
+    description: 'Actor ID of the block assignee',
+    nullable: true,
+  })
+  assigneeActorId?: string | null;
+
+  @ApiProperty({
+    type: String,
+    description: 'Assignee slug from the associated actor',
+    nullable: true,
+  })
+  assignee?: string | null;
+
+  @ApiProperty({
+    description: 'Whether the assignee has been deactivated',
+  })
+  assigneeIsDeactivated!: boolean;
+
+  @ApiProperty({
     description: 'Tags associated with the block',
     type: [ContextTagResponseDto],
     example: [
@@ -87,6 +110,10 @@ export class BlockResponseDto {
     dto.content = block.content;
     dto.createdByActorId = block.createdByActorId;
     dto.createdBy = block.createdBy;
+    dto.createdByIsDeactivated = block.createdByActor?.deletedAt != null;
+    dto.assigneeActorId = block.assigneeActorId;
+    dto.assignee = block.assignee;
+    dto.assigneeIsDeactivated = block.assigneeActor?.deletedAt != null;
     dto.tags =
       block.tags?.map((tag) => ({
         id: tag.id,

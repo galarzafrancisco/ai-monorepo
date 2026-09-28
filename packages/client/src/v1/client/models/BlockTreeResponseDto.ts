@@ -20,6 +20,10 @@ export type BlockTreeResponseDto = {
      */
     createdBy: string | null;
     /**
+     * Whether the creator has been deactivated
+     */
+    createdByIsDeactivated: boolean;
+    /**
      * Parent block ID (null if root block)
      */
     parentId: Record<string, any> | null;

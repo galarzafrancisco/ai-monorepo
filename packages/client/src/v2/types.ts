@@ -859,6 +859,10 @@ export interface BlockResponseDto {
   content: string;
   createdByActorId: string;
   createdBy: string | null;
+  createdByIsDeactivated: boolean;
+  assigneeActorId: Record<string, any> | null;
+  assignee: string | null;
+  assigneeIsDeactivated: boolean;
   tags: ContextTagResponseDto[];
   parentId: Record<string, any> | null;
   order: number;
@@ -871,6 +875,7 @@ export interface BlockSummaryDto {
   title: string;
   createdByActorId: string;
   createdBy: string | null;
+  createdByIsDeactivated: boolean;
   tags: ContextTagResponseDto[];
   parentId: Record<string, any> | null;
   order: number;
@@ -893,6 +898,7 @@ export interface BlockTreeResponseDto {
   title: string;
   createdByActorId: string;
   createdBy: string | null;
+  createdByIsDeactivated: boolean;
   parentId: Record<string, any> | null;
   order: number;
   children: BlockTreeResponseDto[];
