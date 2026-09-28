@@ -172,7 +172,9 @@ function TreeBranch({
                   {!compact ? (
                     <div className="context-tree__meta">
                       <span className="context-tree__id">#{node.block.id.slice(0, 6)}</span>
-                      <span>{node.block.createdBy || "unknown"}</span>
+                      <span>
+                        {node.block.createdBy || "unknown"}{node.block.createdByIsDeactivated ? " (deactivated)" : ""}
+                      </span>
                     </div>
                   ) : null}
                 </div>

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, QueryFailedError } from 'typeorm';
+import { Repository, In, IsNull, QueryFailedError } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 import { ThreadEntity } from './thread.entity';
@@ -99,7 +99,7 @@ export class ThreadsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly chatService: ChatService,
     private readonly threadTitleService: ThreadTitleService,
-  ) { }
+  ) {}
 
   private async ensureThreadConversationSession(
     thread: ThreadEntity,
@@ -149,10 +149,11 @@ export class ThreadsService {
     }
 
     // Generate title based on available context
-    const title = input.title
-      || (parentTask
-        ? ((await this.threadTitleService.generateFromParentTask(parentTask))
-          || ThreadsService.DEFAULT_THREAD_TITLE)
+    const title =
+      input.title ||
+      (parentTask
+        ? (await this.threadTitleService.generateFromParentTask(parentTask)) ||
+          ThreadsService.DEFAULT_THREAD_TITLE
         : ThreadsService.DEFAULT_THREAD_TITLE);
 
     await this.chatService.ensureConversationAvailable();
@@ -204,7 +205,8 @@ export class ThreadsService {
         // No provider configured — thread is created with chatSessionId: null.
         // The session will be lazily initialized when the first message is sent.
         this.logger.warn({
-          message: 'No active chat provider; thread created without a chat session',
+          message:
+            'No active chat provider; thread created without a chat session',
           threadId: savedThread.id,
         });
       } else {
@@ -212,7 +214,8 @@ export class ThreadsService {
         await this.contextBlockRepository.delete({ id: stateBlock.id });
 
         this.logger.error({
-          message: 'Failed to create chat conversation for thread, rolling back thread creation',
+          message:
+            'Failed to create chat conversation for thread, rolling back thread creation',
           threadId: savedThread.id,
           error:
             error instanceof Error
@@ -631,6 +634,7 @@ export class ThreadsService {
 
     const thread = await this.threadRepository
       .createQueryBuilder('thread')
+      .withDeleted()
       .leftJoinAndSelect('thread.createdByActor', 'createdByActor')
       .leftJoinAndSelect('thread.tasks', 'tasks')
       .leftJoinAndSelect('tasks.assigneeActor', 'taskAssigneeActor')
@@ -638,11 +642,15 @@ export class ThreadsService {
       .leftJoinAndSelect('tasks.tags', 'taskTags')
       .leftJoinAndSelect('tasks.comments', 'taskComments')
       .leftJoinAndSelect('tasks.inputRequests', 'taskInputRequests')
-      .leftJoinAndSelect('thread.referencedContextBlocks', 'referencedContextBlocks')
+      .leftJoinAndSelect(
+        'thread.referencedContextBlocks',
+        'referencedContextBlocks',
+      )
       .leftJoinAndSelect('thread.tags', 'tags')
       .leftJoinAndSelect('thread.participants', 'participants')
-      .innerJoin('thread.tasks', 'filterTask')
+      .innerJoin('thread.tasks', 'filterTask', 'filterTask.deletedAt IS NULL')
       .where('filterTask.id = :taskId', { taskId })
+      .andWhere('thread.deletedAt IS NULL')
       .getOne();
 
     if (!thread) {
@@ -652,14 +660,17 @@ export class ThreadsService {
     return await this.buildThreadResult(thread);
   }
 
-  async findThreadsByParentTaskId(parentTaskId: string): Promise<ThreadResult[]> {
+  async findThreadsByParentTaskId(
+    parentTaskId: string,
+  ): Promise<ThreadResult[]> {
     this.logger.log({
       message: 'Finding threads by parent task ID',
       parentTaskId,
     });
 
     const threads = await this.threadRepository.find({
-      where: { parentTaskId },
+      where: { parentTaskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'createdByActor',
         'tasks',
@@ -686,7 +697,8 @@ export class ThreadsService {
     });
 
     const thread = await this.threadRepository.findOne({
-      where: { parentTaskId },
+      where: { parentTaskId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'createdByActor',
         'tasks',
@@ -708,7 +720,9 @@ export class ThreadsService {
     return this.mapThreadToResult(thread);
   }
 
-  async findThreadsByStateBlockId(stateBlockId: string): Promise<ThreadResult[]> {
+  async findThreadsByStateBlockId(
+    stateBlockId: string,
+  ): Promise<ThreadResult[]> {
     this.logger.log({
       message: 'Finding threads by state block ID',
       stateBlockId,
@@ -741,7 +755,8 @@ export class ThreadsService {
     });
 
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
+      where: { id: threadId, deletedAt: IsNull() },
+      withDeleted: true,
     });
 
     if (!thread) {
@@ -813,9 +828,12 @@ export class ThreadsService {
     return updatedBlock.content;
   }
 
-  private async getThreadWithRelations(threadId: string): Promise<ThreadEntity> {
+  private async getThreadWithRelations(
+    threadId: string,
+  ): Promise<ThreadEntity> {
     const thread = await this.threadRepository.findOne({
-      where: { id: threadId },
+      where: { id: threadId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: [
         'createdByActor',
         'tasks',
@@ -842,7 +860,10 @@ export class ThreadsService {
       return true;
     }
 
-    return title.trim().toLowerCase() === ThreadsService.DEFAULT_THREAD_TITLE.toLowerCase();
+    return (
+      title.trim().toLowerCase() ===
+      ThreadsService.DEFAULT_THREAD_TITLE.toLowerCase()
+    );
   }
 
   private async maybeGenerateTitleFromFirstMessage(
@@ -863,7 +884,8 @@ export class ThreadsService {
       return;
     }
 
-    const generatedTitle = await this.threadTitleService.generateFromMessage(content);
+    const generatedTitle =
+      await this.threadTitleService.generateFromMessage(content);
     if (!generatedTitle || this.isPlaceholderTitle(generatedTitle)) {
       return;
     }
@@ -887,7 +909,8 @@ export class ThreadsService {
       });
     } catch (error) {
       this.logger.warn({
-        message: 'Failed to update thread state block title after generating thread title',
+        message:
+          'Failed to update thread state block title after generating thread title',
         threadId: input.thread.id,
         stateContextBlockId: input.thread.stateContextBlockId,
         error:
@@ -914,10 +937,12 @@ export class ThreadsService {
       createdByActor: this.mapActorToResult(thread.createdByActor),
       parentTaskId: thread.parentTaskId || null,
       stateContextBlockId: thread.stateContextBlockId,
-      tasks: (thread.tasks || []).map((task) => this.mapTaskToSummary(task)),
-      referencedContextBlocks: (thread.referencedContextBlocks || []).map(
-        (block) => this.mapContextBlockToSummary(block),
-      ),
+      tasks: (thread.tasks || [])
+        .filter((task) => task.deletedAt == null)
+        .map((task) => this.mapTaskToSummary(task)),
+      referencedContextBlocks: (thread.referencedContextBlocks || [])
+        .filter((block) => block.deletedAt == null)
+        .map((block) => this.mapContextBlockToSummary(block)),
       tags: (thread.tags || []).map((tag) => this.mapTagToResult(tag)),
       participants: (thread.participants || []).map((actor) =>
         this.mapActorToResult(actor),
@@ -948,8 +973,8 @@ export class ThreadsService {
     }
 
     return (
-      message.includes('uq_threads_parent_task_id_non_null')
-      || message.includes('threads.parent_task_id')
+      message.includes('uq_threads_parent_task_id_non_null') ||
+      message.includes('threads.parent_task_id')
     );
   }
 
@@ -969,9 +994,9 @@ export class ThreadsService {
     }
 
     return (
-      message.includes('thread_tasks')
-      && message.includes('thread_id')
-      && message.includes('task_id')
+      message.includes('thread_tasks') &&
+      message.includes('thread_id') &&
+      message.includes('task_id')
     );
   }
 
@@ -991,9 +1016,9 @@ export class ThreadsService {
     }
 
     return (
-      message.includes('thread_participants')
-      && message.includes('thread_id')
-      && message.includes('actor_id')
+      message.includes('thread_participants') &&
+      message.includes('thread_id') &&
+      message.includes('actor_id')
     );
   }
 
@@ -1005,6 +1030,7 @@ export class ThreadsService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      isDeactivated: actor.deletedAt !== null,
     };
   }
 
@@ -1062,9 +1088,8 @@ export class ThreadsService {
     if (!thread) {
       throw new ThreadNotFoundError(input.threadId);
     }
-    const threadWithConversation = await this.ensureThreadConversationSession(
-      thread,
-    );
+    const threadWithConversation =
+      await this.ensureThreadConversationSession(thread);
 
     // Verify actor exists if provided
     const actor = await this.actorRepository.findOne({
@@ -1113,20 +1138,26 @@ export class ThreadsService {
     // Send to chat (fire-and-forget with error handling to prevent unhandled rejection)
     void (async () => {
       try {
-        const { agentActorId, events } = await this.chatService.streamMessageToConversation({
-          conversationId: threadWithConversation.chatSessionId!,
-          threadId: threadWithConversation.id,
-          message: input.content,
-          actor,
-        });
-        await this.consumeResponseStream(events, threadWithConversation.id, agentActorId);
+        const { agentActorId, events } =
+          await this.chatService.streamMessageToConversation({
+            conversationId: threadWithConversation.chatSessionId!,
+            threadId: threadWithConversation.id,
+            message: input.content,
+            actor,
+          });
+        await this.consumeResponseStream(
+          events,
+          threadWithConversation.id,
+          agentActorId,
+        );
       } catch (error) {
         this.logger.error({
           message: 'Failed to process agent response stream',
           threadId: threadWithConversation.id,
-          error: error instanceof Error
-            ? { message: error.message, stack: error.stack, name: error.name }
-            : String(error),
+          error:
+            error instanceof Error
+              ? { message: error.message, stack: error.stack, name: error.name }
+              : String(error),
         });
       }
     })();
@@ -1178,7 +1209,11 @@ export class ThreadsService {
     for await (const event of events) {
       switch (event.type) {
         case 'agent_activity':
-          this.emitAgentActivity({ threadId, actorId: agentActorId, kind: event.kind });
+          this.emitAgentActivity({
+            threadId,
+            actorId: agentActorId,
+            kind: event.kind,
+          });
           break;
         case 'response_delta':
           this.emitAgentResponseDelta({
@@ -1189,11 +1224,19 @@ export class ThreadsService {
           });
           break;
         case 'final_response':
-          await this.persistAgentMessage({ threadId, content: event.content, actorId: agentActorId });
+          await this.persistAgentMessage({
+            threadId,
+            content: event.content,
+            actorId: agentActorId,
+          });
           break;
         case 'error': {
           const errorMessage = `I encountered an error while processing your message: ${event.error.message}`;
-          await this.persistAgentMessage({ threadId, content: errorMessage, actorId: agentActorId });
+          await this.persistAgentMessage({
+            threadId,
+            content: errorMessage,
+            actorId: agentActorId,
+          });
           break;
         }
       }
@@ -1236,9 +1279,10 @@ export class ThreadsService {
       this.logger.error({
         message: 'Failed to persist agent message',
         threadId: input.threadId,
-        error: error instanceof Error
-          ? { message: error.message, stack: error.stack, name: error.name }
-          : String(error),
+        error:
+          error instanceof Error
+            ? { message: error.message, stack: error.stack, name: error.name }
+            : String(error),
       });
     }
   }
@@ -1266,6 +1310,7 @@ export class ThreadsService {
     const [messages, total] = await this.threadMessageRepository.findAndCount({
       where: { threadId: input.threadId },
       relations: ['createdByActor'],
+      withDeleted: true,
       order: { createdAt: 'ASC' },
       skip,
       take: input.limit,

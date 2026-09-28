@@ -27,6 +27,10 @@ export type ActorResponseDto = {
      * Short description of what this actor is good at and when to assign them tasks
      */
     introduction?: string | null;
+    /**
+     * Whether this actor has been deactivated while retaining history
+     */
+    isDeactivated?: boolean;
 };
 export namespace ActorResponseDto {
     /**

@@ -29,6 +29,11 @@ export class BlockSummaryDto {
   createdBy!: string | null;
 
   @ApiProperty({
+    description: 'Whether the creator has been deactivated',
+  })
+  createdByIsDeactivated!: boolean;
+
+  @ApiProperty({
     description: 'Tags associated with the block',
     type: [ContextTagResponseDto],
     example: [

@@ -28,6 +28,11 @@ export class BlockTreeResponseDto {
   createdBy!: string | null;
 
   @ApiProperty({
+    description: 'Whether the creator has been deactivated',
+  })
+  createdByIsDeactivated!: boolean;
+
+  @ApiProperty({
     description: 'Parent block ID (null if root block)',
     example: '123e4567-e89b-12d3-a456-426614174000',
     nullable: true,

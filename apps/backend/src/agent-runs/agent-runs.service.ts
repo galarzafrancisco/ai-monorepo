@@ -75,6 +75,7 @@ export class AgentRunsService {
     const agentRunWithRelations = await this.agentRunRepository.findOne({
       where: { id: savedAgentRun.id },
       relations: ['actor', 'parentTask'],
+      withDeleted: true,
     });
 
     if (!agentRunWithRelations) {
@@ -101,6 +102,7 @@ export class AgentRunsService {
     const agentRun = await this.agentRunRepository.findOne({
       where: { id: runId },
       relations: ['actor', 'parentTask'],
+      withDeleted: true,
     });
 
     if (!agentRun) {
@@ -120,6 +122,7 @@ export class AgentRunsService {
     const agentRunWithRelations = await this.agentRunRepository.findOne({
       where: { id: runId },
       relations: ['actor', 'parentTask'],
+      withDeleted: true,
     });
 
     if (!agentRunWithRelations) {
@@ -138,6 +141,7 @@ export class AgentRunsService {
     const agentRun = await this.agentRunRepository.findOne({
       where: { id: runId },
       relations: ['actor', 'parentTask'],
+      withDeleted: true,
     });
 
     if (!agentRun) {
@@ -162,6 +166,7 @@ export class AgentRunsService {
 
     const queryBuilder = this.agentRunRepository
       .createQueryBuilder('agentRun')
+      .withDeleted()
       .leftJoinAndSelect('agentRun.actor', 'actor')
       .leftJoinAndSelect('agentRun.parentTask', 'parentTask');
 
@@ -224,6 +229,7 @@ export class AgentRunsService {
       displayName: actor.displayName,
       avatarUrl: actor.avatarUrl,
       introduction: actor.introduction,
+      isDeactivated: actor.deletedAt !== null,
     };
   }
 

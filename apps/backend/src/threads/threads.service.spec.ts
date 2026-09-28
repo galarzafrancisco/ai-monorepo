@@ -156,14 +156,23 @@ describe('ThreadsService - Parent Task ID', () => {
   const mockStateBlock = {
     id: 'state-block-uuid',
     title: 'Thread State: Test Thread',
-    content: 'This thread was created to achieve task Parent Task (id parent-task-uuid).',
+    content:
+      'This thread was created to achieve task Parent Task (id parent-task-uuid).',
     createdByActorId: 'actor-uuid',
     createdBy: 'test-user',
     assigneeActorId: null,
     assignee: null,
     parentId: null,
     order: 0,
-    tags: [{ id: 'tag-uuid', name: 'thread:state', color: '#000000', createdAt: new Date(), updatedAt: new Date() }],
+    tags: [
+      {
+        id: 'tag-uuid',
+        name: 'thread:state',
+        color: '#000000',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -223,7 +232,7 @@ describe('ThreadsService - Parent Task ID', () => {
       });
     });
 
-    describe('1.4. Parent Task is Automatically Added to Thread\'s Tasks Relation', () => {
+    describe("1.4. Parent Task is Automatically Added to Thread's Tasks Relation", () => {
       it('should include parent task in tasks array even if not in taskIds', async () => {
         const input: CreateThreadInput = {
           title: 'Test Thread',
@@ -326,18 +335,20 @@ describe('ThreadsService - Parent Task ID', () => {
       it('should throw ThreadNotFoundError when thread does not exist', async () => {
         threadRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.getThreadById('non-existent-uuid')).rejects.toThrow(
-          ThreadNotFoundError,
-        );
+        await expect(
+          service.getThreadById('non-existent-uuid'),
+        ).rejects.toThrow(ThreadNotFoundError);
       });
     });
 
     describe('3.3. Find Thread by Task ID', () => {
       it('should find thread by parent task ID', async () => {
         const mockQueryBuilder = {
+          withDeleted: jest.fn().mockReturnThis(),
           leftJoinAndSelect: jest.fn().mockReturnThis(),
           innerJoin: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
           getOne: jest.fn().mockResolvedValue(mockThread),
         };
 
@@ -353,13 +364,20 @@ describe('ThreadsService - Parent Task ID', () => {
           'filterTask.id = :taskId',
           { taskId: 'parent-task-uuid' },
         );
+        expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
+          'thread.tasks',
+          'filterTask',
+          'filterTask.deletedAt IS NULL',
+        );
       });
 
       it('should return null when thread is not found by task ID', async () => {
         const mockQueryBuilder = {
+          withDeleted: jest.fn().mockReturnThis(),
           leftJoinAndSelect: jest.fn().mockReturnThis(),
           innerJoin: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
           getOne: jest.fn().mockResolvedValue(null),
         };
 
@@ -367,7 +385,9 @@ describe('ThreadsService - Parent Task ID', () => {
           .fn()
           .mockReturnValue(mockQueryBuilder);
 
-        const result = await service.findThreadByTaskId('non-existent-task-uuid');
+        const result = await service.findThreadByTaskId(
+          'non-existent-task-uuid',
+        );
 
         expect(result).toBeNull();
       });
@@ -377,7 +397,8 @@ describe('ThreadsService - Parent Task ID', () => {
       it('should find a thread directly by parent task ID', async () => {
         threadRepository.findOne.mockResolvedValue(mockThread);
 
-        const result = await service.findThreadByParentTaskId('parent-task-uuid');
+        const result =
+          await service.findThreadByParentTaskId('parent-task-uuid');
 
         expect(result).toBeDefined();
         expect(result?.parentTaskId).toBe('parent-task-uuid');
@@ -627,7 +648,10 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithParticipant);
         actorRepository.findOne.mockResolvedValue(mockActor);
 
-        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+        const result = await service.addParticipant(
+          'thread-uuid',
+          'actor-uuid',
+        );
 
         expect(relationQueryBuilder.relation).toHaveBeenCalledWith(
           ThreadEntity,
@@ -637,7 +661,9 @@ describe('ThreadsService - Parent Task ID', () => {
         expect(relationQueryBuilder.add).toHaveBeenCalledWith('actor-uuid');
         expect(threadRepository.save).not.toHaveBeenCalled();
         expect(result.participants).toEqual(
-          expect.arrayContaining([expect.objectContaining({ id: 'actor-uuid' })]),
+          expect.arrayContaining([
+            expect.objectContaining({ id: 'actor-uuid' }),
+          ]),
         );
       });
 
@@ -666,11 +692,16 @@ describe('ThreadsService - Parent Task ID', () => {
           .mockResolvedValueOnce(threadWithParticipant);
         actorRepository.findOne.mockResolvedValue(mockActor);
 
-        const result = await service.addParticipant('thread-uuid', 'actor-uuid');
+        const result = await service.addParticipant(
+          'thread-uuid',
+          'actor-uuid',
+        );
 
         expect(relationQueryBuilder.add).toHaveBeenCalledWith('actor-uuid');
         expect(result.participants).toEqual(
-          expect.arrayContaining([expect.objectContaining({ id: 'actor-uuid' })]),
+          expect.arrayContaining([
+            expect.objectContaining({ id: 'actor-uuid' }),
+          ]),
         );
       });
     });
@@ -713,7 +744,8 @@ describe('ThreadsService - Parent Task ID', () => {
     it('should find threads by state block ID including soft-deleted', async () => {
       threadRepository.find.mockResolvedValue([mockThread]);
 
-      const result = await service.findThreadsByStateBlockId('state-block-uuid');
+      const result =
+        await service.findThreadsByStateBlockId('state-block-uuid');
 
       expect(result.length).toBe(1);
       expect(result[0].id).toBe('thread-uuid');
@@ -727,7 +759,9 @@ describe('ThreadsService - Parent Task ID', () => {
     it('should return empty array when no threads use the state block', async () => {
       threadRepository.find.mockResolvedValue([]);
 
-      const result = await service.findThreadsByStateBlockId('non-existent-state-block');
+      const result = await service.findThreadsByStateBlockId(
+        'non-existent-state-block',
+      );
 
       expect(result.length).toBe(0);
       expect(threadRepository.find).toHaveBeenCalledWith({

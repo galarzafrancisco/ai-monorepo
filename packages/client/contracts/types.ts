@@ -3022,6 +3022,8 @@ export interface components {
              * @example Expert in React and TypeScript development. Assign me frontend tasks.
              */
             introduction?: string | null;
+            /** @description Whether this actor has been deactivated while retaining history */
+            isDeactivated?: boolean;
         };
         McpFlowResponseDto: {
             /**
@@ -5089,6 +5091,14 @@ export interface components {
              * @example agent-roo
              */
             createdBy: string | null;
+            /** @description Whether the creator has been deactivated */
+            createdByIsDeactivated: boolean;
+            /** @description Actor ID of the block assignee */
+            assigneeActorId: Record<string, never> | null;
+            /** @description Assignee slug from the associated actor */
+            assignee: string | null;
+            /** @description Whether the assignee has been deactivated */
+            assigneeIsDeactivated: boolean;
             /**
              * @description Tags associated with the block
              * @example [
@@ -5145,6 +5155,8 @@ export interface components {
              * @example agent-roo
              */
             createdBy: string | null;
+            /** @description Whether the creator has been deactivated */
+            createdByIsDeactivated: boolean;
             /**
              * @description Tags associated with the block
              * @example [
@@ -5222,6 +5234,8 @@ export interface components {
              * @example agent-roo
              */
             createdBy: string | null;
+            /** @description Whether the creator has been deactivated */
+            createdByIsDeactivated: boolean;
             /**
              * @description Parent block ID (null if root block)
              * @example 123e4567-e89b-12d3-a456-426614174000

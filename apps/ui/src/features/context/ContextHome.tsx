@@ -150,7 +150,7 @@ function DesktopContextHome({
               <div className="context-home-desktop__result-main">
                 <div className="row-title">{block.title}</div>
                 <div className="row-detail">
-                  #{block.id.slice(0, 6)} {block.createdBy || "unknown"}
+                  #{block.id.slice(0, 6)} {block.createdBy || "unknown"}{block.createdByIsDeactivated ? " (deactivated)" : ""}
                 </div>
               </div>
             </DataRow>
