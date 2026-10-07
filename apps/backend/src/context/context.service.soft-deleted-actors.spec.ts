@@ -62,4 +62,69 @@ describe('ContextService soft-deleted actors', () => {
       createdByIsDeactivated: true,
     });
   });
+
+  it('preserves deleted creator and assignee personas after adding a tag', async () => {
+    const deletedAt = new Date('2026-09-14T08:00:00.000Z');
+    const block = {
+      id: 'block-1',
+      title: 'Historical context',
+      content: 'Created and assigned by retired agents',
+      createdByActorId: 'deleted-creator',
+      createdByActor: {
+        id: 'deleted-creator',
+        type: ActorType.AGENT,
+        slug: 'retired-creator',
+        deletedAt,
+      },
+      createdBy: 'retired-creator',
+      assigneeActorId: 'deleted-assignee',
+      assigneeActor: {
+        id: 'deleted-assignee',
+        type: ActorType.AGENT,
+        slug: 'retired-assignee',
+        deletedAt,
+      },
+      assignee: 'retired-assignee',
+      tags: [],
+      parentId: null,
+      order: 0,
+      createdAt: deletedAt,
+      updatedAt: deletedAt,
+      deletedAt: null,
+    };
+    const blockRepository = {
+      findOne: jest.fn().mockResolvedValue(block),
+      save: jest.fn().mockResolvedValue(block),
+    };
+    const service = new ContextService(
+      blockRepository as any,
+      { emit: jest.fn() } as any,
+      {
+        findOrCreateTagEntity: jest
+          .fn()
+          .mockResolvedValue({ id: 'tag-1', name: 'history' }),
+        incrementTagUsage: jest.fn(),
+      } as any,
+      {} as any,
+      {} as any,
+    );
+
+    const result = await service.addTagToBlock(
+      'block-1',
+      { name: 'history' },
+      'active-actor',
+    );
+
+    expect(blockRepository.findOne).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: 'block-1' }),
+      withDeleted: true,
+      relations: expect.arrayContaining(['createdByActor', 'assigneeActor']),
+    });
+    expect(result).toMatchObject({
+      createdBy: 'retired-creator',
+      createdByIsDeactivated: true,
+      assignee: 'retired-assignee',
+      assigneeIsDeactivated: true,
+    });
+  });
 });

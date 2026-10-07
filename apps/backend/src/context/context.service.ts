@@ -399,7 +399,8 @@ export class ContextService {
     });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -427,7 +428,8 @@ export class ContextService {
 
     // Reload with relations
     const blockWithRelations = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -448,7 +450,8 @@ export class ContextService {
     this.logger.log({ message: 'Removing tag from block', blockId, tagId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -545,7 +548,8 @@ export class ContextService {
     this.logger.log({ message: 'Reordering page', blockId, newOrder });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
@@ -566,7 +570,8 @@ export class ContextService {
     this.logger.log({ message: 'Moving page', blockId, newParentId });
 
     const block = await this.blockRepository.findOne({
-      where: { id: blockId },
+      where: { id: blockId, deletedAt: IsNull() },
+      withDeleted: true,
       relations: ['tags', 'createdByActor', 'assigneeActor'],
     });
 
