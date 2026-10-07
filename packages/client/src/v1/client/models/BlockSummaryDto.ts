@@ -21,6 +21,10 @@ export type BlockSummaryDto = {
      */
     createdBy: string | null;
     /**
+     * Whether the creator has been deactivated
+     */
+    createdByIsDeactivated: boolean;
+    /**
      * Tags associated with the block
      */
     tags: Array<ContextTagResponseDto>;

@@ -8589,6 +8589,10 @@
             "description": "Short description of what this actor is good at and when to assign them tasks",
             "example": "Expert in React and TypeScript development. Assign me frontend tasks.",
             "nullable": true
+          },
+          "isDeactivated": {
+            "type": "boolean",
+            "description": "Whether this actor has been deactivated while retaining history"
           }
         },
         "required": [
@@ -11721,6 +11725,24 @@
             "example": "agent-roo",
             "nullable": true
           },
+          "createdByIsDeactivated": {
+            "type": "boolean",
+            "description": "Whether the creator has been deactivated"
+          },
+          "assigneeActorId": {
+            "type": "object",
+            "description": "Actor ID of the block assignee",
+            "nullable": true
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Assignee slug from the associated actor",
+            "nullable": true
+          },
+          "assigneeIsDeactivated": {
+            "type": "boolean",
+            "description": "Whether the assignee has been deactivated"
+          },
           "tags": {
             "description": "Tags associated with the block",
             "example": [
@@ -11766,6 +11788,10 @@
           "content",
           "createdByActorId",
           "createdBy",
+          "createdByIsDeactivated",
+          "assigneeActorId",
+          "assignee",
+          "assigneeIsDeactivated",
           "tags",
           "parentId",
           "order",
@@ -11796,6 +11822,10 @@
             "description": "Creator slug from the associated actor",
             "example": "agent-roo",
             "nullable": true
+          },
+          "createdByIsDeactivated": {
+            "type": "boolean",
+            "description": "Whether the creator has been deactivated"
           },
           "tags": {
             "description": "Tags associated with the block",
@@ -11841,6 +11871,7 @@
           "title",
           "createdByActorId",
           "createdBy",
+          "createdByIsDeactivated",
           "tags",
           "parentId",
           "order",
@@ -11914,6 +11945,10 @@
             "example": "agent-roo",
             "nullable": true
           },
+          "createdByIsDeactivated": {
+            "type": "boolean",
+            "description": "Whether the creator has been deactivated"
+          },
           "parentId": {
             "type": "object",
             "description": "Parent block ID (null if root block)",
@@ -11949,6 +11984,7 @@
           "title",
           "createdByActorId",
           "createdBy",
+          "createdByIsDeactivated",
           "parentId",
           "order",
           "children",

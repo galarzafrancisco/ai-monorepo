@@ -12,6 +12,7 @@ export type ActorResult = {
   displayName: string;
   avatarUrl: string | null;
   introduction: string | null;
+  isDeactivated: boolean;
 };
 
 export type TaskResult = {

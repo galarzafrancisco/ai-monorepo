@@ -25,6 +25,22 @@ export type BlockResponseDto = {
      */
     createdBy: string | null;
     /**
+     * Whether the creator has been deactivated
+     */
+    createdByIsDeactivated: boolean;
+    /**
+     * Actor ID of the block assignee
+     */
+    assigneeActorId: Record<string, any> | null;
+    /**
+     * Assignee slug from the associated actor
+     */
+    assignee: string | null;
+    /**
+     * Whether the assignee has been deactivated
+     */
+    assigneeIsDeactivated: boolean;
+    /**
      * Tags associated with the block
      */
     tags: Array<ContextTagResponseDto>;

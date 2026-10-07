@@ -18,6 +18,7 @@ describe('TaskExecutionHistoryService', () => {
           provide: getRepositoryToken(TaskExecutionHistoryEntity),
           useValue: {
             find: jest.fn(),
+            findAndCount: jest.fn(),
             findOne: jest.fn(),
           },
         },
@@ -28,6 +29,38 @@ describe('TaskExecutionHistoryService', () => {
       TaskExecutionHistoryService,
     );
     repository = module.get(getRepositoryToken(TaskExecutionHistoryEntity));
+  });
+
+  describe('listHistory', () => {
+    it('returns historical executions by actor id', async () => {
+      const transitionedAt = new Date('2026-01-01T00:00:00.000Z');
+      repository.findAndCount.mockResolvedValue([
+        [
+          {
+            id: 'history-1',
+            taskId: 'task-1',
+            claimedAt: transitionedAt,
+            transitionedAt,
+            agentActorId: 'agent-actor-1',
+            workerClientId: 'worker-1',
+            runnerSessionId: null,
+            toolCallCount: 2,
+            status: TaskExecutionHistoryStatus.SUCCEEDED,
+            errorCode: null,
+            errorMessage: null,
+            stats: null,
+          } as TaskExecutionHistoryEntity,
+        ],
+        1,
+      ]);
+
+      const result = await service.listHistory({ taskId: 'task-1' });
+
+      expect(result.items[0].agentActorId).toBe('agent-actor-1');
+      expect(repository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ relations: ['task', 'stats'] }),
+      );
+    });
   });
 
   describe('getLatestHistoryForTask', () => {
@@ -46,6 +79,7 @@ describe('TaskExecutionHistoryService', () => {
       expect(result).toBe(mockHistory);
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { taskId },
+        relations: ['stats'],
         order: { transitionedAt: 'DESC' },
       });
     });

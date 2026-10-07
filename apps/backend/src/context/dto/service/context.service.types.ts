@@ -46,8 +46,10 @@ export interface BlockResult {
   content: string;
   createdByActorId: string;
   createdBy: string | null;
+  createdByIsDeactivated?: boolean;
   assigneeActorId?: string | null;
   assignee?: string | null;
+  assigneeIsDeactivated?: boolean;
   tags: TagResult[];
   parentId: string | null;
   order: number;
@@ -61,6 +63,7 @@ export interface BlockSummaryResult {
   title: string;
   createdByActorId: string;
   createdBy: string | null;
+  createdByIsDeactivated?: boolean;
   tags: TagResult[];
   parentId: string | null;
   order: number;
@@ -73,6 +76,7 @@ export interface BlockTreeResult {
   title: string;
   createdByActorId: string;
   createdBy: string | null;
+  createdByIsDeactivated?: boolean;
   parentId: string | null;
   order: number;
   children: BlockTreeResult[];

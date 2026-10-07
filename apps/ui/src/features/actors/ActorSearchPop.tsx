@@ -78,9 +78,9 @@ export function ActorSearchPop({ onCancel, onSave }: ActorSearchPopProps) {
 
   const filteredActors = useMemo(() => {
     if (query.trim()) {
-      return searchResults ?? [];
+      return (searchResults ?? []).filter((actor) => !actor.isDeactivated);
     }
-    return actors;
+    return actors.filter((actor) => !actor.isDeactivated);
   }, [actors, query, searchResults]);
 
   // Reset highlighted index when filtered results change

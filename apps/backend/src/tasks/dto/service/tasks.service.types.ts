@@ -13,6 +13,7 @@ export type ActorResult = {
   displayName: string;
   avatarUrl: string | null;
   introduction: string | null;
+  isDeactivated?: boolean;
 };
 
 // Input types (for service methods)
@@ -23,6 +24,8 @@ export type CreateTaskInput = {
   sessionId?: string;
   tagNames?: string[];
   createdByActorId: string;
+  /** Allows internal history-preserving flows to retain a deleted creator. */
+  allowDeletedCreator?: boolean;
   dependsOnIds?: string[];
 };
 

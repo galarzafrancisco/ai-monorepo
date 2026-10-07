@@ -207,7 +207,9 @@ export function ContextBlockDetailPage() {
         )}
 
         <div className="context-block-detail__meta">
-          <Text size="2" tone="muted">by @{block.createdBy || 'unknown'}</Text>
+          <Text size="2" tone="muted">
+            by @{block.createdBy || 'unknown'}{block.createdByIsDeactivated ? ' (deactivated)' : ''}
+          </Text>
           <Text size="2" tone="muted">•</Text>
           <Text size="2" tone="muted">{new Date(block.createdAt).toDateString()}</Text>
           <Text size="2" tone="muted">•</Text>
