@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { randomUUID } from 'crypto';
 import { generateText, ToolLoopAgent, type LanguageModel, type ModelMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
@@ -79,8 +80,11 @@ export class AiSdkBackend implements ChatBackend {
   }
 
   private async loadHistory(args: StreamMessageArgs): Promise<ModelMessage[]> {
-    const history = await this.historyRepository.findOneBy({ threadId: args.threadId });
-    if (history) return history.messages;
+    const history = await this.historyRepository.find({
+      where: { threadId: args.threadId },
+      order: { sequence: 'ASC' },
+    });
+    if (history.length > 0) return history.map((row) => row.message);
 
     // Existing OpenAI/ADK threads start with their visible transcript. The current
     // message is already persisted by ThreadsService and is appended below once.
@@ -90,12 +94,22 @@ export class AiSdkBackend implements ChatBackend {
       order: { createdAt: 'ASC', id: 'ASC' },
     });
     const currentIndex = transcript.findIndex((message) => message.id === args.messageId);
-    return transcript.slice(0, currentIndex < 0 ? 0 : currentIndex).map((message) => {
+    const messages = transcript.slice(0, currentIndex < 0 ? 0 : currentIndex).map((message) => {
       const actor = message.createdByActor;
       return actor?.slug === 'taico'
         ? { role: 'assistant' as const, content: message.content }
         : { role: 'user' as const, content: actor ? formatMessage(message.content, actor) : message.content };
     });
+    await this.appendHistory(args.threadId, messages);
+    return messages;
+  }
+
+  private async appendHistory(threadId: string, messages: ModelMessage[]): Promise<void> {
+    if (messages.length === 0) return;
+    // JSONB messages are inserted as complete values. TypeORM's recursive
+    // partial type cannot represent the SDK's recursive tool-output JSON types.
+    const rows = messages.map((message) => ({ threadId, message })) as unknown as QueryDeepPartialEntity<ThreadChatHistoryEntity>[];
+    await this.historyRepository.insert(rows);
   }
 
   async *streamMessage(args: StreamMessageArgs): AsyncGenerator<ChatStreamEvent> {
@@ -117,7 +131,7 @@ export class AiSdkBackend implements ChatBackend {
       ];
       // Retain the user turn even if generation fails, so the next turn still
       // has the request that caused the failure.
-      await this.historyRepository.save({ threadId: args.threadId, messages });
+      await this.appendHistory(args.threadId, messages.slice(-1));
       const agent = new ToolLoopAgent({
         model,
         instructions: buildThreadScopedInstructions(args.systemPrompt, args.threadId),
@@ -142,10 +156,7 @@ export class AiSdkBackend implements ChatBackend {
         }
       }
       const responseMessages = await result.responseMessages;
-      await this.historyRepository.save({
-        threadId: args.threadId,
-        messages: [...messages, ...responseMessages],
-      });
+      await this.appendHistory(args.threadId, responseMessages);
       if (content.trim()) yield { type: 'final_response', content: content.trim() };
     } catch (error) {
       this.logger.error({ message: 'AI SDK agent run failed', threadId: args.threadId, error: String(error) });

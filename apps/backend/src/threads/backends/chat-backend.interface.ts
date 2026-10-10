@@ -8,7 +8,6 @@ export type ChatStreamEvent =
 
 export interface StreamMessageArgs {
   messageId: string;
-  conversationId: string;
   threadId: string;
   message: string;
   actor: ActorEntity;

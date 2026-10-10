@@ -15,7 +15,9 @@ The Taico agent's configured model ID overrides provider defaults. Defaults rema
 
 ## History and tools
 
-The `thread_chat_history` PostgreSQL table stores AI SDK model messages, including tool calls and results. Migration `ThreadChatHistory1791580000000` creates the table automatically on startup. Conversation IDs are allocated locally; new threads do not create remote OpenAI conversations or ADK sessions.
+The `thread_chat_history` PostgreSQL table stores one row per AI SDK model message, including tool calls and results. Writes are append-only; each turn inserts only new messages. Reads assemble the SDK message array in database-assigned sequence order. A sequence provides deterministic ordering even when multiple messages in a batch share the same `created_at` timestamp; an index on `(thread_id, sequence)` supports these reads.
+
+Registered migrations create the table automatically on startup. `AppendOnlyThreadChatHistory1791629000000` converts the initial per-thread arrays into individual rows while preserving their order and contents, including for installations that already ran the initial SDK migration. Conversation IDs are still allocated locally for legacy thread API compatibility, but streaming history is keyed exclusively by `threadId`; new threads do not create remote OpenAI conversations or ADK sessions.
 
 On the first SDK turn of an existing thread, the visible thread transcript seeds the new history. Historical provider-only tool traces are not imported. Subsequent turns use the saved SDK history, including after restarts. Turns within each thread are serialized within the backend process to avoid concurrent history overwrites.
 

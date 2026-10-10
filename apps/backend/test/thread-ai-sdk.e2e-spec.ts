@@ -17,6 +17,8 @@ import { ChatProviderType } from '../src/chat-providers/enums';
 import { ActorEntity } from '../src/identity-provider/actor.entity';
 import { ensureTestUser, getAuthCookies } from './helpers/auth.helper';
 import * as envConfig from '../src/config/env.config';
+import { ThreadChatHistory1791580000000 } from '../src/migrations/1791580000000-ThreadChatHistory';
+import { AppendOnlyThreadChatHistory1791629000000 } from '../src/migrations/1791629000000-AppendOnlyThreadChatHistory';
 
 describe('Thread AI SDK authenticated MCP integration', () => {
   let app: INestApplication;
@@ -48,6 +50,43 @@ describe('Thread AI SDK authenticated MCP integration', () => {
     await Promise.all(responseConsumer?.mock.results.map((result) => result.value) ?? []);
     await app?.close();
     jest.restoreAllMocks();
+  });
+
+  it('migrates existing history arrays in order and supports rollback without losing messages', async () => {
+    const runner = app.get(DataSource).createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    try {
+      await runner.query('CREATE SCHEMA thread_history_migration_test');
+      await runner.query('SET LOCAL search_path TO thread_history_migration_test, public');
+      await runner.query('CREATE TABLE "threads" ("id" uuid PRIMARY KEY)');
+      const threadId = '00000000-0000-0000-0000-000000000001';
+      await runner.query('INSERT INTO "threads" ("id") VALUES ($1)', [threadId]);
+      await new ThreadChatHistory1791580000000().up(runner);
+      const messages = [
+        { role: 'user', content: 'Earlier question' },
+        { role: 'assistant', content: [{ type: 'tool-call', toolCallId: 'call', toolName: 'tasks__fetch', input: {} }] },
+        { role: 'tool', content: [{ type: 'tool-result', toolCallId: 'call', toolName: 'tasks__fetch', output: { type: 'text', value: 'Task' } }] },
+      ];
+      await runner.query('INSERT INTO "thread_chat_history" ("thread_id", "messages") VALUES ($1, $2)', [threadId, JSON.stringify(messages)]);
+      const migration = new AppendOnlyThreadChatHistory1791629000000();
+      await migration.up(runner);
+      const rows = await runner.query('SELECT * FROM "thread_chat_history" ORDER BY "sequence" ASC');
+      expect(rows.map((row) => row.message)).toEqual(messages);
+      expect(new Set(rows.map((row) => row.id)).size).toBe(3);
+      expect(new Set(rows.map((row) => row.created_at.getTime())).size).toBe(1);
+      const appended = { role: 'assistant', content: 'New answer' };
+      await runner.query('INSERT INTO "thread_chat_history" ("thread_id", "message") VALUES ($1, $2)', [threadId, JSON.stringify(appended)]);
+      await migration.down(runner);
+      const restored = await runner.query('SELECT "messages" FROM "thread_chat_history" WHERE "thread_id" = $1', [threadId]);
+      expect(restored[0].messages).toEqual([...messages, appended]);
+      await migration.up(runner);
+      await runner.query('DELETE FROM "threads" WHERE "id" = $1', [threadId]);
+      expect(await runner.query('SELECT * FROM "thread_chat_history"')).toEqual([]);
+    } finally {
+      await runner.rollbackTransaction();
+      await runner.release();
+    }
   });
 
   it('runs a real MCP context update through the middle-manager SDK tool loop', async () => {
@@ -118,15 +157,19 @@ describe('Thread AI SDK authenticated MCP integration', () => {
     await request(app.getHttpServer()).post(`/api/v1/threads/${thread.body.id}/messages`)
       .set('Cookie', authCookies).send({ content: 'Inspect the task' }).expect(201);
     await waitForAnswer(1);
-    const firstHistory = await dataSource.getRepository(ThreadChatHistoryEntity).findOneByOrFail({ threadId: thread.body.id });
-    expect(firstHistory.messages.some((message) => message.role === 'tool')).toBe(true);
-    expect(JSON.stringify(firstHistory.messages)).toContain('SDK chat task');
+    const historyRepository = dataSource.getRepository(ThreadChatHistoryEntity);
+    const firstHistory = await historyRepository.find({ where: { threadId: thread.body.id }, order: { sequence: 'ASC' } });
+    expect(firstHistory.some((row) => row.message.role === 'tool')).toBe(true);
+    expect(JSON.stringify(firstHistory.map((row) => row.message))).toContain('SDK chat task');
+    // A single batch has equal timestamps, but must retain assistant/tool order.
+    expect(firstHistory.map((row) => row.message.role)).toEqual(['user', 'assistant', 'tool', 'assistant']);
 
     await request(app.getHttpServer()).post(`/api/v1/threads/${thread.body.id}/messages`)
       .set('Cookie', authCookies).send({ content: 'Continue' }).expect(201);
     await waitForAnswer(2);
-    const secondHistory = await dataSource.getRepository(ThreadChatHistoryEntity).findOneByOrFail({ threadId: thread.body.id });
-    expect(secondHistory.messages.filter((message) => message.role === 'user')).toHaveLength(2);
+    const secondHistory = await historyRepository.find({ where: { threadId: thread.body.id }, order: { sequence: 'ASC' } });
+    expect(secondHistory.filter((row) => row.message.role === 'user')).toHaveLength(2);
+    expect(secondHistory.slice(0, firstHistory.length)).toEqual(firstHistory);
     expect(model.doStreamCalls[2].prompt.some((message) => message.role === 'tool')).toBe(true);
   });
 });

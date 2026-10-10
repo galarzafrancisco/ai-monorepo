@@ -1115,7 +1115,6 @@ export class ThreadsService {
       try {
         const { agentActorId, events } = await this.chatService.streamMessageToConversation({
           messageId: savedMessage.id,
-          conversationId: threadWithConversation.chatSessionId!,
           threadId: threadWithConversation.id,
           message: input.content,
           actor,

@@ -20,7 +20,6 @@ export interface CreateConversationArgs {
 
 export interface StreamMessageToConversationArgs {
   messageId: string;
-  conversationId: string;
   threadId: string;
   message: string;
   actor: ActorEntity;
@@ -46,14 +45,16 @@ export class ChatService {
     return this.agentsService.getAgentBySlug({ slug: 'taico' });
   }
 
-  private async getActiveBackend(): Promise<ChatBackend> {
+  private async getConfiguredBackend(): Promise<ChatBackend> {
+    // Fail fast when no provider is configured. All providers share this
+    // backend; it resolves the selected provider's model adapter for each run.
     await this.chatProvidersService.getActiveChatProviderConfig();
     return this.aiSdkBackend;
   }
 
   public async ensureConversationAvailable(): Promise<void> {
     try {
-      const backend = await this.getActiveBackend();
+      const backend = await this.getConfiguredBackend();
       await backend.ensureAvailable();
     } catch (error) {
       if (error instanceof NoActiveChatProviderError) {
@@ -64,7 +65,7 @@ export class ChatService {
   }
 
   public async createConversation({ threadId }: CreateConversationArgs): Promise<{ id: string }> {
-    const backend = await this.getActiveBackend();
+    const backend = await this.getConfiguredBackend();
 
     try {
       return await backend.createConversation(threadId);
@@ -83,7 +84,7 @@ export class ChatService {
   public async generateText(prompt: string): Promise<string | null> {
     try {
       const self = await this.getSelf();
-      const backend = await this.getActiveBackend();
+      const backend = await this.getConfiguredBackend();
       return backend.generateText(prompt, self.modelId);
     } catch (error) {
       if (error instanceof NoActiveChatProviderError) {
@@ -99,7 +100,7 @@ export class ChatService {
     actor: ActorEntity | null;
   }): Promise<void> {
     const self = await this.getSelf();
-    const backend = await this.getActiveBackend();
+    const backend = await this.getConfiguredBackend();
 
     const selfActor = {
       id: self.actorId,
@@ -150,7 +151,7 @@ export class ChatService {
       };
     }
 
-    const backend = await this.getActiveBackend();
+    const backend = await this.getConfiguredBackend();
 
     const token = await this.issuedAccessTokenService.issueSystemToken({
       subjectActor: {
@@ -178,7 +179,6 @@ export class ChatService {
 
     const events = backend.streamMessage({
       messageId: args.messageId,
-      conversationId: args.conversationId,
       threadId: args.threadId,
       message: args.message,
       actor: args.actor,

@@ -20,7 +20,9 @@ module.exports = {
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/apps/backend/src/$1',
   },
-  // AI SDK and the shared workspace packages publish ESM. Transform them just
-  // as the end-to-end Jest configuration does.
+  // CommonJS Jest cannot load the AI SDK's ESM entry points or the ESM shared
+  // workspace packages directly. Their transitive dependencies also include
+  // ESM, so intentionally transform the full dependency graph (as E2E does)
+  // rather than maintaining an incomplete allowlist. Jest caches transforms.
   transformIgnorePatterns: [],
 };
