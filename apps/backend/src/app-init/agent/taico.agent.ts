@@ -3,12 +3,17 @@ import { getAgentAvatarUrlById } from 'src/agents/agent-avatar.library';
 import { AgentType } from 'src/agents/enums';
 import { TAICO_PROMPT } from '../prompts/prompts';
 
+const taicoAgentType =
+  process.env.TAICO_AGENT_TYPE === AgentType.ADK
+    ? AgentType.ADK
+    : AgentType.OTHER;
+
 export const createTaico: CreateAgentInput = {
   slug: 'taico',
   name: 'Taico',
-  type: AgentType.OTHER,
+  type: taicoAgentType,
   description:
-    'System operator powered by the Vercel AI SDK',
+    'System operator',
   systemPrompt: TAICO_PROMPT,
   statusTriggers: [],
   allowedTools: [],
