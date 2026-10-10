@@ -508,9 +508,9 @@ export class AppInitRunner implements OnApplicationBootstrap {
       }
 
       if (!existingProviders.some((p) => p.type === ChatProviderType.ADK)) {
-        this.logger.log('Creating default Google ADK chat provider');
+        this.logger.log('Creating default Google AI chat provider');
         await this.chatProvidersService.createChatProvider({
-          name: 'Google ADK',
+          name: 'Google AI',
           type: ChatProviderType.ADK,
           secretId: null,
         });

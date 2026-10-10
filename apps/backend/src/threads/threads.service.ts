@@ -192,7 +192,7 @@ export class ThreadsService {
       throw error;
     }
 
-    // Create provider-side conversation/session and persist its ID on the thread.
+    // Allocate a local conversation ID and persist it on the thread.
     try {
       const conversation = await this.chatService.createConversation({
         threadId: savedThread.id,
@@ -1114,6 +1114,7 @@ export class ThreadsService {
     void (async () => {
       try {
         const { agentActorId, events } = await this.chatService.streamMessageToConversation({
+          messageId: savedMessage.id,
           conversationId: threadWithConversation.chatSessionId!,
           threadId: threadWithConversation.id,
           message: input.content,

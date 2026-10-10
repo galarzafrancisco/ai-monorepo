@@ -204,7 +204,7 @@ export class ChatProvidersService {
       throw new NoActiveChatProviderError();
     }
 
-    // ADK uses environment variables and has no stored API key
+    // The legacy `adk` provider selects Google AI SDK and uses environment credentials.
     if (activeProvider.type === ChatProviderType.ADK) {
       return { type: activeProvider.type, apiKey: null };
     }

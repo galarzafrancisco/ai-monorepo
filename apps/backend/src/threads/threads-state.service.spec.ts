@@ -3,6 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ThreadsService } from './threads.service';
 import { ThreadEntity } from './thread.entity';
+import { ThreadMessageEntity } from './thread-message.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ChatService } from './chat.service';
+import { ThreadTitleService } from './thread-title.service';
+import { NoActiveChatProviderError } from '../chat-providers/errors/chat-providers.errors';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -97,6 +102,13 @@ describe('ThreadsService - State Context Block', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ThreadsService,
+        { provide: getRepositoryToken(ThreadMessageEntity), useValue: {} },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
+        { provide: ChatService, useValue: {
+          ensureConversationAvailable: jest.fn().mockResolvedValue(undefined),
+          createConversation: jest.fn().mockRejectedValue(new NoActiveChatProviderError()),
+        } },
+        { provide: ThreadTitleService, useValue: { generateFromParentTask: jest.fn().mockResolvedValue(null) } },
         {
           provide: getRepositoryToken(ThreadEntity),
           useValue: {
@@ -230,7 +242,7 @@ describe('ThreadsService - State Context Block', () => {
 
         const createBlockCall = contextService.createBlock.mock.calls[0][0];
         expect(createBlockCall.content).toBe(
-          'This thread was created to achieve task Parent Task (id parent-task-uuid).',
+          'This thread was created to achieve task Parent Task (id parent-task-uuid).\nParent goal: Parent task description',
         );
       });
     });
@@ -428,6 +440,8 @@ describe('ThreadsService - State Context Block', () => {
           .mockReturnValueOnce(thread2);
         threadRepository.save
           .mockResolvedValueOnce(thread1)
+          .mockResolvedValueOnce(thread1)
+          .mockResolvedValueOnce(thread2)
           .mockResolvedValueOnce(thread2);
         threadRepository.findOne
           .mockResolvedValueOnce(thread1)

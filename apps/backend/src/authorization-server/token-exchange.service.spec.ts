@@ -11,6 +11,8 @@ import { McpConnectionEntity } from '../mcp-registry/entities/mcp-connection.ent
 import { McpScopeMappingEntity } from '../mcp-registry/entities/mcp-scope-mapping.entity';
 import { ConnectionAuthorizationFlowEntity } from '../auth-journeys/entities/connection-authorization-flow.entity';
 import { JwksService } from '../auth/crypto/jwks.service';
+import { TokenVerifierService } from '../auth/crypto/token-verifier.service';
+import { McpRegistryService } from '../mcp-registry/mcp-registry.service';
 import { TokenExchangeRequestDto } from './dto/token-exchange-request.dto';
 import { ConnectionAuthorizationFlowStatus } from 'src/auth-journeys/enums/connection-authorization-flow-status.enum';
 
@@ -51,6 +53,8 @@ describe('TokenExchangeService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TokenExchangeService,
+        { provide: McpRegistryService, useValue: { resolveServerIdFromProvidedId: jest.fn().mockResolvedValue('server-uuid') } },
+        { provide: TokenVerifierService, useValue: { verifyAndDecode: jest.fn().mockRejectedValue(new Error('Invalid JWT')) } },
         {
           provide: getRepositoryToken(McpConnectionEntity),
           useValue: {
@@ -242,24 +246,22 @@ describe('TokenExchangeService', () => {
       mcpConnectionRepository.findOne.mockResolvedValue(mockConnection);
 
       const findMethod = (service as any).findConnection.bind(service);
-      const result = await findMethod('connection-uuid', 'server-uuid');
+      const result = await findMethod('550e8400-e29b-41d4-a716-446655440000', 'server-uuid');
 
       expect(result).toEqual(mockConnection);
       expect(mcpConnectionRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'connection-uuid', serverId: 'server-uuid' },
+        where: { id: '550e8400-e29b-41d4-a716-446655440000', serverId: 'server-uuid' },
       });
     });
 
     it('should find connection by providedId', async () => {
-      mcpConnectionRepository.findOne
-        .mockResolvedValueOnce(null) // First call with UUID fails
-        .mockResolvedValueOnce(mockConnection); // Second call with providedId succeeds
+      mcpConnectionRepository.findOne.mockResolvedValueOnce(mockConnection);
 
       const findMethod = (service as any).findConnection.bind(service);
       const result = await findMethod('test-connection', 'server-uuid');
 
       expect(result).toEqual(mockConnection);
-      expect(mcpConnectionRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(mcpConnectionRepository.findOne).toHaveBeenCalledTimes(1);
     });
 
     it('should return null when connection is not found', async () => {

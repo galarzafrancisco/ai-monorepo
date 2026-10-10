@@ -13,11 +13,11 @@ import { MetaModule } from '../meta/meta.module';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { ContextModule } from '../context/context.module';
 import { ChatService } from './chat.service';
-import { AdkBackend } from './backends/adk.backend';
-import { OpenAiBackend } from './backends/openai.backend';
+import { AiSdkBackend } from './backends/ai-sdk.backend';
+import { ThreadChatHistoryEntity } from './thread-chat-history.entity';
 import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
-import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
+import { AiSdkMcpToolsService } from './ai-sdk-mcp-tools.service';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
@@ -28,6 +28,7 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     TypeOrmModule.forFeature([
       ThreadEntity,
       ThreadMessageEntity,
+      ThreadChatHistoryEntity,
       TaskEntity,
       ContextBlockEntity,
       ActorEntity,
@@ -45,9 +46,8 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     ThreadsService,
     ThreadsGateway,
     ChatService,
-    AdkBackend,
-    OpenAiBackend,
-    OpenAiMcpServerFactoryService,
+    AiSdkBackend,
+    AiSdkMcpToolsService,
     ThreadTitleService,
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,

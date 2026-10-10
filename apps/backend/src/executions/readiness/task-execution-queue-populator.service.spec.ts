@@ -74,7 +74,7 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
   });
 
   describe('upsertQueueEntry', () => {
-    it('should emit TaskExecutionQueuedEvent when a new row is inserted (SQLite changes > 0)', async () => {
+    it('should insert a queue entry idempotently without emitting a runtime event', async () => {
       const taskId = 'test-task-id';
 
       // Mock the query builder chain
@@ -98,14 +98,10 @@ describe('TaskExecutionQueuePopulatorService - Event Emission', () => {
       // Call the private method through reflection
       await (service as any).upsertQueueEntry(taskId);
 
-      // Verify the event was emitted
-      expect(eventEmitter.emit).toHaveBeenCalledWith(
-        TaskExecutionQueuedEvent.INTERNAL,
-        expect.objectContaining({
-          taskId,
-        }),
-      );
-      expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
+      expect(mockQueryBuilder.values).toHaveBeenCalledWith({ taskId });
+      expect(mockQueryBuilder.orIgnore).toHaveBeenCalledTimes(1);
+      expect(mockQueryBuilder.execute).toHaveBeenCalledTimes(1);
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
 
     it('should NOT emit TaskExecutionQueuedEvent when insert is ignored (SQLite changes = 0)', async () => {

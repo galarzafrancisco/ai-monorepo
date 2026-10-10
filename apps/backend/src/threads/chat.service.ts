@@ -9,9 +9,7 @@ import { ALL_TASKS_SCOPES } from 'src/tasks/tasks.scopes';
 import { ALL_CONTEXT_SCOPES } from 'src/context/context.scopes';
 import { ChatProvidersService } from 'src/chat-providers/chat-providers.service';
 import { NoActiveChatProviderError } from 'src/chat-providers/errors/chat-providers.errors';
-import { ChatProviderType } from 'src/chat-providers/enums';
-import { AdkBackend } from './backends/adk.backend';
-import { OpenAiBackend } from './backends/openai.backend';
+import { AiSdkBackend } from './backends/ai-sdk.backend';
 import { ChatBackend, ChatStreamEvent } from './backends/chat-backend.interface';
 
 export type { ChatStreamEvent };
@@ -21,6 +19,7 @@ export interface CreateConversationArgs {
 }
 
 export interface StreamMessageToConversationArgs {
+  messageId: string;
   conversationId: string;
   threadId: string;
   message: string;
@@ -40,8 +39,7 @@ export class ChatService {
     private readonly agentsService: AgentsService,
     private readonly issuedAccessTokenService: IssuedAccessTokenService,
     private readonly chatProvidersService: ChatProvidersService,
-    private readonly adkBackend: AdkBackend,
-    private readonly openAiBackend: OpenAiBackend,
+    private readonly aiSdkBackend: AiSdkBackend,
   ) {}
 
   private async getSelf(): Promise<AgentResult> {
@@ -49,8 +47,8 @@ export class ChatService {
   }
 
   private async getActiveBackend(): Promise<ChatBackend> {
-    const config = await this.chatProvidersService.getActiveChatProviderConfig();
-    return config.type === ChatProviderType.ADK ? this.adkBackend : this.openAiBackend;
+    await this.chatProvidersService.getActiveChatProviderConfig();
+    return this.aiSdkBackend;
   }
 
   public async ensureConversationAvailable(): Promise<void> {
@@ -179,6 +177,7 @@ export class ChatService {
     );
 
     const events = backend.streamMessage({
+      messageId: args.messageId,
       conversationId: args.conversationId,
       threadId: args.threadId,
       message: args.message,

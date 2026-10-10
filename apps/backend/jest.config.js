@@ -7,6 +7,9 @@ module.exports = {
     '^.+\\.(t|j)s$': ['ts-jest', {
       tsconfig: {
         ...require('./tsconfig.json').compilerOptions,
+        module: 'commonjs',
+        moduleResolution: 'node',
+        resolvePackageJsonExports: false,
         esModuleInterop: true,
       }
     }],
@@ -17,7 +20,7 @@ module.exports = {
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/apps/backend/src/$1',
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(@modelcontextprotocol|.*\\.mjs$))',
-  ],
+  // AI SDK and the shared workspace packages publish ESM. Transform them just
+  // as the end-to-end Jest configuration does.
+  transformIgnorePatterns: [],
 };

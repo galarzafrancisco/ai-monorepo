@@ -49,7 +49,9 @@ The recommended way to run the worker is via `npx` on your local machine. That g
 
 That convenience cuts both ways. The worker is powerful, and the agents it launches can act with the capabilities available on the host. Only run it on a machine you trust for that level of access.
 
-If you plan to use Google models via ADK, set the Google environment variables in the helper script before starting it.
+If you plan to use Google models via ADK in the worker, set the Google environment variables in the helper script before starting it.
+
+Thread chat and the thread state middle manager run in the backend using the Vercel AI SDK. See [Thread AI runtime](how-to-guides/thread-ai-runtime.md) for their provider configuration.
 
 ## Logging In
 

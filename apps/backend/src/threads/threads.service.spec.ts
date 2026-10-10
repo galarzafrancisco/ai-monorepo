@@ -3,6 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, QueryFailedError } from 'typeorm';
 import { ThreadsService } from './threads.service';
 import { ThreadEntity } from './thread.entity';
+import { ThreadMessageEntity } from './thread-message.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ChatService } from './chat.service';
+import { ThreadTitleService } from './thread-title.service';
+import { NoActiveChatProviderError } from '../chat-providers/errors/chat-providers.errors';
 import { TaskEntity } from '../tasks/task.entity';
 import { ContextBlockEntity } from '../context/block.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
@@ -80,15 +85,25 @@ describe('ThreadsService - Parent Task ID', () => {
   } as ThreadEntity;
 
   beforeEach(async () => {
+    mockThread.tasks = [mockParentTask];
+    mockThread.participants = [];
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ThreadsService,
+        { provide: getRepositoryToken(ThreadMessageEntity), useValue: {} },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
+        { provide: ChatService, useValue: {
+          ensureConversationAvailable: jest.fn().mockResolvedValue(undefined),
+          createConversation: jest.fn().mockRejectedValue(new NoActiveChatProviderError()),
+        } },
+        { provide: ThreadTitleService, useValue: { generateFromParentTask: jest.fn().mockResolvedValue(null) } },
         {
           provide: getRepositoryToken(ThreadEntity),
           useValue: {
             create: jest.fn(),
             save: jest.fn(),
             findOne: jest.fn(),
+            find: jest.fn(),
             findBy: jest.fn(),
             findAndCount: jest.fn(),
             softRemove: jest.fn(),
@@ -196,6 +211,7 @@ describe('ThreadsService - Parent Task ID', () => {
           where: { id: 'parent-task-uuid' },
         });
         expect(threadRepository.create).toHaveBeenCalledWith({
+          id: expect.any(String),
           title: 'Test Thread',
           chatSessionId: null,
           createdByActorId: 'actor-uuid',

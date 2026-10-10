@@ -7,6 +7,7 @@ export type ChatStreamEvent =
   | { type: 'error'; error: Error };
 
 export interface StreamMessageArgs {
+  messageId: string;
   conversationId: string;
   threadId: string;
   message: string;

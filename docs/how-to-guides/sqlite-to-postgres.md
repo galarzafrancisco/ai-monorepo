@@ -1,7 +1,7 @@
 # SQLite to PostgreSQL migration
 
-Taico uses PostgreSQL for both application entities and Google ADK chat sessions.
-The application schema is created by the single PostgreSQL baseline migration.
+Taico uses PostgreSQL for application entities and provider-independent AI SDK thread chat history. Historical Google ADK session tables can remain in the database, but thread chat no longer reads or writes them.
+The application schema is created by the PostgreSQL baseline migration and subsequent registered migrations.
 
 ## Safety model
 
