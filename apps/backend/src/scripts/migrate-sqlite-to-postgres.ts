@@ -31,7 +31,6 @@ const sqlite =
 const sqlitePath = process.env.SQLITE_PATH;
 const databaseUrl = process.env.DATABASE_URL;
 const recoverySqlitePath = process.env.RECOVERY_SQLITE_PATH;
-const chatSqlitePath = process.env.CHAT_SQLITE_PATH;
 
 if (!sqlitePath || !databaseUrl) {
   throw new Error('SQLITE_PATH and DATABASE_URL are required');
@@ -280,32 +279,6 @@ async function main(): Promise<void> {
       );
     }
 
-    const chatTableMappings: Record<string, string> = {
-      sessions: 'adk_sessions',
-      events: 'adk_events',
-      app_state: 'adk_app_state',
-      user_state: 'adk_user_state',
-    };
-    if (chatSqlitePath) {
-      const chatSource = await readDatabase(chatSqlitePath);
-      for (const [sourceTable, targetTable] of Object.entries(
-        chatTableMappings,
-      )) {
-        const columns = columnsByTable.get(targetTable)!;
-        targetRows.set(
-          targetTable,
-          (chatSource.get(sourceTable) ?? []).map((row) =>
-            Object.fromEntries(
-              columns.map((column) => [
-                column.name,
-                convertValue(row[column.name], column.dataType),
-              ]),
-            ),
-          ),
-        );
-      }
-    }
-
     for (const [table, rows] of source) {
       if (!targetTables.includes(table)) {
         for (const row of rows) {
@@ -423,14 +396,6 @@ async function main(): Promise<void> {
         .filter((column) => rows.some((row) => row[column.name] !== undefined));
       await insertRows(client, table, presentColumns, rows);
       console.log(`${table}: imported ${rows.length}`);
-    }
-
-    if (targetRows.has('adk_events')) {
-      await client.query(
-        `SELECT setval(pg_get_serial_sequence('adk_events', 'sequence'),
-                       COALESCE((SELECT max(sequence) FROM adk_events), 1),
-                       EXISTS (SELECT 1 FROM adk_events))`,
-      );
     }
 
     for (const archived of archive) {

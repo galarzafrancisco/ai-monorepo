@@ -1,7 +1,10 @@
 # SQLite to PostgreSQL migration
 
-Taico uses PostgreSQL for both application entities and Google ADK chat sessions.
-The application schema is created by the single PostgreSQL baseline migration.
+Taico stores its application data in PostgreSQL. The schema is created by the
+PostgreSQL migrations.
+
+Old Google ADK chat sessions (`database-chat.sqlite`) are not imported: the
+threads agent no longer reads them, and the tables that held them were dropped.
 
 ## Safety model
 
@@ -14,11 +17,10 @@ The application schema is created by the single PostgreSQL baseline migration.
 
 ## Run
 
-Create an empty PostgreSQL database, apply the baseline, then run:
+Create an empty PostgreSQL database, apply the migrations, then run:
 
 ```bash
 SQLITE_PATH=/path/to/database.sqlite \
-CHAT_SQLITE_PATH=/path/to/database-chat.sqlite \
 RECOVERY_SQLITE_PATH=/path/to/database.sqlite.bk.2 \
 DATABASE_URL='postgresql://taico:password@localhost:5432/taico' \
 npm -w apps/backend run migrate:sqlite-to-postgres

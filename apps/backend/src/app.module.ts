@@ -23,6 +23,7 @@ import { ThreadAgentMessages1760200000000 } from './migrations/1760200000000-Thr
 import { ChatProviderModelConfig1760300000000 } from './migrations/1760300000000-ChatProviderModelConfig';
 import { ReplaceAdkChatProvider1760400000000 } from './migrations/1760400000000-ReplaceAdkChatProvider';
 import { AiProviderModelSelections1760500000000 } from './migrations/1760500000000-AiProviderModelSelections';
+import { DropAdkSessionTables1760600000000 } from './migrations/1760600000000-DropAdkSessionTables';
 import { SecretsModule } from './secrets/secrets.module';
 import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -47,6 +48,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ChatProviderModelConfig1760300000000,
         ReplaceAdkChatProvider1760400000000,
         AiProviderModelSelections1760500000000,
+        DropAdkSessionTables1760600000000,
       ],
     }),
     EventEmitterModule.forRoot(),
