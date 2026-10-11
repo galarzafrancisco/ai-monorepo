@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import './config/cli-env';
-import { ConsoleLogger, Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { ConsoleLogger, Logger, RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
+import { AppValidationPipe } from './http/app-validation.pipe';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
@@ -113,13 +114,7 @@ async function createConfiguredApp(
     origin: true,
     credentials: true,
   });
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  app.useGlobalPipes(new AppValidationPipe());
   app.useGlobalFilters(new ProblemDetailsFilter());
   app.setGlobalPrefix('api/v1', {
     exclude: [

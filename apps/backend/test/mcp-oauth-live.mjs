@@ -81,7 +81,9 @@ class MemoryOAuthProvider {
   get redirectUrl() { return REDIRECT_URI; }
   get clientMetadata() {
     return { client_name: 'Taico live MCP client', redirect_uris: [REDIRECT_URI],
-      grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'], token_endpoint_auth_method: 'none' };
+      grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'], token_endpoint_auth_method: 'none',
+      // newer clients send metadata Taico does not know; registration must ignore it
+      application_type: 'native' };
   }
   // Taico requires `state`; the SDK only sends one when the provider supplies it
   state() { return randomBytes(16).toString('hex'); }

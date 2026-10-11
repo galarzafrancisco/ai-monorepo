@@ -1,3 +1,4 @@
+import { IgnoresUnknownProperties } from '../../http/app-validation.pipe';
 import {
   IsString,
   IsNotEmpty,
@@ -29,6 +30,7 @@ import { GrantType, ResponseType, TokenEndpointAuthMethod } from '../enums';
 // - software_id?
 // - software_version?
 
+@IgnoresUnknownProperties()
 export class RegisterClientDto {
   @ApiProperty({
     description:
