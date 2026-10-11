@@ -925,7 +925,7 @@ export interface MoveBlockDto {
 
 export interface CreateChatProviderDto {
   name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible' | 'adk';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible';
   secretId?: string;
   modelId?: string | null;
   baseUrl?: string | null;
@@ -936,7 +936,7 @@ export interface CreateChatProviderDto {
 export interface ChatProviderResponseDto {
   id: string;
   name: string;
-  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible' | 'adk';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible';
   secretId?: string | null;
   modelId?: string | null;
   baseUrl?: string | null;

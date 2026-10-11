@@ -37,16 +37,9 @@ const DEFAULT_MODELS: Partial<Record<ChatProviderType, string>> = {
   [ChatProviderType.ANTHROPIC]: 'claude-opus-5-5',
   [ChatProviderType.GOOGLE]: 'gemini-3.6-flash',
   [ChatProviderType.GOOGLE_VERTEX]: 'gemini-3.6-flash',
-  [ChatProviderType.ADK]: 'gemini-3.6-flash',
 };
 
-const LEGACY_MODEL_PROVIDER_TYPES = [ChatProviderType.OPENAI, ChatProviderType.ADK];
-
-/** Matches the Google SDKs, which read this flag case-insensitively ("True", "true", "1"). */
-function isEnvFlagEnabled(value: string | undefined): boolean {
-  const normalized = value?.trim().toLowerCase();
-  return normalized === 'true' || normalized === '1';
-}
+const LEGACY_MODEL_PROVIDER_TYPES = [ChatProviderType.OPENAI];
 
 function vertexProjectFromEnv(): string | undefined {
   return process.env.GOOGLE_VERTEX_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT;
@@ -127,17 +120,6 @@ export class ChatModelFactory {
           providerType: config.type,
           modelId,
         };
-
-      case ChatProviderType.ADK:
-        // No stored settings: Vertex AI when GOOGLE_GENAI_USE_VERTEXAI is set,
-        // otherwise the Gemini API with a key from the environment.
-        return isEnvFlagEnabled(process.env.GOOGLE_GENAI_USE_VERTEXAI)
-          ? this.buildVertex(config, modelId)
-          : {
-              model: createGoogle({ apiKey: googleApiKeyFromEnv() })(modelId),
-              providerType: ChatProviderType.GOOGLE,
-              modelId,
-            };
     }
   }
 

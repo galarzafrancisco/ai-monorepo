@@ -31,11 +31,11 @@ Nothing is kept in memory between turns. A turn whose process died stops heartbe
 
 ## Providers and models
 
-Chat providers are configured in Settings → Chat. Each has a type (`openai`, `anthropic`, `google`, `google_vertex`, `openai_compatible`, or the legacy env-only `adk`), an optional stored secret, and a model.
+Chat providers are configured in Settings → Chat. Each has a type (`openai`, `anthropic`, `google`, `google_vertex` or `openai_compatible`), an optional stored secret, and a model.
 
 Each thread stores `chat_provider_id` and `model_id`. The selector is global for now: activating a provider, or changing the active provider's model, updates every thread.
 
-Vertex AI uses the stored service account JSON, project and location when present. Anything left empty falls back to application default credentials, `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`.
+A Google Vertex AI provider is created by default. It uses the stored service account JSON, project and location when present. Anything left empty falls back to application default credentials, `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`.
 
 When a message was produced by a different model than the one being called, its reasoning parts and provider-specific options are dropped before replay (`agent-context.utils.ts`).
 

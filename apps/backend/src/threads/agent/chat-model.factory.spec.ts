@@ -7,7 +7,6 @@ jest.mock('src/chat-providers/errors/chat-providers.errors', () => ({
 }));
 
 const GOOGLE_ENV_KEYS = [
-  'GOOGLE_GENAI_USE_VERTEXAI',
   'GOOGLE_CLOUD_PROJECT',
   'GOOGLE_CLOUD_LOCATION',
   'GOOGLE_API_KEY',
@@ -41,27 +40,30 @@ describe('ChatModelFactory', () => {
     process.env = originalEnv;
   });
 
-  it.each(['true', 'True', 'TRUE', '1'])(
-    'uses Vertex AI for the environment-only provider when GOOGLE_GENAI_USE_VERTEXAI=%s',
-    async (flag) => {
-      process.env.GOOGLE_GENAI_USE_VERTEXAI = flag;
-      process.env.GOOGLE_CLOUD_PROJECT = 'my-project';
-      process.env.GOOGLE_CLOUD_LOCATION = 'global';
+  it('uses Vertex AI from the environment when nothing is stored on the provider', async () => {
+    process.env.GOOGLE_CLOUD_PROJECT = 'my-project';
+    process.env.GOOGLE_CLOUD_LOCATION = 'global';
 
-      const resolved = await factoryFor(ChatProviderType.ADK).resolve({});
+    const resolved = await factoryFor(ChatProviderType.GOOGLE_VERTEX).resolve({});
 
-      expect(resolved).toMatchObject({
-        providerType: ChatProviderType.GOOGLE_VERTEX,
-        modelId: 'gemini-3.6-flash',
-      });
-    },
-  );
+    expect(resolved).toMatchObject({
+      providerType: ChatProviderType.GOOGLE_VERTEX,
+      modelId: 'gemini-3.6-flash',
+    });
+  });
 
-  it('uses the Gemini API for the environment-only provider when the Vertex flag is off', async () => {
-    process.env.GOOGLE_API_KEY = 'test-key';
+  it('only applies the agent model to OpenAI, where it predates per-provider models', async () => {
+    process.env.GOOGLE_CLOUD_PROJECT = 'my-project';
+    process.env.GOOGLE_CLOUD_LOCATION = 'global';
 
-    const resolved = await factoryFor(ChatProviderType.ADK).resolve({});
+    const vertex = await factoryFor(ChatProviderType.GOOGLE_VERTEX).resolve({
+      legacyModelId: 'gpt-5.4',
+    });
+    const openai = await factoryFor(ChatProviderType.OPENAI).resolve({
+      legacyModelId: 'gpt-5.5',
+    });
 
-    expect(resolved.providerType).toBe(ChatProviderType.GOOGLE);
+    expect(vertex.modelId).toBe('gemini-3.6-flash');
+    expect(openai.modelId).toBe('gpt-5.5');
   });
 });

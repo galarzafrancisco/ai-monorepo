@@ -27,13 +27,12 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 }
 
 /**
- * Whether a provider has what it needs to make a call. Vertex AI and the legacy
- * ADK provider can run purely on environment credentials.
+ * Whether a provider has what it needs to make a call. Vertex AI can run
+ * purely on environment credentials.
  */
 function isChatProviderConfigured(provider: ChatProviderEntity): boolean {
   switch (provider.type) {
     case ChatProviderType.GOOGLE_VERTEX:
-    case ChatProviderType.ADK:
       return true;
     case ChatProviderType.OPENAI_COMPATIBLE:
       return !!provider.baseUrl && !!provider.modelId;

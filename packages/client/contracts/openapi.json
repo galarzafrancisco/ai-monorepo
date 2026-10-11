@@ -12062,8 +12062,7 @@
               "anthropic",
               "google",
               "google_vertex",
-              "openai_compatible",
-              "adk"
+              "openai_compatible"
             ],
             "example": "openai"
           },
@@ -12123,8 +12122,7 @@
               "anthropic",
               "google",
               "google_vertex",
-              "openai_compatible",
-              "adk"
+              "openai_compatible"
             ],
             "example": "openai"
           },

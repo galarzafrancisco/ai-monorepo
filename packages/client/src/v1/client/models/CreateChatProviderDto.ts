@@ -42,7 +42,6 @@ export namespace CreateChatProviderDto {
         GOOGLE = 'google',
         GOOGLE_VERTEX = 'google_vertex',
         OPENAI_COMPATIBLE = 'openai_compatible',
-        ADK = 'adk',
     }
 }
 

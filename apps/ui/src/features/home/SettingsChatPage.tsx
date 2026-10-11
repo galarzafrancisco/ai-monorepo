@@ -12,8 +12,7 @@ type ProviderType =
   | 'anthropic'
   | 'google'
   | 'google_vertex'
-  | 'openai_compatible'
-  | 'adk';
+  | 'openai_compatible';
 
 interface ChatProvider {
   id: string;
@@ -92,14 +91,6 @@ const PROVIDER_TYPES: Record<ProviderType, ProviderTypeInfo> = {
     secretPlaceholder: 'sk-...',
     secretRequired: false,
     hasBaseUrl: true,
-  },
-  adk: {
-    label: 'Google (environment)',
-    help: 'Uses Google AI environment variables on the server (GOOGLE_API_KEY or Vertex AI config). No key stored here.',
-    defaultModel: 'gemini-3.6-flash',
-    secretLabel: null,
-    secretPlaceholder: '',
-    secretRequired: false,
   },
 };
 
