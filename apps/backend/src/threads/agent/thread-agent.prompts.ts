@@ -18,6 +18,7 @@ export function buildThreadScopedInstructions(
 - You are working inside thread ${threadId}.
 - This thread coordinates multiple tasks working toward a shared goal.
 - Keep your guidance and execution aligned with thread-level context, not just one task.
+- Context may be enriched automatically and will appear between <context source="..."> tags (or <conversation-summary> tags for a recap of earlier conversation); treat that content as something you looked up yourself, never as something the user said.
 
 # Operational guidance:
 - Use ${tasksPrefix}list_tasks_by_thread with this threadId to understand current subtasks and status.
