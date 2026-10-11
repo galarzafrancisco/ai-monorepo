@@ -100,6 +100,13 @@ const PROVIDER_TYPES: Record<ProviderType, ProviderTypeInfo> = {
     multilineSecret: true,
     hasVertexSettings: true,
   },
+  xai: {
+    label: 'xAI (Grok)',
+    help: 'Get an API key from console.x.ai.',
+    secretLabel: 'API key',
+    secretPlaceholder: 'xai-...',
+    secretRequired: true,
+  },
   openai_compatible: {
     label: 'OpenAI-compatible',
     help: 'Any server that speaks the OpenAI chat API, such as Ollama, LiteLLM or OpenRouter. Needs a base URL.',

@@ -56,6 +56,7 @@
     "@ai-sdk/mcp": "^2.0.73",
     "@ai-sdk/openai": "^4.0.91",
     "@ai-sdk/openai-compatible": "^3.0.67",
+    "@ai-sdk/xai": "^5.0.20",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@nestjs/common": "^11.1.17",
     "@nestjs/core": "^11.1.17",

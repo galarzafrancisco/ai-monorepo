@@ -65,6 +65,15 @@ describe('ChatModelFactory', () => {
     });
   });
 
+  it('builds an xAI model for a Grok provider', async () => {
+    const { factory } = factoryFor(AiProviderType.XAI, 'grok-4');
+
+    const resolved = await factory.resolve({ job: AiModelJob.CONVERSATION });
+
+    expect(resolved).toMatchObject({ providerType: AiProviderType.XAI, modelId: 'grok-4' });
+    expect((resolved.model as { provider: string }).provider).toContain('xai');
+  });
+
   it("asks for the job's selection when the thread has no model of its own", async () => {
     const { factory, resolveSelection } = factoryFor(AiProviderType.ANTHROPIC, 'claude-haiku-5-5');
 

@@ -33,7 +33,7 @@ Nothing is kept in memory between turns. A turn whose process died stops heartbe
 
 Providers and models are separate, and both are set in Settings → AI models.
 
-An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex` or `openai_compatible`), an optional stored secret, and an endpoint. It has no model.
+An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex`, `xai` or `openai_compatible`), an optional stored secret, and an endpoint. It has no model.
 
 A model is picked per job (`ai_model_selections`, one row per job, holding a provider and a model id):
 
