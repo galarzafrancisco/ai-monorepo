@@ -5,15 +5,16 @@ import { createGoogle } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { ChatProvidersService } from 'src/chat-providers/chat-providers.service';
-import { ChatProviderConfigResult } from 'src/chat-providers/dto/service/chat-providers.service.types';
-import { ChatProviderType } from 'src/chat-providers/enums';
-import { ChatProviderNotConfiguredError } from 'src/chat-providers/errors/chat-providers.errors';
+import { AiProvidersService } from 'src/ai-providers/ai-providers.service';
+import { AiProviderConfigResult } from 'src/ai-providers/dto/service/ai-providers.service.types';
+import { AiModelSelectionsService } from 'src/ai-providers/ai-model-selections.service';
+import { AiModelJob, AiProviderType } from 'src/ai-providers/enums';
+import { AiProviderNotConfiguredError } from 'src/ai-providers/errors/ai-providers.errors';
 import {
   googleApiKeyFromEnv,
   vertexLocationFromEnv,
   vertexProjectFromEnv,
-} from 'src/chat-providers/google-environment';
+} from 'src/ai-providers/google-environment';
 
 type ProviderOptions = Record<string, Record<string, string | number | boolean | null>>;
 
@@ -26,55 +27,37 @@ export type ResolvedChatModel = {
 };
 
 export type ResolveChatModelInput = {
-  /** Null or undefined uses the active chat provider. */
-  chatProviderId?: string | null;
-  /** Null or undefined uses the provider's own model, then its default. */
+  /** The job the model is for. Decides which selection applies. */
+  job: AiModelJob;
+  /** A thread's own provider and model. Both must be set to override the job's selection. */
+  aiProviderId?: string | null;
   modelId?: string | null;
-  /**
-   * The agent's configured model. It predates per-provider models, so it only
-   * applies to the provider types that existed back then.
-   */
-  legacyModelId?: string | null;
 };
 
-const DEFAULT_MODELS: Partial<Record<ChatProviderType, string>> = {
-  [ChatProviderType.OPENAI]: 'gpt-5.4',
-  [ChatProviderType.ANTHROPIC]: 'claude-opus-5-5',
-  [ChatProviderType.GOOGLE]: 'gemini-3.6-flash',
-  [ChatProviderType.GOOGLE_VERTEX]: 'gemini-3.6-flash',
-};
-
-const LEGACY_MODEL_PROVIDER_TYPES = [ChatProviderType.OPENAI];
-
-/** Maps a configured chat provider and model id to an AI SDK model. */
+/** Maps a job's selected provider and model to an AI SDK model. */
 @Injectable()
 export class ChatModelFactory {
-  constructor(private readonly chatProvidersService: ChatProvidersService) {}
+  constructor(
+    private readonly aiProvidersService: AiProvidersService,
+    private readonly aiModelSelectionsService: AiModelSelectionsService,
+  ) {}
 
   async resolve(input: ResolveChatModelInput): Promise<ResolvedChatModel> {
-    const config = input.chatProviderId
-      ? await this.chatProvidersService.getChatProviderConfigById(input.chatProviderId)
-      : await this.chatProvidersService.getActiveChatProviderConfig();
-
-    const modelId =
-      input.modelId ??
-      config.modelId ??
-      (LEGACY_MODEL_PROVIDER_TYPES.includes(config.type) ? input.legacyModelId : null) ??
-      DEFAULT_MODELS[config.type];
-
-    if (!modelId) {
-      throw new ChatProviderNotConfiguredError(config.id);
+    if (input.aiProviderId && input.modelId) {
+      const config = await this.aiProvidersService.getAiProviderConfigById(input.aiProviderId);
+      return this.build(config, input.modelId);
     }
 
-    return this.build(config, modelId);
+    const selection = await this.aiModelSelectionsService.resolve(input.job);
+    return this.build(selection.provider, selection.modelId);
   }
 
-  private build(config: ChatProviderConfigResult, modelId: string): ResolvedChatModel {
+  private build(config: AiProviderConfigResult, modelId: string): ResolvedChatModel {
     const apiKey = config.apiKey ?? undefined;
     const baseURL = config.baseUrl ?? undefined;
 
     switch (config.type) {
-      case ChatProviderType.OPENAI:
+      case AiProviderType.OPENAI:
         return {
           model: createOpenAI({ apiKey, baseURL })(modelId),
           providerType: config.type,
@@ -83,26 +66,26 @@ export class ChatModelFactory {
           providerOptions: { openai: { store: false } },
         };
 
-      case ChatProviderType.ANTHROPIC:
+      case AiProviderType.ANTHROPIC:
         return {
           model: createAnthropic({ apiKey, baseURL })(modelId),
           providerType: config.type,
           modelId,
         };
 
-      case ChatProviderType.GOOGLE:
+      case AiProviderType.GOOGLE:
         return {
           model: createGoogle({ apiKey: apiKey ?? googleApiKeyFromEnv(), baseURL })(modelId),
           providerType: config.type,
           modelId,
         };
 
-      case ChatProviderType.GOOGLE_VERTEX:
+      case AiProviderType.GOOGLE_VERTEX:
         return this.buildVertex(config, modelId);
 
-      case ChatProviderType.OPENAI_COMPATIBLE:
+      case AiProviderType.OPENAI_COMPATIBLE:
         if (!baseURL) {
-          throw new ChatProviderNotConfiguredError(config.id);
+          throw new AiProviderNotConfiguredError(config.id);
         }
         return {
           model: createOpenAICompatible({ name: config.type, baseURL, apiKey })(modelId),
@@ -116,13 +99,13 @@ export class ChatModelFactory {
    * Stored project, location and service account win. Anything left empty
    * falls back to the environment and application default credentials.
    */
-  private buildVertex(config: ChatProviderConfigResult, modelId: string): ResolvedChatModel {
+  private buildVertex(config: AiProviderConfigResult, modelId: string): ResolvedChatModel {
     let credentials: Record<string, unknown> | undefined;
     if (config.apiKey) {
       try {
         credentials = JSON.parse(config.apiKey);
       } catch {
-        throw new ChatProviderNotConfiguredError(config.id);
+        throw new AiProviderNotConfiguredError(config.id);
       }
     }
 
@@ -132,6 +115,6 @@ export class ChatModelFactory {
       googleAuthOptions: credentials ? { credentials } : undefined,
     });
 
-    return { model: vertex(modelId), providerType: ChatProviderType.GOOGLE_VERTEX, modelId };
+    return { model: vertex(modelId), providerType: AiProviderType.GOOGLE_VERTEX, modelId };
   }
 }

@@ -31,9 +31,24 @@ Nothing is kept in memory between turns. A turn whose process died stops heartbe
 
 ## Providers and models
 
-Chat providers are configured in Settings → Chat. Each has a type (`openai`, `anthropic`, `google`, `google_vertex` or `openai_compatible`), an optional stored secret, and a model.
+Providers and models are separate, and both are set in Settings → AI models.
 
-Each thread stores `chat_provider_id` and `model_id`. The selector is global for now: activating a provider, or changing the active provider's model, updates every thread.
+An AI provider (`ai_providers`) is one AI service: a type (`openai`, `anthropic`, `google`, `google_vertex` or `openai_compatible`), an optional stored secret, and an endpoint. It has no model.
+
+A model is picked per job (`ai_model_selections`, one row per job, holding a provider and a model id):
+
+| Job | Used by | When nothing is selected |
+|---|---|---|
+| `conversation` | The threads agent, and compaction | Threads cannot answer |
+| `quick_tasks` | Thread titles | Uses the conversation model |
+| `middle_manager` | The thread state reconciler | Uses the conversation model |
+| `embeddings` | Nothing yet (reserved for search) | Not available |
+
+Selections are read from the database on every call, so a change applies to every backend process on its next turn. `ChatModelFactory.resolve({ job })` turns a job into an AI SDK model.
+
+`GET /api/v1/ai-providers/:id/models` asks the provider which models it offers, using each provider type's own listing endpoint (the AI SDK has none). The model id is stored as plain text, so a model the listing does not return can still be typed in.
+
+Threads normally store no provider or model and follow the `conversation` selection. `threads.ai_provider_id` and `threads.model_id` exist for a per-thread override, which has no UI yet; both must be set for it to apply.
 
 A Google Vertex AI provider is created by default. It uses the stored service account JSON, project and location when present. Anything left empty falls back to application default credentials, `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`.
 

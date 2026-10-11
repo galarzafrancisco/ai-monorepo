@@ -22,8 +22,9 @@ import { PostgresBaseline1750000000000 } from './migrations/1750000000000-Postgr
 import { ThreadAgentMessages1760200000000 } from './migrations/1760200000000-ThreadAgentMessages';
 import { ChatProviderModelConfig1760300000000 } from './migrations/1760300000000-ChatProviderModelConfig';
 import { ReplaceAdkChatProvider1760400000000 } from './migrations/1760400000000-ReplaceAdkChatProvider';
+import { AiProviderModelSelections1760500000000 } from './migrations/1760500000000-AiProviderModelSelections';
 import { SecretsModule } from './secrets/secrets.module';
-import { ChatProvidersModule } from './chat-providers/chat-providers.module';
+import { AiProvidersModule } from './ai-providers/ai-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { GlobalSearchModule } from './global-search/global-search.module';
 import { WorkersModule } from './workers/workers.module';
@@ -45,6 +46,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
         ThreadAgentMessages1760200000000,
         ChatProviderModelConfig1760300000000,
         ReplaceAdkChatProvider1760400000000,
+        AiProviderModelSelections1760500000000,
       ],
     }),
     EventEmitterModule.forRoot(),
@@ -63,7 +65,7 @@ import { ServerLifecycleService } from './server-lifecycle.service';
     IdentityProviderModule,
     AppInitModule,
     SecretsModule,
-    ChatProvidersModule,
+    AiProvidersModule,
     ExecutionsModule,
     WorkersModule,
     GlobalSearchModule,

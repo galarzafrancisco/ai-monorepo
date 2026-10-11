@@ -10,6 +10,10 @@ export type UserWalkthroughStatusResponseDto = {
     projectConfigured: boolean;
     contextBlockCreated: boolean;
     threadConfigured: boolean;
+    /**
+     * Whether a usable model is selected for thread conversations
+     */
+    conversationModelReady: boolean;
     taskWithProjectCreated: boolean;
     onboardingDisplayMode: UserWalkthroughStatusResponseDto.onboardingDisplayMode;
 };

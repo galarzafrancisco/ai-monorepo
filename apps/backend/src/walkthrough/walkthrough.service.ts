@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AgentEntity } from '../agents/agent.entity';
 import { ContextBlockEntity } from '../context/block.entity';
+import { AiModelSelectionsService } from '../ai-providers/ai-model-selections.service';
+import { AiModelJob } from '../ai-providers/enums';
 import { User } from '../identity-provider/user.entity';
 import { UserNotFoundError } from '../identity-provider/errors/identity-provider.errors';
 import { OnboardingDisplayMode } from '../identity-provider/enums';
@@ -19,6 +21,8 @@ export type WalkthroughStatusResult = {
   projectConfigured: boolean;
   contextBlockCreated: boolean;
   threadConfigured: boolean;
+  /** Whether the threads agent has a usable model, so chat can answer. */
+  conversationModelReady: boolean;
   taskWithProjectCreated: boolean;
   onboardingDisplayMode: User['onboardingDisplayMode'];
 };
@@ -40,6 +44,7 @@ export class WalkthroughService {
     private readonly contextBlocksRepository: Repository<ContextBlockEntity>,
     @InjectRepository(ThreadEntity)
     private readonly threadsRepository: Repository<ThreadEntity>,
+    private readonly aiModelSelectionsService: AiModelSelectionsService,
   ) {}
 
   async acknowledgeForActor(actorId: string): Promise<void> {
@@ -72,6 +77,7 @@ export class WalkthroughService {
       contextBlockCreated,
       threadConfigured,
       taskWithProjectCreated,
+      modelSelections,
     ] = await Promise.all([
       this.workersRepository.existsBy({}),
       this.agentsRepository.existsBy({}),
@@ -89,6 +95,7 @@ export class WalkthroughService {
         .innerJoin(ProjectEntity, 'project', 'project.tagId = tag.id')
         .where('task.createdByActorId = :actorId', { actorId })
         .getExists(),
+      this.aiModelSelectionsService.listSelections(),
     ]);
 
     return {
@@ -99,6 +106,9 @@ export class WalkthroughService {
       projectConfigured,
       contextBlockCreated,
       threadConfigured,
+      conversationModelReady: modelSelections.some(
+        (selection) => selection.job === AiModelJob.CONVERSATION && selection.isReady,
+      ),
       taskWithProjectCreated,
       onboardingDisplayMode: user.onboardingDisplayMode,
     };

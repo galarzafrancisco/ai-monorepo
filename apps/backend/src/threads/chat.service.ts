@@ -4,7 +4,8 @@ import { AgentsService } from 'src/agents/agents.service';
 import { AgentResult } from 'src/agents/dto/service/agents.service.types';
 import { ActorEntity } from 'src/identity-provider/actor.entity';
 import { ActorType } from 'src/identity-provider/enums';
-import { NoActiveChatProviderError } from 'src/chat-providers/errors/chat-providers.errors';
+import { AiModelJob } from 'src/ai-providers/enums';
+import { AiModelNotSelectedError } from 'src/ai-providers/errors/ai-providers.errors';
 import { ChatModelFactory } from './agent/chat-model.factory';
 import { McpActor, TaicoMcpToolsFactory } from './agent/taico-mcp-tools.factory';
 import {
@@ -27,11 +28,10 @@ export class ChatService {
     return this.agentsService.getAgentBySlug({ slug: THREAD_AGENT_SLUG });
   }
 
-  /** One-shot text generation with no tools. Returns null on failure. */
+  /** One-shot text generation with no tools, on the quick tasks model. Returns null on failure. */
   public async generateText(prompt: string): Promise<string | null> {
     try {
-      const self = await this.getSelf();
-      const resolved = await this.chatModelFactory.resolve({ legacyModelId: self.modelId });
+      const resolved = await this.chatModelFactory.resolve({ job: AiModelJob.QUICK_TASKS });
       const result = await generateText({
         model: resolved.model,
         prompt,
@@ -39,7 +39,7 @@ export class ChatService {
       });
       return result.text.trim() || null;
     } catch (error) {
-      if (!(error instanceof NoActiveChatProviderError)) {
+      if (!(error instanceof AiModelNotSelectedError)) {
         this.logger.warn({
           message: 'Text generation failed',
           error: error instanceof Error
@@ -51,14 +51,17 @@ export class ChatService {
     }
   }
 
-  /** One-shot agentic run with MCP tools. Text output is discarded; only side effects matter. */
+  /**
+   * One-shot agentic run with MCP tools, on the middle manager model. Text
+   * output is discarded; only side effects matter.
+   */
   public async runTask(args: {
     instructions: string;
     prompt: string;
     actor: ActorEntity | null;
   }): Promise<void> {
     const self = await this.getSelf();
-    const resolved = await this.chatModelFactory.resolve({ legacyModelId: self.modelId });
+    const resolved = await this.chatModelFactory.resolve({ job: AiModelJob.MIDDLE_MANAGER });
 
     const selfActor: McpActor = {
       id: self.actorId,

@@ -28,7 +28,7 @@ import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
-import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
+import { AiProvidersModule } from '../ai-providers/ai-providers.module';
 import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-projector.service';
 
 @Module({
@@ -48,7 +48,7 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     AuthGuardsModule,
     MetaModule,
     ContextModule,
-    ChatProvidersModule,
+    AiProvidersModule,
   ],
   controllers: [ThreadsController],
   providers: [

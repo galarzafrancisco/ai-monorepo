@@ -25,8 +25,8 @@ import { useToast } from '../../shared/context/ToastContext';
 import { ThreadsService } from '../threads/api';
 import { ExecutionsService } from '../executions/api';
 import type { Task } from './types';
-import { useChatReadiness } from '../chat-providers/useChatReadiness';
-import { ChatSetupCallout } from '../chat-providers/ChatSetupCallout';
+import { useChatReadiness } from '../ai-models/useChatReadiness';
+import { ChatSetupCallout } from '../ai-models/ChatSetupCallout';
 import { TaskRow } from './TaskRow';
 import { getTaskStatusTag } from './taskStatusTag';
 import './TaskDetailPage.css';
@@ -112,7 +112,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
 
     if (!isChatReady) {
       showToast('Thread chat unlocks in Chat Settings.', 'info');
-      navigate('/settings/chat');
+      navigate('/settings/models');
       return;
     }
 
@@ -1148,7 +1148,7 @@ export function TaskDetailView({ task, backPath, setSectionTitle, isLoadingTask 
             title={readiness.title}
             description={readiness.description}
             ctaLabel={readiness.ctaLabel}
-            onOpenSettings={() => navigate('/settings/chat')}
+            onOpenSettings={() => navigate('/settings/models')}
           />
         ) : null}
 

@@ -23,6 +23,12 @@ export class UserWalkthroughStatusResponseDto {
   @ApiProperty({ example: true })
   threadConfigured!: boolean;
 
+  @ApiProperty({
+    description: 'Whether a usable model is selected for thread conversations',
+    example: true,
+  })
+  conversationModelReady!: boolean;
+
   @ApiProperty({ example: true })
   taskWithProjectCreated!: boolean;
 

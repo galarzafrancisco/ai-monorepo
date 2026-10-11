@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AgentEntity } from '../agents/agent.entity';
+import { AiProvidersModule } from '../ai-providers/ai-providers.module';
 import { AuthGuardsModule } from '../auth/guards/auth-guards.module';
 import { ContextBlockEntity } from '../context/block.entity';
 import { User } from '../identity-provider/user.entity';
@@ -23,6 +24,7 @@ import { WalkthroughService } from './walkthrough.service';
       ThreadEntity,
     ]),
     AuthGuardsModule,
+    AiProvidersModule,
   ],
   controllers: [WalkthroughController],
   providers: [WalkthroughService],

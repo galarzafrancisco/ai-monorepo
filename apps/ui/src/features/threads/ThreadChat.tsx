@@ -4,8 +4,8 @@ import { Text, Button, Avatar } from "../../ui/primitives";
 import { useThread } from "./useThread";
 import { useAuth } from "../../auth";
 import { useDraftState } from "../../shared/hooks/useDraftState";
-import { useChatReadiness } from "../chat-providers/useChatReadiness";
-import { ChatSetupCallout } from "../chat-providers/ChatSetupCallout";
+import { useChatReadiness } from "../ai-models/useChatReadiness";
+import { ChatSetupCallout } from "../ai-models/ChatSetupCallout";
 import Markdown from "marked-react";
 import "./ThreadChat.css";
 
@@ -173,7 +173,7 @@ export function ThreadChat({ threadId }: ThreadChatProps) {
             title={readiness.title}
             description={readiness.description}
             ctaLabel={readiness.ctaLabel}
-            onOpenSettings={() => navigate('/settings/chat')}
+            onOpenSettings={() => navigate('/settings/models')}
           />
         </div>
       ) : (

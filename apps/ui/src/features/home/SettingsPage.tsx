@@ -6,7 +6,7 @@ import { useIsDesktop } from '../../app/hooks/useIsDesktop';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useNavigate } from 'react-router-dom';
 import { useCommandPalette } from '../../ui/components';
-import { ChatProvidersService, MetaService } from '@taico/client';
+import { AiModelSelectionsService, MetaService } from '@taico/client';
 import { useTheme } from '../../app/providers/ThemeProvider';
 import type { Theme } from '../../app/providers/ThemeProvider';
 import { ProjectsService } from '../projects/api';
@@ -33,11 +33,8 @@ import './SettingsPage.css';
 
 type SettingsMetric = {
   projects: number | null;
-  providers: {
-    configured: number;
-    total: number;
-    activeName: string | null;
-  } | null;
+  /** The model answering in threads, or null when none is usable yet. */
+  conversationModel: string | null;
 };
 
 export function SettingsPage() {
@@ -50,7 +47,7 @@ export function SettingsPage() {
   const [version, setVersion] = useState<{ backend: string; ui: string } | null>(null);
   const [metrics, setMetrics] = useState<SettingsMetric>({
     projects: null,
-    providers: null,
+    conversationModel: null,
   });
 
   // Set document title (browser tab)
@@ -72,19 +69,17 @@ export function SettingsPage() {
   };
 
   const loadMetrics = async () => {
-    const [projectsResult, providersResult] = await Promise.allSettled([
+    const [projectsResult, selectionsResult] = await Promise.allSettled([
       ProjectsService.projectsControllerGetAllProjects(),
-      ChatProvidersService.chatProvidersControllerListChatProviders(),
+      AiModelSelectionsService.aiModelSelectionsControllerListAiModelSelections(),
     ]);
 
     setMetrics({
       projects: projectsResult.status === 'fulfilled' ? projectsResult.value.length : null,
-      providers: providersResult.status === 'fulfilled'
-        ? {
-            configured: providersResult.value.filter((provider) => provider.isConfigured).length,
-            total: providersResult.value.length,
-            activeName: providersResult.value.find((provider) => provider.isActive)?.name ?? null,
-          }
+      conversationModel: selectionsResult.status === 'fulfilled'
+        ? selectionsResult.value.find(
+            (selection) => selection.job === 'conversation' && selection.isReady,
+          )?.effectiveModelId ?? null
         : null,
     });
   };
@@ -114,11 +109,11 @@ export function SettingsPage() {
         onSelect: () => navigate('/settings/projects'),
       },
       {
-        id: 'settings-chat',
-        label: 'Chat Settings',
-        description: 'Configure chat providers for conversations',
-        aliases: ['chat', 'openai', 'providers', 'chat providers'],
-        onSelect: () => navigate('/settings/chat'),
+        id: 'settings-models',
+        label: 'AI Models',
+        description: 'Connect AI providers and pick a model for each job',
+        aliases: ['chat', 'models', 'openai', 'anthropic', 'providers', 'ai providers', 'embeddings'],
+        onSelect: () => navigate('/settings/models'),
       },
       {
         id: 'settings-workers',
@@ -128,11 +123,11 @@ export function SettingsPage() {
         onSelect: () => navigate('/settings/workers'),
       },
       {
-        id: 'settings-ai-providers',
-        label: 'AI Providers',
+        id: 'settings-ai-usage',
+        label: 'AI Usage',
         description: 'View usage and quota for AI providers',
-        aliases: ['ai', 'providers', 'usage', 'quota', 'anthropic', 'openai', 'claude'],
-        onSelect: () => navigate('/settings/ai-providers'),
+        aliases: ['ai', 'usage', 'quota', 'anthropic', 'openai', 'claude'],
+        onSelect: () => navigate('/settings/ai-usage'),
       },
       {
         id: 'settings-data',
@@ -185,16 +180,16 @@ export function SettingsPage() {
       detail: { label: 'Projects', value: metrics.projects === null ? 'Unavailable' : String(metrics.projects), tone: 'default' },
     },
     {
-      title: 'AI & Chat',
-      description: 'Conversation providers and active chat routing.',
+      title: 'AI models',
+      description: 'AI providers and the model each job uses.',
       icon: Sparkles,
       iconTone: 'warning',
-      path: '/settings/chat',
+      path: '/settings/models',
       action: 'Configure',
       detail: {
-        label: 'Active provider',
-        value: metrics.providers?.activeName ?? 'Not selected',
-        tone: metrics.providers?.activeName ? 'default' : 'muted',
+        label: 'Conversation model',
+        value: metrics.conversationModel ?? 'Not selected',
+        tone: metrics.conversationModel ? 'default' : 'muted',
       },
     },
     {
@@ -319,9 +314,9 @@ export function SettingsPage() {
               <Text size="3" weight="semibold">Readiness</Text>
               <StatusRow
                 icon={<CheckCircle2 size={16} strokeWidth={1.8} />}
-                label="Chat provider"
-                value={metrics.providers?.activeName ?? 'Needs active provider'}
-                isReady={Boolean(metrics.providers?.activeName)}
+                label="Conversation model"
+                value={metrics.conversationModel ?? 'Needs a model'}
+                isReady={Boolean(metrics.conversationModel)}
               />
               <StatusRow
                 icon={<Server size={16} strokeWidth={1.8} />}
@@ -341,8 +336,8 @@ export function SettingsPage() {
           <Card padding="4" className="settings-page__side-card">
             <Stack spacing="3">
               <Text size="3" weight="semibold">Quick links</Text>
-              <QuickLink icon={<Bot size={16} />} label="AI usage" onClick={() => navigate('/settings/ai-providers')} />
-              <QuickLink icon={<KeyRound size={16} />} label="Chat API keys" onClick={() => navigate('/settings/chat')} />
+              <QuickLink icon={<Bot size={16} />} label="AI usage" onClick={() => navigate('/settings/ai-usage')} />
+              <QuickLink icon={<KeyRound size={16} />} label="AI providers" onClick={() => navigate('/settings/models')} />
               <QuickLink icon={<Box size={16} />} label="Setup walkthrough" onClick={() => navigate('/walkthrough')} />
               <QuickLink icon={<ExternalLink size={16} />} label="Tools" onClick={() => navigate('/tools')} />
             </Stack>

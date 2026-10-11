@@ -1,0 +1,122 @@
+.settings-models__jobs {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-models__job {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-5);
+  align-items: start;
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-models__job:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.settings-models__job:last-child {
+  padding-bottom: 0;
+}
+
+.settings-models__job-copy,
+.settings-models__header-copy {
+  min-width: 0;
+}
+
+.settings-models__job-title {
+  flex-wrap: wrap;
+}
+
+.settings-models__job-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* Keeps the Save button in the last column while no model field is shown. */
+.settings-models__job-controls > :last-child {
+  grid-column: 3;
+}
+
+.settings-models__control {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--fs-2);
+  font-family: var(--font-sans);
+  color: var(--text);
+  background-color: var(--card-bg);
+  text-overflow: ellipsis;
+}
+
+.settings-models__control:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.settings-models__control:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-models__job-note {
+  grid-column: 2;
+}
+
+.settings-models__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+}
+
+.settings-models__status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.settings-models__status[data-tone='ready']::before {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.settings-models__secret-textarea {
+  font-family: var(--font-mono, monospace);
+  resize: vertical;
+}
+
+.settings-models__add-row {
+  flex-wrap: wrap;
+}
+
+.settings-models__add-field {
+  flex: 1 1 200px;
+  width: auto;
+}
+
+@media (max-width: 760px) {
+  .settings-models__job {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-models__job-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-models__job-controls > :last-child,
+  .settings-models__job-note {
+    grid-column: 1;
+  }
+}

@@ -429,28 +429,34 @@ export const ErrorCatalog: Record<
     type: '/errors/identity-provider/invalid-current-password',
     retryable: false,
   },
-  [ErrorCodes.CHAT_PROVIDER_NOT_FOUND]: {
+  [ErrorCodes.AI_PROVIDER_NOT_FOUND]: {
     status: 404,
-    title: 'Chat provider not found',
-    type: '/errors/chat-providers/not-found',
+    title: 'AI provider not found',
+    type: '/errors/ai-providers/not-found',
     retryable: false,
   },
-  [ErrorCodes.CHAT_PROVIDER_ALREADY_ACTIVE]: {
-    status: 409,
-    title: 'Another chat provider is already active',
-    type: '/errors/chat-providers/already-active',
-    retryable: false,
-  },
-  [ErrorCodes.CHAT_PROVIDER_NOT_CONFIGURED]: {
+  [ErrorCodes.AI_PROVIDER_NOT_CONFIGURED]: {
     status: 400,
-    title: 'Chat provider is not fully configured',
-    type: '/errors/chat-providers/not-configured',
+    title: 'AI provider is not fully configured',
+    type: '/errors/ai-providers/not-configured',
     retryable: false,
   },
-  [ErrorCodes.NO_ACTIVE_CHAT_PROVIDER]: {
+  [ErrorCodes.AI_PROVIDER_IN_USE]: {
+    status: 409,
+    title: 'AI provider is still selected for a job',
+    type: '/errors/ai-providers/in-use',
+    retryable: false,
+  },
+  [ErrorCodes.AI_PROVIDER_MODEL_LISTING_FAILED]: {
+    status: 502,
+    title: 'Could not list models from the AI provider',
+    type: '/errors/ai-providers/model-listing-failed',
+    retryable: true,
+  },
+  [ErrorCodes.AI_MODEL_NOT_SELECTED]: {
     status: 503,
-    title: 'No active chat provider configured',
-    type: '/errors/chat-providers/no-active-provider',
+    title: 'No model is selected for this job',
+    type: '/errors/ai-providers/model-not-selected',
     retryable: false,
   },
 };

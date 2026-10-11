@@ -48,8 +48,8 @@ import { createTaico } from './agent/taico.agent';
 import { createPlaywright } from './mcp/playwright.mcp';
 import { createChromeDevTools } from './mcp/chrome-devtools.mcp';
 import { createElen } from './mcp/elen.mcp';
-import { ChatProvidersService } from 'src/chat-providers/chat-providers.service';
-import { ChatProviderType } from 'src/chat-providers/enums';
+import { AiProvidersService } from 'src/ai-providers/ai-providers.service';
+import { AiProviderType } from 'src/ai-providers/enums';
 import {
   createInternalWorkerAuthScopes,
   createInternalWorkerAuthTarget,
@@ -68,7 +68,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     private readonly identityProviderService: IdentityProviderService,
     private readonly metaService: MetaService,
     private readonly contextService: ContextService,
-    private readonly chatProvidersService: ChatProvidersService,
+    private readonly aiProvidersService: AiProvidersService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(ActorEntity)
@@ -87,7 +87,7 @@ export class AppInitRunner implements OnApplicationBootstrap {
     await this.ensureMcpServers();
     await this.ensurePromptTag();
     await this.ensurePromptContextBlocks();
-    await this.ensureDefaultChatProvider();
+    await this.ensureDefaultAiProvider();
 
     if (config.nodeEnv === 'development') {
       this.ensureUsers();
@@ -492,34 +492,34 @@ export class AppInitRunner implements OnApplicationBootstrap {
     }
   }
 
-  async ensureDefaultChatProvider(): Promise<void> {
+  async ensureDefaultAiProvider(): Promise<void> {
     try {
-      this.logger.log('Ensuring default chat providers exist');
+      this.logger.log('Ensuring default AI providers exist');
 
-      const existingProviders = await this.chatProvidersService.listChatProviders();
+      const existingProviders = await this.aiProvidersService.listAiProviders();
 
-      if (!existingProviders.some((p) => p.type === ChatProviderType.OPENAI)) {
-        this.logger.log('Creating default OpenAI chat provider');
-        await this.chatProvidersService.createChatProvider({
+      if (!existingProviders.some((p) => p.type === AiProviderType.OPENAI)) {
+        this.logger.log('Creating default OpenAI AI provider');
+        await this.aiProvidersService.createAiProvider({
           name: 'OpenAI',
-          type: ChatProviderType.OPENAI,
+          type: AiProviderType.OPENAI,
           secretId: null,
         });
       }
 
       // Works out of the box when the server has Google Cloud credentials in its environment.
-      if (!existingProviders.some((p) => p.type === ChatProviderType.GOOGLE_VERTEX)) {
-        this.logger.log('Creating default Google Vertex AI chat provider');
-        await this.chatProvidersService.createChatProvider({
+      if (!existingProviders.some((p) => p.type === AiProviderType.GOOGLE_VERTEX)) {
+        this.logger.log('Creating default Google Vertex AI AI provider');
+        await this.aiProvidersService.createAiProvider({
           name: 'Google Vertex AI',
-          type: ChatProviderType.GOOGLE_VERTEX,
+          type: AiProviderType.GOOGLE_VERTEX,
           secretId: null,
         });
       }
 
-      this.logger.log('Default chat providers ensured');
+      this.logger.log('Default AI providers ensured');
     } catch (error) {
-      this.logger.error('Error ensuring default chat providers exist');
+      this.logger.error('Error ensuring default AI providers exist');
     }
   }
 }

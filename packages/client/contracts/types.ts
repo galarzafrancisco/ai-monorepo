@@ -1692,61 +1692,78 @@ export interface paths {
         patch: operations["ContextController_handleMcp_patch"];
         trace?: never;
     };
-    "/api/v1/chat-providers": {
+    "/api/v1/ai-providers": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List all chat providers */
-        get: operations["ChatProvidersController_listChatProviders"];
+        /** List all AI providers */
+        get: operations["AiProvidersController_listAiProviders"];
         put?: never;
-        /** Create a new chat provider */
-        post: operations["ChatProvidersController_createChatProvider"];
+        /** Create an AI provider */
+        post: operations["AiProvidersController_createAiProvider"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/chat-providers/{id}": {
+    "/api/v1/ai-providers/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get chat provider by ID */
-        get: operations["ChatProvidersController_getChatProvider"];
+        /** Get AI provider by ID */
+        get: operations["AiProvidersController_getAiProvider"];
         put?: never;
         post?: never;
-        /** Delete a chat provider */
-        delete: operations["ChatProvidersController_deleteChatProvider"];
+        /** Delete an AI provider */
+        delete: operations["AiProvidersController_deleteAiProvider"];
         options?: never;
         head?: never;
-        /** Update a chat provider */
-        patch: operations["ChatProvidersController_updateChatProvider"];
+        /** Update an AI provider */
+        patch: operations["AiProvidersController_updateAiProvider"];
         trace?: never;
     };
-    "/api/v1/chat-providers/set-active": {
+    "/api/v1/ai-providers/{id}/models": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List the models the provider offers, fetched live from the provider */
+        get: operations["AiProvidersController_listAiProviderModels"];
         put?: never;
-        /** Set the active chat provider */
-        post: operations["ChatProvidersController_setActiveChatProvider"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/chat-providers/deactivate": {
+    "/api/v1/ai-model-selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List which model each job uses */
+        get: operations["AiModelSelectionsController_listAiModelSelections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-model-selections/{job}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1754,10 +1771,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
-        /** Deactivate the active chat provider */
-        post: operations["ChatProvidersController_deactivateActiveChatProvider"];
-        delete?: never;
+        /** Select the provider and model a job uses */
+        put: operations["AiModelSelectionsController_setAiModelSelection"];
+        post?: never;
+        /** Clear a job's selection */
+        delete: operations["AiModelSelectionsController_clearAiModelSelection"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5306,14 +5324,14 @@ export interface components {
              */
             newParentId: Record<string, never> | null;
         };
-        CreateChatProviderDto: {
+        CreateAiProviderDto: {
             /**
-             * @description Display name for the chat provider
+             * @description Display name for the AI provider
              * @example OpenAI Production
              */
             name: string;
             /**
-             * @description Type of chat provider
+             * @description Type of AI provider
              * @example openai
              * @enum {string}
              */
@@ -5323,11 +5341,6 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             secretId?: string;
-            /**
-             * @description Model to use with this provider. Blank uses the provider default.
-             * @example claude-opus-5-5
-             */
-            modelId?: string | null;
             /**
              * @description API base URL. Required for OpenAI-compatible providers.
              * @example http://localhost:11434/v1
@@ -5344,19 +5357,19 @@ export interface components {
              */
             location?: string | null;
         };
-        ChatProviderResponseDto: {
+        AiProviderResponseDto: {
             /**
-             * @description Chat provider identifier
+             * @description AI provider identifier
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             id: string;
             /**
-             * @description Display name of the chat provider
+             * @description Display name of the AI provider
              * @example OpenAI Production
              */
             name: string;
             /**
-             * @description Type of chat provider
+             * @description Type of AI provider
              * @example openai
              * @enum {string}
              */
@@ -5366,11 +5379,6 @@ export interface components {
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             secretId?: string | null;
-            /**
-             * @description Model used with this provider
-             * @example claude-opus-5-5
-             */
-            modelId?: string | null;
             /**
              * @description API base URL
              * @example http://localhost:11434/v1
@@ -5386,11 +5394,6 @@ export interface components {
              * @example us-central1
              */
             location?: string | null;
-            /**
-             * @description Whether this provider is currently active
-             * @example true
-             */
-            isActive: boolean;
             /**
              * @description Whether this provider has all required configuration
              * @example true
@@ -5412,9 +5415,9 @@ export interface components {
              */
             updatedAt: string;
         };
-        UpdateChatProviderDto: {
+        UpdateAiProviderDto: {
             /**
-             * @description Display name for the chat provider
+             * @description Display name for the AI provider
              * @example OpenAI Production
              */
             name?: string;
@@ -5424,15 +5427,10 @@ export interface components {
              */
             secretId?: string;
             /**
-             * @description API key for the chat provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.
+             * @description API key for the AI provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.
              * @example sk-...
              */
             apiKey?: string;
-            /**
-             * @description Model to use with this provider. Blank uses the provider default.
-             * @example claude-opus-5-5
-             */
-            modelId?: string | null;
             /**
              * @description API base URL. Required for OpenAI-compatible providers.
              * @example http://localhost:11434/v1
@@ -5449,12 +5447,73 @@ export interface components {
              */
             location?: string | null;
         };
-        SetActiveChatProviderDto: {
+        AiProviderModelResponseDto: {
             /**
-             * @description ID of the chat provider to set as active
+             * @description Model id as the provider names it
+             * @example claude-haiku-5-5
+             */
+            id: string;
+            /**
+             * @description Human-readable name, when the provider gives one
+             * @example Claude Haiku 5.5
+             */
+            displayName?: string | null;
+            /**
+             * @description What the model is for
+             * @example language
+             * @enum {string}
+             */
+            kind: "language" | "embedding";
+        };
+        AiModelSelectionResponseDto: {
+            /**
+             * @description The job the model is selected for
+             * @example conversation
+             * @enum {string}
+             */
+            job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+            /**
+             * @description Provider of the job's own selection. Null when nothing is selected for it.
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
-            providerId: string;
+            aiProviderId?: string | null;
+            /**
+             * @description Model of the job's own selection. Null when nothing is selected for it.
+             * @example claude-opus-5-5
+             */
+            modelId?: string | null;
+            /**
+             * @description True when the job has no selection of its own and uses the conversation model
+             * @example false
+             */
+            followsConversation: boolean;
+            /**
+             * @description Provider the job runs on after applying the fallback
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            effectiveAiProviderId?: string | null;
+            /**
+             * @description Model the job runs on after applying the fallback
+             * @example claude-opus-5-5
+             */
+            effectiveModelId?: string | null;
+            /**
+             * @description Whether the job can make a call: a model is selected and its provider is configured
+             * @example true
+             */
+            isReady: boolean;
+        };
+        SetAiModelSelectionDto: {
+            /**
+             * @description ID of the AI provider to call
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            aiProviderId: string;
+            /**
+             * @description Model id as the provider names it
+             * @example claude-haiku-5-5
+             */
+            modelId: string;
         };
         CreateSecretDto: {
             /**
@@ -6272,6 +6331,11 @@ export interface components {
             contextBlockCreated: boolean;
             /** @example true */
             threadConfigured: boolean;
+            /**
+             * @description Whether a usable model is selected for thread conversations
+             * @example true
+             */
+            conversationModelReady: boolean;
             /** @example true */
             taskWithProjectCreated: boolean;
             /**
@@ -10299,7 +10363,7 @@ export interface operations {
             };
         };
     };
-    ChatProvidersController_listChatProviders: {
+    AiProvidersController_listAiProviders: {
         parameters: {
             query?: never;
             header?: never;
@@ -10308,18 +10372,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of chat providers */
+            /** @description List of AI providers */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatProviderResponseDto"][];
+                    "application/json": components["schemas"]["AiProviderResponseDto"][];
                 };
             };
         };
     };
-    ChatProvidersController_createChatProvider: {
+    AiProvidersController_createAiProvider: {
         parameters: {
             query?: never;
             header?: never;
@@ -10328,43 +10392,43 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateChatProviderDto"];
+                "application/json": components["schemas"]["CreateAiProviderDto"];
             };
         };
         responses: {
-            /** @description Chat provider created successfully */
+            /** @description AI provider created successfully */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatProviderResponseDto"];
+                    "application/json": components["schemas"]["AiProviderResponseDto"];
                 };
             };
         };
     };
-    ChatProvidersController_getChatProvider: {
+    AiProvidersController_getAiProvider: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Chat provider identifier */
+                /** @description AI provider identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Chat provider details */
+            /** @description AI provider details */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatProviderResponseDto"];
+                    "application/json": components["schemas"]["AiProviderResponseDto"];
                 };
             };
-            /** @description Chat provider not found */
+            /** @description AI provider not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -10373,26 +10437,26 @@ export interface operations {
             };
         };
     };
-    ChatProvidersController_deleteChatProvider: {
+    AiProvidersController_deleteAiProvider: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Chat provider identifier */
+                /** @description AI provider identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Chat provider deleted successfully */
+            /** @description AI provider deleted successfully */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Chat provider not found */
+            /** @description AI provider not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -10401,32 +10465,32 @@ export interface operations {
             };
         };
     };
-    ChatProvidersController_updateChatProvider: {
+    AiProvidersController_updateAiProvider: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Chat provider identifier */
+                /** @description AI provider identifier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateChatProviderDto"];
+                "application/json": components["schemas"]["UpdateAiProviderDto"];
             };
         };
         responses: {
-            /** @description Chat provider updated successfully */
+            /** @description AI provider updated successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatProviderResponseDto"];
+                    "application/json": components["schemas"]["AiProviderResponseDto"];
                 };
             };
-            /** @description Chat provider not found */
+            /** @description AI provider not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -10435,29 +10499,28 @@ export interface operations {
             };
         };
     };
-    ChatProvidersController_setActiveChatProvider: {
+    AiProvidersController_listAiProviderModels: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description AI provider identifier */
+                id: string;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetActiveChatProviderDto"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Active chat provider set successfully */
+            /** @description Models offered by the provider */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ChatProviderResponseDto"];
+                    "application/json": components["schemas"]["AiProviderModelResponseDto"][];
                 };
             };
-            /** @description Chat provider not found */
+            /** @description AI provider not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -10466,7 +10529,7 @@ export interface operations {
             };
         };
     };
-    ChatProvidersController_deactivateActiveChatProvider: {
+    AiModelSelectionsController_listAiModelSelections: {
         parameters: {
             query?: never;
             header?: never;
@@ -10475,7 +10538,64 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Active chat provider deactivated successfully */
+            /** @description One entry per job, selected or not */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiModelSelectionResponseDto"][];
+                };
+            };
+        };
+    };
+    AiModelSelectionsController_setAiModelSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The job the model is selected for */
+                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAiModelSelectionDto"];
+            };
+        };
+        responses: {
+            /** @description Selection saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiModelSelectionResponseDto"];
+                };
+            };
+            /** @description AI provider not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AiModelSelectionsController_clearAiModelSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The job the model is selected for */
+                job: "conversation" | "quick_tasks" | "middle_manager" | "embeddings";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Selection cleared */
             204: {
                 headers: {
                     [name: string]: unknown;
