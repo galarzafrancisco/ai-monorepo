@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ThreadEntity } from './thread.entity';
 import { ActorEntity } from '../identity-provider/actor.entity';
+import { ThreadAgentMessageEntity } from './agent/thread-agent-message.entity';
 
 @Entity({ name: 'thread_messages' })
 export class ThreadMessageEntity {
@@ -30,6 +31,14 @@ export class ThreadMessageEntity {
   @ManyToOne(() => ActorEntity)
   @JoinColumn({ name: 'created_by_actor_id' })
   createdByActor?: ActorEntity;
+
+  /** The agent-side message this user-facing message corresponds to. */
+  @Column({ type: 'uuid', nullable: true, name: 'agent_message_id' })
+  agentMessageId!: string | null;
+
+  @ManyToOne(() => ThreadAgentMessageEntity, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'agent_message_id' })
+  agentMessage?: ThreadAgentMessageEntity | null;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;

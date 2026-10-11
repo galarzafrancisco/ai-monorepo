@@ -7,21 +7,126 @@ import '../../auth/LoginPage.css';
 import './SettingsPage.css';
 import './SettingsChatPage.css';
 
+type ProviderType =
+  | 'openai'
+  | 'anthropic'
+  | 'google'
+  | 'google_vertex'
+  | 'openai_compatible'
+  | 'adk';
+
 interface ChatProvider {
   id: string;
   name: string;
-  type: string;
+  type: ProviderType;
   secretId: string | null;
+  modelId: string | null;
+  baseUrl: string | null;
+  project: string | null;
+  location: string | null;
   isActive: boolean;
   isConfigured: boolean;
 }
+
+type ProviderForm = {
+  apiKey: string;
+  modelId: string;
+  baseUrl: string;
+  project: string;
+  location: string;
+};
+
+type ProviderTypeInfo = {
+  label: string;
+  help: string;
+  defaultModel: string | null;
+  /** Label of the secret field, or null when the provider stores no secret. */
+  secretLabel: string | null;
+  secretPlaceholder: string;
+  secretRequired: boolean;
+  multilineSecret?: boolean;
+  hasBaseUrl?: boolean;
+  hasVertexSettings?: boolean;
+};
+
+const PROVIDER_TYPES: Record<ProviderType, ProviderTypeInfo> = {
+  openai: {
+    label: 'OpenAI',
+    help: 'Get an API key from platform.openai.com/api-keys.',
+    defaultModel: 'gpt-5.4',
+    secretLabel: 'API key',
+    secretPlaceholder: 'sk-...',
+    secretRequired: true,
+  },
+  anthropic: {
+    label: 'Anthropic',
+    help: 'Get an API key from console.anthropic.com.',
+    defaultModel: 'claude-opus-5-5',
+    secretLabel: 'API key',
+    secretPlaceholder: 'sk-ant-...',
+    secretRequired: true,
+  },
+  google: {
+    label: 'Google Gemini API',
+    help: 'Get an API key from aistudio.google.com.',
+    defaultModel: 'gemini-3.6-flash',
+    secretLabel: 'API key',
+    secretPlaceholder: 'AIza...',
+    secretRequired: true,
+  },
+  google_vertex: {
+    label: 'Google Vertex AI',
+    help: 'Anything left empty falls back to the server environment (application default credentials, GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION).',
+    defaultModel: 'gemini-3.6-flash',
+    secretLabel: 'Service account JSON (optional)',
+    secretPlaceholder: '{ "type": "service_account", ... }',
+    secretRequired: false,
+    multilineSecret: true,
+    hasVertexSettings: true,
+  },
+  openai_compatible: {
+    label: 'OpenAI-compatible',
+    help: 'Any server that speaks the OpenAI chat API, such as Ollama or OpenRouter. Needs a base URL and a model.',
+    defaultModel: null,
+    secretLabel: 'API key (optional)',
+    secretPlaceholder: 'sk-...',
+    secretRequired: false,
+    hasBaseUrl: true,
+  },
+  adk: {
+    label: 'Google (environment)',
+    help: 'Uses Google AI environment variables on the server (GOOGLE_API_KEY or Vertex AI config). No key stored here.',
+    defaultModel: 'gemini-3.6-flash',
+    secretLabel: null,
+    secretPlaceholder: '',
+    secretRequired: false,
+  },
+};
+
+const CREATABLE_TYPES: ProviderType[] = [
+  'openai',
+  'anthropic',
+  'google',
+  'google_vertex',
+  'openai_compatible',
+];
+
+const EMPTY_FORM: ProviderForm = {
+  apiKey: '',
+  modelId: '',
+  baseUrl: '',
+  project: '',
+  location: '',
+};
 
 export function SettingsChatPage() {
   const { setSectionTitle } = useHomeCtx();
   const [providers, setProviders] = useState<ChatProvider[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [apiKey, setApiKey] = useState<string>('');
+  const [form, setForm] = useState<ProviderForm>(EMPTY_FORM);
+  const [newProviderName, setNewProviderName] = useState('');
+  const [newProviderType, setNewProviderType] = useState<ProviderType>('anthropic');
   const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
   const [providerFeedback, setProviderFeedback] = useState<{
     providerId: string;
@@ -60,9 +165,49 @@ export function SettingsChatPage() {
     }
   };
 
-  const handleConfigureProvider = async (providerId: string) => {
-    if (!apiKey.trim()) {
+  const startEditing = (provider: ChatProvider) => {
+    setError('');
+    setEditingProviderId(provider.id);
+    setForm({
+      apiKey: '',
+      modelId: provider.modelId ?? '',
+      baseUrl: provider.baseUrl ?? '',
+      project: provider.project ?? '',
+      location: provider.location ?? '',
+    });
+  };
+
+  const stopEditing = () => {
+    setEditingProviderId(null);
+    setForm(EMPTY_FORM);
+  };
+
+  const handleAddProvider = async () => {
+    const name = newProviderName.trim() || PROVIDER_TYPES[newProviderType].label;
+
+    setError('');
+    try {
+      const created = await ChatProvidersService.chatProvidersControllerCreateChatProvider({
+        name,
+        type: newProviderType as never,
+      });
+      setNewProviderName('');
+      await loadData();
+      startEditing(created as ChatProvider);
+    } catch (err: any) {
+      setError(err?.body?.detail || 'Failed to add provider');
+    }
+  };
+
+  const handleConfigureProvider = async (provider: ChatProvider) => {
+    const info = PROVIDER_TYPES[provider.type];
+
+    if (info.secretRequired && !provider.secretId && !form.apiKey.trim()) {
       setError('Please enter an API key');
+      return;
+    }
+    if (info.hasBaseUrl && (!form.baseUrl.trim() || !form.modelId.trim())) {
+      setError('Please enter a base URL and a model');
       return;
     }
 
@@ -71,18 +216,23 @@ export function SettingsChatPage() {
 
     try {
       await ChatProvidersService.chatProvidersControllerUpdateChatProvider(
-        providerId,
+        provider.id,
         {
-          apiKey: apiKey,
+          // An empty secret field keeps the stored one.
+          ...(form.apiKey.trim() ? { apiKey: form.apiKey.trim() } : {}),
+          modelId: form.modelId,
+          ...(info.hasBaseUrl ? { baseUrl: form.baseUrl } : {}),
+          ...(info.hasVertexSettings
+            ? { project: form.project, location: form.location }
+            : {}),
         }
       );
       setProviderFeedback({
-        providerId,
+        providerId: provider.id,
         action: 'configure',
         message: 'Config updated',
       });
-      setEditingProviderId(null);
-      setApiKey('');
+      stopEditing();
       await loadData();
     } catch (err: any) {
       setError(err?.body?.detail || 'Failed to configure provider');
@@ -142,7 +292,7 @@ export function SettingsChatPage() {
   return (
     <Stack spacing="6" className="settings-subpage">
       <Text tone="muted" className="settings-subpage__intro">
-        Configure chat providers for thread conversations.
+        Configure chat providers for thread conversations. The active provider and its model power every thread.
       </Text>
 
       {error && (
@@ -171,61 +321,100 @@ export function SettingsChatPage() {
                       </span>
                     ) : null}
                   </div>
-                  {provider.type === 'openai' ? (
-                    <Text size="1" tone="muted">
-                      You can get an API key from{' '}
-                      <a
-                        href="https://platform.openai.com/api-keys"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="settings-chat__helper-link"
-                      >
-                        platform.openai.com/api-keys
-                      </a>
-                    </Text>
-                  ) : provider.type === 'adk' ? (
-                    <Text size="1" tone="muted">
-                      Uses Google AI environment variables (GOOGLE_API_KEY or Vertex AI config). No key stored here.
-                    </Text>
-                  ) : null}
+                  <Text size="1" tone="muted">
+                    {PROVIDER_TYPES[provider.type].label} · Model:{' '}
+                    {provider.modelId
+                      || (PROVIDER_TYPES[provider.type].defaultModel
+                        ? `${PROVIDER_TYPES[provider.type].defaultModel} (default)`
+                        : 'not set')}
+                  </Text>
+                  <Text size="1" tone="muted">
+                    {PROVIDER_TYPES[provider.type].help}
+                  </Text>
                 </Stack>
               </Row>
 
-              {editingProviderId === provider.id && provider.type !== 'adk' ? (
+              {editingProviderId === provider.id ? (
                 <Stack spacing="3">
-                  <Stack spacing="2">
-                    <Text size="2" weight="medium">
-                      Enter API Key
-                    </Text>
-                    <input
-                      type="password"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="login-input"
-                      placeholder="sk-..."
-                      autoFocus
-                    />
-                    <Text size="1" tone="muted">
-                      Your API key will be stored securely
-                    </Text>
-                  </Stack>
+                  {(() => {
+                    const info = PROVIDER_TYPES[provider.type];
+                    const field = (
+                      label: string,
+                      key: keyof ProviderForm,
+                      placeholder: string,
+                    ) => (
+                      <Stack spacing="2">
+                        <Text size="2" weight="medium">
+                          {label}
+                        </Text>
+                        <input
+                          type="text"
+                          value={form[key]}
+                          onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                          className="login-input"
+                          placeholder={placeholder}
+                        />
+                      </Stack>
+                    );
+
+                    return (
+                      <>
+                        {info.secretLabel ? (
+                          <Stack spacing="2">
+                            <Text size="2" weight="medium">
+                              {info.secretLabel}
+                            </Text>
+                            {info.multilineSecret ? (
+                              <textarea
+                                value={form.apiKey}
+                                onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+                                className="login-input settings-chat__secret-textarea"
+                                placeholder={info.secretPlaceholder}
+                                rows={4}
+                              />
+                            ) : (
+                              <input
+                                type="password"
+                                value={form.apiKey}
+                                onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+                                className="login-input"
+                                placeholder={info.secretPlaceholder}
+                                autoFocus
+                              />
+                            )}
+                            <Text size="1" tone="muted">
+                              {provider.secretId
+                                ? 'A value is already stored. Leave empty to keep it.'
+                                : 'Stored securely on the server.'}
+                            </Text>
+                          </Stack>
+                        ) : null}
+                        {info.hasBaseUrl
+                          ? field('Base URL', 'baseUrl', 'http://localhost:11434/v1')
+                          : null}
+                        {field(
+                          'Model',
+                          'modelId',
+                          info.defaultModel ? `${info.defaultModel} (default)` : 'model name',
+                        )}
+                        {info.hasVertexSettings ? (
+                          <>
+                            {field('Project ID', 'project', 'From GOOGLE_CLOUD_PROJECT')}
+                            {field('Location', 'location', 'From GOOGLE_CLOUD_LOCATION')}
+                          </>
+                        ) : null}
+                      </>
+                    );
+                  })()}
                   <Row spacing="2">
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => handleConfigureProvider(provider.id)}
-                      disabled={!apiKey.trim()}
+                      onClick={() => handleConfigureProvider(provider)}
                     >
                       Save
                     </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setEditingProviderId(null);
-                        setApiKey('');
-                      }}
-                    >
+                    <Button variant="secondary" size="sm" onClick={stopEditing}>
                       Cancel
                     </Button>
                   </Row>
@@ -266,15 +455,13 @@ export function SettingsChatPage() {
 
                     return (
                       <>
-                        {provider.type !== 'adk' && (
-                          <Button
-                            variant={configureFeedback ? 'primary' : 'secondary'}
-                            size="sm"
-                            onClick={() => setEditingProviderId(provider.id)}
-                          >
-                            {configureFeedback || (provider.isConfigured ? 'Update Config' : 'Configure')}
-                          </Button>
-                        )}
+                        <Button
+                          variant={configureFeedback ? 'primary' : 'secondary'}
+                          size="sm"
+                          onClick={() => startEditing(provider)}
+                        >
+                          {configureFeedback || (provider.isConfigured ? 'Update Config' : 'Configure')}
+                        </Button>
                         <span className="settings-chat__action-wrapper" title={actionTitle}>
                           <Button
                             variant={actionVariant}
@@ -296,6 +483,39 @@ export function SettingsChatPage() {
           </Card>
         ))
       )}
+
+      <Card padding="5" className="settings-panel-card">
+        <Stack spacing="3">
+          <Text size="4" weight="semibold">
+            Add a provider
+          </Text>
+          <Row spacing="2" align="center" className="settings-chat__add-row">
+            <select
+              value={newProviderType}
+              onChange={(e) => setNewProviderType(e.target.value as ProviderType)}
+              className="login-input settings-chat__add-field"
+              aria-label="Provider type"
+            >
+              {CREATABLE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {PROVIDER_TYPES[type].label}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={newProviderName}
+              onChange={(e) => setNewProviderName(e.target.value)}
+              className="login-input settings-chat__add-field"
+              placeholder={`Name (default: ${PROVIDER_TYPES[newProviderType].label})`}
+              aria-label="Provider name"
+            />
+            <Button variant="primary" size="sm" onClick={handleAddProvider}>
+              Add
+            </Button>
+          </Row>
+        </Stack>
+      </Card>
 
     </Stack>
   );

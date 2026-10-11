@@ -28,4 +28,48 @@ export class CreateChatProviderDto {
   @IsUUID()
   @IsOptional()
   secretId?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Model to use with this provider. Blank uses the provider default.',
+    example: 'claude-opus-5-5',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(2048)
+  modelId?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'API base URL. Required for OpenAI-compatible providers.',
+    example: 'http://localhost:11434/v1',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(2048)
+  baseUrl?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Google Cloud project for Vertex AI. Blank falls back to the environment.',
+    example: 'my-gcp-project',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(2048)
+  project?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Google Cloud location for Vertex AI. Blank falls back to the environment.',
+    example: 'us-central1',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(2048)
+  location?: string | null;
 }

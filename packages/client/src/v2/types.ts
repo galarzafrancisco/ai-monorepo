@@ -925,15 +925,23 @@ export interface MoveBlockDto {
 
 export interface CreateChatProviderDto {
   name: string;
-  type: 'openai' | 'adk';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible' | 'adk';
   secretId?: string;
+  modelId?: string | null;
+  baseUrl?: string | null;
+  project?: string | null;
+  location?: string | null;
 }
 
 export interface ChatProviderResponseDto {
   id: string;
   name: string;
-  type: 'openai' | 'adk';
+  type: 'openai' | 'anthropic' | 'google' | 'google_vertex' | 'openai_compatible' | 'adk';
   secretId?: string | null;
+  modelId?: string | null;
+  baseUrl?: string | null;
+  project?: string | null;
+  location?: string | null;
   isActive: boolean;
   isConfigured: boolean;
   rowVersion: number;
@@ -945,6 +953,10 @@ export interface UpdateChatProviderDto {
   name?: string;
   secretId?: string;
   apiKey?: string;
+  modelId?: string | null;
+  baseUrl?: string | null;
+  project?: string | null;
+  location?: string | null;
 }
 
 export interface SetActiveChatProviderDto {

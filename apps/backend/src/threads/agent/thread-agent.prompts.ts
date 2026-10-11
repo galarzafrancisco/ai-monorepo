@@ -1,16 +1,16 @@
-import { ActorEntity } from 'src/identity-provider/actor.entity';
-
-export function formatMessage(message: string, actor: ActorEntity): string {
+export function formatMessage(
+  message: string,
+  actor: { displayName: string; slug: string },
+): string {
   return `[${actor.displayName} @${actor.slug}] says:\n${message}`;
 }
 
 export function buildThreadScopedInstructions(
   baseInstructions: string,
   threadId: string,
-  options?: { useNamespacedToolNames?: boolean },
 ): string {
-  const tasksPrefix = options?.useNamespacedToolNames ? 'mcp__tasks__' : 'tasks__';
-  const contextPrefix = options?.useNamespacedToolNames ? 'mcp__context__' : 'context__';
+  const tasksPrefix = 'tasks__';
+  const contextPrefix = 'context__';
 
   return `${baseInstructions}
 

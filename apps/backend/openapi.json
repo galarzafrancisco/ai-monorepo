@@ -12059,6 +12059,10 @@
             "description": "Type of chat provider",
             "enum": [
               "openai",
+              "anthropic",
+              "google",
+              "google_vertex",
+              "openai_compatible",
               "adk"
             ],
             "example": "openai"
@@ -12067,6 +12071,30 @@
             "type": "string",
             "description": "ID of the secret containing the API key",
             "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model to use with this provider. Blank uses the provider default.",
+            "example": "claude-opus-5-5",
+            "nullable": true
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "API base URL. Required for OpenAI-compatible providers.",
+            "example": "http://localhost:11434/v1",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "description": "Google Cloud project for Vertex AI. Blank falls back to the environment.",
+            "example": "my-gcp-project",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "description": "Google Cloud location for Vertex AI. Blank falls back to the environment.",
+            "example": "us-central1",
+            "nullable": true
           }
         },
         "required": [
@@ -12092,6 +12120,10 @@
             "description": "Type of chat provider",
             "enum": [
               "openai",
+              "anthropic",
+              "google",
+              "google_vertex",
+              "openai_compatible",
               "adk"
             ],
             "example": "openai"
@@ -12100,6 +12132,30 @@
             "type": "string",
             "description": "ID of the secret containing the API key",
             "example": "123e4567-e89b-12d3-a456-426614174000",
+            "nullable": true
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model used with this provider",
+            "example": "claude-opus-5-5",
+            "nullable": true
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "API base URL",
+            "example": "http://localhost:11434/v1",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "description": "Google Cloud project for Vertex AI",
+            "example": "my-gcp-project",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "description": "Google Cloud location for Vertex AI",
+            "example": "us-central1",
             "nullable": true
           },
           "isActive": {
@@ -12154,8 +12210,32 @@
           },
           "apiKey": {
             "type": "string",
-            "description": "API key for the chat provider. If provided, a secret will be created automatically.",
+            "description": "API key for the chat provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.",
             "example": "sk-..."
+          },
+          "modelId": {
+            "type": "string",
+            "description": "Model to use with this provider. Blank uses the provider default.",
+            "example": "claude-opus-5-5",
+            "nullable": true
+          },
+          "baseUrl": {
+            "type": "string",
+            "description": "API base URL. Required for OpenAI-compatible providers.",
+            "example": "http://localhost:11434/v1",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "description": "Google Cloud project for Vertex AI. Blank falls back to the environment.",
+            "example": "my-gcp-project",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "description": "Google Cloud location for Vertex AI. Blank falls back to the environment.",
+            "example": "us-central1",
+            "nullable": true
           }
         }
       },

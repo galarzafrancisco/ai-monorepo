@@ -20,7 +20,6 @@ It does not try to document every workspace in the monorepo.
 - `packages/shared`
 - `packages/events`
 - `packages/errors`
-- `packages/adk-session-store`
 
 `apps/ui` depends on:
 - `packages/client`
@@ -89,7 +88,6 @@ Worker runtime:
 packages/shared ------------> apps/backend
 packages/events ------------> apps/backend
 packages/errors ------------> apps/backend
-packages/adk-session-store -> apps/backend
 
 apps/backend ---------------> packages/client
 packages/openapi-sdkgen ---> packages/client
@@ -128,7 +126,6 @@ flowchart TD
   shared --> backend
   events --> backend
   errors --> backend
-  adk --> backend
 
   backend --> backendSpec
   backendSpec --> client

@@ -29,6 +29,18 @@ export class ThreadEntity {
   @Column({ type: 'text', nullable: true, name: 'chat_session_id' })
   chatSessionId!: string | null;
 
+  /** Tip of the active branch in thread_agent_messages. */
+  @Column({ type: 'uuid', nullable: true, name: 'head_agent_message_id' })
+  headAgentMessageId!: string | null;
+
+  /** Provider powering this thread. Null follows the active chat provider. */
+  @Column({ type: 'uuid', nullable: true, name: 'chat_provider_id' })
+  chatProviderId!: string | null;
+
+  /** Model powering this thread. Null follows the agent's default model. */
+  @Column({ type: 'text', nullable: true, name: 'model_id' })
+  modelId!: string | null;
+
   @Column({ type: 'uuid', nullable: false, name: 'created_by_actor_id' })
   createdByActorId!: string;
 

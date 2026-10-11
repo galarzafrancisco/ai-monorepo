@@ -8,6 +8,8 @@ module.exports = {
       tsconfig: {
         ...require('./tsconfig.json').compilerOptions,
         esModuleInterop: true,
+        // The AI SDK ships ESM only, so its JavaScript is transformed too.
+        allowJs: true,
       }
     }],
   },
@@ -18,6 +20,6 @@ module.exports = {
     '^src/(.*)$': '<rootDir>/apps/backend/src/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@modelcontextprotocol|.*\\.mjs$))',
+    'node_modules/(?!(@modelcontextprotocol|ai/|@ai-sdk/|@workflow/|eventsource-parser/|.*\\.mjs$))',
   ],
 };

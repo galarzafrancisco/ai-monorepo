@@ -19,6 +19,8 @@ import { getConfig, isTypeormSchemaSyncEnabled } from './config/env.config';
 import { AppInitModule } from './app-init/app-init.module';
 import { TaskBlueprintsModule } from './task-blueprints/task-blueprints.module';
 import { PostgresBaseline1750000000000 } from './migrations/1750000000000-PostgresBaseline';
+import { ThreadAgentMessages1760200000000 } from './migrations/1760200000000-ThreadAgentMessages';
+import { ChatProviderModelConfig1760300000000 } from './migrations/1760300000000-ChatProviderModelConfig';
 import { SecretsModule } from './secrets/secrets.module';
 import { ChatProvidersModule } from './chat-providers/chat-providers.module';
 import { ExecutionsModule } from './executions/executions.module';
@@ -37,7 +39,11 @@ import { ServerLifecycleService } from './server-lifecycle.service';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: isTypeormSchemaSyncEnabled(),
       migrationsRun: !isTypeormSchemaSyncEnabled(),
-      migrations: [PostgresBaseline1750000000000],
+      migrations: [
+        PostgresBaseline1750000000000,
+        ThreadAgentMessages1760200000000,
+        ChatProviderModelConfig1760300000000,
+      ],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),

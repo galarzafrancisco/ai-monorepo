@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { ChatProviderEntity } from './chat-provider.entity';
 import { SecretsService } from '../secrets/secrets.service';
 import {
@@ -8,7 +8,8 @@ import {
   UpdateChatProviderInput,
   SetActiveChatProviderInput,
   ChatProviderResult,
-  ActiveChatProviderConfigResult,
+  ActiveChatSelectionResult,
+  ChatProviderConfigResult,
 } from './dto/service/chat-providers.service.types';
 import {
   ChatProviderNotFoundError,
@@ -16,6 +17,30 @@ import {
   NoActiveChatProviderError,
 } from './errors/chat-providers.errors';
 import { ChatProviderType } from './enums';
+
+/** Trims text input. Undefined means "leave unchanged"; blank means "clear". */
+function normalizeOptionalText(value: string | null | undefined): string | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  return value?.trim() || null;
+}
+
+/**
+ * Whether a provider has what it needs to make a call. Vertex AI and the legacy
+ * ADK provider can run purely on environment credentials.
+ */
+function isChatProviderConfigured(provider: ChatProviderEntity): boolean {
+  switch (provider.type) {
+    case ChatProviderType.GOOGLE_VERTEX:
+    case ChatProviderType.ADK:
+      return true;
+    case ChatProviderType.OPENAI_COMPATIBLE:
+      return !!provider.baseUrl && !!provider.modelId;
+    default:
+      return !!provider.secretId;
+  }
+}
 
 @Injectable()
 export class ChatProvidersService {
@@ -37,6 +62,10 @@ export class ChatProvidersService {
       name: input.name,
       type: input.type,
       secretId: input.secretId ?? null,
+      modelId: normalizeOptionalText(input.modelId) ?? null,
+      baseUrl: normalizeOptionalText(input.baseUrl) ?? null,
+      project: normalizeOptionalText(input.project) ?? null,
+      location: normalizeOptionalText(input.location) ?? null,
       isActive: false,
     });
 
@@ -117,7 +146,19 @@ export class ChatProvidersService {
       provider.secretId = input.secretId;
     }
 
-    await this.chatProviderRepository.save(provider);
+    for (const field of ['modelId', 'baseUrl', 'project', 'location'] as const) {
+      const value = normalizeOptionalText(input[field]);
+      if (value !== undefined) {
+        provider[field] = value;
+      }
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(ChatProviderEntity).save(provider);
+      if (provider.isActive) {
+        await this.applySelectionToThreads(manager, provider);
+      }
+    });
 
     return this.mapToResult(provider);
   }
@@ -133,7 +174,13 @@ export class ChatProvidersService {
       throw new ChatProviderNotFoundError(id);
     }
 
-    await this.chatProviderRepository.softDelete(id);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(ChatProviderEntity).softDelete(id);
+      await manager.query(
+        `UPDATE threads SET chat_provider_id = NULL, model_id = NULL WHERE chat_provider_id = $1`,
+        [id],
+      );
+    });
   }
 
   async setActiveChatProvider(
@@ -156,8 +203,7 @@ export class ChatProvidersService {
         throw new ChatProviderNotFoundError(input.providerId);
       }
 
-      // ADK uses environment variables and needs no stored API key
-      if (provider.type !== ChatProviderType.ADK && !provider.secretId) {
+      if (!isChatProviderConfigured(provider)) {
         throw new ChatProviderNotConfiguredError(input.providerId);
       }
 
@@ -173,6 +219,7 @@ export class ChatProvidersService {
       // Activate the selected provider
       provider.isActive = true;
       const saved = await repository.save(provider);
+      await this.applySelectionToThreads(manager, saved);
 
       return this.mapToResult(saved);
     });
@@ -190,10 +237,39 @@ export class ChatProvidersService {
         .set({ isActive: false })
         .where('is_active = :isActive', { isActive: true })
         .execute();
+
+      await manager.query(
+        `UPDATE threads SET chat_provider_id = NULL, model_id = NULL WHERE chat_provider_id IS NOT NULL`,
+      );
     });
   }
 
-  async getActiveChatProviderConfig(): Promise<ActiveChatProviderConfigResult> {
+  /** The provider and model new threads start with, or null when no provider is active. */
+  async getActiveChatSelection(): Promise<ActiveChatSelectionResult | null> {
+    const activeProvider = await this.chatProviderRepository.findOne({
+      where: { isActive: true },
+    });
+
+    return activeProvider
+      ? { chatProviderId: activeProvider.id, modelId: activeProvider.modelId }
+      : null;
+  }
+
+  /**
+   * The model selector is global for now: choosing a provider or model moves
+   * every thread to it. Raw update so thread row versions are left alone.
+   */
+  private async applySelectionToThreads(
+    manager: EntityManager,
+    provider: ChatProviderEntity,
+  ): Promise<void> {
+    await manager.query(
+      `UPDATE threads SET chat_provider_id = $1, model_id = $2 WHERE deleted_at IS NULL`,
+      [provider.id, provider.modelId],
+    );
+  }
+
+  async getActiveChatProviderConfig(): Promise<ChatProviderConfigResult> {
     this.logger.log({ message: 'Fetching active chat provider configuration' });
 
     const activeProvider = await this.chatProviderRepository.findOne({
@@ -204,22 +280,42 @@ export class ChatProvidersService {
       throw new NoActiveChatProviderError();
     }
 
-    // ADK uses environment variables and has no stored API key
-    if (activeProvider.type === ChatProviderType.ADK) {
-      return { type: activeProvider.type, apiKey: null };
+    return this.toProviderConfig(activeProvider);
+  }
+
+  async getChatProviderConfigById(
+    id: string,
+  ): Promise<ChatProviderConfigResult> {
+    const provider = await this.chatProviderRepository.findOne({
+      where: { id },
+    });
+
+    if (!provider) {
+      throw new ChatProviderNotFoundError(id);
     }
 
-    if (!activeProvider.secretId) {
-      throw new ChatProviderNotConfiguredError(activeProvider.id);
+    return this.toProviderConfig(provider);
+  }
+
+  private async toProviderConfig(
+    provider: ChatProviderEntity,
+  ): Promise<ChatProviderConfigResult> {
+    if (!isChatProviderConfigured(provider)) {
+      throw new ChatProviderNotConfiguredError(provider.id);
     }
 
-    const secretValue = await this.secretsService.getSecretValue(
-      activeProvider.secretId,
-    );
+    const secretValue = provider.secretId
+      ? await this.secretsService.getSecretValue(provider.secretId)
+      : null;
 
     return {
-      type: activeProvider.type,
-      apiKey: secretValue.value,
+      id: provider.id,
+      type: provider.type,
+      apiKey: secretValue?.value ?? null,
+      modelId: provider.modelId,
+      baseUrl: provider.baseUrl,
+      project: provider.project,
+      location: provider.location,
     };
   }
 
@@ -229,8 +325,12 @@ export class ChatProvidersService {
       name: provider.name,
       type: provider.type,
       secretId: provider.secretId,
+      modelId: provider.modelId,
+      baseUrl: provider.baseUrl,
+      project: provider.project,
+      location: provider.location,
       isActive: provider.isActive,
-      isConfigured: provider.type === ChatProviderType.ADK ? true : !!provider.secretId,
+      isConfigured: isChatProviderConfigured(provider),
       rowVersion: provider.rowVersion,
       createdAt: provider.createdAt,
       updatedAt: provider.updatedAt,

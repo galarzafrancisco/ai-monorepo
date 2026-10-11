@@ -5317,12 +5317,32 @@ export interface components {
              * @example openai
              * @enum {string}
              */
-            type: "openai" | "adk";
+            type: "openai" | "anthropic" | "google" | "google_vertex" | "openai_compatible" | "adk";
             /**
              * @description ID of the secret containing the API key
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             secretId?: string;
+            /**
+             * @description Model to use with this provider. Blank uses the provider default.
+             * @example claude-opus-5-5
+             */
+            modelId?: string | null;
+            /**
+             * @description API base URL. Required for OpenAI-compatible providers.
+             * @example http://localhost:11434/v1
+             */
+            baseUrl?: string | null;
+            /**
+             * @description Google Cloud project for Vertex AI. Blank falls back to the environment.
+             * @example my-gcp-project
+             */
+            project?: string | null;
+            /**
+             * @description Google Cloud location for Vertex AI. Blank falls back to the environment.
+             * @example us-central1
+             */
+            location?: string | null;
         };
         ChatProviderResponseDto: {
             /**
@@ -5340,12 +5360,32 @@ export interface components {
              * @example openai
              * @enum {string}
              */
-            type: "openai" | "adk";
+            type: "openai" | "anthropic" | "google" | "google_vertex" | "openai_compatible" | "adk";
             /**
              * @description ID of the secret containing the API key
              * @example 123e4567-e89b-12d3-a456-426614174000
              */
             secretId?: string | null;
+            /**
+             * @description Model used with this provider
+             * @example claude-opus-5-5
+             */
+            modelId?: string | null;
+            /**
+             * @description API base URL
+             * @example http://localhost:11434/v1
+             */
+            baseUrl?: string | null;
+            /**
+             * @description Google Cloud project for Vertex AI
+             * @example my-gcp-project
+             */
+            project?: string | null;
+            /**
+             * @description Google Cloud location for Vertex AI
+             * @example us-central1
+             */
+            location?: string | null;
             /**
              * @description Whether this provider is currently active
              * @example true
@@ -5384,10 +5424,30 @@ export interface components {
              */
             secretId?: string;
             /**
-             * @description API key for the chat provider. If provided, a secret will be created automatically.
+             * @description API key for the chat provider, or service account JSON for Vertex AI. If provided, a secret will be created automatically.
              * @example sk-...
              */
             apiKey?: string;
+            /**
+             * @description Model to use with this provider. Blank uses the provider default.
+             * @example claude-opus-5-5
+             */
+            modelId?: string | null;
+            /**
+             * @description API base URL. Required for OpenAI-compatible providers.
+             * @example http://localhost:11434/v1
+             */
+            baseUrl?: string | null;
+            /**
+             * @description Google Cloud project for Vertex AI. Blank falls back to the environment.
+             * @example my-gcp-project
+             */
+            project?: string | null;
+            /**
+             * @description Google Cloud location for Vertex AI. Blank falls back to the environment.
+             * @example us-central1
+             */
+            location?: string | null;
         };
         SetActiveChatProviderDto: {
             /**

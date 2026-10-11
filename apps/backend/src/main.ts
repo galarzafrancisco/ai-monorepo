@@ -12,6 +12,7 @@ import cookieParser from 'cookie-parser';
 import { getConfig } from './config/env.config';
 import { Request, Response } from 'express';
 import { ServerLifecycleService } from './server-lifecycle.service';
+import { PostgresIoAdapter } from './common/postgres-io.adapter';
 
 const logger = new Logger('Bootstrap');
 
@@ -43,6 +44,11 @@ async function bootstrap() {
     await generateOpenApi(app);
     return;
   }
+
+  // Several backend processes can serve the same clients: broadcasts go through Postgres.
+  const ioAdapter = new PostgresIoAdapter(app);
+  await ioAdapter.prepare();
+  app.useWebSocketAdapter(ioAdapter);
 
   const lifecycle = app.get(ServerLifecycleService);
   process.once('SIGTERM', () => lifecycle.beginShutdown('SIGTERM'));
