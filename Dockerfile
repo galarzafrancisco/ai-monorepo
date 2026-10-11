@@ -11,7 +11,6 @@ COPY apps/ui-v1/package*.json ./apps/ui-v1/
 COPY apps/ui/package*.json ./apps/ui/
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/client/package*.json ./packages/client/
-COPY packages/adk-session-store/package*.json ./packages/adk-session-store/
 COPY packages/errors/package*.json ./packages/errors/
 COPY packages/events/package*.json ./packages/events/
 COPY packages/openapi-sdkgen/package*.json ./packages/openapi-sdkgen/
@@ -36,7 +35,6 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY apps/worker/package*.json ./apps/worker/
 COPY packages/shared/package*.json ./packages/shared/
 COPY packages/client/package*.json ./packages/client/
-COPY packages/adk-session-store/package*.json ./packages/adk-session-store/
 COPY packages/errors/package*.json ./packages/errors/
 COPY packages/events/package*.json ./packages/events/
 
@@ -47,7 +45,6 @@ RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 COPY --from=builder /workdir/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /workdir/apps/worker/dist ./apps/worker/dist
 COPY --from=builder /workdir/packages/shared/dist ./packages/shared/dist
-COPY --from=builder /workdir/packages/adk-session-store/dist ./packages/adk-session-store/dist
 COPY --from=builder /workdir/packages/errors/dist ./packages/errors/dist
 COPY --from=builder /workdir/packages/events/dist ./packages/events/dist
 
