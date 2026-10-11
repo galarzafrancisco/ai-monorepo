@@ -10,6 +10,7 @@ import { AppModule } from '../src/app.module';
 import { getConfig } from '../src/config/env.config';
 import { ProblemDetailsFilter } from '../src/http/problem-details.filter';
 import { AgentsService } from '../src/agents/agents.service';
+import { ThreadEntity } from '../src/threads/thread.entity';
 import { ChatModelFactory } from '../src/threads/agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from '../src/threads/agent/taico-mcp-tools.factory';
 import { ThreadTurnsService } from '../src/threads/agent/thread-turns.service';
@@ -175,6 +176,25 @@ describe('Thread agent E2E', () => {
     expect(userDisplay.agent_message_id).toBe(userRow.id);
   });
 
+  it('keeps the conversation when a thread loaded before the turn is saved afterwards', async () => {
+    const threadId = await createThread();
+    const threads = dataSource.getRepository(ThreadEntity);
+
+    // What title generation does: load the thread, do slow work, save it.
+    const staleThread = await threads.findOneOrFail({ where: { id: threadId } });
+    await sendMessage(threadId, 'first question');
+    await waitForAgentReplies(threadId, 1);
+    staleThread.title = 'Renamed while the agent was answering';
+    await threads.save(staleThread);
+
+    await sendMessage(threadId, 'second question');
+    await waitForAgentReplies(threadId, 2);
+
+    const texts = userTexts(prompts[prompts.length - 1]);
+    expect(texts).toHaveLength(3);
+    expect(texts[0]).toContain('first question');
+  });
+
   it('replays the stored history on the next turn', async () => {
     const threadId = await createThread();
 
@@ -250,6 +270,15 @@ describe('Thread agent E2E', () => {
     );
     expect(visible).toHaveLength(2);
     expect(visible.some((message) => message.content.includes('<context'))).toBe(false);
+
+    // The list is still in context, so asking about tags again does not inject it twice.
+    await sendMessage(threadId, 'which tags exist?');
+    await waitForAgentReplies(threadId, 2);
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM thread_agent_messages WHERE thread_id = $1 AND source = 'hook:tags'`,
+      [threadId],
+    );
+    expect(count).toBe(1);
   });
 
   it('replaces older history with a summary once the conversation is large', async () => {
