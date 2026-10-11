@@ -3,7 +3,7 @@ import { THREAD_AGENT_MESSAGE_FORMAT_VERSION } from './thread-agent.enums';
 
 export type AgentContextRow = {
   id: string;
-  /** Who produced the row, e.g. 'user', 'model', 'hook:tags'. */
+  /** Who produced the row, e.g. 'user', 'model', 'hook:easter-egg'. */
   source: string;
   message: unknown;
   formatVersion: number;

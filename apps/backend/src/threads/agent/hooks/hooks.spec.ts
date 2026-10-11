@@ -1,10 +1,9 @@
 import { ThreadAgentMessageKind } from '../thread-agent.enums';
 import { renderTranscript } from './compaction.hook';
-import { TagsContextHook } from './tags-context.hook';
+import { EasterEggHook } from './easter-egg.hook';
 import { ThreadAgentHook } from './thread-agent-hook.interface';
 import { ThreadAgentHooksRunner } from './thread-agent-hooks.runner';
 
-jest.mock('src/meta/meta.service', () => ({ MetaService: class {} }));
 jest.mock('../thread-agent-log.service', () => ({ ThreadAgentLogService: class {} }));
 jest.mock('src/config/env.config', () => ({
   getConfig: () => ({ threadAgentCompactionTokenThreshold: 100 }),
@@ -20,7 +19,7 @@ describe('ThreadAgentHooksRunner', () => {
 
   it('stores what a hook returns as a hidden injection', async () => {
     const { runner, agentLog } = createRunner([
-      { name: 'tags', beforeTurn: async () => 'Existing tags:\n- bug' },
+      { name: 'lookup', beforeTurn: async () => 'Existing tags:\n- bug' },
     ]);
 
     const injected = await runner.runBeforeTurn({ ...turn, newUserMessages: [], context: [] });
@@ -29,11 +28,11 @@ describe('ThreadAgentHooksRunner', () => {
     expect(agentLog.append).toHaveBeenCalledWith('thread-1', [
       expect.objectContaining({
         kind: ThreadAgentMessageKind.INJECTION,
-        source: 'hook:tags',
+        source: 'hook:lookup',
         turnId: 'turn-1',
         message: {
           role: 'user',
-          content: '<context source="tags">\nExisting tags:\n- bug\n</context>',
+          content: '<context source="lookup">\nExisting tags:\n- bug\n</context>',
         },
       }),
     ]);
@@ -53,33 +52,22 @@ describe('ThreadAgentHooksRunner', () => {
   });
 });
 
-describe('TagsContextHook', () => {
-  const metaService = { getAllTags: jest.fn().mockResolvedValue([{ name: 'bug' }, { name: 'project:taico' }]) };
-  const hook = new TagsContextHook(metaService as never);
+describe('EasterEggHook', () => {
+  const hook = new EasterEggHook();
 
-  it('lists tags when the user talks about tags', async () => {
+  it('hands over the countersign when the user says the recognition phrase', async () => {
     const text = await hook.beforeTurn({
       ...turn,
-      newUserMessages: ['add a tag to that task'],
+      newUserMessages: ['Psst. The key is under the doormat.'],
       context: [],
     });
 
-    expect(text).toBe('Existing tags:\n- bug\n- project:taico');
+    expect(text).toContain('The owl only hoots at midnight.');
   });
 
-  it('stays quiet for unrelated messages and when tags are already in context', async () => {
+  it('stays quiet otherwise', async () => {
     expect(
-      await hook.beforeTurn({ ...turn, newUserMessages: ['what is the status?'], context: [] }),
-    ).toBeNull();
-
-    expect(
-      await hook.beforeTurn({
-        ...turn,
-        newUserMessages: ['tag it'],
-        context: [
-          { id: 'r1', source: 'hook:tags', message: {}, formatVersion: 1, providerType: null, modelId: null },
-        ],
-      }),
+      await hook.beforeTurn({ ...turn, newUserMessages: ['where is the key?'], context: [] }),
     ).toBeNull();
   });
 });

@@ -22,7 +22,7 @@ import { ChatModelFactory } from './agent/chat-model.factory';
 import { TaicoMcpToolsFactory } from './agent/taico-mcp-tools.factory';
 import { THREAD_AGENT_HOOKS } from './agent/hooks/thread-agent-hook.interface';
 import { ThreadAgentHooksRunner } from './agent/hooks/thread-agent-hooks.runner';
-import { TagsContextHook } from './agent/hooks/tags-context.hook';
+import { EasterEggHook } from './agent/hooks/easter-egg.hook';
 import { CompactionHook } from './agent/hooks/compaction.hook';
 import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
@@ -61,13 +61,16 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     ChatModelFactory,
     TaicoMcpToolsFactory,
     ThreadAgentHooksRunner,
-    TagsContextHook,
+    EasterEggHook,
     CompactionHook,
     {
       // Hooks run in this order.
       provide: THREAD_AGENT_HOOKS,
-      useFactory: (tags: TagsContextHook, compaction: CompactionHook) => [tags, compaction],
-      inject: [TagsContextHook, CompactionHook],
+      useFactory: (easterEgg: EasterEggHook, compaction: CompactionHook) => [
+        easterEgg,
+        compaction,
+      ],
+      inject: [EasterEggHook, CompactionHook],
     },
     ThreadTitleService,
     ThreadStateReconcilerService,

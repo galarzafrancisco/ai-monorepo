@@ -248,18 +248,19 @@ describe('Thread agent E2E', () => {
     expect(unseen).toHaveLength(0);
   });
 
-  it('gives the agent the tag list when the user talks about tags, without showing it', async () => {
+  it('injects hook context into the agent conversation without showing it to the user', async () => {
     const threadId = await createThread();
 
-    await sendMessage(threadId, 'please add a tag to this thread');
+    await sendMessage(threadId, 'the key is under the doormat');
     await waitForAgentReplies(threadId, 1);
 
     const texts = userTexts(prompts[prompts.length - 1]);
     expect(texts).toHaveLength(2);
-    expect(texts[1]).toContain('<context source="tags">');
+    expect(texts[1]).toContain('<context source="easter-egg">');
+    expect(texts[1]).toContain('The owl only hoots at midnight.');
 
     const [injection] = await dataSource.query(
-      `SELECT kind, role FROM thread_agent_messages WHERE thread_id = $1 AND source = 'hook:tags'`,
+      `SELECT kind, role FROM thread_agent_messages WHERE thread_id = $1 AND source = 'hook:easter-egg'`,
       [threadId],
     );
     expect(injection).toEqual({ kind: 'injection', role: 'user' });
@@ -270,15 +271,6 @@ describe('Thread agent E2E', () => {
     );
     expect(visible).toHaveLength(2);
     expect(visible.some((message) => message.content.includes('<context'))).toBe(false);
-
-    // The list is still in context, so asking about tags again does not inject it twice.
-    await sendMessage(threadId, 'which tags exist?');
-    await waitForAgentReplies(threadId, 2);
-    const [{ count }] = await dataSource.query(
-      `SELECT count(*)::int AS count FROM thread_agent_messages WHERE thread_id = $1 AND source = 'hook:tags'`,
-      [threadId],
-    );
-    expect(count).toBe(1);
   });
 
   it('replaces older history with a summary once the conversation is large', async () => {
