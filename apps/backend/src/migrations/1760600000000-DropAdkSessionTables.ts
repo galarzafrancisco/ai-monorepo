@@ -3,7 +3,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * Thread conversations used to live in Google ADK session tables. The threads
  * agent now keeps its own log in thread_agent_messages, which was backfilled
- * from thread_messages, and nothing reads the ADK tables any more.
+ * from thread_messages, and nothing reads the ADK tables any more. Neither
+ * does anything read threads.chat_session_id, which pointed at an ADK session.
  */
 export class DropAdkSessionTables1760600000000 implements MigrationInterface {
   name = 'DropAdkSessionTables1760600000000';
@@ -13,10 +14,12 @@ export class DropAdkSessionTables1760600000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS "adk_sessions"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "adk_app_state"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "adk_user_state"`);
+    await queryRunner.query(`ALTER TABLE "threads" DROP COLUMN "chat_session_id"`);
   }
 
-  /** Recreates the tables empty. The dropped sessions cannot be restored. */
+  /** Recreates the column and tables empty. The dropped sessions cannot be restored. */
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "threads" ADD "chat_session_id" text`);
     await queryRunner.query(`CREATE TABLE "adk_sessions" (
           "app_name" text NOT NULL,
           "user_id" text NOT NULL,

@@ -19,15 +19,6 @@ export class ThreadResponseDto {
   title!: string;
 
   @ApiProperty({
-    description:
-      'Provider-specific chat session/conversation ID associated with this thread',
-    example: 'conv_123abc',
-    type: String,
-    nullable: true,
-  })
-  chatSessionId!: string | null;
-
-  @ApiProperty({
     description: 'Actor who created the thread',
     type: ActorResponseDto,
   })
@@ -97,7 +88,6 @@ export class ThreadResponseDto {
     return {
       id: result.id,
       title: result.title,
-      chatSessionId: result.chatSessionId,
       createdByActor: ActorResponseDto.fromResult(result.createdByActor),
       parentTaskId: result.parentTaskId,
       stateContextBlockId: result.stateContextBlockId,

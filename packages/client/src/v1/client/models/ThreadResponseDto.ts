@@ -16,10 +16,6 @@ export type ThreadResponseDto = {
      */
     title: string;
     /**
-     * Provider-specific chat session/conversation ID associated with this thread
-     */
-    chatSessionId: string | null;
-    /**
      * Actor who created the thread
      */
     createdByActor: ActorResponseDto;

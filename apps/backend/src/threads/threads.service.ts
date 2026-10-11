@@ -134,7 +134,6 @@ export class ThreadsService {
     const thread = this.threadRepository.create({
       id: randomUUID(),
       title,
-      chatSessionId: null,
       createdByActorId: input.createdByActorId,
       parentTaskId: input.parentTaskId || null,
       stateContextBlockId: stateBlock.id,
@@ -301,7 +300,6 @@ export class ThreadsService {
       items: threads.map((thread) => ({
         id: thread.id,
         title: thread.title,
-        chatSessionId: thread.chatSessionId ?? null,
         stateContextBlockId: thread.stateContextBlockId,
       })),
       total,
@@ -837,7 +835,6 @@ export class ThreadsService {
     return {
       id: thread.id,
       title: thread.title,
-      chatSessionId: thread.chatSessionId ?? null,
       createdByActor: this.mapActorToResult(thread.createdByActor),
       parentTaskId: thread.parentTaskId || null,
       stateContextBlockId: thread.stateContextBlockId,
