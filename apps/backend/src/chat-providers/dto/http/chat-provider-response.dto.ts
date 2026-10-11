@@ -29,6 +29,38 @@ export class ChatProviderResponseDto {
   })
   secretId!: string | null;
 
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Model used with this provider',
+    example: 'claude-opus-5-5',
+    nullable: true,
+  })
+  modelId!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'API base URL',
+    example: 'http://localhost:11434/v1',
+    nullable: true,
+  })
+  baseUrl!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Google Cloud project for Vertex AI',
+    example: 'my-gcp-project',
+    nullable: true,
+  })
+  project!: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Google Cloud location for Vertex AI',
+    example: 'us-central1',
+    nullable: true,
+  })
+  location!: string | null;
+
   @ApiProperty({
     description: 'Whether this provider is currently active',
     example: true,

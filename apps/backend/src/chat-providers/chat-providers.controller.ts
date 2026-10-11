@@ -52,6 +52,10 @@ export class ChatProvidersController {
       name: dto.name,
       type: dto.type,
       secretId: dto.secretId,
+      modelId: dto.modelId,
+      baseUrl: dto.baseUrl,
+      project: dto.project,
+      location: dto.location,
     });
     return this.mapToResponse(result);
   }
@@ -93,6 +97,10 @@ export class ChatProvidersController {
       secretId: dto.secretId,
       apiKey: dto.apiKey,
       createdByActorId: user.actorId,
+      modelId: dto.modelId,
+      baseUrl: dto.baseUrl,
+      project: dto.project,
+      location: dto.location,
     });
     return this.mapToResponse(result);
   }
@@ -139,6 +147,10 @@ export class ChatProvidersController {
       name: result.name,
       type: result.type,
       secretId: result.secretId,
+      modelId: result.modelId,
+      baseUrl: result.baseUrl,
+      project: result.project,
+      location: result.location,
       isActive: result.isActive,
       isConfigured: result.isConfigured,
       rowVersion: result.rowVersion,

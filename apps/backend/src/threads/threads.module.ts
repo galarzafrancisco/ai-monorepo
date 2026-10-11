@@ -13,11 +13,19 @@ import { MetaModule } from '../meta/meta.module';
 import { AgentRunEntity } from '../agent-runs/agent-run.entity';
 import { ContextModule } from '../context/context.module';
 import { ChatService } from './chat.service';
-import { AdkBackend } from './backends/adk.backend';
-import { OpenAiBackend } from './backends/openai.backend';
+import { ThreadAgentMessageEntity } from './agent/thread-agent-message.entity';
+import { ThreadTurnEntity } from './agent/thread-turn.entity';
+import { ThreadAgentService } from './agent/thread-agent.service';
+import { ThreadAgentLogService } from './agent/thread-agent-log.service';
+import { ThreadTurnsService } from './agent/thread-turns.service';
+import { ChatModelFactory } from './agent/chat-model.factory';
+import { TaicoMcpToolsFactory } from './agent/taico-mcp-tools.factory';
+import { THREAD_AGENT_HOOKS } from './agent/hooks/thread-agent-hook.interface';
+import { ThreadAgentHooksRunner } from './agent/hooks/thread-agent-hooks.runner';
+import { EasterEggHook } from './agent/hooks/easter-egg.hook';
+import { CompactionHook } from './agent/hooks/compaction.hook';
 import { AgentsModule } from 'src/agents/agents.module';
 import { AuthorizationServerModule } from 'src/authorization-server/authorization-server.module';
-import { OpenAiMcpServerFactoryService } from './openai-mcp-server-factory.service';
 import { ThreadTitleService } from './thread-title.service';
 import { ThreadStateReconcilerService } from './thread-state-reconciler.service';
 import { ChatProvidersModule } from '../chat-providers/chat-providers.module';
@@ -28,6 +36,8 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     TypeOrmModule.forFeature([
       ThreadEntity,
       ThreadMessageEntity,
+      ThreadAgentMessageEntity,
+      ThreadTurnEntity,
       TaskEntity,
       ContextBlockEntity,
       ActorEntity,
@@ -45,9 +55,23 @@ import { ThreadTaskAssignmentProjectorService } from './thread-task-assignment-p
     ThreadsService,
     ThreadsGateway,
     ChatService,
-    AdkBackend,
-    OpenAiBackend,
-    OpenAiMcpServerFactoryService,
+    ThreadAgentService,
+    ThreadAgentLogService,
+    ThreadTurnsService,
+    ChatModelFactory,
+    TaicoMcpToolsFactory,
+    ThreadAgentHooksRunner,
+    EasterEggHook,
+    CompactionHook,
+    {
+      // Hooks run in this order.
+      provide: THREAD_AGENT_HOOKS,
+      useFactory: (easterEgg: EasterEggHook, compaction: CompactionHook) => [
+        easterEgg,
+        compaction,
+      ],
+      inject: [EasterEggHook, CompactionHook],
+    },
     ThreadTitleService,
     ThreadStateReconcilerService,
     ThreadTaskAssignmentProjectorService,

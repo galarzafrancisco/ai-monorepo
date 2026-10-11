@@ -507,11 +507,12 @@ export class AppInitRunner implements OnApplicationBootstrap {
         });
       }
 
-      if (!existingProviders.some((p) => p.type === ChatProviderType.ADK)) {
-        this.logger.log('Creating default Google ADK chat provider');
+      // Works out of the box when the server has Google Cloud credentials in its environment.
+      if (!existingProviders.some((p) => p.type === ChatProviderType.GOOGLE_VERTEX)) {
+        this.logger.log('Creating default Google Vertex AI chat provider');
         await this.chatProvidersService.createChatProvider({
-          name: 'Google ADK',
-          type: ChatProviderType.ADK,
+          name: 'Google Vertex AI',
+          type: ChatProviderType.GOOGLE_VERTEX,
           secretId: null,
         });
       }

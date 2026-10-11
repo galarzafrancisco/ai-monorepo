@@ -29,6 +29,36 @@ export class ThreadEntity {
   @Column({ type: 'text', nullable: true, name: 'chat_session_id' })
   chatSessionId!: string | null;
 
+  /**
+   * Tip of the active branch in thread_agent_messages.
+   *
+   * `update: false`: the agent moves the head with its own SQL while a turn
+   * runs, so saving a thread entity loaded earlier must never write it back.
+   */
+  @Column({
+    type: 'uuid',
+    nullable: true,
+    name: 'head_agent_message_id',
+    update: false,
+  })
+  headAgentMessageId!: string | null;
+
+  /**
+   * Provider powering this thread. Null follows the active chat provider.
+   * Changed through the chat provider selection, not by saving the entity.
+   */
+  @Column({
+    type: 'uuid',
+    nullable: true,
+    name: 'chat_provider_id',
+    update: false,
+  })
+  chatProviderId!: string | null;
+
+  /** Model powering this thread. Null follows the provider's model. */
+  @Column({ type: 'text', nullable: true, name: 'model_id', update: false })
+  modelId!: string | null;
+
   @Column({ type: 'uuid', nullable: false, name: 'created_by_actor_id' })
   createdByActorId!: string;
 

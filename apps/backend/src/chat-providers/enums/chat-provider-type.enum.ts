@@ -1,4 +1,7 @@
 export enum ChatProviderType {
   OPENAI = 'openai',
-  ADK = 'adk',
+  ANTHROPIC = 'anthropic',
+  GOOGLE = 'google',
+  GOOGLE_VERTEX = 'google_vertex',
+  OPENAI_COMPATIBLE = 'openai_compatible',
 }

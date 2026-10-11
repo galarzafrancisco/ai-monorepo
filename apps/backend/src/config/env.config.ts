@@ -54,6 +54,9 @@ export interface AppConfig {
   // Feature Flags
   threadStateReconcilerEnabled: boolean;
   threadStateReconcilerDebounceMs: number;
+
+  /** Conversation size, in input tokens, above which a thread's agent context is summarized. */
+  threadAgentCompactionTokenThreshold: number;
 }
 
 /**
@@ -121,6 +124,7 @@ export function loadConfig(): AppConfig {
 
     threadStateReconcilerEnabled: getThreadStateReconcilerEnabled(),
     threadStateReconcilerDebounceMs: getThreadStateReconcilerDebounceMs(),
+    threadAgentCompactionTokenThreshold: getThreadAgentCompactionTokenThreshold(),
   };
 
   // Log configuration (excluding sensitive data)
@@ -136,6 +140,7 @@ export function loadConfig(): AppConfig {
   logger.log(`  - MCP Client Prune Retention Hours: ${config.mcpClientPruneRetentionHours}`);
   logger.log(`  - Thread State Reconciler Enabled: ${config.threadStateReconcilerEnabled}`);
   logger.log(`  - Thread State Reconciler Debounce Ms: ${config.threadStateReconcilerDebounceMs}`);
+  logger.log(`  - Thread Agent Compaction Token Threshold: ${config.threadAgentCompactionTokenThreshold}`);
 
   return config;
 }
@@ -242,6 +247,17 @@ function getThreadStateReconcilerDebounceMs(): number {
   );
   if (!Number.isFinite(parsed) || parsed <= 0) {
     return 20000;
+  }
+  return parsed;
+}
+
+function getThreadAgentCompactionTokenThreshold(): number {
+  const parsed = parseInt(
+    process.env.THREAD_AGENT_COMPACTION_TOKEN_THRESHOLD || '100000',
+    10,
+  );
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 100000;
   }
   return parsed;
 }

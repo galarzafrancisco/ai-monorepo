@@ -20,6 +20,22 @@ export type ChatProviderResponseDto = {
      */
     secretId?: string | null;
     /**
+     * Model used with this provider
+     */
+    modelId?: string | null;
+    /**
+     * API base URL
+     */
+    baseUrl?: string | null;
+    /**
+     * Google Cloud project for Vertex AI
+     */
+    project?: string | null;
+    /**
+     * Google Cloud location for Vertex AI
+     */
+    location?: string | null;
+    /**
      * Whether this provider is currently active
      */
     isActive: boolean;
@@ -46,7 +62,10 @@ export namespace ChatProviderResponseDto {
      */
     export enum type {
         OPENAI = 'openai',
-        ADK = 'adk',
+        ANTHROPIC = 'anthropic',
+        GOOGLE = 'google',
+        GOOGLE_VERTEX = 'google_vertex',
+        OPENAI_COMPATIBLE = 'openai_compatible',
     }
 }
 

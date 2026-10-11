@@ -37,15 +37,11 @@ import {
 } from './errors/threads.errors';
 import {
   MessageCreatedEvent,
-  ThreadAgentActivityEvent,
-  ThreadAgentActivityKind,
-  ThreadAgentResponseDeltaEvent,
   ThreadTitleUpdatedEvent,
   ThreadUpdatedEvent,
 } from './events/threads.events';
-import { ChatService } from './chat.service';
-import { ChatStreamEvent } from './backends/chat-backend.interface';
-import { NoActiveChatProviderError } from '../chat-providers/errors/chat-providers.errors';
+import { ThreadAgentService } from './agent/thread-agent.service';
+import { ChatProvidersService } from '../chat-providers/chat-providers.service';
 import { ActorType } from '../identity-provider/enums';
 import { ThreadTitleService } from './thread-title.service';
 
@@ -54,19 +50,6 @@ type GenerateTitleFromFirstMessageInput = {
   actor: ActorEntity;
   messageContent: string;
   existingMessageCount: number;
-};
-
-type EmitAgentActivityInput = {
-  threadId: string;
-  actorId: string;
-  kind: ThreadAgentActivityKind;
-};
-
-type EmitAgentResponseDeltaInput = {
-  threadId: string;
-  actorId: string;
-  streamId: string;
-  delta: string;
 };
 
 @Injectable()
@@ -97,30 +80,10 @@ export class ThreadsService {
     private readonly metaService: MetaService,
     private readonly contextService: ContextService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly chatService: ChatService,
+    private readonly threadAgentService: ThreadAgentService,
+    private readonly chatProvidersService: ChatProvidersService,
     private readonly threadTitleService: ThreadTitleService,
   ) { }
-
-  private async ensureThreadConversationSession(
-    thread: ThreadEntity,
-  ): Promise<ThreadEntity> {
-    if (thread.chatSessionId) {
-      return thread;
-    }
-
-    this.logger.warn({
-      message: 'Thread missing chat session id, recreating conversation',
-      threadId: thread.id,
-    });
-
-    const conversation = await this.chatService.createConversation({
-      threadId: thread.id,
-    });
-
-    thread.chatSessionId = conversation.id;
-
-    return await this.threadRepository.save(thread);
-  }
 
   async createThread(input: CreateThreadInput): Promise<ThreadResult> {
     this.logger.log({
@@ -155,8 +118,6 @@ export class ThreadsService {
           || ThreadsService.DEFAULT_THREAD_TITLE)
         : ThreadsService.DEFAULT_THREAD_TITLE);
 
-    await this.chatService.ensureConversationAvailable();
-
     // Create state context block for the thread
     const stateBlockContent = parentTask
       ? [
@@ -172,10 +133,15 @@ export class ThreadsService {
       tagNames: ['thread:state'],
     });
 
+    // New threads start on the globally selected provider and model.
+    const selection = await this.chatProvidersService.getActiveChatSelection();
+
     const thread = this.threadRepository.create({
       id: randomUUID(),
       title,
       chatSessionId: null,
+      chatProviderId: selection?.chatProviderId ?? null,
+      modelId: selection?.modelId ?? null,
       createdByActorId: input.createdByActorId,
       parentTaskId: input.parentTaskId || null,
       stateContextBlockId: stateBlock.id,
@@ -190,38 +156,6 @@ export class ThreadsService {
         throw new ParentTaskThreadAlreadyExistsError(input.parentTaskId!);
       }
       throw error;
-    }
-
-    // Create provider-side conversation/session and persist its ID on the thread.
-    try {
-      const conversation = await this.chatService.createConversation({
-        threadId: savedThread.id,
-      });
-      savedThread.chatSessionId = conversation.id;
-      await this.threadRepository.save(savedThread);
-    } catch (error) {
-      if (error instanceof NoActiveChatProviderError) {
-        // No provider configured — thread is created with chatSessionId: null.
-        // The session will be lazily initialized when the first message is sent.
-        this.logger.warn({
-          message: 'No active chat provider; thread created without a chat session',
-          threadId: savedThread.id,
-        });
-      } else {
-        await this.threadRepository.delete({ id: savedThread.id });
-        await this.contextBlockRepository.delete({ id: stateBlock.id });
-
-        this.logger.error({
-          message: 'Failed to create chat conversation for thread, rolling back thread creation',
-          threadId: savedThread.id,
-          error:
-            error instanceof Error
-              ? { message: error.message, stack: error.stack, name: error.name }
-              : String(error),
-        });
-
-        throw error;
-      }
     }
 
     // Handle tags if provided
@@ -1062,9 +996,6 @@ export class ThreadsService {
     if (!thread) {
       throw new ThreadNotFoundError(input.threadId);
     }
-    const threadWithConversation = await this.ensureThreadConversationSession(
-      thread,
-    );
 
     // Verify actor exists if provided
     const actor = await this.actorRepository.findOne({
@@ -1110,26 +1041,8 @@ export class ThreadsService {
       ),
     );
 
-    // Send to chat (fire-and-forget with error handling to prevent unhandled rejection)
-    void (async () => {
-      try {
-        const { agentActorId, events } = await this.chatService.streamMessageToConversation({
-          conversationId: threadWithConversation.chatSessionId!,
-          threadId: threadWithConversation.id,
-          message: input.content,
-          actor,
-        });
-        await this.consumeResponseStream(events, threadWithConversation.id, agentActorId);
-      } catch (error) {
-        this.logger.error({
-          message: 'Failed to process agent response stream',
-          threadId: threadWithConversation.id,
-          error: error instanceof Error
-            ? { message: error.message, stack: error.stack, name: error.name }
-            : String(error),
-        });
-      }
-    })();
+    // The agent answers in the background; any backend process may pick the turn up.
+    this.threadAgentService.requestTurn(thread.id);
 
     await this.maybeGenerateTitleFromFirstMessage({
       thread,
@@ -1139,108 +1052,6 @@ export class ThreadsService {
     });
 
     return this.mapThreadMessageToResult(messageWithRelations);
-  }
-
-  private emitAgentActivity(input: EmitAgentActivityInput): void {
-    this.eventEmitter.emit(
-      ThreadAgentActivityEvent.INTERNAL,
-      new ThreadAgentActivityEvent(
-        { id: input.actorId },
-        {
-          threadId: input.threadId,
-          kind: input.kind,
-        },
-      ),
-    );
-  }
-
-  private emitAgentResponseDelta(input: EmitAgentResponseDeltaInput): void {
-    this.eventEmitter.emit(
-      ThreadAgentResponseDeltaEvent.INTERNAL,
-      new ThreadAgentResponseDeltaEvent(
-        { id: input.actorId },
-        {
-          threadId: input.threadId,
-          streamId: input.streamId,
-          delta: input.delta,
-        },
-      ),
-    );
-  }
-
-  private async consumeResponseStream(
-    events: AsyncIterable<ChatStreamEvent>,
-    threadId: string,
-    agentActorId: string,
-  ): Promise<void> {
-    const responseStreamId = randomUUID();
-
-    for await (const event of events) {
-      switch (event.type) {
-        case 'agent_activity':
-          this.emitAgentActivity({ threadId, actorId: agentActorId, kind: event.kind });
-          break;
-        case 'response_delta':
-          this.emitAgentResponseDelta({
-            threadId,
-            actorId: agentActorId,
-            streamId: responseStreamId,
-            delta: event.delta,
-          });
-          break;
-        case 'final_response':
-          await this.persistAgentMessage({ threadId, content: event.content, actorId: agentActorId });
-          break;
-        case 'error': {
-          const errorMessage = `I encountered an error while processing your message: ${event.error.message}`;
-          await this.persistAgentMessage({ threadId, content: errorMessage, actorId: agentActorId });
-          break;
-        }
-      }
-    }
-  }
-
-  private async persistAgentMessage(input: {
-    threadId: string;
-    content: string;
-    actorId: string;
-  }): Promise<void> {
-    try {
-      const message = this.threadMessageRepository.create({
-        threadId: input.threadId,
-        content: input.content,
-        createdByActorId: input.actorId,
-      });
-
-      const savedMessage = await this.threadMessageRepository.save(message);
-
-      const messageWithRelations = await this.threadMessageRepository.findOne({
-        where: { id: savedMessage.id },
-        relations: ['createdByActor'],
-      });
-
-      if (!messageWithRelations) {
-        this.logger.error({
-          message: 'Failed to reload agent message after creation',
-          threadId: input.threadId,
-          messageId: savedMessage.id,
-        });
-        return;
-      }
-
-      this.eventEmitter.emit(
-        MessageCreatedEvent.INTERNAL,
-        new MessageCreatedEvent({ id: input.actorId }, messageWithRelations),
-      );
-    } catch (error) {
-      this.logger.error({
-        message: 'Failed to persist agent message',
-        threadId: input.threadId,
-        error: error instanceof Error
-          ? { message: error.message, stack: error.stack, name: error.name }
-          : String(error),
-      });
-    }
   }
 
   async listMessages(

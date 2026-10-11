@@ -30,6 +30,22 @@ export class ChatProviderEntity {
   @JoinColumn({ name: 'secret_id' })
   secret?: SecretEntity;
 
+  /** Model used with this provider. Null uses the provider type's default. */
+  @Column({ type: 'text', nullable: true, name: 'model_id' })
+  modelId!: string | null;
+
+  /** API base URL. Required for OpenAI-compatible providers. */
+  @Column({ type: 'text', nullable: true, name: 'base_url' })
+  baseUrl!: string | null;
+
+  /** Google Cloud project for Vertex AI. Null falls back to the environment. */
+  @Column({ type: 'text', nullable: true })
+  project!: string | null;
+
+  /** Google Cloud location for Vertex AI. Null falls back to the environment. */
+  @Column({ type: 'text', nullable: true })
+  location!: string | null;
+
   @Column({ type: 'boolean', name: 'is_active', default: false })
   isActive!: boolean;
 
